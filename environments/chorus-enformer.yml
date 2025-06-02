@@ -1,6 +1,7 @@
 name: chorus-enformer
 channels:
   - conda-forge
+  - bioconda
   - defaults
 dependencies:
   # Core Python

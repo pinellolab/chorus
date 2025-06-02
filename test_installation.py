@@ -48,7 +48,7 @@ try:
     # Check environment manager
     from chorus.core.environment import EnvironmentManager
     manager = EnvironmentManager()
-    envs = manager.list_environments()
+    envs = manager.list_available_environments()
     print(f"✓ Environment manager works")
     print(f"  - Available environments: {len(envs)}")
     

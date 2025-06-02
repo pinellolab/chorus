@@ -2,7 +2,7 @@
 
 from ..core.base import OracleBase
 from ..core.track import Track
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 import numpy as np
 
 

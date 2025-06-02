@@ -1,6 +1,7 @@
 name: chorus-borzoi
 channels:
   - conda-forge
+  - bioconda
   - pytorch
   - defaults
 dependencies:

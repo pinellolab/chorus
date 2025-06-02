@@ -247,5 +247,8 @@ def main(argv: Optional[List[str]] = None):
     return args.func(args)
 
 
+# Create cli alias for setuptools entry point
+cli = main
+
 if __name__ == '__main__':
     sys.exit(main())
