@@ -1,10 +1,14 @@
 """Base class for all oracle implementations."""
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, Union, Optional, Tuple
+from typing import List, Dict, Union, Optional, Tuple, Any
 import numpy as np
 import pandas as pd
 import re
+import os
+import logging
+from pathlib import Path
+
 from ..core.track import Track
 from ..core.exceptions import (
     ModelNotLoadedError,
@@ -13,15 +17,27 @@ from ..core.exceptions import (
     InvalidRegionError
 )
 
+logger = logging.getLogger(__name__)
+
 
 class OracleBase(ABC):
     """Abstract base class for all oracle implementations."""
     
-    def __init__(self):
+    def __init__(self, use_environment: bool = True):
         self.model = None
         self.loaded = False
         self._assay_types = []
         self._cell_types = []
+        
+        # Environment management
+        self.use_environment = use_environment
+        self._env_manager = None
+        self._env_runner = None
+        self.oracle_name = self.__class__.__name__.lower().replace('oracle', '')
+        
+        # Initialize environment if requested
+        if self.use_environment:
+            self._setup_environment()
     
     @abstractmethod
     def load_pretrained_model(self, weights: str) -> None:
@@ -37,6 +53,55 @@ class OracleBase(ABC):
     def list_cell_types(self) -> List[str]:
         """Return list of available cell types."""
         pass
+    
+    def _setup_environment(self):
+        """Set up environment management for the oracle."""
+        try:
+            from ..core.environment import EnvironmentManager, EnvironmentRunner
+            
+            self._env_manager = EnvironmentManager()
+            self._env_runner = EnvironmentRunner(self._env_manager)
+            
+            # Check if environment exists
+            if not self._env_manager.environment_exists(self.oracle_name):
+                logger.warning(
+                    f"Environment for {self.oracle_name} does not exist. "
+                    f"Run 'chorus setup {self.oracle_name}' to create it."
+                )
+                self.use_environment = False
+            else:
+                # Validate environment
+                is_valid, issues = self._env_manager.validate_environment(self.oracle_name)
+                if not is_valid:
+                    logger.warning(
+                        f"Environment validation failed for {self.oracle_name}: "
+                        f"{'; '.join(issues)}"
+                    )
+                    self.use_environment = False
+                else:
+                    logger.info(f"Using conda environment: chorus-{self.oracle_name}")
+        except ImportError:
+            logger.warning("Environment management not available. Running in current environment.")
+            self.use_environment = False
+        except Exception as e:
+            logger.warning(f"Failed to set up environment: {e}")
+            self.use_environment = False
+    
+    def run_in_environment(self, func: Any, *args, **kwargs) -> Any:
+        """Run a function in the oracle's environment if available."""
+        if self.use_environment and self._env_runner:
+            return self._env_runner.run_in_environment(
+                self.oracle_name, func, args, kwargs
+            )
+        else:
+            # Run directly in current environment
+            return func(*args, **kwargs)
+    
+    def get_environment_info(self) -> Optional[Dict[str, Any]]:
+        """Get information about the oracle's environment."""
+        if self._env_manager:
+            return self._env_manager.get_environment_info(self.oracle_name)
+        return None
     
     def predict_region_replacement(
         self,

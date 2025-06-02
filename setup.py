@@ -42,7 +42,11 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "chorus=chorus.cli:main",
+            "chorus=chorus.cli.main:cli",
         ],
     },
+    package_data={
+        "chorus": ["../environments/*.yml"],
+    },
+    include_package_data=True,
 )

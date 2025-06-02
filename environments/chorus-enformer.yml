@@ -1,0 +1,40 @@
+name: chorus-enformer
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # Core Python
+  - python=3.10
+  
+  # Essential scientific computing
+  - numpy>=1.21.0
+  - pandas>=1.3.0
+  - scipy>=1.7.0
+  
+  # Core bioinformatics
+  - pysam>=0.19.0
+  - biopython>=1.79
+  - pyfaidx>=0.7.0
+  
+  # Utilities
+  - tqdm>=4.62.0
+  - h5py>=3.6.0
+  
+  # Visualization (for Enformer's contribution scores)
+  - matplotlib>=3.5.0
+  - seaborn>=0.11.0
+  
+  # TensorFlow ecosystem
+  - pip
+  - pip:
+    # Enformer specific dependencies
+    - tensorflow>=2.8.0,<2.15.0
+    - tensorflow-hub>=0.12.0
+    - tensorflow-datasets>=4.0.0
+    
+    # Genomics utilities
+    - kipoiseq>=0.7.0
+    
+    # Additional utilities
+    - dm-sonnet>=2.0.0
+    - tensorflow-probability>=0.15.0
