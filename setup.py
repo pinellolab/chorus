@@ -28,7 +28,7 @@ setup(
         "Programming Language :: Python :: 3.11",
     ],
     python_requires=">=3.8",
-    install_requires=requirements,
+    install_requires=requirements + ["click>=8.0"],
     extras_require={
         "dev": [
             "pytest>=6.0",

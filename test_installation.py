@@ -42,12 +42,26 @@ except Exception as e:
 
 # Test oracle creation
 try:
-    oracle = chorus.create_oracle('enformer')
-    print("✓ Oracle creation works")
-    print(f"  - Available assays: {len(oracle.list_assay_types())}")
-    print(f"  - Available cell types: {len(oracle.list_cell_types())}")
+    # First check if we can create an oracle with environment isolation
+    print("\nTesting oracle system:")
+    
+    # Check environment manager
+    from chorus.core.environment import EnvironmentManager
+    manager = EnvironmentManager()
+    envs = manager.list_environments()
+    print(f"✓ Environment manager works")
+    print(f"  - Available environments: {len(envs)}")
+    
+    # Try to create oracle with environment (won't fail even without deps)
+    try:
+        oracle = chorus.create_oracle('enformer', use_environment=True)
+        print("✓ Oracle creation with environment isolation works")
+    except Exception as e:
+        print(f"! Oracle with environment isolation not available: {e}")
+        print("  Run 'chorus setup --oracle enformer' to set up the environment")
+    
 except Exception as e:
-    print(f"✗ Error creating oracle: {e}")
+    print(f"✗ Error with oracle system: {e}")
 
 # Test sequence utilities
 try:

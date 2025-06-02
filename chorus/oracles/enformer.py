@@ -1,7 +1,5 @@
 """Enformer oracle implementation."""
 
-import tensorflow as tf
-import tensorflow_hub as hub
 import numpy as np
 import pandas as pd
 from typing import List, Dict, Optional, Tuple, Union
@@ -12,6 +10,28 @@ from tqdm import tqdm
 from ..core.base import OracleBase
 from ..core.track import Track
 from ..core.exceptions import ModelNotLoadedError, InvalidSequenceError
+
+# Lazy import TensorFlow to avoid import errors when not installed
+tf = None
+hub = None
+
+def _ensure_tensorflow():
+    """Ensure TensorFlow is available."""
+    global tf, hub
+    if tf is None:
+        try:
+            import tensorflow as _tf
+            import tensorflow_hub as _hub
+            tf = _tf
+            hub = _hub
+        except ImportError:
+            raise ImportError(
+                "TensorFlow is required for Enformer but not installed.\n"
+                "Either:\n"
+                "1. Use 'chorus.create_oracle(\"enformer\", use_environment=True)' for isolated execution\n"
+                "2. Install TensorFlow: pip install tensorflow tensorflow-hub\n"
+                "3. Set up Enformer environment: chorus setup --oracle enformer"
+            )
 
 
 class EnformerOracle(OracleBase):
@@ -39,6 +59,8 @@ class EnformerOracle(OracleBase):
             weights: Path to model weights or TFHub URL. 
                     If None, uses default Enformer model from TFHub.
         """
+        _ensure_tensorflow()  # Make sure TensorFlow is available
+        
         if weights is None:
             weights = self.default_model_path
         
@@ -113,6 +135,7 @@ class EnformerOracle(OracleBase):
         one_hot = self._one_hot_encode(seq)
         
         # Add batch dimension
+        _ensure_tensorflow()  # Make sure TensorFlow is available
         one_hot_batch = tf.constant(one_hot[np.newaxis], dtype=tf.float32)
         
         # Run prediction
@@ -319,13 +342,12 @@ class EnformerOracle(OracleBase):
         
         return results
     
-    @tf.function
     def compute_contribution_scores(
         self,
-        input_sequence: tf.Tensor,
-        target_mask: tf.Tensor,
+        input_sequence,
+        target_mask,
         output_head: str = "human"
-    ) -> tf.Tensor:
+    ):
         """
         Compute contribution scores using integrated gradients.
         
@@ -337,17 +359,24 @@ class EnformerOracle(OracleBase):
         Returns:
             Contribution scores
         """
-        input_sequence = input_sequence[tf.newaxis]
-        target_mask_mass = tf.reduce_sum(target_mask)
+        _ensure_tensorflow()  # Make sure TensorFlow is available
         
-        with tf.GradientTape() as tape:
-            tape.watch(input_sequence)
-            prediction = self._enformer_model(input_sequence)[output_head]
-            masked_prediction = (
-                tf.reduce_sum(target_mask[tf.newaxis] * prediction) / target_mask_mass
-            )
+        # Create the function dynamically with tf.function
+        @tf.function
+        def _compute_scores(input_seq, mask):
+            input_seq = input_seq[tf.newaxis]
+            mask_mass = tf.reduce_sum(mask)
+            
+            with tf.GradientTape() as tape:
+                tape.watch(input_seq)
+                prediction = self._enformer_model(input_seq)[output_head]
+                masked_prediction = (
+                    tf.reduce_sum(mask[tf.newaxis] * prediction) / mask_mass
+                )
+            
+            input_grad = tape.gradient(masked_prediction, input_seq) * input_seq
+            input_grad = tf.squeeze(input_grad, axis=0)
+            
+            return tf.reduce_sum(input_grad, axis=-1)
         
-        input_grad = tape.gradient(masked_prediction, input_sequence) * input_sequence
-        input_grad = tf.squeeze(input_grad, axis=0)
-        
-        return tf.reduce_sum(input_grad, axis=-1)
+        return _compute_scores(input_sequence, target_mask)
