@@ -333,22 +333,30 @@ class EnvironmentManager:
             issues.append("Python executable not found in environment")
             return False, issues
         
-        # Try to import the oracle module
-        oracle_module = f"chorus.oracles.{oracle}"
-        try:
-            result = subprocess.run(
-                [python_exe, '-c', f'import {oracle_module}'],
-                capture_output=True,
-                text=True,
-                timeout=30
-            )
-            
-            if result.returncode != 0:
-                issues.append(f"Failed to import {oracle_module}: {result.stderr}")
-        except subprocess.TimeoutExpired:
-            issues.append(f"Timeout while trying to import {oracle_module}")
-        except Exception as e:
-            issues.append(f"Error validating environment: {str(e)}")
+        # Check oracle-specific dependencies instead of importing chorus
+        oracle_deps = {
+            'enformer': ['tensorflow', 'tensorflow_hub'],
+            'sei': ['torch'],
+            'borzoi': ['tensorflow'],
+            'chrombpnet': ['tensorflow']
+        }
+        
+        if oracle in oracle_deps:
+            for dep in oracle_deps[oracle]:
+                try:
+                    result = subprocess.run(
+                        [python_exe, '-c', f'import {dep}'],
+                        capture_output=True,
+                        text=True,
+                        timeout=30
+                    )
+                    
+                    if result.returncode != 0:
+                        issues.append(f"Missing dependency {dep}: {result.stderr}")
+                except subprocess.TimeoutExpired:
+                    issues.append(f"Timeout while checking dependency {dep}")
+                except Exception as e:
+                    issues.append(f"Error checking dependency {dep}: {str(e)}")
         
         return len(issues) == 0, issues
     

@@ -18,6 +18,17 @@ Key features:
 - 🎯 In silico mutagenesis and sequence optimization
 - 📈 Track normalization and comparison utilities
 - 🚀 Batch prediction support
+- 🔧 **NEW**: Isolated conda environments for each oracle to avoid dependency conflicts
+
+## ⚠️ Current Status
+
+**This is a work-in-progress implementation.** Currently, only the Enformer oracle is fully implemented with:
+- Environment isolation support
+- Reference genome integration for biologically accurate predictions
+- ENCODE track identifier support
+- BedGraph output generation
+
+Other oracles (Borzoi, ChromBPNet, Sei) have placeholder implementations and will be completed in future updates.
 
 ## Installation
 
@@ -26,219 +37,212 @@ Key features:
 git clone https://github.com/pinellolab/chorus.git
 cd chorus
 
-# Install in development mode
+# Install chorus package
 pip install -e .
 
-# Or install directly from GitHub
-pip install git+https://github.com/pinellolab/chorus.git
+# Install the CLI tool
+pip install --upgrade anthropic  # Required for setup assistant
+chorus --help
 ```
 
-### Dependencies
+### Setting Up Oracle Environments
 
-Chorus requires Python 3.8+ and the following key dependencies:
-- TensorFlow 2.8+ (for Enformer)
-- PyTorch 1.10+ (for other models)
-- NumPy, Pandas, Matplotlib
-- pysam (for genomic file handling)
+Chorus uses isolated conda environments for each oracle to avoid dependency conflicts between TensorFlow and PyTorch models:
+
+```bash
+# Set up Enformer environment (TensorFlow-based)
+chorus setup --oracle enformer
+
+# Check environment status
+chorus env status
+
+# List available environments
+chorus env list
+```
 
 ## Quick Start
 
 ```python
 import chorus
 
-# Create an oracle instance
-oracle = chorus.create_oracle('enformer')
+# Create an Enformer oracle with environment isolation
+# This ensures TensorFlow dependencies don't conflict with PyTorch
+oracle = chorus.create_oracle('enformer', use_environment=True)
+
+# For genomic coordinate predictions, provide reference genome
+oracle = chorus.create_oracle('enformer', 
+                             use_environment=True,
+                             reference_fasta='/path/to/hg38.fa')
 
 # Load pre-trained model
 oracle.load_pretrained_model()
 
-# List available assays and cell types
-print(oracle.list_assay_types())
-print(oracle.list_cell_types())
-
-# Predict regulatory activity for a genomic region
-results = oracle.predict_region_replacement(
-    genomic_region="chr1:1000000-1200000",
-    seq="",  # Use reference sequence
-    assay_ids=["DNase:K562", "CAGE:K562"],
-    genome="hg38.fa"
+# Predict using genomic coordinates (with automatic sequence extraction)
+predictions = oracle.predict(
+    ('chrX', 48780505, 48785229),  # Genomic coordinates
+    ['ENCFF413AHU']  # ENCODE identifier for DNase:K562
 )
 
-# Analyze variant effects
-variant_results = oracle.predict_variant_effect(
-    genomic_region="chr1:1000000-1001000",
-    variant_position="chr1:1000500",
-    alleles=["A", "G"],  # Reference and alternate
-    assay_ids=["DNase:K562"],
-    genome="hg38.fa"
-)
+# Or predict using a DNA sequence directly
+sequence = 'ACGT' * 1000  # Your sequence
+predictions = oracle.predict(sequence, ['DNase:K562'])
+```
+
+## Examples
+
+See the `examples/` directory for comprehensive examples:
+
+1. **`enformer_quick_start.py`** - Minimal example to get started
+2. **`enformer_comprehensive_example.py`** - Detailed examples showing all features
+
+```bash
+# Run quick start (requires hg38.fa reference genome)
+cd examples
+python enformer_quick_start.py /path/to/hg38.fa
+
+# Run comprehensive examples
+python enformer_comprehensive_example.py /path/to/hg38.fa
+```
+
+## Key Features
+
+### 1. Environment Isolation
+
+Each oracle runs in its own conda environment to avoid dependency conflicts:
+
+```python
+# TensorFlow-based Enformer runs in isolated environment
+enformer = chorus.create_oracle('enformer', use_environment=True)
+
+# Future: PyTorch-based models will have their own environments
+borzoi = chorus.create_oracle('borzoi', use_environment=True)  # Coming soon
+```
+
+### 2. Reference Genome Integration
+
+For accurate predictions, provide a reference genome to extract proper flanking sequences:
+
+```python
+# Enformer requires 393,216 bp of context
+# Chorus automatically extracts and pads sequences from the reference
+oracle = chorus.create_oracle('enformer', 
+                             use_environment=True,
+                             reference_fasta='hg38.fa')
+
+# Predict using genomic coordinates
+predictions = oracle.predict(('chr1', 1000000, 1001000), ['DNase:K562'])
+```
+
+### 3. ENCODE Track Support
+
+Use specific ENCODE identifiers or general track descriptions:
+
+```python
+# Using ENCODE identifier (recommended for reproducibility)
+predictions = oracle.predict(sequence, ['ENCFF413AHU'])  # Specific DNase:K562 experiment
+
+# Using descriptive name (may return multiple tracks)
+predictions = oracle.predict(sequence, ['DNase:K562'])
+```
+
+### 4. BedGraph Output
+
+Predictions can be saved as BedGraph tracks for genome browser visualization:
+
+```python
+# Predictions are returned as numpy arrays
+# Each bin represents 128 bp for Enformer
+# See examples for BedGraph generation code
 ```
 
 ## Core Concepts
 
 ### Oracles
-Oracles are deep learning models that predict genomic regulatory activity. Each oracle implements a common interface:
-
-```python
-# All oracles inherit from OracleBase
-oracle = chorus.EnformerOracle()
-oracle.load_pretrained_model()
-
-# Common methods across all oracles
-oracle.predict_region_replacement(...)
-oracle.predict_region_insertion_at(...)
-oracle.predict_variant_effect(...)
-oracle.fine_tune(...)
-```
+Oracles are deep learning models that predict genomic regulatory activity. Each oracle implements a common interface while running in isolated environments.
 
 ### Tracks
-Tracks represent genomic signal data (e.g., DNase-seq, ChIP-seq):
+Tracks represent genomic signal data (e.g., DNase-seq, ChIP-seq). Enformer predicts 5,313 human tracks covering various assays and cell types.
 
-```python
-# Create a track from data
-track = chorus.Track(
-    name="my_dnase_track",
-    assay_type="DNase",
-    cell_type="K562",
-    data=track_dataframe  # Requires: chrom, start, end, value
-)
+### Environment Management
+The `chorus` CLI manages conda environments for each oracle:
 
-# Save as BEDGraph
-track.to_bedgraph("output.bedgraph")
+```bash
+# Set up environments
+chorus setup --oracle enformer
 
-# Normalize track
-normalized = track.normalize(method="quantile")
+# Check status
+chorus env status
+
+# Clean up
+chorus env clean enformer
 ```
-
-### Sequence Utilities
-Work with DNA sequences and variants:
-
-```python
-# Extract sequence from reference genome
-seq = chorus.extract_sequence("chr1:1000-2000", genome="hg38.fa")
-
-# Apply variants
-mutated = chorus.apply_variant(seq, position=500, ref="A", alt="G")
-
-# Parse VCF files
-variants = chorus.parse_vcf("variants.vcf")
-```
-
-## Examples
-
-### 1. Predict Enhancer Activity
-
-```python
-# Define enhancer sequence
-enhancer_seq = "GGATCCAAGGCTGCAGCAGAGGGGCAAAGTGAGGC..."
-
-# Test at different positions
-for position in ["chr8:128740000", "chr8:128745000"]:
-    results = oracle.predict_region_insertion_at(
-        genomic_position=position,
-        seq=enhancer_seq,
-        assay_ids=["H3K27ac:K562", "DNase:K562"],
-        genome="hg38.fa"
-    )
-    print(f"Activity at {position}: {results['normalized_scores']}")
-```
-
-### 2. Visualize Predictions
-
-```python
-# Visualize multiple tracks
-chorus.visualize_tracks(
-    tracks_filenames=["dnase.bedgraph", "h3k27ac.bedgraph"],
-    track_names=["DNase", "H3K27ac"],
-    colors=["blue", "red"],
-    output_file="tracks_visualization.png"
-)
-
-# Compare two tracks
-stats = chorus.plot_track_comparison(
-    track1_file="predicted.bedgraph",
-    track2_file="experimental.bedgraph",
-    track1_name="Predicted",
-    track2_name="Experimental",
-    correlation_method="pearson"
-)
-```
-
-### 3. Batch Variant Analysis
-
-```python
-# Analyze all variants in a VCF
-variants = chorus.parse_vcf("gwas_variants.vcf")
-
-for _, variant in variants.iterrows():
-    results = oracle.predict_variant_effect(
-        genomic_region=f"{variant['chrom']}:{variant['pos']-1000}-{variant['pos']+1000}",
-        variant_position=f"{variant['chrom']}:{variant['pos']}",
-        alleles=[variant['ref'], variant['alt']],
-        assay_ids=["DNase:K562", "ATAC-seq:K562"],
-        genome="hg38.fa"
-    )
-    
-    # Analyze effects
-    print(f"{variant['id']}: {results['effect_sizes']}")
-```
-
-## Model-Specific Features
-
-### Enformer
-- Sequence length: 393,216 bp (196,608 bp prediction window)
-- Output: 896 bins × 5,313 tracks (human + mouse)
-- Bin size: 128 bp
-
-```python
-enformer = chorus.EnformerOracle()
-enformer.compute_contribution_scores(...)  # Integrated gradients
-```
-
-### ChromBPNet
-- Sequence length: 2,114 bp
-- Output: Base-pair resolution (1,000 bp)
-- Specialized for TF binding and accessibility
-
-### Sei
-- Sequence length: 4,096 bp
-- Output: 21,907 regulatory features
-- Sequence class predictions
 
 ## API Reference
 
-### Oracle Methods
+### Oracle Creation
+```python
+oracle = chorus.create_oracle(
+    oracle_name='enformer',
+    use_environment=True,  # Use isolated conda environment
+    reference_fasta='/path/to/hg38.fa'  # Optional, for coordinate-based predictions
+)
+```
 
-#### `predict_region_replacement(genomic_region, seq, assay_ids, create_tracks=False, genome="hg38.fa")`
-Replace a genomic region with a new sequence and predict activity.
+### Prediction Methods
+```python
+# Predict from sequence
+predictions = oracle.predict(
+    'ACGTACGT...',  # DNA sequence
+    ['DNase:K562', 'ATAC-seq:K562']  # Track identifiers
+)
 
-#### `predict_variant_effect(genomic_region, variant_position, alleles, assay_ids, create_tracks=False, genome="hg38.fa")`
-Predict the effects of genetic variants.
+# Predict from genomic coordinates (requires reference_fasta)
+predictions = oracle.predict(
+    ('chr1', 1000000, 1001000),  # (chrom, start, end)
+    ['ENCFF413AHU']  # ENCODE identifiers
+)
+```
 
-#### `fine_tune(tracks, track_names, **kwargs)`
-Fine-tune the model on new experimental data.
+## Model-Specific Details
 
-### Utility Functions
+### Enformer (Implemented)
+- Sequence length: 393,216 bp input, 114,688 bp output window
+- Output: 896 bins × 5,313 tracks
+- Bin size: 128 bp
+- Tracks: Gene expression, chromatin accessibility, histone modifications, etc.
 
-#### Sequence Manipulation
-- `extract_sequence()`: Extract DNA from reference genome
-- `apply_variant()`: Apply variant to sequence
-- `reverse_complement()`: Get reverse complement
-- `parse_vcf()`: Parse VCF files
+### Other Models (Coming Soon)
+- **Borzoi**: Enhanced Enformer with improved performance
+- **ChromBPNet**: Base-pair resolution TF binding predictions  
+- **Sei**: Sequence regulatory effect predictions
 
-#### Normalization
-- `quantile_normalize()`: Quantile normalization
-- `minmax_normalize()`: Min-max scaling
-- `zscore_normalize()`: Z-score normalization
+## Troubleshooting
 
-#### Visualization
-- `visualize_tracks()`: Plot genomic tracks
-- `plot_track_heatmap()`: Create track heatmaps
-- `plot_track_comparison()`: Compare and correlate tracks
+### Environment Issues
+```bash
+# Check if environment exists
+chorus env status
+
+# Recreate environment
+chorus env clean enformer
+chorus setup --oracle enformer
+```
+
+### Memory Issues
+Enformer requires significant memory (~8-16 GB) for predictions. Reduce batch size if needed.
+
+### CUDA/GPU Support
+The isolated environments include GPU support. Ensure CUDA is properly installed on your system.
 
 ## Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Areas needing work:
+1. Complete implementations for Borzoi, ChromBPNet, and Sei oracles
+2. Add more examples and tutorials
+3. Implement batch prediction optimizations
+4. Add more visualization utilities
+
+Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ## Citation
 

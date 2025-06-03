@@ -264,3 +264,72 @@ def pad_sequence(seq: str, target_length: int, pad_char: str = 'N') -> str:
     pad_right = pad_needed - pad_left
     
     return pad_char * pad_left + seq + pad_char * pad_right
+
+
+def extract_sequence_with_padding(
+    fasta_path: str,
+    chrom: str,
+    start: int,
+    end: int,
+    total_length: int
+) -> str:
+    """
+    Extract a genomic sequence with padding to reach total_length.
+    
+    Args:
+        fasta_path: Path to indexed FASTA file
+        chrom: Chromosome name
+        start: Start position (0-based)
+        end: End position (exclusive)
+        total_length: Desired total length including padding
+        
+    Returns:
+        DNA sequence padded to total_length with flanking genomic sequence
+    """
+    try:
+        with pysam.FastaFile(fasta_path) as fasta:
+            # Get chromosome length
+            chrom_length = fasta.get_reference_length(chrom)
+            
+            # Calculate region length
+            region_length = end - start
+            
+            if region_length >= total_length:
+                # If region is already long enough, trim from center
+                trim_amount = region_length - total_length
+                trim_left = trim_amount // 2
+                return fasta.fetch(chrom, start + trim_left, start + trim_left + total_length).upper()
+            
+            # Calculate padding needed
+            padding_needed = total_length - region_length
+            pad_left = padding_needed // 2
+            pad_right = padding_needed - pad_left
+            
+            # Calculate extraction coordinates with bounds checking
+            extract_start = max(0, start - pad_left)
+            extract_end = min(chrom_length, end + pad_right)
+            
+            # Extract sequence
+            extracted_seq = fasta.fetch(chrom, extract_start, extract_end).upper()
+            
+            # If we couldn't get enough sequence from the chromosome, pad with N's
+            if len(extracted_seq) < total_length:
+                if extract_start == 0:
+                    # Hit start of chromosome, pad on the left
+                    n_pad_left = total_length - len(extracted_seq)
+                    extracted_seq = 'N' * n_pad_left + extracted_seq
+                else:
+                    # Hit end of chromosome, pad on the right
+                    n_pad_right = total_length - len(extracted_seq)
+                    extracted_seq = extracted_seq + 'N' * n_pad_right
+            
+            return extracted_seq
+    except FileNotFoundError:
+        raise FileFormatError(f"Genome file not found: {fasta_path}")
+    except Exception as e:
+        if "index" in str(e).lower():
+            raise FileFormatError(
+                f"Genome file {fasta_path} is not indexed. "
+                f"Please run 'samtools faidx {fasta_path}' to create index."
+            )
+        raise

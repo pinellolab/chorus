@@ -102,8 +102,8 @@ def create_oracle(oracle_name: str, use_environment: bool = False, **kwargs):
     if use_environment:
         # Use the environment-aware oracle implementations
         if oracle_name.lower() == 'enformer':
-            from .oracles.enformer_env import EnformerOracleEnv
-            return EnformerOracleEnv(use_environment=True, **kwargs)
+            from .oracles.enformer import EnformerOracle
+            return EnformerOracle(use_environment=True, **kwargs)
         else:
             raise NotImplementedError(
                 f"Environment-isolated version of {oracle_name} not yet implemented.\n"

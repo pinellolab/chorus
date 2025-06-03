@@ -26,6 +26,103 @@ class EnvironmentRunner:
         """
         self.env_manager = environment_manager
     
+    def run_code_in_environment(
+        self,
+        oracle: str,
+        code: str,
+        timeout: Optional[int] = None
+    ) -> Any:
+        """
+        Run Python code in the oracle's conda environment and return the result.
+        
+        The code should set a variable named 'result' that will be returned.
+        
+        Args:
+            oracle: Name of the oracle
+            code: Python code to execute
+            timeout: Timeout in seconds
+            
+        Returns:
+            The value of the 'result' variable from the executed code
+        """
+        # Check if environment exists
+        if not self.env_manager.environment_exists(oracle):
+            raise RuntimeError(f"Environment for {oracle} does not exist. Run setup first.")
+        
+        # Get Python executable
+        python_exe = self.env_manager.get_python_executable(oracle)
+        if not python_exe:
+            raise RuntimeError(f"Could not find Python executable for {oracle}")
+        
+        # Create temporary files
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as code_file:
+            code_path = code_file.name
+            
+            # Get the chorus package path
+            import chorus
+            chorus_path = os.path.dirname(os.path.dirname(chorus.__file__))
+            
+            # Write the wrapped code to file
+            # Properly indent the user code
+            indented_code = '\n'.join('    ' + line for line in code.split('\n'))
+            
+            wrapped_code = f"""import sys
+import pickle
+import traceback
+
+# Add chorus to Python path
+sys.path.insert(0, {repr(chorus_path)})
+
+# Initialize result
+result = None
+error = None
+
+try:
+    # Execute user code
+{indented_code}
+    
+    # Save result
+    with open({repr(code_path + '.pkl')}, 'wb') as f:
+        pickle.dump({{'success': True, 'result': result, 'error': None}}, f)
+except Exception as e:
+    # Save error
+    with open({repr(code_path + '.pkl')}, 'wb') as f:
+        pickle.dump({{'success': False, 'result': None, 'error': str(e), 'traceback': traceback.format_exc()}}, f)
+"""
+            code_file.write(wrapped_code)
+        
+        output_path = code_path + '.pkl'
+        
+        try:
+            # Run the script file instead of passing code as argument
+            result = subprocess.run(
+                [python_exe, code_path],
+                capture_output=True,
+                text=True,
+                timeout=timeout
+            )
+            
+            if result.returncode != 0:
+                raise RuntimeError(f"Execution failed: {result.stderr}")
+            
+            # Load result
+            if os.path.exists(output_path):
+                with open(output_path, 'rb') as f:
+                    output_data = pickle.load(f)
+                
+                if output_data['success']:
+                    return output_data['result']
+                else:
+                    raise RuntimeError(f"Code execution failed: {output_data['error']}\n{output_data.get('traceback', '')}")
+            else:
+                raise RuntimeError(f"No output file created. Stdout: {result.stdout}, Stderr: {result.stderr}")
+                
+        finally:
+            # Clean up
+            for path in [code_path, output_path]:
+                if os.path.exists(path):
+                    os.unlink(path)
+    
     def run_in_environment(
         self,
         oracle: str,
@@ -194,10 +291,18 @@ except Exception as e:
     
     def _create_execution_script(self, input_path: str, output_path: str) -> str:
         """Create a script for executing a function in a subprocess."""
+        # Get the chorus package path
+        import chorus
+        chorus_path = os.path.dirname(os.path.dirname(chorus.__file__))
+        
         return f"""
 import pickle
 import sys
 import traceback
+import os
+
+# Add chorus to Python path so isolated environment can access it
+sys.path.insert(0, {repr(chorus_path)})
 
 # Load input
 with open('{input_path}', 'rb') as f:

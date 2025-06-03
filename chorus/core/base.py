@@ -33,7 +33,10 @@ class OracleBase(ABC):
         self.use_environment = use_environment
         self._env_manager = None
         self._env_runner = None
-        self.oracle_name = self.__class__.__name__.lower().replace('oracle', '')
+        
+        # Set oracle name if not already set by subclass
+        if not hasattr(self, 'oracle_name'):
+            self.oracle_name = self.__class__.__name__.lower().replace('oracle', '')
         
         # Initialize environment if requested
         if self.use_environment:
@@ -66,7 +69,7 @@ class OracleBase(ABC):
             if not self._env_manager.environment_exists(self.oracle_name):
                 logger.warning(
                     f"Environment for {self.oracle_name} does not exist. "
-                    f"Run 'chorus setup {self.oracle_name}' to create it."
+                    f"Run 'chorus setup --oracle {self.oracle_name}' to create it."
                 )
                 self.use_environment = False
             else:
@@ -97,11 +100,61 @@ class OracleBase(ABC):
             # Run directly in current environment
             return func(*args, **kwargs)
     
+    def run_code_in_environment(self, code: str, timeout: Optional[int] = None) -> Any:
+        """Run code in the oracle's environment and return the result."""
+        if self.use_environment and self._env_runner:
+            return self._env_runner.run_code_in_environment(
+                self.oracle_name, code, timeout
+            )
+        else:
+            # Run directly in current environment
+            local_vars = {}
+            exec(code, {'__builtins__': __builtins__}, local_vars)
+            return local_vars.get('result')
+    
     def get_environment_info(self) -> Optional[Dict[str, Any]]:
         """Get information about the oracle's environment."""
         if self._env_manager:
             return self._env_manager.get_environment_info(self.oracle_name)
         return None
+    
+    def predict(
+        self,
+        input_data: Union[str, Tuple[str, int, int]],
+        assay_ids: List[str],
+        create_tracks: bool = False
+    ) -> Dict[str, np.ndarray]:
+        """
+        Predict regulatory activity for a sequence or genomic region.
+        
+        Args:
+            input_data: Either a DNA sequence string or a tuple of (chrom, start, end)
+            assay_ids: List of assay identifiers (e.g., ['ENCFF413AHU'] or ['DNase:K562'])
+            create_tracks: Whether to create track files (not implemented yet)
+            
+        Returns:
+            Dictionary mapping assay IDs to prediction arrays
+            
+        Example:
+            >>> # Using sequence
+            >>> predictions = oracle.predict('ACGT...', ['DNase:K562'])
+            >>> 
+            >>> # Using genomic coordinates (requires reference_fasta)
+            >>> predictions = oracle.predict(('chrX', 48780505, 48785229), ['ENCFF413AHU'])
+        """
+        # Validate inputs
+        self._validate_loaded()
+        self._validate_assay_ids(assay_ids)
+        
+        # Get raw predictions
+        predictions = self._predict(input_data, assay_ids)
+        
+        # Return as dictionary
+        result = {}
+        for i, assay_id in enumerate(assay_ids):
+            result[assay_id] = predictions[:, i]
+        
+        return result
     
     def predict_region_replacement(
         self,
@@ -287,9 +340,12 @@ class OracleBase(ABC):
         valid_cells = self.list_cell_types()
         valid_ids = valid_assays + valid_cells
         
-        # Also check for combined format like "DNASE:K562"
+        # Also check for combined format like "DNASE:K562" and ENCODE identifiers
         for assay_id in assay_ids:
-            if ':' in assay_id:
+            # Skip validation for ENCODE identifiers (start with ENCFF)
+            if assay_id.startswith('ENCFF'):
+                continue
+            elif ':' in assay_id:
                 assay, cell = assay_id.split(':', 1)
                 if assay not in valid_assays or cell not in valid_cells:
                     raise InvalidAssayError(f"Invalid assay ID: {assay_id}")
