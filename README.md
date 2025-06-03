@@ -57,12 +57,40 @@ Chorus uses isolated conda environments for each oracle to avoid dependency conf
 # Set up Enformer environment (TensorFlow-based)
 chorus setup --oracle enformer
 
-# Check environment status
-chorus env status
+# Check environment health
+chorus health
 
 # List available environments
-chorus env list
+chorus list
 ```
+
+### Managing Reference Genomes
+
+Chorus includes built-in support for downloading and managing reference genomes:
+
+```bash
+# List available genomes
+chorus genome list
+
+# Download a reference genome (e.g., hg38, hg19, mm10)
+chorus genome download hg38
+
+# Get information about a downloaded genome
+chorus genome info hg38
+
+# Remove a downloaded genome
+chorus genome remove hg38
+```
+
+Supported genomes:
+- **hg38**: Human genome assembly GRCh38
+- **hg19**: Human genome assembly GRCh37
+- **mm10**: Mouse genome assembly GRCm38
+- **mm9**: Mouse genome assembly NCBI37
+- **dm6**: Drosophila melanogaster genome assembly BDGP6
+- **ce11**: C. elegans genome assembly WBcel235
+
+Genomes are stored in the `genomes/` directory within your Chorus installation.
 
 ## Quick Start
 
@@ -74,9 +102,11 @@ import chorus
 oracle = chorus.create_oracle('enformer', use_environment=True)
 
 # For genomic coordinate predictions, provide reference genome
+from chorus.utils import get_genome
+genome_path = get_genome('hg38')  # Auto-downloads if not present
 oracle = chorus.create_oracle('enformer', 
                              use_environment=True,
-                             reference_fasta='/path/to/hg38.fa')
+                             reference_fasta=str(genome_path))
 
 # Load pre-trained model
 oracle.load_pretrained_model()
@@ -100,12 +130,15 @@ See the `examples/` directory for comprehensive examples:
 2. **`enformer_comprehensive_example.py`** - Detailed examples showing all features
 
 ```bash
-# Run quick start (requires hg38.fa reference genome)
-cd examples
-python enformer_quick_start.py /path/to/hg38.fa
+# First download the reference genome if needed
+chorus genome download hg38
 
-# Run comprehensive examples
-python enformer_comprehensive_example.py /path/to/hg38.fa
+# Run quick start
+cd examples
+python enformer_quick_start.py
+
+# Run comprehensive examples  
+python enformer_comprehensive_example.py
 ```
 
 ## Key Features
@@ -129,9 +162,21 @@ For accurate predictions, provide a reference genome to extract proper flanking 
 ```python
 # Enformer requires 393,216 bp of context
 # Chorus automatically extracts and pads sequences from the reference
+
+# Option 1: Using get_genome() - simplest approach
+from chorus.utils import get_genome
+genome_path = get_genome('hg38')  # Auto-downloads if not present
 oracle = chorus.create_oracle('enformer', 
                              use_environment=True,
-                             reference_fasta='hg38.fa')
+                             reference_fasta=str(genome_path))
+
+# Option 2: Using GenomeManager directly
+from chorus.utils import GenomeManager
+gm = GenomeManager()
+genome_path = gm.get_genome('hg38')  # Auto-downloads if needed
+oracle = chorus.create_oracle('enformer', 
+                             use_environment=True,
+                             reference_fasta=str(genome_path))
 
 # Predict using genomic coordinates
 predictions = oracle.predict(('chr1', 1000000, 1001000), ['DNase:K562'])
@@ -174,11 +219,11 @@ The `chorus` CLI manages conda environments for each oracle:
 # Set up environments
 chorus setup --oracle enformer
 
-# Check status
-chorus env status
+# Check health
+chorus health
 
 # Clean up
-chorus env clean enformer
+chorus remove --oracle enformer
 ```
 
 ## API Reference
@@ -226,10 +271,10 @@ predictions = oracle.predict(
 ### Environment Issues
 ```bash
 # Check if environment exists
-chorus env status
+chorus health
 
 # Recreate environment
-chorus env clean enformer
+chorus remove --oracle enformer
 chorus setup --oracle enformer
 ```
 

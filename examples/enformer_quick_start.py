@@ -10,19 +10,16 @@ This minimal example shows how to:
 """
 
 import chorus
-import sys
-
-# Get reference genome path from command line
-if len(sys.argv) < 2:
-    print("Usage: python enformer_quick_start.py /path/to/hg38.fa")
-    sys.exit(1)
-
-reference_fasta = sys.argv[1]
+from chorus.utils import get_genome
 
 # Define region of interest
 region = "chrX:48780505-48785229"
 chrom, coords = region.split(':')
 start, end = map(int, coords.split('-'))
+
+# Get reference genome (will download if needed)
+print("Getting reference genome...")
+reference_fasta = get_genome('hg38')  # Automatically downloads if not present
 
 # Create oracle with reference genome
 print("Creating Enformer oracle...")

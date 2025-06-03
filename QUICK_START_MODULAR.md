@@ -47,6 +47,38 @@ chorus setup --oracle sei
 chorus validate
 ```
 
+## Managing Reference Genomes
+
+Chorus includes utilities for automatically downloading and managing reference genomes:
+
+```bash
+# List available genomes
+chorus genome list
+
+# Download a reference genome
+chorus genome download hg38
+
+# Get genome information
+chorus genome info hg38
+
+# Remove a genome
+chorus genome remove hg38
+```
+
+In Python, genomes are automatically downloaded when needed:
+
+```python
+from chorus.utils import get_genome
+
+# Get genome path (downloads automatically if not present)
+genome_path = get_genome('hg38')  # Default genome
+
+# Use with oracles
+oracle = chorus.create_oracle('enformer', 
+                             use_environment=True,
+                             reference_fasta=str(genome_path))
+```
+
 ## Using Oracles with Isolated Environments
 
 ### Python API
@@ -58,12 +90,16 @@ import chorus
 oracle = chorus.create_oracle('enformer', use_environment=True)
 oracle.load_pretrained_model()  # Runs in isolated environment
 
+# Get reference genome (auto-downloads if needed)
+from chorus.utils import get_genome
+genome_path = get_genome('hg38')
+
 # Make predictions
 results = oracle.predict_region_replacement(
     genomic_region="chr1:1000000-1200000",
     seq="",
     assay_ids=["DNase:K562"],
-    genome="hg38.fa"
+    genome=str(genome_path)
 )
 
 # Method 2: Manual environment specification

@@ -90,6 +90,11 @@ Thumbs.db
 *.ckpt
 *.pth
 
+# Genome files
+genomes/*.fa
+genomes/*.fa.gz
+genomes/*.fai
+
 # Model weights
 models/
 weights/
