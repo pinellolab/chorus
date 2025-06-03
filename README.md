@@ -243,7 +243,27 @@ We welcome contributions! Areas needing work:
 3. Implement batch prediction optimizations
 4. Add more visualization utilities
 
-Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+### Adding New Oracles
+
+We've designed Chorus to make it easy to add new genomic prediction models. Each oracle runs in its own isolated conda environment, avoiding dependency conflicts between different frameworks (TensorFlow, PyTorch, JAX, etc.).
+
+**For detailed instructions on implementing a new oracle, see our [Contributing Guide](CONTRIBUTING.md).**
+
+Key steps:
+1. Inherit from `OracleBase` and implement required methods
+2. Define your conda environment configuration
+3. Use the environment isolation system for model loading and predictions
+4. Add tests and example notebooks
+5. Submit a PR with your implementation
+
+We're particularly interested in:
+- **Borzoi** - Enhanced Enformer with improved performance
+- **ChromBPNet** - Base-pair resolution TF binding predictions
+- **Sei** - Sequence regulatory effect predictions
+- **Basset** - Chromatin accessibility predictions
+- **DeepSEA** - Variant effect predictions
+
+The contributing guide includes complete code examples and templates to get you started.
 
 ## Citation
 
