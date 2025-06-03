@@ -11,8 +11,8 @@ This example shows:
 
 import chorus
 import numpy as np
-import sys
 import os
+from chorus.utils import get_genome
 
 def example_basic_sequence_prediction():
     """Example 1: Basic sequence prediction without reference genome."""
@@ -35,7 +35,7 @@ def example_basic_sequence_prediction():
     print(f"Mean predicted signal: {predictions['DNase:K562'].mean():.4f}")
     
 
-def example_genomic_coordinate_prediction(reference_fasta):
+def example_genomic_coordinate_prediction():
     """Example 2: Predict using genomic coordinates with reference padding."""
     print("\n" + "="*80)
     print("Example 2: Genomic Coordinate Prediction with Reference Genome")
@@ -45,6 +45,9 @@ def example_genomic_coordinate_prediction(reference_fasta):
     region = "chrX:48780505-48785229"
     chrom, coords = region.split(':')
     start, end = map(int, coords.split('-'))
+    
+    # Get reference genome (will download if needed)
+    reference_fasta = get_genome('hg38')
     
     # Create oracle with reference genome
     oracle = chorus.create_oracle('enformer', 
@@ -66,7 +69,7 @@ def example_genomic_coordinate_prediction(reference_fasta):
                          track_id, oracle.sequence_length)
     
 
-def example_multiple_tracks(reference_fasta):
+def example_multiple_tracks():
     """Example 3: Predict multiple tracks simultaneously."""
     print("\n" + "="*80)
     print("Example 3: Multiple Track Prediction")
@@ -75,6 +78,9 @@ def example_multiple_tracks(reference_fasta):
     region = "chr1:1000000-1100000"
     chrom, coords = region.split(':')
     start, end = map(int, coords.split('-'))
+    
+    # Get reference genome (will download if needed)
+    reference_fasta = get_genome('hg38')
     
     oracle = chorus.create_oracle('enformer', 
                                  use_environment=True,
@@ -149,29 +155,14 @@ def main():
     print("\nChorus Enformer Oracle - Comprehensive Examples")
     print("=" * 80)
     
-    # Check if reference FASTA is provided
-    reference_fasta = None
-    if len(sys.argv) > 1:
-        reference_fasta = sys.argv[1]
-        if not os.path.exists(reference_fasta):
-            print(f"Error: Reference FASTA not found at {reference_fasta}")
-            sys.exit(1)
-        print(f"Using reference genome: {reference_fasta}")
-    else:
-        print("No reference genome provided.")
-        print("Usage: python enformer_comprehensive_example.py [/path/to/hg38.fa]")
-        print("\nRunning only Example 1 (sequence-based prediction)...")
-    
     # Example 1: Always run basic sequence prediction
     example_basic_sequence_prediction()
     
-    # Examples 2 & 3: Only run if reference genome is provided
-    if reference_fasta:
-        example_genomic_coordinate_prediction(reference_fasta)
-        example_multiple_tracks(reference_fasta)
-    else:
-        print("\nSkipping Examples 2 & 3 (require reference genome)")
-        print("Provide path to hg38.fa to run all examples")
+    # Examples 2 & 3: Run with automatic genome download
+    print("\nRunning Examples 2 & 3 with reference genome...")
+    print("Note: The reference genome will be automatically downloaded if needed.")
+    example_genomic_coordinate_prediction()
+    example_multiple_tracks()
     
     print("\n" + "="*80)
     print("Examples completed!")

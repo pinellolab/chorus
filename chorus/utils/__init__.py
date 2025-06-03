@@ -28,6 +28,13 @@ from .visualization import (
     plot_track_comparison
 )
 
+from .genome import (
+    GenomeManager,
+    get_genome,
+    download_genome,
+    list_genomes
+)
+
 __all__ = [
     # Sequence utilities
     'extract_sequence',
@@ -52,5 +59,11 @@ __all__ = [
     # Visualization utilities
     'visualize_tracks',
     'plot_track_heatmap',
-    'plot_track_comparison'
+    'plot_track_comparison',
+    
+    # Genome management utilities
+    'GenomeManager',
+    'get_genome',
+    'download_genome',
+    'list_genomes'
 ]
