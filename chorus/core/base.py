@@ -169,7 +169,7 @@ class OracleBase(ABC):
         
         Args:
             genomic_region: BED format string "chr1:1000-2000" or DataFrame
-            seq: DNA sequence to insert
+            seq: DNA sequence to insert (replaces only the specified region)
             assay_ids: List of assay identifiers
             create_tracks: Whether to save tracks as files
             genome: Path to reference genome FASTA
@@ -181,17 +181,53 @@ class OracleBase(ABC):
         # Validate inputs
         self._validate_loaded()
         self._validate_assay_ids(assay_ids)
-        self._validate_sequence(seq)
+        self._validate_dna_sequence(seq)  # Only validate DNA content, not length
         
-        # Parse region
+        # Parse region to replace
         chrom, start, end = self._parse_region(genomic_region)
+        region_length = end - start
         
-        # Get predictions
-        predictions = self._predict(seq, assay_ids)
+        # Check that replacement sequence matches region length
+        if len(seq) != region_length:
+            raise ValueError(
+                f"Replacement sequence length ({len(seq)}) must match "
+                f"region length ({region_length})"
+            )
         
-        # Format results
+        # Get model's required context size
+        context_size = self._get_context_size()
+        
+        # Calculate center of the region to replace
+        region_center = (start + end) // 2
+        
+        # Calculate context window centered on the region
+        context_start = region_center - context_size // 2
+        context_end = region_center + context_size // 2
+        
+        # Extract the full context sequence from reference
+        from ..utils.sequence import extract_sequence
+        context_seq = extract_sequence(
+            f"{chrom}:{context_start}-{context_end}", 
+            genome
+        )
+        
+        # Calculate where the replacement goes within the context
+        replace_start_in_context = start - context_start
+        replace_end_in_context = end - context_start
+        
+        # Build the full sequence with the replacement
+        full_seq = (
+            context_seq[:replace_start_in_context] + 
+            seq + 
+            context_seq[replace_end_in_context:]
+        )
+        
+        # Get predictions for the full context
+        predictions = self._predict(full_seq, assay_ids)
+        
+        # Format results with the actual replacement region coordinates
         return self._format_results(
-            predictions, assay_ids, chrom, start, end, create_tracks
+            predictions, assay_ids, chrom, context_start, context_end, create_tracks
         )
     
     def predict_region_insertion_at(
@@ -206,7 +242,7 @@ class OracleBase(ABC):
         # Validate inputs
         self._validate_loaded()
         self._validate_assay_ids(assay_ids)
-        self._validate_sequence(seq)
+        self._validate_dna_sequence(seq)  # Only validate DNA content, not length
         
         # Parse position
         chrom, position = self._parse_position(genomic_position)
@@ -342,11 +378,16 @@ class OracleBase(ABC):
         
         # Also check for combined format like "DNASE:K562" and ENCODE identifiers
         for assay_id in assay_ids:
-            # Skip validation for ENCODE identifiers (start with ENCFF)
-            if assay_id.startswith('ENCFF'):
+            # Skip validation for known identifier patterns
+            if assay_id.startswith('ENCFF'):  # ENCODE identifiers
+                continue
+            elif assay_id.startswith('CNhs'):  # CAGE identifiers  
                 continue
             elif ':' in assay_id:
                 assay, cell = assay_id.split(':', 1)
+                # For Enformer, skip validation as it uses complex descriptions
+                if hasattr(self, '_get_assay_indices'):
+                    continue
                 if assay not in valid_assays or cell not in valid_cells:
                     raise InvalidAssayError(f"Invalid assay ID: {assay_id}")
             elif assay_id not in valid_ids:
@@ -367,6 +408,19 @@ class OracleBase(ABC):
             raise InvalidSequenceError(
                 f"Sequence length {len(seq)} is outside valid range [{min_len}, {max_len}]"
             )
+    
+    def _validate_dna_sequence(self, seq: str):
+        """Validate DNA sequence content only (not length)."""
+        # Check if sequence contains only valid nucleotides
+        valid_nucleotides = set('ACGTNacgtn')
+        if not all(base in valid_nucleotides for base in seq):
+            raise InvalidSequenceError(
+                f"Sequence contains invalid characters. Only A, C, G, T, N allowed."
+            )
+        
+        # Check for empty sequence
+        if len(seq) == 0:
+            raise InvalidSequenceError("Sequence cannot be empty")
     
     def _parse_region(self, genomic_region: Union[str, pd.DataFrame]) -> Tuple[str, int, int]:
         """Parse genomic region into chromosome, start, end."""
@@ -411,6 +465,109 @@ class OracleBase(ABC):
     def _get_sequence_length_bounds(self) -> Tuple[int, int]:
         """Return min and max sequence lengths accepted by the model."""
         pass
+    
+    def save_predictions_as_bedgraph(
+        self, 
+        predictions: Dict[str, np.ndarray],
+        chrom: str,
+        start: int,
+        output_dir: str = ".",
+        prefix: str = "",
+        bin_size: Optional[int] = None,
+        track_colors: Optional[Dict[str, str]] = None
+    ) -> List[str]:
+        """Save predictions as BedGraph files.
+        
+        Args:
+            predictions: Dictionary of track_id -> prediction values
+            chrom: Chromosome name
+            start: Start position
+            output_dir: Directory to save files
+            prefix: Prefix for filenames
+            bin_size: Bin size for predictions (default: oracle-specific)
+            track_colors: Optional dictionary of track_id -> color
+            
+        Returns:
+            List of saved file paths
+        """
+        from pathlib import Path
+        from .track import Track
+        import pandas as pd
+        
+        # Get bin size if not provided
+        if bin_size is None:
+            bin_size = self._get_bin_size()
+        
+        # Default colors for different assay types
+        default_colors = {
+            'DNASE': '#1f77b4',  # Blue
+            'ATAC': '#2ca02c',   # Green  
+            'CAGE': '#ff7f0e',   # Orange
+            'CHIP': '#d62728',   # Red
+            'RNA': '#9467bd'     # Purple
+        }
+        
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        saved_files = []
+        
+        for track_id, values in predictions.items():
+            # Determine assay type and cell type
+            if ':' in track_id:
+                assay_type, cell_type = track_id.split(':', 1)
+            else:
+                # For identifiers like ENCFF413AHU or CNhs11250
+                # Try to get info from metadata if available
+                assay_type = "Unknown"
+                cell_type = track_id
+                
+                if hasattr(self, 'get_track_info'):
+                    track_info = self.get_track_info(track_id)
+                    if not track_info.empty and len(track_info) > 0:
+                        desc = track_info.iloc[0]['description']
+                        if ':' in desc:
+                            assay_type, cell_type = desc.split(':', 1)
+            
+            # Create track data
+            track_data = []
+            for i, value in enumerate(values):
+                bin_start = start + i * bin_size
+                bin_end = bin_start + bin_size
+                track_data.append({
+                    'chrom': chrom,
+                    'start': bin_start,
+                    'end': bin_end,
+                    'value': float(value)
+                })
+            
+            df = pd.DataFrame(track_data)
+            
+            # Determine color
+            if track_colors and track_id in track_colors:
+                color = track_colors[track_id]
+            else:
+                # Use default color based on assay type
+                color = default_colors.get(assay_type.upper(), '#000000')
+            
+            # Create Track object
+            track = Track(
+                name=f"{prefix}_{track_id}" if prefix else track_id,
+                assay_type=assay_type,
+                cell_type=cell_type,
+                data=df,
+                color=color
+            )
+            
+            # Save to file
+            clean_id = track_id.replace(':', '_')
+            filename = f"{prefix}_{clean_id}.bedgraph" if prefix else f"{clean_id}.bedgraph"
+            filepath = output_dir / filename
+            
+            track.to_bedgraph(str(filepath))
+            saved_files.append(str(filepath))
+            
+        return saved_files
     
     def _format_results(
         self,

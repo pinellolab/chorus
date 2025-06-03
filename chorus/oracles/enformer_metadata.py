@@ -87,7 +87,20 @@ class EnformerMetadata:
             # Extract cell type from description
             parts = desc.split(':')
             if len(parts) > 1:
-                cell_types.add(parts[1].split()[0])  # Get first word after colon
+                cell_type_part = parts[1].strip()
+                # Handle different formats:
+                # Simple: "K562"
+                # Complex: "H1-hESC", "HeLa-S3"
+                # With modifiers: "K562 treated with...", "GM12878 male adult..."
+                # Just take the first token (which might include hyphens)
+                tokens = cell_type_part.split()
+                if tokens:
+                    # The cell type is the first token (may include hyphens)
+                    cell_type = tokens[0]
+                    # Remove trailing commas or other punctuation
+                    cell_type = cell_type.rstrip(',.')
+                    if cell_type:
+                        cell_types.add(cell_type)
         
         return sorted(list(cell_types))
     
@@ -115,6 +128,18 @@ class EnformerMetadata:
                 self.tracks_df['identifier'].str.contains(query, case=False))
         
         return self.tracks_df[mask]
+    
+    def get_track_summary(self) -> Dict[str, int]:
+        """Get summary of available tracks by assay type."""
+        if self.tracks_df is None or self.tracks_df.empty:
+            return {}
+        
+        summary = {}
+        for assay_type in self.list_assay_types():
+            count = len(self.tracks_df[self.tracks_df['description'].str.startswith(f"{assay_type}:")])
+            summary[assay_type] = count
+        
+        return summary
 
 # Global instance
 _metadata = None

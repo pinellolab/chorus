@@ -9,6 +9,7 @@ pyfaidx>=0.7.0
 biopython>=1.79
 tqdm>=4.62.0
 click>=8.0
+pygenometracks>=3.8
 
 # Note: Oracle-specific dependencies are installed in separate environments
 # See environments/ directory for oracle-specific requirements
