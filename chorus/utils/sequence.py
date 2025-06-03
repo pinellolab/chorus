@@ -23,18 +23,21 @@ def extract_sequence(
     """
     # Parse region
     if ":" in genomic_region and "-" in genomic_region:
-        # Format: chr1:1000-2000
+        # Format: chr1:1000-2000 (1-based inclusive coordinates)
         match = re.match(r'(\w+):(\d+)-(\d+)', genomic_region)
         if not match:
             raise InvalidRegionError(f"Invalid region format: {genomic_region}")
         chrom, start, end = match.groups()
         start, end = int(start), int(end)
+        # Convert from 1-based inclusive to 0-based half-open for pysam
+        start = start - 1
     elif "\t" in genomic_region:
-        # BED format
+        # BED format (already 0-based half-open)
         parts = genomic_region.strip().split("\t")
         if len(parts) < 3:
             raise InvalidRegionError(f"Invalid BED format: {genomic_region}")
         chrom, start, end = parts[0], int(parts[1]), int(parts[2])
+        # BED format is already 0-based, no conversion needed
     else:
         raise InvalidRegionError(
             f"Invalid region format: {genomic_region}. "
