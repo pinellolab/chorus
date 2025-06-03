@@ -233,17 +233,23 @@ oracle = chorus.create_oracle('enformer',
 predictions = oracle.predict(('chr1', 1000000, 1001000), ['DNase:K562'])
 ```
 
-### 3. ENCODE Track Support
+### 3. Track Support
 
-Use specific ENCODE identifiers or general track descriptions:
+**Note: ENCODE track identifiers and cell type descriptions are specific to Enformer and Borzoi models. Other oracles may use different track naming conventions.**
 
+For Enformer/Borzoi:
 ```python
 # Using ENCODE identifier (recommended for reproducibility)
 predictions = oracle.predict(sequence, ['ENCFF413AHU'])  # Specific DNase:K562 experiment
 
-# Using descriptive name (may return multiple tracks)
+# Using descriptive name
 predictions = oracle.predict(sequence, ['DNase:K562'])
+
+# Using CAGE identifiers
+predictions = oracle.predict(sequence, ['CNhs11250'])  # CAGE:K562
 ```
+
+For other oracles (ChromBPNet, Sei, etc.), track specifications will vary based on the model's training data.
 
 ### 4. BedGraph Output
 
@@ -293,13 +299,13 @@ oracle = chorus.create_oracle(
 # Predict from sequence
 predictions = oracle.predict(
     'ACGTACGT...',  # DNA sequence
-    ['DNase:K562', 'ATAC-seq:K562']  # Track identifiers
+    ['track1', 'track2']  # Track identifiers (oracle-specific)
 )
 
 # Predict from genomic coordinates (requires reference_fasta)
 predictions = oracle.predict(
     ('chr1', 1000000, 1001000),  # (chrom, start, end)
-    ['ENCFF413AHU']  # ENCODE identifiers
+    ['track1', 'track2']  # Track identifiers
 )
 ```
 
@@ -309,13 +315,17 @@ predictions = oracle.predict(
 - Sequence length: 393,216 bp input, 114,688 bp output window
 - Output: 896 bins × 5,313 tracks
 - Bin size: 128 bp
-- Tracks: Gene expression, chromatin accessibility, histone modifications, etc.
+- Track types: Gene expression (CAGE), chromatin accessibility (DNase/ATAC), histone modifications (ChIP-seq)
+- Track identifiers: 
+  - ENCODE IDs (e.g., ENCFF413AHU for DNase:K562)
+  - CAGE IDs (e.g., CNhs11250 for CAGE:K562)
+  - Descriptive names (e.g., 'DNase:K562', 'H3K4me3:HepG2')
 - Track metadata: Included in the package (783KB file with all 5,313 human track definitions)
 
 ### Other Models (Coming Soon)
-- **Borzoi**: Enhanced Enformer with improved performance
-- **ChromBPNet**: Base-pair resolution TF binding predictions  
-- **Sei**: Sequence regulatory effect predictions
+- **Borzoi**: Enhanced Enformer with improved performance (will support ENCODE track identifiers)
+- **ChromBPNet**: Base-pair resolution TF binding predictions (uses TF-specific tracks)
+- **Sei**: Sequence regulatory effect predictions (uses custom track naming for 21,907 profiles)
 
 ## Troubleshooting
 

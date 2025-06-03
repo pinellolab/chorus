@@ -30,15 +30,18 @@ Run it:
 jupyter notebook gata1_comprehensive_analysis.ipynb
 ```
 
-## Gene Expression Analysis
+## Python Script Version
 
-**`gene_expression_analysis.py`** - Focused example on:
-- Analyzing gene expression using CAGE signals
-- TSS (Transcription Start Site) identification
-- Comparing wild-type vs modified sequences
-- Future Borzoi implementation notes
+**`gata1_comprehensive_analysis.py`** - Complete Python script version demonstrating:
+- All prediction methods (wild-type, replacement, insertion, variant, synthetic)
+- Gene expression analysis using CAGE signals at TSS
+- Saving outputs as BedGraph files
+- Same analysis as the notebook but without visualizations
 
-**`gata1_comprehensive_analysis.py`** - Python script version of the notebook for non-interactive use.
+Run it:
+```bash
+python gata1_comprehensive_analysis.py
+```
 
 ## Prerequisites
 
@@ -57,3 +60,12 @@ chorus genome download hg38
 cd examples
 python quick_demo.py
 ```
+
+## Note on Track Identifiers
+
+The examples use ENCODE track identifiers (e.g., ENCFF413AHU) and CAGE identifiers (e.g., CNhs11250) which are specific to Enformer and Borzoi models. Other oracles will have different track naming conventions:
+
+- **Enformer/Borzoi**: ENCODE IDs, CAGE IDs, or descriptive names (e.g., 'DNase:K562')
+- **ChromBPNet**: TF-specific tracks (e.g., 'CTCF', 'POLR2A')
+- **Sei**: Custom profile names for 21,907 chromatin profiles
+- **Other models**: Will vary based on training data
