@@ -20,6 +20,14 @@ class EnformerMetadata:
     
     def _load_metadata(self):
         """Load the metadata file."""
+        if not os.path.exists(self.metadata_file):
+            logger.error(f"Enformer metadata file not found: {self.metadata_file}")
+            logger.error("This file should be included with the Chorus package.")
+            logger.error("If missing, you can download it from:")
+            logger.error("https://github.com/calico/basenji/raw/master/manuscripts/cross2020/targets_human.txt")
+            self.tracks_df = pd.DataFrame()
+            return
+            
         try:
             self.tracks_df = pd.read_csv(self.metadata_file, sep='\t')
             # Create index mapping

@@ -210,6 +210,7 @@ predictions = oracle.predict(
 - Output: 896 bins × 5,313 tracks
 - Bin size: 128 bp
 - Tracks: Gene expression, chromatin accessibility, histone modifications, etc.
+- Track metadata: Included in the package (783KB file with all 5,313 human track definitions)
 
 ### Other Models (Coming Soon)
 - **Borzoi**: Enhanced Enformer with improved performance
