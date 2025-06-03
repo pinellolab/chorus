@@ -39,12 +39,13 @@ cd chorus
 
 #create main chorus env
 mamba env create -f environment.yml
+mamba activate chorus
 
 # Install chorus package
 pip install -e .
 
 # Install the CLI tool
-pip install --upgrade anthropic  # Required for setup assistant
+pip install --upgrade anthropic
 chorus --help
 ```
 
