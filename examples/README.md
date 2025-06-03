@@ -1,72 +1,59 @@
 # Chorus Examples
 
-This directory contains comprehensive examples demonstrating the capabilities of the Chorus library.
+This directory contains examples demonstrating Chorus capabilities.
 
-## Main Examples
+## Quick Demo
 
-### 1. GATA1 Comprehensive Analysis
-The most complete example showing all features of Chorus using the GATA1 transcription factor region:
-
-- **Script version**: `gata1_comprehensive_analysis.py`
-- **Notebook version**: `gata1_comprehensive_analysis.ipynb`
-
-These examples demonstrate:
-- Wild-type sequence prediction
+**`quick_demo.py`** - Simple demonstration of all key features:
+- Wild-type prediction
 - Region replacement
 - Sequence insertion
 - Variant effect analysis
-- Direct sequence prediction
-- Saving predictions as BedGraph files
+- Saving predictions as BedGraph
 
-### 2. Quick Start Examples
-Simple examples to get started quickly:
+Run it:
+```bash
+python quick_demo.py
+```
 
-- `enformer_quick_start.py` - Minimal example for Enformer
-- `simple_predictions.py` - Basic prediction examples
+## Comprehensive Analysis
 
-### 3. Feature-Specific Examples
+**`gata1_comprehensive_analysis.ipynb`** - Complete walkthrough with:
+- Detailed explanations of each method
+- Gene annotation and visualization
+- Performance analysis at TSS positions
+- Multiple visualization approaches
+- Real biological examples using GATA1 locus
 
-#### Region Manipulation
-- `region_manipulation_examples.py` - Comprehensive region replacement and insertion
-- `flexible_region_manipulation.py` - Examples with sequences of any length (1bp to full context)
+Run it:
+```bash
+jupyter notebook gata1_comprehensive_analysis.ipynb
+```
 
-#### Prediction Methods
-- `prediction_methods_demo.py` - Demonstrates all three main prediction methods
+## Gene Expression Analysis
 
-#### Variant Analysis
-- `variant_analysis.ipynb` - Detailed variant effect analysis notebook
+**`gene_expression_analysis.py`** - Focused example on:
+- Analyzing gene expression using CAGE signals
+- TSS (Transcription Start Site) identification
+- Comparing wild-type vs modified sequences
+- Future Borzoi implementation notes
 
-### 4. Environment and Setup
-- `environment_demo.py` - Demonstrates environment isolation features
+**`gata1_comprehensive_analysis.py`** - Python script version of the notebook for non-interactive use.
 
-## Running the Examples
+## Prerequisites
 
-1. Make sure Chorus is installed and the Enformer environment is set up:
+1. Install Chorus and set up Enformer:
 ```bash
 chorus setup --oracle enformer
 ```
 
-2. Download the reference genome if needed:
+2. Download reference genome:
 ```bash
 chorus genome download hg38
 ```
 
-3. Run any example:
+3. Run examples:
 ```bash
-python examples/gata1_comprehensive_analysis.py
+cd examples
+python quick_demo.py
 ```
-
-Or open the notebooks in Jupyter:
-```bash
-jupyter notebook examples/gata1_comprehensive_analysis.ipynb
-```
-
-## Output Files
-
-Most examples generate BedGraph files that can be loaded into genome browsers (UCSC Genome Browser, IGV, etc.) for visualization. The GATA1 examples use a consistent naming scheme:
-
-- `a_wt_*.bedgraph` - Wild-type predictions
-- `b_replacement_*.bedgraph` - Region replacement results
-- `c_insertion_*.bedgraph` - Sequence insertion results
-- `d_variant_*.bedgraph` - Variant effect predictions
-- `e_synthetic_*.bedgraph` - Synthetic sequence predictions

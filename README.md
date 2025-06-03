@@ -94,52 +94,103 @@ Genomes are stored in the `genomes/` directory within your Chorus installation.
 
 ## Quick Start
 
+### Basic Setup
+
 ```python
 import chorus
-
-# Create an Enformer oracle with environment isolation
-# This ensures TensorFlow dependencies don't conflict with PyTorch
-oracle = chorus.create_oracle('enformer', use_environment=True)
-
-# For genomic coordinate predictions, provide reference genome
 from chorus.utils import get_genome
-genome_path = get_genome('hg38')  # Auto-downloads if not present
+
+# Create oracle with reference genome (auto-downloads if needed)
+genome_path = get_genome('hg38')
 oracle = chorus.create_oracle('enformer', 
                              use_environment=True,
                              reference_fasta=str(genome_path))
-
-# Load pre-trained model
 oracle.load_pretrained_model()
 
-# Predict using genomic coordinates (with automatic sequence extraction)
+# Define tracks to predict (ENCODE IDs or descriptions)
+tracks = ['ENCFF413AHU', 'CNhs11250']  # DNase:K562, CAGE:K562
+```
+
+### 1. Wild-type Prediction
+
+```python
+# Predict from genomic coordinates
 predictions = oracle.predict(
-    ('chrX', 48780505, 48785229),  # Genomic coordinates
-    ['ENCFF413AHU']  # ENCODE identifier for DNase:K562
+    ('chr11', 5247000, 5248000),  # Beta-globin locus
+    tracks
 )
 
-# Or predict using a DNA sequence directly
-sequence = 'ACGT' * 1000  # Your sequence
-predictions = oracle.predict(sequence, ['DNase:K562'])
+# Or from DNA sequence
+sequence = 'ACGT' * 98304  # 393,216 bp for Enformer
+predictions = oracle.predict(sequence, tracks)
 ```
 
-## Examples
+### 2. Region Replacement
 
-See the `examples/` directory for comprehensive examples:
+```python
+# Replace a 200bp region with enhancer sequence
+enhancer = 'GATA' * 50  # 200bp GATA motif repeats
+replaced = oracle.predict_region_replacement(
+    'chr11:5247400-5247600',  # Region to replace
+    enhancer,                  # New sequence
+    tracks
+)
+```
 
-1. **`enformer_quick_start.py`** - Minimal example to get started
-2. **`enformer_comprehensive_example.py`** - Detailed examples showing all features
+### 3. Sequence Insertion
+
+```python
+# Insert enhancer at specific position
+inserted = oracle.predict_region_insertion_at(
+    'chr11:5247500',  # Insertion point
+    enhancer,         # Sequence to insert
+    tracks
+)
+```
+
+### 4. Variant Effect
+
+```python
+# Test SNP effects (e.g., A→G mutation)
+variant_effects = oracle.predict_variant_effect(
+    'chr11:5247000-5248000',  # Region containing variant
+    'chr11:5247500',          # Variant position
+    ['A', 'G', 'C', 'T'],     # Reference first, then alternates
+    tracks
+)
+```
+
+### 5. Save Predictions
+
+```python
+# Save as BedGraph for genome browser
+oracle.save_predictions_as_bedgraph(
+    predictions,
+    chrom='chr11',
+    start=5247000,
+    output_dir='outputs',
+    prefix='betaglobin'
+)
+
+```
+
+## Comprehensive Example
+
+For a detailed walkthrough with visualizations and gene annotations, see the comprehensive notebook:
 
 ```bash
-# First download the reference genome if needed
+# Download reference genome and gene annotations
 chorus genome download hg38
 
-# Run quick start
-cd examples
-python enformer_quick_start.py
-
-# Run comprehensive examples  
-python enformer_comprehensive_example.py
+# Run the comprehensive notebook
+jupyter notebook examples/gata1_comprehensive_analysis.ipynb
 ```
+
+This notebook demonstrates:
+- All prediction methods with real genomic data
+- Gene annotation and visualization
+- Saving outputs for genome browsers
+- Performance tips and best practices
 
 ## Key Features
 
