@@ -25,7 +25,8 @@ from .normalization import (
 from .visualization import (
     visualize_tracks,
     plot_track_heatmap,
-    plot_track_comparison
+    plot_track_comparison,
+    visualize_chorus_predictions
 )
 
 from .genome import (
@@ -33,6 +34,13 @@ from .genome import (
     get_genome,
     download_genome,
     list_genomes
+)
+
+from .annotations import (
+    AnnotationManager,
+    download_gencode,
+    get_genes_in_region,
+    get_gene_tss
 )
 
 __all__ = [
@@ -60,10 +68,17 @@ __all__ = [
     'visualize_tracks',
     'plot_track_heatmap',
     'plot_track_comparison',
+    'visualize_chorus_predictions',
     
     # Genome management utilities
     'GenomeManager',
     'get_genome',
     'download_genome',
-    'list_genomes'
+    'list_genomes',
+    
+    # Annotation utilities
+    'AnnotationManager',
+    'download_gencode',
+    'get_genes_in_region',
+    'get_gene_tss'
 ]

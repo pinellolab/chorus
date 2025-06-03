@@ -29,6 +29,9 @@ dependencies:
   - biopython>=1.79
   - samtools  # For genome indexing
   
+  # Visualization tools
+  - pygenometracks>=3.8
+  
   # For testing
   - pytest>=6.0
   - pytest-cov>=2.0

@@ -8,6 +8,8 @@ from typing import List, Tuple, Optional, Union, Dict
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
 import matplotlib.patches as mpatches
+import warnings
+import os
 
 
 def visualize_tracks(
@@ -407,3 +409,414 @@ def _merge_track_intervals(track1: pd.DataFrame, track2: pd.DataFrame) -> pd.Dat
             })
     
     return pd.DataFrame(merged_data)
+
+
+def plot_tracks_with_pygenometracks(
+    track_files: List[str],
+    genomic_region: str,
+    output_file: str,
+    track_config: Optional[Dict[str, Dict]] = None,
+    genome_file: Optional[str] = None,
+    gtf_file: Optional[str] = None,
+    height_ratios: Optional[List[float]] = None,
+    width: float = 10,
+    dpi: int = 300
+) -> bool:
+    """
+    Plot tracks using pyGenomeTracks if available.
+    
+    Args:
+        track_files: List of BedGraph files
+        genomic_region: Region to plot (chr:start-end)
+        output_file: Output image file
+        track_config: Optional configuration for each track
+        genome_file: Optional genome file for gene annotations
+        height_ratios: Height ratio for each track
+        width: Figure width in inches
+        dpi: DPI for output
+        
+    Returns:
+        True if successful, False if pyGenomeTracks not available
+    """
+    try:
+        import pygenometracks.tracks as pygtk
+        from pygenometracks.plotTracks import PlotTracks
+        import tempfile
+        import os
+    except ImportError:
+        warnings.warn("pyGenomeTracks not installed. Use pip install pyGenomeTracks")
+        return False
+    
+    # Default track configurations for different assay types
+    default_configs = {
+        'DNASE': {
+            'file_type': 'bedgraph',
+            'color': '#1f77b4',
+            'height': 2,
+            'style': 'fill',
+            'max_value': 'auto'
+        },
+        'CAGE': {
+            'file_type': 'bedgraph', 
+            'color': '#ff7f0e',
+            'height': 2,
+            'style': 'line:1.5',
+            'max_value': 'auto'
+        },
+        'ATAC': {
+            'file_type': 'bedgraph',
+            'color': '#2ca02c',
+            'height': 2,
+            'style': 'fill',
+            'max_value': 'auto'
+        },
+        'CHIP': {
+            'file_type': 'bedgraph',
+            'color': '#d62728',
+            'height': 2,
+            'style': 'fill',
+            'max_value': 'auto'
+        }
+    }
+    
+    # Create configuration file
+    config_content = []
+    
+    for i, track_file in enumerate(track_files):
+        # Determine track type from filename or metadata
+        track_type = 'Unknown'
+        with open(track_file, 'r') as f:
+            header = f.readline()
+            if 'DNASE' in header.upper():
+                track_type = 'DNASE'
+            elif 'CAGE' in header.upper():
+                track_type = 'CAGE'
+            elif 'ATAC' in header.upper():
+                track_type = 'ATAC'
+            elif 'CHIP' in header.upper():
+                track_type = 'CHIP'
+        
+        # Get configuration
+        if track_config and track_file in track_config:
+            config = track_config[track_file]
+        else:
+            config = default_configs.get(track_type, {
+                'file_type': 'bedgraph',
+                'color': '#000000',
+                'height': 2,
+                'style': 'fill',
+                'max_value': 'auto'
+            })
+        
+        # Extract track name from file
+        track_name = os.path.basename(track_file).replace('.bedgraph', '')
+        
+        # Add track configuration
+        config_content.append(f"[{track_name}]")
+        config_content.append(f"file = {track_file}")
+        config_content.append(f"file_type = {config.get('file_type', 'bedgraph')}")
+        config_content.append(f"color = {config.get('color', '#000000')}")
+        config_content.append(f"height = {config.get('height', 2)}")
+        
+        # Style determines how the track is displayed
+        style = config.get('style', 'fill')
+        if style == 'fill':
+            config_content.append("type = fill")
+        elif style.startswith('line'):
+            config_content.append("type = line")
+            if ':' in style:
+                line_width = style.split(':')[1]
+                config_content.append(f"line_width = {line_width}")
+        
+        config_content.append(f"max_value = {config.get('max_value', 'auto')}")
+        config_content.append(f"title = {track_name}")
+        config_content.append("")
+    
+    # Add gene track if GTF file provided
+    if gtf_file or genome_file:
+        # Prefer GTF file over genome_file for backwards compatibility
+        gene_file = gtf_file if gtf_file else genome_file
+        config_content.append("[genes]")
+        config_content.append(f"file = {gene_file}")
+        config_content.append("file_type = gtf")
+        config_content.append("height = 3")
+        config_content.append("title = Genes")
+        config_content.append("labels = true")
+        config_content.append("fontsize = 10")
+        config_content.append("gene_rows = 3")
+        config_content.append("arrow_length = 1000")
+        config_content.append("arrowhead_included = true")
+        config_content.append("")
+    
+    # Write configuration to temporary file
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.ini', delete=False) as f:
+        f.write('\n'.join(config_content))
+        config_file = f.name
+    
+    try:
+        # Create the plot
+        tracks = PlotTracks(config_file, width=width, dpi=dpi)
+        tracks.plot(output_file, genomic_region)
+        return True
+    except Exception as e:
+        warnings.warn(f"Error creating pyGenomeTracks plot: {e}")
+        return False
+    finally:
+        # Clean up temp file
+        if os.path.exists(config_file):
+            os.remove(config_file)
+
+
+def visualize_chorus_predictions(
+    predictions: Dict[str, np.ndarray],
+    chrom: str,
+    start: int,
+    track_ids: List[str],
+    output_file: Optional[str] = None,
+    bin_size: int = 128,
+    style: str = 'modern',
+    use_pygenometracks: bool = True,
+    figsize: Optional[Tuple[float, float]] = None,
+    gtf_file: Optional[str] = None,
+    show_gene_names: bool = True
+) -> None:
+    """
+    Visualize Chorus predictions with appropriate styling for different assay types.
+    
+    Args:
+        predictions: Dictionary of track_id -> prediction arrays
+        chrom: Chromosome
+        start: Start position
+        track_ids: List of track IDs to plot
+        output_file: Optional output file
+        bin_size: Bin size for predictions
+        style: Visualization style ('modern', 'classic', 'minimal')
+        use_pygenometracks: Try to use pyGenomeTracks if available
+        figsize: Figure size (width, height)
+        gtf_file: Optional GTF file for gene annotations
+        show_gene_names: Whether to show gene names on the plot
+    """
+    # First try pyGenomeTracks if requested
+    if use_pygenometracks and output_file:
+        # Save predictions as temporary BedGraph files
+        import tempfile
+        temp_files = []
+        
+        try:
+            temp_dir = tempfile.mkdtemp()
+            
+            # Determine track types and save files
+            track_configs = {}
+            for track_id in track_ids:
+                if track_id not in predictions:
+                    continue
+                    
+                # Determine track type
+                track_type = 'Unknown'
+                if 'DNASE' in track_id.upper() or track_id.startswith('ENCFF'):
+                    track_type = 'DNASE'
+                elif 'CAGE' in track_id.upper() or track_id.startswith('CNhs'):
+                    track_type = 'CAGE'
+                
+                # Save to temp file
+                temp_file = os.path.join(temp_dir, f"{track_id.replace(':', '_')}.bedgraph")
+                _save_single_bedgraph(predictions[track_id], chrom, start, bin_size, temp_file, track_id)
+                temp_files.append(temp_file)
+                
+                # Set configuration
+                if track_type == 'DNASE':
+                    track_configs[temp_file] = {
+                        'style': 'fill',
+                        'color': '#1f77b4'
+                    }
+                elif track_type == 'CAGE':
+                    track_configs[temp_file] = {
+                        'style': 'line:2',
+                        'color': '#ff7f0e' 
+                    }
+            
+            # Calculate genomic region
+            end = start + len(predictions[track_ids[0]]) * bin_size
+            region = f"{chrom}:{start}-{end}"
+            
+            # Try pyGenomeTracks
+            success = plot_tracks_with_pygenometracks(
+                temp_files,
+                region,
+                output_file,
+                track_config=track_configs,
+                gtf_file=gtf_file
+            )
+            
+            if success:
+                return
+                
+        finally:
+            # Clean up temp files
+            import shutil
+            if 'temp_dir' in locals():
+                shutil.rmtree(temp_dir)
+    
+    # Fall back to matplotlib
+    # Add extra subplot for genes if GTF provided
+    n_subplots = len(track_ids) + (1 if gtf_file and show_gene_names else 0)
+    
+    if not figsize:
+        figsize = (12, 3 * n_subplots)
+    
+    # Use white background style
+    plt.style.use('default')
+    fig, axes = plt.subplots(n_subplots, 1, figsize=figsize, sharex=True, facecolor='white')
+    
+    if n_subplots == 1:
+        axes = [axes]
+    
+    # Plot each track
+    for idx, track_id in enumerate(track_ids):
+        ax = axes[idx]
+        values = predictions[track_id]
+        positions = np.arange(len(values)) * bin_size + start
+        
+        # Determine track color based on type
+        if 'DNASE' in track_id.upper() or track_id.startswith('ENCFF'):
+            color = '#1f77b4'  # Blue for DNase
+        elif 'CAGE' in track_id.upper() or track_id.startswith('CNhs'):
+            color = '#ff7f0e'  # Orange for CAGE
+        elif 'ATAC' in track_id.upper():
+            color = '#2ca02c'  # Green for ATAC
+        elif 'CHIP' in track_id.upper():
+            color = '#d62728'  # Red for ChIP
+        else:
+            color = '#9467bd'  # Purple for others
+        
+        # Use consistent style for all tracks: filled area plot
+        ax.fill_between(positions, values, alpha=0.7, color=color)
+        ax.plot(positions, values, color=color, linewidth=1)
+        
+        # Styling
+        ax.set_ylabel(track_id, fontsize=10)
+        ax.set_facecolor('white')
+        ax.grid(True, alpha=0.3, color='gray', linestyle='--')
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        
+        # Add track statistics
+        mean_val = np.mean(values)
+        max_val = np.max(values)
+        ax.text(0.02, 0.95, f'Mean: {mean_val:.2f}, Max: {max_val:.2f}',
+                transform=ax.transAxes, fontsize=8, verticalalignment='top',
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7))
+    
+    # Add gene track if GTF file provided
+    if gtf_file and show_gene_names:
+        from .annotations import AnnotationManager
+        
+        ax_genes = axes[len(track_ids)]  # Gene track is the last subplot
+        end = start + len(predictions[track_ids[0]]) * bin_size
+        
+        try:
+            # Extract genes in region
+            manager = AnnotationManager()
+            genes_df = manager.extract_genes_in_region(gtf_file, chrom, start, end)
+            
+            if len(genes_df) > 0:
+                # Plot genes
+                gene_height = 0.3
+                y_offset = 0
+                used_y_positions = []
+                
+                for _, gene in genes_df.iterrows():
+                    # Find a y position that doesn't overlap
+                    y_pos = 0
+                    for used_y in used_y_positions:
+                        if abs(y_pos - used_y) < gene_height * 1.5:
+                            y_pos = used_y + gene_height * 1.5
+                    used_y_positions.append(y_pos)
+                    
+                    # Draw gene as a rectangle
+                    gene_start = max(gene['start'], start)
+                    gene_end = min(gene['end'], end)
+                    
+                    # Gene body
+                    rect = plt.Rectangle((gene_start, y_pos), 
+                                       gene_end - gene_start, 
+                                       gene_height,
+                                       facecolor='lightblue' if gene['strand'] == '+' else 'lightcoral',
+                                       edgecolor='black',
+                                       linewidth=1)
+                    ax_genes.add_patch(rect)
+                    
+                    # Gene name
+                    if gene['gene_name']:
+                        text_x = (gene_start + gene_end) / 2
+                        ax_genes.text(text_x, y_pos + gene_height/2, 
+                                    gene['gene_name'],
+                                    ha='center', va='center',
+                                    fontsize=8, weight='bold')
+                    
+                    # Add arrow for strand
+                    arrow_y = y_pos + gene_height / 2
+                    if gene['strand'] == '+':
+                        ax_genes.annotate('', xy=(gene_end, arrow_y), 
+                                        xytext=(gene_end - 2000, arrow_y),
+                                        arrowprops=dict(arrowstyle='->', lw=1.5))
+                    else:
+                        ax_genes.annotate('', xy=(gene_start, arrow_y), 
+                                        xytext=(gene_start + 2000, arrow_y),
+                                        arrowprops=dict(arrowstyle='->', lw=1.5))
+                
+                # Set gene track properties
+                ax_genes.set_ylim(-gene_height, max(used_y_positions) + gene_height * 1.5)
+                ax_genes.set_ylabel('Genes', fontsize=10)
+                ax_genes.set_facecolor('white')
+                ax_genes.spines['top'].set_visible(False)
+                ax_genes.spines['right'].set_visible(False)
+                ax_genes.spines['left'].set_visible(False)
+                ax_genes.set_yticks([])
+                
+            else:
+                ax_genes.text(0.5, 0.5, 'No genes in region', 
+                            transform=ax_genes.transAxes, 
+                            ha='center', va='center',
+                            fontsize=10, style='italic')
+                ax_genes.set_ylabel('Genes', fontsize=10)
+                ax_genes.set_ylim(0, 1)
+                ax_genes.set_yticks([])
+                
+        except Exception as e:
+            ax_genes.text(0.5, 0.5, f'Could not load genes: {str(e)}', 
+                        transform=ax_genes.transAxes, 
+                        ha='center', va='center',
+                        fontsize=10, style='italic')
+            ax_genes.set_ylabel('Genes', fontsize=10)
+            ax_genes.set_ylim(0, 1)
+            ax_genes.set_yticks([])
+    
+    # Set x-axis
+    axes[-1].set_xlabel('Genomic Position', fontsize=12)
+    axes[-1].ticklabel_format(style='plain', axis='x')
+    
+    # Add title
+    fig.suptitle(f'{chrom}:{start}-{start + len(predictions[track_ids[0]]) * bin_size}', fontsize=14)
+    
+    plt.tight_layout()
+    
+    if output_file:
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
+        plt.close(fig)  # Close the figure after saving
+    else:
+        # Always display the figure, even with non-interactive backend
+        from IPython.display import display
+        display(fig)
+        plt.close(fig)  # Close after display to free memory
+
+
+def _save_single_bedgraph(values: np.ndarray, chrom: str, start: int, bin_size: int, 
+                         filename: str, track_name: str) -> None:
+    """Save a single track as BedGraph."""
+    with open(filename, 'w') as f:
+        f.write(f'track name="{track_name}" type=bedGraph\n')
+        for i, value in enumerate(values):
+            bin_start = start + i * bin_size
+            bin_end = bin_start + bin_size
+            f.write(f"{chrom}\t{bin_start}\t{bin_end}\t{float(value):.6f}\n")
