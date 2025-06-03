@@ -5,6 +5,7 @@ matplotlib>=3.5.0
 seaborn>=0.11.0
 scipy>=1.7.0
 pysam>=0.19.0
+pyfaidx>=0.7.0
 biopython>=1.79
 tqdm>=4.62.0
 click>=8.0
