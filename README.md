@@ -37,6 +37,9 @@ Other oracles (Borzoi, ChromBPNet, Sei) have placeholder implementations and wil
 git clone https://github.com/pinellolab/chorus.git
 cd chorus
 
+#create main chorus env
+mamba env create -f environment.yml
+
 # Install chorus package
 pip install -e .
 
