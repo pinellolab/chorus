@@ -1,0 +1,3 @@
+# This file ensures the genomes directory is tracked by git
+# Actual genome files (*.fa, *.fai) are gitignored
+# Use 'chorus genome download <genome>' to download genomes
