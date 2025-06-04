@@ -83,6 +83,7 @@ oracle.save_predictions_as_bedgraph(
     wt_predictions,
     chrom='chr11',
     start=5247000,
+    end=5248000,  # Add end coordinate to avoid warning
     output_dir='outputs',
     prefix='betaglobin_demo'
 )
