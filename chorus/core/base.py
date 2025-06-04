@@ -162,7 +162,7 @@ class OracleBase(ABC):
         seq: str,
         assay_ids: List[str],
         create_tracks: bool = False,
-        genome: str = "hg38.fa"
+        genome: Optional[str] = None
     ) -> Dict:
         """
         Replace a genomic region with a new sequence and predict activity.
@@ -182,6 +182,16 @@ class OracleBase(ABC):
         self._validate_loaded()
         self._validate_assay_ids(assay_ids)
         self._validate_dna_sequence(seq)  # Only validate DNA content, not length
+        
+        # Use instance reference_fasta if no genome provided
+        if genome is None:
+            if hasattr(self, 'reference_fasta') and self.reference_fasta:
+                genome = self.reference_fasta
+            else:
+                raise ValueError(
+                    "No reference genome provided. Either pass genome parameter or "
+                    "initialize oracle with reference_fasta."
+                )
         
         # Parse region to replace
         chrom, start, end = self._parse_region(genomic_region)
@@ -236,13 +246,23 @@ class OracleBase(ABC):
         seq: str,
         assay_ids: List[str],
         create_tracks: bool = False,
-        genome: str = "hg38.fa"
+        genome: Optional[str] = None
     ) -> Dict:
         """Insert sequence at a specific position and predict."""
         # Validate inputs
         self._validate_loaded()
         self._validate_assay_ids(assay_ids)
         self._validate_dna_sequence(seq)  # Only validate DNA content, not length
+        
+        # Use instance reference_fasta if no genome provided
+        if genome is None:
+            if hasattr(self, 'reference_fasta') and self.reference_fasta:
+                genome = self.reference_fasta
+            else:
+                raise ValueError(
+                    "No reference genome provided. Either pass genome parameter or "
+                    "initialize oracle with reference_fasta."
+                )
         
         # Parse position
         chrom, position = self._parse_position(genomic_position)
@@ -280,12 +300,22 @@ class OracleBase(ABC):
         alleles: Union[List[str], pd.DataFrame],
         assay_ids: List[str],
         create_tracks: bool = False,
-        genome: str = "hg38.fa"
+        genome: Optional[str] = None
     ) -> Dict:
         """Predict effects of variants."""
         # Validate inputs
         self._validate_loaded()
         self._validate_assay_ids(assay_ids)
+        
+        # Use instance reference_fasta if no genome provided
+        if genome is None:
+            if hasattr(self, 'reference_fasta') and self.reference_fasta:
+                genome = self.reference_fasta
+            else:
+                raise ValueError(
+                    "No reference genome provided. Either pass genome parameter or "
+                    "initialize oracle with reference_fasta."
+                )
         
         # Parse inputs
         region_chrom, region_start, region_end = self._parse_region(genomic_region)

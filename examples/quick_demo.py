@@ -38,6 +38,7 @@ replaced = oracle.predict_region_replacement(
     'chr11:5247400-5247600',
     enhancer,
     tracks
+    # genome parameter not needed - uses oracle's reference_fasta
 )
 for track in tracks:
     wt_mean = np.mean(wt_predictions[track])
@@ -50,6 +51,7 @@ inserted = oracle.predict_region_insertion_at(
     'chr11:5247500',
     enhancer,
     tracks
+    # genome parameter not needed - uses oracle's reference_fasta
 )
 for track in tracks:
     wt_mean = np.mean(wt_predictions[track])
@@ -58,20 +60,22 @@ for track in tracks:
 
 # 4. Variant effect
 print("\n4. Variant effect analysis (SNP at chr11:5247500)")
+# Note: The reference allele at chr11:5247500 is 'C'
 variant = oracle.predict_variant_effect(
     'chr11:5247000-5248000',
     'chr11:5247500',
-    ['A', 'G', 'C', 'T'],  # Test all possible alleles
+    ['C', 'A', 'G', 'T'],  # Reference 'C' first, then alternates
     tracks
+    # genome parameter not needed - uses oracle's reference_fasta
 )
-print("   Effect sizes vs reference 'A':")
+print("   Effect sizes vs reference 'C':")
 for track in tracks:
     effects = variant['effect_sizes']
     print(f"   {track}:")
-    for alt in ['alt_1', 'alt_2', 'alt_3']:
-        allele = ['G', 'C', 'T'][int(alt.split('_')[1])-1]
+    for i, alt in enumerate(['alt_1', 'alt_2', 'alt_3']):
+        allele = ['A', 'G', 'T'][i]
         effect = np.mean(effects[alt][track])
-        print(f"      A→{allele}: {effect:+.4f}")
+        print(f"      C→{allele}: {effect:+.4f}")
 
 # 5. Save predictions
 print("\n5. Saving predictions as BedGraph...")
