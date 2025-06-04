@@ -90,8 +90,8 @@ print(f"   Replacing {replace_region} with GATA repeat enhancer")
 replacement_results = oracle.predict_region_replacement(
     genomic_region=replace_region,
     seq=replacement_seq,
-    assay_ids=track_ids,
-    genome=str(genome_path)
+    assay_ids=track_ids
+    # genome parameter not needed - uses oracle's reference_fasta
 )
 
 # Compare with wild-type
@@ -110,8 +110,8 @@ print(f"   Inserting GATA enhancer at {insertion_pos}")
 insertion_results = oracle.predict_region_insertion_at(
     genomic_position=insertion_pos,
     seq=insert_seq,
-    assay_ids=track_ids,
-    genome=str(genome_path)
+    assay_ids=track_ids
+    # genome parameter not needed - uses oracle's reference_fasta
 )
 
 # Analyze impact
@@ -132,8 +132,8 @@ variant_results = oracle.predict_variant_effect(
     genomic_region=f"chrX:{variant_pos-5000}-{variant_pos+5000}",
     variant_position=f"chrX:{variant_pos}",
     alleles=[ref_seq] + alt_alleles,
-    assay_ids=track_ids,
-    genome=str(genome_path)
+    assay_ids=track_ids
+    # genome parameter not needed - uses oracle's reference_fasta
 )
 
 # Analyze effects
