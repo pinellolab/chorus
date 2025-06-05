@@ -407,7 +407,7 @@ with open('{output_path}', 'wb') as f:
         
         # Try to import oracle
         try:
-            metadata = self.import_oracle_in_environment(oracle, timeout=10)
+            metadata = self.import_oracle_in_environment(oracle, timeout=30)  # Increased for slower systems
             health['can_import'] = True
             health['metadata'] = metadata
         except Exception as e:
@@ -438,7 +438,7 @@ print(json.dumps({{'missing': missing}}))
 """
         
         try:
-            result = self.run_script_in_environment(oracle, deps_script, timeout=10)
+            result = self.run_script_in_environment(oracle, deps_script, timeout=30)  # Increased for slower systems
             if result.returncode == 0:
                 deps_data = json.loads(result.stdout)
                 if not deps_data['missing']:

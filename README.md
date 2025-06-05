@@ -110,6 +110,58 @@ oracle.load_pretrained_model()
 tracks = ['ENCFF413AHU', 'CNhs11250']  # DNase:K562, CAGE:K562
 ```
 
+#### Device Selection
+
+By default, Chorus auto-detects and uses GPU if available. You can explicitly control device selection:
+
+```python
+# Force CPU usage (useful for testing or GPU memory issues)
+oracle = chorus.create_oracle('enformer', 
+                             use_environment=True,
+                             reference_fasta=str(genome_path),
+                             device='cpu')
+
+# Use specific GPU (for multi-GPU systems)
+oracle = chorus.create_oracle('enformer',
+                             use_environment=True,
+                             reference_fasta=str(genome_path),
+                             device='cuda:1')  # Use second GPU
+
+# Set default device via environment variable
+# export CHORUS_DEVICE=cpu
+```
+
+#### Timeout Configuration
+
+For slower systems or CPU-only environments, you may need to adjust timeouts:
+
+```python
+# Custom timeouts for slower systems
+oracle = chorus.create_oracle('enformer', 
+                             use_environment=True,
+                             reference_fasta=str(genome_path),
+                             model_load_timeout=1200,  # 20 minutes
+                             predict_timeout=600)      # 10 minutes
+
+# Combine device and timeout settings
+oracle = chorus.create_oracle('enformer',
+                             use_environment=True,
+                             reference_fasta=str(genome_path),
+                             device='cpu',             # Force CPU
+                             model_load_timeout=1800,  # 30 minutes for CPU
+                             predict_timeout=900)      # 15 minutes for CPU
+
+# Disable all timeouts (use with caution)
+oracle = chorus.create_oracle('enformer',
+                             use_environment=True,
+                             reference_fasta=str(genome_path),
+                             model_load_timeout=None,
+                             predict_timeout=None)
+
+# Or set environment variable to disable all timeouts globally
+# export CHORUS_NO_TIMEOUT=1
+```
+
 ### 1. Wild-type Prediction
 
 ```python
@@ -328,6 +380,25 @@ predictions = oracle.predict(
 
 ## Troubleshooting
 
+### Timeout Issues
+If you encounter timeout errors on slower systems:
+
+```python
+# Increase timeouts
+oracle = chorus.create_oracle('enformer',
+                             use_environment=True,
+                             model_load_timeout=1800,  # 30 minutes
+                             predict_timeout=900)      # 15 minutes
+
+# Or disable timeouts entirely
+export CHORUS_NO_TIMEOUT=1
+```
+
+Common timeout scenarios:
+- **Model loading**: First-time downloads can be slow (~1GB model)
+- **CPU predictions**: GPU is 10-100x faster than CPU
+- **Network filesystems**: Add 50% to timeouts for NFS/shared storage
+
 ### Environment Issues
 ```bash
 # Check if environment exists
@@ -339,10 +410,27 @@ chorus setup --oracle enformer
 ```
 
 ### Memory Issues
-Enformer requires significant memory (~8-16 GB) for predictions. Reduce batch size if needed.
+Enformer requires significant memory (~8-16 GB) for predictions. Solutions:
+- Force CPU usage: `device='cpu'`
+- Use a different GPU: `device='cuda:1'`
+- Reduce batch size if needed
 
 ### CUDA/GPU Support
 The isolated environments include GPU support. Ensure CUDA is properly installed on your system.
+
+To check GPU availability:
+```python
+# In your Python environment
+import tensorflow as tf
+print(f"GPUs available: {tf.config.list_physical_devices('GPU')}")
+```
+
+To force CPU usage when GPU causes issues:
+```python
+oracle = chorus.create_oracle('enformer',
+                             use_environment=True,
+                             device='cpu')
+```
 
 ## Contributing
 

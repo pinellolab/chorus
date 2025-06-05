@@ -387,7 +387,7 @@ class EnvironmentManager:
                         [python_exe, '-c', f'import {dep}'],
                         capture_output=True,
                         text=True,
-                        timeout=30
+                        timeout=60  # Increased timeout for slower systems
                     )
                     
                     if result.returncode != 0:
