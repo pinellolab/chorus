@@ -4,18 +4,62 @@ Quick demonstration of Chorus key features.
 
 This script shows all five main prediction methods in a concise format.
 For detailed analysis with visualizations, see gata1_comprehensive_analysis.ipynb
+
+Note on timeouts:
+- By default, model loading has a 10 minute timeout (600s)
+- Predictions have a 5 minute timeout (300s)
+- For slower machines or CPU-only systems, you may need to increase these
+- Set CHORUS_NO_TIMEOUT=1 to disable timeouts entirely
 """
 
 import chorus
 from chorus.utils import get_genome
 import numpy as np
+import os
 
 # Setup
 print("Setting up Chorus with Enformer...")
 genome_path = get_genome('hg38')
+
+# Create oracle with default settings (auto-detect GPU)
 oracle = chorus.create_oracle('enformer', 
                              use_environment=True,
                              reference_fasta=str(genome_path))
+
+# For different compute configurations:
+# 1. Force CPU usage:
+# oracle = chorus.create_oracle('enformer', 
+#                              use_environment=True,
+#                              reference_fasta=str(genome_path),
+#                              device='cpu')
+
+# 2. Use specific GPU:
+# oracle = chorus.create_oracle('enformer',
+#                              use_environment=True,
+#                              reference_fasta=str(genome_path),
+#                              device='cuda:1')  # Use second GPU
+
+# 3. For slower systems, customize timeouts:
+# oracle = chorus.create_oracle('enformer', 
+#                              use_environment=True,
+#                              reference_fasta=str(genome_path),
+#                              model_load_timeout=1200,  # 20 minutes
+#                              predict_timeout=600)      # 10 minutes
+
+# 4. CPU with longer timeouts:
+# oracle = chorus.create_oracle('enformer',
+#                              use_environment=True,
+#                              reference_fasta=str(genome_path),
+#                              device='cpu',
+#                              model_load_timeout=1800,  # 30 min for CPU
+#                              predict_timeout=900)      # 15 min for CPU
+
+# 5. Disable timeouts entirely:
+# oracle = chorus.create_oracle('enformer',
+#                              use_environment=True,
+#                              reference_fasta=str(genome_path),
+#                              model_load_timeout=None,
+#                              predict_timeout=None)
 oracle.load_pretrained_model()
 
 # Define tracks

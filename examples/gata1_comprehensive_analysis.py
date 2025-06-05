@@ -22,6 +22,19 @@ print("=" * 60)
 # 1. Setup and initialization
 print("\n1. Setting up Enformer oracle...")
 genome_path = get_genome('hg38')
+
+# Create oracle with default settings (auto-detect GPU)
+# For different configurations:
+# - Force CPU: device='cpu'
+# - Use specific GPU: device='cuda:1'
+# - Increase timeouts: model_load_timeout=1200, predict_timeout=600
+# Example for CPU with longer timeouts:
+# oracle = chorus.create_oracle('enformer', 
+#                              use_environment=True,
+#                              reference_fasta=str(genome_path),
+#                              device='cpu',
+#                              model_load_timeout=1800,  # 30 min
+#                              predict_timeout=900)      # 15 min
 oracle = chorus.create_oracle('enformer', 
                              use_environment=True,
                              reference_fasta=str(genome_path))

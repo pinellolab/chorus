@@ -90,14 +90,46 @@ def create_oracle(oracle_name: str, use_environment: bool = False, **kwargs):
     Args:
         oracle_name: Name of the oracle (enformer, borzoi, chrombpnet, sei)
         use_environment: If True, use isolated conda environment for the oracle
-        **kwargs: Additional arguments passed to oracle constructor
+        **kwargs: Additional arguments passed to oracle constructor, including:
+            - model_load_timeout: Timeout for model loading in seconds (default: 600)
+            - predict_timeout: Timeout for predictions in seconds (default: 300)
+            - reference_fasta: Path to reference genome FASTA file
+            - device: Device to use ('cpu', 'cuda', 'cuda:0', etc.)
         
     Returns:
         Oracle instance
         
     Example:
+        >>> # Default (auto-detect GPU)
         >>> oracle = chorus.create_oracle('enformer', use_environment=True)
+        >>> 
+        >>> # Force CPU usage
+        >>> oracle = chorus.create_oracle('enformer', 
+        ...                              use_environment=True,
+        ...                              device='cpu')
+        >>> 
+        >>> # Use specific GPU
+        >>> oracle = chorus.create_oracle('enformer',
+        ...                              use_environment=True,
+        ...                              device='cuda:1')  # Use second GPU
+        >>> 
+        >>> # Custom timeouts for slower systems
+        >>> oracle = chorus.create_oracle('enformer', 
+        ...                              use_environment=True,
+        ...                              model_load_timeout=1200,  # 20 minutes
+        ...                              predict_timeout=600,      # 10 minutes
+        ...                              device='cpu')             # Force CPU
+        >>> 
+        >>> # Disable all timeouts
+        >>> oracle = chorus.create_oracle('enformer',
+        ...                              use_environment=True,
+        ...                              model_load_timeout=None,
+        ...                              predict_timeout=None)
         >>> oracle.load_pretrained_model()
+        
+    Environment Variables:
+        - CHORUS_NO_TIMEOUT=1: Disable all timeouts globally
+        - CHORUS_DEVICE=cpu: Set default device (can be overridden by device parameter)
     """
     if use_environment:
         # Use the environment-aware oracle implementations

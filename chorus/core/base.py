@@ -23,7 +23,10 @@ logger = logging.getLogger(__name__)
 class OracleBase(ABC):
     """Abstract base class for all oracle implementations."""
     
-    def __init__(self, use_environment: bool = True):
+    def __init__(self, use_environment: bool = True, 
+                 model_load_timeout: Optional[int] = 600,
+                 predict_timeout: Optional[int] = 300,
+                 device: Optional[str] = None):
         self.model = None
         self.loaded = False
         self._assay_types = []
@@ -33,6 +36,25 @@ class OracleBase(ABC):
         self.use_environment = use_environment
         self._env_manager = None
         self._env_runner = None
+        
+        # Timeout settings (in seconds)
+        # Check for global timeout disable
+        if os.environ.get('CHORUS_NO_TIMEOUT', '').lower() in ('1', 'true', 'yes'):
+            logger.info("CHORUS_NO_TIMEOUT is set - all timeouts disabled")
+            self.model_load_timeout = None
+            self.predict_timeout = None
+        else:
+            self.model_load_timeout = model_load_timeout  # Default 10 minutes
+            self.predict_timeout = predict_timeout  # Default 5 minutes
+        
+        # Device settings
+        # Default: None (auto-detect GPU if available)
+        # Options: 'cpu', 'cuda', 'cuda:0', 'cuda:1', etc.
+        self.device = device or os.environ.get('CHORUS_DEVICE')
+        if self.device:
+            logger.info(f"Device set to: {self.device}")
+        else:
+            logger.info("Device: auto-detect (GPU if available, else CPU)")
         
         # Set oracle name if not already set by subclass
         if not hasattr(self, 'oracle_name'):

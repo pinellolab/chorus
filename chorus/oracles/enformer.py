@@ -19,19 +19,34 @@ logger = logging.getLogger(__name__)
 class EnformerOracle(OracleBase):
     """Enformer oracle with automatic environment management."""
     
-    def __init__(self, use_environment: bool = True, reference_fasta: Optional[str] = None):
+    def __init__(self, use_environment: bool = True, reference_fasta: Optional[str] = None,
+                 model_load_timeout: Optional[int] = 600,
+                 predict_timeout: Optional[int] = 300,
+                 device: Optional[str] = None):
         """
         Initialize Enformer oracle.
         
         Args:
             use_environment: Whether to use isolated conda environment
             reference_fasta: Path to reference FASTA file (e.g., hg38.fa)
+            model_load_timeout: Timeout for model loading in seconds (default: 600s/10min)
+                               Set to None to disable timeout
+            predict_timeout: Timeout for predictions in seconds (default: 300s/5min)
+                            Set to None to disable timeout
+            device: Device to use for computation. Options:
+                   - None: Auto-detect (GPU if available, else CPU)
+                   - 'cpu': Force CPU usage
+                   - 'cuda' or 'gpu': Use default GPU
+                   - 'cuda:0', 'cuda:1', etc.: Use specific GPU
         """
         # Set the oracle name BEFORE calling super().__init__
         self.oracle_name = 'enformer'
         
         # Now initialize base class with correct oracle name
-        super().__init__(use_environment=use_environment)
+        super().__init__(use_environment=use_environment, 
+                        model_load_timeout=model_load_timeout,
+                        predict_timeout=predict_timeout,
+                        device=device)
         
         # Enformer specific parameters
         self.target_length = 896
@@ -66,22 +81,53 @@ import os
 # Set TFHub progress tracking
 os.environ["TFHUB_DOWNLOAD_PROGRESS"] = "1"
 
+# Configure device
+device = {repr(self.device)}
+if device:
+    if device == 'cpu':
+        # Force CPU usage
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+        print("Forcing CPU usage")
+    elif device.startswith('cuda:'):
+        # Use specific GPU
+        gpu_id = device.split(':')[1]
+        os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
+        print(f"Using GPU {{gpu_id}}")
+    elif device in ['cuda', 'gpu']:
+        # Use default GPU (don't change CUDA_VISIBLE_DEVICES)
+        print("Using default GPU")
+else:
+    # Auto-detect - TensorFlow will use GPU if available
+    gpus = tf.config.list_physical_devices('GPU')
+    if gpus:
+        print(f"Auto-detected {{len(gpus)}} GPU(s), using first available")
+    else:
+        print("No GPU detected, using CPU")
+
 # Load the model
 enformer = hub.load({repr(weights)})
 # Get the actual model from the enformer object
 model = enformer.model
+
+# Get device info
+if device == 'cpu' or not tf.config.list_physical_devices('GPU'):
+    actual_device = 'CPU'
+else:
+    actual_device = f'GPU ({{len(tf.config.list_physical_devices("GPU"))}} available)'
 
 # Get model info (we can't pickle the model itself)
 result = {{
     'loaded': True,
     'model_class': str(type(model)),
     'has_predict': hasattr(model, 'predict_on_batch'),
-    'description': 'Enformer model loaded successfully'
+    'description': 'Enformer model loaded successfully',
+    'device': actual_device
 }}
 """
             
             # Run loading in environment
-            model_info = self.run_code_in_environment(load_code, timeout=300)
+            # Use the instance timeout setting (can be customized or disabled)
+            model_info = self.run_code_in_environment(load_code, timeout=self.model_load_timeout)
             
             if model_info and model_info['loaded']:
                 self.loaded = True
@@ -98,6 +144,25 @@ result = {{
         try:
             import tensorflow as tf
             import tensorflow_hub as hub
+            
+            # Configure device
+            if self.device:
+                if self.device == 'cpu':
+                    os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+                    logger.info("Forcing CPU usage")
+                elif self.device.startswith('cuda:'):
+                    gpu_id = self.device.split(':')[1]
+                    os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
+                    logger.info(f"Using GPU {gpu_id}")
+                elif self.device in ['cuda', 'gpu']:
+                    logger.info("Using default GPU")
+            else:
+                # Auto-detect
+                gpus = tf.config.list_physical_devices('GPU')
+                if gpus:
+                    logger.info(f"Auto-detected {len(gpus)} GPU(s)")
+                else:
+                    logger.info("No GPU detected, using CPU")
             
             os.environ["TFHUB_DOWNLOAD_PROGRESS"] = "1"
             enformer = hub.load(weights)
@@ -145,6 +210,16 @@ result = {{
 import tensorflow as tf
 import tensorflow_hub as hub
 import numpy as np
+import os
+
+# Configure device
+device = {repr(self.device)}
+if device:
+    if device == 'cpu':
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+    elif device.startswith('cuda:'):
+        gpu_id = device.split(':')[1]
+        os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
 
 # Read sequence from file
 with open({repr(seq_path)}, 'r') as f:
@@ -216,7 +291,8 @@ result = selected_predictions.tolist()
 """
                 
                 # Run prediction in environment
-                predictions_list = self.run_code_in_environment(predict_code, timeout=120)
+                # Use the instance timeout setting (can be customized or disabled)
+                predictions_list = self.run_code_in_environment(predict_code, timeout=self.predict_timeout)
                 
                 return np.array(predictions_list)
                 
