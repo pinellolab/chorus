@@ -41,7 +41,38 @@ class EnvironmentManager:
         
     def _find_conda_executable(self) -> Optional[str]:
         """Find conda or mamba executable."""
-        # Try common conda/mamba commands
+        # First check CONDA_EXE environment variable (set by conda when activated)
+        conda_exe = os.environ.get('CONDA_EXE')
+        if conda_exe and os.path.exists(conda_exe):
+            logger.info(f"Found conda via CONDA_EXE: {conda_exe}")
+            # Check if mamba exists in the same directory
+            conda_dir = os.path.dirname(conda_exe)
+            mamba_exe = os.path.join(conda_dir, 'mamba')
+            if os.path.exists(mamba_exe):
+                logger.info(f"Found mamba at: {mamba_exe}")
+                return mamba_exe
+            return conda_exe
+        
+        # Check MAMBA_EXE environment variable
+        mamba_exe = os.environ.get('MAMBA_EXE')
+        if mamba_exe and os.path.exists(mamba_exe):
+            logger.info(f"Found mamba via MAMBA_EXE: {mamba_exe}")
+            return mamba_exe
+        
+        # Try using the base conda installation path
+        conda_prefix = os.environ.get('CONDA_PREFIX')
+        if conda_prefix:
+            # Go up to the base conda directory
+            # If we're in an env, CONDA_PREFIX points to the env, not base
+            # Check for CONDA_PREFIX_1 which points to base when in an env
+            base_prefix = os.environ.get('CONDA_PREFIX_1', conda_prefix)
+            for cmd in ['mamba', 'conda']:
+                exe_path = os.path.join(base_prefix, 'bin', cmd)
+                if os.path.exists(exe_path):
+                    logger.info(f"Found {cmd} via CONDA_PREFIX at: {exe_path}")
+                    return exe_path
+        
+        # Try common conda/mamba commands (may work via shell functions)
         for cmd in ['mamba', 'conda', 'micromamba']:
             try:
                 result = subprocess.run(
@@ -62,12 +93,20 @@ class EnvironmentManager:
             os.path.expanduser("~/miniconda3/bin/conda"),
             os.path.expanduser("~/anaconda3/bin/conda"),
             "/opt/conda/bin/conda",
-            "/usr/local/bin/conda"
+            "/usr/local/bin/conda",
+            # Add path specific to your setup
+            "/data/pinello/SHARED_SOFTWARE/miniforge3/bin/mamba",
+            "/data/pinello/SHARED_SOFTWARE/miniforge3/bin/conda"
         ]
         
-        for path in common_paths:
-            if os.path.exists(path):
-                return path
+        # Also check for mamba in these locations
+        for base_path in common_paths:
+            base_dir = os.path.dirname(base_path)
+            mamba_path = os.path.join(base_dir, 'mamba')
+            if os.path.exists(mamba_path):
+                return mamba_path
+            elif os.path.exists(base_path):
+                return base_path
         
         return None
     
