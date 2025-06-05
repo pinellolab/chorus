@@ -1,7 +1,6 @@
 name: chorus
 channels:
   - conda-forge
-  - defaults
 dependencies:
   # Core Python
   - python=3.10

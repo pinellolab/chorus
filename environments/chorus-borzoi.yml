@@ -3,7 +3,6 @@ channels:
   - conda-forge
   - bioconda
   - pytorch
-  - defaults
 dependencies:
   # Core Python
   - python=3.10
