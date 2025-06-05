@@ -44,8 +44,7 @@ mamba activate chorus
 # Install chorus package
 pip install -e .
 
-# Install the CLI tool
-pip install --upgrade anthropic
+# Check if CLI tool works
 chorus --help
 ```
 
