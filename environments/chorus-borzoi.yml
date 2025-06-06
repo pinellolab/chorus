@@ -1,42 +1,53 @@
+# Conda environment for Borzoi oracle
+# Based on Borzoi's requirements: TensorFlow 2.15.x, Python 3.10
+
 name: chorus-borzoi
+
 channels:
   - conda-forge
   - bioconda
-  - pytorch
+  - defaults
+
 dependencies:
-  # Core Python
+  # Python and core packages
   - python=3.10
+  - pip
+  - numpy
+  - pandas
+  - scipy
   
-  # Essential scientific computing
-  - numpy>=1.21.0
-  - pandas>=1.3.0
-  - scipy>=1.7.0
+  # TensorFlow and ML dependencies
+  - tensorflow=2.15.*
+  - keras
+  - scikit-learn
   
-  # Core bioinformatics
-  - pysam>=0.19.0
-  - biopython>=1.79
-  - pyfaidx>=0.7.0
+  # Genomics and bioinformatics
+  - pysam
+  - pyfaidx
+  - kipoiseq
+  
+  # Data handling
+  - h5py
+  - zarr
+  - tables
+  
+  # Visualization (optional)
+  - matplotlib
+  - seaborn
+  - plotly
   
   # Utilities
-  - tqdm>=4.62.0
-  - h5py>=3.6.0
+  - tqdm
+  - joblib
+  - click
   
-  # PyTorch ecosystem
-  - pytorch>=2.0.0
-  - torchvision>=0.15.0
-  - torchaudio>=2.0.0
-  - cudatoolkit=11.8  # Adjust based on your CUDA version
+  # Development tools
+  - jupyter
+  - ipykernel
   
-  # Additional dependencies
-  - pip
+  # Install via pip
   - pip:
-    # Borzoi specific
-    - einops>=0.6.0
-    - wandb>=0.15.0
-    
-    # Genomics utilities
-    - kipoiseq>=0.7.0
-    - pybedtools>=0.9.0
-    
-    # Additional ML utilities
-    - scikit-learn>=1.0.0
+    # Borzoi-specific dependencies
+    - baskerville  # May need to install from GitHub
+    # Note: might need to install baskerville manually:
+    # pip install git+https://github.com/calico/baskerville.git
