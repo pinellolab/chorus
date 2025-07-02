@@ -115,3 +115,5 @@ examples/*.png
 examples/*.bedgraph
 examples/*.csv
 examples/variant_analysis_results/
+chorus/oracles/sei/histone_inds.npy
+chorus/oracles/sei/projvec_targets.npy
