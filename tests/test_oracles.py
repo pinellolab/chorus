@@ -160,10 +160,10 @@ class TestSeiOracle:
         """Test Sei assay types."""
         oracle = SeiOracle()
         
-        assays = oracle.list_assay_types()
-        assert "Promoter" in assays
-        assert "Enhancer" in assays
-        assert "Transcription" in assays
+        groups = oracle.list_group_types()
+        assert "Promoter" in groups
+        assert "Enhancer" in groups
+        assert "Transcription" in groups
 
 
 if __name__ == "__main__":

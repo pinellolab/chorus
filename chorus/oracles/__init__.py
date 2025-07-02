@@ -3,7 +3,7 @@
 from .enformer import EnformerOracle
 from .borzoi import BorzoiOracle
 from .chrombpnet import ChromBPNetOracle
-from .sei import SeiOracle
+from .sei_oracle import SeiOracle
 
 # Dictionary for easy oracle access
 ORACLES = {

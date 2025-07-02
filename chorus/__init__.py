@@ -136,6 +136,9 @@ def create_oracle(oracle_name: str, use_environment: bool = False, **kwargs):
         if oracle_name.lower() == 'enformer':
             from .oracles.enformer import EnformerOracle
             return EnformerOracle(use_environment=True, **kwargs)
+        elif oracle_name.lower() == 'sei':
+            from .oracles.sei_oracle import SeiOracle
+            return SeiOracle(use_environment=True, **kwargs)
         else:
             raise NotImplementedError(
                 f"Environment-isolated version of {oracle_name} not yet implemented.\n"

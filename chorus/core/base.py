@@ -233,7 +233,7 @@ class OracleBase(ABC):
         region_center = (start + end) // 2
         
         # Calculate context window centered on the region
-        context_start = region_center - context_size // 2
+        context_start = region_center - context_size // 2 + 1 # 1-based inclusive
         context_end = region_center + context_size // 2
         
         # Extract the full context sequence from reference
@@ -242,7 +242,6 @@ class OracleBase(ABC):
             f"{chrom}:{context_start}-{context_end}", 
             genome
         )
-        
         # Calculate where the replacement goes within the context
         replace_start_in_context = start - context_start
         replace_end_in_context = end - context_start
