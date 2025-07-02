@@ -373,6 +373,16 @@ predictions = oracle.predict(
   - Descriptive names (e.g., 'DNase:K562', 'H3K4me3:HepG2')
 - Track metadata: Included in the package (783KB file with all 5,313 human track definitions)
 
+### Sei (Implemented)
+- Sequence length: 4096 bp input window
+- Output: 21907 signal predictions + 40 sequence classes prediction
+- Bin size: 4096 bp
+- Track types: chromatin accessibility (DNase/ATAC), histone modifications (ChIP-seq), sequence classes (introduced by Sei paper authors)
+- Track identifiers: 
+  - custom, derived from tracks and classes metainfo
+- Track metadata: Included in the package (separate files with short tracks and classes description)
+
+
 ### Other Models (Coming Soon)
 - **Borzoi**: Enhanced Enformer with improved performance (will support ENCODE track identifiers)
 - **ChromBPNet**: Base-pair resolution TF binding predictions (uses TF-specific tracks)
