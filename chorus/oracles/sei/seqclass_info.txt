@@ -1,0 +1,41 @@
+Sequence class label	Sequence class name	Rank by size	Group
+PC1	Polycomb / Heterochromatin	0	Polycomb-repressed
+L1	Low signal	1	Low Signal
+TN1	Transcription	2	Transcription
+TN2	Transcription	3	Transcription
+L2	Low signal	4	Low Signal
+E1	Stem cell	5	Enhancer
+E2	Multi-tissue	6	Enhancer
+E3	Brain / Melanocyte	7	Enhancer
+L3	Low signal	8	Low Signal
+E4	Multi-tissue	9	Enhancer
+TF1	NANOG / FOXA1	10	TF binding
+HET1	Heterochromatin	11	Heterochromatin
+E5	B-cell-like	12	Enhancer
+E6	Weak epithelial	13	Enhancer
+TF2	CEBPB	14	TF binding
+PC2	Weak Polycomb	15	Polycomb-repressed
+E7	Monocyte / Macrophage	16	Enhancer
+E8	Weak multi-tissue	17	Enhancer
+L4	Low signal	18	Low Signal
+TF3	FOXA1 / AR / ESR1	19	TF binding
+PC3	Polycomb	20	Polycomb-repressed
+TN3	Transcription	21	Transcription
+L5	Low signal	22	Low Signal
+HET2	Heterochromatin	23	Heterochromatin
+L6	Low signal	24	Low Signal
+P	Promoter	25	Promoter
+E9	Liver / Intestine	26	Enhancer
+CTCF	CTCF-Cohesin	27	CTCF-cohesin binding
+TN4	Transcription	28	Transcription
+HET3	Heterochromatin	29	Heterochromatin
+E10	Brain	30	Enhancer
+TF4	OTX2	31	TF binding
+HET4	Heterochromatin	32	Heterochromatin
+L7	Low signal	33	Low Signal
+PC4	Polycomb / Bivalent stem cell Enh	34	Polycomb-repressed
+HET5	Centromere	35	Heterochromatin
+E11	T-cell	36	Enhancer
+TF5	AR	37	TF binding
+E12	Erythroblast-like	38	Enhancer
+HET6	Centromere	39	Heterochromatin
