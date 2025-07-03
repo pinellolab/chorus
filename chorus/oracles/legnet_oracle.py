@@ -66,15 +66,19 @@ class LegNetOracle(OracleBase):
     def get_model_dir_path(self):
         if self.model_dir is None:
             parent = os.path.dirname(os.path.realpath(__file__))
-            self.model_dir = os.path.join(parent, "legnet", "models", self.cell_line)
+            self.model_dir = os.path.join(parent, "legnet")
         return self.model_dir
 
-    def get_model_weights_path(self):
+    def get_model_weight_dir(self):
         d = self.get_model_dir_path()
+        return  os.path.join(d, "models", self.cell_line)
+
+    def get_model_weights_path(self):
+        d = self.get_model_weight_dir()
         return os.path.join(d, "weights.ckpt")
 
     def get_training_config_path(self):
-        d = self.get_model_dir_path()
+        d = self.get_model_weight_dir()
         return os.path.join(d, "config.json")
 
     def get_templates_dir(self):
@@ -193,7 +197,7 @@ class LegNetOracle(OracleBase):
         predictions = self._predict(input_data, assay_ids=assay_ids)
         
         # Return as dictionary
-        result = {self.cell_line: predictions[0]}
+        result = MetaInfoDict({self.cell_line: predictions[0]}, metainfo={'positions': predictions.metainfo['positions']})
         return result 
     
     def _predict(self,
@@ -247,6 +251,7 @@ class LegNetOracle(OracleBase):
             'device': self.device,
             'sequence_length': self.sequence_length,
             'model_weights': self.get_model_weights_path(),
+            'config_path': self.get_training_config_path(),
             'seq': seq,
             'reverse_aug': reverse_aug,
             'batch_size': self.batch_size,
@@ -323,10 +328,13 @@ class LegNetOracle(OracleBase):
         self,
         genomic_region: Union[str, pd.DataFrame],
         seq: str,
-        assay_ids: List[str],
+        assay_ids: List[str] | None = None,
         create_tracks: bool = False,
         genome: str | None = None
     ) -> MetaInfoDict:
+        if assay_ids is None:
+            assay_ids = [self.cell_line]
+
         dt = super().predict_region_replacement(genomic_region, seq, assay_ids, create_tracks, genome)
         
         try:
@@ -336,3 +344,47 @@ class LegNetOracle(OracleBase):
             metainfo = {}
 
         return MetaInfoDict(dt, metainfo=metainfo)
+
+    def predict_region_insertion_at(
+        self,
+        genomic_position: Union[str, pd.DataFrame],
+        seq: str,
+        assay_ids: List[str] | None = None,
+        create_tracks: bool = False,
+        genome: str | None = None
+    ) -> MetaInfoDict:
+        if assay_ids is None:
+            assay_ids = [self.cell_line]
+
+        dt = super().predict_region_insertion_at(genomic_position=genomic_position, 
+                                                   seq=seq, 
+                                                   assay_ids=assay_ids, 
+                                                   create_tracks=create_tracks, 
+                                                   genome=genome)
+        try:
+            val = next(iter(dt['raw_predictions'].values()))
+            metainfo = {'positions': val.metainfo['positions']}
+        except StopIteration:
+            metainfo = {}
+
+        return MetaInfoDict(dt, metainfo=metainfo)
+        
+
+    def predict_variant_effect(
+        self,
+        genomic_region: Union[str, pd.DataFrame],
+        variant_position: Union[str, pd.DataFrame],
+        alleles: Union[List[str], pd.DataFrame],
+        assay_ids: List[str] | None = None,
+        create_tracks: bool = False,
+        genome: str | None = None
+    ) -> Dict:
+        if assay_ids is None:
+            assay_ids = [self.cell_line]
+
+        return super().predict_variant_effect(genomic_region=genomic_region, 
+                                              variant_position=variant_position,
+                                              alleles=alleles,
+                                              assay_ids=assay_ids, 
+                                              create_tracks=create_tracks, 
+                                              genome=genome)
