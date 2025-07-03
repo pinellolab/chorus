@@ -4,13 +4,15 @@ from .enformer import EnformerOracle
 from .borzoi import BorzoiOracle
 from .chrombpnet import ChromBPNetOracle
 from .sei import SeiOracle
+from .legnet_oracle import LegNetOracle
 
 # Dictionary for easy oracle access
 ORACLES = {
     'enformer': EnformerOracle,
     'borzoi': BorzoiOracle,
     'chrombpnet': ChromBPNetOracle,
-    'sei': SeiOracle
+    'sei': SeiOracle,
+    'legnet': LegNetOracle,
 }
 
 def get_oracle(name: str) -> type:
@@ -33,6 +35,7 @@ __all__ = [
     'BorzoiOracle', 
     'ChromBPNetOracle',
     'SeiOracle',
+    'LegNetOracle',
     'ORACLES',
     'get_oracle'
 ]
