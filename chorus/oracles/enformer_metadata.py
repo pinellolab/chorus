@@ -3,15 +3,19 @@ Enformer track metadata loader based on the official targets file.
 """
 
 import os
+from pyclbr import Class
 import pandas as pd
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, ClassVar
 import logging
 
 logger = logging.getLogger(__name__)
 
 class EnformerMetadata:
     """Class to handle Enformer track metadata."""
-    
+    DEFAULT_CELL_TYPE: ClassVar[str] = 'unknown'
+    DEFAULT_ASSAY_TYPE: ClassVar[str] = 'unknown'
+
+
     def __init__(self):
         self.metadata_file = os.path.join(os.path.dirname(__file__), 'enformer_human_targets.txt')
         self.tracks_df = None
@@ -76,6 +80,31 @@ class EnformerMetadata:
             return None
         
         return track.iloc[0].to_dict()
+
+    def parse_description(self, desc: str) -> dict[str]:
+      
+        parts = desc.split(':')
+        if len(parts) > 0:
+            assay_type = parts[0]
+        else:
+            assay_type = self.DEFAULT_ASSAY_TYPE
+        if len(parts) > 1:
+            cell_type_part = parts[1].strip()
+            # Handle different formats:
+            # Simple: "K562"
+            # Complex: "H1-hESC", "HeLa-S3"
+            # With modifiers: "K562 treated with...", "GM12878 male adult..."
+            # Just take the first token (which might include hyphens)
+            tokens = cell_type_part.split()
+            if tokens:
+                # The cell type is the first token (may include hyphens)
+                cell_type = tokens[0]
+                # Remove trailing commas or other punctuation
+                cell_type = cell_type.rstrip(',.')
+        else:
+            cell_type = self.DEFAULT_CELL_TYPE 
+
+        return {'assay_type': assay_type, 'cell_type': cell_type}
     
     def list_cell_types(self) -> List[str]:
         """List all unique cell types."""

@@ -7,7 +7,7 @@ import pandas as pd
 import re
 import os
 import logging
-from pathlib import Path
+from ..core.new_interval import Interval, GenomeRef
 
 from ..core.track import Track
 from ..core.exceptions import (
@@ -16,6 +16,7 @@ from ..core.exceptions import (
     InvalidAssayError,
     InvalidRegionError
 )
+from ..core.result import OraclePrediction
 
 logger = logging.getLogger(__name__)
 
@@ -144,8 +145,7 @@ class OracleBase(ABC):
         self,
         input_data: Union[str, Tuple[str, int, int]],
         assay_ids: List[str],
-        create_tracks: bool = False
-    ) -> Dict[str, np.ndarray]:
+    ) -> OraclePrediction:
         """
         Predict regulatory activity for a sequence or genomic region.
         
@@ -169,23 +169,22 @@ class OracleBase(ABC):
         self._validate_assay_ids(assay_ids)
         
         # Get raw predictions
-        predictions = self._predict(input_data, assay_ids)
-        
-        # Return as dictionary
-        result = {}
-        for i, assay_id in enumerate(assay_ids):
-            result[assay_id] = predictions[:, i]
-        
-        return result
+        return self._predict(input_data, assay_ids)
+
+    def get_output_window_offsets(self) -> Tuple[int, int]:
+        """
+           by default we assume that model predicts for the same size of window it accepts
+        """
+        return 0, 0
+       
     
     def predict_region_replacement(
         self,
         genomic_region: Union[str, pd.DataFrame],
         seq: str,
         assay_ids: List[str],
-        create_tracks: bool = False,
         genome: Optional[str] = None
-    ) -> Dict:
+    ) ->  dict[str, OraclePrediction]:
         """
         Replace a genomic region with a new sequence and predict activity.
         
@@ -214,62 +213,30 @@ class OracleBase(ABC):
                     "No reference genome provided. Either pass genome parameter or "
                     "initialize oracle with reference_fasta."
                 )
-        
+
         # Parse region to replace
         chrom, start, end = self._parse_region(genomic_region)
-        region_length = end - start
-        
-        # Check that replacement sequence matches region length
-        if len(seq) != region_length:
-            raise ValueError(
-                f"Replacement sequence length ({len(seq)}) must match "
-                f"region length ({region_length})"
-            )
-        
-        # Get model's required context size
-        context_size = self._get_context_size()
-        
-        # Calculate center of the region to replace
-        region_center = (start + end) // 2
-        
-        # Calculate context window centered on the region
-        context_start = region_center - context_size // 2
-        context_end = region_center + context_size // 2
-        
-        # Extract the full context sequence from reference
-        from ..utils.sequence import extract_sequence
-        context_seq = extract_sequence(
-            f"{chrom}:{context_start}-{context_end}", 
-            genome
-        )
-        
-        # Calculate where the replacement goes within the context
-        replace_start_in_context = start - context_start
-        replace_end_in_context = end - context_start
-        
-        # Build the full sequence with the replacement
-        full_seq = (
-            context_seq[:replace_start_in_context] + 
-            seq + 
-            context_seq[replace_end_in_context:]
-        )
+        region_interval = Interval.make(GenomeRef(chrom=chrom, start=start, end=end, fasta=genome))
+        region_interval = region_interval.replace(seq=seq, start=0, end=len(seq))
         
         # Get predictions for the full context
-        predictions = self._predict(full_seq, assay_ids)
+        predictions = self._predict(region_interval, 
+                                    assay_ids)
         
-        # Format results with the actual replacement region coordinates
-        return self._format_results(
-            predictions, assay_ids, chrom, context_start, context_end, create_tracks
-        )
+        results = {
+            'raw_predictions': predictions,
+            'normalized_scores': predictions.normalize()
+        }
+
+        return results 
     
     def predict_region_insertion_at(
         self,
         genomic_position: Union[str, pd.DataFrame],
         seq: str,
         assay_ids: List[str],
-        create_tracks: bool = False,
         genome: Optional[str] = None
-    ) -> Dict:
+    ) -> dict[str, OraclePrediction]:
         """Insert sequence at a specific position and predict."""
         # Validate inputs
         self._validate_loaded()
@@ -288,32 +255,23 @@ class OracleBase(ABC):
         
         # Parse position
         chrom, position = self._parse_position(genomic_position)
-        
-        # Extract flanking sequences
-        from ..utils.sequence import extract_sequence
-        
-        # Get context window size based on model requirements
-        context_size = self._get_context_size()
-        flank_size = (context_size - len(seq)) // 2
-        
-        # Extract flanking sequences
-        left_flank = extract_sequence(
-            f"{chrom}:{position-flank_size}-{position}", genome
-        )
-        right_flank = extract_sequence(
-            f"{chrom}:{position}-{position+flank_size}", genome
-        )
-        
-        # Construct full sequence
-        full_seq = left_flank + seq + right_flank
+
+        position_interval = Interval.make(GenomeRef(chrom=chrom, 
+                                                    start=position,
+                                                    end=position, 
+                                                    fasta=genome))
+        insertion_interval = position_interval.insert(seq=seq, pos=0)
         
         # Get predictions
-        predictions = self._predict(full_seq, assay_ids)
+        predictions = self._predict(insertion_interval, assay_ids) # contains prediction without correct intervals 
+    
+        results = {
+            'raw_predictions': predictions,
+            'normalized_scores': predictions.normalize()
+        }
+
+        return results
         
-        # Format results with insertion coordinates
-        return self._format_results(
-            predictions, assay_ids, chrom, position, position + len(seq), create_tracks
-        )
     
     def predict_variant_effect(
         self,
@@ -349,6 +307,11 @@ class OracleBase(ABC):
         if not (region_start <= var_pos < region_end):
             raise InvalidRegionError("Variant position must be within the specified region")
         
+        region_interval = Interval.make(GenomeRef(chrom=region_chrom, 
+                                                  start=region_start, 
+                                                  end=region_end, 
+                                                  fasta=genome))
+
         # Parse alleles
         if isinstance(alleles, pd.DataFrame):
             ref_allele = alleles.iloc[0]['ref']
@@ -357,48 +320,38 @@ class OracleBase(ABC):
             ref_allele = alleles[0]
             alt_alleles = alleles[1:]
         
-        # Extract reference sequence
-        from ..utils.sequence import extract_sequence, apply_variant
-        ref_seq = extract_sequence(genomic_region, genome)
-        
-        # Create sequences for each allele
-        sequences = {'reference': ref_seq}
-        relative_pos = var_pos - region_start
+        intervals = {}
+        real_pos = region_interval.ref2query(var_pos, ref_global=True)
+        if region_interval[real_pos] != ref_allele:
+            logger.warning('Provided reference allele is not the same as the genome reference')
+            intervals['reference'] = region_interval.replace(seq=ref_allele, start=real_pos, end=real_pos+1)
+        else:
+            intervals['reference'] = region_interval
         
         for i, alt in enumerate(alt_alleles):
-            alt_seq = apply_variant(ref_seq, relative_pos, ref_allele, alt)
-            sequences[f'alt_{i+1}'] = alt_seq
+            intervals[f'alt_{i+1}'] = region_interval.replace(seq=alt, start=real_pos, end=real_pos+1)
+
         
         # Get predictions for each sequence
         all_predictions = {}
         all_tracks = {}
         all_files = {}
         
-        for allele_name, seq in sequences.items():
-            predictions = self._predict(seq, assay_ids)
-            results = self._format_results(
-                predictions, assay_ids, region_chrom, region_start, region_end, create_tracks
-            )
-            
-            all_predictions[allele_name] = results['raw_predictions']
-            if 'track_objects' in results:
-                all_tracks[allele_name] = results['track_objects']
-            if 'track_files' in results:
-                all_files[allele_name] = results['track_files']
-        
+        for allele_name, interval in intervals.items():
+            predictions = self._predict(interval, assay_ids)
+            all_predictions[allele_name] = predictions
+    
         # Calculate effect sizes
         effect_sizes = {}
         for allele_name in ['alt_' + str(i+1) for i in range(len(alt_alleles))]:
             effect_sizes[allele_name] = {
-                assay: all_predictions[allele_name][assay] - all_predictions['reference'][assay]
+                assay: all_predictions[allele_name][assay].values - all_predictions['reference'][assay].values
                 for assay in assay_ids
             }
         
         return {
             'predictions': all_predictions,
             'effect_sizes': effect_sizes,
-            'track_objects': all_tracks if all_tracks else None,
-            'track_files': all_files if all_files else None,
             'variant_info': {
                 'position': f"{var_chrom}:{var_pos}",
                 'ref': ref_allele,
@@ -504,7 +457,7 @@ class OracleBase(ABC):
                 raise InvalidRegionError(f"Invalid position format: {genomic_position}")
     
     @abstractmethod
-    def _predict(self, seq: str, assay_ids: List[str]) -> np.ndarray:
+    def _predict(self, seq: str, assay_ids: List[str]) -> OraclePrediction:
         """Internal prediction method to be implemented by subclasses."""
         pass
     
@@ -518,191 +471,7 @@ class OracleBase(ABC):
         """Return min and max sequence lengths accepted by the model."""
         pass
     
-    def save_predictions_as_bedgraph(
-        self, 
-        predictions: Dict[str, np.ndarray],
-        chrom: str,
-        start: int,
-        output_dir: str = ".",
-        prefix: str = "",
-        bin_size: Optional[int] = None,
-        track_colors: Optional[Dict[str, str]] = None
-    ) -> List[str]:
-        """Save predictions as BedGraph files.
-        
-        Args:
-            predictions: Dictionary of track_id -> prediction values
-            chrom: Chromosome name
-            start: Start position
-            output_dir: Directory to save files
-            prefix: Prefix for filenames
-            bin_size: Bin size for predictions (default: oracle-specific)
-            track_colors: Optional dictionary of track_id -> color
-            
-        Returns:
-            List of saved file paths
-        """
-        from pathlib import Path
-        from .track import Track
-        import pandas as pd
-        
-        # Get bin size if not provided
-        if bin_size is None:
-            bin_size = self._get_bin_size()
-        
-        # Default colors for different assay types
-        default_colors = {
-            'DNASE': '#1f77b4',  # Blue
-            'ATAC': '#2ca02c',   # Green  
-            'CAGE': '#ff7f0e',   # Orange
-            'CHIP': '#d62728',   # Red
-            'RNA': '#9467bd'     # Purple
-        }
-        
-        output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
-        
-        saved_files = []
-        
-        for track_id, values in predictions.items():
-            # Determine assay type and cell type
-            if ':' in track_id:
-                assay_type, cell_type = track_id.split(':', 1)
-            else:
-                # For identifiers like ENCFF413AHU or CNhs11250
-                # Try to get info from metadata if available
-                assay_type = "Unknown"
-                cell_type = track_id
-                
-                if hasattr(self, 'get_track_info'):
-                    track_info = self.get_track_info(track_id)
-                    if not track_info.empty and len(track_info) > 0:
-                        desc = track_info.iloc[0]['description']
-                        if ':' in desc:
-                            assay_type, cell_type = desc.split(':', 1)
-            
-            # Create track data
-            track_data = []
-            for i, value in enumerate(values):
-                bin_start = start + i * bin_size
-                bin_end = bin_start + bin_size
-                track_data.append({
-                    'chrom': chrom,
-                    'start': bin_start,
-                    'end': bin_end,
-                    'value': float(value)
-                })
-            
-            df = pd.DataFrame(track_data)
-            
-            # Determine color
-            if track_colors and track_id in track_colors:
-                color = track_colors[track_id]
-            else:
-                # Use default color based on assay type
-                color = default_colors.get(assay_type.upper(), '#000000')
-            
-            # Create Track object
-            track = Track(
-                name=f"{prefix}_{track_id}" if prefix else track_id,
-                assay_type=assay_type,
-                cell_type=cell_type,
-                data=df,
-                color=color
-            )
-            
-            # Save to file
-            clean_id = track_id.replace(':', '_')
-            filename = f"{prefix}_{clean_id}.bedgraph" if prefix else f"{clean_id}.bedgraph"
-            filepath = output_dir / filename
-            
-            track.to_bedgraph(str(filepath))
-            saved_files.append(str(filepath))
-            
-        return saved_files
-    
-    def _format_results(
-        self,
-        predictions: np.ndarray,
-        assay_ids: List[str],
-        chrom: str,
-        start: int,
-        end: int,
-        create_tracks: bool
-    ) -> Dict:
-        """Format prediction results."""
-        results = {
-            'raw_predictions': {},
-            'normalized_scores': {}
-        }
-        
-        track_objects = []
-        track_files = []
-        
-        # Get bin size for the model
-        bin_size = self._get_bin_size()
-        
-        for i, assay_id in enumerate(assay_ids):
-            # Store raw predictions
-            results['raw_predictions'][assay_id] = predictions[:, i]
-            
-            # Normalize scores
-            results['normalized_scores'][assay_id] = self._normalize_predictions(
-                predictions[:, i]
-            )
-            
-            # Create track if requested
-            if create_tracks:
-                # Create track data
-                num_bins = predictions.shape[0]
-                track_data = []
-                
-                for j in range(num_bins):
-                    track_data.append({
-                        'chrom': chrom,
-                        'start': start + j * bin_size,
-                        'end': start + (j + 1) * bin_size,
-                        'value': float(predictions[j, i])
-                    })
-                
-                # Parse assay and cell type
-                if ':' in assay_id:
-                    assay_type, cell_type = assay_id.split(':', 1)
-                else:
-                    assay_type = assay_id
-                    cell_type = "unknown"
-                
-                # Create Track object
-                track = Track(
-                    name=f"{assay_id}_{chrom}_{start}_{end}",
-                    assay_type=assay_type,
-                    cell_type=cell_type,
-                    data=pd.DataFrame(track_data)
-                )
-                track_objects.append(track)
-                
-                # Save to file
-                filename = f"{assay_id}_{chrom}_{start}_{end}.bedgraph"
-                track.to_bedgraph(filename)
-                track_files.append(filename)
-        
-        if create_tracks:
-            results['track_objects'] = track_objects
-            results['track_files'] = track_files
-        
-        return results
-    
     @abstractmethod
     def _get_bin_size(self) -> int:
         """Return the bin size for predictions."""
         pass
-    
-    def _normalize_predictions(self, predictions: np.ndarray) -> np.ndarray:
-        """Normalize predictions to a standard scale."""
-        # Default implementation: min-max normalization
-        min_val = np.min(predictions)
-        max_val = np.max(predictions)
-        if max_val > min_val:
-            return (predictions - min_val) / (max_val - min_val)
-        else:
-            return predictions
