@@ -11,6 +11,8 @@ import matplotlib.patches as mpatches
 import warnings
 import os
 
+from ..core.result import OraclePrediction
+
 
 def visualize_tracks(
     tracks_filenames: List[str],
@@ -413,7 +415,9 @@ def _merge_track_intervals(track1: pd.DataFrame, track2: pd.DataFrame) -> pd.Dat
 
 def plot_tracks_with_pygenometracks(
     track_files: List[str],
-    genomic_region: str,
+    chrom: str,
+    start: int,
+    end: int,
     output_file: str,
     track_config: Optional[Dict[str, Dict]] = None,
     genome_file: Optional[str] = None,
@@ -482,7 +486,7 @@ def plot_tracks_with_pygenometracks(
     # Create configuration file
     config_content = []
     
-    for i, track_file in enumerate(track_files):
+    for track_file in track_files:
         # Determine track type from filename or metadata
         track_type = 'Unknown'
         with open(track_file, 'r') as f:
@@ -555,12 +559,13 @@ def plot_tracks_with_pygenometracks(
     
     try:
         # Create the plot
-        tracks = PlotTracks(config_file, width=width, dpi=dpi)
-        tracks.plot(output_file, genomic_region)
+        
+        tracks = PlotTracks(config_file, fig_width=width, dpi=dpi, plot_regions=[[chrom, start, end]])
+        tracks.plot(output_file, chrom=chrom, start=start, end=end)
         return True
-    except Exception as e:
-        warnings.warn(f"Error creating pyGenomeTracks plot: {e}")
-        return False
+    #except Exception as e:
+    #    warnings.warn(f"Error creating pyGenomeTracks plot: {e}")
+    #    return False
     finally:
         # Clean up temp file
         if os.path.exists(config_file):
@@ -568,13 +573,9 @@ def plot_tracks_with_pygenometracks(
 
 
 def visualize_chorus_predictions(
-    predictions: Dict[str, np.ndarray],
-    chrom: str,
-    start: int,
-    track_ids: List[str],
+    predictions: OraclePrediction,
+    track_ids: List[str] = None,
     output_file: Optional[str] = None,
-    bin_size: int = 128,
-    style: str = 'modern',
     use_pygenometracks: bool = True,
     figsize: Optional[Tuple[float, float]] = None,
     gtf_file: Optional[str] = None,
@@ -584,9 +585,7 @@ def visualize_chorus_predictions(
     Visualize Chorus predictions with appropriate styling for different assay types.
     
     Args:
-        predictions: Dictionary of track_id -> prediction arrays
-        chrom: Chromosome
-        start: Start position
+        predictions: oracle predictions 
         track_ids: List of track IDs to plot
         output_file: Optional output file
         bin_size: Bin size for predictions
@@ -596,6 +595,11 @@ def visualize_chorus_predictions(
         gtf_file: Optional GTF file for gene annotations
         show_gene_names: Whether to show gene names on the plot
     """
+    if track_ids is None:
+        track_ids = list(predictions.keys())
+    else:
+        predictions = predictions.subset(track_ids)
+
     # First try pyGenomeTracks if requested
     if use_pygenometracks and output_file:
         # Save predictions as temporary BedGraph files
@@ -607,43 +611,35 @@ def visualize_chorus_predictions(
             
             # Determine track types and save files
             track_configs = {}
-            for track_id in track_ids:
-                if track_id not in predictions:
-                    continue
-                    
-                # Determine track type
-                track_type = 'Unknown'
-                if 'DNASE' in track_id.upper() or track_id.startswith('ENCFF'):
-                    track_type = 'DNASE'
-                elif 'CAGE' in track_id.upper() or track_id.startswith('CNhs'):
-                    track_type = 'CAGE'
-                
-                # Save to temp file
-                temp_file = os.path.join(temp_dir, f"{track_id.replace(':', '_')}.bedgraph")
-                _save_single_bedgraph(predictions[track_id], chrom, start, bin_size, temp_file, track_id)
-                temp_files.append(temp_file)
-                
+
+            # account for track_ids
+            temp_files = predictions.save_predictions_as_bedgraph(output_dir=temp_dir,
+                                                                  prefix='')                                                     
+            for track_id, temp_file in temp_files.items():
+
                 # Set configuration
-                if track_type == 'DNASE':
+
+                if predictions[track_id].assay_type == 'DNASE':
                     track_configs[temp_file] = {
                         'style': 'fill',
                         'color': '#1f77b4'
                     }
-                elif track_type == 'CAGE':
+                elif predictions[track_id].assay_type == 'CAGE':
                     track_configs[temp_file] = {
                         'style': 'line:2',
                         'color': '#ff7f0e' 
                     }
             
             # Calculate genomic region
-            end = start + len(predictions[track_ids[0]]) * bin_size
-            region = f"{chrom}:{start}-{end}"
-            
+            interval = predictions[track_ids[0]].prediction_interval
+            chrom, start, end = interval.reference.chrom, interval.reference.start, interval.reference.end
             # Try pyGenomeTracks
             success = plot_tracks_with_pygenometracks(
-                temp_files,
-                region,
-                output_file,
+                list(temp_files.values()),
+                chrom=chrom,
+                start=start,
+                end=end,
+                output_file=output_file,
                 track_config=track_configs,
                 gtf_file=gtf_file
             )
@@ -656,6 +652,7 @@ def visualize_chorus_predictions(
             import shutil
             if 'temp_dir' in locals():
                 shutil.rmtree(temp_dir)
+            pass
     
     # Fall back to matplotlib
     # Add extra subplot for genes if GTF provided
@@ -672,26 +669,26 @@ def visualize_chorus_predictions(
         axes = [axes]
     
     # Plot each track
-    for idx, track_id in enumerate(track_ids):
+    for idx, (track_id, track) in enumerate(predictions.items()):
         ax = axes[idx]
-        values = predictions[track_id]
-        positions = np.arange(len(values)) * bin_size + start
+
+        positions = np.arange(track.values.shape[0]) * track.resolution + track.prediction_interval.reference.start
         
         # Determine track color based on type
-        if 'DNASE' in track_id.upper() or track_id.startswith('ENCFF'):
+        if track.assay_type == 'DNASE' :
             color = '#1f77b4'  # Blue for DNase
-        elif 'CAGE' in track_id.upper() or track_id.startswith('CNhs'):
+        elif track.assay_type == 'CAGE':
             color = '#ff7f0e'  # Orange for CAGE
-        elif 'ATAC' in track_id.upper():
+        elif track.assay_type == 'ATAC': 
             color = '#2ca02c'  # Green for ATAC
-        elif 'CHIP' in track_id.upper():
+        elif track.assay_type =='CHIP':
             color = '#d62728'  # Red for ChIP
         else:
             color = '#9467bd'  # Purple for others
         
         # Use consistent style for all tracks: filled area plot
-        ax.fill_between(positions, values, alpha=0.7, color=color)
-        ax.plot(positions, values, color=color, linewidth=1)
+        ax.fill_between(positions, track.values, alpha=0.7, color=color)
+        ax.plot(positions, track.values, color=color, linewidth=1)
         
         # Styling
         ax.set_ylabel(track_id, fontsize=10)
@@ -701,8 +698,8 @@ def visualize_chorus_predictions(
         ax.spines['right'].set_visible(False)
         
         # Add track statistics
-        mean_val = np.mean(values)
-        max_val = np.max(values)
+        mean_val = np.mean(track.values)
+        max_val = np.max(track.values)
         ax.text(0.02, 0.95, f'Mean: {mean_val:.2f}, Max: {max_val:.2f}',
                 transform=ax.transAxes, fontsize=8, verticalalignment='top',
                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.7))
@@ -712,7 +709,8 @@ def visualize_chorus_predictions(
         from .annotations import AnnotationManager
         
         ax_genes = axes[len(track_ids)]  # Gene track is the last subplot
-        end = start + len(predictions[track_ids[0]]) * bin_size
+        interval = predictions[track_ids[0]].prediction_interval
+        chrom, start, end = interval.reference.chrom, interval.reference.start, interval.reference.end
         
         try:
             # Extract genes in region
@@ -722,7 +720,6 @@ def visualize_chorus_predictions(
             if len(genes_df) > 0:
                 # Plot genes
                 gene_height = 0.3
-                y_offset = 0
                 used_y_positions = []
                 
                 for _, gene in genes_df.iterrows():
@@ -797,7 +794,9 @@ def visualize_chorus_predictions(
     axes[-1].ticklabel_format(style='plain', axis='x')
     
     # Add title
-    fig.suptitle(f'{chrom}:{start}-{start + len(predictions[track_ids[0]]) * bin_size}', fontsize=14)
+    interval = predictions[track_ids[0]].prediction_interval
+    chrom, start, end = interval.reference.chrom, interval.reference.start, interval.reference.end
+    fig.suptitle(f'{chrom}:{start}-{end}', fontsize=14)
     
     plt.tight_layout()
     
@@ -809,14 +808,3 @@ def visualize_chorus_predictions(
         from IPython.display import display
         display(fig)
         plt.close(fig)  # Close after display to free memory
-
-
-def _save_single_bedgraph(values: np.ndarray, chrom: str, start: int, bin_size: int, 
-                         filename: str, track_name: str) -> None:
-    """Save a single track as BedGraph."""
-    with open(filename, 'w') as f:
-        f.write(f'track name="{track_name}" type=bedGraph\n')
-        for i, value in enumerate(values):
-            bin_start = start + i * bin_size
-            bin_end = bin_start + bin_size
-            f.write(f"{chrom}\t{bin_start}\t{bin_end}\t{float(value):.6f}\n")
