@@ -1,16 +1,56 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, asdict
 import numpy as np 
-import logging 
-from typing import Any 
+import pandas as pd
+import logging         
+import tempfile
+import shutil
+import weakref
+from pathlib import Path
+
+from typing import Any, ClassVar
 from copy import deepcopy
 
-from ..core.new_interval import Interval, GenomeRef
-
+from ..core.interval import Interval, GenomeRef
 
 logger = logging.getLogger(__name__)
 
+from coolbox.api import (
+    BedGraph,
+    TrackHeight,
+    Color,
+    MinValue,
+    MaxValue,
+    Title,
+    XAxis,
+    Vlines,
+    HighLights,
+)
+
+from typing import ClassVar, Any
+from threading import RLock
+
+def default_track_visualization_params() -> dict:
+    coolbox_params = {
+            'threshold_color': 'lightblue',
+            'height': 8,
+            'color': 'black',
+            'fontsize': 15,
+            'highlight_color': 'green',
+            'vline_width': 2}
+    return coolbox_params
+
+
+def modify_dict(dt: dict, **kwargs: Any) -> dict:
+    dt = deepcopy(dt)
+    for key, value in kwargs.items():
+        dt[key] = value
+    return dt
+
 @dataclass
 class OraclePredictionTrack:
+    _registry: ClassVar[dict[str, 'OraclePredictionTrack']] = {}
+    _lock: ClassVar[RLock] = RLock()
+
     source_model: str = field(repr=True)
     assay_id: str = field(repr=True)
     assay_type: str = field(repr=True) # experiment type
@@ -24,6 +64,58 @@ class OraclePredictionTrack:
     preferred_deconvolution: str = field(repr=False)
     preferred_scoring_strategy: str = field(repr=False)
     metadata: dict = field(repr=False, default_factory=dict)
+    track_id: int | None = field(repr=True, default=None)
+    coolbox_params: ClassVar[dict] = default_track_visualization_params()
+    PREFIX: ClassVar[str] = 'track-'
+    COOLBOX_FILE_NAME: ClassVar[str] = 'coolbox.bedgraph'
+    ASSAY_TYPE_COLUMN: ClassVar[str] = 'assay_type'
+
+    def __init_subclass__(cls, *, register: bool = True, name: str | None = None, **kwargs: Any):
+        super().__init_subclass__(**kwargs)
+        if not register:
+            return  # allow abstract/templates to skip registration
+
+        if name is None:
+            raise TypeError(
+                f"{cls.__name__}: name must be passed using name argument when subclassing) for registration"
+            )
+        cls.name = name 
+
+        with OraclePredictionTrack._lock:
+            if name in OraclePredictionTrack._registry and OraclePredictionTrack._registry[name] is not cls:
+                raise ValueError(
+                    f"Duplicate registration for '{name}': "
+                    f"{OraclePredictionTrack._registry[name].__name__} already registered"
+                )
+            OraclePredictionTrack._registry[name] = cls
+
+    def __post_init__(self):
+
+        self._td = tempfile.TemporaryDirectory(prefix=self.PREFIX)
+        self._storage = Path(self._td.name) # directory to store files associated with the track (e.g for )
+
+        self._finalizer = weakref.finalize(
+            self, shutil.rmtree, self._storage, True  # ignore_errors=True
+        )
+
+    @classmethod
+    def create(cls, cls_name: str | None = None, **kwargs: Any) -> "OraclePredictionTrack":
+        if cls_name is None:
+            cls_name = kwargs.get(cls.ASSAY_TYPE_COLUMN, None)
+        if cls_name is not None:
+            try:
+                impl = OraclePredictionTrack._registry[cls_name]
+            except KeyError as e:
+                available = ", ".join(sorted(OraclePredictionTrack._registry))
+                logger.warning(f"Unknown implementation '{cls_name}'. Available: {available}")
+                impl = cls
+        else:
+            impl = cls 
+        return impl(**kwargs) 
+
+    @classmethod
+    def registered(cls) -> tuple[str, ...]:
+        return tuple(sorted(OraclePredictionTrack._registry))
 
     def aggregate(self, target_resolution: int, aggregation_strategy: str | None = None): 
         """
@@ -94,6 +186,97 @@ class OraclePredictionTrack:
     def __getitem__(self, item) -> np.ndarray:
         return self.values[item]
 
+
+    def to_dataframe(self, use_reference_interval: bool = True) -> pd.DataFrame:
+        track_data = []
+        if not use_reference_interval:
+            raise NotImplementedError("For now chorus can't store predictions for non-genome reference intervals")
+
+
+        for i, value in enumerate(self.values):
+            bin_start = self.prediction_interval.reference.start + i * self.resolution
+            bin_end = bin_start + self.resolution
+            track_data.append({
+                'chrom': self.prediction_interval.reference.chrom,
+                'start': bin_start,
+                'end': bin_end,
+                'value': float(value)
+            })
+        return pd.DataFrame(track_data)
+
+    def save_as_bedgraph(self, filepath: str, write_header: bool = True):
+        from .track import Track
+        df = self.to_dataframe(use_reference_interval=True)
+        track = Track(
+                name=f"{self.source_model}_{self.assay_id}",
+                assay_type=self.assay_type,
+                cell_type=self.cell_type,
+                data=df,
+                color=self.coolbox_params['color']
+        )
+        track.to_bedgraph(str(filepath), write_header=write_header)
+
+    def get_coolbox_representation(self, 
+                                   title: str | None = None,
+                                   override_params: dict | None = None, 
+                                   signal_threshold: float | None = None, 
+                                   add_xaxis: bool = True,
+                                   add_highlight: bool = False,
+                                   add_vlines: bool = True):
+        if override_params is None:
+            coolbox_params = self.coolbox_params
+        else:
+            coolbox_params = modify_dict(self.coolbox_params, **override_params)
+        if title is None:
+            title = self.assay_id
+        df = self.to_dataframe(use_reference_interval=True)
+        coolbox_file = self._storage / self.COOLBOX_FILE_NAME
+        if not coolbox_file.exists():
+            df.to_csv(coolbox_file, sep='\t', index=False, header=False)
+        if signal_threshold is None:
+            signal_threshold = df['value'].max() + 0.1 
+      
+        frame = BedGraph(coolbox_file,  threshold=signal_threshold, threshold_color=coolbox_params['threshold_color']) +\
+            TrackHeight(coolbox_params['height']) +\
+            Color(coolbox_params['color']) +\
+            MinValue(min(df['value'].min(), 0) ) +\
+            MaxValue(df['value'].max()) +\
+            Title(title)
+       
+        if add_vlines:
+            frame += Vlines([self.query_interval.to_string()], line_width=coolbox_params['vline_width'])
+        if add_highlight:
+            frame += HighLights([self.query_interval.to_string()], color=coolbox_params['highlight_color'])
+        if add_xaxis:
+            frame += XAxis(fontsize=coolbox_params['fontsize'])
+        return frame
+
+    def promote(self) -> 'OraclePredictionTrack':
+        kwargs = asdict(self)
+        promoted = OraclePredictionTrack.create(cls_name=self.ASSAY_TYPE_COLUMN, **kwargs)
+        return promoted
+
+
+class DNaseOraclePredictionTrack(OraclePredictionTrack, name='DNASE'):
+    coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(), 
+                                         color='#1f77b4')
+
+class ATACOraclePredictionTrack(OraclePredictionTrack, name='ATAC'):
+    coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(), 
+                                         color='#2ca02c')
+    
+class CAGEOraclePredictionTrack(OraclePredictionTrack, name='CAGE'):
+    coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(), 
+                                         color='#ff7f0e')
+    
+class CHIPOraclePredictionTrack(OraclePredictionTrack, name='CHIP'):
+    coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(), 
+                                         color='#d62728')
+    
+class RNAOraclePredictionTrack(OraclePredictionTrack, name='RNA'):
+    coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(), 
+                                         color='#9467bd')
+
 @dataclass
 class OraclePrediction:
     tracks: dict[str, OraclePredictionTrack] = field(default_factory=dict)
@@ -143,8 +326,7 @@ class OraclePrediction:
     def save_predictions_as_bedgraph(
         self, 
         output_dir: str = ".",
-        prefix: str = "",
-        track_colors: dict[str, str] | None = None) -> dict[str, str]:
+        prefix: str = "") -> dict[str, str]:
         """Save predictions as BedGraph files.
         
         Args:
@@ -156,8 +338,6 @@ class OraclePrediction:
             List of saved file paths
         """
         from pathlib import Path
-        from .track import Track
-        import pandas as pd
 
 
         example_track = list(self.tracks.values())[0]
@@ -165,58 +345,20 @@ class OraclePrediction:
             raise NotImplementedError("For now chorus can't save predictions for non-genome reference intervals")
 
 
-        # Default colors for different assay types
-        default_colors = {
-            'DNASE': '#1f77b4',  # Blue
-            'ATAC': '#2ca02c',   # Green  
-            'CAGE': '#ff7f0e',   # Orange
-            'CHIP': '#d62728',   # Red
-            'RNA': '#9467bd'     # Purple
-        }
-        
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
         
         saved_files = {}
         
         for track_id, track in self.tracks.items():
-            
             # Create track data
-            track_data = []
-            for i, value in enumerate(track.values):
-                bin_start = track.prediction_interval.reference.start + i * track.resolution
-                bin_end = bin_start + track.resolution
-                track_data.append({
-                    'chrom': track.prediction_interval.reference.chrom,
-                    'start': bin_start,
-                    'end': bin_end,
-                    'value': float(value)
-                })
-            
-            df = pd.DataFrame(track_data)
-            
-            # Determine color
-            if track_colors and track_id in track_colors:
-                color = track_colors[track_id]
-            else:
-                # Use default color based on assay type
-                color = default_colors.get(track.assay_type.upper(), '#000000')
-            
-            # Create Track object
-            track = Track(
-                name=f"{prefix}_{track_id}" if prefix else track_id,
-                assay_type=track.assay_type,
-                cell_type=track.cell_type,
-                data=df,
-                color=color
-            )
             
             # Save to file
             clean_id = track_id.replace(':', '_')
             filename = f"{prefix}_{clean_id}.bedgraph" if prefix else f"{clean_id}.bedgraph"
             filepath = output_dir / filename
             
-            track.to_bedgraph(str(filepath))
+            track.save_as_bedgraph(str(filepath), write_header=False)
             saved_files[track_id] = str(filepath)
             
         return saved_files
@@ -267,6 +409,7 @@ def analyze_gene_expression(predictions: OraclePrediction,
             For Borzoi, we also need to sum RNA-seq signal over coding exons
             as described in their paper, but Enformer doesn't have RNA-seq tracks.
         """
+        # TODO: add support for RNA-seq signal 
         from ..utils.annotations import get_gene_tss
         
         # Get TSS positions for the gene
@@ -295,6 +438,9 @@ def analyze_gene_expression(predictions: OraclePrediction,
         
         any_tss = False
         for track_id, track in predictions.items():
+            if not isinstance(track, CAGEOraclePredictionTrack):
+                logger.warning(f"Track {track_id} is not a CAGE track, skipping")
+                continue
             
             # Filter TSS positions to those in our region
             tss_in_region = tss_df[
@@ -315,7 +461,6 @@ def analyze_gene_expression(predictions: OraclePrediction,
                 # Convert TSS position to bin index
                 tss_bin = track.pos2bin(tss_info['chrom'], tss_pos)
 
-                
                 # Get signal in window around TSS (e.g., +/- 5 bins = +/- 640bp)
                 start_bin = max(0, tss_bin - cage_window_bin_size)
                 end_bin = min(track.values.shape[0], tss_bin + cage_window_bin_size + 1)

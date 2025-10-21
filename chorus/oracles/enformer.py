@@ -330,9 +330,10 @@ result = selected_predictions.tolist()
 
             types_info = metadata.parse_description(info['description']) 
 
-            track = OraclePredictionTrack(
+            track = OraclePredictionTrack.create(
                 source_model="enformer",
                 assay_id=assay_id, 
+                track_id=track_id,
                 assay_type=types_info['assay_type'],
                 cell_type=types_info['cell_type'],
                 query_interval=query_interval,

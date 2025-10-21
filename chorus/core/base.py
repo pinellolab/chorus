@@ -7,7 +7,7 @@ import pandas as pd
 import re
 import os
 import logging
-from ..core.new_interval import Interval, GenomeRef
+from ..core.interval import Interval, GenomeRef
 
 from ..core.track import Track
 from ..core.exceptions import (
@@ -169,7 +169,8 @@ class OracleBase(ABC):
         self._validate_assay_ids(assay_ids)
         
         # Get raw predictions
-        return self._predict(input_data, assay_ids)
+        predictions = self._predict(input_data, assay_ids)
+        return predictions
 
     def get_output_window_offsets(self) -> Tuple[int, int]:
         """
@@ -177,7 +178,6 @@ class OracleBase(ABC):
         """
         return 0, 0
        
-    
     def predict_region_replacement(
         self,
         genomic_region: Union[str, pd.DataFrame],
@@ -271,7 +271,6 @@ class OracleBase(ABC):
         }
 
         return results
-        
     
     def predict_variant_effect(
         self,
@@ -279,7 +278,6 @@ class OracleBase(ABC):
         variant_position: Union[str, pd.DataFrame],
         alleles: Union[List[str], pd.DataFrame],
         assay_ids: List[str],
-        create_tracks: bool = False,
         genome: Optional[str] = None
     ) -> Dict:
         """Predict effects of variants."""
@@ -334,8 +332,6 @@ class OracleBase(ABC):
         
         # Get predictions for each sequence
         all_predictions = {}
-        all_tracks = {}
-        all_files = {}
         
         for allele_name, interval in intervals.items():
             predictions = self._predict(interval, assay_ids)
