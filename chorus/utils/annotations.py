@@ -381,5 +381,4 @@ def get_gene_tss(gene_name: str, annotation: str = 'gencode_v48_basic') -> pd.Da
     gtf_path = manager.get_annotation_path(annotation)
     if not gtf_path:
         raise ValueError(f"Could not find annotation: {annotation}")
-    
     return manager.get_tss_positions(gtf_path, gene_name=gene_name)

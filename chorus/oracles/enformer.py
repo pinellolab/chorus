@@ -11,7 +11,7 @@ from copy import copy
 from ..core.base import OracleBase
 from ..core.result import OraclePrediction, OraclePrediction, OraclePredictionTrack
 from ..core.track import Track
-from ..core.new_interval import Interval, GenomeRef, Sequence 
+from ..core.interval import Interval, GenomeRef, Sequence 
 from ..core.exceptions import ModelNotLoadedError
 from ..utils.sequence import extract_sequence_with_padding
 
@@ -342,8 +342,8 @@ result = selected_predictions.tolist()
                 resolution=self.bin_size,
                 values=predictions[:, ind],
                 metadata=info,
-                preferred_aggregation='mean',
-                preferred_deconvolution='repeat',
+                preferred_aggregation='sum',
+                preferred_interpolation='linear_divided',
                 preferred_scoring_strategy='mean'
             )
             final_prediction.add(assay_id, track)

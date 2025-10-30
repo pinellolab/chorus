@@ -458,6 +458,7 @@ class Interval:
                 cur_ref_pos += len(entry)
 
         else:
+            print(cur_query_pos, query_pos)
             if cur_query_pos != query_pos: # end of genome
                 raise IntervalException('Provided position is out of reference length')
 
