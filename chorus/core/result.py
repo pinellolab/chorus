@@ -7,10 +7,13 @@ import shutil
 import weakref
 from pathlib import Path
 
-from typing import Any, ClassVar
 from copy import deepcopy
 
-from ..core.interval import Interval, GenomeRef
+from ..core.interval import Interval, GenomeRef, CigarEqual, CigarNotEqual, CigarInsertion
+from ..core.aggregation import Aggregation
+from ..core.interpolation import Interpolation
+
+from typing import Type
 
 logger = logging.getLogger(__name__)
 
@@ -60,9 +63,9 @@ class OraclePredictionTrack:
     input_interval: Interval = field(repr=False)
     resolution: int = field(repr=True) # bin size, resolutions can be different for different tracks
     values: np.ndarray = field(repr=False)
-    preferred_aggregation : str = field(repr=False)
-    preferred_deconvolution: str = field(repr=False)
-    preferred_scoring_strategy: str = field(repr=False)
+    preferred_aggregation : str = field(repr=False, default='sum')
+    preferred_interpolation : str = field(repr=False, default='linear_divided')
+    preferred_scoring_strategy: str = field(repr=False, default='mean')
     metadata: dict = field(repr=False, default_factory=dict)
     track_id: int | None = field(repr=True, default=None)
     coolbox_params: ClassVar[dict] = default_track_visualization_params()
@@ -116,24 +119,6 @@ class OraclePredictionTrack:
     @classmethod
     def registered(cls) -> tuple[str, ...]:
         return tuple(sorted(OraclePredictionTrack._registry))
-
-    def aggregate(self, target_resolution: int, aggregation_strategy: str | None = None): 
-        """
-        decrease track resolution using specified aggregation strategy
-        if target resolution equals to -1 - provide a single value 
-        """
-        if aggregation_strategy is None:
-            aggregation_strategy = self.preferred_aggregation
-        raise NotImplementedError()
-
-    def deconvolve(self, target_resolution: int, deconvolution_strategy: str | None = None):
-        """
-        increase track resolution using specified aggregation strategy 
-        if target resolution equals to -1 - provide a single value 
-        """
-        if deconvolution_strategy is None:
-            deconvolution_strategy = self.preferred_deconvolution
-        raise NotImplementedError
 
     def score(self, scoring_strategy: str | None = None) -> float:
         """
@@ -255,6 +240,131 @@ class OraclePredictionTrack:
         kwargs = asdict(self)
         promoted = OraclePredictionTrack.create(cls_name=self.ASSAY_TYPE_COLUMN, **kwargs)
         return promoted
+
+    def copy(self) -> 'OraclePredictionTrack':
+        return deepcopy(self)
+
+    def rescale(self, 
+                resolution: int, 
+                interpolation: str | Type[Interpolation] | None = None, 
+                aggregation: str | Type[Aggregation] | None = None) -> 'OraclePredictionTrack':
+        if resolution == self.resolution:
+            return self.copy()
+        elif resolution > self.resolution:
+            return self.aggregate(resolution=resolution, aggregation=aggregation, interpolation=interpolation)
+        else: #resolution < self.resolution
+            return self.interpolate(resolution=resolution, method=interpolation)
+
+    def interpolate(self, 
+                    resolution: int,
+                    method: str | Type[Interpolation] | None = None) -> 'OraclePredictionTrack':
+        '''
+        Interpolate track to a new resolution.
+        '''
+        assert resolution < self.resolution, "Target resolution must be smaller than the initial one"
+
+        if method is None:
+            method = self.preferred_interpolation
+        if isinstance(method, str):
+            interp = Interpolation.from_string(method) 
+        else:
+            interp = method()
+        interp.fit(resolution=self.resolution, values=self.values)
+
+        new_vals = interp.predict(resolution=resolution, interval_end=len(self.prediction_interval))
+
+        other = self.copy()
+        other.resolution = resolution
+        other.values = new_vals
+        return other 
+
+    def aggregate(self, 
+                resolution: int,
+                aggregation: str | Type[Aggregation] | None = None,
+                interpolation: str | Type[Interpolation] | None = None) -> 'OraclePredictionTrack':
+        '''
+        Change track resolution. 
+        Uses intermediate interpolation when the target resolution is not an exact multiple of the initial one.
+        '''
+        assert resolution > self.resolution, "Target resolution must be greater than the initial one"
+        if aggregation is None:
+            aggregation = self.preferred_aggregation
+        if interpolation is None:
+            interpolation = self.preferred_interpolation
+
+        if isinstance(aggregation, str):
+            aggregation = Aggregation.from_string(aggregation)
+        else:
+            aggregation = aggregation()
+        
+        new_vals = aggregation.aggregate(values=self.values,
+            resolution=self.resolution,
+            new_resolution=resolution, 
+            interpolation=interpolation)
+        
+        other = self.copy()
+        other.resolution = resolution
+        other.values = new_vals
+        return other 
+
+    def calc_ref_values(self, 
+                aggregation: str | Aggregation | None = None, 
+                interpolation: str| Interpolation | None = None):
+
+        if aggregation is None:
+            aggregation = self.preferred_aggregation
+        if isinstance(aggregation, str):
+            aggregation = Aggregation.from_string(aggregation)
+        else:
+            aggregation = aggregation()
+        if interpolation is None:
+            interpolation = self.preferred_interpolation
+        if isinstance(interpolation, str):
+            interpolation = Interpolation.from_string(interpolation) 
+        else:
+            interpolation = interpolation()
+        
+        values = self.values
+        interpolation.fit(self.resolution, values)
+        
+        query_length = len(self.prediction_interval)
+        
+        q_values = interpolation.predict(1, query_length )
+        
+        
+        ref_start = ref_end = 0
+        q_start = q_end = 0 
+        
+        reference_length = sum(len(ci) for ci in self.prediction_interval.cigar if ci.consumes_ref)
+        ref_values = np.zeros(reference_length, dtype=np.float32)
+        
+        for ci in self.prediction_interval.cigar:
+            if ci.consumes_ref:
+                ref_end = ref_start + len(ci)
+            if ci.consumes_query:
+                q_end = q_start + len(ci)
+            if isinstance(ci, (CigarEqual, CigarNotEqual)):
+                ref_values[ref_start:ref_end] += q_values[q_start:q_end]
+            elif isinstance(ci, CigarInsertion):
+                cov = aggregation.aggregation_func(q_values[q_start:q_end])
+                if ref_start + 1 == reference_length:
+                    ref_values[ref_start] += cov
+                else:
+                    ref_values[ref_start] += cov / 2
+                    ref_values[ref_start+1] += cov / 2
+            else: # missing reference values 
+                ref_values[ref_start:ref_end] = np.nan
+        
+            ref_start = ref_end
+            q_start = q_end
+        known_coords = np.where(~np.isnan(ref_values))[0]
+        interp_f = interpolation.interpolation_func(coords=known_coords, values=ref_values[known_coords])
+        unknown_coords = np.where(np.isnan(ref_values))[0]
+        ref_values[unknown_coords] = interp_f(unknown_coords)
+
+        ref_values = aggregation.aggregate(ref_values, 1, self.resolution) # no need to pass interpolation as resolution is equal to 1 
+        return ref_values
+
 
 
 class DNaseOraclePredictionTrack(OraclePredictionTrack, name='DNASE'):

@@ -217,7 +217,7 @@ class OracleBase(ABC):
         # Parse region to replace
         chrom, start, end = self._parse_region(genomic_region)
         region_interval = Interval.make(GenomeRef(chrom=chrom, start=start, end=end, fasta=genome))
-        region_interval = region_interval.replace(seq=seq, start=0, end=len(seq))
+        region_interval = region_interval.replace(seq=seq, start=0, end=end-start)
         
         # Get predictions for the full context
         predictions = self._predict(region_interval, 
