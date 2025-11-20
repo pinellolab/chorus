@@ -14,6 +14,14 @@ import importlib.util
 logger = logging.getLogger(__name__)
 
 
+ORACLE_CLASS_MAP = {
+    "chrombpnet": "ChromBPNetOracle",
+    "borzoi": "BorzoiOracle",
+    "enformer": "EnformerOracle"
+    # TODO: fill in the list
+}
+
+
 class EnvironmentRunner:
     """Executes code in oracle-specific conda environments."""
     
@@ -250,15 +258,19 @@ except Exception as e:
         Returns:
             Dictionary with oracle metadata
         """
+        class_name = ORACLE_CLASS_MAP.get(oracle.lower(), f"{oracle.capitalize()}Oracle")
         script = f"""
 import json
 import sys
 
 try:
-    from chorus.oracles.{oracle} import {oracle.capitalize()}Oracle
+
+    # from chorus.oracles.{oracle} import {oracle.capitalize()}Oracle
+    from chorus.oracles.{oracle} import {class_name}
     
     # Create instance
-    oracle_instance = {oracle.capitalize()}Oracle()
+    # oracle_instance = {oracle.capitalize()}Oracle()
+    oracle_instance = {class_name}()
     
     # Get metadata
     metadata = {{
