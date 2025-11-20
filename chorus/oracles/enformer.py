@@ -286,6 +286,8 @@ for assay_id in {repr(assay_ids)}:
         track_indices.append(5241)
     elif assay_id == 'DNase:K562':
         track_indices.append(121)
+    elif assay_id == 'ENCFF136DBS':
+        track_indices.append(27)
     elif assay_id == 'CAGE:chronic myelogenous leukemia cell line:K562':
         track_indices.append(4828)
     elif assay_id.startswith('ENCFF') or assay_id.startswith('CNhs'):
