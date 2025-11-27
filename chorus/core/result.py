@@ -17,17 +17,6 @@ from typing import Type
 
 logger = logging.getLogger(__name__)
 
-from coolbox.api import (
-    BedGraph,
-    TrackHeight,
-    Color,
-    MinValue,
-    MaxValue,
-    Title,
-    XAxis,
-    Vlines,
-    HighLights,
-)
 
 from typing import ClassVar, Any
 from threading import RLock
@@ -208,6 +197,17 @@ class OraclePredictionTrack:
                                    add_xaxis: bool = True,
                                    add_highlight: bool = False,
                                    add_vlines: bool = True):
+        from coolbox.api import (
+            BedGraph,
+            TrackHeight,
+            Color,
+            MinValue,
+            MaxValue,
+            Title,
+            XAxis,
+            Vlines,
+            HighLights,
+        )
         if override_params is None:
             coolbox_params = self.coolbox_params
         else:
@@ -221,7 +221,7 @@ class OraclePredictionTrack:
         if signal_threshold is None:
             signal_threshold = df['value'].max() + 0.1 
       
-        frame = BedGraph(coolbox_file,  threshold=signal_threshold, threshold_color=coolbox_params['threshold_color']) +\
+        frame = BedGraph(str(coolbox_file),  threshold=signal_threshold, threshold_color=coolbox_params['threshold_color']) +\
             TrackHeight(coolbox_params['height']) +\
             Color(coolbox_params['color']) +\
             MinValue(min(df['value'].min(), 0) ) +\
