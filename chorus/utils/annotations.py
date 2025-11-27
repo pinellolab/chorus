@@ -18,6 +18,8 @@ import subprocess
 import shutil
 logger = logging.getLogger(__name__)
 
+from ..core.globals import CHORUS_ANNOTATIONS_DIR
+
 
 class AnnotationManager:
     """Manager for gene annotations (GTF files)."""
@@ -50,8 +52,7 @@ class AnnotationManager:
         """
         if annotations_dir is None:
             # Default to annotations directory in chorus root
-            chorus_root = Path(__file__).parent.parent.parent
-            annotations_dir = chorus_root / "annotations"
+            annotations_dir = CHORUS_ANNOTATIONS_DIR
         
         self.annotations_dir = Path(annotations_dir)
         self.annotations_dir.mkdir(parents=True, exist_ok=True)
