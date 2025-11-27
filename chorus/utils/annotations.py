@@ -13,8 +13,12 @@ from typing import Optional, Dict, List, Tuple, Union
 import pandas as pd
 import requests
 from tqdm import tqdm
-
+import shlex
+import subprocess
+import shutil
 logger = logging.getLogger(__name__)
+
+from ..core.globals import CHORUS_ANNOTATIONS_DIR
 
 
 class AnnotationManager:
@@ -48,15 +52,23 @@ class AnnotationManager:
         """
         if annotations_dir is None:
             # Default to annotations directory in chorus root
-            chorus_root = Path(__file__).parent.parent.parent
-            annotations_dir = chorus_root / "annotations"
+            annotations_dir = CHORUS_ANNOTATIONS_DIR
         
         self.annotations_dir = Path(annotations_dir)
         self.annotations_dir.mkdir(parents=True, exist_ok=True)
+
+    def annotation_exists(self, annotation_path: Path) -> str | None:
+        if annotation_path.exists():
+            return str(annotation_path)
+        elif Path(str(annotation_path).replace('.gtf.gz', '.gtf')).exists():
+            return str(Path(str(annotation_path).replace('.gtf.gz', '.gtf')))
+        else:
+            return None
+  
     
     def download_annotation(self, annotation_id: str = 'gencode_v48_basic', 
                           force: bool = False) -> Path:
-        """Download gene annotation file.
+        """Download gene annotation file if it doesn't exist.
         
         Args:
             annotation_id: ID of annotation to download from ANNOTATION_SOURCES
@@ -75,9 +87,11 @@ class AnnotationManager:
         filepath = self.annotations_dir / filename
         
         # Check if already downloaded
-        if filepath.exists() and not force:
-            logger.info(f"Annotation file already exists: {filepath}")
-            return filepath
+
+        existing_path = self.annotation_exists(filepath)
+        if existing_path is not None and not force:
+            logger.info(f"Annotation file already exists: {existing_path}")
+            return existing_path
         
         # Download with progress bar
         logger.info(f"Downloading {annotation_info['description']}...")
@@ -96,10 +110,23 @@ class AnnotationManager:
                     pbar.update(len(chunk))
         
         logger.info(f"Downloaded annotation to: {filepath}")
+        logger.info(f"Sorting annotation...")
+        filepath = self.sort_annotation(filepath)
+        logger.info(f"Sorted annotation to: {filepath}")
         return filepath
+
+    def sort_annotation(self, annotation_path: Path) -> Path:
+        gtf_path_no_gz = Path(str(annotation_path).replace('.gtf.gz', '.gtf'))
+        with gzip.open(annotation_path, 'rb') as f_in:
+            with open(gtf_path_no_gz, 'wb') as f_out:
+                shutil.copyfileobj(f_in, f_out)
+        os.remove(annotation_path)
+        sorted_gtf_path = sort_gtf(gtf_path_no_gz, gtf_path_no_gz.with_suffix('.sorted.gtf'))
+        shutil.move(sorted_gtf_path, gtf_path_no_gz)
+        return gtf_path_no_gz
     
     def get_annotation_path(self, annotation_id: str = 'gencode_v48_basic',
-                          auto_download: bool = True) -> Optional[Path]:
+                          auto_download: bool = True) -> str | None:
         """Get path to annotation file, downloading if necessary.
         
         Args:
@@ -129,7 +156,7 @@ class AnnotationManager:
             return self.download_annotation(annotation_id)
         
         return None
-    
+
     def list_annotations(self) -> Dict[str, Dict]:
         """List available annotations.
         
@@ -343,8 +370,26 @@ def download_gencode(version: str = 'v48', annotation_type: str = 'basic') -> Pa
         Path to downloaded annotation file
     """
     annotation_id = f'gencode_{version}_{annotation_type}'
-    return get_annotation_manager().download_annotation(annotation_id)
+    gtf_path = get_annotation_manager().download_annotation(annotation_id)
+    
+    return gtf_path
 
+
+def sort_gtf(gtf_path: str, output_path: str) -> str:
+    """Sort GTF file.
+    
+    Args:
+        gtf_path: Path to GTF file
+        
+    Returns:
+        Path to sorted GTF file
+    """
+    cmd = f"gtfsort --input {gtf_path} --output {output_path}"
+    cmd = shlex.split(cmd)
+    res = subprocess.run(cmd)
+    if res.returncode != 0:
+        raise RuntimeError(f"Failed to sort GTF file: {res.stderr}")
+    return output_path
 
 def get_genes_in_region(chrom: str, start: int, end: int,
                        annotation: str = 'gencode_v48_basic') -> pd.DataFrame:
@@ -381,5 +426,4 @@ def get_gene_tss(gene_name: str, annotation: str = 'gencode_v48_basic') -> pd.Da
     gtf_path = manager.get_annotation_path(annotation)
     if not gtf_path:
         raise ValueError(f"Could not find annotation: {annotation}")
-    
     return manager.get_tss_positions(gtf_path, gene_name=gene_name)
