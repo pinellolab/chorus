@@ -4,6 +4,7 @@ channels:
   - bioconda
 dependencies:
   # Core Python
+
   - python=3.10
   
   # Essential scientific computing
@@ -25,16 +26,8 @@ dependencies:
   - seaborn>=0.11.0
   
   # TensorFlow ecosystem
-  - pip
   - pip:
     # Enformer specific dependencies
     - tensorflow>=2.8.0,<2.15.0
     - tensorflow-hub>=0.12.0
     - tensorflow-datasets>=4.0.0
-    
-    # Genomics utilities
-    - kipoiseq>=0.7.0
-    
-    # Additional utilities
-    - dm-sonnet>=2.0.0
-    - tensorflow-probability>=0.15.0
