@@ -106,7 +106,7 @@ class GenomeRef:
 @dataclass(frozen=True)
 class Sequence:
     sequence: str
-    name: str = field(default='', repr=False)
+    name: str = field(default='chrSynth', repr=False)
     extendible: ClassVar[bool] = field(default=False, repr=False) # can't extend simple sequence 
 
     @property

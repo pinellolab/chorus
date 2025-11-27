@@ -66,82 +66,45 @@ class EnformerOracle(OracleBase):
         
         # Reference genome
         self.reference_fasta = reference_fasta
+        self.model_dir = None
+    
+    def get_model_weights_path(self) -> str:
+        return self.default_model_path
     
     def load_pretrained_model(self, weights: str = None) -> None:
         """Load Enformer model in the appropriate environment."""
         if weights is None:
-            weights = self.default_model_path
+            weights = self.get_model_weights_path()
         
         logger.info(f"Loading Enformer model from {weights}...")
         
         if self.use_environment:
-            # Code to run in environment
-            load_code = f"""
-import tensorflow as tf
-import tensorflow_hub as hub
-import os
-
-# Set TFHub progress tracking
-os.environ["TFHUB_DOWNLOAD_PROGRESS"] = "1"
-
-# Configure device
-device = {repr(self.device)}
-if device:
-    if device == 'cpu':
-        # Force CPU usage
-        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-        print("Forcing CPU usage")
-    elif device.startswith('cuda:'):
-        # Use specific GPU
-        gpu_id = device.split(':')[1]
-        os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
-        print(f"Using GPU {{gpu_id}}")
-    elif device in ['cuda', 'gpu']:
-        # Use default GPU (don't change CUDA_VISIBLE_DEVICES)
-        print("Using default GPU")
-else:
-    # Auto-detect - TensorFlow will use GPU if available
-    gpus = tf.config.list_physical_devices('GPU')
-    if gpus:
-        print(f"Auto-detected {{len(gpus)}} GPU(s), using first available")
-    else:
-        print("No GPU detected, using CPU")
-
-# Load the model
-enformer = hub.load({repr(weights)})
-# Get the actual model from the enformer object
-model = enformer.model
-
-# Get device info
-if device == 'cpu' or not tf.config.list_physical_devices('GPU'):
-    actual_device = 'CPU'
-else:
-    actual_device = f'GPU ({{len(tf.config.list_physical_devices("GPU"))}} available)'
-
-# Get model info (we can't pickle the model itself)
-result = {{
-    'loaded': True,
-    'model_class': str(type(model)),
-    'has_predict': hasattr(model, 'predict_on_batch'),
-    'description': 'Enformer model loaded successfully',
-    'device': actual_device
-}}
-"""
-            
-            # Run loading in environment
-            # Use the instance timeout setting (can be customized or disabled)
-            model_info = self.run_code_in_environment(load_code, timeout=self.model_load_timeout)
-            
-            if model_info and model_info['loaded']:
-                self.loaded = True
-                self._model_info = model_info
-                logger.info("Enformer model loaded successfully in environment!")
-            else:
-                raise ModelNotLoadedError("Failed to load model in environment")
+            self._load_in_environment(weights)
         else:
             # Load directly if not using environment
             self._load_direct(weights)
-    
+
+    def get_model_dir_path(self) -> str:
+        if self.model_dir is None:
+            parent = os.path.dirname(os.path.realpath(__file__))
+            self.model_dir = os.path.join(parent, "enformer_source")
+        return self.model_dir
+
+    def get_templates_dir(self) -> str:
+        return os.path.join(self.get_model_dir_path(), "templates")
+
+    def get_load_template(self) -> str:
+        d = self.get_templates_dir()
+        path = os.path.join(d, 'load_template.py')
+        with open(path) as inp:
+            return inp.read(), "__ARGS_FILE_NAME__"
+
+    def get_predict_template(self) -> str:
+        d = self.get_templates_dir()
+        path = os.path.join(d, 'predict_template.py')
+        with open(path) as inp:
+            return inp.read(), "__ARGS_FILE_NAME__"
+
     def _load_direct(self, weights: str):
         """Load model directly in current environment."""
         try:
@@ -176,6 +139,30 @@ result = {{
             logger.info("Enformer model loaded successfully!")
         except Exception as e:
             raise ModelNotLoadedError(f"Failed to load Enformer model: {str(e)}")
+
+    def _load_in_environment(self, weights: str) -> None:
+        args = {
+            'device': self.device,
+            'model_weights': weights,
+        }
+
+        # Save arguments to temporary file
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as arg_file:
+            json.dump(args, arg_file)
+            arg_file.flush()
+
+            template, arg = self.get_load_template()
+            template = template.replace(arg, arg_file.name)
+            model_info = self.run_code_in_environment(template, timeout=self.model_load_timeout)
+            
+            if model_info and model_info['loaded']:
+                self.loaded = True
+                self._model_info = model_info
+                logger.info("Enformer model loaded successfully in environment!")
+            else:
+                raise ModelNotLoadedError("Failed to load Enformer model in environment")
+
     
     def _predict(self, seq: str | Tuple[str, int, int] | Interval, assay_ids: List[str] | None = None) -> OraclePrediction:
         """Run prediction in the appropriate environment.
@@ -184,7 +171,6 @@ result = {{
             seq: Either a DNA sequence string or a tuple of (chrom, start, end)
             assay_ids: List of assay identifiers
         """
-
         if assay_ids is None:
             assay_ids =  self.get_all_assay_ids()
 
@@ -211,115 +197,14 @@ result = {{
 
         if self.use_environment:
             # Save sequence to temporary file
-            import tempfile
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as seq_file:
-                seq_file.write(full_seq)
-                seq_path = seq_file.name
-            
-            try:
-                # Code to run in environment
-                predict_code = f"""
-import tensorflow as tf
-import tensorflow_hub as hub
-import numpy as np
-import os
-
-# Configure device
-device = {repr(self.device)}
-if device:
-    if device == 'cpu':
-        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-    elif device.startswith('cuda:'):
-        gpu_id = device.split(':')[1]
-        os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
-
-# Read sequence from file
-with open({repr(seq_path)}, 'r') as f:
-    seq = f.read().strip()
-
-# Load model (cached in TFHub)
-# Enformer model has a specific structure - we need to get the model attribute
-enformer = hub.load({repr(self.default_model_path)})
-model = enformer.model
-
-# Prepare sequence
-#if len(seq) != 393216:
-#    # Pad or trim sequence
-#    if len(seq) < 393216:
-#        pad_needed = 393216 - len(seq)
-#        pad_left = pad_needed // 2
-#        pad_right = pad_needed - pad_left
-#        seq = 'N' * pad_left + seq + 'N' * pad_right
-#    else:
-#        trim_needed = len(seq) - 393216
-#        trim_left = trim_needed // 2
-#        trim_right = trim_needed - trim_left
-#        seq = seq[trim_left:len(seq)-trim_right]
-
-# One-hot encode
-mapping = {{'A': 0, 'C': 1, 'G': 2, 'T': 3}}
-one_hot = np.zeros((len(seq), 4), dtype=np.float32)
-
-for i, base in enumerate(seq.upper()):
-    if base in mapping:
-        one_hot[i, mapping[base]] = 1.0
-
-# Add batch dimension
-one_hot_batch = tf.constant(one_hot[np.newaxis], dtype=tf.float32)
-
-# Run prediction - Use predict_on_batch method
-predictions = model.predict_on_batch(one_hot_batch)
-# Extract human predictions (Enformer outputs both human and mouse)
-human_predictions = predictions['human'][0].numpy()
-
-# Map assay IDs to track indices
-# For environment execution, we'll use a simplified mapping
-# Map track IDs to indices - handle common ones
-track_indices = []
-for assay_id in {repr(assay_ids)}:
-    # Handle specific identifiers we know
-    if assay_id == 'ENCFF413AHU':  # DNase:K562 
-        track_indices.append(121)
-    elif assay_id == 'CNhs11250':  # CAGE:K562
-        track_indices.append(4828)
-    elif assay_id == 'CNhs12336':  # CAGE:K562 ENCODE
-        track_indices.append(5241)
-    elif assay_id == 'DNase:K562':
-        track_indices.append(121)
-    elif assay_id == 'CAGE:chronic myelogenous leukemia cell line:K562':
-        track_indices.append(4828)
-    elif assay_id.startswith('ENCFF') or assay_id.startswith('CNhs'):
-        # For unknown IDs, need to warn
-        print(f"Warning: Unknown track ID {{assay_id}}, using default")
-        track_indices.append(121)  
-    else:
-        # For descriptions, use defaults
-        print(f"Warning: Using default track for {{assay_id}}")
-        track_indices.append(121)
-
-# Extract predictions for selected tracks
-selected_predictions = human_predictions[:, track_indices]
-result = selected_predictions.tolist()
-"""
-                
-                # Run prediction in environment
-                # Use the instance timeout setting (can be customized or disabled)
-                predictions_list = self.run_code_in_environment(predict_code, timeout=self.predict_timeout)
-                
-                predictions =  np.array(predictions_list)
-                
-            finally:
-                # Clean up sequence file
-                import os
-                if os.path.exists(seq_path):
-                    os.unlink(seq_path)
+            predictions = self._predict_in_environment(full_seq, assay_ids)
         else:
             # Use direct prediction
-            predictions = self._predict_direct(seq, assay_ids)
+            predictions = self._predict_direct(full_seq, assay_ids)
         
         # for now we have all predictions
 
-        from .enformer_metadata import get_metadata
+        from .enformer_source.enformer_metadata import get_metadata
         metadata = get_metadata()
 
         final_prediction = OraclePrediction()
@@ -349,6 +234,24 @@ result = selected_predictions.tolist()
             final_prediction.add(assay_id, track)
 
         return final_prediction
+    
+    def _predict_in_environment(self, seq: str, assay_ids: List[str]) -> np.ndarray:
+        args = {
+            'device': self.device,
+            'model_weights': self.get_model_weights_path(),
+            'sequence': seq,
+            'assay_ids': assay_ids,
+        }
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as arg_file:
+            json.dump(args, arg_file)
+            arg_file.flush()
+
+            template, arg = self.get_predict_template()
+            template = template.replace(arg, arg_file.name)
+            predictions_list = self.run_code_in_environment(template, timeout=self.predict_timeout)    
+            predictions = np.array(predictions_list)
+        return predictions
 
     def _predict_direct(self, seq: str, assay_ids: List[str]) -> np.ndarray:
         """Direct prediction in current environment."""
@@ -369,13 +272,13 @@ result = selected_predictions.tolist()
     
     def list_assay_types(self) -> List[str]:
         """Return all unique assay types from Enformer metadata."""
-        from .enformer_metadata import get_metadata
+        from .enformer_source.enformer_metadata import get_metadata
         metadata = get_metadata()
         return metadata.list_assay_types()
     
     def list_cell_types(self) -> List[str]:
         """Return all unique cell types from Enformer metadata."""
-        from .enformer_metadata import get_metadata
+        from .enformer_source.enformer_metadata import get_metadata
         metadata = get_metadata()
         return metadata.list_cell_types()
     
@@ -412,7 +315,7 @@ result = selected_predictions.tolist()
     
     def _get_assay_indices(self, assay_ids: List[str]) -> List[int]:
         """Map assay IDs to track indices using proper metadata."""
-        from .enformer_metadata import get_metadata
+        from .enformer_source.enformer_metadata import get_metadata
         
         metadata = get_metadata()
         indices = []
@@ -494,7 +397,7 @@ result = selected_predictions.tolist()
             If query is provided: DataFrame of matching tracks
             If no query: Dictionary with counts by assay type
         """
-        from .enformer_metadata import get_metadata
+        from .enformer_source.enformer_metadata import get_metadata
         metadata = get_metadata()
         
         if query:
@@ -503,7 +406,7 @@ result = selected_predictions.tolist()
             return metadata.get_track_summary()
 
     def get_all_assay_ids(self) -> list[str]:
-        from .enformer_metadata import get_metadata
+        from .enformer_source.enformer_metadata import get_metadata
         metadata = get_metadata()
         
         return list(metadata._track_index_map.keys())
