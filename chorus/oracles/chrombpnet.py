@@ -5,11 +5,16 @@ from ..core.track import Track
 from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..core.interval import Interval, GenomeRef, Sequence
 from ..core.exceptions import ModelNotLoadedError
-from typing import List, Tuple, Optional
+from ..core.globals import CHORUS_DOWNLOADS_DIR
+
+from typing import List, Tuple, Optional, ClassVar
 import numpy as np
 import subprocess
 import logging
 import os
+import tarfile
+from pathlib import Path
+
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -19,7 +24,21 @@ logger = logging.getLogger(__name__)
 
 class ChromBPNetOracle(OracleBase):
     """ChromBPNet oracle implementation for TF binding and chromatin accessibility."""
-    
+    CHROMBPNET_MODELS_DICT: ClassVar[dict[str, dict[str, str]]] = {
+        "ATAC": {
+            "K562": "ENCFF984RAF",
+            "HepG2": "ENCFF137WCM",
+            "GM12878": "ENCFF142IOR",
+            "IMR-90": "ENCFF113GSV"
+        },
+        "DNASE": {
+            "HepG2": "ENCFF615AKY",
+            "IMR-90": "ENCFF515HBV",
+            "GM12878": "ENCFF673TIN",
+            "K562": "ENCFF574YLK"
+        }
+    }
+
     def __init__(self,
                  use_environment: bool = True, 
                  reference_fasta: Optional[str] = None,
@@ -43,24 +62,24 @@ class ChromBPNetOracle(OracleBase):
         # Store Reference Genome
         self.reference_fasta = reference_fasta
 
-        # Store Dictionary of available models
-        self.chrombpnet_models_dict = {
-            "ATAC": {
-                "K562": "ENCFF984RAF",
-                "HepG2": "ENCFF137WCM",
-                "GM12878": "ENCFF142IOR",
-                "IMR-90": "ENCFF113GSV"
-            },
-            "DNASE": {
-                "HepG2": "ENCFF615AKY",
-                "IMR-90": "ENCFF515HBV",
-                "GM12878": "ENCFF673TIN",
-                "K562": "ENCFF574YLK"
-            }
-        }
+        self.download_dir = CHORUS_DOWNLOADS_DIR / "chrombpnet"
+        self.download_dir.mkdir(parents=True, exist_ok=True)
+        self.model_path = None # will be set when the model is downloaded
+        self.assay = None
+        self.cell_type = None
+        self.fold = 0
 
-        self.make_encode_link = lambda idx: f"https://www.encodeproject.org/files/{idx}/@@download/{idx}.tar.gz"
+    def get_encode_link(self, idx: str) -> str:
+        return f"https://www.encodeproject.org/files/{idx}/@@download/{idx}.tar.gz"
 
+    def get_model_weights_dir(self, assay: str, cell_type: str) -> Path:
+        path = self.download_dir / f"{assay}_{cell_type}"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    def get_model_weights_path(self, assay: str, cell_type: str, fold: int, model_type: str = 'chrombpnet') -> Path:
+        path = self.get_model_weights_dir(assay, cell_type) / 'models' / f"fold_{fold}" / model_type / 'chrombpnet'
+        return path
 
     #from https://github.com/kundajelab/basepair/blob/cda0875571066343cdf90aed031f7c51714d991a/basepair/losses.py#L87
     @staticmethod
@@ -75,65 +94,64 @@ class ChromBPNetOracle(OracleBase):
         return (-tf.reduce_sum(dist.log_prob(true_counts)) /
                 tf.cast(tf.shape(true_counts)[0], dtype=tf.float32))
 
-    def _download_chrombpnet_model(self):        
-        import shutil
-        import tarfile
-
+    def _download_chrombpnet_model(self): 
+        
         # Get model's ENCODE idx
-        idx = self.chrombpnet_models_dict[self.assay][self.cell_type]
+        idx = self.CHROMBPNET_MODELS_DICT[self.assay][self.cell_type]
 
         # Create download link
-        download_link = self.make_encode_link(idx)
+        download_link = self.get_encode_link(idx)
+        download_path = self.get_model_weights_dir(self.assay, self.cell_type)
 
-        logger.info(f"Dowloading ChromBPNet into {self.download_path}...")
+        logger.info(f"Dowloading ChromBPNet into {download_path}...")
 
-        # Download from ENCODE (tar file)
-        result = subprocess.run(
-            ["wget", "-P", self.download_path, download_link],
-            text=True,
-            capture_output=True
-        )
-        if result.returncode != 0:
-            raise RuntimeError(f"Execution Failed: {result.stderr}")
-        
-        logger.info("Dowload completed!")
-        
-        file_path = os.path.join(
-            self.download_path, 
+        download_file_path = os.path.join(
+            download_path, 
             os.path.basename(download_link)
         )
 
+        if not os.path.exists(download_file_path):
+            
+            # Download from ENCODE (tar file)
+            result = subprocess.run(
+                ["wget", "-P", download_path, download_link],
+                text=True,
+                capture_output=True
+            )
+            if result.returncode != 0:
+                raise RuntimeError(f"Execution Failed: {result.stderr}")
+            
+            logger.info("Dowload completed!")
+        
+
+
         # Now extract the file in the same download folder
         extract_folder = os.path.join(
-            self.download_path,
+            download_path,
             "models"
         )
 
-        with tarfile.open(file_path, "r:gz") as tar:
+        with tarfile.open(download_file_path, "r:gz") as tar:
             tar.extractall(path=extract_folder)
 
-        # Now select model coming from fold 0 (ChromBPNet was trained with CV)
-        models_dir = os.path.join(
-            extract_folder,
-            "fold_0"
-        )
-        tar_model_filename = [
-            os.path.join(models_dir, file_name)
-            for file_name in os.listdir(models_dir)
-            if "chrombpnet" in file_name and "chrombpnet_nobias" not in file_name
-        ][0] # we know that only one model exists with that filename
-
-        # Extract the model, it will be placed into a "chrombpnet" folder
-        with tarfile.open(tar_model_filename, "r:") as tar:
-            tar.extractall(path=self.download_path)
-
-        # Remove tmp directories
-        shutil.rmtree(extract_folder)
-
-        # Remove the downloaded file
-        os.remove(file_path)
-
-        return os.path.join(self.download_path, "chrombpnet")
+        for fold in range(5):
+            # Now select model coming from fold 0 (ChromBPNet was trained with CV)
+            models_dir = os.path.join(
+                extract_folder,
+                f"fold_{fold}"
+            )
+            tar_mappings = {
+                f"model.bias_scaled.fold_{fold}.*.tar": 'bias_scaled',
+                f"model.chrombpnet.fold_{fold}.*.tar": 'chrombpnet',
+                f"model.chrombpnet_nobias.fold_{fold}.*.tar": 'chrombpnet_nobias'
+            }
+            for t_name, t_type in tar_mappings.items():
+                t_pattern = os.path.join(models_dir, t_name)
+                import glob
+                t_path =glob.glob(t_pattern)[0] # one file for pattern
+                t_out = os.path.join(models_dir, t_type)
+                with tarfile.open(t_path, "r:") as tar:
+                    tar.extractall(path=t_out)
                 
 
     def load_pretrained_model(
@@ -141,7 +159,8 @@ class ChromBPNetOracle(OracleBase):
             assay: Optional[str] = None,
             cell_type: Optional[str] = None,
             weights: Optional[str] = None,
-            download_path: Optional[str] = "."
+            fold: int = 0,
+            model_type: str = 'chrombpnet'
         ) -> None:
         """Load ChromBPNet model weights."""
 
@@ -149,23 +168,31 @@ class ChromBPNetOracle(OracleBase):
             raise ValueError("You must provide both assay and cell-type if weights are None.")
             
         # Check whether the assay is valid
-        if assay not in self.chrombpnet_models_dict:
-            raise ValueError(f"ChromBPNet supports only the following assays: {list(self.chrombpnet_models_dict.keys())}")
+        if assay not in self.CHROMBPNET_MODELS_DICT:
+            raise ValueError(f"ChromBPNet supports only the following assays: {list(self.CHROMBPNET_MODELS_DICT.keys())}")
         
         # Check if the combination is valid
-        if cell_type not in self.chrombpnet_models_dict[assay]:
-            raise ValueError(f"ChromBPNet {assay} predictions can only be done on the following cell types: {list(self.chrombpnet_models_dict[assay].keys())}")
+        if cell_type not in self.CHROMBPNET_MODELS_DICT[assay]:
+            raise ValueError(f"ChromBPNet {assay} predictions can only be done on the following cell types: {list(self.CHROMBPNET_MODELS_DICT[assay].keys())}")
+
+        if fold not in range(5):
+            raise ValueError(f"ChromBPNet fold must be an integer between 0 and 4, got {fold}")
             
         # Store assay and celltype
         self.assay = assay
         self.cell_type = cell_type
+        self.fold = fold
 
         if weights is None:
             # Check whether the user has provided assay and cell-type
-            self.download_path = download_path
             # Download weights and return path to them
-            model_name = self._download_chrombpnet_model()
-            self.model_path = model_name
+
+            weights = self.get_model_weights_path(assay, cell_type, fold, model_type)
+            if not os.path.exists(weights):
+                self._download_chrombpnet_model()
+            if not os.path.exists(weights):
+                raise FileNotFoundError(f"Weights file {weights} not found even after downloading from ENCODE")
+            self.model_path = weights
         else:
             # Use directly the specified path
             self.model_path = weights            
@@ -174,8 +201,15 @@ class ChromBPNetOracle(OracleBase):
         logger.info(f"Loading ChromBPNet model...")
 
         if self.use_environment:
+            print('Loading in environment')
+            self._load_in_environment(self.model_path)
+        else:
+            print('Loading directly')
+            self._load_direct(self.model_path)
+ 
 
-            load_code = f"""
+    def _load_in_environment(self, weights: str):
+        load_code = f"""
 import tensorflow as tf
 from tensorflow.keras.utils import get_custom_objects
 import tensorflow_probability as tfp
@@ -213,7 +247,7 @@ else:
 
 # Load model
 model = tf.keras.models.load_model(
-    '{self.model_path}',
+    '{weights}',
     compile=False,
     custom_objects={{"multinomial_nll": multinomial_nll, "tf": tf}}
 )
@@ -232,17 +266,17 @@ result = {{
     'description': 'ChromBPNet model loaded successfully',
     'device': actual_device
 }}
+"""
 
-            """
-            # Run loading in environment
-            model_info = self.run_code_in_environment(load_code, timeout=self.model_load_timeout)
+        # Run loading in environment
+        model_info = self.run_code_in_environment(load_code, timeout=self.model_load_timeout)
 
-            if model_info and model_info['loaded']:
-                self.loaded = True
-                self._model_info = model_info
-                logger.info("ChromBPNet model loaded successfully in environment!")
-            else:
-                raise ModelNotLoadedError("Failed to load model in environment.")
+        if model_info and model_info['loaded']:
+            self.loaded = True
+            self._model_info = model_info
+            logger.info("ChromBPNet model loaded successfully in environment!")
+        else:
+            raise ModelNotLoadedError("Failed to load model in environment.")
     
     def _load_direct(self, weights: str):
         """Load model directly in current environment"""
@@ -288,11 +322,12 @@ result = {{
         """Return ChromBPNet's cell types."""
         return ["IMR-90", "GM12878", "HepG2", "K562"]
     
-    def _predict(self, seq: str | Tuple[str, int, int] | Interval, assay_ids: List[str]) -> OraclePrediction:
+    def _predict(self, seq: str | Tuple[str, int, int] | Interval, assay_ids: List[str] = None) -> OraclePrediction:
         """Run ChromBPNet prediction in the appropriate environment.
         
         Args:
             seq: Either a DNA sequence string or a tuple of (chrom, start, end)
+            assay_ids: List of assay identifiers. In case of chrombnet this parameter is ignored.
         """
 
         # Handle genomic coordinates

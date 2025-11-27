@@ -32,7 +32,6 @@ class OracleBase(ABC):
         self.loaded = False
         self._assay_types = []
         self._cell_types = []
-        
         # Environment management
         self.use_environment = use_environment
         self._env_manager = None
@@ -64,6 +63,7 @@ class OracleBase(ABC):
         # Initialize environment if requested
         if self.use_environment:
             self._setup_environment()
+
     
     @abstractmethod
     def load_pretrained_model(self, weights: str) -> None:
@@ -107,10 +107,10 @@ class OracleBase(ABC):
                 else:
                     logger.info(f"Using conda environment: chorus-{self.oracle_name}")
         except ImportError:
-            logger.warning("Environment management not available. Running in current environment.")
+            logger.warning("Environment management not available. Oracle will run in current environment.")
             self.use_environment = False
         except Exception as e:
-            logger.warning(f"Failed to set up environment: {e}")
+            logger.warning(f"Failed to set up environment: {e}. Oracle will run in current environment.")
             self.use_environment = False
     
     def run_in_environment(self, func: Any, *args, **kwargs) -> Any:
@@ -144,7 +144,7 @@ class OracleBase(ABC):
     def predict(
         self,
         input_data: Union[str, Tuple[str, int, int]],
-        assay_ids: List[str],
+        assay_ids: List[str] | None = None,
     ) -> OraclePrediction:
         """
         Predict regulatory activity for a sequence or genomic region.
@@ -371,28 +371,8 @@ class OracleBase(ABC):
         if not self.loaded:
             raise ModelNotLoadedError("Model not loaded. Call load_pretrained_model first.")
     
-    def _validate_assay_ids(self, assay_ids: List[str]):
-        """Validate assay IDs."""
-        valid_assays = self.list_assay_types()
-        valid_cells = self.list_cell_types()
-        valid_ids = valid_assays + valid_cells
-        
-        # Also check for combined format like "DNASE:K562" and ENCODE identifiers
-        for assay_id in assay_ids:
-            # Skip validation for known identifier patterns
-            if assay_id.startswith('ENCFF'):  # ENCODE identifiers
-                continue
-            elif assay_id.startswith('CNhs'):  # CAGE identifiers  
-                continue
-            elif ':' in assay_id:
-                assay, cell = assay_id.split(':', 1)
-                # For Enformer, skip validation as it uses complex descriptions
-                if hasattr(self, '_get_assay_indices'):
-                    continue
-                if assay not in valid_assays or cell not in valid_cells:
-                    raise InvalidAssayError(f"Invalid assay ID: {assay_id}")
-            elif assay_id not in valid_ids:
-                raise InvalidAssayError(f"Invalid assay ID: {assay_id}")
+    def _validate_assay_ids(self, assay_ids: List[str] | None = None):
+        return True # for base class it is not needed to validate assay ids
     
     def _validate_sequence(self, seq: str):
         """Validate DNA sequence."""
