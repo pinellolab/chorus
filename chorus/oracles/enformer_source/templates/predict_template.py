@@ -48,7 +48,7 @@ human_predictions = predictions['human'][0].numpy()
 # For environment execution, we'll use a simplified mapping
 # Map track IDs to indices - handle common ones
 
-with open('/home/penzard/pinellolab/fork/chorus/chorus/oracles/enformer_source/enformer_human_targets.txt') as inp:
+with open('__ARGS_ENFORMER_METADATA__') as inp:
     inp.readline() # skip header
     mappings = {}
     for line in inp:
