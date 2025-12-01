@@ -103,7 +103,10 @@ class EnformerOracle(OracleBase):
         d = self.get_templates_dir()
         path = os.path.join(d, 'predict_template.py')
         with open(path) as inp:
-            return inp.read(), "__ARGS_FILE_NAME__"
+            return inp.read(), "__ARGS_FILE_NAME__", "__ARGS_ENFORMER_METADATA__"
+        
+    def _get_metadata_path(self) -> str:
+        return os.path.join(self.get_model_dir_path(), "enformer_human_targets.txt")
 
     def _load_direct(self, weights: str):
         """Load model directly in current environment."""
@@ -247,8 +250,9 @@ class EnformerOracle(OracleBase):
             json.dump(args, arg_file)
             arg_file.flush()
 
-            template, arg = self.get_predict_template()
-            template = template.replace(arg, arg_file.name)
+            template, arg1, arg2 = self.get_predict_template()
+            template = template.replace(arg1, arg_file.name)
+            template = template.replace(arg2, self._get_metadata_path())
             predictions_list = self.run_code_in_environment(template, timeout=self.predict_timeout)    
             predictions = np.array(predictions_list)
         return predictions
