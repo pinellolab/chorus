@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field, asdict
+from dataclasses import replace as dt_replace
 import numpy as np 
 import pandas as pd
 import logging         
@@ -160,6 +161,23 @@ class OraclePredictionTrack:
     def __getitem__(self, item) -> np.ndarray:
         return self.values[item]
 
+    def qclamp(self, lower_q: float | None = None, upper_q: float | None = None) -> 'OraclePredictionTrack':
+        # TODO: check correctness of qclamp
+        orig_v = self.values
+        v = np.copy(orig_v)
+        if upper_q is not None:
+            q = np.quantile(orig_v, upper_q)
+            v[v > q] = q 
+        if lower_q is not None:
+            q = np.quantile(orig_v, lower_q)
+            v[v < q] = q 
+        return dt_replace(self, values=v)
+
+    def clamp(self, lower: float | None = None, upper: float | None = None) -> 'OraclePredictionTrack':
+        other = self.copy()
+        other.values[other.values < lower] = lower
+        other.values[other.values > upper] = upper
+        return other
 
     def to_dataframe(self, use_reference_interval: bool = True) -> pd.DataFrame:
         track_data = []
@@ -476,7 +494,20 @@ class OraclePrediction:
     def normalize(self, normalization: str = "minmax"):
         norm_tracks = {track_id: track.normalize(normalization) for track_id, track in self.tracks.items()}
         return OraclePrediction(norm_tracks)
-        
+
+    def join(self, other: 'OraclePrediction') -> 'OraclePrediction':
+        joined = {**self.tracks, **other.tracks}
+        return OraclePrediction(joined)
+
+    def q_normalize(self, points_cnt: int = 10_001) -> 'OraclePrediction':
+        from ..utils.quantile_normalization import build_support_distr, quantile_map
+        support_distr = build_support_distr({track_id: track.values for track_id, track in self.tracks.items()}, points_cnt=points_cnt)
+        new_dt = {}
+        for k, v in self.tracks.items():
+            v = v.copy()
+            v.values = quantile_map(v.values, v.values, support_distr)
+            new_dt[k] = v
+        return OraclePrediction(new_dt)
 
 def minmax(arr: np.ndarray):
     min_val = np.min(arr)
@@ -485,7 +516,6 @@ def minmax(arr: np.ndarray):
         return (arr - min_val) / (max_val - min_val)
     else:
         return arr
-
 
 def analyze_gene_expression(predictions: OraclePrediction, 
                             gene_name: str, 

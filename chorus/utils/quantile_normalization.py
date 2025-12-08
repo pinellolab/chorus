@@ -37,14 +37,14 @@ def quantile_unimap(arr: np.ndarray, points_cnt: int = 10_000_000 + 1) -> np.nda
     quantiles = arr_s[lower_indices] * (1-weights) + arr_s[upper_indices] * weights
     return quantiles
 
-def build_support_distr(distr: dict[str, np.ndarray], outpath: str, points_cnt: int) -> str:
+def build_support_distr(distr: dict[str, np.ndarray], points_cnt: int) -> np.ndarray:
     support = 0
     for d in distr.values():
         unimap = quantile_unimap(d, points_cnt=points_cnt)
         support += unimap
     support /= len(distr)
 
-    return outpath
+    return support
 
 def quantile_map(values: np.ndarray, initial_distr: np.ndarray, support_distr: np.ndarray) -> np.ndarray:
     N = support_distr.shape[0] - 1
