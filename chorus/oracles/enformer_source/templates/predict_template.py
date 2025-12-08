@@ -48,7 +48,7 @@ human_predictions = predictions['human'][0].numpy()
 # For environment execution, we'll use a simplified mapping
 # Map track IDs to indices - handle common ones
 
-with open('__ARGS_ENFORMER_METADATA__') as inp:
+with open(args['metainfo_path']) as inp:
     inp.readline() # skip header
     mappings = {}
     for line in inp:
