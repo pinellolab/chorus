@@ -27,9 +27,11 @@ dependencies:
   - pyfaidx>=0.7.0
   - biopython>=1.79
   - samtools  # For genome indexing
+  - gtfsort # For gtf sorting (required by coolbox)
   
   # Visualization tools
   - pygenometracks>=3.8
+  - coolbox>=0.4.0
   
   # For testing
   - pytest>=6.0

@@ -191,24 +191,31 @@ class EnvironmentManager:
         # Create environment
         logger.info(f"Creating environment {env_name} from {env_file}")
         try:
-            cmd = [self.conda_exe, 'env', 'create', '-f', str(env_file)]
+            cmd = [self.conda_exe, 'env', 'create', '-f', str(env_file), '-y']
             
             # Use mamba if available for faster solving
             if 'mamba' in self.conda_exe:
-                cmd = [self.conda_exe, 'env', 'create', '-f', str(env_file)]
-            
-            result = subprocess.run(
+                cmd = [self.conda_exe, 'env', 'create', '-f', str(env_file), '-y']
+
+            process = subprocess.Popen(
                 cmd,
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
                 text=True
             )
-            
-            if result.returncode == 0:
+
+            # Stream output live
+            for line in process.stdout:
+                print(line, end="") 
+
+            process.wait()
+
+            if process.returncode == 0:
                 logger.info(f"Successfully created environment {env_name}")
                 self._env_cache[env_name] = True
                 return True
             else:
-                logger.error(f"Failed to create environment: {result.stderr}")
+                logger.error(f"Failed to create environment: {process.stderr}")
                 return False
                 
         except subprocess.CalledProcessError as e:
