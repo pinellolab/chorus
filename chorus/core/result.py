@@ -240,7 +240,6 @@ class OraclePredictionTrack:
         df = self.to_dataframe(use_reference_interval=True)
         coolbox_file = self._storage / self.COOLBOX_FILE_NAME
         df.to_csv(coolbox_file, sep='\t', index=False, header=False)
-        print(coolbox_file)
         if signal_threshold is None:
             signal_threshold = df['value'].max() + 0.1 
       
