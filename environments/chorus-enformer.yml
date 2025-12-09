@@ -24,6 +24,7 @@ dependencies:
   # Visualization (for Enformer's contribution scores)
   - matplotlib>=3.5.0
   - seaborn>=0.11.0
+  - matplotlib-inline>=0.2.1
   
   # TensorFlow ecosystem
   - pip:
