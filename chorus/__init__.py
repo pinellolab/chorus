@@ -30,6 +30,7 @@ if not os.environ.get('CHORUS_DISABLE_ORACLE_IMPORTS'):
             BorzoiOracle,
             ChromBPNetOracle,
             SeiOracle,
+            LegNetOracle,
             get_oracle,
             ORACLES
         )
@@ -44,6 +45,7 @@ if not os.environ.get('CHORUS_DISABLE_ORACLE_IMPORTS'):
         BorzoiOracle = None
         ChromBPNetOracle = None
         SeiOracle = None
+        LegNetOracle = None
         ORACLES = {}
         
         def get_oracle(name: str):
@@ -57,6 +59,7 @@ else:
     BorzoiOracle = None
     ChromBPNetOracle = None
     SeiOracle = None
+    LegNetOracle = None
     ORACLES = {}
     get_oracle = None
 
@@ -139,6 +142,9 @@ def create_oracle(oracle_name: str, use_environment: bool = False, **kwargs):
         if oracle_name.lower() == "chrombpnet":
             from .oracles.chrombpnet import ChromBPNetOracle
             return ChromBPNetOracle(use_environment=True, **kwargs)
+        if oracle_name.lower() == "legnet":
+            from .oracles.legnet import LegNetOracle
+            return LegNetOracle(use_environment=True, **kwargs)
         else:
             raise NotImplementedError(
                 f"Environment-isolated version of {oracle_name} not yet implemented.\n"

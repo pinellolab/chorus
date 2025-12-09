@@ -1,7 +1,7 @@
 import json 
 import torch 
-from chorus.oracles.legnet.model_usage import load_model
-from chorus.oracles.legnet.model_usage import predict_bigseq
+from chorus.oracles.legnet_source.model_usage import load_model
+from chorus.oracles.legnet_source.model_usage import predict_bigseq
 
 with open("__ARGS_FILE_NAME__") as inp:  # to be formatted by calling script 
     args = json.load(inp)

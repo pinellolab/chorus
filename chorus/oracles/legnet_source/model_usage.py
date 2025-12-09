@@ -3,7 +3,7 @@ import numpy as np
 
 from .config import TrainingConfig
 from .dataset import SubSequenceDataset
-from .legnet_globals import LEGNET_WINDOW, LEGNET_STEP
+from .legnet_globals import LEGNET_WINDOW, LEGNET_DEFAULT_STEP
 from .agarwal_meta import LEFT_MPRA_FLANK, RIGHT_MPRA_FLANK
 from torch.utils.data import DataLoader
 
@@ -23,7 +23,7 @@ def get_device(m: torch.nn.Module) -> torch.device:
 
 def predict_bigseq(model, 
                    seq: str, 
-                   step: int = LEGNET_STEP,
+                   step: int = LEGNET_DEFAULT_STEP,
                    window_size: int = LEGNET_WINDOW, 
                    reverse_aug: bool = False,
                    batch_size: int = 1,
