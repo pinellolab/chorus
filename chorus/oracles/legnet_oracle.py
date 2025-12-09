@@ -1,27 +1,30 @@
 """LegNet oracle implementation."""
 
 from typing import List, Tuple, Dict, Union, Any
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import os 
 import json
 import logging
 from ..core.base import OracleBase
-from ..core.track import Track
 from ..core.exceptions import ModelNotLoadedError, InvalidAssayError
+from ..core.globals import CHORUS_DOWNLOADS_DIR
+from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..utils.sequence import extract_sequence_with_padding
 
-from .legnet.legnet_globals import LEGNET_WINDOW, LEGNET_STEP, LEGNET_AVAILABLE_CELLTYPES
-from .legnet.exceptions import LegNetError
-from .legnet.metainfo import MetaInfoArray, MetaInfoDict
-from .legnet.agarwal_meta import LEFT_MPRA_FLANK, RIGHT_MPRA_FLANK
+from .legnet_source.legnet_globals import LEGNET_WINDOW, LEGNET_STEP, LEGNET_AVAILABLE_CELLTYPES
+from .legnet_source.exceptions import LegNetError
+from .legnet_source.agarwal_meta import LEFT_MPRA_FLANK, RIGHT_MPRA_FLANK
 
 logger = logging.getLogger(__name__)
 
+LEGNET_MODELS_DIR = CHORUS_DOWNLOADS_DIR / "legnet"
+LEGNET_MODELS_DIR.mkdir(exist_ok=True, parents=True)
 
 class LegNetOracle(OracleBase):
     """LegNet oracle implementation for sequence regulatory activities."""
-    
+
     def __init__(self, 
                  cell_line: str,
                  step_size: int = LEGNET_STEP,
@@ -49,8 +52,9 @@ class LegNetOracle(OracleBase):
         if self.device is None:
             self.device = 'cpu'
 
-        # Sei-specific parameters
-        self.sequence_length = LEGNET_WINDOW # Sei input length
+        self.download_dir = LEGNET_MODELS_DIR
+
+        self.sequence_length = LEGNET_WINDOW
         self.n_targets = 1  # Number of regulatory features
         self.sliding_predict = sliding_predict
         
@@ -63,37 +67,36 @@ class LegNetOracle(OracleBase):
         self.right_flank = right_flank
         self._model = None # Predictor model
 
-    def get_model_dir_path(self):
-        if self.model_dir is None:
-            parent = os.path.dirname(os.path.realpath(__file__))
-            self.model_dir = os.path.join(parent, "legnet")
-        return self.model_dir
+    def get_model_weights_dir(self, assay: str, cell_type: str) -> Path:
+        path = self.download_dir / f"{assay}_{cell_type}"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
 
-    def get_model_weight_dir(self):
-        d = self.get_model_dir_path()
-        return  os.path.join(d, "models", self.cell_line)
+    def get_model_weights_path(self, assay: str, cell_type: str, model_id: str) -> Path:
+        path = self.get_model_weights_dir(assay, cell_type) / model_id / 'weights.ckpt'
+        return path
 
-    def get_model_weights_path(self):
-        d = self.get_model_weight_dir()
-        return os.path.join(d, "weights.ckpt")
+    def get_training_config_path(self, assay: str, cell_type: str,) -> Path:
+        path = self.get_model_weights_dir(assay, cell_type) / 'config.json'
+        return path
 
-    def get_training_config_path(self):
-        d = self.get_model_weight_dir()
-        return os.path.join(d, "config.json")
+    def get_model_dir_path(self) -> Path:
+        path = Path(__file__).parent / "legnet_source"
+        return path
 
-    def get_templates_dir(self):
-        d = self.get_model_dir_path()
-        return os.path.join(d, "templates")
+    def get_templates_dir(self) -> Path:
+        path = self.get_model_dir_path() / "templates"
+        return path
     
     def get_load_template(self):
         d = self.get_templates_dir()
-        path = os.path.join(d, 'load_template.py')
+        path = d / 'load_template.py'
         with open(path) as inp:
             return inp.read(), "__ARGS_FILE_NAME__"
     
     def get_predict_template(self):
         d = self.get_templates_dir()
-        path = os.path.join(d, 'predict_template.py')
+        path = d / 'predict_template.py'
         with open(path) as inp:
             return inp.read(), "__ARGS_FILE_NAME__"
     
@@ -136,7 +139,7 @@ class LegNetOracle(OracleBase):
     def _load_direct(self):
         try:
             import torch 
-            from .legnet.model_usage import load_model
+            from .legnet_source.model_usage import load_model
 
             model = load_model(self.get_training_config_path(), self.get_model_weights_path())
             device = torch.device(self.device)
@@ -173,79 +176,76 @@ class LegNetOracle(OracleBase):
         total_length = div * self.bin_size + self.bin_size * (mod > 0)
         return total_length
 
-    def predict(
-        self,
-        input_data: Union[str, Tuple[str, int, int]],
-        assay_ids: list[str] | None = None,
-        create_tracks: bool = False
-    ) -> Dict[str, MetaInfoArray]:
-        """
-        Predict regulatory activity for a sequence or genomic region.
+    def _predict(self, seq: str | Tuple[str, int, int] | Interval, assay_ids: List[str] = None) -> OraclePrediction:
+        """Run ChromBPNet prediction in the appropriate environment.
         
         Args:
-            input_data: Either a DNA sequence string or a tuple of (chrom, start, end)
-            create_tracks: Whether to create track files (not implemented yet)
-            
-        Returns:
-            Dictionary mapping assay IDs to prediction arrays
+            seq: Either a DNA sequence string or a tuple of (chrom, start, end)
+            assay_ids: List of assay identifiers. In case of chrombnet this parameter is ignored.
         """
-        
-        # Validate inputs
-        self._validate_loaded()
-        
-        # Get raw predictions
-        predictions = self._predict(input_data, assay_ids=assay_ids)
-        
-        # Return as dictionary
-        result = MetaInfoDict({self.cell_line: predictions[0]}, metainfo={'positions': predictions.metainfo['positions']})
-        return result 
-    
-    def _predict(self,
-                 seq: Union[str, Tuple[str, int, int]],
-                 assay_ids: list[str] | None = None) -> MetaInfoArray:
-        self._validate_assay_ids(assay_ids)
-        
+
         # Handle genomic coordinates
         if isinstance(seq, tuple):
             if self.reference_fasta is None:
-                raise ValueError("Reference FASTA required for genomic coordinate input")
+                raise ValueError("Reference FASTA required for genomic coordinates.")
             chrom, start, end = seq
-
-            # Extract sequence with padding from reference
-            total_length =  self._refine_total_length(end - start)
-            full_seq = extract_sequence_with_padding(
-                self.reference_fasta,
-                chrom,
-                start,
-                end,
-                total_length=total_length
-            )
-
-            center = (start + end) // 2 
-            real_start = center - total_length // 2
+            query_interval = Interval.make(GenomeRef(
+                chrom=chrom,
+                start=start,
+                end=end,
+                fasta=self.reference_fasta
+            ))
+        elif isinstance(seq, str):
+            query_interval = Interval.make(Sequence(sequence=seq))
+        elif isinstance(seq, Interval):
+            query_interval = seq
         else:
-            full_seq = seq        
-            real_start = 0
+            raise ValueError(f"Unsupported sequence type: {type(seq)}")
+
+        input_interval = query_interval.extend(self.sequence_length)
+        prediction_interval = query_interval.extend(self.output_size)
+
+        full_seq = input_interval.sequence
         
         if self.use_environment:
-            preds, offsets = self._predict_in_environment(
+            preds = self._predict_in_environment(
                 seq=full_seq, 
                 reverse_aug=self.average_reverse)
             
         else:
-            preds, offsets = self._predict_direct(
+            preds = self._predict_direct(
                 seq=full_seq, 
                 reverse_aug=self.average_reverse)
 
-        positions = real_start + offsets 
         preds = preds[None, :] # Add assay dimension 
 
-        return MetaInfoArray(preds, metainfo={'positions': positions})
+        final_prediction = OraclePrediction()
+
+        # Create a Prediction Object
+        track = OraclePredictionTrack.create(
+            source_model="legnet",
+            assay_id=None, 
+            track_id=None,
+            assay_type=self.assay,
+            cell_type=self.cell_type,
+            query_interval=query_interval,
+            prediction_interval=prediction_interval,
+            input_interval=input_interval,
+            resolution=self.bin_size,
+            values=preds,
+            metadata=None,
+            preferred_aggregation='mean',
+            preferred_interpolation='linear_divided',
+            preferred_scoring_strategy='mean'
+        )
+        final_prediction.add(f"{self.assay}:{self.cell_type}", track)
+        
+        return final_prediction
         
     
     def _predict_in_environment(self,
                                 seq: str,
-                                reverse_aug: bool = True) -> Tuple[np.ndarray, np.ndarray]:
+                                reverse_aug: bool = True) -> np.ndarray:
  
         args = {
             'device': self.device,
@@ -269,19 +269,18 @@ class LegNetOracle(OracleBase):
             template = template.replace(arg, arg_file.name)
             model_predictions = self.run_code_in_environment(template, timeout=self.model_load_timeout)
             predictions = np.array(model_predictions['preds'], dtype=np.float32)
-            offsets = np.array(model_predictions['offsets'], dtype=np.int64)
-        return predictions, offsets
+        return predictions
         
         
     def _predict_direct(self,
                         seq: str,
-                        reverse_aug: bool = True) -> Tuple[np.ndarray, np.ndarray]:
+                        reverse_aug: bool = True) -> np.ndarray:
         """Direct prediction in current environment."""
 
         if self._model is None:
             raise ModelNotLoadedError()
-        from .legnet.model_usage import predict_bigseq
-        preds, offsets = predict_bigseq(self._model, 
+        from .legnet_source.model_usage import predict_bigseq
+        preds, _ = predict_bigseq(self._model, 
                                         seq=seq, 
                                         reverse_aug=reverse_aug,
                                         window_size=self.sequence_length,
@@ -290,7 +289,7 @@ class LegNetOracle(OracleBase):
                                         right_flank=self.right_flank,
                                         batch_size=self.batch_size)
 
-        return preds, offsets 
+        return preds
 
     def fine_tune(self, tracks: List[Track], track_names: List[str], **kwargs) -> None:
         """Fine-tune Sei on new tracks."""
@@ -323,68 +322,3 @@ class LegNetOracle(OracleBase):
             status['environment_info'] = self.get_environment_info()
         
         return status
-
-    def predict_region_replacement(
-        self,
-        genomic_region: Union[str, pd.DataFrame],
-        seq: str,
-        assay_ids: List[str] | None = None,
-        create_tracks: bool = False,
-        genome: str | None = None
-    ) -> MetaInfoDict:
-        if assay_ids is None:
-            assay_ids = [self.cell_line]
-
-        dt = super().predict_region_replacement(genomic_region, seq, assay_ids, create_tracks, genome)
-        
-        try:
-            val = next(iter(dt['raw_predictions'].values()))
-            metainfo = {'positions': val.metainfo['positions']}
-        except StopIteration:
-            metainfo = {}
-
-        return MetaInfoDict(dt, metainfo=metainfo)
-
-    def predict_region_insertion_at(
-        self,
-        genomic_position: Union[str, pd.DataFrame],
-        seq: str,
-        assay_ids: List[str] | None = None,
-        create_tracks: bool = False,
-        genome: str | None = None
-    ) -> MetaInfoDict:
-        if assay_ids is None:
-            assay_ids = [self.cell_line]
-
-        dt = super().predict_region_insertion_at(genomic_position=genomic_position, 
-                                                   seq=seq, 
-                                                   assay_ids=assay_ids, 
-                                                   create_tracks=create_tracks, 
-                                                   genome=genome)
-        try:
-            val = next(iter(dt['raw_predictions'].values()))
-            metainfo = {'positions': val.metainfo['positions']}
-        except StopIteration:
-            metainfo = {}
-
-        return MetaInfoDict(dt, metainfo=metainfo)
-        
-
-    def predict_variant_effect(
-        self,
-        genomic_region: Union[str, pd.DataFrame],
-        variant_position: Union[str, pd.DataFrame],
-        alleles: Union[List[str], pd.DataFrame],
-        assay_ids: List[str] | None = None,
-        create_tracks: bool = False,
-        genome: str | None = None
-    ) -> Dict:
-        if assay_ids is None:
-            assay_ids = [self.cell_line]
-
-        return super().predict_variant_effect(genomic_region=genomic_region, 
-                                              variant_position=variant_position,
-                                              alleles=alleles,
-                                              assay_ids=assay_ids, 
-                                              create_tracks=create_tracks, 
-                                              genome=genome)
