@@ -8,7 +8,7 @@ from ..core.exceptions import InvalidRegionError, FileFormatError
 
 
 def extract_sequence(
-    genomic_region: str,
+    genomic_region: str | tuple[str, int, int],
     genome: str = "hg38.fa"
 ) -> str:
     """
@@ -22,7 +22,9 @@ def extract_sequence(
         DNA sequence string
     """
     # Parse region
-    if ":" in genomic_region and "-" in genomic_region:
+    if isinstance(genomic_region, tuple):
+        chrom, start, end = genomic_region
+    elif ":" in genomic_region and "-" in genomic_region:
         # Format: chr1:1000-2000 (1-based inclusive coordinates)
         match = re.match(r'(\w+):(\d+)-(\d+)', genomic_region)
         if not match:
@@ -274,8 +276,9 @@ def extract_sequence_with_padding(
     chrom: str,
     start: int,
     end: int,
-    total_length: int
-) -> str:
+    total_length: int,
+    return_meta: bool = False
+) -> str | Tuple[str, dict[str, int]]:
     """
     Extract a genomic sequence with padding to reach total_length.
     
@@ -301,7 +304,14 @@ def extract_sequence_with_padding(
                 # If region is already long enough, trim from center
                 trim_amount = region_length - total_length
                 trim_left = trim_amount // 2
-                return fasta.fetch(chrom, start + trim_left, start + trim_left + total_length).upper()
+
+                meta =  {'start_change': trim_left, 'end_change': -(trim_amount-trim_left), 'leftN': 0, 'rightN': 0}
+                seq = fasta.fetch(chrom, start + trim_left, start + trim_left + total_length).upper()
+                
+                if return_meta:
+                    return seq, meta
+                else:
+                    return seq
             
             # Calculate padding needed
             padding_needed = total_length - region_length
@@ -311,6 +321,8 @@ def extract_sequence_with_padding(
             # Calculate extraction coordinates with bounds checking
             extract_start = max(0, start - pad_left)
             extract_end = min(chrom_length, end + pad_right)
+
+            meta = {'start_change': extract_start-start, 'end_change': extract_end-end}
             
             # Extract sequence
             extracted_seq = fasta.fetch(chrom, extract_start, extract_end).upper()
@@ -321,12 +333,22 @@ def extract_sequence_with_padding(
                     # Hit start of chromosome, pad on the left
                     n_pad_left = total_length - len(extracted_seq)
                     extracted_seq = 'N' * n_pad_left + extracted_seq
+                    meta['leftN'] = n_pad_left
+                    meta['rightN'] = 0
                 else:
                     # Hit end of chromosome, pad on the right
                     n_pad_right = total_length - len(extracted_seq)
                     extracted_seq = extracted_seq + 'N' * n_pad_right
+                    meta['leftN'] = 0
+                    meta['rightN'] = n_pad_right
+            else:
+                meta['leftN'] = 0
+                meta['rightN'] = 0
             
-            return extracted_seq
+            if return_meta:
+                return extracted_seq, meta
+            else: 
+                return extracted_seq
     except FileNotFoundError:
         raise FileFormatError(f"Genome file not found: {fasta_path}")
     except Exception as e:

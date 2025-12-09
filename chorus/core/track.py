@@ -35,13 +35,14 @@ class Track:
         # Sort by chromosome and start position
         self.data = self.data.sort_values(['chrom', 'start'])
     
-    def to_bedgraph(self, filepath: str) -> None:
+    def to_bedgraph(self, filepath: str, write_header: bool = False) -> None:
         """Save track as BEDGraph file."""
         with open(filepath, 'w') as f:
             # Write track header
-            f.write(f"track type=bedGraph name=\"{self.name}\" ")
-            f.write(f"description=\"{self.assay_type} - {self.cell_type}\" ")
-            f.write(f"color={self._color_to_rgb()}\n")
+            if write_header:
+                f.write(f"track type=bedGraph name=\"{self.name}\" ")
+                f.write(f"description=\"{self.assay_type} - {self.cell_type}\" ")
+                f.write(f"color={self._color_to_rgb()}\n")
             
             # Write data
             self.data[['chrom', 'start', 'end', 'value']].to_csv(
