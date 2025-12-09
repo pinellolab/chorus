@@ -22,13 +22,13 @@ Key features:
 
 ## ⚠️ Current Status
 
-**This is a work-in-progress implementation.** Currently, only the Enformer oracle is fully implemented with:
+**This is a work-in-progress implementation.** Currently, Enformer, ChromBPNet and LegNet oracles is fully implemented with:
 - Environment isolation support
 - Reference genome integration for biologically accurate predictions
 - ENCODE track identifier support
 - BedGraph output generation
 
-Other oracles (Borzoi, ChromBPNet, Sei) have placeholder implementations and will be completed in future updates.
+Other oracles (Borzoi, Flashzoi, Sei) have placeholder implementations and will be completed in future updates.
 
 ## Installation
 
