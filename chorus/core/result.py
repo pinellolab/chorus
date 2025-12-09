@@ -13,6 +13,7 @@ from copy import deepcopy
 from ..core.interval import Interval, GenomeRef, CigarEqual, CigarNotEqual, CigarInsertion
 from ..core.aggregation import Aggregation
 from ..core.interpolation import Interpolation
+from ..core.delete_registry import DeleteOnExitRegistry
 
 from typing import Type
 
@@ -38,6 +39,8 @@ def modify_dict(dt: dict, **kwargs: Any) -> dict:
     for key, value in kwargs.items():
         dt[key] = value
     return dt
+
+
 
 @dataclass
 class OraclePredictionTrack:
@@ -83,13 +86,10 @@ class OraclePredictionTrack:
             OraclePredictionTrack._registry[name] = cls
 
     def __post_init__(self):
+        td = tempfile.TemporaryDirectory(prefix=self.PREFIX)
+        self._storage = Path(td.name) # directory to store files associated with the track (e.g for )
+        DeleteOnExitRegistry().register(td)
 
-        self._td = tempfile.TemporaryDirectory(prefix=self.PREFIX)
-        self._storage = Path(self._td.name) # directory to store files associated with the track (e.g for )
-
-        self._finalizer = weakref.finalize(
-            self, shutil.rmtree, self._storage, True  # ignore_errors=True
-        )
 
     @classmethod
     def create(cls, cls_name: str | None = None, **kwargs: Any) -> "OraclePredictionTrack":
@@ -179,6 +179,11 @@ class OraclePredictionTrack:
         other.values[other.values > upper] = upper
         return other
 
+    def exp(self) -> 'OraclePredictionTrack':
+        other = self.copy()
+        other.values = np.exp(other.values)
+        return other
+
     def to_dataframe(self, use_reference_interval: bool = True) -> pd.DataFrame:
         track_data = []
         if not use_reference_interval:
@@ -234,8 +239,8 @@ class OraclePredictionTrack:
             title = self.assay_id
         df = self.to_dataframe(use_reference_interval=True)
         coolbox_file = self._storage / self.COOLBOX_FILE_NAME
-        if not coolbox_file.exists():
-            df.to_csv(coolbox_file, sep='\t', index=False, header=False)
+        df.to_csv(coolbox_file, sep='\t', index=False, header=False)
+        print(coolbox_file)
         if signal_threshold is None:
             signal_threshold = df['value'].max() + 0.1 
       
@@ -260,7 +265,9 @@ class OraclePredictionTrack:
         return promoted
 
     def copy(self) -> 'OraclePredictionTrack':
-        return deepcopy(self)
+        other = deepcopy(self)
+        other.__post_init__()
+        return other
 
     def rescale(self, 
                 resolution: int, 

@@ -11,11 +11,12 @@ from ..core.base import OracleBase
 from ..core.exceptions import ModelNotLoadedError, InvalidAssayError
 from ..core.globals import CHORUS_DOWNLOADS_DIR
 from ..core.result import OraclePrediction, OraclePredictionTrack
-from ..utils.sequence import extract_sequence_with_padding
+from ..core.interval import Interval, GenomeRef, Sequence
 
-from .legnet_source.legnet_globals import LEGNET_WINDOW, LEGNET_STEP, LEGNET_AVAILABLE_CELLTYPES
+from .legnet_source.legnet_globals import LEGNET_WINDOW, LEGNET_DEFAULT_STEP, LEGNET_AVAILABLE_CELLTYPES
 from .legnet_source.exceptions import LegNetError
 from .legnet_source.agarwal_meta import LEFT_MPRA_FLANK, RIGHT_MPRA_FLANK
+
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +27,10 @@ class LegNetOracle(OracleBase):
     """LegNet oracle implementation for sequence regulatory activities."""
 
     def __init__(self, 
-                 cell_line: str,
-                 step_size: int = LEGNET_STEP,
-                 sliding_predict: bool = False,
+                 cell_type: str,
+                 assay: str,
+                 model_id: str = 'example',
+                 step_size: int = LEGNET_DEFAULT_STEP,
                  batch_size: int = 1,
                  left_flank: str = LEFT_MPRA_FLANK,
                  right_flank: str = RIGHT_MPRA_FLANK,
@@ -41,9 +43,11 @@ class LegNetOracle(OracleBase):
                  model_dir: str | None = None):
         
         self.oracle_name = 'legnet'
-        if cell_line not in LEGNET_AVAILABLE_CELLTYPES:
-            raise LegNetError(f"Cell line {cell_line} not in available cell types: {LEGNET_AVAILABLE_CELLTYPES}")
-        self.cell_line = cell_line
+        if cell_type not in LEGNET_AVAILABLE_CELLTYPES:
+            raise LegNetError(f"Cell line {cell_type} not in available cell types: {LEGNET_AVAILABLE_CELLTYPES}")
+        self.cell_type = cell_type
+        self.assay = assay
+        self.model_id = model_id
         # Now initialize base class with correct oracle name
         super().__init__(use_environment=use_environment, 
                          model_load_timeout=model_load_timeout,
@@ -56,9 +60,8 @@ class LegNetOracle(OracleBase):
 
         self.sequence_length = LEGNET_WINDOW
         self.n_targets = 1  # Number of regulatory features
-        self.sliding_predict = sliding_predict
         
-        self.bin_size = step_size if self.sliding_predict else self.sequence_length # Sequence-level predictions
+        self.bin_size = step_size
         self.model_dir = model_dir 
         self.average_reverse = average_reverse
         self.reference_fasta = reference_fasta
@@ -67,17 +70,20 @@ class LegNetOracle(OracleBase):
         self.right_flank = right_flank
         self._model = None # Predictor model
 
-    def get_model_weights_dir(self, assay: str, cell_type: str) -> Path:
-        path = self.download_dir / f"{assay}_{cell_type}"
+    def get_model_weights_dir(self) -> Path:
+        path = self.download_dir / f"{self.assay}_{self.cell_type}"
         path.mkdir(parents=True, exist_ok=True)
         return path
 
-    def get_model_weights_path(self, assay: str, cell_type: str, model_id: str) -> Path:
-        path = self.get_model_weights_dir(assay, cell_type) / model_id / 'weights.ckpt'
+    def set_bin_size(self, bin_size: int):
+        self.bin_size = bin_size
+
+    def get_model_weights_path(self) -> Path:
+        path = self.get_model_weights_dir() / self.model_id / 'weights.ckpt'
         return path
 
-    def get_training_config_path(self, assay: str, cell_type: str,) -> Path:
-        path = self.get_model_weights_dir(assay, cell_type) / 'config.json'
+    def get_training_config_path(self) -> Path:
+        path = self.get_model_weights_dir() / 'config.json'
         return path
 
     def get_model_dir_path(self) -> Path:
@@ -114,9 +120,10 @@ class LegNetOracle(OracleBase):
         args = {
             'device': self.device,
             'sequence_length': self.sequence_length,
-            'model_weights': self.get_model_weights_path(),
-            'cell_line': self.cell_line,
-            'config_path': self.get_training_config_path(),
+            'model_weights': str(self.get_model_weights_path()),
+            'cell_type': self.cell_type,
+            'assay': self.assay,
+            'config_path': str(self.get_training_config_path()),
         }
 
         # Save arguments to temporary file
@@ -152,11 +159,11 @@ class LegNetOracle(OracleBase):
     
     def list_assay_types(self) -> List[str]:
         """Return LegNet's assay types."""
-        return ["MPRA"]
+        return ["LentiMPRA"]
 
     def list_cell_types(self) -> List[str]:
         """Return LegNet's cell types."""       
-        return [self.cell_line]
+        return [self.cell_type]
  
     def _validate_loaded(self):
         """Check if model is loaded."""
@@ -164,14 +171,11 @@ class LegNetOracle(OracleBase):
             raise ModelNotLoadedError("Model not loaded. Call load_pretrained_model first.")
     
     def _validate_assay_ids(self, assay_ids: List[str] | None):
-        if assay_ids is None or (len(assay_ids) == 1 and assay_ids[0] == self.cell_line):
+        if assay_ids is None or (len(assay_ids) == 1 and assay_ids[0] == self._cell_type):
             return 
-        raise InvalidAssayError(f"Instantiated LegNet oracle can only predict for assay {self.cell_line}")
+        raise InvalidAssayError(f"Instantiated LegNet oracle can only predict for assay {self.cell_type}")
 
     def _refine_total_length(self, total_length: int) -> int:
-        if not self.sliding_predict:
-            return self.sequence_length
-
         div, mod = divmod(total_length, self.bin_size)
         total_length = div * self.bin_size + self.bin_size * (mod > 0)
         return total_length
@@ -203,7 +207,7 @@ class LegNetOracle(OracleBase):
             raise ValueError(f"Unsupported sequence type: {type(seq)}")
 
         input_interval = query_interval.extend(self.sequence_length)
-        prediction_interval = query_interval.extend(self.output_size)
+        prediction_interval = query_interval.extend(self.sequence_length)
 
         full_seq = input_interval.sequence
         
@@ -216,8 +220,6 @@ class LegNetOracle(OracleBase):
             preds = self._predict_direct(
                 seq=full_seq, 
                 reverse_aug=self.average_reverse)
-
-        preds = preds[None, :] # Add assay dimension 
 
         final_prediction = OraclePrediction()
 
@@ -250,8 +252,8 @@ class LegNetOracle(OracleBase):
         args = {
             'device': self.device,
             'sequence_length': self.sequence_length,
-            'model_weights': self.get_model_weights_path(),
-            'config_path': self.get_training_config_path(),
+            'model_weights': str(self.get_model_weights_path()),
+            'config_path': str(self.get_training_config_path()),
             'seq': seq,
             'reverse_aug': reverse_aug,
             'batch_size': self.batch_size,
@@ -291,10 +293,10 @@ class LegNetOracle(OracleBase):
 
         return preds
 
-    def fine_tune(self, tracks: List[Track], track_names: List[str], **kwargs) -> None:
-        """Fine-tune Sei on new tracks."""
+    def fine_tune(self, tracks: List[OraclePredictionTrack], track_names: List[str], **kwargs) -> None:
+        """Fine-tune LegNet on new tracks."""
         # TODO: for now we decided not to implement this functionality
-        raise NotImplementedError("Sei fine-tuning not yet implemented")
+        raise NotImplementedError("LegNet fine-tuning not yet implemented")
     
     def _get_context_size(self) -> int:
         """Return the required context size for the model."""

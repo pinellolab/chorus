@@ -3,7 +3,7 @@ import math
 
 from torch.utils.data import Dataset 
 from .transforms import Seq2Tensor, AddFlanks, PadNs, ReverseComplement
-from .legnet_globals import LEGNET_WINDOW, LEGNET_STEP
+from .legnet_globals import LEGNET_WINDOW, LEGNET_DEFAULT_STEP
 from .agarwal_meta import LEFT_MPRA_FLANK, RIGHT_MPRA_FLANK
 
 
@@ -12,7 +12,7 @@ class SubSequenceDataset(Dataset):
                  sequence: str, 
                  reverse_aug: bool = True,
                  window_size: int = LEGNET_WINDOW, 
-                 step: int = LEGNET_STEP, 
+                 step: int = LEGNET_DEFAULT_STEP, 
                  left_flank: str = LEFT_MPRA_FLANK,
                  right_flank: str = RIGHT_MPRA_FLANK):
         """
