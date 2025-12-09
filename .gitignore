@@ -81,6 +81,9 @@ Thumbs.db
 
 # Project specific
 *.bedgraph
+*.bgz
+*.tbi
+*.gtf
 *.bed
 *.vcf
 *.fa

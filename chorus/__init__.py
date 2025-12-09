@@ -136,6 +136,9 @@ def create_oracle(oracle_name: str, use_environment: bool = False, **kwargs):
         if oracle_name.lower() == 'enformer':
             from .oracles.enformer import EnformerOracle
             return EnformerOracle(use_environment=True, **kwargs)
+        if oracle_name.lower() == "chrombpnet":
+            from .oracles.chrombpnet import ChromBPNetOracle
+            return ChromBPNetOracle(use_environment=True, **kwargs)
         else:
             raise NotImplementedError(
                 f"Environment-isolated version of {oracle_name} not yet implemented.\n"

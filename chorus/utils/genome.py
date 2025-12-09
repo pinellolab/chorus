@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Dict, Optional, List
 import subprocess
 
+from ..core.globals import CHORUS_GENOMES_DIR
+
 logger = logging.getLogger(__name__)
 
 # UCSC genome URLs
@@ -42,8 +44,7 @@ class GenomeManager:
         """
         if genomes_dir is None:
             # Default to genomes directory in project root
-            project_root = Path(__file__).resolve().parents[2]
-            genomes_dir = project_root / 'genomes'
+            genomes_dir = CHORUS_GENOMES_DIR
         
         self.genomes_dir = Path(genomes_dir)
         self.genomes_dir.mkdir(parents=True, exist_ok=True)

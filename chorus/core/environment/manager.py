@@ -9,6 +9,8 @@ from typing import List, Dict, Optional, Tuple
 import yaml
 import sys
 
+from ..globals import CHORUS_ENVIRONMENTS_DIR
+
 logger = logging.getLogger(__name__)
 
 
@@ -25,8 +27,7 @@ class EnvironmentManager:
         """
         if base_path is None:
             # Default to package root/environments
-            module_path = Path(__file__).parent.parent.parent.parent
-            base_path = module_path / "environments"
+            base_path = CHORUS_ENVIRONMENTS_DIR
         
         self.base_path = Path(base_path)
         self.base_path.mkdir(exist_ok=True)
