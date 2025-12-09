@@ -14,7 +14,7 @@ model.eval()
 model.to(device)
 
 
-preds, offsets = predict_bigseq(model, 
+preds, _ = predict_bigseq(model, 
                                 seq=args['seq'], 
                                 reverse_aug=args['reverse_aug'],
                                 window_size=args['sequence_length'],
@@ -25,5 +25,4 @@ preds, offsets = predict_bigseq(model,
         
 result = {
     'preds': preds.tolist(),
-    'offsets': offsets.tolist()
 }
