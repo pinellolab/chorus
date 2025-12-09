@@ -49,20 +49,18 @@ def build_support_distr(distr: dict[str, np.ndarray], points_cnt: int) -> np.nda
 def quantile_map(values: np.ndarray, initial_distr: np.ndarray, support_distr: np.ndarray) -> np.ndarray:
     N = support_distr.shape[0] - 1
     M = initial_distr.shape[0] - 1
-    mapped_values = np.zeros_like(values)
 
-    non_zero = values > 0
-    non_zero_v = values[non_zero]
+    initial_distr_sorted = np.sort(initial_distr)
 
-    left_rank = np.searchsorted(initial_distr, non_zero_v, side='left')
-    right_rank = np.searchsorted(initial_distr, non_zero_v, side='right')
+    left_rank = np.searchsorted(initial_distr_sorted, values, side='left')
+    right_rank = np.searchsorted(initial_distr_sorted, values, side='right')
 
     left_point = np.asarray(np.floor((left_rank / M) * N ), dtype=np.int64)
     right_point = np.asarray(np.ceil((right_rank / M) * N ), dtype=np.int64)
     left_point[left_point > N] = N 
     right_point[right_point > N] = N
 
-    mapped_values[non_zero] = (support_distr[left_point] + support_distr[right_point]) / 2
+    mapped_values = (support_distr[left_point] + support_distr[right_point]) / 2
 
     return mapped_values
 
