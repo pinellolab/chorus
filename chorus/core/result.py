@@ -412,6 +412,10 @@ class RNAOraclePredictionTrack(OraclePredictionTrack, name='RNA'):
     coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(), 
                                          color='#9467bd')
 
+class LentiMPRAOraclePredictionTrack(OraclePredictionTrack, name='LentiMPRA'):
+    coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(), 
+                                         color='#ff7f0e')
+
 @dataclass
 class OraclePrediction:
     tracks: dict[str, OraclePredictionTrack] = field(default_factory=dict)
