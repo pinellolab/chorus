@@ -28,7 +28,7 @@ class LegNetOracle(OracleBase):
 
     def __init__(self, 
                  cell_type: str,
-                 assay: str,
+                 assay: str = 'LentiMPRA',
                  model_id: str = 'example',
                  step_size: int = LEGNET_DEFAULT_STEP,
                  batch_size: int = 1,
@@ -71,8 +71,12 @@ class LegNetOracle(OracleBase):
         self._model = None # Predictor model
 
     def get_model_weights_dir(self) -> Path:
+        if self.model_dir is not None:
+            self.download_dir = Path(self.model_dir)
+        
         path = self.download_dir / f"{self.assay}_{self.cell_type}"
-        path.mkdir(parents=True, exist_ok=True)
+        if not path.exists():
+            self._download_legnet_model()
         return path
 
     def set_bin_size(self, bin_size: int):
@@ -106,7 +110,7 @@ class LegNetOracle(OracleBase):
         with open(path) as inp:
             return inp.read(), "__ARGS_FILE_NAME__"
     
-    def load_pretrained_model(self, weights: str | None) -> None:
+    def load_pretrained_model(self, weights: str | None = None) -> None:
         """Load LegNet model weights."""
         if weights is not None:
             self.model_dir = weights
@@ -324,3 +328,41 @@ class LegNetOracle(OracleBase):
             status['environment_info'] = self.get_environment_info()
         
         return status
+
+    def get_zenodo_link(self) -> str:
+        return "https://zenodo.org/records/17863550/files/chorus_small_legnet.zip"
+    
+    def _download_legnet_model(self): 
+        import zipfile
+        import urllib.request
+        import shutil
+       
+        # Create download link
+        download_link = self.get_zenodo_link()
+        download_path = self.download_dir
+
+        logger.info(f"Dowloading LegNet into {download_path}...")
+
+        download_file_path = os.path.join(
+            download_path, 
+            os.path.basename(download_link)
+        )
+
+        if not Path(download_file_path).exists():
+            urllib.request.urlretrieve(download_link, filename=download_file_path)    
+            logger.info("Dowload completed!")
+        
+        # Now extract the file in the same download folder
+        extract_folder = download_path
+        with zipfile.ZipFile(download_file_path, 'r') as zip_ref:
+            zip_ref.extractall(extract_folder)
+        
+        extracted_folder = download_file_path.replace('.zip', '')
+        for file in Path(extracted_folder).glob('*'):
+            dest = download_path / file.name
+            if Path(dest).exists():
+                shutil.rmtree(dest)
+            shutil.move(file, dest)
+        shutil.rmtree(extracted_folder)
+        os.remove(download_file_path)
+        logger.info("Extraction completed!")
