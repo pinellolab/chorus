@@ -531,7 +531,7 @@ def analyze_gene_expression(predictions: OraclePrediction,
                             gene_name: str, 
                             #chrom: str, start: int, end: int,
                             gtf_file: str,
-                            cage_track_ids: list[str] | None = None,
+                            expresion_track_ids: list[str] | None = None,
                             cage_window_bin_size: int = 5) -> dict[str, Any]:
         """Analyze predicted gene expression using CAGE signal at TSS.
         
@@ -545,7 +545,7 @@ def analyze_gene_expression(predictions: OraclePrediction,
             start: Start of the predicted region
             end: End of the predicted region  
             gtf_file: Path to GTF file with gene annotations
-            cage_track_ids: List of CAGE track IDs to analyze
+            expresion_track_ids: List of CAGE track IDs to analyze
                           If None, uses all CAGE tracks in predictions
                           
         Returns:
@@ -575,11 +575,11 @@ def analyze_gene_expression(predictions: OraclePrediction,
             }
 
         # Identify CAGE tracks if not specified
-        if cage_track_ids is None:
-            cage_track_ids = [
+        if expresion_track_ids is None:
+            expresion_track_ids = [
                 track_id for track_id, track in predictions.items() if track.assay_id == 'CAGE'
             ]
-        predictions = predictions.subset(cage_track_ids)
+        predictions = predictions.subset(expresion_track_ids)
 
         # Analyze CAGE signal at TSS positions
         cage_signals = {}
@@ -588,8 +588,8 @@ def analyze_gene_expression(predictions: OraclePrediction,
         
         any_tss = False
         for track_id, track in predictions.items():
-            if not isinstance(track, CAGEOraclePredictionTrack):
-                logger.warning(f"Track {track_id} is not a CAGE track, skipping")
+            if not isinstance(track, (CAGEOraclePredictionTrack, LentiMPRAOraclePredictionTrack)):
+                logger.warning(f"Track {track_id} is not a CAGE or LentiMPRA track, skipping")
                 continue
             
             # Filter TSS positions to those in our region
