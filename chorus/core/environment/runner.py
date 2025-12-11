@@ -7,9 +7,8 @@ import pickle
 import tempfile
 import subprocess
 import logging
-from pathlib import Path
-from typing import Any, Dict, Optional, Union, Callable
-import importlib.util
+from typing import Any, Dict, Optional, Callable
+import shlex
 
 logger = logging.getLogger(__name__)
 
@@ -103,11 +102,28 @@ except Exception as e:
         
         try:
             # Run the script file instead of passing code as argument
+            env_name = self.env_manager.get_environment_name(oracle)
+            running_command = shlex.split(f"mamba run -n {env_name} python {code_path}")
+
+            env = os.environ.copy()
+            
+            # Force the loader to use the env's libstdc++
+
+            env_prefix = self.env_manager.get_environment_info(oracle)['path']
+            env_libstdcpp = f"{env_prefix}/lib/libstdc++.so.6"
+            if os.path.exists(env_libstdcpp):
+                env["LD_PRELOAD"] = env_libstdcpp
+          
+            env['PATH'].replace("chorus", env_name)
+            if 'MPLBACKEND' in env:
+                env.pop('MPLBACKEND') # remove matplotlib backend to avoid conflict with matplotlib inline backend
+                
             result = subprocess.run(
-                [python_exe, code_path],
+                running_command,
                 capture_output=True,
                 text=True,
-                timeout=timeout
+                timeout=timeout,
+                env=env,
             )
             
             if result.returncode != 0:
