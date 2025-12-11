@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 from scipy.interpolate import splev
 from typing import Tuple
 
-from .sei_globals import SEI_WINDOW, SEI_STEP, SEI_TARGETS, SEI_CLASSES
+from .sei_globals import SEI_WINDOW, SEI_DEFAULT_STEP, SEI_TARGETS, SEI_CLASSES
 from .seq_utils import one_hot_encode, rev_compl
 from .dataset import SubSequenceDataset
 
@@ -259,7 +259,7 @@ class Sei(nn.Module):
                             seq: str, 
                             reverse_aug: bool = True,
                             window_size: int = SEI_WINDOW,
-                            step: int = SEI_STEP,
+                            step: int = SEI_DEFAULT_STEP,
                             batch_size: int = 1) -> Tuple[np.ndarray, np.ndarray]:
 
         dataset = SubSequenceDataset(seq, window_size=window_size, step=step, reverse_aug=reverse_aug)

@@ -12,19 +12,23 @@ from ..core.exceptions import ModelNotLoadedError, InvalidAssayError
 from ..utils.sequence import extract_sequence_with_padding
 
 from .sei_source.annotations import SeiClass, SeiTarget, SeiClassesList, SeiTargetList
-from .sei_source.sei_globals import SEI_WINDOW, SEI_STEP, SEI_TARGETS, SEI_CLASSES
+from .sei_source.sei_globals import SEI_WINDOW, SEI_DEFAULT_STEP, SEI_TARGETS, SEI_CLASSES
 from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..core.interval import Interval, GenomeRef, Sequence
+from ..core.globals import CHORUS_DOWNLOADS_DIR
+
 
 logger = logging.getLogger(__name__)
 
+SEI_MODELS_DIR = CHORUS_DOWNLOADS_DIR / "sei"
+SEI_MODELS_DIR.mkdir(exist_ok=True, parents=True)
 
 class SeiOracle(OracleBase):
     """Sei oracle implementation for sequence regulatory activities."""
     
     def __init__(self, 
-                 step_size: int = SEI_STEP,
-                 sliding_predict: bool = False,
+                 step_size: int = SEI_DEFAULT_STEP,
+                 sliding_predict: bool = True,
                  batch_size: int = 1,
                  use_environment: bool = True, 
                  reference_fasta: str | None = None,
@@ -61,32 +65,28 @@ class SeiOracle(OracleBase):
         self._projector = None # Model to get high-level classes 
         self._target_list = None
         self._classes_list = None 
+        self.download_dir = SEI_MODELS_DIR
 
     def get_model_dir_path(self):
         if self.model_dir is None:
             parent = os.path.dirname(os.path.realpath(__file__))
-            self.model_dir = os.path.join(parent, "sei")
+            self.model_dir = os.path.join(parent, "sei_source")
         return self.model_dir
 
     def get_model_weights_path(self):
-        d = self.get_model_dir_path()
-        return os.path.join(d, "sei.pth")
+        return self.download_dir / 'model' / "sei.pth"
     
     def get_projector_weights(self):
-        d = self.get_model_dir_path()
-        return os.path.join(d, "projvec_targets.npy")
+        return self.download_dir / 'model'/ "projvec_targets.npy"
     
     def get_adjustor_params(self):
-        d = self.get_model_dir_path()
-        return os.path.join(d, "histone_inds.npy")
+        return self.download_dir / 'model'/"histone_inds.npy"
     
     def get_target_names(self):
-        d = self.get_model_dir_path()
-        return os.path.join(d, "target.names")
+        return self.download_dir / 'model'/ "target.names"
     
     def get_classes_names(self):
-        d = self.get_model_dir_path()
-        return os.path.join(d, "seqclass_info.txt")
+        return self.download_dir / 'model'/ "seqclass_info.txt"
 
     def get_templates_dir(self):
         d = self.get_model_dir_path()
@@ -104,7 +104,7 @@ class SeiOracle(OracleBase):
         with open(path) as inp:
             return inp.read(), "__ARGS_FILE_NAME__"
     
-    def load_pretrained_model(self, weights: str | None) -> None:
+    def load_pretrained_model(self, weights: str | None = None) -> None:
         """Load Sei model weights."""
         if weights is not None:
             self.model_dir = weights
@@ -119,12 +119,12 @@ class SeiOracle(OracleBase):
             'device': self.device,
             'sequence_length': self.sequence_length,
             'n_genomic_features': self.n_targets,
-            'model_weights': self.get_model_weights_path(),
-            'projector_weights': self.get_projector_weights(),
+            'model_weights': str(self.get_model_weights_path()),
+            'projector_weights': str(self.get_projector_weights()),
             'n_classes': self.n_classes,
-            'histone_inds': self.get_adjustor_params(),
-            'targets': self.get_target_names(),
-            'classes': self.get_classes_names()
+            'histone_inds': str(self.get_adjustor_params()),
+            'targets': str(self.get_target_names()),
+            'classes': str(self.get_classes_names())
         }
 
         # Save arguments to temporary file
@@ -349,7 +349,7 @@ class SeiOracle(OracleBase):
             raise ValueError(f"Unsupported sequence type: {type(seq)}")
 
         input_interval = query_interval.extend(self.sequence_length)
-        prediction_interval = query_interval.extend(self.output_size)
+        prediction_interval = query_interval.extend(self.sequence_length)
         
         full_seq = input_interval.sequence
         
@@ -419,11 +419,11 @@ class SeiOracle(OracleBase):
             'device': self.device,
             'sequence_length': self.sequence_length,
             'n_genomic_features': self.n_targets,
-            'model_weights': self.get_model_weights_path(),
-            'projector_weights': self.get_projector_weights(),
+            'model_weights': str(self.get_model_weights_path()),
+            'projector_weights': str(self.get_projector_weights()),
             'n_classes': self.n_classes,
-            'targets': self.get_target_names(),
-            'classes': self.get_classes_names(),
+            'targets': str(self.get_target_names()),
+            'classes': str(self.get_classes_names()),
             'seq': seq,
             'targets_inds': targets_inds,
             'classes_inds': classes_inds,
