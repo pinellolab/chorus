@@ -6,6 +6,9 @@ import pandas as pd
 import os 
 import json
 import logging
+
+from pathlib import Path
+
 from ..core.base import OracleBase
 from ..core.track import Track
 from ..core.exceptions import ModelNotLoadedError, InvalidAssayError
@@ -67,30 +70,33 @@ class SeiOracle(OracleBase):
         self._classes_list = None 
         self.download_dir = SEI_MODELS_DIR
 
-    def get_model_dir_path(self):
+        if not self.get_model_weights_path().exists() or not self.get_projector_weights().exists() or not self.get_adjustor_params().exists() or not self.get_target_names().exists() or not self.get_classes_names().exists():
+            self._download_sei_model()
+
+    def get_model_dir_path(self) -> Path:
         if self.model_dir is None:
             parent = os.path.dirname(os.path.realpath(__file__))
             self.model_dir = os.path.join(parent, "sei_source")
-        return self.model_dir
+        return Path(self.model_dir)
 
-    def get_model_weights_path(self):
+    def get_model_weights_path(self) -> Path:
         return self.download_dir / 'model' / "sei.pth"
     
-    def get_projector_weights(self):
+    def get_projector_weights(self) -> Path:
         return self.download_dir / 'model'/ "projvec_targets.npy"
     
-    def get_adjustor_params(self):
+    def get_adjustor_params(self) -> Path:
         return self.download_dir / 'model'/"histone_inds.npy"
     
-    def get_target_names(self):
+    def get_target_names(self) -> Path:
         return self.download_dir / 'model'/ "target.names"
     
-    def get_classes_names(self):
+    def get_classes_names(self) -> Path:
         return self.download_dir / 'model'/ "seqclass_info.txt"
 
-    def get_templates_dir(self):
+    def get_templates_dir(self) -> Path:
         d = self.get_model_dir_path()
-        return os.path.join(d, "templates")
+        return d / "templates"
     
     def get_load_template(self):
         d = self.get_templates_dir()
@@ -499,3 +505,37 @@ class SeiOracle(OracleBase):
             status['environment_info'] = self.get_environment_info()
         
         return status
+
+    def get_zenodo_link(self) -> str:
+        return "https://zenodo.org/record/4906997/files/sei_model.tar.gz"
+
+    def _download_sei_model(self):
+        import urllib.request
+        from pathlib import Path
+        import tarfile
+        import shutil
+        
+        # Create download link
+        download_link = self.get_zenodo_link()
+        download_path = self.download_dir
+        
+        logger.info(f"Dowloading Sei model into {download_path}...")
+        
+        download_file_path = os.path.join(
+            download_path, 
+            os.path.basename(download_link)
+        )
+
+        if not Path(download_file_path).exists():
+            urllib.request.urlretrieve(download_link, filename=download_file_path)    
+            logger.info("Dowload completed!")
+        else:
+            logger.info("Sei model archive is already downloaded!")
+        
+        # Now extract the file in the same download folder
+        with tarfile.open(download_file_path, "r:gz") as tar:
+            tar.extractall(path=download_path)
+        logger.info("Sei model downloaded and extracted successfully!")
+
+        info_file_path = self.get_model_dir_path() / "seqclass_info.txt"
+        shutil.copy(info_file_path, self.get_classes_names())
