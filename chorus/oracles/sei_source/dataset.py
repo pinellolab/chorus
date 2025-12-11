@@ -4,7 +4,7 @@ import torch.nn as nn
 
 from torch.utils.data import Dataset 
 from .seq_utils import one_hot_encode, rev_compl
-from .sei_globals import SEI_WINDOW, SEI_STEP 
+from .sei_globals import SEI_WINDOW, SEI_DEFAULT_STEP 
 
 class Seq2Tensor(nn.Module):
     '''
@@ -42,7 +42,7 @@ class SubSequenceDataset(Dataset):
                  sequence: str, 
                  reverse_aug: bool = True,
                  window_size: int = SEI_WINDOW, 
-                 step: int = SEI_STEP, 
+                 step: int = SEI_DEFAULT_STEP, 
                  transform=DEFAULT_TRANSFORM):
         """
             sequence: A single nucleotide sequence (e.g., 'ATGC...')

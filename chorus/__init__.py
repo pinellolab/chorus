@@ -145,6 +145,9 @@ def create_oracle(oracle_name: str, use_environment: bool = False, **kwargs):
         if oracle_name.lower() == "legnet":
             from .oracles.legnet import LegNetOracle
             return LegNetOracle(use_environment=True, **kwargs)
+        if oracle_name.lower() == "sei":
+            from .oracles.sei import SeiOracle
+            return SeiOracle(use_environment=True, **kwargs)
         else:
             raise NotImplementedError(
                 f"Environment-isolated version of {oracle_name} not yet implemented.\n"
