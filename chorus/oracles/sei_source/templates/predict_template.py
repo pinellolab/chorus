@@ -1,9 +1,9 @@
 import json 
 import torch 
-from chorus.oracles.sei.sei import Sei, SeiProjector, SeiNormalizer
-from chorus.oracles.sei.annotations import SeiClassesList, SeiTargetList
-from chorus.oracles.sei.utils import gather_with_nones
-from chorus.oracles.sei.exceptions import SeiError
+from chorus.oracles.sei_source.sei import Sei, SeiProjector, SeiNormalizer
+from chorus.oracles.sei_source.annotations import SeiClassesList, SeiTargetList
+from chorus.oracles.sei_source.utils import gather_with_nones
+from chorus.oracles.sei_source.exceptions import SeiError
 
 with open("__ARGS_FILE_NAME__") as inp:  # to be formatted by calling script 
     args = json.load(inp)
@@ -29,7 +29,7 @@ classes_inds = args['classes_inds']
 if targets_inds is None and classes_inds is None:
     raise SeiError("Assays or classes ids must be provided")
 
-predictions, offsets = model.seq_sliding_predict(seq, 
+predictions, _ = model.seq_sliding_predict(seq, 
                                         reverse_aug=args['reverse_aug'],
                                         window_size=args['sequence_length'],
                                         step=args['bin_size'],
@@ -47,5 +47,4 @@ result = {
     'selected_preds': selected_preds,
     'selected_classes': selected_classes,
     'seq_length': len(seq),
-    'offsets': offsets.tolist()
 }

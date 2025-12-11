@@ -1,7 +1,7 @@
 import json 
 import torch 
-from chorus.oracles.sei.sei import Sei, SeiProjector, SeiNormalizer
-from chorus.oracles.sei.annotations import SeiClassesList, SeiTargetList
+from chorus.oracles.sei_source.sei import Sei, SeiProjector, SeiNormalizer
+from chorus.oracles.sei_source.annotations import SeiClassesList, SeiTargetList
 
 with open("__ARGS_FILE_NAME__") as inp:  # to be formatted by calling script 
     args = json.load(inp)

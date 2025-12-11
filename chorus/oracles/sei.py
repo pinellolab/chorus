@@ -11,9 +11,10 @@ from ..core.track import Track
 from ..core.exceptions import ModelNotLoadedError, InvalidAssayError
 from ..utils.sequence import extract_sequence_with_padding
 
-from .sei.annotations import SeiClass, SeiTarget, SeiClassesList, SeiTargetList
-from .sei.sei_globals import SEI_WINDOW, SEI_STEP, SEI_TARGETS, SEI_CLASSES
-from .sei.metainfo import MetaInfoArray, MetaInfoDict
+from .sei_source.annotations import SeiClass, SeiTarget, SeiClassesList, SeiTargetList
+from .sei_source.sei_globals import SEI_WINDOW, SEI_STEP, SEI_TARGETS, SEI_CLASSES
+from ..core.result import OraclePrediction, OraclePredictionTrack
+from ..core.interval import Interval, GenomeRef, Sequence
 
 logger = logging.getLogger(__name__)
 
@@ -307,50 +308,10 @@ class SeiOracle(OracleBase):
         total_length = div * self.bin_size + self.bin_size * (mod > 0)
         return total_length
 
-    def predict(
-        self,
-        input_data: Union[str, Tuple[str, int, int]],
-        assay_ids: List[str] | None = None,
-        create_tracks: bool = False
-    ) -> Dict[str, np.ndarray]:
-        """
-        Predict regulatory activity for a sequence or genomic region.
-        
-        Args:
-            input_data: Either a DNA sequence string or a tuple of (chrom, start, end)
-            assay_ids: List of assay identifiers (e.g., ['ENCFF413AHU'] or ['DNase:K562'])
-            create_tracks: Whether to create track files (not implemented yet)
-            
-        Returns:
-            Dictionary mapping assay IDs to prediction arrays
-            
-        Example:
-            >>> # Using sequence
-            >>> predictions = oracle.predict('ACGT...', ['DNase:K562'])
-            >>> 
-            >>> # Using genomic coordinates (requires reference_fasta)
-            >>> predictions = oracle.predict(('chrX', 48780505, 48785229), ['ENCFF413AHU'])
-        """
-        
-        # Validate inputs
-        self._validate_loaded()
-        if assay_ids is None:
-            assay_ids = self._get_all_assay_ids()
-        else:
-            self._validate_assay_ids(assay_ids)
-        
-        # Get raw predictions
-        predictions = self._predict(input_data, assay_ids)
-        
-        # Return as dictionary
-        result = {}
-        for i, assay_id in enumerate(assay_ids):
-            result[assay_id] = predictions[:, i]
-        return MetaInfoDict(result, metainfo={'positions': predictions.metainfo['positions']})
     
     def _predict(self,
-                 seq: Union[str, Tuple[str, int, int]],
-                 assay_ids: list[str]) -> MetaInfoArray:
+                 seq: Union[str, Tuple[str, int, int], Interval],
+                 assay_ids: list[str]) -> OraclePrediction:
         targets_ids = []
         classes_ids = []
         mapping = {}
@@ -371,63 +332,88 @@ class SeiOracle(OracleBase):
         targets_inds = self._targets2inds(sei_targets)
         classes_inds = self._cl2ind(sei_classes)
 
-        # Handle genomic coordinates
+       # Handle genomic coordinates
         if isinstance(seq, tuple):
             if self.reference_fasta is None:
                 raise ValueError("Reference FASTA required for genomic coordinate input")
             chrom, start, end = seq
-
-            # Extract sequence with padding from reference
-            total_length =  self._refine_total_length(end - start)
-            full_seq = extract_sequence_with_padding(
-                self.reference_fasta,
-                chrom,
-                start,
-                end,
-                total_length=total_length
-            )
-
-            center = (start + end) // 2 
-            real_start = center - total_length // 2
+            query_interval = Interval.make(GenomeRef(chrom=chrom, 
+                                                     start=start, 
+                                                     end=end, 
+                                                     fasta=self.reference_fasta))
+        elif isinstance(seq, str):
+            query_interval = Interval.make(Sequence(sequence=seq))
+        elif isinstance(seq, Interval):
+            query_interval = seq
         else:
-            full_seq = seq        
-            real_start = 0
+            raise ValueError(f"Unsupported sequence type: {type(seq)}")
+
+        input_interval = query_interval.extend(self.sequence_length)
+        prediction_interval = query_interval.extend(self.output_size)
+        
+        full_seq = input_interval.sequence
         
         if self.use_environment:
-            target_preds, class_preds, offsets = self._predict_in_environment(
+            target_preds, class_preds = self._predict_in_environment(
                 seq=full_seq, 
                 targets_inds=targets_inds, 
                 classes_inds=classes_inds,
                 reverse_aug=self.average_reverse)
             
         else:
-            target_preds, class_preds, offsets = self._predict_direct(
+            target_preds, class_preds = self._predict_direct(
                 seq=full_seq, 
                 targets_inds=targets_inds, 
                 classes_inds=classes_inds,
-                reverse_aug=self.average_reverse)
+                reverse_aug=self.average_reverse)            
 
-        positions = real_start + offsets 
-        n_bins = target_preds.shape[0]             
-        joined_preds = np.zeros((n_bins, len(assay_ids)), dtype=np.float32)
-        for ind in range(0, joined_preds.shape[1]):
-            if mapping[ind] is not None:
-                source, source_ind = mapping[ind]
-                if source == 't':
-                    joined_preds[:, ind] = target_preds[:, source_ind]
-                elif source == 'c':
-                    joined_preds[:, ind] = class_preds[:, source_ind]
+
+        final_prediction = OraclePrediction()
+
+
+        for ind, assay_id in enumerate(assay_ids):
+            source, source_ind = mapping[ind]
+            if source == 't':
+                info = sei_targets[source_ind]
+                values = target_preds[:, source_ind]
+                assay_type = info.assay
+                cell_type = info.celltype
+
+            elif source == 'c':
+                info = sei_classes[source_ind]
+                values = class_preds[:, source_ind]
+                cell_type = info.group
+                assay_type = info.name
             else:
-                joined_preds[:, ind] = np.nan
+                raise ValueError(f"Invalid mapping: {mapping[ind]}")
+            
 
-        return MetaInfoArray(joined_preds, metainfo={'positions': positions})
+            track = OraclePredictionTrack.create(
+                source_model="sei",
+                assay_id=assay_id, 
+                track_id=source_ind,
+                assay_type=assay_type,
+                cell_type=cell_type,
+                query_interval=query_interval,
+                prediction_interval=prediction_interval,
+                input_interval=input_interval,
+                resolution=self.bin_size,
+                values=values,
+                metadata=None,
+                preferred_aggregation='sum',
+                preferred_interpolation='linear_divided',
+                preferred_scoring_strategy='mean'
+            )
+            final_prediction.add(assay_id, track)
+
+        return final_prediction
         
     
     def _predict_in_environment(self,
                                 seq: str,
                                 targets_inds: list[int],
                                 classes_inds: list[int],
-                                reverse_aug: bool = True) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+                                reverse_aug: bool = True) -> Tuple[np.ndarray, np.ndarray]:
  
         args = {
             'device': self.device,
@@ -445,7 +431,6 @@ class SeiOracle(OracleBase):
             'batch_size': self.batch_size,
             'bin_size': self.bin_size,
         }
-
         import tempfile
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as arg_file:
             json.dump(args, arg_file)
@@ -457,21 +442,20 @@ class SeiOracle(OracleBase):
             
             selected_preds = np.array(model_predictions['selected_preds'], dtype=np.float32)
             selected_classes = np.array(model_predictions['selected_classes'], dtype=np.float32)
-            offsets = np.array(model_predictions['offsets'], dtype=np.int64)
-        return selected_preds, selected_classes, offsets
+        return selected_preds, selected_classes
         
         
     def _predict_direct(self,
                         seq: str,
                         targets_inds: list[int],
                         classes_inds: list[int],
-                        reverse_aug: bool = True) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+                        reverse_aug: bool = True) -> Tuple[np.ndarray, np.ndarray]:
         """Direct prediction in current environment."""
 
         if self._model is None or self._projector is None or self._normalizer is None:
             raise ModelNotLoadedError()
         
-        predictions, offsets = self._model.seq_sliding_predict(seq=seq, 
+        predictions, _ = self._model.seq_sliding_predict(seq=seq, 
                                                                reverse_aug=reverse_aug,
                                                                window_size=self.sequence_length,
                                                                step=self.bin_size,
@@ -482,7 +466,7 @@ class SeiOracle(OracleBase):
         selected_preds = predictions[:, targets_inds]
         selected_classes = class_preds[:, classes_inds]
 
-        return selected_preds, selected_classes, offsets 
+        return selected_preds, selected_classes 
 
     def fine_tune(self, tracks: List[Track], track_names: List[str], **kwargs) -> None:
         """Fine-tune Sei on new tracks."""
@@ -515,31 +499,3 @@ class SeiOracle(OracleBase):
             status['environment_info'] = self.get_environment_info()
         
         return status
-
-    def predict_region_replacement(
-        self,
-        genomic_region: Union[str, pd.DataFrame],
-        seq: str,
-        assay_ids: List[str],
-        create_tracks: bool = False,
-        genome: str | None = None
-    ) -> MetaInfoDict:
-        dt = super().predict_region_replacement(genomic_region, seq, assay_ids, create_tracks, genome)
-        
-        try:
-            val = next(iter(dt['raw_predictions'].values()))
-            metainfo = {'positions': val.metainfo['positions']}
-        except StopIteration:
-            metainfo = {}
-
-        return MetaInfoDict(dt, metainfo=metainfo)
-
-    def predict_variant_effect(self, 
-                               genomic_region: Union[str, pd.DataFrame], 
-                               variant_position: Union[str, pd.DataFrame], 
-                               alleles: Union[List[str], pd.DataFrame],
-                               assay_ids: List[str], 
-                               create_tracks: bool = False,
-                               genome: str | None = None) -> Dict:
-        # TODO: add histone correction for variant effect prediction
-        return super().predict_variant_effect(genomic_region, variant_position, alleles, assay_ids, create_tracks, genome)
