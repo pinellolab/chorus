@@ -11,6 +11,7 @@ from typing import List, Tuple, Optional, ClassVar
 import numpy as np
 import subprocess
 import logging
+import json
 import os
 import tarfile
 from pathlib import Path
@@ -36,7 +37,8 @@ class ChromBPNetOracle(OracleBase):
             "IMR-90": "ENCFF515HBV",
             "GM12878": "ENCFF673TIN",
             "K562": "ENCFF574YLK"
-        }
+        },
+        "CHIP": {}
     }
 
     def __init__(self,
@@ -65,6 +67,8 @@ class ChromBPNetOracle(OracleBase):
         self.download_dir = CHORUS_DOWNLOADS_DIR / "chrombpnet"
         self.download_dir.mkdir(parents=True, exist_ok=True)
         self.model_path = None # will be set when the model is downloaded
+        self.model_dir = None # Where templates and utils are stored
+        self.JASPAR_metadata = None
         self.assay = None
         self.cell_type = None
         self.fold = 0
@@ -72,14 +76,46 @@ class ChromBPNetOracle(OracleBase):
     def get_encode_link(self, idx: str) -> str:
         return f"https://www.encodeproject.org/files/{idx}/@@download/{idx}.tar.gz"
 
-    def get_model_weights_dir(self, assay: str, cell_type: str) -> Path:
-        path = self.download_dir / f"{assay}_{cell_type}"
+    def get_model_weights_dir(self, assay: str, cell_type: str, tf: Optional[str] = None) -> Path:
+        weights_dir = (
+            f"{assay}_{cell_type}" if tf is None
+            else f"{assay}_{cell_type}_{tf}"
+        )
+        path = self.download_dir / weights_dir
         path.mkdir(parents=True, exist_ok=True)
         return path
 
-    def get_model_weights_path(self, assay: str, cell_type: str, fold: int, model_type: str = 'chrombpnet') -> Path:
-        path = self.get_model_weights_dir(assay, cell_type) / 'models' / f"fold_{fold}" / model_type / 'chrombpnet'
+    def get_model_weights_path(self, assay: str, cell_type: str, fold: int, tf: Optional[str] = None, model_type: str = 'chrombpnet') -> Path:
+        if tf is None:  
+            path = self.get_model_weights_dir(assay, cell_type) / 'models' / f"fold_{fold}" / model_type / 'chrombpnet'
+        else:
+            weights_name = os.path.basename(self.JASPAR_metadata.get_weights_by_cell_and_tf(tf, cell_type))
+            path = self.get_model_weights_dir(assay, cell_type, tf) / weights_name
         return path
+    
+    def get_model_dir_path(self) -> str:
+        if self.model_dir is None:
+            parent = os.path.dirname(os.path.realpath(__file__))
+            self.model_dir = os.path.join(parent, "chrombpnet_source")
+        return self.model_dir
+    
+    def get_templates_dir(self) -> str:
+        return os.path.join(self.get_model_dir_path(), "templates")
+    
+    def get_load_template(self) -> str:
+        d = self.get_templates_dir()
+        path = os.path.join(d, "load_template.py")
+        with open(path) as inp:
+            return inp.read(), "__ARGS_FILE_NAME__"
+        
+    def get_predict_template(self) -> str:
+        d = self.get_templates_dir()
+        path = os.path.join(d, "predict_template.py")
+        with open(path) as inp:
+            return inp.read(), "__ARGS_FILE_NAME__"
+        
+    def _get_JASPAR_path(self) -> str:
+        return os.path.join(self.get_model_dir_path(), "chrombpnet_JASPAR_metadata.tsv")
 
     #from https://github.com/kundajelab/basepair/blob/cda0875571066343cdf90aed031f7c51714d991a/basepair/losses.py#L87
     @staticmethod
@@ -93,6 +129,33 @@ class ChromBPNetOracle(OracleBase):
 
         return (-tf.reduce_sum(dist.log_prob(true_counts)) /
                 tf.cast(tf.shape(true_counts)[0], dtype=tf.float32))
+    
+    def _download_model_from_JASPAR(self):
+
+        # Get link from metadata
+        download_link = self.JASPAR_metadata.get_weights_by_cell_and_tf(self.tf, self.cell_type)
+        download_path = self.get_model_weights_dir(self.assay, self.cell_type, self.tf)
+
+        logger.info(f"Downloading BPNet into {download_path}...")
+
+        download_file_path = os.path.join(
+            download_path,
+            os.path.basename(download_link)
+        )
+
+        if not os.path.exists(download_file_path):
+
+            # Download from JASPAR
+            result = subprocess.run(
+                ["wget", "-P", download_path, download_link],
+                text=True,
+                capture_output=True
+            )
+            if result.returncode != 0:
+                raise RuntimeError(f"Execution failed: {result.stderr}")
+            
+            logger.info("Download completed!")
+
 
     def _download_chrombpnet_model(self): 
         
@@ -159,6 +222,7 @@ class ChromBPNetOracle(OracleBase):
             assay: Optional[str] = None,
             cell_type: Optional[str] = None,
             weights: Optional[str] = None,
+            TF: Optional[str] = None,
             fold: int = 0,
             model_type: str = 'chrombpnet'
         ) -> None:
@@ -166,30 +230,42 @@ class ChromBPNetOracle(OracleBase):
 
         if assay is None or cell_type is None:
             raise ValueError("You must provide both assay and cell-type if weights are None.")
-            
-        # Check whether the assay is valid
+        
         if assay not in self.CHROMBPNET_MODELS_DICT:
             raise ValueError(f"ChromBPNet supports only the following assays: {list(self.CHROMBPNET_MODELS_DICT.keys())}")
         
-        # Check if the combination is valid
-        if cell_type not in self.CHROMBPNET_MODELS_DICT[assay]:
-            raise ValueError(f"ChromBPNet {assay} predictions can only be done on the following cell types: {list(self.CHROMBPNET_MODELS_DICT[assay].keys())}")
+        if assay != "CHIP":            
+            # Check if the combination is valid
+            if cell_type not in self.CHROMBPNET_MODELS_DICT[assay]:
+                raise ValueError(f"ChromBPNet {assay} predictions can only be done on the following cell types: {list(self.CHROMBPNET_MODELS_DICT[assay].keys())}")
 
-        if fold not in range(5):
-            raise ValueError(f"ChromBPNet fold must be an integer between 0 and 4, got {fold}")
+            if fold not in range(5):
+                raise ValueError(f"ChromBPNet fold must be an integer between 0 and 4, got {fold}")
+        else:
+            if TF is None:
+                 raise ValueError(f"You must provide TF for which you want ChIP-seq model.")
             
         # Store assay and celltype
         self.assay = assay
         self.cell_type = cell_type
         self.fold = fold
+        self.tf = TF
+
+        # Load JASPAR metadata if TF is set
+        if TF is not None:
+            from .chrombpnet_source.metadata import BPNetMetadata
+            self.JASPAR_metadata = BPNetMetadata()
 
         if weights is None:
             # Check whether the user has provided assay and cell-type
             # Download weights and return path to them
 
-            weights = self.get_model_weights_path(assay, cell_type, fold, model_type)
+            weights = self.get_model_weights_path(assay, cell_type, fold, TF, model_type)
             if not os.path.exists(weights):
-                self._download_chrombpnet_model()
+                if assay != "CHIP":
+                    self._download_chrombpnet_model()
+                else:
+                    self._download_model_from_JASPAR()
             if not os.path.exists(weights):
                 raise FileNotFoundError(f"Weights file {weights} not found even after downloading from ENCODE")
             self.model_path = weights
@@ -209,74 +285,28 @@ class ChromBPNetOracle(OracleBase):
  
 
     def _load_in_environment(self, weights: str):
-        load_code = f"""
-import tensorflow as tf
-from tensorflow.keras.utils import get_custom_objects
-import tensorflow_probability as tfp
+        args = {
+            "device": self.device,
+            "model_weights": str(weights),
+            "is_CHIP": self.assay == "CHIP",
+            "BPNet_dir": self.get_templates_dir()
+        }
 
-def multinomial_nll(true_counts, logits):
-    counts_per_example = tf.reduce_sum(true_counts, axis=-1)
-    dist = tfp.distributions.Multinomial(total_count=counts_per_example,logits=logits)
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as arg_file:
+            json.dump(args, arg_file)
+            arg_file.flush()
 
-    return (-tf.reduce_sum(dist.log_prob(true_counts)) /
-            tf.cast(tf.shape(true_counts)[0], dtype=tf.float32))
+            template, arg = self.get_load_template()
+            template = template.replace(arg, arg_file.name)
+            model_info = self.run_code_in_environment(template, timeout=self.model_load_timeout)
 
-# Configure device
-device = {repr(self.device)}
-if device:
-    if device=='cpu':
-        # Force CPU usage
-        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-        print("Forcing CPU usage")
-    elif device.startswith('cuda:'):
-        # Use specific GPU
-        gpu_id = device.split(':')[1]
-        os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
-        print(f"Using GPU {{gpu_id}}")
-    elif device in ['cuda', 'gpu']:
-        # Use default GPU (don't change CUDA_VISIBLE_DEVICES)
-        print("Using default GPU")
-
-else:
-    # Auto-detect - TensorFlow will use GPU if available
-    gpus = tf.config.list_physical_devices('GPU')
-    if gpus:
-        print(f"Auto-detected {{len(gpus)}} GPU(s), using first available")
-    else:
-        print("No GPU detected, using CPU")
-
-# Load model
-model = tf.keras.models.load_model(
-    '{weights}',
-    compile=False,
-    custom_objects={{"multinomial_nll": multinomial_nll, "tf": tf}}
-)
-
-# Get device info
-if device == 'cpu' or not tf.config.list_physical_devices('GPU'):
-    actual_device = 'CPU'
-else:
-    actual_device = f'GPU ({{len(tf.config.list_physical_devices("GPU"))}} available)'
-
-# Get model info (we can't pickle the model itself)
-result = {{
-    'loaded': True,
-    'model_class': str(type(model)),
-    'has_predict': hasattr(model, 'predict_on_batch'),
-    'description': 'ChromBPNet model loaded successfully',
-    'device': actual_device
-}}
-"""
-
-        # Run loading in environment
-        model_info = self.run_code_in_environment(load_code, timeout=self.model_load_timeout)
-
-        if model_info and model_info['loaded']:
-            self.loaded = True
-            self._model_info = model_info
-            logger.info("ChromBPNet model loaded successfully in environment!")
-        else:
-            raise ModelNotLoadedError("Failed to load model in environment.")
+            if model_info and model_info["loaded"]:
+                self.loaded = True
+                self._model_info = model_info
+                logger.info("ChromBPNet model loaded successfully in environment!")
+            else:
+                raise ModelNotLoadedError("Failed to load ChromBPNet model in environment")
     
     def _load_direct(self, weights: str):
         """Load model directly in current environment"""
@@ -316,11 +346,37 @@ result = {{
     
     def list_assay_types(self) -> List[str]:
         """Return ChromBPNet's assay types."""
-        return ["ATAC", "DNASE"]
+        return ["ATAC", "DNASE", "CHIP"]
     
     def list_cell_types(self) -> List[str]:
         """Return ChromBPNet's cell types."""
         return ["IMR-90", "GM12878", "HepG2", "K562"]
+    
+    def _transform_predictions_to_tracks(self, probabilities: np.array, counts: np.array, seq_len: int) -> np.array:
+
+        # Allocate space for output tensor
+        out = np.zeros(seq_len)
+
+        # Predictions should represent probabilities and should be multiplied 
+        # by the predicted log counts
+        norm_prob = probabilities - np.mean(probabilities, axis=1, keepdims=True)
+        softmax_probs = np.exp(norm_prob) / np.sum(np.exp(norm_prob), axis=1, keepdims=True)
+
+        predictions = softmax_probs * (np.expand_dims(np.exp(counts)[:, 0], axis=1)) # (B, 1000)
+
+        # Stack into 1D array
+        predictions = predictions.reshape(-1, 1).squeeze()
+
+        # Insert into final output
+        start_insertion = (self.sequence_length - self.output_length) // 2 # ChromBPNet padding
+
+        # Define insertion boundaries
+        end_insertion_out = min(start_insertion + len(predictions), seq_len)
+        end_insertion_pred = min(len(predictions), (end_insertion_out - start_insertion))
+        
+        out[start_insertion:end_insertion_out] = predictions[:end_insertion_pred]
+
+        return out
     
     def _predict(self, seq: str | Tuple[str, int, int] | Interval, assay_ids: List[str] = None) -> OraclePrediction:
         """Run ChromBPNet prediction in the appropriate environment.
@@ -354,115 +410,28 @@ result = {{
         full_seq = input_interval.sequence
 
         if self.use_environment:
-            # Save sequence to temporary file
-            import tempfile
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as seq_file:
-                seq_file.write(full_seq)
-                seq_path = seq_file.name
 
             # Allocate space for output
             seq_len = max(len(full_seq), self.sequence_length)
-            out = np.zeros(seq_len)
             
-            try:
-                # Code to run in environment
-                predict_code = f"""
-import tensorflow as tf
-import numpy as np
-import tensorflow_probability as tfp
+            predictions = self._predict_in_environment(full_seq, assay_ids)
 
-def multinomial_nll(true_counts, logits):
-        counts_per_example = tf.reduce_sum(true_counts, axis=-1)
-        dist = tfp.distributions.Multinomial(total_count=counts_per_example,logits=logits)
+            # Extract track and counts
+            probabilities, counts = predictions
 
-        return (-tf.reduce_sum(dist.log_prob(true_counts)) /
-                tf.cast(tf.shape(true_counts)[0], dtype=tf.float32))
+            predictions_list = []
+            if self.assay == "CHIP":
+                # You have plus and minus strand predictions
+                plus = self._transform_predictions_to_tracks(probabilities[..., 0], counts, seq_len)
+                minus = self._transform_predictions_to_tracks(probabilities[..., 1], counts, seq_len)
 
-# Configure device
-device = {repr(self.device)}
-if device:
-    if device == 'cpu':
-        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-    elif device.startswith('cuda:'):
-        gpu_id = device.split(':')[1]
-        os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
-
-# Read sequence from file
-with open({repr(seq_path)}, 'r') as f:
-    seq = f.read().strip()
-
-# Load model
-model = tf.keras.models.load_model(
-    '{self.model_path}',
-    compile=False,
-    custom_objects={{"multinomial_nll": multinomial_nll, "tf": tf}}
-)
-
-# Mapping dict
-MAPPING = {{'A': 0, 'C': 1, 'G': 2, 'T': 3}}
-
-if len(seq) > {self.sequence_length}:
-    num_windows_stride_one = (len(seq) - {self.sequence_length} + 1)
-    num_windows = (num_windows_stride_one + {self.output_length} - 1) // {self.output_length} + 1
-
-    # Define seq_len and flag
-    seq_len = ({self.output_length} * (num_windows - 1)) + {self.sequence_length}
-    trimmed = False
-else:
-    seq_len = len(seq)
-    trimmed = True
-
-# One hot encoding
-one_hot = np.zeros((seq_len, 4), dtype=np.float32)
-for i, base in enumerate(seq.upper()):
-    if base in MAPPING:
-        one_hot[i, MAPPING[base]] = 1.0
-
-# Add batch dimension
-if trimmed:
-    one_hot_batch = tf.constant(one_hot[np.newaxis], dtype=tf.float32)
-else:
-    # Compute windows of 2114 with a stride of 1000 to extend the prediction
-    new_shape = (num_windows, {self.sequence_length}, 4)
-    stride_x, stride_y = one_hot.strides
-    new_stride = (stride_x * {self.output_length}, stride_x, stride_y)
-
-    one_hot_batch = np.lib.stride_tricks.as_strided(one_hot, shape=new_shape, strides=new_stride)
-
-# Extract predictions
-result = model.predict_on_batch(one_hot_batch)
-"""
-                
-                # Run predictions in environment
-                predictions = self.run_code_in_environment(predict_code, timeout=self.predict_timeout)
-
-                # Extract track and counts
-                probabilities, counts = predictions
-
-                # Predictions should represent probabilities and should be multiplied 
-                # by the predicted log counts
-                norm_prob = probabilities - np.mean(probabilities, axis=1, keepdims=True)
-                softmax_probs = np.exp(norm_prob) / np.sum(np.exp(norm_prob), axis=1, keepdims=True)
-
-                predictions = softmax_probs * (np.expand_dims(np.exp(counts)[:, 0], axis=1)) # (B, 1000)
-
-                # Stack into 1D array
-                predictions = predictions.reshape(-1, 1).squeeze()
-
-                # Insert into final output
-                start_insertion = (self.sequence_length - self.output_length) // 2 # ChromBPNet padding
-
-                # Define insertion boundaries
-                end_insertion_out = min(start_insertion + len(predictions), seq_len)
-                end_insertion_pred = min(len(predictions), (end_insertion_out - start_insertion))
-                
-                out[start_insertion:end_insertion_out] = predictions[:end_insertion_pred]
-
-            finally:
-                # Clean up the sequence file
-                import os
-                if os.path.exists(seq_path):
-                    os.unlink(seq_path)
+                # Append to the list
+                predictions_list.append(plus)
+                predictions_list.append(minus)
+            else:
+                # You have only one prediction
+                prediction = self._transform_predictions_to_tracks(probabilities, counts, seq_len)
+                predictions_list.append(prediction)
 
         else:
             raise NotImplementedError("ChromBPNet direct prediction not yet implemented")
@@ -470,25 +439,55 @@ result = model.predict_on_batch(one_hot_batch)
         final_prediction = OraclePrediction()
 
         # Create a Prediction Object
-        track = OraclePredictionTrack.create(
-            source_model="chrombpnet",
-            assay_id=None, 
-            track_id=None,
-            assay_type=self.assay,
-            cell_type=self.cell_type,
-            query_interval=query_interval,
-            prediction_interval=prediction_interval,
-            input_interval=input_interval,
-            resolution=self.bin_size,
-            values=out,
-            metadata=None,
-            preferred_aggregation='mean',
-            preferred_interpolation='linear_divided',
-            preferred_scoring_strategy='mean'
-        )
-        final_prediction.add(f"{self.assay}:{self.cell_type}", track)
+        strands = ["+", "-"]
+        for i, pred in enumerate(predictions_list):
+            track = OraclePredictionTrack.create(
+                source_model="chrombpnet",
+                assay_id=None, 
+                track_id=None,
+                assay_type=self.assay,
+                cell_type=self.cell_type,
+                query_interval=query_interval,
+                prediction_interval=prediction_interval,
+                input_interval=input_interval,
+                resolution=self.bin_size,
+                values=pred,
+                metadata=None,
+                preferred_aggregation='mean',
+                preferred_interpolation='linear_divided',
+                preferred_scoring_strategy='mean'
+            )
+            track_id = (
+                f"{self.assay}:{self.cell_type}" if self.assay != "CHIP"
+                else f"{self.assay}:{self.cell_type}:{self.tf}:{strands[i]}"
+            )
+            final_prediction.add(track_id, track)
         
         return final_prediction
+    
+    def _predict_in_environment(self, seq: str, assay_ids: List[str]) -> Tuple[np.ndarray, np.ndarray]:
+        args = {
+            "device": self.device,
+            "model_weights": str(self.get_model_weights_path(self.assay, self.cell_type, self.fold, self.tf)),
+            "sequence": seq,
+            "assay_ids": assay_ids,
+            "sequence_length": self.sequence_length,
+            "output_length": self.output_length,
+            "is_CHIP": self.assay == "CHIP",
+            "BPNet_dir": self.get_templates_dir()
+        }
+
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode="w", suffix="txt", delete=False) as arg_file:
+            json.dump(args, arg_file)
+            arg_file.flush()
+
+            template, arg1 = self.get_predict_template()
+            template = template.replace(arg1, arg_file.name)
+            predictions = self.run_code_in_environment(template, timeout=self.predict_timeout)
+            probabilities, counts = predictions
+
+        return probabilities, counts
     
     @property
     def output_size(self):

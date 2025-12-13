@@ -1,0 +1,20 @@
+{
+    "0": {
+        "signal": {
+            "source": ["ENCSR000EGM/data/plus.bw", 
+                       "ENCSR000EGM/data/minus.bw"]
+        },
+        "loci": {
+            "source": ["ENCSR000EGM/data/peaks_inliers.bed"]
+        },
+        "background_loci": {
+            "source": ["ENCSR000EGM/data/gc_negatives.bed"],
+            "ratio": [0.33]
+        },
+        "bias": {
+            "source": ["ENCSR000EGM/data/control_plus.bw",
+                       "ENCSR000EGM/data/control_minus.bw"],
+            "smoothing": [null, null]
+        }
+    }
+}
