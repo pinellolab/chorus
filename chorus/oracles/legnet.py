@@ -47,6 +47,7 @@ class LegNetOracle(OracleBase):
             raise LegNetError(f"Cell line {cell_type} not in available cell types: {LEGNET_AVAILABLE_CELLTYPES}")
         self.cell_type = cell_type
         self.assay = assay
+        self.assay_id = f"{self.assay}:{self.cell_type}"
         self.model_id = model_id
         # Now initialize base class with correct oracle name
         super().__init__(use_environment=use_environment, 
@@ -175,9 +176,9 @@ class LegNetOracle(OracleBase):
             raise ModelNotLoadedError("Model not loaded. Call load_pretrained_model first.")
     
     def _validate_assay_ids(self, assay_ids: List[str] | None):
-        if assay_ids is None or (len(assay_ids) == 1 and assay_ids[0] == self._cell_type):
+        if assay_ids is None or (len(assay_ids) == 1 and assay_ids[0] == self.assay_id):
             return 
-        raise InvalidAssayError(f"Instantiated LegNet oracle can only predict for assay {self.cell_type}")
+        raise InvalidAssayError(f"Instantiated LegNet oracle can only predict for assay {self.assay_id}")
 
     def _refine_total_length(self, total_length: int) -> int:
         div, mod = divmod(total_length, self.bin_size)
@@ -230,8 +231,8 @@ class LegNetOracle(OracleBase):
         # Create a Prediction Object
         track = OraclePredictionTrack.create(
             source_model="legnet",
-            assay_id=None, 
-            track_id=None,
+            assay_id=self.assay_id, 
+            track_id=self.assay_id,
             assay_type=self.assay,
             cell_type=self.cell_type,
             query_interval=query_interval,
@@ -244,7 +245,7 @@ class LegNetOracle(OracleBase):
             preferred_interpolation='linear_divided',
             preferred_scoring_strategy='mean'
         )
-        final_prediction.add(f"{self.assay}:{self.cell_type}", track)
+        final_prediction.add(self.assay_id, track)
         
         return final_prediction
         
