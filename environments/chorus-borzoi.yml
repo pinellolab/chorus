@@ -5,7 +5,7 @@ channels:
   - pytorch
 dependencies:
   # Core Python
-  - python=3.10
+  - python=3.12
   
   # Essential scientific computing
   - numpy>=1.21.0
@@ -25,18 +25,14 @@ dependencies:
   - pytorch>=2.0.0
   - torchvision>=0.15.0
   - torchaudio>=2.0.0
-  - cudatoolkit=11.8  # Adjust based on your CUDA version
-  
-  # Additional dependencies
-  - pip
+  - cudatoolkit  # Adjust based on your CUDA version
+
+  - einops >= 0.5
+  - transformers >=3.34.1,<4.51.0
+  - nvidia::cuda-nvcc
+
+  - matplotlib
+  - seaborn
+
   - pip:
-    # Borzoi specific
-    - einops>=0.6.0
-    - wandb>=0.15.0
-    
-    # Genomics utilities
-    - kipoiseq>=0.7.0
-    - pybedtools>=0.9.0
-    
-    # Additional ML utilities
-    - scikit-learn>=1.0.0
+    - borzoi-pytorch

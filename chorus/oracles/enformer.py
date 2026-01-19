@@ -13,7 +13,6 @@ from ..core.result import OraclePrediction, OraclePrediction, OraclePredictionTr
 from ..core.track import Track
 from ..core.interval import Interval, GenomeRef, Sequence 
 from ..core.exceptions import ModelNotLoadedError
-from ..utils.sequence import extract_sequence_with_padding
 
 logger = logging.getLogger(__name__)
 
@@ -286,26 +285,6 @@ class EnformerOracle(OracleBase):
         metadata = get_metadata()
         return metadata.list_cell_types()
     
-    def _prepare_sequence(self, seq: str) -> Tuple[str, dict[str, int]]:
-        """Prepare sequence to correct length."""
-        seq = seq.upper()
-        
-        if len(seq) < self.sequence_length:
-            pad_needed = self.sequence_length - len(seq)
-            pad_left = pad_needed // 2
-            pad_right = pad_needed - pad_left
-            seq = 'N' * pad_left + seq + 'N' * pad_right
-            meta = dict(leftN=pad_left, rightN=pad_right, start_change=0, end_change=0)
-
-        elif len(seq) > self.sequence_length:
-            trim_needed = len(seq) - self.sequence_length
-            trim_left = trim_needed // 2
-            trim_right = trim_needed - trim_left
-            seq = seq[trim_left:len(seq)-trim_right]
-            meta = dict(leftN=0, rightN=0, start_change=trim_left, end_change=-trim_right)
-        
-        return seq, meta
-    
     def _one_hot_encode(self, seq: str) -> np.ndarray:
         """Convert DNA sequence to one-hot encoding."""
         mapping = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
@@ -418,40 +397,3 @@ class EnformerOracle(OracleBase):
     @property
     def output_size(self) -> int:
         return self.target_length * self.bin_size
-
-    def map_predictions_to_coords(self, predictions: np.ndarray, 
-                                chrom: str, start: int, end: int) -> List[Dict[str, Any]]:
-        """Map prediction values to genomic coordinates.
-        
-        This handles the complex coordinate mapping needed for Enformer's architecture,
-        where the output window is a subset of the input window.
-        
-        Args:
-            predictions: Array of prediction values (896 bins)
-            chrom: Chromosome name
-            start: Start coordinate of the original query region
-            end: End coordinate of the original query region
-            
-        Returns:
-            List of dictionaries with genomic coordinates and values for BedGraph
-        """
-        # Get the region center
-        region_center = (start + end) // 2
-        
-        # Get output window coordinates
-        output_start, output_end = self.get_output_window_coords(region_center)
-        
-        # Map predictions to coordinates
-        mapped_predictions = []
-        for i, value in enumerate(predictions):
-            bin_start = output_start + i * self.bin_size
-            bin_end = bin_start + self.bin_size
-            
-            mapped_predictions.append({
-                'chrom': chrom,
-                'start': bin_start,
-                'end': bin_end,
-                'value': float(value)
-            })
-        
-        return mapped_predictions

@@ -44,17 +44,6 @@ predictions = model.predict_on_batch(one_hot_batch)
 # Extract human predictions (Enformer outputs both human and mouse)
 human_predictions = predictions['human'][0].numpy()
 
-# Map assay IDs to track indices
-# For environment execution, we'll use a simplified mapping
-# Map track IDs to indices - handle common ones
-
-with open(args['metainfo_path']) as inp:
-    inp.readline() # skip header
-    mappings = {}
-    for line in inp:
-        index, genome, identifier, file, clip, scale, sum_stat, description = line.strip().split('\t')
-        mappings[identifier] = int(index)
-
 meta = get_metadata()
 track_indices = meta.id2index(args['assay_ids'])
 if any(map(lambda x: x is None, track_indices)):
