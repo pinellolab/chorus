@@ -384,7 +384,7 @@ class EnvironmentManager:
         oracle_deps = {
             'enformer': ['tensorflow', 'tensorflow_hub'],
             'sei': ['torch'],
-            'borzoi': ['tensorflow'],
+            'borzoi': ['torch'],
             'chrombpnet': ['tensorflow']
         }
         
