@@ -10,6 +10,7 @@ Chorus provides a consistent, easy-to-use API for working with state-of-the-art 
 - **Borzoi**: Enhanced model for regulatory genomics predictions  
 - **ChromBPNet**: Predicts TF binding and chromatin accessibility at base-pair resolution
 - **Sei**: Sequence regulatory effect predictions across 21,907 chromatin profiles
+- **LegNet**: Regulatory regions activity prediction using models trained on MPRA data
 
 Key features:
 - 🧬 Unified API across different models
@@ -17,18 +18,17 @@ Key features:
 - 🔬 Variant effect prediction
 - 🎯 In silico mutagenesis and sequence optimization
 - 📈 Track normalization and comparison utilities
-- 🚀 Batch prediction support
+- 🚀 Enchanced sequence editing logic
 - 🔧 **NEW**: Isolated conda environments for each oracle to avoid dependency conflicts
 
 ## ⚠️ Current Status
 
-**This is a work-in-progress implementation.** Currently, Enformer, ChromBPNet and LegNet oracles is fully implemented with:
+ Currently, Enformer, Sei, Borzoi, ChromBPNet and LegNet oracles is fully implemented with:
+
 - Environment isolation support
 - Reference genome integration for biologically accurate predictions
 - ENCODE track identifier support
 - BedGraph output generation
-
-Other oracles (Borzoi, Flashzoi, Sei) have placeholder implementations and will be completed in future updates.
 
 ## Installation
 
@@ -43,9 +43,6 @@ mamba activate chorus
 
 # Install chorus package
 pip install -e .
-
-# Check if CLI tool works
-chorus --help
 ```
 
 ### Setting Up Oracle Environments
@@ -215,13 +212,8 @@ variant_effects = oracle.predict_variant_effect(
 
 ```python
 # Save as BedGraph for genome browser
-oracle.save_predictions_as_bedgraph(
-    predictions,
-    chrom='chr11',
-    start=5247000,
-    output_dir='outputs',
-    prefix='betaglobin'
-)
+wt_files = predictions.save_predictions_as_bedgraph(output_dir="bedgraph_outputs",
+                                                    prefix='a_wt')
 
 ```
 
@@ -286,9 +278,9 @@ predictions = oracle.predict(('chr1', 1000000, 1001000), ['DNase:K562'])
 
 ### 3. Track Support
 
-**Note: ENCODE track identifiers and cell type descriptions are specific to Enformer and Borzoi models. Other oracles may use different track naming conventions.**
+**Note: ENCODE track identifiers and cell type descriptions are specific to Enformer model. Other oracles may use different track naming conventions.**
 
-For Enformer/Borzoi:
+For Enformer:
 ```python
 # Using ENCODE identifier (recommended for reproducibility)
 predictions = oracle.predict(sequence, ['ENCFF413AHU'])  # Specific DNase:K562 experiment
@@ -300,7 +292,7 @@ predictions = oracle.predict(sequence, ['DNase:K562'])
 predictions = oracle.predict(sequence, ['CNhs11250'])  # CAGE:K562
 ```
 
-For other oracles (ChromBPNet, Sei, etc.), track specifications will vary based on the model's training data.
+For other oracles (Borzoi, ChromBPNet, Sei, etc.), track specifications will vary based on the model's training data.
 
 ### 4. BedGraph Output
 
@@ -316,6 +308,10 @@ Predictions can be saved as BedGraph tracks for genome browser visualization:
 
 ### Oracles
 Oracles are deep learning models that predict genomic regulatory activity. Each oracle implements a common interface while running in isolated environments.
+
+### Intervals
+
+Class as a unified interface to the reference genome/sequence. This component enables structured access to genomic coordinates while explicitly tracking and managing sequence edits together with their corresponding model predictions, thereby supporting reproducible in silico perturbation workflows and consistent downstream analysis.
 
 ### Tracks
 Tracks represent genomic signal data (e.g., DNase-seq, ChIP-seq). Enformer predicts 5,313 human tracks covering various assays and cell types.
@@ -334,35 +330,15 @@ chorus health
 chorus remove --oracle enformer
 ```
 
-## API Reference
-
-### Oracle Creation
-```python
-oracle = chorus.create_oracle(
-    oracle_name='enformer',
-    use_environment=True,  # Use isolated conda environment
-    reference_fasta='/path/to/hg38.fa'  # Optional, for coordinate-based predictions
-)
-```
-
-### Prediction Methods
-```python
-# Predict from sequence
-predictions = oracle.predict(
-    'ACGTACGT...',  # DNA sequence
-    ['track1', 'track2']  # Track identifiers (oracle-specific)
-)
-
-# Predict from genomic coordinates (requires reference_fasta)
-predictions = oracle.predict(
-    ('chr1', 1000000, 1001000),  # (chrom, start, end)
-    ['track1', 'track2']  # Track identifiers
-)
-```
-
 ## Model-Specific Details
 
-### Enformer (Implemented)
+### Enformer 
+
+Enformer [6] is a hybrid convolutional–transformer architecture
+designed for long-range sequence-to-function modeling of regulatory
+genomics, with the primary goal of predicting transcriptional and
+epigenomic activity directly from DNA sequence.
+
 - Sequence length: 393,216 bp input, 114,688 bp output window
 - Output: 896 bins × 5,313 tracks
 - Bin size: 128 bp
@@ -371,12 +347,57 @@ predictions = oracle.predict(
   - ENCODE IDs (e.g., ENCFF413AHU for DNase:K562)
   - CAGE IDs (e.g., CNhs11250 for CAGE:K562)
   - Descriptive names (e.g., 'DNase:K562', 'H3K4me3:HepG2')
-- Track metadata: Included in the package (783KB file with all 5,313 human track definitions)
+- Track metadata: Included in the package (file with all 5,313 human track definitions)
 
-### Other Models (Coming Soon)
-- **Borzoi**: Enhanced Enformer with improved performance (will support ENCODE track identifiers)
-- **ChromBPNet**: Base-pair resolution TF binding predictions (uses TF-specific tracks)
-- **Sei**: Sequence regulatory effect predictions (uses custom track naming for 21,907 profiles)
+### Borzoi
+
+Enhanced Enformer with improved performance and RNA-tracks predictions.
+
+- Sequence length: 393,216 bp input, 114,688 bp output window
+- Output: 896 bins × 5,313 tracks
+- Bin size: 128 bp
+- Track types: Gene expression (CAGE, RNA-Seq), chromatin accessibility (DNase/ATAC), histone modifications (ChIP-seq)
+- Track identifiers: 
+  - ENCODE IDs (e.g., ENCFF413AHU for DNase:K562)
+  - CAGE IDs (e.g., CNhs11250 for CAGE:K562)
+  - Descriptive names (e.g., 'DNase:K562', 'H3K4me3:HepG2')
+- Track metadata: Included in the package (file with all 7,610 human track definitions)
+
+
+### ChromBPNet
+
+Base-pair resolution for chromatin accessibility and TF binding predictions (uses TF-specific tracks)
+
+- Sequence length: 2114 bp input
+- Output: 1000 bins 
+- Bin size: 1 bp
+- Track types: DNase accessibility, TF binding (CHIP-Seq) 
+- Track identifiers: 
+  - ENCODE IDs (e.g., ENCFF574YLK for DNase:K562)
+
+### Sei
+
+Sequence regulatory effect predictions (uses custom track naming for 21,907 profiles)
+
+- Sequence length: 4096 bp input
+- Output: 1 bin 
+- Bin size: 4096 bp
+- Track types: DNase accessibility, TF binding (CHIP-Seq), histone modifications 
+- Track identifiers: 
+  - custom Sei track identifiers
+- Track metadata: Included in the package (files with all 21907 human track definitions and 41 Sei-defined classes)
+
+
+### LegNet
+ 
+LegNet is a fully convolutional neural network designed for efficient modeling of short regulatory DNA sequences.
+
+- Sequence length: 200 bp input
+- Output: 1 bin 
+- Bin size: 200 bp
+- Track types: Element activity in MPRA experiment
+- Track identifiers: 
+  - cell line names
 
 ## Troubleshooting
 
@@ -410,7 +431,7 @@ chorus setup --oracle enformer
 ```
 
 ### Memory Issues
-Enformer requires significant memory (~8-16 GB) for predictions. Solutions:
+Some oracles require a significant memory (~8-16 GB) for predictions. Solutions:
 - Force CPU usage: `device='cpu'`
 - Use a different GPU: `device='cuda:1'`
 - Reduce batch size if needed
@@ -435,10 +456,11 @@ oracle = chorus.create_oracle('enformer',
 ## Contributing
 
 We welcome contributions! Areas needing work:
-1. Complete implementations for Borzoi, ChromBPNet, and Sei oracles
-2. Add more examples and tutorials
-3. Implement batch prediction optimizations
-4. Add more visualization utilities
+
+1. Add more examples and tutorials
+2. Implement batch prediction optimizations
+3. Add more visualization utilities
+4. Add more oracles 
 
 ### Adding New Oracles
 
@@ -453,13 +475,6 @@ Key steps:
 4. Add tests and example notebooks
 5. Submit a PR with your implementation
 
-We're particularly interested in:
-- **Borzoi** - Enhanced Enformer with improved performance
-- **ChromBPNet** - Base-pair resolution TF binding predictions
-- **Sei** - Sequence regulatory effect predictions
-- **Basset** - Chromatin accessibility predictions
-- **DeepSEA** - Variant effect predictions
-
 The contributing guide includes complete code examples and templates to get you started.
 
 ## Citation
@@ -467,10 +482,10 @@ The contributing guide includes complete code examples and templates to get you 
 If you use Chorus in your research, please cite:
 
 ```bibtex
-@software{chorus2024,
+@software{chorus2026,
   title = {Chorus: A unified interface for genomic sequence oracles},
-  author = {Pinello Lab},
-  year = {2024},
+  author = {Dmitry Penzar , Lorenzo Ruggeri , Rosalba Giugno, Luca Pinello},
+  year = {2026},
   url = {https://github.com/pinellolab/chorus}
 }
 ```
@@ -486,3 +501,6 @@ Chorus integrates several groundbreaking models:
 - Borzoi (Linder et al., 2023)
 - ChromBPNet (Agarwal et al., 2021)
 - Sei (Chen et al., 2022)
+- LegNet (Penzar et al., 2023)
+
+For vizualization tasks we extensively use [coolbox package](https://github.com/GangCaoLab/CoolBox)
