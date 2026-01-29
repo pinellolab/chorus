@@ -13,6 +13,7 @@ import subprocess
 import logging
 import json
 import os
+import sys
 import tarfile
 from pathlib import Path
 
@@ -63,12 +64,18 @@ class ChromBPNetOracle(OracleBase):
         
         # Store Reference Genome
         self.reference_fasta = reference_fasta
-
+        
+        # Paths to model weights
         self.download_dir = CHORUS_DOWNLOADS_DIR / "chrombpnet"
         self.download_dir.mkdir(parents=True, exist_ok=True)
         self.model_path = None # will be set when the model is downloaded
         self.model_dir = None # Where templates and utils are stored
+        self.model = None
+
+        # Metadata path
         self.JASPAR_metadata = None
+
+        # Model specific parameters
         self.assay = None
         self.cell_type = None
         self.fold = 0
@@ -224,26 +231,31 @@ class ChromBPNetOracle(OracleBase):
             weights: Optional[str] = None,
             TF: Optional[str] = None,
             fold: int = 0,
-            model_type: str = 'chrombpnet'
+            model_type: str = 'chrombpnet',
+            is_custom: bool = False
         ) -> None:
         """Load ChromBPNet model weights."""
 
         if assay is None or cell_type is None:
             raise ValueError("You must provide both assay and cell-type if weights are None.")
         
-        if assay not in self.CHROMBPNET_MODELS_DICT:
-            raise ValueError(f"ChromBPNet supports only the following assays: {list(self.CHROMBPNET_MODELS_DICT.keys())}")
-        
-        if assay != "CHIP":            
-            # Check if the combination is valid
-            if cell_type not in self.CHROMBPNET_MODELS_DICT[assay]:
-                raise ValueError(f"ChromBPNet {assay} predictions can only be done on the following cell types: {list(self.CHROMBPNET_MODELS_DICT[assay].keys())}")
+        if not is_custom:
+            if assay not in self.CHROMBPNET_MODELS_DICT:
+                raise ValueError(f"ChromBPNet supports only the following assays: {list(self.CHROMBPNET_MODELS_DICT.keys())}")
+            
+            if assay != "CHIP":            
+                # Check if the combination is valid
+                if cell_type not in self.CHROMBPNET_MODELS_DICT[assay]:
+                    raise ValueError(f"ChromBPNet {assay} predictions can only be done on the following cell types: {list(self.CHROMBPNET_MODELS_DICT[assay].keys())}")
 
-            if fold not in range(5):
-                raise ValueError(f"ChromBPNet fold must be an integer between 0 and 4, got {fold}")
+                if fold not in range(5):
+                    raise ValueError(f"ChromBPNet fold must be an integer between 0 and 4, got {fold}")
+            else:
+                if TF is None:
+                    raise ValueError(f"You must provide TF for which you want ChIP-seq model.")
         else:
-            if TF is None:
-                 raise ValueError(f"You must provide TF for which you want ChIP-seq model.")
+            if weights is None:
+                raise ValueError("You must provide weights if custom flag is set.")
             
         # Store assay and celltype
         self.assay = assay
@@ -330,12 +342,29 @@ class ChromBPNetOracle(OracleBase):
                 else:
                     logger.info("No GPU detected, using CPU")
 
-            # Load the model using custom objects for loss function
-            model = tf.keras.models.load_model(
-                weights,
-                compile=False,
-                custom_objects={"multinomial_nll": self.multinomial_nll, "tf": tf}
-            )
+            # Load model
+            if self.assay == "CHIP":
+                sys.path.insert(0, self.get_templates_dir()) # to get BPNet visible
+                
+                from BPNet.arch import BPNet
+                
+                # Open JSON for architecture
+                with open(os.path.join(self.get_templates_dir(), "input_data.json")) as fopen:
+                    tasks_raw = json.load(fopen)
+                tasks = {int(k): v for k, v in tasks_raw.items()}
+
+                # Create model
+                model = BPNet(tasks, {}, name_prefix="main")
+
+                # Load weights
+                model.load_weights(weights)
+            else:
+                model = tf.keras.models.load_model(
+                    weights,
+                    compile=False,
+                    custom_objects={"multinomial_nll": self.multinomial_nll, "tf": tf}
+                )
+        
             self.model = model
 
             self.loaded = True
@@ -409,32 +438,37 @@ class ChromBPNetOracle(OracleBase):
 
         full_seq = input_interval.sequence
 
+        # Allocate space for output
+        seq_len = max(len(full_seq), self.sequence_length)
+
         if self.use_environment:
-
-            # Allocate space for output
-            seq_len = max(len(full_seq), self.sequence_length)
-            
-            predictions = self._predict_in_environment(full_seq, assay_ids)
-
-            # Extract track and counts
-            probabilities, counts = predictions
-
-            predictions_list = []
-            if self.assay == "CHIP":
-                # You have plus and minus strand predictions
-                plus = self._transform_predictions_to_tracks(probabilities[..., 0], counts, seq_len)
-                minus = self._transform_predictions_to_tracks(probabilities[..., 1], counts, seq_len)
-
-                # Append to the list
-                predictions_list.append(plus)
-                predictions_list.append(minus)
-            else:
-                # You have only one prediction
-                prediction = self._transform_predictions_to_tracks(probabilities, counts, seq_len)
-                predictions_list.append(prediction)
+            predictions = self._predict_in_environment(
+                full_seq, 
+                assay_ids
+            )
 
         else:
-            raise NotImplementedError("ChromBPNet direct prediction not yet implemented")
+            predictions = self._predict_direct(
+                full_seq, 
+                assay_ids
+            )
+
+        # Extract track and counts
+        probabilities, counts = predictions
+
+        predictions_list = []
+        if self.assay == "CHIP":
+            # You have plus and minus strand predictions
+            plus = self._transform_predictions_to_tracks(probabilities[..., 0], counts, seq_len)
+            minus = self._transform_predictions_to_tracks(probabilities[..., 1], counts, seq_len)
+
+            # Append to the list
+            predictions_list.append(plus)
+            predictions_list.append(minus)
+        else:
+            # You have only one prediction
+            prediction = self._transform_predictions_to_tracks(probabilities, counts, seq_len)
+            predictions_list.append(prediction)
         
         final_prediction = OraclePrediction()
 
@@ -489,6 +523,58 @@ class ChromBPNetOracle(OracleBase):
 
         return probabilities, counts
     
+    def _predict_direct(self, seq: str, assay_ids: List[str]) -> Tuple[np.ndarray, np.ndarray]:
+        import tensorflow as tf
+        # Mapping dict
+        MAPPING = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
+
+        if len(seq) > self.sequence_length:
+            num_windows_stride_one = (len(seq) - self.sequence_length + 1)
+            num_windows = (num_windows_stride_one + self.sequence_length - 1) // self.sequence_length + 1
+
+            # Define seq_len and flag
+            seq_len = (self.output_length * (num_windows - 1)) + self.sequence_length
+            trimmed = False
+        else:
+            seq_len = len(seq)
+            trimmed = True
+
+        # One hot encoding
+        one_hot = np.zeros((seq_len, 4), dtype=np.float32)
+        for i, base in enumerate(seq.upper()):
+            if base in MAPPING:
+                one_hot[i, MAPPING[base]] = 1.0
+
+        # Add batch dimension
+        if trimmed:
+            one_hot_batch = tf.constant(one_hot[np.newaxis], dtype=tf.float32)
+        else:
+            # Compute windows of 2114 with a stride of 1000 to extend the prediction
+            new_shape = (num_windows, self.sequence_length, 4)
+            stride_x, stride_y = one_hot.strides
+            new_stride = (stride_x * self.output_length, stride_x, stride_y)
+
+            one_hot_batch = np.lib.stride_tricks.as_strided(one_hot, shape=new_shape, strides=new_stride)
+
+        # Extract predictions
+        if self.assay == "CHIP":
+            # JASPAR models require bias profile and counts
+            profile_bias = (
+                np.zeros((num_windows, self.output_length, 2), dtype="float32") if not trimmed
+                else np.zeros((1, self.output_length, 2), dtype="float32")
+            )
+            count_bias = (
+                np.zeros((num_windows, 1), dtype="float32") if not trimmed
+                else np.zeros((1, 1), dtype="float32")
+            )
+            result = self.model.predict_on_batch(
+                [one_hot_batch, profile_bias, count_bias]
+            ) 
+        else:
+            result = self.model.predict_on_batch(one_hot_batch)
+
+        return result
+            
     @property
     def output_size(self):
         return self.bin_size * self.output_length
