@@ -69,6 +69,7 @@ class SeiOracle(OracleBase):
         self._target_list = None
         self._classes_list = None 
         self.download_dir = SEI_MODELS_DIR
+        self._model_info = None
 
         if not self.get_model_weights_path().exists() or not self.get_projector_weights().exists() or not self.get_adjustor_params().exists() or not self.get_target_names().exists() or not self.get_classes_names().exists():
             self._download_sei_model()
@@ -153,8 +154,8 @@ class SeiOracle(OracleBase):
     def _load_direct(self):
         try:
             import torch 
-            from .sei.sei import Sei, SeiProjector, SeiNormalizer
-            from .sei.annotations import SeiClassesList, SeiTargetList
+            from .sei_source.sei import Sei, SeiProjector, SeiNormalizer
+            from .sei_source.annotations import SeiClassesList, SeiTargetList
 
             device = torch.device(self.device)
             model = Sei(sequence_length=self.sequence_length, n_genomic_features=self.n_targets)
@@ -189,7 +190,7 @@ class SeiOracle(OracleBase):
         elif self._target_list is not None: # model is loaded in current environment
             return self._target_list.list_assay_types()
         else:
-            from .sei.annotations import SeiTargetList
+            from .sei_source.annotations import SeiTargetList
             targets = SeiTargetList.load(self.get_target_names())
             return targets.list_assay_types()
 

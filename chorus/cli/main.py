@@ -153,7 +153,7 @@ def check_health(args):
     
     for oracle in oracles:
         logger.info(f"\nChecking {oracle}...")
-        health = runner.check_environment_health(oracle)
+        health = runner.check_environment_health(oracle, timeout=args.timeout)
         
         if health['errors']:
             logger.error(f"✗ {oracle}: Unhealthy")
@@ -342,6 +342,12 @@ def main(argv: Optional[List[str]] = None):
     health_parser.add_argument(
         '--oracle',
         help='Specific oracle to check (default: all installed)'
+    )
+    health_parser.add_argument(
+        '--timeout',
+        help='Timeout for health check per single oracle (default: 30 seconds)',
+        default=30,
+        type=int
     )
     health_parser.add_argument(
         '--verbose', '-v',

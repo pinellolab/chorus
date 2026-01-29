@@ -41,7 +41,14 @@ class EnvironmentManager:
         self._env_cache = {}
         
     def _find_conda_executable(self) -> Optional[str]:
-        """Find conda or mamba executable."""
+        """Find mamba or conda executable."""
+
+        # Check MAMBA_EXE environment variable
+        mamba_exe = os.environ.get('MAMBA_EXE')
+        if mamba_exe and os.path.exists(mamba_exe):
+            logger.info(f"Found mamba via MAMBA_EXE: {mamba_exe}")
+            return mamba_exe
+
         # First check CONDA_EXE environment variable (set by conda when activated)
         conda_exe = os.environ.get('CONDA_EXE')
         if conda_exe and os.path.exists(conda_exe):
@@ -53,12 +60,6 @@ class EnvironmentManager:
                 logger.info(f"Found mamba at: {mamba_exe}")
                 return mamba_exe
             return conda_exe
-        
-        # Check MAMBA_EXE environment variable
-        mamba_exe = os.environ.get('MAMBA_EXE')
-        if mamba_exe and os.path.exists(mamba_exe):
-            logger.info(f"Found mamba via MAMBA_EXE: {mamba_exe}")
-            return mamba_exe
         
         # Try using the base conda installation path
         conda_prefix = os.environ.get('CONDA_PREFIX')
@@ -95,9 +96,6 @@ class EnvironmentManager:
             os.path.expanduser("~/anaconda3/bin/conda"),
             "/opt/conda/bin/conda",
             "/usr/local/bin/conda",
-            # Add path specific to your setup
-            "/data/pinello/SHARED_SOFTWARE/miniforge3/bin/mamba",
-            "/data/pinello/SHARED_SOFTWARE/miniforge3/bin/conda"
         ]
         
         # Also check for mamba in these locations
@@ -159,10 +157,26 @@ class EnvironmentManager:
         except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
             logger.error(f"Error checking environment existence: {e}")
             return False
+        
+    def install_chorus_primitive(self, oracle: str) -> bool:
+        import shlex
+        from chorus import PACKAGE_DIR
+        env_name = self.get_environment_name(oracle)
+
+        running_command = shlex.split(f"mamba run -n {env_name} python -m pip install -e . --no-deps --no-build-isolation")
+        result = subprocess.run(
+                running_command,
+                capture_output=True,
+                text=True,
+                cwd=PACKAGE_DIR
+            )
+        if result.returncode != 0:
+            raise RuntimeError(f"Execution failed: {result.stderr}")
+
     
     def create_environment(self, oracle: str, force: bool = False) -> bool:
         """
-        Create a conda environment for the given oracle.
+        Create a mamba environment for the given oracle.
         
         Args:
             oracle: Name of the oracle
@@ -209,6 +223,8 @@ class EnvironmentManager:
                 print(line, end="") 
 
             process.wait()
+
+            self.install_chorus_primitive(oracle)
 
             if process.returncode == 0:
                 logger.info(f"Successfully created environment {env_name}")
