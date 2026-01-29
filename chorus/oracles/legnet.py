@@ -27,7 +27,7 @@ class LegNetOracle(OracleBase):
     """LegNet oracle implementation for sequence regulatory activities."""
 
     def __init__(self, 
-                 cell_type: str,
+                 cell_type: str = 'HepG2',
                  assay: str = 'LentiMPRA',
                  model_id: str = 'example',
                  step_size: int = LEGNET_DEFAULT_STEP,

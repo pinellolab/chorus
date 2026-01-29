@@ -278,16 +278,9 @@ except Exception as e:
         script = f"""
 import json
 import sys
-
-try:
-
-    # from chorus.oracles.{oracle} import {oracle.capitalize()}Oracle
-    from chorus.oracles.{oracle} import {class_name}
-    
-    # Create instance
-    # oracle_instance = {oracle.capitalize()}Oracle()
-    oracle_instance = {class_name}()
-    
+import chorus
+try:    
+    oracle_instance = chorus.create_oracle('{oracle}', use_environment=True)
     # Get metadata
     metadata = {{
         'class_name': oracle_instance.__class__.__name__,
@@ -402,7 +395,7 @@ with open('{output_path}', 'wb') as f:
         
         return self.run_in_environment(oracle, wrapper, args, kwargs, timeout)
     
-    def check_environment_health(self, oracle: str) -> Dict[str, Any]:
+    def check_environment_health(self, oracle: str, timeout: int) -> Dict[str, Any]:
         """
         Check the health of an oracle's environment.
         
@@ -435,7 +428,7 @@ with open('{output_path}', 'wb') as f:
         
         # Try to import oracle
         try:
-            metadata = self.import_oracle_in_environment(oracle, timeout=30)  # Increased for slower systems
+            metadata = self.import_oracle_in_environment(oracle, timeout=timeout)  # Increased for slower systems
             health['can_import'] = True
             health['metadata'] = metadata
         except Exception as e:

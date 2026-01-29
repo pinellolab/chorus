@@ -18,10 +18,11 @@ from .core import (
     InvalidRegionError,
     FileFormatError
 )
-
 # Import oracles - make them optional to avoid dependency issues
 import os
 import warnings
+
+PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 if not os.environ.get('CHORUS_DISABLE_ORACLE_IMPORTS'):
     try:
@@ -212,5 +213,6 @@ __all__ = [
     # Visualization utilities
     'visualize_tracks',
     'plot_track_heatmap',
-    'plot_track_comparison'
+    'plot_track_comparison',
+    'PACKAGE_DIR',
 ]
