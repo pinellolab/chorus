@@ -53,12 +53,18 @@ Chorus uses isolated conda environments for each oracle to avoid dependency conf
 # Set up Enformer environment (TensorFlow-based)
 chorus setup --oracle enformer
 
-# Check environment health
-chorus health
-
 # List available environments
 chorus list
 ```
+
+You can check the correctness of installation using the following command
+
+```bash
+# Check environment health
+chorus health --timeout 300
+```
+
+Note: If you haven’t used Oracle yet, it will need some time to download its weights.
 
 ### Managing Reference Genomes
 
