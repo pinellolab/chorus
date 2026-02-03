@@ -6,6 +6,7 @@ from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..core.interval import Interval, GenomeRef, Sequence
 from ..core.exceptions import ModelNotLoadedError
 from ..core.globals import CHORUS_DOWNLOADS_DIR
+from .chrombpnet_source.chrombpnet_globals import CHROMBPNET_MODELS_DICT
 
 from typing import List, Tuple, Optional, ClassVar
 import numpy as np
@@ -26,21 +27,6 @@ logger = logging.getLogger(__name__)
 
 class ChromBPNetOracle(OracleBase):
     """ChromBPNet oracle implementation for TF binding and chromatin accessibility."""
-    CHROMBPNET_MODELS_DICT: ClassVar[dict[str, dict[str, str]]] = {
-        "ATAC": {
-            "K562": "ENCFF984RAF",
-            "HepG2": "ENCFF137WCM",
-            "GM12878": "ENCFF142IOR",
-            "IMR-90": "ENCFF113GSV"
-        },
-        "DNASE": {
-            "HepG2": "ENCFF615AKY",
-            "IMR-90": "ENCFF515HBV",
-            "GM12878": "ENCFF673TIN",
-            "K562": "ENCFF574YLK"
-        },
-        "CHIP": {}
-    }
 
     def __init__(self,
                  use_environment: bool = True, 
@@ -94,7 +80,13 @@ class ChromBPNetOracle(OracleBase):
 
     def get_model_weights_path(self, assay: str, cell_type: str, fold: int, tf: Optional[str] = None, model_type: str = 'chrombpnet') -> Path:
         if tf is None:  
-            path = self.get_model_weights_dir(assay, cell_type) / 'models' / f"fold_{fold}" / model_type / 'chrombpnet'
+            path = self.get_model_weights_dir(assay, cell_type) / 'models' / f"fold_{fold}" / model_type
+            # Models can have inner dirs to descend
+            if path.exists() and path.is_dir():
+                subdirs = [p for p in path.iterdir() if p.is_dir()]
+                if len(subdirs) == 1:
+                    path = subdirs[0]
+    
         else:
             weights_name = os.path.basename(self.JASPAR_metadata.get_weights_by_cell_and_tf(tf, cell_type))
             path = self.get_model_weights_dir(assay, cell_type, tf) / weights_name
@@ -167,7 +159,7 @@ class ChromBPNetOracle(OracleBase):
     def _download_chrombpnet_model(self): 
         
         # Get model's ENCODE idx
-        idx = self.CHROMBPNET_MODELS_DICT[self.assay][self.cell_type]
+        idx = CHROMBPNET_MODELS_DICT[self.assay][self.cell_type]
 
         # Create download link
         download_link = self.get_encode_link(idx)
@@ -220,8 +212,16 @@ class ChromBPNetOracle(OracleBase):
                 import glob
                 t_path =glob.glob(t_pattern)[0] # one file for pattern
                 t_out = os.path.join(models_dir, t_type)
-                with tarfile.open(t_path, "r:") as tar:
-                    tar.extractall(path=t_out)
+
+                try:
+                    with tarfile.open(t_path, "r:") as tar:
+                        tar.extractall(path=t_out)
+                except:
+                    # If the "tar file" is actually a directory, rename it to chrombpnet
+                    if os.path.isdir(t_path):
+                        os.rename(t_path, os.path.join(os.path.dirname(t_path), t_type))
+                    else:
+                        raise
                 
 
     def load_pretrained_model(
@@ -240,13 +240,13 @@ class ChromBPNetOracle(OracleBase):
             raise ValueError("You must provide both assay and cell-type if weights are None.")
         
         if not is_custom:
-            if assay not in self.CHROMBPNET_MODELS_DICT:
-                raise ValueError(f"ChromBPNet supports only the following assays: {list(self.CHROMBPNET_MODELS_DICT.keys())}")
+            if assay not in CHROMBPNET_MODELS_DICT:
+                raise ValueError(f"ChromBPNet supports only the following assays: {list(CHROMBPNET_MODELS_DICT.keys())}")
             
             if assay != "CHIP":            
                 # Check if the combination is valid
-                if cell_type not in self.CHROMBPNET_MODELS_DICT[assay]:
-                    raise ValueError(f"ChromBPNet {assay} predictions can only be done on the following cell types: {list(self.CHROMBPNET_MODELS_DICT[assay].keys())}")
+                if cell_type not in CHROMBPNET_MODELS_DICT[assay]:
+                    raise ValueError(f"ChromBPNet {assay} predictions can only be done on the following cell types: {list(CHROMBPNET_MODELS_DICT[assay].keys())}")
 
                 if fold not in range(5):
                     raise ValueError(f"ChromBPNet fold must be an integer between 0 and 4, got {fold}")
@@ -276,10 +276,15 @@ class ChromBPNetOracle(OracleBase):
             if not os.path.exists(weights):
                 if assay != "CHIP":
                     self._download_chrombpnet_model()
+
+                    # Rechecking due to download
+                    weights = self.get_model_weights_path(assay, cell_type, fold, TF, model_type)
+
                 else:
                     self._download_model_from_JASPAR()
             if not os.path.exists(weights):
                 raise FileNotFoundError(f"Weights file {weights} not found even after downloading from ENCODE")
+
             self.model_path = weights
         else:
             # Use directly the specified path
