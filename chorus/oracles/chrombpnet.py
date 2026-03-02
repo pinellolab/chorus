@@ -507,7 +507,7 @@ class ChromBPNetOracle(OracleBase):
     def _predict_in_environment(self, seq: str, assay_ids: List[str]) -> Tuple[np.ndarray, np.ndarray]:
         args = {
             "device": self.device,
-            "model_weights": str(self.get_model_weights_path(self.assay, self.cell_type, self.fold, self.tf)),
+            "model_weights": str(self.model_path),
             "sequence": seq,
             "assay_ids": assay_ids,
             "sequence_length": self.sequence_length,
