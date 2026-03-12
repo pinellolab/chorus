@@ -163,7 +163,7 @@ class EnvironmentManager:
         from chorus import PACKAGE_DIR
         env_name = self.get_environment_name(oracle)
 
-        running_command = shlex.split(f"mamba run -n {env_name} python -m pip install -e . --no-deps --no-build-isolation")
+        running_command = shlex.split(f"{self.conda_exe} run -n {env_name} python -m pip install -e . --no-deps --no-build-isolation")
         result = subprocess.run(
                 running_command,
                 capture_output=True,
