@@ -102,7 +102,8 @@ def _pkg_name(spec: str) -> str:
         'numpy>=1.21.0' -> 'numpy'
         'protobuf==3.20' -> 'protobuf'
     """
-    for sep in ('==', '>=', '<=', '!=', '<', '>', '~='):
+    # Check multi-char separators first, then single-char
+    for sep in ('==', '>=', '<=', '!=', '~=', '<', '>', '='):
         if sep in spec:
             return spec.split(sep)[0].strip()
     return spec.strip()
@@ -156,29 +157,37 @@ PLATFORM_ADAPTATIONS: Dict[str, Dict[str, EnvironmentAdaptation]] = {
             pip_replace={
                 "tensorflow": "tensorflow>=2.15.0,<2.17.0",
             },
+            pip_add=[
+                "setuptools<81",  # tensorflow_hub needs pkg_resources
+            ],
             notes=[
                 "TensorFlow <2.13 is not available for Apple Silicon; "
                 "broadening range to >=2.15",
+                "Pinned setuptools<81 (tensorflow_hub requires pkg_resources)",
             ],
         ),
     },
     "borzoi": {
         "macos_arm64": EnvironmentAdaptation(
-            conda_remove=["cudatoolkit"],
-            pip_remove=["nvidia::cuda-nvcc"],
-            channels_remove=["nvidia"],
+            conda_remove=["cudatoolkit", "nvidia::cuda-nvcc"],
+            channels_remove=["pytorch", "nvidia"],
             notes=[
                 "CUDA packages removed (not available on macOS); "
                 "PyTorch will use CPU/MPS backend",
+                "Removed pytorch channel (available on conda-forge for ARM Mac)",
             ],
         ),
     },
     "sei": {
         "macos_arm64": EnvironmentAdaptation(
-            conda_remove=["cudatoolkit"],
+            conda_remove=["cudatoolkit", "pytorch", "torchvision"],
+            conda_add=["pytorch>=1.13.0", "torchvision>=0.14.0"],
+            channels_remove=["pytorch"],
             notes=[
                 "CUDA toolkit removed (not available on macOS); "
                 "PyTorch will use CPU/MPS backend",
+                "Removed pytorch channel (available on conda-forge for ARM Mac)",
+                "Relaxed PyTorch <2.0 upper bound (compatible with Sei on ARM Mac)",
             ],
         ),
     },
@@ -186,10 +195,10 @@ PLATFORM_ADAPTATIONS: Dict[str, Dict[str, EnvironmentAdaptation]] = {
         "macos_arm64": EnvironmentAdaptation(
             conda_remove=["pytorch-gpu", "cuda-version"],
             conda_add=["pytorch>=2.0"],
-            channels_remove=["nvidia"],
+            channels_remove=["pytorch", "nvidia"],
             notes=[
                 "Replaced pytorch-gpu with pytorch (no GPU variant on macOS); "
-                "removed CUDA and nvidia channel",
+                "removed CUDA, nvidia and pytorch channels (conda-forge has ARM builds)",
             ],
         ),
     },
