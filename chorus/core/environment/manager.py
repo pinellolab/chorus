@@ -4,12 +4,14 @@ import os
 import json
 import subprocess
 import logging
+import tempfile
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 import yaml
 import sys
 
 from ..globals import CHORUS_ENVIRONMENTS_DIR
+from ..platform import detect_platform, adapt_environment_config, PlatformInfo
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +22,7 @@ class EnvironmentManager:
     def __init__(self, base_path: Optional[Path] = None, conda_exe: Optional[str] = None):
         """
         Initialize the environment manager.
-        
+
         Args:
             base_path: Base path for environments directory
             conda_exe: Path to conda executable
@@ -28,15 +30,18 @@ class EnvironmentManager:
         if base_path is None:
             # Default to package root/environments
             base_path = CHORUS_ENVIRONMENTS_DIR
-        
+
         self.base_path = Path(base_path)
         self.base_path.mkdir(exist_ok=True)
-        
+
         # Try to find conda executable
         self.conda_exe = conda_exe or self._find_conda_executable()
         if not self.conda_exe:
             raise RuntimeError("Could not find conda executable. Please install conda or mamba.")
-        
+
+        # Detect platform once at init
+        self.platform_info = detect_platform()
+
         # Cache for environment status
         self._env_cache = {}
         
@@ -177,39 +182,72 @@ class EnvironmentManager:
     def create_environment(self, oracle: str, force: bool = False) -> bool:
         """
         Create a mamba environment for the given oracle.
-        
+
+        Detects the current platform architecture and adapts the environment
+        YAML if needed (e.g. different TensorFlow versions for ARM macOS,
+        removing CUDA packages on non-GPU systems).
+
         Args:
             oracle: Name of the oracle
             force: If True, recreate environment even if it exists
-            
+
         Returns:
             True if successful, False otherwise
         """
         env_name = self.get_environment_name(oracle)
         env_file = self.get_environment_file(oracle)
-        
+
         if not env_file.exists():
             logger.error(f"Environment file not found: {env_file}")
             return False
-        
+
         # Check if environment already exists
         if self.environment_exists(oracle) and not force:
             logger.info(f"Environment {env_name} already exists")
             return True
-        
+
         # Remove existing environment if force is True
         if force and self.environment_exists(oracle):
             logger.info(f"Removing existing environment {env_name}")
             self.remove_environment(oracle)
-        
+
+        # Load and adapt the YAML for the current platform
+        with open(env_file, 'r') as f:
+            env_config = yaml.safe_load(f)
+
+        adapted_config, post_install_steps, notes = adapt_environment_config(
+            env_config, oracle, self.platform_info
+        )
+
+        # Log any platform adaptations
+        if notes:
+            logger.info(
+                f"Platform adaptation ({self.platform_info.key}) for {oracle}:"
+            )
+            for note in notes:
+                logger.info(f"  - {note}")
+
+        # Determine which file to pass to conda
+        if adapted_config is not env_config:
+            # Write adapted config to a temp file
+            tmp_file = tempfile.NamedTemporaryFile(
+                mode='w', suffix='.yml', prefix=f'chorus-{oracle}-',
+                delete=False
+            )
+            yaml.dump(adapted_config, tmp_file, default_flow_style=False)
+            tmp_file.close()
+            effective_env_file = tmp_file.name
+            logger.info(f"Using adapted environment file: {effective_env_file}")
+        else:
+            effective_env_file = str(env_file)
+
         # Create environment
         logger.info(f"Creating environment {env_name} from {env_file}")
         try:
-            cmd = [self.conda_exe, 'env', 'create', '-f', str(env_file), '-y']
-            
-            # Use mamba if available for faster solving
-            if 'mamba' in self.conda_exe:
-                cmd = [self.conda_exe, 'env', 'create', '-f', str(env_file), '-y']
+            cmd = [
+                self.conda_exe, 'env', 'create',
+                '-f', effective_env_file, '-y'
+            ]
 
             process = subprocess.Popen(
                 cmd,
@@ -220,23 +258,81 @@ class EnvironmentManager:
 
             # Stream output live
             for line in process.stdout:
-                print(line, end="") 
+                print(line, end="")
 
             process.wait()
 
-            self.install_chorus_primitive(oracle)
-
-            if process.returncode == 0:
-                logger.info(f"Successfully created environment {env_name}")
-                self._env_cache[env_name] = True
-                return True
-            else:
+            if process.returncode != 0:
                 logger.error(f"Failed to create environment: {process.stderr}")
                 return False
-                
+
+            # Run post-install steps (e.g. pip install --no-deps)
+            if post_install_steps:
+                if not self._run_post_install(oracle, post_install_steps):
+                    logger.error(
+                        f"Post-install steps failed for {oracle}. "
+                        f"Environment was created but may be incomplete."
+                    )
+                    return False
+
+            self.install_chorus_primitive(oracle)
+
+            logger.info(f"Successfully created environment {env_name}")
+            self._env_cache[env_name] = True
+            return True
+
         except subprocess.CalledProcessError as e:
             logger.error(f"Error creating environment: {e}")
             return False
+        finally:
+            # Clean up temp file
+            if adapted_config is not env_config:
+                try:
+                    os.unlink(effective_env_file)
+                except OSError:
+                    pass
+
+    def _run_post_install(self, oracle: str, steps) -> bool:
+        """Run post-install pip commands in the oracle's environment.
+
+        Args:
+            oracle: Oracle name.
+            steps: List of PostInstallStep objects.
+
+        Returns:
+            True if all steps succeeded.
+        """
+        env_name = self.get_environment_name(oracle)
+
+        for step in steps:
+            if step.description:
+                logger.info(f"Post-install: {step.description}")
+
+            cmd = [
+                self.conda_exe, 'run', '-n', env_name,
+                'python', '-m', 'pip', 'install',
+            ] + step.flags + step.packages
+
+            logger.info(f"Running: {' '.join(cmd)}")
+
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+            )
+            for line in process.stdout:
+                print(line, end="")
+            process.wait()
+
+            if process.returncode != 0:
+                logger.error(
+                    f"Post-install step failed: "
+                    f"pip install {' '.join(step.flags)} {' '.join(step.packages)}"
+                )
+                return False
+
+        return True
     
     def remove_environment(self, oracle: str) -> bool:
         """Remove a conda environment for the given oracle."""
