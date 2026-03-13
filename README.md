@@ -19,7 +19,7 @@ Key features:
 - 🔬 Variant effect prediction
 - 🎯 In silico mutagenesis and sequence optimization
 - 📈 Track normalization and comparison utilities
-- 🚀 Enchanced sequence editing logic
+- 🚀 Enhanced sequence editing logic
 - 🔧 **NEW**: Isolated conda environments for each oracle to avoid dependency conflicts
 
 ## ⚠️ Current Status
@@ -236,7 +236,7 @@ For a detailed walkthrough with visualizations and gene annotations, see the com
 chorus genome download hg38
 
 # Run the comprehensive notebook
-jupyter notebook examples/gata1_comprehensive_analysis.ipynb
+jupyter notebook examples/comprehensive_oracle_showcase.ipynb
 ```
 
 This notebook demonstrates:
@@ -255,8 +255,8 @@ Each oracle runs in its own conda environment to avoid dependency conflicts:
 # TensorFlow-based Enformer runs in isolated environment
 enformer = chorus.create_oracle('enformer', use_environment=True)
 
-# Future: PyTorch-based models will have their own environments
-borzoi = chorus.create_oracle('borzoi', use_environment=True)  # Coming soon
+# PyTorch-based Borzoi runs in its own isolated environment
+borzoi = chorus.create_oracle('borzoi', use_environment=True)
 ```
 
 ### 2. Reference Genome Integration
