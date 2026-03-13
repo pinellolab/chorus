@@ -18,11 +18,12 @@ REFERENCE_FASTA = "genomes/hg38.fa"
 
 # Genomic regions on chr1 sized to each oracle's input window
 REGIONS = {
-    "chrombpnet": ("chr1", 1_000_000, 1_002_114),
-    "enformer":   ("chr1", 1_000_000, 1_393_216),
-    "borzoi":     ("chr1", 1_000_000, 1_524_288),
-    "sei":        ("chr1", 1_000_000, 1_004_096),
-    "legnet":     ("chr1", 1_000_000, 1_002_048),
+    "chrombpnet":   ("chr1", 1_000_000, 1_002_114),
+    "enformer":     ("chr1", 1_000_000, 1_393_216),
+    "borzoi":       ("chr1", 1_000_000, 1_524_288),
+    "sei":          ("chr1", 1_000_000, 1_004_096),
+    "legnet":       ("chr1", 1_000_000, 1_002_048),
+    "alphagenome":  ("chr1", 1_000_000, 2_048_576),
 }
 
 
@@ -124,6 +125,33 @@ class TestSmokeLegnet:
         result = legnet_oracle.predict(REGIONS["legnet"])
         tracks = dict(result.items())
         assert len(tracks) > 0, "No tracks returned"
+        for name, track in tracks.items():
+            assert track.values.shape[0] > 0, f"Empty values for {name}"
+            assert np.isfinite(track.values).all(), f"Non-finite values in {name}"
+
+
+@pytest.fixture(scope="module")
+def alphagenome_oracle():
+    oracle = chorus.create_oracle(
+        "alphagenome", use_environment=True, reference_fasta=REFERENCE_FASTA
+    )
+    oracle.load_pretrained_model()
+    return oracle
+
+
+class TestSmokeAlphagenome:
+    def test_predict(self, alphagenome_oracle):
+        # Use the first available assay id from metadata
+        from chorus.oracles.alphagenome_source.alphagenome_metadata import get_metadata
+        metadata = get_metadata()
+        assay_ids = list(metadata._track_index_map.keys())[:1]
+        if not assay_ids:
+            pytest.skip("No AlphaGenome track metadata available")
+        result = alphagenome_oracle.predict(
+            REGIONS["alphagenome"], assay_ids=assay_ids
+        )
+        tracks = dict(result.items())
+        assert len(tracks) == 1
         for name, track in tracks.items():
             assert track.values.shape[0] > 0, f"Empty values for {name}"
             assert np.isfinite(track.values).all(), f"Non-finite values in {name}"

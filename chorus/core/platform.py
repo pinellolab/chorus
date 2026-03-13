@@ -27,10 +27,17 @@ class PlatformInfo:
 
     @property
     def key(self) -> str:
-        """Return a platform key for adaptation lookup (e.g. 'macos_arm64')."""
+        """Return a platform key for adaptation lookup (e.g. 'macos_arm64').
+
+        Appends '_cuda' on Linux when NVIDIA GPU is detected, so that
+        oracle-specific CUDA adaptations (e.g. jax[cuda12]) can be applied.
+        """
         os_part = "macos" if self.is_macos else "linux" if self.is_linux else self.system.lower()
         arch_part = "arm64" if self.is_arm else self.machine
-        return f"{os_part}_{arch_part}"
+        base = f"{os_part}_{arch_part}"
+        if self.has_cuda:
+            return f"{base}_cuda"
+        return base
 
 
 def detect_platform() -> PlatformInfo:
@@ -202,6 +209,27 @@ PLATFORM_ADAPTATIONS: Dict[str, Dict[str, EnvironmentAdaptation]] = {
             ],
         ),
     },
+    "alphagenome": {
+        "macos_arm64": EnvironmentAdaptation(
+            pip_replace={
+                "jax[cpu]": "jax",
+            },
+            pip_add=[
+                "jax-metal",
+            ],
+            notes=[
+                "JAX with Metal backend for Apple Silicon",
+            ],
+        ),
+        "linux_x86_64_cuda": EnvironmentAdaptation(
+            pip_replace={
+                "jax[cpu]": "jax[cuda12]",
+            },
+            notes=[
+                "JAX with CUDA 12 backend for NVIDIA GPUs",
+            ],
+        ),
+    },
 }
 
 
@@ -223,6 +251,12 @@ def adapt_environment_config(
     """
     oracle_adaptations = PLATFORM_ADAPTATIONS.get(oracle, {})
     adaptation = oracle_adaptations.get(platform_info.key)
+
+    # Fall back to base key without _cuda suffix so that existing
+    # platform entries (e.g. "linux_x86_64") still match on CUDA systems.
+    if adaptation is None and platform_info.has_cuda:
+        base_key = platform_info.key.removesuffix("_cuda")
+        adaptation = oracle_adaptations.get(base_key)
 
     if adaptation is None:
         return config, [], []

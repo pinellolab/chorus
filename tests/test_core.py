@@ -70,9 +70,9 @@ class TestTrack:
         
         track = Track("test", "DNase", "K562", data)
         
-        # Get chr1 region
+        # Get chr1 region — bins overlapping [150, 350) are [100-200, 200-300, 300-400]
         region_data = track.get_region_values('chr1', 150, 350)
-        assert len(region_data) == 2
+        assert len(region_data) == 3
         assert all(region_data['chrom'] == 'chr1')
     
     def test_aggregate_by_bins(self):
@@ -163,17 +163,222 @@ class TestOracleBase:
         
         oracle = TestOracle()
         
-        # Valid sequence
-        oracle._validate_sequence("ATCGATCG")
-        oracle._validate_sequence("ATCGATCGN")
-        
-        # Invalid sequence
+        # Valid sequence (min length is 10 per _get_sequence_length_bounds)
+        oracle._validate_sequence("ATCGATCGATCG")
+        oracle._validate_sequence("ATCGATCGATCGN")
+
+        # Invalid characters
         with pytest.raises(InvalidSequenceError):
-            oracle._validate_sequence("ATCGATCGX")
-        
-        # Invalid length
+            oracle._validate_sequence("ATCGATCGATCGX")
+
+        # Too short (min=10)
         with pytest.raises(InvalidSequenceError):
-            oracle._validate_sequence("ATG")  # Too short
+            oracle._validate_sequence("ATG")
+
+
+class TestOraclePredictionTrack:
+    """Test OraclePredictionTrack properties and methods."""
+
+    def _make_track(self, assay_id="DNase:K562", num_bins=896):
+        from chorus.core.result import OraclePredictionTrack
+        from chorus.core.interval import Interval, Sequence
+
+        seq = "A" * 10000
+        interval = Interval.make(Sequence(sequence=seq))
+
+        return OraclePredictionTrack.create(
+            source_model="mock",
+            assay_id=assay_id,
+            track_id=0,
+            assay_type="DNase",
+            cell_type="K562",
+            query_interval=interval,
+            prediction_interval=interval,
+            input_interval=interval,
+            resolution=128,
+            values=np.random.rand(num_bins).astype(np.float32),
+        )
+
+    def test_score_mean(self):
+        track = self._make_track()
+        s = track.score("mean")
+        assert isinstance(s, float)
+        assert np.isclose(s, float(np.mean(track.values)))
+
+    def test_score_max(self):
+        track = self._make_track()
+        s = track.score("max")
+        assert np.isclose(s, float(np.max(track.values)))
+
+    def test_score_sum(self):
+        track = self._make_track()
+        s = track.score("sum")
+        assert np.isclose(s, float(np.sum(track.values)), rtol=1e-5)
+
+    def test_score_default(self):
+        track = self._make_track()
+        # preferred_scoring_strategy defaults to 'mean'
+        assert np.isclose(track.score(), track.score("mean"))
+
+    def test_score_unknown_strategy(self):
+        track = self._make_track()
+        with pytest.raises(ValueError, match="Unknown scoring strategy"):
+            track.score("nonexistent")
+
+    def test_track_properties(self):
+        track = self._make_track()
+        assert isinstance(track.chrom, str)
+        assert isinstance(track.start, int)
+        assert isinstance(track.end, int)
+        assert track.end >= track.start
+
+    def test_positions(self):
+        track = self._make_track(num_bins=10)
+        pos = track.positions
+        assert len(pos) == 10
+        assert pos[1] - pos[0] == 128  # resolution
+
+    def test_len(self):
+        track = self._make_track(num_bins=42)
+        assert len(track) == 42
+
+
+class TestOraclePrediction:
+    """Test OraclePrediction properties and methods."""
+
+    def _make_prediction(self, assay_ids=None):
+        from chorus.core.result import OraclePrediction, OraclePredictionTrack
+        from chorus.core.interval import Interval, Sequence
+
+        if assay_ids is None:
+            assay_ids = ["DNase:K562", "RNA-seq:HepG2"]
+
+        seq = "A" * 10000
+        interval = Interval.make(Sequence(sequence=seq))
+        pred = OraclePrediction()
+
+        for i, aid in enumerate(assay_ids):
+            parts = aid.split(":")
+            track = OraclePredictionTrack.create(
+                source_model="mock",
+                assay_id=aid,
+                track_id=i,
+                assay_type=parts[0],
+                cell_type=parts[1] if len(parts) > 1 else "UNKNOWN",
+                query_interval=interval,
+                prediction_interval=interval,
+                input_interval=interval,
+                resolution=128,
+                values=np.random.rand(896).astype(np.float32),
+            )
+            pred.add(aid, track)
+        return pred
+
+    def test_getitem(self):
+        pred = self._make_prediction()
+        track = pred["DNase:K562"]
+        assert track.assay_id == "DNase:K562"
+
+    def test_iter(self):
+        pred = self._make_prediction()
+        keys = list(pred)
+        assert "DNase:K562" in keys
+        assert "RNA-seq:HepG2" in keys
+
+    def test_items_keys_values(self):
+        pred = self._make_prediction()
+        assert len(list(pred.keys())) == 2
+        assert len(list(pred.values())) == 2
+        assert len(list(pred.items())) == 2
+
+    def test_chrom(self):
+        pred = self._make_prediction()
+        assert isinstance(pred.chrom, str)
+
+    def test_start_end(self):
+        pred = self._make_prediction()
+        assert isinstance(pred.start, int)
+        assert isinstance(pred.end, int)
+        assert pred.end >= pred.start
+
+    def test_add_duplicate_raises(self):
+        from chorus.core.result import OraclePrediction
+        pred = self._make_prediction(["DNase:K562"])
+        with pytest.raises(Exception, match="already exists"):
+            # Try to add same assay_id again
+            pred.add("DNase:K562", pred["DNase:K562"])
+
+    def test_subset(self):
+        pred = self._make_prediction(["A:X", "B:Y", "C:Z"])
+        sub = pred.subset(["A:X", "C:Z"])
+        assert len(list(sub.keys())) == 2
+        assert "A:X" in sub.keys()
+        assert "C:Z" in sub.keys()
+        assert "B:Y" not in sub.keys()
+
+
+class TestPlatformAdaptation:
+    """Test platform detection and adaptation system."""
+
+    def test_detect_platform(self):
+        from chorus.core.platform import detect_platform, PlatformInfo
+        info = detect_platform()
+        assert isinstance(info, PlatformInfo)
+        assert info.system in ("Darwin", "Linux", "Windows")
+
+    def test_platform_key_format(self):
+        from chorus.core.platform import PlatformInfo
+        # macOS ARM
+        info = PlatformInfo(system="Darwin", machine="arm64", is_arm=True, is_macos=True)
+        assert info.key == "macos_arm64"
+
+        # Linux x86_64 no CUDA
+        info = PlatformInfo(system="Linux", machine="x86_64", is_linux=True)
+        assert info.key == "linux_x86_64"
+
+        # Linux x86_64 with CUDA
+        info = PlatformInfo(system="Linux", machine="x86_64", is_linux=True, has_cuda=True)
+        assert info.key == "linux_x86_64_cuda"
+
+    def test_platform_properties(self):
+        from chorus.core.platform import PlatformInfo
+        mac = PlatformInfo(system="Darwin", machine="arm64", is_arm=True, is_macos=True)
+        assert mac.is_macos
+        assert mac.is_arm
+        assert not mac.is_linux
+
+        linux = PlatformInfo(system="Linux", machine="x86_64", is_linux=True, has_cuda=True)
+        assert linux.is_linux
+        assert not linux.is_arm
+        assert not linux.is_macos
+
+    def test_adapt_environment_config_no_adaptation(self):
+        from chorus.core.platform import adapt_environment_config, PlatformInfo
+        config = {"name": "test", "dependencies": ["numpy"]}
+        # Use a platform key that has no adaptations (linux_x86_64 for enformer)
+        info = PlatformInfo(system="Linux", machine="x86_64", is_linux=True)
+        result_config, post_install, notes = adapt_environment_config(config, "enformer", info)
+        assert result_config["name"] == "test"
+
+    def test_adapt_environment_config_cuda_fallback(self):
+        from chorus.core.platform import adapt_environment_config, PlatformInfo, PLATFORM_ADAPTATIONS
+        if "alphagenome" in PLATFORM_ADAPTATIONS:
+            ag_adaptations = PLATFORM_ADAPTATIONS["alphagenome"]
+            if "linux_x86_64_cuda" in ag_adaptations:
+                config = {
+                    "name": "chorus-alphagenome",
+                    "dependencies": ["numpy", {"pip": ["jax[cpu]"]}],
+                }
+                info = PlatformInfo(system="Linux", machine="x86_64", is_linux=True, has_cuda=True)
+                result_config, post_install, notes = adapt_environment_config(config, "alphagenome", info)
+                # jax[cpu] should be replaced with jax[cuda12]
+                pip_deps = None
+                for dep in result_config["dependencies"]:
+                    if isinstance(dep, dict) and "pip" in dep:
+                        pip_deps = dep["pip"]
+                assert pip_deps is not None
+                assert "jax[cuda12]" in pip_deps
+                assert "jax[cpu]" not in pip_deps
 
 
 if __name__ == "__main__":

@@ -7,10 +7,11 @@ A unified interface for genomic sequence oracles - deep learning models that pre
 Chorus provides a consistent, easy-to-use API for working with state-of-the-art genomic deep learning models including:
 
 - **Enformer**: Predicts gene expression and chromatin states from DNA sequences
-- **Borzoi**: Enhanced model for regulatory genomics predictions  
+- **Borzoi**: Enhanced model for regulatory genomics predictions
 - **ChromBPNet**: Predicts TF binding and chromatin accessibility at base-pair resolution
 - **Sei**: Sequence regulatory effect predictions across 21,907 chromatin profiles
 - **LegNet**: Regulatory regions activity prediction using models trained on MPRA data
+- **AlphaGenome**: Google DeepMind's model predicting 5,930 genomic tracks at single base-pair resolution from 1MB input
 
 Key features:
 - 🧬 Unified API across different models
@@ -23,7 +24,7 @@ Key features:
 
 ## ⚠️ Current Status
 
- Currently, Enformer, Sei, Borzoi, ChromBPNet and LegNet oracles is fully implemented with:
+ Currently, Enformer, Sei, Borzoi, ChromBPNet, LegNet and AlphaGenome oracles are fully implemented with:
 
 - Environment isolation support
 - Reference genome integration for biologically accurate predictions
@@ -52,6 +53,9 @@ Chorus uses isolated conda environments for each oracle to avoid dependency conf
 ```bash
 # Set up Enformer environment (TensorFlow-based)
 chorus setup --oracle enformer
+
+# Set up AlphaGenome environment (JAX-based, see AlphaGenome section below)
+chorus setup --oracle alphagenome
 
 # List available environments
 chorus list
@@ -395,15 +399,95 @@ Sequence regulatory effect predictions (uses custom track naming for 21,907 prof
 
 
 ### LegNet
- 
+
 LegNet is a fully convolutional neural network designed for efficient modeling of short regulatory DNA sequences.
 
 - Sequence length: 200 bp input
-- Output: 1 bin 
+- Output: 1 bin
 - Bin size: 200 bp
 - Track types: Element activity in MPRA experiment
-- Track identifiers: 
+- Track identifiers:
   - cell line names
+
+### AlphaGenome
+
+AlphaGenome (Google DeepMind, Nature 2026) predicts 5,930 human functional genomic tracks at single base-pair resolution from up to 1 MB of DNA sequence using a JAX-based model.
+
+- Sequence length: 1,048,576 bp (1 MB) input
+- Output: 1,048,576 bins at single base-pair resolution
+- Bin size: 1 bp (ATAC, CAGE, DNase, RNA-seq, splice sites, PRO-CAP) or 128 bp (ChIP-seq histone/TF)
+- Track types: ATAC, CAGE, ChIP-seq (histone + TF), DNase, RNA-seq, Splice sites, PRO-CAP
+- Track identifiers: `{OutputType}/{TrackName}/{Strand}` (e.g., `ATAC/CL:0000084 ATAC-seq/.`)
+- Weights: Hosted on HuggingFace (gated repository, requires authentication)
+
+#### AlphaGenome Setup
+
+AlphaGenome weights are hosted on a **gated HuggingFace repository**. You must authenticate before first use:
+
+1. **Create a HuggingFace account** at https://huggingface.co/join
+
+2. **Accept the model license terms** at https://huggingface.co/google/alphagenome-all-folds (click "Agree and access repository")
+
+3. **Log in to HuggingFace CLI**:
+```bash
+# Activate the AlphaGenome environment first
+conda activate chorus-alphagenome
+
+# Log in (will prompt for your HF token)
+huggingface-cli login
+```
+
+You can generate a token at https://huggingface.co/settings/tokens.
+
+4. **Set up the environment and verify**:
+```bash
+# Create the environment
+chorus setup --oracle alphagenome
+
+# Verify installation
+chorus health --oracle alphagenome
+```
+
+#### AlphaGenome Usage
+
+```python
+import chorus
+from chorus.utils import get_genome
+
+genome_path = get_genome('hg38')
+
+# Create and load oracle
+oracle = chorus.create_oracle('alphagenome',
+                              reference_fasta=str(genome_path),
+                              device='cpu')  # or omit for auto-detect GPU
+oracle.load_pretrained_model()
+
+# Discover available tracks
+print(oracle.list_assay_types())   # ['ATAC', 'CAGE', 'CHIP', 'DNASE', ...]
+print(oracle.get_track_info('ATAC'))  # DataFrame of ATAC tracks
+
+# Predict
+tracks = ['ATAC/CL:0000084 ATAC-seq/.']  # T-cell ATAC-seq
+predictions = oracle.predict(('chr1', 1_000_000, 2_048_576), tracks)
+```
+
+#### AlphaGenome GPU Support
+
+AlphaGenome uses JAX, which supports multiple accelerator backends:
+
+- **NVIDIA GPU (Linux)**: Automatically installs `jax[cuda12]` when NVIDIA GPU is detected during `chorus setup`
+- **Apple Silicon (macOS)**: Automatically installs `jax-metal` for Metal GPU acceleration during `chorus setup`
+- **CPU**: Works everywhere as fallback; pass `device='cpu'` to force CPU
+
+```python
+# Auto-detect best available device (GPU > Metal > CPU)
+oracle = chorus.create_oracle('alphagenome')
+
+# Force specific device
+oracle = chorus.create_oracle('alphagenome', device='cpu')
+oracle = chorus.create_oracle('alphagenome', device='gpu')    # NVIDIA CUDA
+oracle = chorus.create_oracle('alphagenome', device='metal')  # Apple Metal
+```
 
 ## Troubleshooting
 
@@ -441,6 +525,16 @@ Some oracles require a significant memory (~8-16 GB) for predictions. Solutions:
 - Force CPU usage: `device='cpu'`
 - Use a different GPU: `device='cuda:1'`
 - Reduce batch size if needed
+
+### AlphaGenome Authentication
+AlphaGenome weights are hosted on a gated HuggingFace repository. If you see a `GatedRepoError` or 403 error:
+
+```bash
+# 1. Accept model terms at https://huggingface.co/google/alphagenome-all-folds
+# 2. Log in to HuggingFace
+conda activate chorus-alphagenome
+huggingface-cli login
+```
 
 ### CUDA/GPU Support
 The isolated environments include GPU support. Ensure CUDA is properly installed on your system.
@@ -508,5 +602,6 @@ Chorus integrates several groundbreaking models:
 - ChromBPNet (Agarwal et al., 2021)
 - Sei (Chen et al., 2022)
 - LegNet (Penzar et al., 2023)
+- AlphaGenome (Google DeepMind, 2026)
 
 For vizualization tasks we extensively use [coolbox package](https://github.com/GangCaoLab/CoolBox)

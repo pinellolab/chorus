@@ -16,8 +16,10 @@ logger = logging.getLogger(__name__)
 ORACLE_CLASS_MAP = {
     "chrombpnet": "ChromBPNetOracle",
     "borzoi": "BorzoiOracle",
-    "enformer": "EnformerOracle"
-    # TODO: fill in the list
+    "enformer": "EnformerOracle",
+    "sei": "SeiOracle",
+    "legnet": "LegNetOracle",
+    "alphagenome": "AlphaGenomeOracle",
 }
 
 
@@ -114,7 +116,7 @@ except Exception as e:
             if os.path.exists(env_libstdcpp):
                 env["LD_PRELOAD"] = env_libstdcpp
           
-            env['PATH'].replace("chorus", env_name)
+            # mamba run -n handles PATH activation; no manual PATH rewriting needed
             if 'MPLBACKEND' in env:
                 env.pop('MPLBACKEND') # remove matplotlib backend to avoid conflict with matplotlib inline backend
                 
@@ -443,7 +445,9 @@ dependencies = {{
     'enformer': ['tensorflow', 'tensorflow_hub'],
     'borzoi': ['torch'],
     'sei': ['torch'],
-    'chrombpnet': ['tensorflow']
+    'chrombpnet': ['tensorflow'],
+    'legnet': ['torch'],
+    'alphagenome': ['jax']
 }}
 
 oracle_deps = dependencies.get('{oracle}', [])
