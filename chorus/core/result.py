@@ -117,6 +117,17 @@ class OraclePredictionTrack:
         if scoring_strategy is None:
             scoring_strategy = self.preferred_scoring_strategy
 
+        if scoring_strategy == 'mean':
+            return float(np.mean(self.values))
+        elif scoring_strategy == 'max':
+            return float(np.max(self.values))
+        elif scoring_strategy == 'sum':
+            return float(np.sum(self.values))
+        elif scoring_strategy == 'median':
+            return float(np.median(self.values))
+        else:
+            raise ValueError(f"Unknown scoring strategy: {scoring_strategy}")
+
     def pos2bin(self, chrom: str, position: int) -> int | None:
         if chrom != self.prediction_interval.reference.chrom:
             return None
@@ -412,8 +423,16 @@ class RNAOraclePredictionTrack(OraclePredictionTrack, name='RNA'):
                                          color='#9467bd')
 
 class LentiMPRAOraclePredictionTrack(OraclePredictionTrack, name='LentiMPRA'):
-    coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(), 
+    coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(),
                                          color='#ff7f0e')
+
+class SpliceSitesOraclePredictionTrack(OraclePredictionTrack, name='SPLICE_SITES'):
+    coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(),
+                                         color='#8c564b')
+
+class ProCapOraclePredictionTrack(OraclePredictionTrack, name='PRO_CAP'):
+    coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(),
+                                         color='#e377c2')
 
 @dataclass
 class OraclePrediction:
@@ -430,16 +449,16 @@ class OraclePrediction:
         return chroms[0]
     
     @property
-    def start(self) -> str:
+    def start(self) -> int:
         return min(track.start for track in self.tracks.values())
 
     @property
-    def end(self) -> str:
-        return max(track.start for track in self.tracks.values())
+    def end(self) -> int:
+        return max(track.end for track in self.tracks.values())
 
     def add(self, assay_id: str, track: OraclePredictionTrack):
         if assay_id in self.tracks:
-            raise Exception("The following assay_id already exists: {assay_id}")
+            raise Exception(f"The following assay_id already exists: {assay_id}")
         self.tracks[assay_id] = track
 
     def __iter__(self):
@@ -457,7 +476,7 @@ class OraclePrediction:
     def values(self):
         return self.tracks.values()
 
-    def subset(self, track_ids: str) -> 'OraclePrediction':
+    def subset(self, track_ids: list[str]) -> 'OraclePrediction':
         selected = {ti: self[ti] for ti in track_ids}
         return OraclePrediction(selected)
 

@@ -497,7 +497,9 @@ class EnvironmentManager:
             'enformer': ['tensorflow', 'tensorflow_hub'],
             'sei': ['torch'],
             'borzoi': ['torch'],
-            'chrombpnet': ['tensorflow']
+            'chrombpnet': ['tensorflow'],
+            'legnet': ['torch'],
+            'alphagenome': ['jax'],
         }
         
         if oracle in oracle_deps:

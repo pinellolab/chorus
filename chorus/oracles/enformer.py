@@ -9,7 +9,7 @@ import logging
 from copy import copy
 
 from ..core.base import OracleBase
-from ..core.result import OraclePrediction, OraclePrediction, OraclePredictionTrack
+from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..core.track import Track
 from ..core.interval import Interval, GenomeRef, Sequence 
 from ..core.exceptions import ModelNotLoadedError

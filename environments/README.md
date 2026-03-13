@@ -13,6 +13,7 @@ The modular environment system allows each oracle to run in its own conda enviro
 - `chorus-borzoi.yml`: Environment for Borzoi (PyTorch-based)
 - `chorus-sei.yml`: Environment for Sei (PyTorch-based)
 - `chorus-chrombpnet.yml`: Environment for ChromBPNet (TensorFlow-based)
+- `chorus-alphagenome.yml`: Environment for AlphaGenome (JAX-based)
 
 ## Usage
 

@@ -32,6 +32,7 @@ if not os.environ.get('CHORUS_DISABLE_ORACLE_IMPORTS'):
             ChromBPNetOracle,
             SeiOracle,
             LegNetOracle,
+            AlphaGenomeOracle,
             get_oracle,
             ORACLES
         )
@@ -47,8 +48,9 @@ if not os.environ.get('CHORUS_DISABLE_ORACLE_IMPORTS'):
         ChromBPNetOracle = None
         SeiOracle = None
         LegNetOracle = None
+        AlphaGenomeOracle = None
         ORACLES = {}
-        
+
         def get_oracle(name: str):
             raise ImportError(
                 f"Oracle '{name}' requires its environment to be set up.\n"
@@ -61,6 +63,7 @@ else:
     ChromBPNetOracle = None
     SeiOracle = None
     LegNetOracle = None
+    AlphaGenomeOracle = None
     ORACLES = {}
     get_oracle = None
 
@@ -92,7 +95,7 @@ def create_oracle(oracle_name: str, use_environment: bool = False, **kwargs):
     Create an oracle instance by name.
     
     Args:
-        oracle_name: Name of the oracle (enformer, borzoi, chrombpnet, sei)
+        oracle_name: Name of the oracle (enformer, borzoi, chrombpnet, sei, legnet, alphagenome)
         use_environment: If True, use isolated conda environment for the oracle
         **kwargs: Additional arguments passed to oracle constructor, including:
             - model_load_timeout: Timeout for model loading in seconds (default: 600)
@@ -152,6 +155,9 @@ def create_oracle(oracle_name: str, use_environment: bool = False, **kwargs):
         elif oracle_name.lower() == 'borzoi':
             from .oracles.borzoi import BorzoiOracle
             return BorzoiOracle(use_environment=True, **kwargs)
+        elif oracle_name.lower() == 'alphagenome':
+            from .oracles.alphagenome import AlphaGenomeOracle
+            return AlphaGenomeOracle(use_environment=True, **kwargs)
         else:
             raise NotImplementedError(
                 f"Environment-isolated version of {oracle_name} not yet implemented.\n"
@@ -190,6 +196,8 @@ __all__ = [
     'BorzoiOracle',
     'ChromBPNetOracle',
     'SeiOracle',
+    'LegNetOracle',
+    'AlphaGenomeOracle',
     
     # Oracle utilities
     'get_oracle',
