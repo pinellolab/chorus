@@ -376,19 +376,48 @@ def download_gencode(version: str = 'v48', annotation_type: str = 'basic') -> Pa
 
 
 def sort_gtf(gtf_path: str, output_path: str) -> str:
-    """Sort GTF file.
-    
+    """Sort GTF file using gtfsort (Linux) or Python fallback (macOS).
+
     Args:
         gtf_path: Path to GTF file
-        
+        output_path: Path for sorted output
+
     Returns:
         Path to sorted GTF file
     """
-    cmd = f"gtfsort --input {gtf_path} --output {output_path}"
-    cmd = shlex.split(cmd)
-    res = subprocess.run(cmd)
-    if res.returncode != 0:
-        raise RuntimeError(f"Failed to sort GTF file: {res.stderr}")
+    if shutil.which("gtfsort"):
+        cmd = shlex.split(f"gtfsort --input {gtf_path} --output {output_path}")
+        res = subprocess.run(cmd)
+        if res.returncode != 0:
+            raise RuntimeError(f"Failed to sort GTF file: {res.stderr}")
+        return output_path
+
+    # Fallback: sort by chromosome and position using Python
+    logger.info("gtfsort not found (Linux-only); using Python fallback for GTF sorting")
+    header_lines = []
+    data_lines = []
+    with open(gtf_path) as f:
+        for line in f:
+            if line.startswith('#'):
+                header_lines.append(line)
+            else:
+                data_lines.append(line)
+
+    def _sort_key(line):
+        parts = line.split('\t', 5)
+        chrom = parts[0]
+        # Numeric sort for chr1-22, then chrX, chrY, chrM, others
+        chrom_order = chrom.replace('chr', '')
+        try:
+            chrom_num = int(chrom_order)
+        except ValueError:
+            chrom_num = {'X': 23, 'Y': 24, 'M': 25, 'MT': 25}.get(chrom_order, 100)
+        return (chrom_num, int(parts[3]) if len(parts) > 3 else 0)
+
+    data_lines.sort(key=_sort_key)
+    with open(output_path, 'w') as f:
+        f.writelines(header_lines)
+        f.writelines(data_lines)
     return output_path
 
 def get_genes_in_region(chrom: str, start: int, end: int,

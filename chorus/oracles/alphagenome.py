@@ -122,6 +122,7 @@ class AlphaGenomeOracle(OracleBase):
                     )
 
             # Determine JAX device — AlphaGenome requires explicit device when no GPU
+            # NOTE: Metal is skipped in auto-detect (too experimental for AlphaGenome)
             if self.device and self.device.startswith("cpu"):
                 jax_device = jax.devices("cpu")[0]
             elif self.device and self.device.startswith("gpu"):
@@ -129,12 +130,10 @@ class AlphaGenomeOracle(OracleBase):
             elif self.device and self.device.startswith("metal"):
                 jax_device = jax.devices("METAL")[0]
             else:
-                # Auto-detect: prefer CUDA GPU > Apple Metal > CPU
+                # Auto-detect: prefer CUDA GPU > CPU (Metal skipped)
                 available_platforms = {d.platform for d in jax.devices()}
                 if "gpu" in available_platforms:
                     jax_device = jax.devices("gpu")[0]
-                elif "METAL" in available_platforms:
-                    jax_device = jax.devices("METAL")[0]
                 else:
                     jax_device = jax.devices("cpu")[0]
 
