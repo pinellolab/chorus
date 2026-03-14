@@ -1,21 +1,17 @@
 """Borzoi oracle implementation"""
 
 from ..core.base import OracleBase
+from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..core.track import Track
+from ..core.interval import Interval, GenomeRef, Sequence
 from ..core.exceptions import ModelNotLoadedError
-from typing import List, Tuple, Union, Optional, Dict
+
+from typing import List, Tuple, Union, Optional, Dict, Any
 import os
 import logging
 import json
-import numpy as np 
+import numpy as np
 import pandas as pd
-from typing import List, Tuple, Union, Optional, Dict, Any
-
-from ..core.base import OracleBase
-from ..core.result import OraclePrediction, OraclePrediction, OraclePredictionTrack
-from ..core.track import Track
-from ..core.interval import Interval, GenomeRef, Sequence 
-from ..core.exceptions import ModelNotLoadedError
 
 logger = logging.getLogger(__name__)
 

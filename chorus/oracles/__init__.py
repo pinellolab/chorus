@@ -5,6 +5,7 @@ from .borzoi import BorzoiOracle
 from .chrombpnet import ChromBPNetOracle
 from .sei import SeiOracle
 from .legnet import LegNetOracle
+from .alphagenome import AlphaGenomeOracle
 
 # Dictionary for easy oracle access
 ORACLES = {
@@ -12,7 +13,8 @@ ORACLES = {
     'borzoi': BorzoiOracle,
     'chrombpnet': ChromBPNetOracle,
     'sei': SeiOracle,
-    'legnet': LegNetOracle
+    'legnet': LegNetOracle,
+    'alphagenome': AlphaGenomeOracle,
 }
 
 def get_oracle(name: str) -> type:
@@ -20,7 +22,7 @@ def get_oracle(name: str) -> type:
     Get oracle class by name.
     
     Args:
-        name: Oracle name (enformer, borzoi, chrombpnet, sei)
+        name: Oracle name (enformer, borzoi, chrombpnet, sei, legnet, alphagenome)
         
     Returns:
         Oracle class
@@ -32,10 +34,11 @@ def get_oracle(name: str) -> type:
 
 __all__ = [
     'EnformerOracle',
-    'BorzoiOracle', 
+    'BorzoiOracle',
     'ChromBPNetOracle',
     'SeiOracle',
     'LegNetOracle',
+    'AlphaGenomeOracle',
     'ORACLES',
     'get_oracle'
 ]

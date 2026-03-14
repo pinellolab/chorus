@@ -16,8 +16,10 @@ logger = logging.getLogger(__name__)
 ORACLE_CLASS_MAP = {
     "chrombpnet": "ChromBPNetOracle",
     "borzoi": "BorzoiOracle",
-    "enformer": "EnformerOracle"
-    # TODO: fill in the list
+    "enformer": "EnformerOracle",
+    "sei": "SeiOracle",
+    "legnet": "LegNetOracle",
+    "alphagenome": "AlphaGenomeOracle",
 }
 
 
@@ -114,7 +116,7 @@ except Exception as e:
             if os.path.exists(env_libstdcpp):
                 env["LD_PRELOAD"] = env_libstdcpp
           
-            env['PATH'].replace("chorus", env_name)
+            # mamba run -n handles PATH activation; no manual PATH rewriting needed
             if 'MPLBACKEND' in env:
                 env.pop('MPLBACKEND') # remove matplotlib backend to avoid conflict with matplotlib inline backend
                 
@@ -251,12 +253,22 @@ except Exception as e:
         if not python_exe:
             raise RuntimeError(f"Could not find Python executable for {oracle}")
         
+        # Set up environment with LD_PRELOAD for the env's libstdc++
+        env = os.environ.copy()
+        env_info = self.env_manager.get_environment_info(oracle)
+        if env_info:
+            env_prefix = env_info['path']
+            env_libstdcpp = f"{env_prefix}/lib/libstdc++.so.6"
+            if os.path.exists(env_libstdcpp):
+                env["LD_PRELOAD"] = env_libstdcpp
+
         # Run script
         return subprocess.run(
             [python_exe, '-c', script],
             capture_output=capture_output,
             text=True,
-            timeout=timeout
+            timeout=timeout,
+            env=env,
         )
     
     def import_oracle_in_environment(
@@ -443,7 +455,9 @@ dependencies = {{
     'enformer': ['tensorflow', 'tensorflow_hub'],
     'borzoi': ['torch'],
     'sei': ['torch'],
-    'chrombpnet': ['tensorflow']
+    'chrombpnet': ['tensorflow'],
+    'legnet': ['torch'],
+    'alphagenome': ['jax']
 }}
 
 oracle_deps = dependencies.get('{oracle}', [])
@@ -459,7 +473,7 @@ print(json.dumps({{'missing': missing}}))
 """
         
         try:
-            result = self.run_script_in_environment(oracle, deps_script, timeout=30)  # Increased for slower systems
+            result = self.run_script_in_environment(oracle, deps_script, timeout=120)  # TensorFlow import can take >30s
             if result.returncode == 0:
                 deps_data = json.loads(result.stdout)
                 if not deps_data['missing']:

@@ -180,7 +180,7 @@ class SeiOracle(OracleBase):
             self._target_list = targets
             self._classes_list = classes
         except Exception as e:
-            raise ModelNotLoadedError(f"Failed to load Enformer model: {str(e)}")
+            raise ModelNotLoadedError(f"Failed to load Sei model: {str(e)}")
 
     
     def list_assay_types(self) -> List[str]:
@@ -248,10 +248,10 @@ class SeiOracle(OracleBase):
     
     def _cl2ind(self, cls_lst: list[SeiClass]) -> list[int]:
         if self._classes_list is not None:
-            classes = SeiClassesList.load(self.get_classes_names())
+            classes = self._classes_list
         else:
             classes = SeiClassesList.load(self.get_classes_names())
-        
+
         return classes.cl2ind(cls_lst)
     
     def select_targets(self,
@@ -520,7 +520,7 @@ class SeiOracle(OracleBase):
         download_link = self.get_zenodo_link()
         download_path = self.download_dir
         
-        logger.info(f"Dowloading Sei model into {download_path}...")
+        logger.info(f"Downloading Sei model into {download_path}...")
         
         download_file_path = os.path.join(
             download_path, 
@@ -528,14 +528,21 @@ class SeiOracle(OracleBase):
         )
 
         if not Path(download_file_path).exists():
-            urllib.request.urlretrieve(download_link, filename=download_file_path)    
-            logger.info("Dowload completed!")
+            urllib.request.urlretrieve(download_link, filename=download_file_path)
+            logger.info("Download completed!")
         else:
             logger.info("Sei model archive is already downloaded!")
-        
+
         # Now extract the file in the same download folder
-        with tarfile.open(download_file_path, "r:gz") as tar:
-            tar.extractall(path=download_path)
+        try:
+            with tarfile.open(download_file_path, "r:gz") as tar:
+                tar.extractall(path=download_path)
+        except (tarfile.TarError, EOFError) as e:
+            logger.warning(f"Archive appears corrupt ({e}), re-downloading...")
+            Path(download_file_path).unlink(missing_ok=True)
+            urllib.request.urlretrieve(download_link, filename=download_file_path)
+            with tarfile.open(download_file_path, "r:gz") as tar:
+                tar.extractall(path=download_path)
         logger.info("Sei model downloaded and extracted successfully!")
 
         info_file_path = self.get_model_dir_path() / "seqclass_info.txt"
