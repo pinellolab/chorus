@@ -27,6 +27,24 @@ pip install -e .
 python -c "import chorus; print(f'chorus {chorus.__version__} from {chorus.PACKAGE_DIR}')"
 ```
 
+## Step 1b: Set Up HuggingFace Authentication (Required for AlphaGenome)
+
+AlphaGenome model weights are hosted on a **gated HuggingFace repository**. Before running AlphaGenome predictions, you must:
+
+1. **Create a HuggingFace account** at https://huggingface.co/join
+2. **Accept the model license** at https://huggingface.co/google/alphagenome-all-folds
+3. **Authenticate** via one of these methods:
+
+```bash
+# Option A: Set environment variable (recommended for CI/automation)
+export HF_TOKEN="hf_your_token_here"
+
+# Option B: Interactive login (saves token to ~/.cache/huggingface/token)
+mamba run -n chorus-alphagenome huggingface-cli login
+```
+
+Generate a token at https://huggingface.co/settings/tokens (read access is sufficient).
+
 ## Step 2: Set Up All Oracle Environments
 
 Each oracle runs in an isolated conda environment. Set them all up:
@@ -164,7 +182,10 @@ print(f"Enformer: {list(result.keys())[0]} shape={list(result.values())[0].value
 # AlphaGenome (JAX) - should use GPU
 oracle = chorus.create_oracle('alphagenome', use_environment=True)
 oracle.load_pretrained_model()
-result = oracle.predict('A' * 1048576, [list(oracle.list_assay_types())[0] + ':*'])
+from chorus.oracles.alphagenome_source.alphagenome_metadata import get_metadata
+meta = get_metadata()
+atac = meta.search_tracks("ATAC")
+result = oracle.predict('A' * 1048576, [atac.iloc[0]['identifier']])
 print(f"AlphaGenome: prediction successful")
 
 print("\nGPU VALIDATION PASS")

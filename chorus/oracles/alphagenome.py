@@ -101,8 +101,25 @@ class AlphaGenomeOracle(OracleBase):
 
     def _load_direct(self, weights: str) -> None:
         try:
+            import os
             import jax
+            import huggingface_hub
             from alphagenome_research.model.dna_model import create_from_huggingface
+
+            # Ensure HuggingFace auth (required for gated AlphaGenome model)
+            try:
+                huggingface_hub.whoami()
+            except huggingface_hub.errors.LocalTokenNotFoundError:
+                hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+                if hf_token:
+                    huggingface_hub.login(token=hf_token, add_to_git_credential=False)
+                else:
+                    raise ModelNotLoadedError(
+                        "AlphaGenome requires HuggingFace authentication. "
+                        "Set the HF_TOKEN environment variable or run 'huggingface-cli login'. "
+                        "You must also accept the model license at "
+                        "https://huggingface.co/google/alphagenome"
+                    )
 
             # Determine JAX device — AlphaGenome requires explicit device when no GPU
             if self.device and self.device.startswith("cpu"):
@@ -126,6 +143,8 @@ class AlphaGenomeOracle(OracleBase):
             self.model = model
             self.loaded = True
             logger.info("AlphaGenome model loaded successfully on %s", jax_device)
+        except ModelNotLoadedError:
+            raise
         except Exception as e:
             raise ModelNotLoadedError(f"Failed to load AlphaGenome model: {e}")
 

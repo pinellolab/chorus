@@ -253,12 +253,22 @@ except Exception as e:
         if not python_exe:
             raise RuntimeError(f"Could not find Python executable for {oracle}")
         
+        # Set up environment with LD_PRELOAD for the env's libstdc++
+        env = os.environ.copy()
+        env_info = self.env_manager.get_environment_info(oracle)
+        if env_info:
+            env_prefix = env_info['path']
+            env_libstdcpp = f"{env_prefix}/lib/libstdc++.so.6"
+            if os.path.exists(env_libstdcpp):
+                env["LD_PRELOAD"] = env_libstdcpp
+
         # Run script
         return subprocess.run(
             [python_exe, '-c', script],
             capture_output=capture_output,
             text=True,
-            timeout=timeout
+            timeout=timeout,
+            env=env,
         )
     
     def import_oracle_in_environment(
@@ -463,7 +473,7 @@ print(json.dumps({{'missing': missing}}))
 """
         
         try:
-            result = self.run_script_in_environment(oracle, deps_script, timeout=30)  # Increased for slower systems
+            result = self.run_script_in_environment(oracle, deps_script, timeout=120)  # TensorFlow import can take >30s
             if result.returncode == 0:
                 deps_data = json.loads(result.stdout)
                 if not deps_data['missing']:

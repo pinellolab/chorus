@@ -29,6 +29,22 @@ else:
     else:
         jax_device = jax.devices("cpu")[0]
 
+import os
+import huggingface_hub
+
+# Ensure HuggingFace token is available (required for gated AlphaGenome model)
+try:
+    huggingface_hub.whoami()
+except huggingface_hub.errors.LocalTokenNotFoundError:
+    hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+    if hf_token:
+        huggingface_hub.login(token=hf_token, add_to_git_credential=False)
+    else:
+        raise RuntimeError(
+            "AlphaGenome requires HuggingFace authentication. "
+            "Set the HF_TOKEN environment variable or run 'huggingface-cli login'."
+        )
+
 from alphagenome_research.model.dna_model import create_from_huggingface
 
 fold = args.get("fold", "all_folds")

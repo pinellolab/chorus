@@ -20,6 +20,9 @@ dependencies:
   - tqdm>=4.62.0
   - h5py>=3.6.0
 
+  # Build tools (pyranges → sorted_nearest requires C compilation on Python 3.11)
+  - compilers
+
   # Visualization
   - matplotlib
   - seaborn

@@ -3,6 +3,7 @@ channels:
   - conda-forge
   - bioconda
   - pytorch
+  - nvidia
 dependencies:
   # Core Python
   - python=3.12

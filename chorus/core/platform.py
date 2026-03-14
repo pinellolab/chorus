@@ -184,6 +184,13 @@ PLATFORM_ADAPTATIONS: Dict[str, Dict[str, EnvironmentAdaptation]] = {
                 "Removed pytorch channel (available on conda-forge for ARM Mac)",
             ],
         ),
+        "linux_x86_64_cuda": EnvironmentAdaptation(
+            conda_remove=["cudatoolkit", "nvidia::cuda-nvcc"],
+            notes=[
+                "Removed cudatoolkit and cuda-nvcc (PyTorch from pytorch channel "
+                "bundles its own CUDA runtime); avoids channel priority conflicts",
+            ],
+        ),
     },
     "sei": {
         "macos_arm64": EnvironmentAdaptation(

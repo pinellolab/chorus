@@ -32,6 +32,7 @@ dependencies:
   # Visualization tools
   - pygenometracks>=3.8
   - coolbox>=0.4.0
+  - oxbow>=0.4.0  # Required by coolbox for tab file reading
   
   # For testing
   - pytest>=6.0
