@@ -31,6 +31,13 @@ Key features:
 - ENCODE track identifier support
 - BedGraph output generation
 
+## Prerequisites
+
+- **Miniforge** (provides `mamba`): Install from https://github.com/conda-forge/miniforge
+- **Git**
+- ~20 GB free disk space (for models, genomes, and conda environments)
+- Works on **Linux x86_64** and **macOS (Intel/Apple Silicon)**. GPU support is auto-detected.
+
 ## Installation
 
 ```bash
@@ -38,37 +45,42 @@ Key features:
 git clone https://github.com/pinellolab/chorus.git
 cd chorus
 
-#create main chorus env
+# Create the base chorus environment
 mamba env create -f environment.yml
 mamba activate chorus
 
 # Install chorus package
 pip install -e .
+
+# Verify installation
+python -c "import chorus; print(f'chorus {chorus.__version__}')"
 ```
 
 ### Setting Up Oracle Environments
 
-Chorus uses isolated conda environments for each oracle to avoid dependency conflicts between TensorFlow and PyTorch models:
+Chorus uses isolated conda environments for each oracle to avoid dependency conflicts between TensorFlow, PyTorch, and JAX models:
 
 ```bash
-# Set up Enformer environment (TensorFlow-based)
-chorus setup --oracle enformer
-
-# Set up AlphaGenome environment (JAX-based, see AlphaGenome section below)
-chorus setup --oracle alphagenome
+# Set up all oracle environments
+chorus setup --oracle enformer      # TensorFlow-based
+chorus setup --oracle borzoi        # PyTorch-based
+chorus setup --oracle chrombpnet    # TensorFlow-based
+chorus setup --oracle sei           # PyTorch-based
+chorus setup --oracle legnet        # PyTorch-based
+chorus setup --oracle alphagenome   # JAX-based (see AlphaGenome section below for auth)
 
 # List available environments
 chorus list
 ```
 
-You can check the correctness of installation using the following command
+You can check the correctness of installation using the following command:
 
 ```bash
-# Check environment health
+# Check environment health (use --timeout for first run when models download)
 chorus health --timeout 300
 ```
 
-Note: If you haven’t used Oracle yet, it will need some time to download its weights.
+**Note:** The first health check (or first prediction) for each oracle may take several minutes as model weights are downloaded automatically. Subsequent runs will be much faster.
 
 ### Managing Reference Genomes
 
@@ -363,8 +375,8 @@ epigenomic activity directly from DNA sequence.
 
 Enhanced Enformer with improved performance and RNA-tracks predictions.
 
-- Sequence length: 393,216 bp input, 114,688 bp output window
-- Output: 896 bins × 5,313 tracks
+- Sequence length: 524,288 bp input, 114,688 bp output window
+- Output: 896 bins × 7,610 tracks
 - Bin size: 128 bp
 - Track types: Gene expression (CAGE, RNA-Seq), chromatin accessibility (DNase/ATAC), histone modifications (ChIP-seq)
 - Track identifiers: 
@@ -428,24 +440,21 @@ AlphaGenome weights are hosted on a **gated HuggingFace repository**. You must a
 
 2. **Accept the model license terms** at https://huggingface.co/google/alphagenome-all-folds (click "Agree and access repository")
 
-3. **Log in to HuggingFace CLI**:
-```bash
-# Activate the AlphaGenome environment first
-conda activate chorus-alphagenome
+3. **Generate a token** at https://huggingface.co/settings/tokens (read access is sufficient)
 
-# Log in (will prompt for your HF token)
-huggingface-cli login
+4. **Authenticate** via one of these methods:
+```bash
+# Option A: Set environment variable (recommended — works with automation and across envs)
+export HF_TOKEN="hf_your_token_here"
+
+# Option B: Interactive login (saves token to ~/.cache/huggingface/token)
+mamba run -n chorus-alphagenome huggingface-cli login
 ```
 
-You can generate a token at https://huggingface.co/settings/tokens.
-
-4. **Set up the environment and verify**:
+5. **Set up the environment and verify**:
 ```bash
-# Create the environment
 chorus setup --oracle alphagenome
-
-# Verify installation
-chorus health --oracle alphagenome
+chorus health --oracle alphagenome --timeout 300
 ```
 
 #### AlphaGenome Usage
@@ -458,6 +467,7 @@ genome_path = get_genome('hg38')
 
 # Create and load oracle
 oracle = chorus.create_oracle('alphagenome',
+                              use_environment=True,
                               reference_fasta=str(genome_path),
                               device='cpu')  # or omit for auto-detect GPU
 oracle.load_pretrained_model()
@@ -481,12 +491,12 @@ AlphaGenome uses JAX, which supports multiple accelerator backends:
 
 ```python
 # Auto-detect best available device (GPU > Metal > CPU)
-oracle = chorus.create_oracle('alphagenome')
+oracle = chorus.create_oracle('alphagenome', use_environment=True)
 
 # Force specific device
-oracle = chorus.create_oracle('alphagenome', device='cpu')
-oracle = chorus.create_oracle('alphagenome', device='gpu')    # NVIDIA CUDA
-oracle = chorus.create_oracle('alphagenome', device='metal')  # Apple Metal
+oracle = chorus.create_oracle('alphagenome', use_environment=True, device='cpu')
+oracle = chorus.create_oracle('alphagenome', use_environment=True, device='gpu')    # NVIDIA CUDA
+oracle = chorus.create_oracle('alphagenome', use_environment=True, device='metal')  # Apple Metal
 ```
 
 ## Troubleshooting
@@ -531,20 +541,13 @@ AlphaGenome weights are hosted on a gated HuggingFace repository. If you see a `
 
 ```bash
 # 1. Accept model terms at https://huggingface.co/google/alphagenome-all-folds
-# 2. Log in to HuggingFace
-conda activate chorus-alphagenome
-huggingface-cli login
+# 2. Authenticate via environment variable (recommended)
+export HF_TOKEN="hf_your_token_here"
+# Or: mamba run -n chorus-alphagenome huggingface-cli login
 ```
 
 ### CUDA/GPU Support
-The isolated environments include GPU support. Ensure CUDA is properly installed on your system.
-
-To check GPU availability:
-```python
-# In your Python environment
-import tensorflow as tf
-print(f"GPUs available: {tf.config.list_physical_devices('GPU')}")
-```
+The isolated environments include GPU support. On Linux with NVIDIA GPUs, Chorus auto-detects CUDA and installs GPU-enabled packages during `chorus setup`. On macOS with Apple Silicon, JAX-based oracles (AlphaGenome) can use Metal acceleration.
 
 To force CPU usage when GPU causes issues:
 ```python
@@ -604,4 +607,4 @@ Chorus integrates several groundbreaking models:
 - LegNet (Penzar et al., 2023)
 - AlphaGenome (Google DeepMind, 2026)
 
-For vizualization tasks we extensively use [coolbox package](https://github.com/GangCaoLab/CoolBox)
+For visualization tasks we extensively use [coolbox package](https://github.com/GangCaoLab/CoolBox)
