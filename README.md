@@ -36,7 +36,8 @@ Key features:
 - **Miniforge** (provides `mamba`): Install from https://github.com/conda-forge/miniforge
 - **Git**
 - ~20 GB free disk space (for models, genomes, and conda environments)
-- Works on **Linux x86_64** and **macOS (Intel/Apple Silicon)**. GPU support is auto-detected.
+- Works on **Linux x86_64** and **macOS (Intel/Apple Silicon)**
+- GPU support: NVIDIA CUDA (Linux) is auto-detected. Apple Metal is experimental and not fully supported by all oracles (see AlphaGenome section).
 
 ## Installation
 
@@ -486,17 +487,16 @@ predictions = oracle.predict(('chr1', 1_000_000, 2_048_576), tracks)
 AlphaGenome uses JAX, which supports multiple accelerator backends:
 
 - **NVIDIA GPU (Linux)**: Automatically installs `jax[cuda12]` when NVIDIA GPU is detected during `chorus setup`
-- **Apple Silicon (macOS)**: Automatically installs `jax-metal` for Metal GPU acceleration during `chorus setup`
+- **Apple Silicon (macOS)**: Uses **CPU** by default. `jax-metal` is installed but the Metal backend is experimental and does not yet support all operations AlphaGenome requires (e.g., `default_memory_space`). You can explicitly try `device='metal'` but expect errors.
 - **CPU**: Works everywhere as fallback; pass `device='cpu'` to force CPU
 
 ```python
-# Auto-detect best available device (GPU > Metal > CPU)
+# Auto-detect best available device (CUDA GPU > CPU; Metal skipped for AlphaGenome)
 oracle = chorus.create_oracle('alphagenome', use_environment=True)
 
 # Force specific device
 oracle = chorus.create_oracle('alphagenome', use_environment=True, device='cpu')
 oracle = chorus.create_oracle('alphagenome', use_environment=True, device='gpu')    # NVIDIA CUDA
-oracle = chorus.create_oracle('alphagenome', use_environment=True, device='metal')  # Apple Metal
 ```
 
 ## Troubleshooting
@@ -547,7 +547,7 @@ export HF_TOKEN="hf_your_token_here"
 ```
 
 ### CUDA/GPU Support
-The isolated environments include GPU support. On Linux with NVIDIA GPUs, Chorus auto-detects CUDA and installs GPU-enabled packages during `chorus setup`. On macOS with Apple Silicon, JAX-based oracles (AlphaGenome) can use Metal acceleration.
+The isolated environments include GPU support. On Linux with NVIDIA GPUs, Chorus auto-detects CUDA and installs GPU-enabled packages during `chorus setup`. On macOS with Apple Silicon, AlphaGenome defaults to CPU because the JAX Metal backend does not yet support all required operations.
 
 To force CPU usage when GPU causes issues:
 ```python

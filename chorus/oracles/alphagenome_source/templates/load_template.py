@@ -6,13 +6,21 @@ path to a JSON file containing loading arguments.
 """
 
 import json
-import jax
+import os
+import platform as _platform
 
 with open("__ARGS_FILE_NAME__") as inp:
     args = json.load(inp)
 
-# Select device — AlphaGenome requires an explicit jax.Device when no GPU
+# Pre-import device routing: JAX Metal is too experimental for AlphaGenome
+# (missing default_memory_space etc.), so force CPU on macOS unless the user
+# explicitly requests Metal.
 device_str = args.get("device")
+if _platform.system() == "Darwin" and (device_str is None or device_str.startswith("cpu")):
+    os.environ["JAX_PLATFORMS"] = "cpu"
+
+import jax
+
 if device_str is not None and device_str.startswith("cpu"):
     jax_device = jax.devices("cpu")[0]
 elif device_str is not None and device_str.startswith("gpu"):
@@ -20,12 +28,10 @@ elif device_str is not None and device_str.startswith("gpu"):
 elif device_str is not None and device_str.startswith("metal"):
     jax_device = jax.devices("METAL")[0]
 else:
-    # Auto-detect: prefer CUDA GPU > Apple Metal > CPU
+    # Auto-detect: prefer CUDA GPU > CPU
     available_platforms = {d.platform for d in jax.devices()}
     if "gpu" in available_platforms:
         jax_device = jax.devices("gpu")[0]
-    elif "METAL" in available_platforms:
-        jax_device = jax.devices("METAL")[0]
     else:
         jax_device = jax.devices("cpu")[0]
 
