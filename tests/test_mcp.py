@@ -1,0 +1,788 @@
+"""Tests for the Chorus MCP server — serializers, state manager, and tool definitions.
+
+These tests do NOT load any real models; they exercise the logic with mocks and
+synthetic data.
+"""
+
+import numpy as np
+import pandas as pd
+import pytest
+from unittest.mock import MagicMock, patch
+from dataclasses import dataclass, field
+
+
+# ── Fixtures ─────────────────────────────────────────────────────────
+
+@dataclass
+class FakeInterval:
+    chrom: str = "chr1"
+    start: int = 1_000_000
+    end: int = 1_100_000
+
+    class reference:
+        chrom = "chr1"
+        start = 1_000_000
+        end = 1_100_000
+
+    def __init__(self, chrom="chr1", start=1_000_000, end=1_100_000):
+        self.chrom = chrom
+        self.start = start
+        self.end = end
+        self.reference = type("Ref", (), {"chrom": chrom, "start": start, "end": end})()
+
+
+def _make_track(assay_id="DNASE:K562", n_bins=100, resolution=128):
+    """Build a minimal OraclePredictionTrack-like object for testing."""
+    interval = FakeInterval()
+    track = MagicMock()
+    track.assay_id = assay_id
+    track.assay_type = assay_id.split(":")[0]
+    track.cell_type = assay_id.split(":")[-1] if ":" in assay_id else ""
+    track.chrom = interval.chrom
+    track.start = interval.start
+    track.end = interval.start + n_bins * resolution
+    track.resolution = resolution
+    track.values = np.random.randn(n_bins).astype(np.float32)
+    track.prediction_interval = interval
+    return track
+
+
+def _make_prediction(assay_ids=None, n_bins=100, resolution=128):
+    """Build a minimal OraclePrediction-like object."""
+    if assay_ids is None:
+        assay_ids = ["DNASE:K562"]
+    tracks = {aid: _make_track(aid, n_bins, resolution) for aid in assay_ids}
+    pred = MagicMock()
+    pred.items.return_value = tracks.items()
+    pred.__iter__ = lambda self: iter(tracks)
+    pred.__getitem__ = lambda self, key: tracks[key]
+    pred.tracks = tracks
+    pred.save_predictions_as_bedgraph = MagicMock(
+        return_value={aid: f"/tmp/{aid.replace(':', '_')}.bedgraph" for aid in assay_ids}
+    )
+    return pred
+
+
+# ── Serializer tests ─────────────────────────────────────────────────
+
+class TestTrackSummary:
+    def test_summary_keys(self):
+        from chorus.mcp.serializers import _track_summary
+        track = _make_track(n_bins=50)
+        summary = _track_summary(track)
+        for key in ("assay_id", "assay_type", "cell_type", "chrom", "start", "end",
+                     "resolution", "num_bins", "mean", "max", "min", "std"):
+            assert key in summary
+        assert summary["num_bins"] == 50
+
+    def test_summary_values_are_floats(self):
+        from chorus.mcp.serializers import _track_summary
+        summary = _track_summary(_make_track())
+        for k in ("mean", "max", "min", "std"):
+            assert isinstance(summary[k], float)
+
+
+class TestDownsample:
+    def test_no_downsample_when_small(self):
+        from chorus.mcp.serializers import _downsample
+        arr = np.arange(100, dtype=float)
+        result = _downsample(arr, max_bins=500)
+        assert len(result) == 100
+
+    def test_downsample_to_max_bins(self):
+        from chorus.mcp.serializers import _downsample
+        arr = np.arange(10_000, dtype=float)
+        result = _downsample(arr, max_bins=500)
+        assert len(result) == 500
+
+
+class TestSerializePrediction:
+    def test_inline_values_for_small_prediction(self):
+        from chorus.mcp.serializers import serialize_prediction
+        pred = _make_prediction(n_bins=100)
+        result = serialize_prediction(pred, inline_threshold=500)
+        assert "tracks" in result
+        track = result["tracks"][0]
+        assert "values" in track
+        assert len(track["values"]) == 100
+
+    def test_preview_for_large_prediction(self):
+        from chorus.mcp.serializers import serialize_prediction
+        pred = _make_prediction(n_bins=2000)
+        result = serialize_prediction(pred, output_dir="/tmp/test_mcp", inline_threshold=500)
+        track = result["tracks"][0]
+        assert "values_preview" in track
+        assert len(track["values_preview"]) == 500
+        assert "values_preview_note" in track
+
+
+class TestSerializeVariantEffect:
+    def test_basic_structure(self):
+        from chorus.mcp.serializers import serialize_variant_effect
+        pred_ref = _make_prediction(["DNASE:K562"])
+        pred_alt = _make_prediction(["DNASE:K562"])
+        variant_result = {
+            "predictions": {"reference": pred_ref, "alt_1": pred_alt},
+            "effect_sizes": {
+                "alt_1": {"DNASE:K562": np.random.randn(100).astype(np.float32)}
+            },
+            "variant_info": {"position": "chr1:1050000", "ref": "A", "alts": ["G"]},
+        }
+        out = serialize_variant_effect(variant_result)
+        assert "variant_info" in out
+        assert "effect_sizes" in out
+        assert "alt_1" in out["effect_sizes"]
+        es = out["effect_sizes"]["alt_1"]["DNASE:K562"]
+        assert "mean_effect" in es
+        assert "abs_max_effect" in es
+
+
+# ── State manager tests ──────────────────────────────────────────────
+
+class TestOracleStateManager:
+    def setup_method(self):
+        # Reset singleton
+        from chorus.mcp.state import OracleStateManager
+        OracleStateManager._instance = None
+
+    def test_singleton(self):
+        from chorus.mcp.state import OracleStateManager
+        a = OracleStateManager()
+        b = OracleStateManager()
+        assert a is b
+
+    def test_list_loaded_empty(self):
+        from chorus.mcp.state import OracleStateManager
+        mgr = OracleStateManager()
+        assert mgr.list_loaded() == []
+
+    def test_get_oracle_raises_when_not_loaded(self):
+        from chorus.mcp.state import OracleStateManager
+        mgr = OracleStateManager()
+        with pytest.raises(RuntimeError, match="not loaded"):
+            mgr.get_oracle("enformer")
+
+    def test_unload_returns_false_when_not_loaded(self):
+        from chorus.mcp.state import OracleStateManager
+        mgr = OracleStateManager()
+        assert mgr.unload_oracle("enformer") is False
+
+    @patch("chorus.mcp.state.GenomeManager")
+    def test_load_and_unload(self, mock_gm_cls):
+        mock_gm_cls.return_value.is_genome_downloaded.return_value = False
+
+        from chorus.mcp.state import OracleStateManager
+        OracleStateManager._instance = None
+        mgr = OracleStateManager()
+
+        # Manually inject a fake oracle
+        fake_oracle = MagicMock()
+        fake_oracle.device = "cpu"
+        mgr._oracles["enformer"] = fake_oracle
+        mgr._load_times["enformer"] = 1.5
+
+        loaded = mgr.list_loaded()
+        assert len(loaded) == 1
+        assert loaded[0]["name"] == "enformer"
+
+        assert mgr.get_oracle("enformer") is fake_oracle
+        assert mgr.unload_oracle("enformer") is True
+        assert mgr.list_loaded() == []
+
+
+# ── Server tool definition smoke tests ───────────────────────────────
+
+_has_fastmcp = pytest.importorskip is not None  # always True, just a placeholder
+try:
+    import fastmcp as _fastmcp_mod  # noqa: F401
+    _has_fastmcp = True
+except ImportError:
+    _has_fastmcp = False
+
+
+@pytest.mark.skipif(not _has_fastmcp, reason="fastmcp not installed")
+class TestServerTools:
+    def test_list_oracles_returns_all_six(self):
+        from chorus.mcp.server import ORACLE_SPECS
+        # Verify we have all 6 oracles in specs
+        assert len(ORACLE_SPECS) == 6
+        expected = {"enformer", "borzoi", "chrombpnet", "sei", "legnet", "alphagenome"}
+        assert set(ORACLE_SPECS.keys()) == expected
+
+    def test_oracle_specs_keys(self):
+        from chorus.mcp.server import ORACLE_SPECS
+        for name, spec in ORACLE_SPECS.items():
+            assert "description" in spec
+            assert "framework" in spec
+            assert "input_size_bp" in spec
+
+
+# ── score_region tests ────────────────────────────────────────────────
+
+def _make_real_track(assay_id="DNASE:K562", n_bins=100, resolution=128,
+                     pred_start=1_000_000, chrom="chr1", cls=None):
+    """Build a real OraclePredictionTrack for testing score_region."""
+    from chorus.core.result import OraclePredictionTrack
+    from chorus.core.interval import Interval, GenomeRef
+
+    pred_end = pred_start + n_bins * resolution
+    interval = MagicMock()
+    interval.reference = MagicMock()
+    interval.reference.chrom = chrom
+    interval.reference.start = pred_start
+    interval.reference.end = pred_end
+
+    track_cls = cls or OraclePredictionTrack
+    values = np.arange(n_bins, dtype=np.float32)
+
+    track = track_cls.__new__(track_cls)
+    track.source_model = "test"
+    track.assay_id = assay_id
+    track.assay_type = assay_id.split(":")[0]
+    track.cell_type = assay_id.split(":")[-1] if ":" in assay_id else ""
+    track.query_interval = interval
+    track.prediction_interval = interval
+    track.input_interval = interval
+    track.resolution = resolution
+    track.values = values
+    track.preferred_aggregation = 'sum'
+    track.preferred_interpolation = 'linear_divided'
+    track.preferred_scoring_strategy = 'mean'
+    track.metadata = {}
+    track.track_id = None
+    return track
+
+
+class TestScoreRegionTrack:
+    """Test OraclePredictionTrack.score_region()."""
+
+    def test_within_window(self):
+        track = _make_real_track(n_bins=100, resolution=128, pred_start=1_000_000)
+        # Bins 10-20, values = [10, 11, ..., 19]
+        start = 1_000_000 + 10 * 128
+        end = 1_000_000 + 20 * 128
+        score = track.score_region("chr1", start, end, "mean")
+        assert score is not None
+        assert abs(score - np.mean(np.arange(10, 20, dtype=np.float32))) < 1e-5
+
+    def test_sum_strategy(self):
+        track = _make_real_track(n_bins=100, resolution=128, pred_start=1_000_000)
+        start = 1_000_000 + 0 * 128
+        end = 1_000_000 + 5 * 128
+        score = track.score_region("chr1", start, end, "sum")
+        assert abs(score - float(np.sum(np.arange(5, dtype=np.float32)))) < 1e-5
+
+    def test_max_strategy(self):
+        track = _make_real_track(n_bins=100, resolution=128, pred_start=1_000_000)
+        start = 1_000_000 + 50 * 128
+        end = 1_000_000 + 60 * 128
+        score = track.score_region("chr1", start, end, "max")
+        assert score == 59.0
+
+    def test_median_strategy(self):
+        track = _make_real_track(n_bins=100, resolution=128, pred_start=1_000_000)
+        start = 1_000_000 + 0 * 128
+        end = 1_000_000 + 4 * 128
+        score = track.score_region("chr1", start, end, "median")
+        assert abs(score - np.median(np.arange(4, dtype=np.float32))) < 1e-5
+
+    def test_no_overlap_before(self):
+        track = _make_real_track(n_bins=100, resolution=128, pred_start=1_000_000)
+        score = track.score_region("chr1", 500_000, 600_000, "mean")
+        assert score is None
+
+    def test_no_overlap_after(self):
+        track = _make_real_track(n_bins=100, resolution=128, pred_start=1_000_000)
+        pred_end = 1_000_000 + 100 * 128
+        score = track.score_region("chr1", pred_end + 1000, pred_end + 2000, "mean")
+        assert score is None
+
+    def test_wrong_chrom(self):
+        track = _make_real_track(n_bins=100, resolution=128, pred_start=1_000_000)
+        score = track.score_region("chr2", 1_000_000, 1_001_000, "mean")
+        assert score is None
+
+    def test_partial_overlap_left(self):
+        track = _make_real_track(n_bins=100, resolution=128, pred_start=1_000_000)
+        # Region starts before prediction window
+        score = track.score_region("chr1", 999_000, 1_000_000 + 5 * 128, "mean")
+        assert score is not None
+
+    def test_partial_overlap_right(self):
+        track = _make_real_track(n_bins=100, resolution=128, pred_start=1_000_000)
+        pred_end = 1_000_000 + 100 * 128
+        score = track.score_region("chr1", pred_end - 5 * 128, pred_end + 1000, "mean")
+        assert score is not None
+
+    def test_default_strategy(self):
+        track = _make_real_track(n_bins=100, resolution=128, pred_start=1_000_000)
+        # Default is 'mean'
+        start = 1_000_000 + 10 * 128
+        end = 1_000_000 + 20 * 128
+        score_default = track.score_region("chr1", start, end)
+        score_mean = track.score_region("chr1", start, end, "mean")
+        assert score_default == score_mean
+
+
+class TestScoreRegionPrediction:
+    """Test OraclePrediction.score_region()."""
+
+    def test_delegates_to_tracks(self):
+        from chorus.core.result import OraclePrediction
+
+        track1 = _make_real_track("DNASE:K562", n_bins=100, resolution=128)
+        track2 = _make_real_track("CAGE:K562", n_bins=100, resolution=128)
+        pred = OraclePrediction(tracks={"DNASE:K562": track1, "CAGE:K562": track2})
+
+        scores = pred.score_region("chr1", 1_000_000, 1_000_000 + 10 * 128, "mean")
+        assert "DNASE:K562" in scores
+        assert "CAGE:K562" in scores
+        assert scores["DNASE:K562"] is not None
+
+
+# ── score_variant_effect tests ────────────────────────────────────────
+
+class TestScoreVariantEffect:
+    """Test score_variant_effect() standalone function."""
+
+    def _make_variant_result(self, n_bins=100, resolution=128, pred_start=1_000_000):
+        from chorus.core.result import OraclePrediction
+
+        ref_track = _make_real_track("DNASE:K562", n_bins=n_bins, resolution=resolution, pred_start=pred_start)
+        alt_track = _make_real_track("DNASE:K562", n_bins=n_bins, resolution=resolution, pred_start=pred_start)
+        alt_track.values = ref_track.values + 1.0  # alt is uniformly higher
+
+        ref_pred = OraclePrediction(tracks={"DNASE:K562": ref_track})
+        alt_pred = OraclePrediction(tracks={"DNASE:K562": alt_track})
+
+        var_pos = pred_start + 50 * resolution
+        return {
+            'predictions': {'reference': ref_pred, 'alt_1': alt_pred},
+            'effect_sizes': {
+                'alt_1': {'DNASE:K562': alt_track.values - ref_track.values}
+            },
+            'variant_info': {
+                'position': f'chr1:{var_pos}',
+                'ref': 'A',
+                'alts': ['G'],
+            }
+        }
+
+    def test_region_mode(self):
+        from chorus.core.result import score_variant_effect
+        vr = self._make_variant_result()
+        result = score_variant_effect(
+            vr, chrom="chr1", start=1_000_000, end=1_000_000 + 10 * 128, scoring_strategy="mean"
+        )
+        assert 'alt_1' in result
+        assert 'DNASE:K562' in result['alt_1']
+        entry = result['alt_1']['DNASE:K562']
+        assert abs(entry['effect'] - 1.0) < 1e-5  # alt is 1.0 higher everywhere
+
+    def test_at_variant_mode(self):
+        from chorus.core.result import score_variant_effect
+        vr = self._make_variant_result()
+        result = score_variant_effect(vr, at_variant=True, window_bins=2, scoring_strategy="mean")
+        assert 'alt_1' in result
+        entry = result['alt_1']['DNASE:K562']
+        assert abs(entry['effect'] - 1.0) < 1e-5
+
+    def test_abs_max_strategy(self):
+        from chorus.core.result import score_variant_effect, OraclePrediction
+
+        ref_track = _make_real_track("DNASE:K562", n_bins=100, resolution=128)
+        alt_track = _make_real_track("DNASE:K562", n_bins=100, resolution=128)
+        alt_track.values = ref_track.values.copy()
+        alt_track.values[50] += 10.0  # Spike at bin 50
+
+        ref_pred = OraclePrediction(tracks={"DNASE:K562": ref_track})
+        alt_pred = OraclePrediction(tracks={"DNASE:K562": alt_track})
+
+        vr = {
+            'predictions': {'reference': ref_pred, 'alt_1': alt_pred},
+            'effect_sizes': {'alt_1': {'DNASE:K562': alt_track.values - ref_track.values}},
+            'variant_info': {
+                'position': f'chr1:{1_000_000 + 50 * 128}',
+                'ref': 'A', 'alts': ['G'],
+            }
+        }
+        result = score_variant_effect(
+            vr, chrom="chr1",
+            start=1_000_000 + 45 * 128, end=1_000_000 + 55 * 128,
+            scoring_strategy="abs_max"
+        )
+        assert abs(result['alt_1']['DNASE:K562']['effect'] - 10.0) < 1e-5
+
+    def test_raises_without_coords_or_at_variant(self):
+        from chorus.core.result import score_variant_effect
+        vr = self._make_variant_result()
+        with pytest.raises(ValueError, match="chrom/start/end"):
+            score_variant_effect(vr)
+
+
+# ── get_gene_exons tests ─────────────────────────────────────────────
+
+class TestGetGeneExons:
+    """Test get_gene_exons() and AnnotationManager.get_exon_positions()."""
+
+    def _make_gtf_file(self, tmp_path, lines):
+        """Write GTF lines to a temp file."""
+        gtf = tmp_path / "test.gtf"
+        gtf.write_text("\n".join(lines) + "\n")
+        return str(gtf)
+
+    def _gtf_exon_line(self, chrom, start, end, strand, gene_name, transcript_id, exon_number):
+        attrs = (
+            f'gene_name "{gene_name}"; '
+            f'gene_id "ENSG00000000001"; '
+            f'transcript_id "{transcript_id}"; '
+            f'exon_number "{exon_number}"'
+        )
+        return f'{chrom}\tENSEMBL\texon\t{start}\t{end}\t.\t{strand}\t.\t{attrs}'
+
+    def test_overlapping_exons_merged(self, tmp_path):
+        from chorus.utils.annotations import AnnotationManager
+        lines = [
+            self._gtf_exon_line("chr1", 1000, 2000, "+", "MYC", "T1", 1),
+            self._gtf_exon_line("chr1", 1500, 2500, "+", "MYC", "T2", 1),
+            self._gtf_exon_line("chr1", 3000, 4000, "+", "MYC", "T1", 2),
+        ]
+        gtf_path = self._make_gtf_file(tmp_path, lines)
+        mgr = AnnotationManager(str(tmp_path))
+
+        exons = mgr.get_exon_positions(gtf_path, gene_name="MYC")
+        assert len(exons) == 3
+
+        # Test merging via get_gene_exons logic
+        from chorus.utils.annotations import get_gene_exons
+        with patch('chorus.utils.annotations.get_annotation_manager') as mock_mgr:
+            mock_mgr.return_value = mgr
+            mock_mgr.return_value.get_annotation_path = MagicMock(return_value=gtf_path)
+            merged = get_gene_exons("MYC", annotation=gtf_path)
+
+        # Should merge first two overlapping into [1000, 2500], keep [3000, 4000]
+        assert len(merged) == 2
+        assert merged.iloc[0]['start'] == 1000
+        assert merged.iloc[0]['end'] == 2500
+        assert merged.iloc[1]['start'] == 3000
+
+    def test_disjoint_exons_not_merged(self, tmp_path):
+        from chorus.utils.annotations import AnnotationManager, get_gene_exons
+        lines = [
+            self._gtf_exon_line("chr1", 1000, 2000, "+", "MYC", "T1", 1),
+            self._gtf_exon_line("chr1", 5000, 6000, "+", "MYC", "T1", 2),
+        ]
+        gtf_path = self._make_gtf_file(tmp_path, lines)
+        mgr = AnnotationManager(str(tmp_path))
+
+        with patch('chorus.utils.annotations.get_annotation_manager') as mock_mgr:
+            mock_mgr.return_value = mgr
+            mock_mgr.return_value.get_annotation_path = MagicMock(return_value=gtf_path)
+            merged = get_gene_exons("MYC", annotation=gtf_path)
+
+        assert len(merged) == 2
+
+    def test_single_transcript(self, tmp_path):
+        from chorus.utils.annotations import AnnotationManager
+        lines = [
+            self._gtf_exon_line("chr1", 1000, 2000, "+", "MYC", "T1", 1),
+        ]
+        gtf_path = self._make_gtf_file(tmp_path, lines)
+        mgr = AnnotationManager(str(tmp_path))
+
+        exons = mgr.get_exon_positions(gtf_path, gene_name="MYC")
+        assert len(exons) == 1
+        assert exons.iloc[0]['gene_name'] == 'MYC'
+
+
+# ── analyze_gene_expression tests ────────────────────────────────────
+
+class TestAnalyzeGeneExpression:
+    """Test OracleBase.analyze_gene_expression() method."""
+
+    def _make_oracle(self):
+        """Create a minimal concrete oracle subclass for testing."""
+        from chorus.core.base import OracleBase
+
+        class TestOracle(OracleBase):
+            def __init__(self):
+                self.model = None
+                self.loaded = True
+                self.oracle_name = "test"
+                self.use_environment = False
+                self._env_manager = None
+                self._env_runner = None
+                self.model_load_timeout = None
+                self.predict_timeout = None
+                self.device = None
+
+            def load_pretrained_model(self, weights=None): pass
+            def list_assay_types(self): return []
+            def list_cell_types(self): return []
+            def _predict(self, seq, assay_ids): pass
+            def _get_context_size(self): return 0
+            def _get_sequence_length_bounds(self): return (0, 0)
+            def _get_bin_size(self): return 128
+            def fine_tune(self, tracks, track_names, **kwargs): pass
+
+        return TestOracle()
+
+    def test_cage_uses_tss_windowed_max(self):
+        from chorus.core.result import OraclePrediction, CAGEOraclePredictionTrack
+
+        oracle = self._make_oracle()
+        track = _make_real_track("CAGE:K562", n_bins=100, resolution=128,
+                                 pred_start=1_000_000, cls=CAGEOraclePredictionTrack)
+        # Set a peak at bin 50
+        track.values[50] = 100.0
+        pred = OraclePrediction(tracks={"CAGE:K562": track})
+
+        tss_pos = 1_000_000 + 50 * 128 + 64  # middle of bin 50
+
+        with patch('chorus.utils.annotations.get_gene_tss') as mock_tss, \
+             patch('chorus.utils.annotations.get_gene_exons') as mock_exons:
+            mock_tss.return_value = pd.DataFrame([{
+                'chrom': 'chr1', 'tss': tss_pos, 'strand': '+',
+                'gene_name': 'TEST', 'gene_id': 'ENSG1',
+                'transcript_id': 'ENST1', 'transcript_type': 'protein_coding',
+                'transcript_start': 1_000_000, 'transcript_end': 1_100_000,
+            }])
+            mock_exons.return_value = pd.DataFrame()
+
+            result = oracle.analyze_gene_expression(pred, 'TEST')
+
+        assert result['gene_name'] == 'TEST'
+        assert 'CAGE:K562' in result['per_track']
+        track_result = result['per_track']['CAGE:K562']
+        assert track_result['quantification_method'] == 'tss_windowed_max'
+        assert track_result['expression'] == 100.0
+
+    def test_rna_uses_exon_sum(self):
+        from chorus.core.result import OraclePrediction, RNAOraclePredictionTrack
+
+        oracle = self._make_oracle()
+        track = _make_real_track("RNA:K562", n_bins=100, resolution=128,
+                                 pred_start=1_000_000, cls=RNAOraclePredictionTrack)
+        # All values are 1.0 for easy sum calculation
+        track.values = np.ones(100, dtype=np.float32)
+        pred = OraclePrediction(tracks={"RNA:K562": track})
+
+        with patch('chorus.utils.annotations.get_gene_tss') as mock_tss, \
+             patch('chorus.utils.annotations.get_gene_exons') as mock_exons:
+            mock_tss.return_value = pd.DataFrame([{
+                'chrom': 'chr1', 'tss': 1_050_000, 'strand': '+',
+                'gene_name': 'TEST', 'gene_id': 'ENSG1',
+                'transcript_id': 'ENST1', 'transcript_type': 'protein_coding',
+                'transcript_start': 1_000_000, 'transcript_end': 1_100_000,
+            }])
+            # Two exons, each spanning 5 bins (5 * 128 = 640bp)
+            mock_exons.return_value = pd.DataFrame([
+                {'chrom': 'chr1', 'start': 1_000_000, 'end': 1_000_000 + 5 * 128,
+                 'strand': '+', 'gene_name': 'TEST'},
+                {'chrom': 'chr1', 'start': 1_000_000 + 50 * 128, 'end': 1_000_000 + 55 * 128,
+                 'strand': '+', 'gene_name': 'TEST'},
+            ])
+
+            result = oracle.analyze_gene_expression(pred, 'TEST')
+
+        assert 'RNA:K562' in result['per_track']
+        track_result = result['per_track']['RNA:K562']
+        assert track_result['quantification_method'] == 'exon_sum'
+        assert track_result['expression'] == 10.0  # 5 bins + 5 bins, all 1.0
+
+    def test_auto_detects_track_types(self):
+        from chorus.core.result import (
+            OraclePrediction, CAGEOraclePredictionTrack,
+            RNAOraclePredictionTrack, DNaseOraclePredictionTrack,
+        )
+
+        oracle = self._make_oracle()
+        cage_track = _make_real_track("CAGE:K562", cls=CAGEOraclePredictionTrack)
+        rna_track = _make_real_track("RNA:K562", cls=RNAOraclePredictionTrack)
+        dnase_track = _make_real_track("DNASE:K562", cls=DNaseOraclePredictionTrack)
+
+        pred = OraclePrediction(tracks={
+            "CAGE:K562": cage_track,
+            "RNA:K562": rna_track,
+            "DNASE:K562": dnase_track,
+        })
+
+        with patch('chorus.utils.annotations.get_gene_tss') as mock_tss, \
+             patch('chorus.utils.annotations.get_gene_exons') as mock_exons:
+            mock_tss.return_value = pd.DataFrame([{
+                'chrom': 'chr1', 'tss': 1_050_000, 'strand': '+',
+                'gene_name': 'TEST', 'gene_id': 'ENSG1',
+                'transcript_id': 'ENST1', 'transcript_type': 'protein_coding',
+                'transcript_start': 1_000_000, 'transcript_end': 1_100_000,
+            }])
+            mock_exons.return_value = pd.DataFrame([
+                {'chrom': 'chr1', 'start': 1_000_000, 'end': 1_005_000,
+                 'strand': '+', 'gene_name': 'TEST'},
+            ])
+
+            result = oracle.analyze_gene_expression(pred, 'TEST')
+
+        # CAGE and RNA should be detected, DNASE should not
+        assert 'CAGE:K562' in result['per_track']
+        assert 'RNA:K562' in result['per_track']
+        assert 'DNASE:K562' not in result['per_track']
+
+    def test_no_expression_tracks(self):
+        from chorus.core.result import OraclePrediction, DNaseOraclePredictionTrack
+
+        oracle = self._make_oracle()
+        track = _make_real_track("DNASE:K562", cls=DNaseOraclePredictionTrack)
+        pred = OraclePrediction(tracks={"DNASE:K562": track})
+
+        with patch('chorus.utils.annotations.get_gene_tss') as mock_tss:
+            mock_tss.return_value = pd.DataFrame([{
+                'chrom': 'chr1', 'tss': 1_050_000, 'strand': '+',
+                'gene_name': 'TEST', 'gene_id': 'ENSG1',
+                'transcript_id': 'ENST1', 'transcript_type': 'protein_coding',
+                'transcript_start': 1_000_000, 'transcript_end': 1_100_000,
+            }])
+
+            result = oracle.analyze_gene_expression(pred, 'TEST')
+
+        assert result['per_track'] == {}
+
+
+# ── analyze_variant_effect_on_gene tests ──────────────────────────────
+
+class TestAnalyzeVariantEffectOnGene:
+    """Test OracleBase.analyze_variant_effect_on_gene() method."""
+
+    def _make_oracle(self):
+        from chorus.core.base import OracleBase
+
+        class TestOracle(OracleBase):
+            def __init__(self):
+                self.model = None
+                self.loaded = True
+                self.oracle_name = "test"
+                self.use_environment = False
+                self._env_manager = None
+                self._env_runner = None
+                self.model_load_timeout = None
+                self.predict_timeout = None
+                self.device = None
+
+            def load_pretrained_model(self, weights=None): pass
+            def list_assay_types(self): return []
+            def list_cell_types(self): return []
+            def _predict(self, seq, assay_ids): pass
+            def _get_context_size(self): return 0
+            def _get_sequence_length_bounds(self): return (0, 0)
+            def _get_bin_size(self): return 128
+            def fine_tune(self, tracks, track_names, **kwargs): pass
+
+        return TestOracle()
+
+    def test_fold_change_computation(self):
+        from chorus.core.result import OraclePrediction, CAGEOraclePredictionTrack
+
+        oracle = self._make_oracle()
+
+        # Reference track with peak=10 at TSS
+        ref_track = _make_real_track("CAGE:K562", cls=CAGEOraclePredictionTrack)
+        ref_track.values = np.ones(100, dtype=np.float32)
+        ref_track.values[50] = 10.0
+
+        # Alt track with peak=20 at TSS (2x fold change)
+        alt_track = _make_real_track("CAGE:K562", cls=CAGEOraclePredictionTrack)
+        alt_track.values = np.ones(100, dtype=np.float32)
+        alt_track.values[50] = 20.0
+
+        ref_pred = OraclePrediction(tracks={"CAGE:K562": ref_track})
+        alt_pred = OraclePrediction(tracks={"CAGE:K562": alt_track})
+
+        variant_result = {
+            'predictions': {'reference': ref_pred, 'alt_1': alt_pred},
+            'effect_sizes': {'alt_1': {'CAGE:K562': alt_track.values - ref_track.values}},
+            'variant_info': {
+                'position': f'chr1:{1_000_000 + 50 * 128}',
+                'ref': 'A', 'alts': ['G'],
+            }
+        }
+
+        tss_pos = 1_000_000 + 50 * 128 + 64
+
+        with patch('chorus.utils.annotations.get_gene_tss') as mock_tss, \
+             patch('chorus.utils.annotations.get_gene_exons') as mock_exons:
+            mock_tss.return_value = pd.DataFrame([{
+                'chrom': 'chr1', 'tss': tss_pos, 'strand': '+',
+                'gene_name': 'TEST', 'gene_id': 'ENSG1',
+                'transcript_id': 'ENST1', 'transcript_type': 'protein_coding',
+                'transcript_start': 1_000_000, 'transcript_end': 1_100_000,
+            }])
+            mock_exons.return_value = pd.DataFrame()
+
+            result = oracle.analyze_variant_effect_on_gene(variant_result, 'TEST')
+
+        assert result['gene_name'] == 'TEST'
+        assert 'alt_1' in result['per_allele']
+        vs_ref = result['per_allele']['alt_1']['vs_reference']['CAGE:K562']
+        assert vs_ref['ref_expression'] == 10.0
+        assert vs_ref['alt_expression'] == 20.0
+        assert vs_ref['fold_change'] == 2.0
+        assert abs(vs_ref['absolute_change'] - 10.0) < 1e-5
+
+    def test_no_expression_tracks_returns_empty(self):
+        from chorus.core.result import OraclePrediction, DNaseOraclePredictionTrack
+
+        oracle = self._make_oracle()
+        ref_track = _make_real_track("DNASE:K562", cls=DNaseOraclePredictionTrack)
+        alt_track = _make_real_track("DNASE:K562", cls=DNaseOraclePredictionTrack)
+        ref_pred = OraclePrediction(tracks={"DNASE:K562": ref_track})
+        alt_pred = OraclePrediction(tracks={"DNASE:K562": alt_track})
+
+        variant_result = {
+            'predictions': {'reference': ref_pred, 'alt_1': alt_pred},
+            'effect_sizes': {'alt_1': {'DNASE:K562': alt_track.values - ref_track.values}},
+            'variant_info': {'position': 'chr1:1050000', 'ref': 'A', 'alts': ['G']},
+        }
+
+        with patch('chorus.utils.annotations.get_gene_tss') as mock_tss:
+            mock_tss.return_value = pd.DataFrame([{
+                'chrom': 'chr1', 'tss': 1_050_000, 'strand': '+',
+                'gene_name': 'TEST', 'gene_id': 'ENSG1',
+                'transcript_id': 'ENST1', 'transcript_type': 'protein_coding',
+                'transcript_start': 1_000_000, 'transcript_end': 1_100_000,
+            }])
+
+            result = oracle.analyze_variant_effect_on_gene(variant_result, 'TEST')
+
+        assert result['reference_expression'] == {}
+        assert result['per_allele']['alt_1']['vs_reference'] == {}
+
+    def test_no_tss_in_window(self):
+        from chorus.core.result import OraclePrediction, CAGEOraclePredictionTrack
+
+        oracle = self._make_oracle()
+        ref_track = _make_real_track("CAGE:K562", cls=CAGEOraclePredictionTrack)
+        alt_track = _make_real_track("CAGE:K562", cls=CAGEOraclePredictionTrack)
+        ref_pred = OraclePrediction(tracks={"CAGE:K562": ref_track})
+        alt_pred = OraclePrediction(tracks={"CAGE:K562": alt_track})
+
+        variant_result = {
+            'predictions': {'reference': ref_pred, 'alt_1': alt_pred},
+            'effect_sizes': {'alt_1': {'CAGE:K562': alt_track.values - ref_track.values}},
+            'variant_info': {'position': 'chr1:1050000', 'ref': 'A', 'alts': ['G']},
+        }
+
+        with patch('chorus.utils.annotations.get_gene_tss') as mock_tss, \
+             patch('chorus.utils.annotations.get_gene_exons') as mock_exons:
+            # TSS on a different chromosome — not in window
+            mock_tss.return_value = pd.DataFrame([{
+                'chrom': 'chr2', 'tss': 5_000_000, 'strand': '+',
+                'gene_name': 'FAR_GENE', 'gene_id': 'ENSG2',
+                'transcript_id': 'ENST2', 'transcript_type': 'protein_coding',
+                'transcript_start': 5_000_000, 'transcript_end': 5_100_000,
+            }])
+            mock_exons.return_value = pd.DataFrame()
+
+            result = oracle.analyze_variant_effect_on_gene(variant_result, 'FAR_GENE')
+
+        # CAGE track should have 0 expression (no TSS in window)
+        cage_result = result['reference_expression']['CAGE:K562']
+        assert cage_result['expression'] == 0.0

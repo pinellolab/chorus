@@ -39,10 +39,14 @@ setup(
             "jupyter>=1.0",
             "nbconvert>=6.0",
         ],
+        "mcp": [
+            "fastmcp>=3.0",
+        ],
     },
     entry_points={
         "console_scripts": [
             "chorus=chorus.cli.main:cli",
+            "chorus-mcp=chorus.mcp.server:main",
         ],
     },
     package_data={

@@ -20,7 +20,9 @@ Key features:
 - 🎯 In silico mutagenesis and sequence optimization
 - 📈 Track normalization and comparison utilities
 - 🚀 Enhanced sequence editing logic
-- 🔧 **NEW**: Isolated conda environments for each oracle to avoid dependency conflicts
+- 🔧 Isolated conda environments for each oracle to avoid dependency conflicts
+- 🧪 Sub-region scoring, gene expression analysis (CAGE + RNA-seq), and variant-to-gene effect prediction
+- 🤖 MCP server for AI assistant integration (Claude, etc.)
 
 ## ⚠️ Current Status
 
@@ -231,7 +233,61 @@ variant_effects = oracle.predict_variant_effect(
 )
 ```
 
-### 5. Save Predictions
+### 5. Sub-Region Scoring
+
+```python
+# Score a specific peak or promoter within the prediction window
+# (instead of summarizing the entire 114 kb output)
+score = predictions.score_region('chr11', 5247400, 5247600, 'mean')
+# Returns {track_id: score} for all tracks
+
+# Also available on individual tracks with different strategies
+track = predictions['ENCFF413AHU']
+track.score_region('chr11', 5247400, 5247600, 'max')   # peak signal
+track.score_region('chr11', 5247400, 5247600, 'sum')   # total signal
+```
+
+### 6. Focused Variant Effect Scoring
+
+```python
+from chorus.core.result import score_variant_effect
+
+# Score variant effects at the variant site (±N bins)
+scores = score_variant_effect(variant_effects, at_variant=True, window_bins=2)
+# Returns {allele: {track_id: {ref_score, alt_score, effect}}}
+
+# Or score variant effects at a specific region (e.g. a nearby promoter)
+scores = score_variant_effect(
+    variant_effects,
+    chrom='chr11', start=5247400, end=5247600,
+    scoring_strategy='mean'  # mean, max, sum, median, or abs_max
+)
+```
+
+### 7. Gene Expression Analysis
+
+```python
+# Quantify predicted gene expression from CAGE and/or RNA-seq tracks
+# Auto-detects expression tracks and uses appropriate quantification:
+#   CAGE/LentiMPRA → TSS windowed max
+#   RNA-seq → exon sum (Borzoi/AlphaGenome)
+expr = oracle.analyze_gene_expression(predictions, 'GATA1')
+# Returns per-track expression values with quantification method
+
+# Also available: get exon annotations for a gene
+from chorus.utils.annotations import get_gene_exons
+exons = get_gene_exons('GATA1')  # merged exon coordinates
+```
+
+### 8. Variant Effect on Gene Expression
+
+```python
+# The key question: does this variant change expression of a gene?
+result = oracle.analyze_variant_effect_on_gene(variant_effects, 'GATA1')
+# Returns fold change, log2 fold change, and absolute change per allele per track
+```
+
+### 9. Save Predictions
 
 ```python
 # Save as BedGraph for genome browser
@@ -254,6 +310,9 @@ jupyter notebook examples/comprehensive_oracle_showcase.ipynb
 
 This notebook demonstrates:
 - All prediction methods with real genomic data
+- Sub-region scoring and focused variant effects
+- Gene expression analysis (CAGE TSS windowed max, RNA-seq exon sum)
+- Variant effect on gene expression with fold change computation
 - Gene annotation and visualization
 - Saving outputs for genome browsers
 - Performance tips and best practices
@@ -497,6 +556,33 @@ oracle = chorus.create_oracle('alphagenome', use_environment=True)
 # Force specific device
 oracle = chorus.create_oracle('alphagenome', use_environment=True, device='cpu')
 oracle = chorus.create_oracle('alphagenome', use_environment=True, device='gpu')    # NVIDIA CUDA
+```
+
+## MCP Server (AI Assistant Integration)
+
+Chorus includes an MCP (Model Context Protocol) server that exposes all oracle tools to AI assistants like Claude. The server is installed automatically via the `chorus` conda environment.
+
+```bash
+# Run the MCP server
+chorus-mcp
+
+# Or via fastmcp (useful for development/testing)
+fastmcp dev chorus/mcp/server.py
+```
+
+Available MCP tools:
+- **Discovery**: `list_oracles`, `list_tracks`, `list_genomes`, `get_genes_in_region`, `get_gene_tss`
+- **Lifecycle**: `load_oracle`, `unload_oracle`, `oracle_status`
+- **Prediction**: `predict`, `predict_variant_effect`, `predict_region_replacement`, `predict_region_insertion`
+- **Scoring & Analysis**: `score_prediction_region`, `score_variant_effect_at_region`, `predict_variant_effect_on_gene`
+
+To connect to Claude Code or Claude Desktop, add to your MCP config:
+```json
+{
+  "chorus": {
+    "command": "chorus-mcp"
+  }
+}
 ```
 
 ## Troubleshooting

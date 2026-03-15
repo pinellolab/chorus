@@ -432,6 +432,207 @@ class OracleBase(ABC):
             else:
                 raise InvalidRegionError(f"Invalid position format: {genomic_position}")
     
+    def analyze_gene_expression(
+        self,
+        predictions: OraclePrediction,
+        gene_name: str,
+        expression_track_ids: Optional[List[str]] = None,
+        cage_window_bin_size: int = 5,
+    ) -> Dict:
+        """Analyze predicted gene expression using CAGE and/or RNA-seq signal.
+
+        Auto-detects expression tracks in the prediction by track type:
+        - CAGEOraclePredictionTrack / LentiMPRAOraclePredictionTrack → TSS windowed max
+        - RNAOraclePredictionTrack → sum signal over merged exonic regions
+
+        Args:
+            predictions: OraclePrediction from predict()
+            gene_name: Gene symbol (e.g. 'MYC', 'TP53')
+            expression_track_ids: Override auto-detection with specific track IDs
+            cage_window_bin_size: Bins around TSS for CAGE quantification (default ±5)
+
+        Returns:
+            Dict with gene_name, tss_positions, exon_regions, and per-track
+            expression quantification.
+        """
+        from ..utils.annotations import get_gene_tss, get_gene_exons
+        from ..core.result import (
+            CAGEOraclePredictionTrack,
+            LentiMPRAOraclePredictionTrack,
+            RNAOraclePredictionTrack,
+        )
+
+        # Get TSS positions
+        tss_df = get_gene_tss(gene_name)
+
+        # Auto-detect or filter expression tracks
+        if expression_track_ids is not None:
+            tracks_to_analyze = {
+                tid: predictions[tid] for tid in expression_track_ids
+            }
+        else:
+            tracks_to_analyze = {
+                tid: track for tid, track in predictions.items()
+                if isinstance(track, (CAGEOraclePredictionTrack,
+                                      LentiMPRAOraclePredictionTrack,
+                                      RNAOraclePredictionTrack))
+            }
+
+        if not tracks_to_analyze:
+            return {
+                'gene_name': gene_name,
+                'tss_positions': tss_df['tss'].tolist() if len(tss_df) > 0 else [],
+                'exon_regions': [],
+                'per_track': {},
+            }
+
+        # Check if any RNA tracks are present — only fetch exons if needed
+        has_rna = any(
+            isinstance(t, RNAOraclePredictionTrack) for t in tracks_to_analyze.values()
+        )
+        exon_df = get_gene_exons(gene_name) if has_rna else pd.DataFrame()
+
+        per_track = {}
+        for track_id, track in tracks_to_analyze.items():
+            chrom = track.prediction_interval.reference.chrom
+
+            if isinstance(track, (CAGEOraclePredictionTrack, LentiMPRAOraclePredictionTrack)):
+                # CAGE / LentiMPRA: windowed max around TSS
+                tss_in_window = tss_df[
+                    (tss_df['chrom'] == chrom) &
+                    (tss_df['tss'] >= track.start) &
+                    (tss_df['tss'] <= track.end)
+                ]
+                if len(tss_in_window) == 0:
+                    per_track[track_id] = {
+                        'expression': 0.0,
+                        'quantification_method': 'tss_windowed_max',
+                        'n_tss_in_window': 0,
+                    }
+                    continue
+
+                tss_signals = []
+                for _, row in tss_in_window.iterrows():
+                    tss_bin = track.pos2bin(row['chrom'], row['tss'])
+                    if tss_bin is None:
+                        continue
+                    s = max(0, tss_bin - cage_window_bin_size)
+                    e = min(len(track.values), tss_bin + cage_window_bin_size + 1)
+                    if s < e:
+                        tss_signals.append(float(np.max(track.values[s:e])))
+
+                expression = max(tss_signals) if tss_signals else 0.0
+                per_track[track_id] = {
+                    'expression': expression,
+                    'quantification_method': 'tss_windowed_max',
+                    'n_tss_in_window': len(tss_in_window),
+                    'tss_signals': tss_signals,
+                }
+
+            elif isinstance(track, RNAOraclePredictionTrack):
+                # RNA: sum signal over merged exons
+                if len(exon_df) == 0:
+                    per_track[track_id] = {
+                        'expression': 0.0,
+                        'quantification_method': 'exon_sum',
+                        'n_exons_in_window': 0,
+                    }
+                    continue
+
+                exon_sum = 0.0
+                n_exons = 0
+                for _, exon in exon_df.iterrows():
+                    score = track.score_region(exon['chrom'], exon['start'], exon['end'], 'sum')
+                    if score is not None:
+                        exon_sum += score
+                        n_exons += 1
+
+                per_track[track_id] = {
+                    'expression': exon_sum,
+                    'quantification_method': 'exon_sum',
+                    'n_exons_in_window': n_exons,
+                }
+
+        return {
+            'gene_name': gene_name,
+            'tss_positions': tss_df['tss'].tolist() if len(tss_df) > 0 else [],
+            'exon_regions': exon_df[['chrom', 'start', 'end']].to_dict('records') if len(exon_df) > 0 else [],
+            'per_track': per_track,
+        }
+
+    def analyze_variant_effect_on_gene(
+        self,
+        variant_result: Dict,
+        gene_name: str,
+        expression_track_ids: Optional[List[str]] = None,
+        cage_window_bin_size: int = 5,
+    ) -> Dict:
+        """Predict how a variant affects expression of a nearby gene.
+
+        Calls analyze_gene_expression() on reference and each alternate allele,
+        then computes fold change, log2 fold change, and absolute change.
+
+        Args:
+            variant_result: Return value of predict_variant_effect().
+            gene_name: Gene symbol (e.g. 'MYC', 'TP53')
+            expression_track_ids: Override auto-detection with specific track IDs
+            cage_window_bin_size: Bins around TSS for CAGE quantification
+
+        Returns:
+            Dict with gene_name, variant_info, reference_expression,
+            and per-allele expression with fold changes.
+        """
+        ref_expr = self.analyze_gene_expression(
+            variant_result['predictions']['reference'],
+            gene_name,
+            expression_track_ids=expression_track_ids,
+            cage_window_bin_size=cage_window_bin_size,
+        )
+
+        per_allele = {}
+        for allele_name, pred in variant_result['predictions'].items():
+            if allele_name == 'reference':
+                continue
+            alt_expr = self.analyze_gene_expression(
+                pred, gene_name,
+                expression_track_ids=expression_track_ids,
+                cage_window_bin_size=cage_window_bin_size,
+            )
+
+            allele_vs_ref = {}
+            for track_id in ref_expr['per_track']:
+                ref_val = ref_expr['per_track'][track_id]['expression']
+                alt_val = alt_expr['per_track'].get(track_id, {}).get('expression', 0.0)
+                abs_change = alt_val - ref_val
+                if ref_val != 0:
+                    fold_change = alt_val / ref_val
+                    log2fc = float(np.log2(alt_val / ref_val)) if alt_val > 0 and ref_val > 0 else None
+                else:
+                    fold_change = None
+                    log2fc = None
+
+                allele_vs_ref[track_id] = {
+                    'ref_expression': ref_val,
+                    'alt_expression': alt_val,
+                    'absolute_change': abs_change,
+                    'fold_change': fold_change,
+                    'log2_fold_change': log2fc,
+                }
+
+            per_allele[allele_name] = {
+                'expression': alt_expr['per_track'],
+                'vs_reference': allele_vs_ref,
+            }
+
+        return {
+            'gene_name': gene_name,
+            'variant_info': variant_result['variant_info'],
+            'tss_positions': ref_expr['tss_positions'],
+            'exon_regions': ref_expr['exon_regions'],
+            'reference_expression': ref_expr['per_track'],
+            'per_allele': per_allele,
+        }
+
     @abstractmethod
     def _predict(self, seq: str, assay_ids: List[str]) -> OraclePrediction:
         """Internal prediction method to be implemented by subclasses."""
