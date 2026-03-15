@@ -625,7 +625,36 @@ def predict_variant_effect_on_gene(
         assay_ids=assay_ids,
     )
 
-    return oracle.analyze_variant_effect_on_gene(variant_result, gene_name)
+    result = oracle.analyze_variant_effect_on_gene(variant_result, gene_name)
+
+    # Check if TSS fell outside the prediction window and add a clear warning
+    tss_positions = result.get("tss_positions", [])
+    ref_expr = result.get("reference_expression", {})
+    all_zero = all(
+        info.get("n_tss_in_window", 0) == 0
+        for info in ref_expr.values()
+    ) if ref_expr else True
+
+    if tss_positions and all_zero:
+        # Compute distance from variant to nearest TSS
+        var_chrom, var_pos_str = position.split(":")
+        var_pos = int(var_pos_str)
+        nearest_tss = min(tss_positions, key=lambda t: abs(t - var_pos))
+        distance_kb = abs(nearest_tss - var_pos) / 1000
+
+        # Get output window size
+        output_kb = ORACLE_SPECS.get(oracle_name.lower(), {}).get("output_bins", 0) * (
+            ORACLE_SPECS.get(oracle_name.lower(), {}).get("resolution_bp", 1) or 1
+        ) / 1000
+
+        result["warning"] = (
+            f"{gene_name} TSS (nearest: {var_chrom}:{nearest_tss}) is {distance_kb:.0f}kb "
+            f"from the variant — outside {oracle_name}'s {output_kb:.0f}kb output window. "
+            f"Try: (1) use a larger-window oracle like borzoi (196kb) or alphagenome (1Mb), "
+            f"or (2) pass a custom region spanning both variant and TSS."
+        )
+
+    return result
 
 
 # ── Entry-point ──────────────────────────────────────────────────────
