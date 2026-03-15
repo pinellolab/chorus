@@ -576,6 +576,30 @@ Available MCP tools:
 - **Prediction**: `predict`, `predict_variant_effect`, `predict_region_replacement`, `predict_region_insertion`
 - **Scoring & Analysis**: `score_prediction_region`, `score_variant_effect_at_region`, `predict_variant_effect_on_gene`
 
+Key features:
+- **Auto-centering**: `region` is optional in variant tools — auto-sized for each oracle's output window
+- **ChromBPNet params**: `load_oracle("chrombpnet", assay="CHIP", cell_type="K562", TF="GATA1")`
+- **TSS warnings**: `predict_variant_effect_on_gene` warns when the target gene TSS is outside the output window
+- **Mixed-resolution**: AlphaGenome's 1bp DNASE + 128bp histone tracks score correctly in a single call
+
+### Variant Analysis with AlphaGenome (Recommended)
+
+AlphaGenome (1Mb window, 5930 tracks) is the recommended primary oracle for variant analysis.
+It covers DNASE, ATAC, CAGE, RNA-seq, ChIP-seq histone marks, and TF binding in a single model:
+
+```
+# Via MCP (Claude Code):
+load_oracle("alphagenome")
+predict_variant_effect(
+    oracle_name="alphagenome",
+    position="chr1:109274968",
+    ref_allele="G", alt_alleles=["T"],
+    assay_ids=["DNASE/CL:0000182 DNase-seq/.", "CAGE/hCAGE CL:0000182/+"],
+)
+```
+
+See `chorus_mcp_output/reports/variant_analysis_framework.md` for the full 5-layer analysis guide.
+
 To connect to Claude Code or Claude Desktop, add to your MCP config:
 ```json
 {
