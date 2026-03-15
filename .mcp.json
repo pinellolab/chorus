@@ -3,7 +3,10 @@
     "chorus": {
       "type": "stdio",
       "command": "mamba",
-      "args": ["run", "--no-banner", "-n", "chorus", "chorus-mcp"]
+      "args": ["run", "-n", "chorus", "chorus-mcp"],
+      "env": {
+        "CHORUS_NO_TIMEOUT": "1"
+      }
     }
   }
 }

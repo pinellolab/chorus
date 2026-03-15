@@ -67,23 +67,26 @@ class OracleStateManager:
 
         from chorus import create_oracle
 
+        # Separate constructor kwargs from load-time kwargs (assay/cell_type
+        # are only used by load_pretrained_model, not the oracle constructor).
+        _load_only_keys = {"assay", "cell_type", "TF", "fold", "model_type"}
         oracle_kwargs: dict = {}
         if device:
             oracle_kwargs["device"] = device
         if self._reference_fasta:
             oracle_kwargs["reference_fasta"] = self._reference_fasta
-        oracle_kwargs.update(kwargs)
+        oracle_kwargs.update(
+            {k: v for k, v in kwargs.items() if k not in _load_only_keys}
+        )
 
         t0 = time.time()
         oracle = create_oracle(name, use_environment=True, **oracle_kwargs)
 
-        # ChromBPNet needs assay/cell_type passed to load_pretrained_model
+        # Pass load-time kwargs (assay, cell_type, TF, fold, model_type)
         load_kwargs: dict = {}
-        if name == "chrombpnet":
-            if "assay" in kwargs:
-                load_kwargs["assay"] = kwargs["assay"]
-            if "cell_type" in kwargs:
-                load_kwargs["cell_type"] = kwargs["cell_type"]
+        for key in ("assay", "cell_type", "TF", "fold", "model_type"):
+            if key in kwargs:
+                load_kwargs[key] = kwargs[key]
         oracle.load_pretrained_model(**load_kwargs)
 
         elapsed = time.time() - t0

@@ -2,7 +2,8 @@ from dataclasses import dataclass, field, asdict
 from dataclasses import replace as dt_replace
 import numpy as np 
 import pandas as pd
-import logging         
+import logging
+import re
 import tempfile
 import shutil
 import weakref
@@ -569,7 +570,7 @@ class OraclePrediction:
             # Create track data
             
             # Save to file
-            clean_id = track_id.replace(':', '_')
+            clean_id = re.sub(r'[/:*?"<>|.\s]+', '_', track_id).strip('_')
             filename = f"{prefix}_{clean_id}.bedgraph" if prefix else f"{clean_id}.bedgraph"
             filepath = output_dir / filename
             
@@ -662,37 +663,66 @@ def score_variant_effect(
     # Apply abs_max strategy via post-processing
     base_strategy = scoring_strategy if scoring_strategy != 'abs_max' else 'mean'
 
+    # Helper to score a slice of values using the given strategy
+    def _score_array(arr: np.ndarray, strategy: str) -> float:
+        if strategy == 'mean':
+            return float(np.mean(arr))
+        elif strategy == 'max':
+            return float(np.max(arr))
+        elif strategy == 'sum':
+            return float(np.sum(arr))
+        elif strategy == 'median':
+            return float(np.median(arr))
+        else:
+            raise ValueError(f"Unknown scoring strategy: {strategy}")
+
     results = {}
     for allele_name, alt_pred in predictions.items():
         if allele_name == 'reference':
             continue
         allele_scores = {}
         for assay_id in ref_pred.keys():
-            ref_score = ref_pred[assay_id].score_region(chrom, start, end, base_strategy)
-            alt_score = alt_pred[assay_id].score_region(chrom, start, end, base_strategy)
+            ref_track = ref_pred[assay_id]
+            alt_track = alt_pred[assay_id]
 
-            if scoring_strategy == 'abs_max':
-                # For abs_max, get the max of absolute values in the effect array
-                ref_track = ref_pred[assay_id]
-                alt_track = alt_pred[assay_id]
-                pred_start = ref_track.prediction_interval.reference.start
-                s_bin = (max(start, pred_start) - pred_start) // ref_track.resolution
-                e_bin = min(
-                    (min(end, ref_track.prediction_interval.reference.end) - pred_start + ref_track.resolution - 1) // ref_track.resolution,
-                    len(ref_track.values)
-                )
-                if s_bin < e_bin:
-                    diff = alt_track.values[s_bin:e_bin] - ref_track.values[s_bin:e_bin]
-                    effect = float(diff[np.argmax(np.abs(diff))])
+            if at_variant:
+                # Directly slice using bin indices to avoid coordinate round-trip
+                # that causes start_bin >= end_bin at coarse resolutions
+                ref_vals = ref_track.values[region_start_bin:region_end_bin]
+                alt_vals = alt_track.values[region_start_bin:region_end_bin]
+
+                if scoring_strategy == 'abs_max':
+                    ref_score = _score_array(ref_vals, 'mean')
+                    alt_score = _score_array(alt_vals, 'mean')
+                    diff = alt_vals - ref_vals
+                    effect = float(diff[np.argmax(np.abs(diff))]) if len(diff) > 0 else 0.0
                 else:
-                    effect = 0.0
-                ref_score = ref_score if ref_score is not None else 0.0
-                alt_score = alt_score if alt_score is not None else 0.0
-            else:
-                if ref_score is not None and alt_score is not None:
+                    ref_score = _score_array(ref_vals, base_strategy)
+                    alt_score = _score_array(alt_vals, base_strategy)
                     effect = alt_score - ref_score
+            else:
+                ref_score = ref_track.score_region(chrom, start, end, base_strategy)
+                alt_score = alt_track.score_region(chrom, start, end, base_strategy)
+
+                if scoring_strategy == 'abs_max':
+                    pred_start_coord = ref_track.prediction_interval.reference.start
+                    s_bin = (max(start, pred_start_coord) - pred_start_coord) // ref_track.resolution
+                    e_bin = min(
+                        (min(end, ref_track.prediction_interval.reference.end) - pred_start_coord + ref_track.resolution - 1) // ref_track.resolution,
+                        len(ref_track.values)
+                    )
+                    if s_bin < e_bin:
+                        diff = alt_track.values[s_bin:e_bin] - ref_track.values[s_bin:e_bin]
+                        effect = float(diff[np.argmax(np.abs(diff))])
+                    else:
+                        effect = 0.0
+                    ref_score = ref_score if ref_score is not None else 0.0
+                    alt_score = alt_score if alt_score is not None else 0.0
                 else:
-                    effect = None
+                    if ref_score is not None and alt_score is not None:
+                        effect = alt_score - ref_score
+                    else:
+                        effect = None
 
             allele_scores[assay_id] = {
                 'ref_score': ref_score,

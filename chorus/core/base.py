@@ -337,12 +337,14 @@ class OracleBase(ABC):
             predictions = self._predict(interval, assay_ids)
             all_predictions[allele_name] = predictions
     
-        # Calculate effect sizes
+        # Calculate effect sizes using actual prediction keys (may differ from
+        # input assay_ids, e.g. ChromBPNet returns "ATAC:K562" not "ATAC")
+        ref_keys = list(all_predictions['reference'].keys())
         effect_sizes = {}
         for allele_name in ['alt_' + str(i+1) for i in range(len(alt_alleles))]:
             effect_sizes[allele_name] = {
                 assay: all_predictions[allele_name][assay].values - all_predictions['reference'][assay].values
-                for assay in assay_ids
+                for assay in ref_keys
             }
         
         return {
@@ -479,11 +481,19 @@ class OracleBase(ABC):
             }
 
         if not tracks_to_analyze:
+            present_types = sorted({
+                type(t).__name__ for t in predictions.values()
+            })
             return {
                 'gene_name': gene_name,
                 'tss_positions': tss_df['tss'].tolist() if len(tss_df) > 0 else [],
                 'exon_regions': [],
                 'per_track': {},
+                'warning': (
+                    f"No expression tracks (CAGE/RNA) found in prediction. "
+                    f"Track types present: {present_types}. "
+                    f"Gene expression analysis requires CAGE or RNA track types."
+                ),
             }
 
         # Check if any RNA tracks are present — only fetch exons if needed

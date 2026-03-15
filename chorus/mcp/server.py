@@ -86,6 +86,19 @@ def _state() -> OracleStateManager:
     return OracleStateManager()
 
 
+def _auto_region(oracle, position: str) -> str:
+    """Compute an input region centered on a variant position.
+
+    Uses a minimal region so the oracle's internal extend() properly sizes both
+    the input and prediction intervals.  This avoids a mismatch where
+    prediction_interval covers the full input window but values only cover
+    the output window (e.g. Enformer: 393 kb input → 114 kb output).
+    """
+    chrom, pos_str = position.split(":")
+    pos = int(pos_str)
+    return f"{chrom}:{pos}-{pos + 1}"
+
+
 # ── Discovery tools ──────────────────────────────────────────────────
 
 @mcp.tool()
@@ -149,38 +162,70 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
     if oracle_name == "enformer":
         from chorus.oracles.enformer_source.enformer_metadata import get_metadata
         meta = get_metadata()
-        assay_types = meta.list_assay_types()
-        cell_types = meta.list_cell_types()
         if query:
-            q = query.upper()
-            filtered_assays = [a for a in assay_types if q in a.upper()]
-            filtered_cells = [c for c in cell_types if q in c.upper()]
-            return {"oracle": oracle_name, "query": query, "matching_assay_types": filtered_assays, "matching_cell_types": filtered_cells}
-        return {"oracle": oracle_name, "assay_types": assay_types, "cell_types": cell_types}
+            df = meta.search_tracks(query)
+            results = df.to_dict(orient="records")
+            return {"oracle": oracle_name, "query": query, "num_results": len(results), "tracks": results[:200]}
+        return {
+            "oracle": oracle_name,
+            "assay_types": meta.list_assay_types(),
+            "cell_types": meta.list_cell_types(),
+            "note": "Use query parameter to search tracks (e.g. query='DNASE K562') and get usable assay identifiers.",
+        }
 
     if oracle_name == "chrombpnet":
         from chorus.oracles.chrombpnet_source.metadata import BPNetMetadata
+        from chorus.oracles.chrombpnet_source.chrombpnet_globals import CHROMBPNET_MODELS_DICT
         meta = BPNetMetadata()
-        cell_types = meta.list_cell_types()
-        tfs = meta.list_TFs()
+        atac_cell_types = sorted(CHROMBPNET_MODELS_DICT.get("ATAC", {}).keys())
+        dnase_cell_types = sorted(CHROMBPNET_MODELS_DICT.get("DNASE", {}).keys())
+        chip_cell_types = meta.list_cell_types()
+        chip_tfs = meta.list_TFs()
         if query:
             q = query.upper()
-            filtered_cells = [c for c in cell_types if q in c.upper()]
-            filtered_tfs = [t for t in tfs if q in t.upper()]
-            return {"oracle": oracle_name, "query": query, "matching_cell_types": filtered_cells, "matching_TFs": filtered_tfs}
-        return {"oracle": oracle_name, "assay_types": ["ATAC", "DNASE", "CHIP"], "cell_types": cell_types, "TFs": tfs}
+            # Show matching ATAC/DNASE cell types
+            matching_atac = [c for c in atac_cell_types if q in c.upper()]
+            matching_dnase = [c for c in dnase_cell_types if q in c.upper()]
+            # Show matching CHIP TF-cell_type combinations
+            matching_chip_cells = [c for c in chip_cell_types if q in c.upper()]
+            matching_chip_tfs = [t for t in chip_tfs if q in t.upper()]
+            chip_combos = []
+            if matching_chip_cells or matching_chip_tfs:
+                for ct in (matching_chip_cells or chip_cell_types):
+                    for tf in meta.list_TFs_by_cell_type(ct):
+                        if not matching_chip_tfs or tf in matching_chip_tfs:
+                            chip_combos.append({"cell_type": ct, "TF": tf})
+            return {
+                "oracle": oracle_name,
+                "query": query,
+                "ATAC_cell_types": matching_atac,
+                "DNASE_cell_types": matching_dnase,
+                "CHIP_combinations": chip_combos[:100],
+                "note": "Load with: load_oracle('chrombpnet', assay='ATAC', cell_type='K562') or load_oracle('chrombpnet', assay='CHIP', cell_type='K562', TF='GATA1')",
+            }
+        return {
+            "oracle": oracle_name,
+            "assay_types": ["ATAC", "DNASE", "CHIP"],
+            "ATAC_cell_types": atac_cell_types,
+            "DNASE_cell_types": dnase_cell_types,
+            "CHIP_cell_types": chip_cell_types,
+            "CHIP_TFs": chip_tfs,
+            "note": "Load with: load_oracle('chrombpnet', assay='ATAC', cell_type='K562') or load_oracle('chrombpnet', assay='CHIP', cell_type='K562', TF='GATA1')",
+        }
 
     if oracle_name == "alphagenome":
         from chorus.oracles.alphagenome_source.alphagenome_metadata import get_metadata
         meta = get_metadata()
-        assay_types = meta.list_assay_types()
-        cell_types = meta.list_cell_types()
         if query:
-            q = query.upper()
-            filtered_assays = [a for a in assay_types if q in a.upper()]
-            filtered_cells = [c for c in cell_types if q in c.upper()]
-            return {"oracle": oracle_name, "query": query, "matching_assay_types": filtered_assays, "matching_cell_types": filtered_cells}
-        return {"oracle": oracle_name, "assay_types": assay_types, "cell_types": cell_types}
+            df = meta.search_tracks(query)
+            results = df.to_dict(orient="records")
+            return {"oracle": oracle_name, "query": query, "num_results": len(results), "tracks": results[:200]}
+        return {
+            "oracle": oracle_name,
+            "assay_types": meta.list_assay_types(),
+            "cell_types": meta.list_cell_types(),
+            "note": "Use query parameter to search tracks (e.g. query='GATA1') and get usable assay identifiers.",
+        }
 
     if oracle_name == "sei":
         return {
@@ -260,6 +305,9 @@ def load_oracle(
     device: Optional[str] = None,
     assay: Optional[str] = None,
     cell_type: Optional[str] = None,
+    TF: Optional[str] = None,
+    fold: Optional[int] = None,
+    model_type: Optional[str] = None,
 ) -> dict:
     """Load a genomic oracle and its pretrained model (cached for reuse).
 
@@ -270,12 +318,21 @@ def load_oracle(
         device: Device to use — "cpu", "cuda", "cuda:0", etc. None = auto-detect.
         assay: (ChromBPNet only) Assay type — "ATAC", "DNASE", or "CHIP".
         cell_type: (ChromBPNet/LegNet) Cell type — e.g. "K562", "HepG2".
+        TF: (ChromBPNet CHIP only) Transcription factor — e.g. "GATA1", "CTCF".
+        fold: (ChromBPNet ATAC/DNASE only) Cross-validation fold 0-4 (default 0).
+        model_type: (ChromBPNet only) Model variant — "chrombpnet", "bias_scaled", "chrombpnet_nobias".
     """
     kwargs: dict = {}
     if assay:
         kwargs["assay"] = assay
     if cell_type:
         kwargs["cell_type"] = cell_type
+    if TF:
+        kwargs["TF"] = TF
+    if fold is not None:
+        kwargs["fold"] = fold
+    if model_type:
+        kwargs["model_type"] = model_type
     return _state().load_oracle(oracle_name, device=device, **kwargs)
 
 
@@ -329,11 +386,11 @@ def predict(
 @mcp.tool()
 def predict_variant_effect(
     oracle_name: str,
-    region: str,
     position: str,
     ref_allele: str,
     alt_alleles: list[str],
     assay_ids: list[str],
+    region: Optional[str] = None,
 ) -> dict:
     """Predict the effect of a genetic variant.
 
@@ -342,14 +399,17 @@ def predict_variant_effect(
 
     Args:
         oracle_name: A loaded oracle name.
-        region: Genomic region as "chr1:1000000-1393216".
         position: Variant position as "chr1:1050000".
         ref_allele: Reference allele (e.g. "A").
         alt_alleles: Alternate alleles (e.g. ["G", "T"]).
         assay_ids: List of assay identifiers.
+        region: Genomic region as "chr1:1000000-1393216". If omitted, auto-centered on the variant position using the oracle's input window.
     """
     state = _state()
     oracle = state.get_oracle(oracle_name)
+
+    if region is None:
+        region = _auto_region(oracle, position)
 
     alleles = [ref_allele] + list(alt_alleles)
     result = oracle.predict_variant_effect(
@@ -461,11 +521,11 @@ def score_prediction_region(
 @mcp.tool()
 def score_variant_effect_at_region(
     oracle_name: str,
-    region: str,
     position: str,
     ref_allele: str,
     alt_alleles: list[str],
     assay_ids: list[str],
+    region: Optional[str] = None,
     score_region: Optional[str] = None,
     at_variant: bool = False,
     window_bins: int = 1,
@@ -479,11 +539,11 @@ def score_variant_effect_at_region(
 
     Args:
         oracle_name: A loaded oracle name.
-        region: Input region as "chr1:1000000-1393216".
         position: Variant position as "chr1:1050000".
         ref_allele: Reference allele.
         alt_alleles: Alternate alleles.
         assay_ids: List of assay identifiers.
+        region: Input region as "chr1:1000000-1393216". If omitted, auto-centered on the variant position.
         score_region: Sub-region to score (e.g. "chr1:1050000-1051000").
         at_variant: If true, score around the variant position instead.
         window_bins: Bins on each side when at_variant is true (default 1).
@@ -493,6 +553,9 @@ def score_variant_effect_at_region(
 
     state = _state()
     oracle = state.get_oracle(oracle_name)
+
+    if region is None:
+        region = _auto_region(oracle, position)
 
     alleles = [ref_allele] + list(alt_alleles)
     variant_result = oracle.predict_variant_effect(
@@ -527,12 +590,12 @@ def score_variant_effect_at_region(
 @mcp.tool()
 def predict_variant_effect_on_gene(
     oracle_name: str,
-    region: str,
     position: str,
     ref_allele: str,
     alt_alleles: list[str],
     gene_name: str,
     assay_ids: list[str],
+    region: Optional[str] = None,
 ) -> dict:
     """Predict how a variant affects expression of a nearby gene.
 
@@ -541,15 +604,18 @@ def predict_variant_effect_on_gene(
 
     Args:
         oracle_name: A loaded oracle name.
-        region: Input region as "chr1:1000000-1393216".
         position: Variant position as "chr1:1050000".
         ref_allele: Reference allele.
         alt_alleles: Alternate alleles.
         gene_name: Gene symbol (e.g. "MYC", "TP53").
         assay_ids: List of assay identifiers.
+        region: Input region as "chr1:1000000-1393216". If omitted, auto-centered on the variant position.
     """
     state = _state()
     oracle = state.get_oracle(oracle_name)
+
+    if region is None:
+        region = _auto_region(oracle, position)
 
     alleles = [ref_allele] + list(alt_alleles)
     variant_result = oracle.predict_variant_effect(
