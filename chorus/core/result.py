@@ -686,12 +686,26 @@ def score_variant_effect(
             alt_track = alt_pred[assay_id]
 
             if at_variant:
-                # Directly slice using bin indices to avoid coordinate round-trip
-                # that causes start_bin >= end_bin at coarse resolutions
-                ref_vals = ref_track.values[region_start_bin:region_end_bin]
-                alt_vals = alt_track.values[region_start_bin:region_end_bin]
+                # Compute per-track bin indices to handle mixed resolutions
+                # (e.g. AlphaGenome has 1bp DNASE + 128bp histone tracks)
+                t_var_bin = ref_track.pos2bin(var_chrom, var_pos)
+                if t_var_bin is not None:
+                    # Scale window_bins by resolution ratio so genomic window is consistent
+                    genomic_window = window_bins * resolution  # window in bp from first track
+                    t_window = max(1, genomic_window // ref_track.resolution)
+                    t_start = max(0, t_var_bin - t_window)
+                    t_end = min(len(ref_track.values), t_var_bin + t_window + 1)
+                    ref_vals = ref_track.values[t_start:t_end]
+                    alt_vals = alt_track.values[t_start:t_end]
+                else:
+                    ref_vals = np.array([])
+                    alt_vals = np.array([])
 
-                if scoring_strategy == 'abs_max':
+                if len(ref_vals) == 0:
+                    ref_score = None
+                    alt_score = None
+                    effect = None
+                elif scoring_strategy == 'abs_max':
                     ref_score = _score_array(ref_vals, 'mean')
                     alt_score = _score_array(alt_vals, 'mean')
                     diff = alt_vals - ref_vals
