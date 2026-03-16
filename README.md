@@ -560,17 +560,76 @@ oracle = chorus.create_oracle('alphagenome', use_environment=True, device='gpu')
 
 ## MCP Server (AI Assistant Integration)
 
-Chorus includes an MCP (Model Context Protocol) server that exposes all oracle tools to AI assistants like Claude. The server is installed automatically via the `chorus` conda environment.
+Chorus includes an MCP (Model Context Protocol) server that lets AI assistants like Claude
+directly load oracles, predict variant effects, and analyze gene expression — all through
+natural language conversation.
 
-```bash
-# Run the MCP server
-chorus-mcp
+### Setup for Claude Code
 
-# Or via fastmcp (useful for development/testing)
-fastmcp dev chorus/mcp/server.py
+**You do NOT need to run the server manually.** Claude Code manages the MCP server process
+automatically. You just need a `.mcp.json` file in the root of the Chorus repo:
+
+**Step 1:** Create (or verify) the file `.mcp.json` in the repo root:
+
+```json
+{
+  "mcpServers": {
+    "chorus": {
+      "type": "stdio",
+      "command": "mamba",
+      "args": ["run", "-n", "chorus", "chorus-mcp"],
+      "env": {
+        "CHORUS_NO_TIMEOUT": "1"
+      }
+    }
+  }
+}
 ```
 
-Available MCP tools:
+> **Note:** If you use `conda` instead of `mamba`, replace `"command": "mamba"` with `"command": "conda"`.
+> The `CHORUS_NO_TIMEOUT` env var disables prediction timeouts, which is recommended for interactive use.
+
+**Step 2:** Start (or restart) Claude Code from the Chorus directory:
+
+```bash
+cd /path/to/chorus
+claude
+```
+
+Claude Code reads `.mcp.json` on startup and launches the MCP server in the background.
+You should see the Chorus tools available immediately — try asking: *"What oracles are available?"*
+
+### Setup for Claude Desktop
+
+Add this to your Claude Desktop MCP config (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "chorus": {
+      "command": "mamba",
+      "args": ["run", "-n", "chorus", "chorus-mcp"],
+      "env": {
+        "CHORUS_NO_TIMEOUT": "1"
+      }
+    }
+  }
+}
+```
+
+Then restart Claude Desktop.
+
+### Manual testing (optional)
+
+You can verify the server starts correctly by running it directly:
+
+```bash
+mamba run -n chorus chorus-mcp
+# You should see the FastMCP banner. Press Ctrl+C to stop.
+```
+
+### Available MCP tools
+
 - **Discovery**: `list_oracles`, `list_tracks`, `list_genomes`, `get_genes_in_region`, `get_gene_tss`
 - **Lifecycle**: `load_oracle`, `unload_oracle`, `oracle_status`
 - **Prediction**: `predict`, `predict_variant_effect`, `predict_region_replacement`, `predict_region_insertion`
@@ -585,29 +644,17 @@ Key features:
 ### Variant Analysis with AlphaGenome (Recommended)
 
 AlphaGenome (1Mb window, 5930 tracks) is the recommended primary oracle for variant analysis.
-It covers DNASE, ATAC, CAGE, RNA-seq, ChIP-seq histone marks, and TF binding in a single model:
+It covers DNASE, ATAC, CAGE, RNA-seq, ChIP-seq histone marks, and TF binding in a single model.
 
-```
-# Via MCP (Claude Code):
-load_oracle("alphagenome")
-predict_variant_effect(
-    oracle_name="alphagenome",
-    position="chr1:109274968",
-    ref_allele="G", alt_alleles=["T"],
-    assay_ids=["DNASE/CL:0000182 DNase-seq/.", "CAGE/hCAGE CL:0000182/+"],
-)
-```
+Example conversation with Claude:
 
-See `chorus_mcp_output/reports/variant_analysis_framework.md` for the full 5-layer analysis guide.
+> **You:** *Load AlphaGenome and predict the effect of rs12740374 (chr1:109274968 G>T) on hepatocyte CAGE expression*
+>
+> Claude will call `load_oracle("alphagenome")`, then `predict_variant_effect(...)` with the right tracks,
+> and return a summary of chromatin and expression effects.
 
-To connect to Claude Code or Claude Desktop, add to your MCP config:
-```json
-{
-  "chorus": {
-    "command": "chorus-mcp"
-  }
-}
-```
+See `chorus_mcp_output/reports/variant_analysis_framework.md` for the full 5-layer analysis guide
+with track selection cheat sheets by disease area.
 
 ## Troubleshooting
 
