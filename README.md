@@ -24,7 +24,7 @@ Key features:
 - 🧪 Sub-region scoring, gene expression analysis (CAGE + RNA-seq), and variant-to-gene effect prediction
 - 🤖 MCP server for AI assistant integration (Claude, etc.)
 
-## ⚠️ Current Status
+## Current Status
 
  Currently, Enformer, Sei, Borzoi, ChromBPNet, LegNet and AlphaGenome oracles are fully implemented with:
 
