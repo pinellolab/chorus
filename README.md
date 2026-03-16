@@ -570,7 +570,13 @@ natural language conversation.
 automatically. You just need a `.mcp.json` file — and it works from **any project folder**,
 not just the Chorus repo.
 
-**Step 1:** Create a `.mcp.json` file in your project directory (wherever you run `claude`):
+**Step 1:** One-liner — run this from any project folder:
+
+```bash
+curl -sL https://raw.githubusercontent.com/pinellolab/chorus/main/.mcp.json -o .mcp.json
+```
+
+Or create `.mcp.json` manually:
 
 ```json
 {
@@ -587,7 +593,7 @@ not just the Chorus repo.
 }
 ```
 
-That's it. The `chorus-mcp` command is installed in the `chorus` conda environment, so
+The `chorus-mcp` command is installed in the `chorus` conda environment, so
 `mamba run -n chorus chorus-mcp` works from any directory.
 
 > **Note:** If you use `conda` instead of `mamba`, replace `"command": "mamba"` with `"command": "conda"`.
