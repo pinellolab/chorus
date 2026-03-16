@@ -46,3 +46,4 @@ dependencies:
   - pip:
     - coolbox>=0.4.0
     - oxbow>=0.4.0
+    - fastmcp>=2.0.0
