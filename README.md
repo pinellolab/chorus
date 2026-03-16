@@ -567,9 +567,10 @@ natural language conversation.
 ### Setup for Claude Code
 
 **You do NOT need to run the server manually.** Claude Code manages the MCP server process
-automatically. You just need a `.mcp.json` file in the root of the Chorus repo:
+automatically. You just need a `.mcp.json` file — and it works from **any project folder**,
+not just the Chorus repo.
 
-**Step 1:** Create (or verify) the file `.mcp.json` in the repo root:
+**Step 1:** Create a `.mcp.json` file in your project directory (wherever you run `claude`):
 
 ```json
 {
@@ -586,18 +587,29 @@ automatically. You just need a `.mcp.json` file in the root of the Chorus repo:
 }
 ```
 
+That's it. The `chorus-mcp` command is installed in the `chorus` conda environment, so
+`mamba run -n chorus chorus-mcp` works from any directory.
+
 > **Note:** If you use `conda` instead of `mamba`, replace `"command": "mamba"` with `"command": "conda"`.
 > The `CHORUS_NO_TIMEOUT` env var disables prediction timeouts, which is recommended for interactive use.
 
-**Step 2:** Start (or restart) Claude Code from the Chorus directory:
+**Step 2:** Start (or restart) Claude Code from your project:
 
 ```bash
-cd /path/to/chorus
+cd /path/to/my-project    # any folder — does NOT need to be the chorus repo
 claude
 ```
 
 Claude Code reads `.mcp.json` on startup and launches the MCP server in the background.
 You should see the Chorus tools available immediately — try asking: *"What oracles are available?"*
+
+**Alternatively**, you can add Chorus to your global Claude Code settings (`~/.claude/settings.json`)
+so it's available in every project without needing a per-project `.mcp.json`:
+
+```bash
+# Add globally (one-time setup):
+claude mcp add chorus -- mamba run -n chorus chorus-mcp
+```
 
 ### Setup for Claude Desktop
 
@@ -617,7 +629,7 @@ Add this to your Claude Desktop MCP config (`~/Library/Application Support/Claud
 }
 ```
 
-Then restart Claude Desktop.
+Then restart Claude Desktop. Chorus tools will be available in all conversations.
 
 ### Manual testing (optional)
 
