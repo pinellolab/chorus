@@ -27,6 +27,10 @@ dependencies:
   - torchvision>=0.14.0
   - cudatoolkit=11.7  # Adjust based on your CUDA version
   
+  # Build tools (needed to compile pytabix, selene-sdk C extensions)
+  - c-compiler
+  - cxx-compiler
+
   # Additional dependencies
   - pip
   - pip:
