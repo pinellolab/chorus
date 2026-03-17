@@ -17,6 +17,7 @@ dependencies:
   - pyfaidx==0.6.1 #>=0.7.0
   - bedtools>=2.30.0
   - samtools>=1.15
+  - wget
   
   # Utilities
   - tqdm>=4.62.0
