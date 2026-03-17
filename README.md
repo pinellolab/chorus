@@ -260,26 +260,20 @@ wt_files = predictions.save_predictions_as_bedgraph(output_dir="bedgraph_outputs
 
 ```
 
-## Comprehensive Example
-
-For a detailed walkthrough with visualizations and gene annotations, see the comprehensive notebook:
+## Example Notebooks
 
 ```bash
-# Download reference genome and gene annotations
+# Download reference genome first
 chorus genome download hg38
-
-# Run the comprehensive notebook
-jupyter notebook examples/comprehensive_oracle_showcase.ipynb
 ```
 
-This notebook demonstrates:
-- All prediction methods with real genomic data
-- Sub-region scoring and focused variant effects
-- Gene expression analysis (CAGE TSS windowed max, RNA-seq exon sum)
-- Variant effect on gene expression with fold change computation
-- Gene annotation and visualization
-- Saving outputs for genome browsers
-- Performance tips and best practices
+Three notebooks are provided, from introductory to advanced:
+
+| Notebook | Oracles | What it covers |
+|----------|---------|----------------|
+| `examples/single_oracle_quickstart.ipynb` | Enformer | Deep single-oracle tutorial: predictions, region replacement, insertion, variant effects, gene expression, coolbox visualization |
+| `examples/comprehensive_oracle_showcase.ipynb` | All 6 | All oracles side by side, cross-oracle comparison, variant analysis with gene expression, sub-region scoring |
+| `examples/advanced_multi_oracle_analysis.ipynb` | Enformer + ChromBPNet + LegNet | CHIP-seq TF binding, strand-specific tracks, Interval API, quantile normalization, cell-type switching |
 
 ## Key Features
 
