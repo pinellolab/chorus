@@ -24,15 +24,6 @@ Key features:
 - 🧪 Sub-region scoring, gene expression analysis (CAGE + RNA-seq), and variant-to-gene effect prediction
 - 🤖 MCP server for AI assistant integration (Claude, etc.)
 
-## Current Status
-
- Currently, Enformer, Sei, Borzoi, ChromBPNet, LegNet and AlphaGenome oracles are fully implemented with:
-
-- Environment isolation support
-- Reference genome integration for biologically accurate predictions
-- ENCODE track identifier support
-- BedGraph output generation
-
 ## Prerequisites
 
 - **Miniforge** (provides `mamba`): Install from https://github.com/conda-forge/miniforge
@@ -117,74 +108,45 @@ Genomes are stored in the `genomes/` directory within your Chorus installation.
 
 ## Quick Start
 
-### Basic Setup
+### Minimal Working Example
 
 ```python
 import chorus
 from chorus.utils import get_genome
 
-# Create oracle with reference genome (auto-downloads if needed)
-genome_path = get_genome('hg38')
-oracle = chorus.create_oracle('enformer', 
-                             use_environment=True,
-                             reference_fasta=str(genome_path))
+# 1. Create oracle with reference genome
+genome_path = get_genome('hg38')  # auto-downloads if needed
+oracle = chorus.create_oracle('enformer', use_environment=True,
+                              reference_fasta=str(genome_path))
 oracle.load_pretrained_model()
 
-# Define tracks to predict (ENCODE IDs or descriptions)
+# 2. Predict DNase accessibility at the beta-globin locus
+predictions = oracle.predict(('chr11', 5247000, 5248000), ['ENCFF413AHU'])
+
+# 3. Check the result
+track = predictions['ENCFF413AHU']
+print(f"Mean signal: {track.values.mean():.2f}, Max: {track.values.max():.2f}")
+```
+
+### Discovering Tracks
+
+Each oracle has thousands of tracks. Use the metadata to find the right ones:
+
+```python
+# List available assay types
+print(oracle.list_assay_types())   # ['ATAC', 'CAGE', 'CHIP', 'DNASE']
+
+# Search for tracks by keyword (e.g. cell type)
+from chorus.oracles.enformer_source.enformer_metadata import get_metadata
+meta = get_metadata()
+k562_tracks = meta.search_tracks('K562')  # Returns DataFrame with 'identifier' column
+print(k562_tracks[['identifier', 'description']].head())
+
+# Use the 'identifier' column as track IDs for predictions
 tracks = ['ENCFF413AHU', 'CNhs11250']  # DNase:K562, CAGE:K562
 ```
 
-#### Device Selection
-
-By default, Chorus auto-detects and uses GPU if available. You can explicitly control device selection:
-
-```python
-# Force CPU usage (useful for testing or GPU memory issues)
-oracle = chorus.create_oracle('enformer', 
-                             use_environment=True,
-                             reference_fasta=str(genome_path),
-                             device='cpu')
-
-# Use specific GPU (for multi-GPU systems)
-oracle = chorus.create_oracle('enformer',
-                             use_environment=True,
-                             reference_fasta=str(genome_path),
-                             device='cuda:1')  # Use second GPU
-
-# Set default device via environment variable
-# export CHORUS_DEVICE=cpu
-```
-
-#### Timeout Configuration
-
-For slower systems or CPU-only environments, you may need to adjust timeouts:
-
-```python
-# Custom timeouts for slower systems
-oracle = chorus.create_oracle('enformer', 
-                             use_environment=True,
-                             reference_fasta=str(genome_path),
-                             model_load_timeout=1200,  # 20 minutes
-                             predict_timeout=600)      # 10 minutes
-
-# Combine device and timeout settings
-oracle = chorus.create_oracle('enformer',
-                             use_environment=True,
-                             reference_fasta=str(genome_path),
-                             device='cpu',             # Force CPU
-                             model_load_timeout=1800,  # 30 minutes for CPU
-                             predict_timeout=900)      # 15 minutes for CPU
-
-# Disable all timeouts (use with caution)
-oracle = chorus.create_oracle('enformer',
-                             use_environment=True,
-                             reference_fasta=str(genome_path),
-                             model_load_timeout=None,
-                             predict_timeout=None)
-
-# Or set environment variable to disable all timeouts globally
-# export CHORUS_NO_TIMEOUT=1
-```
+> **Tip:** Each oracle has different track naming. Enformer and Borzoi use ENCODE identifiers (e.g. `ENCFF413AHU`). ChromBPNet uses assay + cell type. AlphaGenome uses `{OutputType}/{TrackName}/{Strand}`. See the [Model-Specific Details](#model-specific-details) section for each oracle's track format.
 
 ### 1. Wild-type Prediction
 
@@ -362,21 +324,21 @@ predictions = oracle.predict(('chr1', 1000000, 1001000), ['DNase:K562'])
 
 ### 3. Track Support
 
-**Note: ENCODE track identifiers and cell type descriptions are specific to Enformer model. Other oracles may use different track naming conventions.**
+Track identifiers vary by oracle. Use the metadata search (see [Discovering Tracks](#discovering-tracks)) to find the right IDs.
 
-For Enformer:
+For Enformer and Borzoi, you can use ENCODE identifiers or descriptive names in the Python API:
 ```python
-# Using ENCODE identifier (recommended for reproducibility)
-predictions = oracle.predict(sequence, ['ENCFF413AHU'])  # Specific DNase:K562 experiment
+# ENCODE identifier (recommended — works in both Python API and MCP)
+predictions = oracle.predict(sequence, ['ENCFF413AHU'])  # DNase:K562
 
-# Using descriptive name
+# Descriptive name (Python API only)
 predictions = oracle.predict(sequence, ['DNase:K562'])
 
-# Using CAGE identifiers
+# CAGE identifier
 predictions = oracle.predict(sequence, ['CNhs11250'])  # CAGE:K562
 ```
 
-For other oracles (Borzoi, ChromBPNet, Sei, etc.), track specifications will vary based on the model's training data.
+> **MCP users:** The MCP server requires ENCODE identifiers (e.g. `ENCFF413AHU`), not descriptive names. Use `list_tracks(oracle_name, query='K562')` to search and get the `identifier` field.
 
 ### 4. BedGraph Output
 
@@ -395,7 +357,7 @@ Oracles are deep learning models that predict genomic regulatory activity. Each 
 
 ### Intervals
 
-Class as a unified interface to the reference genome/sequence. This component enables structured access to genomic coordinates while explicitly tracking and managing sequence edits together with their corresponding model predictions, thereby supporting reproducible in silico perturbation workflows and consistent downstream analysis.
+A unified interface to genomic coordinates and reference sequences. Intervals track sequence edits alongside their corresponding model predictions, supporting reproducible in silico perturbation workflows and consistent downstream analysis.
 
 ### Tracks
 Tracks represent genomic signal data (e.g., DNase-seq, ChIP-seq). Enformer predicts 5,313 human tracks covering various assays and cell types.
@@ -418,7 +380,7 @@ chorus remove --oracle enformer
 
 ### Enformer 
 
-Enformer [6] is a hybrid convolutional–transformer architecture
+Enformer (Avsec et al., 2021) is a hybrid convolutional-transformer architecture
 designed for long-range sequence-to-function modeling of regulatory
 genomics, with the primary goal of predicting transcriptional and
 epigenomic activity directly from DNA sequence.
@@ -437,9 +399,9 @@ epigenomic activity directly from DNA sequence.
 
 Enhanced Enformer with improved performance and RNA-tracks predictions.
 
-- Sequence length: 524,288 bp input, 114,688 bp output window
-- Output: 896 bins × 7,610 tracks
-- Bin size: 128 bp
+- Sequence length: 524,288 bp input, 196,608 bp output window
+- Output: 6,144 bins × 7,610 tracks
+- Bin size: 32 bp
 - Track types: Gene expression (CAGE, RNA-Seq), chromatin accessibility (DNase/ATAC), histone modifications (ChIP-seq)
 - Track identifiers: 
   - ENCODE IDs (e.g., ENCFF413AHU for DNase:K562)
@@ -673,23 +635,35 @@ Example conversation with Claude:
 > Claude will call `load_oracle("alphagenome")`, then `predict_variant_effect(...)` with the right tracks,
 > and return a summary of chromatin and expression effects.
 
-See `chorus_mcp_output/reports/variant_analysis_framework.md` for the full 5-layer analysis guide
+See `docs/variant_analysis_framework.md` for the full 5-layer analysis guide
 with track selection cheat sheets by disease area.
 
 ## Troubleshooting
 
-### Timeout Issues
-If you encounter timeout errors on slower systems:
+### Device Selection
+
+By default, Chorus auto-detects and uses GPU if available. You can explicitly control device selection:
 
 ```python
-# Increase timeouts
-oracle = chorus.create_oracle('enformer',
-                             use_environment=True,
-                             model_load_timeout=1800,  # 30 minutes
-                             predict_timeout=900)      # 15 minutes
+oracle = chorus.create_oracle('enformer', use_environment=True,
+                              reference_fasta=str(genome_path),
+                              device='cpu')       # Force CPU
+# Or: device='cuda:1' for a specific GPU
+# Or: export CHORUS_DEVICE=cpu
+```
 
-# Or disable timeouts entirely
-export CHORUS_NO_TIMEOUT=1
+### Timeout Issues
+
+For slower systems or CPU-only environments, you may need to adjust timeouts:
+
+```python
+oracle = chorus.create_oracle('enformer', use_environment=True,
+                              reference_fasta=str(genome_path),
+                              model_load_timeout=1800,  # 30 min (default 600)
+                              predict_timeout=900)      # 15 min (default 300)
+
+# Or disable all timeouts globally
+# export CHORUS_NO_TIMEOUT=1
 ```
 
 Common timeout scenarios:
