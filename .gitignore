@@ -118,3 +118,6 @@ examples/*.png
 examples/*.bedgraph
 examples/*.csv
 examples/variant_analysis_results/
+
+# MCP server output
+chorus_mcp_output/

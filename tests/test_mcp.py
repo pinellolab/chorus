@@ -495,42 +495,45 @@ class TestGetGeneExons:
         assert exons.iloc[0]['gene_name'] == 'MYC'
 
 
+# ── Shared test oracle factory ───────────────────────────────────────
+
+def _make_test_oracle():
+    """Create a minimal concrete oracle subclass for testing."""
+    from chorus.core.base import OracleBase
+
+    class TestOracle(OracleBase):
+        def __init__(self):
+            self.model = None
+            self.loaded = True
+            self.oracle_name = "test"
+            self.use_environment = False
+            self._env_manager = None
+            self._env_runner = None
+            self.model_load_timeout = None
+            self.predict_timeout = None
+            self.device = None
+
+        def load_pretrained_model(self, weights=None): pass
+        def list_assay_types(self): return []
+        def list_cell_types(self): return []
+        def _predict(self, seq, assay_ids): pass
+        def _get_context_size(self): return 0
+        def _get_sequence_length_bounds(self): return (0, 0)
+        def _get_bin_size(self): return 128
+        def fine_tune(self, tracks, track_names, **kwargs): pass
+
+    return TestOracle()
+
+
 # ── analyze_gene_expression tests ────────────────────────────────────
 
 class TestAnalyzeGeneExpression:
     """Test OracleBase.analyze_gene_expression() method."""
 
-    def _make_oracle(self):
-        """Create a minimal concrete oracle subclass for testing."""
-        from chorus.core.base import OracleBase
-
-        class TestOracle(OracleBase):
-            def __init__(self):
-                self.model = None
-                self.loaded = True
-                self.oracle_name = "test"
-                self.use_environment = False
-                self._env_manager = None
-                self._env_runner = None
-                self.model_load_timeout = None
-                self.predict_timeout = None
-                self.device = None
-
-            def load_pretrained_model(self, weights=None): pass
-            def list_assay_types(self): return []
-            def list_cell_types(self): return []
-            def _predict(self, seq, assay_ids): pass
-            def _get_context_size(self): return 0
-            def _get_sequence_length_bounds(self): return (0, 0)
-            def _get_bin_size(self): return 128
-            def fine_tune(self, tracks, track_names, **kwargs): pass
-
-        return TestOracle()
-
     def test_cage_uses_tss_windowed_max(self):
         from chorus.core.result import OraclePrediction, CAGEOraclePredictionTrack
 
-        oracle = self._make_oracle()
+        oracle = _make_test_oracle()
         track = _make_real_track("CAGE:K562", n_bins=100, resolution=128,
                                  pred_start=1_000_000, cls=CAGEOraclePredictionTrack)
         # Set a peak at bin 50
@@ -560,7 +563,7 @@ class TestAnalyzeGeneExpression:
     def test_rna_uses_exon_sum(self):
         from chorus.core.result import OraclePrediction, RNAOraclePredictionTrack
 
-        oracle = self._make_oracle()
+        oracle = _make_test_oracle()
         track = _make_real_track("RNA:K562", n_bins=100, resolution=128,
                                  pred_start=1_000_000, cls=RNAOraclePredictionTrack)
         # All values are 1.0 for easy sum calculation
@@ -596,7 +599,7 @@ class TestAnalyzeGeneExpression:
             RNAOraclePredictionTrack, DNaseOraclePredictionTrack,
         )
 
-        oracle = self._make_oracle()
+        oracle = _make_test_oracle()
         cage_track = _make_real_track("CAGE:K562", cls=CAGEOraclePredictionTrack)
         rna_track = _make_real_track("RNA:K562", cls=RNAOraclePredictionTrack)
         dnase_track = _make_real_track("DNASE:K562", cls=DNaseOraclePredictionTrack)
@@ -630,7 +633,7 @@ class TestAnalyzeGeneExpression:
     def test_no_expression_tracks(self):
         from chorus.core.result import OraclePrediction, DNaseOraclePredictionTrack
 
-        oracle = self._make_oracle()
+        oracle = _make_test_oracle()
         track = _make_real_track("DNASE:K562", cls=DNaseOraclePredictionTrack)
         pred = OraclePrediction(tracks={"DNASE:K562": track})
 
@@ -652,36 +655,10 @@ class TestAnalyzeGeneExpression:
 class TestAnalyzeVariantEffectOnGene:
     """Test OracleBase.analyze_variant_effect_on_gene() method."""
 
-    def _make_oracle(self):
-        from chorus.core.base import OracleBase
-
-        class TestOracle(OracleBase):
-            def __init__(self):
-                self.model = None
-                self.loaded = True
-                self.oracle_name = "test"
-                self.use_environment = False
-                self._env_manager = None
-                self._env_runner = None
-                self.model_load_timeout = None
-                self.predict_timeout = None
-                self.device = None
-
-            def load_pretrained_model(self, weights=None): pass
-            def list_assay_types(self): return []
-            def list_cell_types(self): return []
-            def _predict(self, seq, assay_ids): pass
-            def _get_context_size(self): return 0
-            def _get_sequence_length_bounds(self): return (0, 0)
-            def _get_bin_size(self): return 128
-            def fine_tune(self, tracks, track_names, **kwargs): pass
-
-        return TestOracle()
-
     def test_fold_change_computation(self):
         from chorus.core.result import OraclePrediction, CAGEOraclePredictionTrack
 
-        oracle = self._make_oracle()
+        oracle = _make_test_oracle()
 
         # Reference track with peak=10 at TSS
         ref_track = _make_real_track("CAGE:K562", cls=CAGEOraclePredictionTrack)
@@ -730,7 +707,7 @@ class TestAnalyzeVariantEffectOnGene:
     def test_no_expression_tracks_returns_empty(self):
         from chorus.core.result import OraclePrediction, DNaseOraclePredictionTrack
 
-        oracle = self._make_oracle()
+        oracle = _make_test_oracle()
         ref_track = _make_real_track("DNASE:K562", cls=DNaseOraclePredictionTrack)
         alt_track = _make_real_track("DNASE:K562", cls=DNaseOraclePredictionTrack)
         ref_pred = OraclePrediction(tracks={"DNASE:K562": ref_track})
@@ -758,7 +735,7 @@ class TestAnalyzeVariantEffectOnGene:
     def test_no_tss_in_window(self):
         from chorus.core.result import OraclePrediction, CAGEOraclePredictionTrack
 
-        oracle = self._make_oracle()
+        oracle = _make_test_oracle()
         ref_track = _make_real_track("CAGE:K562", cls=CAGEOraclePredictionTrack)
         alt_track = _make_real_track("CAGE:K562", cls=CAGEOraclePredictionTrack)
         ref_pred = OraclePrediction(tracks={"CAGE:K562": ref_track})
@@ -992,3 +969,80 @@ class TestChrombpnetLoadParams:
         assert "TF" in load_kwargs
         assert load_kwargs["TF"] == "GATA1"
         assert load_kwargs["fold"] == 0
+
+
+# ── Region/position parsing tests ────────────────────────────────────
+
+class TestParseRegion:
+    """Test _parse_region() validation helper."""
+
+    def test_valid_region(self):
+        from chorus.mcp.server import _parse_region
+        chrom, start, end = _parse_region("chr1:1000000-2000000")
+        assert chrom == "chr1"
+        assert start == 1000000
+        assert end == 2000000
+
+    def test_chrX(self):
+        from chorus.mcp.server import _parse_region
+        chrom, start, end = _parse_region("chrX:100-200")
+        assert chrom == "chrX"
+
+    def test_missing_colon(self):
+        from chorus.mcp.server import _parse_region
+        with pytest.raises(ValueError, match="Invalid region format"):
+            _parse_region("chr1-1000000-2000000")
+
+    def test_missing_dash(self):
+        from chorus.mcp.server import _parse_region
+        with pytest.raises(ValueError, match="Invalid region format"):
+            _parse_region("chr1:1000000")
+
+    def test_start_ge_end(self):
+        from chorus.mcp.server import _parse_region
+        with pytest.raises(ValueError, match="start.*less than end"):
+            _parse_region("chr1:2000000-1000000")
+
+    def test_empty_string(self):
+        from chorus.mcp.server import _parse_region
+        with pytest.raises(ValueError, match="Invalid region format"):
+            _parse_region("")
+
+
+class TestParsePosition:
+    """Test _parse_position() validation helper."""
+
+    def test_valid_position(self):
+        from chorus.mcp.server import _parse_position
+        chrom, pos = _parse_position("chr1:1050000")
+        assert chrom == "chr1"
+        assert pos == 1050000
+
+    def test_invalid_format(self):
+        from chorus.mcp.server import _parse_position
+        with pytest.raises(ValueError, match="Invalid position format"):
+            _parse_position("chr1:100-200")
+
+    def test_no_colon(self):
+        from chorus.mcp.server import _parse_position
+        with pytest.raises(ValueError, match="Invalid position format"):
+            _parse_position("chr1_1050000")
+
+
+# ── Prompt tests ─────────────────────────────────────────────────────
+
+@pytest.mark.skipif(not _has_fastmcp, reason="fastmcp not installed")
+class TestPrompts:
+    def test_getting_started_returns_string(self):
+        from chorus.mcp.server import getting_started
+        result = getting_started()
+        assert isinstance(result, str)
+        assert "list_oracles" in result
+        assert "AlphaGenome" in result
+
+    def test_analyze_variant_returns_string(self):
+        from chorus.mcp.server import analyze_variant
+        result = analyze_variant(variant="chr1:109274968 G>T", gene="SORT1", cell_type="HepG2")
+        assert isinstance(result, str)
+        assert "SORT1" in result
+        assert "HepG2" in result

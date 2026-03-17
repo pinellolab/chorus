@@ -8,6 +8,8 @@ Or via the console_scripts entry-point:
 """
 
 import logging
+import re
+import sys
 from typing import Optional
 
 from fastmcp import FastMCP
@@ -82,6 +84,39 @@ ORACLE_SPECS = {
 }
 
 
+# ── Region/position parsing helpers ──────────────────────────────────
+
+_REGION_RE = re.compile(r'^(chr[\w]+):(\d+)-(\d+)$')
+_POSITION_RE = re.compile(r'^(chr[\w]+):(\d+)$')
+
+
+def _parse_region(region: str) -> tuple[str, int, int]:
+    """Parse 'chrN:start-end' into (chrom, start, end) with validation."""
+    m = _REGION_RE.match(region)
+    if not m:
+        raise ValueError(
+            f"Invalid region format: '{region}'. "
+            f"Expected 'chrN:start-end' (e.g. 'chr1:1000000-1393216')."
+        )
+    chrom, start, end = m.group(1), int(m.group(2)), int(m.group(3))
+    if start >= end:
+        raise ValueError(
+            f"Invalid region: start ({start}) must be less than end ({end})."
+        )
+    return chrom, start, end
+
+
+def _parse_position(position: str) -> tuple[str, int]:
+    """Parse 'chrN:pos' into (chrom, pos) with validation."""
+    m = _POSITION_RE.match(position)
+    if not m:
+        raise ValueError(
+            f"Invalid position format: '{position}'. "
+            f"Expected 'chrN:position' (e.g. 'chr1:1050000')."
+        )
+    return m.group(1), int(m.group(2))
+
+
 def _state() -> OracleStateManager:
     return OracleStateManager()
 
@@ -94,8 +129,7 @@ def _auto_region(oracle, position: str) -> str:
     prediction_interval covers the full input window but values only cover
     the output window (e.g. Enformer: 393 kb input → 114 kb output).
     """
-    chrom, pos_str = position.split(":")
-    pos = int(pos_str)
+    chrom, pos = _parse_position(position)
     return f"{chrom}:{pos}-{pos + 1}"
 
 
@@ -375,9 +409,7 @@ def predict(
     state = _state()
     oracle = state.get_oracle(oracle_name)
 
-    chrom, rest = region.split(":")
-    start_str, end_str = rest.split("-")
-    input_data = (chrom, int(start_str), int(end_str))
+    input_data = _parse_region(region)
 
     prediction = oracle.predict(input_data, assay_ids)
     return serialize_prediction(prediction, output_dir=state.output_dir, prefix=f"{oracle_name}_wt_")
@@ -498,16 +530,13 @@ def score_prediction_region(
     state = _state()
     oracle = state.get_oracle(oracle_name)
 
-    chrom, rest = region.split(":")
-    start_str, end_str = rest.split("-")
-    input_data = (chrom, int(start_str), int(end_str))
+    input_data = _parse_region(region)
 
     prediction = oracle.predict(input_data, assay_ids)
 
-    sc_chrom, sc_rest = score_region.split(":")
-    sc_start_str, sc_end_str = sc_rest.split("-")
+    sc_chrom, sc_start, sc_end = _parse_region(score_region)
     scores = prediction.score_region(
-        sc_chrom, int(sc_start_str), int(sc_end_str), scoring_strategy
+        sc_chrom, sc_start, sc_end, scoring_strategy
     )
 
     return {
@@ -571,11 +600,10 @@ def score_variant_effect_at_region(
         "scoring_strategy": scoring_strategy,
     }
     if score_region is not None:
-        sc_chrom, sc_rest = score_region.split(":")
-        sc_start_str, sc_end_str = sc_rest.split("-")
+        sc_chrom, sc_start, sc_end = _parse_region(score_region)
         kwargs["chrom"] = sc_chrom
-        kwargs["start"] = int(sc_start_str)
-        kwargs["end"] = int(sc_end_str)
+        kwargs["start"] = sc_start
+        kwargs["end"] = sc_end
 
     scores = _score_ve(variant_result, **kwargs)
 
@@ -637,8 +665,7 @@ def predict_variant_effect_on_gene(
 
     if tss_positions and all_zero:
         # Compute distance from variant to nearest TSS
-        var_chrom, var_pos_str = position.split(":")
-        var_pos = int(var_pos_str)
+        var_chrom, var_pos = _parse_position(position)
         nearest_tss = min(tss_positions, key=lambda t: abs(t - var_pos))
         distance_kb = abs(nearest_tss - var_pos) / 1000
 
@@ -657,10 +684,102 @@ def predict_variant_effect_on_gene(
     return result
 
 
+# ── Prompts ──────────────────────────────────────────────────────────
+
+@mcp.prompt()
+def getting_started() -> str:
+    """Step-by-step guide for using Chorus genomic oracles."""
+    return (
+        "You are using Chorus, a unified interface for genomic deep-learning oracles.\n\n"
+        "## Getting Started\n\n"
+        "1. **Discover oracles**: Call `list_oracles()` to see all 6 available oracles "
+        "and which ones have their environments installed.\n\n"
+        "2. **Choose an oracle**:\n"
+        "   - **AlphaGenome** (recommended): 1Mb window, 5930 tracks, 1bp resolution. Best for variant analysis.\n"
+        "   - **Enformer**: 114kb output, 5313 ENCODE tracks. Great general-purpose oracle.\n"
+        "   - **Borzoi**: 196kb output at 32bp resolution. Good for distal gene expression.\n"
+        "   - **ChromBPNet**: 1bp resolution, 1kb window. Best for motif-level TF binding analysis.\n"
+        "   - **Sei**: Regulatory element classification (not per-track signal).\n"
+        "   - **LegNet**: MPRA activity prediction for short sequences.\n\n"
+        "3. **Find tracks**: Call `list_tracks(oracle_name, query='...')` to search for "
+        "relevant assays (e.g. 'DNASE K562', 'CAGE liver', 'GATA1').\n\n"
+        "4. **Load an oracle**: Call `load_oracle(oracle_name)`. This takes 30s-5min. "
+        "The oracle stays loaded for subsequent calls.\n\n"
+        "5. **Make predictions**: Use `predict()`, `predict_variant_effect()`, "
+        "`predict_region_replacement()`, or `predict_region_insertion()`.\n\n"
+        "6. **Analyse gene effects**: Use `predict_variant_effect_on_gene()` to get "
+        "fold-change in expression for a specific gene.\n\n"
+        "## Tips\n"
+        "- Regions use the format `chrN:start-end` (e.g. `chr1:1000000-1393216`)\n"
+        "- Positions use `chrN:pos` (e.g. `chr1:1050000`)\n"
+        "- The `region` parameter is optional in variant tools - it auto-centers on the variant\n"
+        "- Call `oracle_status()` to see what's currently loaded\n"
+        "- Call `unload_oracle(name)` to free memory when done\n"
+    )
+
+
+@mcp.prompt()
+def analyze_variant(variant: str, gene: str, cell_type: str = "K562") -> str:
+    """Template for a complete variant-to-gene effect analysis.
+
+    Args:
+        variant: Variant in 'chrN:pos REF>ALT' format (e.g. 'chr1:109274968 G>T').
+        gene: Target gene symbol (e.g. 'SORT1').
+        cell_type: Cell type for track selection (e.g. 'K562', 'HepG2').
+    """
+    return (
+        f"Analyse the effect of variant **{variant}** on **{gene}** expression "
+        f"in **{cell_type}** cells using the Chorus genomic oracles.\n\n"
+        f"## Recommended workflow\n\n"
+        f"1. Load AlphaGenome (recommended primary oracle):\n"
+        f"   `load_oracle('alphagenome')`\n\n"
+        f"2. Search for relevant tracks in {cell_type}:\n"
+        f"   `list_tracks('alphagenome', query='{cell_type}')`\n"
+        f"   Select DNASE/ATAC (accessibility), H3K27ac (enhancer mark), "
+        f"and CAGE (expression) tracks.\n\n"
+        f"3. Predict variant effect on gene expression:\n"
+        f"   `predict_variant_effect_on_gene(...)` with the variant position, "
+        f"alleles, gene name '{gene}', and selected tracks.\n\n"
+        f"4. For deeper motif-level analysis at the variant site:\n"
+        f"   Load ChromBPNet: `load_oracle('chrombpnet', assay='ATAC', cell_type='{cell_type}')`\n"
+        f"   Then `predict_variant_effect(...)` at the variant position.\n\n"
+        f"## Interpretation guide\n"
+        f"- **Layer 1** (Accessibility): Is the variant in an open chromatin region?\n"
+        f"- **Layer 2** (Histone marks): Active enhancer (H3K27ac+) or promoter (H3K4me3+)?\n"
+        f"- **Layer 3** (TF binding): Does the variant disrupt or create a TF binding site?\n"
+        f"- **Layer 4** (Gene expression): Fold change in CAGE/RNA-seq at {gene} TSS?\n"
+        f"- **Layer 5** (Cell-type specificity): Is the effect specific to {cell_type}?\n"
+    )
+
+
 # ── Entry-point ──────────────────────────────────────────────────────
 
 def main():
     """Console-scripts entry-point for ``chorus-mcp``."""
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print("chorus-mcp — Chorus Genomics MCP Server")
+        print()
+        print("Starts the Chorus MCP server (Model Context Protocol) for AI")
+        print("assistant integration. The server communicates via stdio and")
+        print("is normally launched automatically by Claude Code or Claude Desktop.")
+        print()
+        print("Usage:")
+        print("  chorus-mcp          Start the MCP server (stdio transport)")
+        print("  chorus-mcp --help   Show this help message")
+        print()
+        print("Configuration:")
+        print("  CHORUS_NO_TIMEOUT=1       Disable prediction timeouts")
+        print("  CHORUS_MCP_OUTPUT_DIR=DIR  Set output directory for bedgraph files")
+        print()
+        print("Tools provided: list_oracles, list_tracks, list_genomes,")
+        print("  get_genes_in_region, get_gene_tss, load_oracle, unload_oracle,")
+        print("  oracle_status, predict, predict_variant_effect,")
+        print("  predict_region_replacement, predict_region_insertion,")
+        print("  score_prediction_region, score_variant_effect_at_region,")
+        print("  predict_variant_effect_on_gene")
+        print()
+        print("Prompts provided: getting_started, analyze_variant")
+        return
     mcp.run()
 
 

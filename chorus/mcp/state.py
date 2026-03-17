@@ -1,5 +1,6 @@
 """Oracle state manager — singleton that caches loaded oracles across MCP tool calls."""
 
+import os
 import time
 import logging
 from pathlib import Path
@@ -31,7 +32,7 @@ class OracleStateManager:
         self._oracles: dict = {}          # name → loaded oracle instance
         self._load_times: dict = {}       # name → seconds it took to load
         self._reference_fasta: str | None = None
-        self._output_dir: str = str(Path.cwd() / "chorus_mcp_output")
+        self._output_dir: str = os.environ.get("CHORUS_MCP_OUTPUT_DIR", str(Path.cwd() / "chorus_mcp_output"))
         self._initialised = True
 
         # Auto-detect hg38 reference

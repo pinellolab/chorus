@@ -24,6 +24,5 @@ class DeleteOnExitRegistry:
 
     def _delete_files(self):
         """Called automatically when the program exits."""
-        print(self._paths)
         for td in list(self._paths):
             td.cleanup()

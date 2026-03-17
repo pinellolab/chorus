@@ -39,9 +39,6 @@ setup(
             "jupyter>=1.0",
             "nbconvert>=6.0",
         ],
-        "mcp": [
-            "fastmcp>=3.0",
-        ],
     },
     entry_points={
         "console_scripts": [
