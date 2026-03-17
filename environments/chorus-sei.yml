@@ -27,24 +27,8 @@ dependencies:
   - torchvision>=0.14.0
   - cudatoolkit=11.7  # Adjust based on your CUDA version
   
-  # Build tools (needed to compile pytabix, selene-sdk C extensions)
-  - c-compiler
-  - cxx-compiler
-
   # Additional dependencies
   - pip
-  - pip:
-    # SEI specific dependencies
-    - seqlogo>=5.29.0
-    - logomaker>=0.8
-    
-    # Genomics utilities
-    - kipoiseq>=0.7.0
-    - selene-sdk>=0.5.0
-    
-    # Additional utilities
-    - scikit-learn>=1.0.0
-    - joblib>=1.0.0
 
   # Visualization
   - matplotlib>=3.5.0
