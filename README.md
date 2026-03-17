@@ -61,16 +61,18 @@ python -c "import chorus; print(f'chorus {chorus.__version__}')"
 
 ### Setting Up Oracle Environments
 
-Chorus uses isolated conda environments for each oracle to avoid dependency conflicts between TensorFlow, PyTorch, and JAX models:
+Chorus uses isolated conda environments for each oracle to avoid dependency conflicts between TensorFlow, PyTorch, and JAX models.
+
+**Which oracle to start with?** For variant analysis, **AlphaGenome** is the most comprehensive (1 Mb window, 1 bp resolution, 5,930 tracks) but requires ~16 GB RAM and benefits from a GPU. **Enformer** is a good lightweight alternative that runs comfortably on CPU with ~8 GB RAM.
 
 ```bash
 # Set up all oracle environments
+chorus setup --oracle alphagenome   # JAX-based — recommended primary oracle (see AlphaGenome section below for auth)
 chorus setup --oracle enformer      # TensorFlow-based
 chorus setup --oracle borzoi        # PyTorch-based
 chorus setup --oracle chrombpnet    # TensorFlow-based
 chorus setup --oracle sei           # PyTorch-based
 chorus setup --oracle legnet        # PyTorch-based
-chorus setup --oracle alphagenome   # JAX-based (see AlphaGenome section below for auth)
 
 # List available environments
 chorus list

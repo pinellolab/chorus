@@ -173,7 +173,7 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
 
     Args:
         oracle_name: Oracle name (enformer, borzoi, chrombpnet, sei, legnet, alphagenome).
-        query: Optional search string to filter tracks (e.g. "K562", "DNASE").
+        query: Optional search string to filter tracks (e.g. "K562", "DNASE"). Use the returned 'identifier' field as the assay_id for predictions.
     """
     oracle_name = oracle_name.lower()
 
@@ -190,7 +190,7 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
                 "oracle": oracle_name,
                 "assay_types": meta.list_assay_types(),
                 "cell_types": meta.list_cell_types(),
-                "note": "Use query parameter to search tracks (e.g. query='DNASE:K562').",
+                "note": "Use query parameter to search tracks (e.g. query='K562' or query='DNASE:K562'). Use the 'identifier' field as assay_id for predictions.",
             }
 
     if oracle_name == "enformer":
@@ -204,7 +204,7 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
             "oracle": oracle_name,
             "assay_types": meta.list_assay_types(),
             "cell_types": meta.list_cell_types(),
-            "note": "Use query parameter to search tracks (e.g. query='DNASE K562') and get usable assay identifiers.",
+            "note": "Use query parameter to search tracks (e.g. query='K562' or query='DNASE:K562'). Use the 'identifier' field as assay_id for predictions.",
         }
 
     if oracle_name == "chrombpnet":
@@ -258,7 +258,7 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
             "oracle": oracle_name,
             "assay_types": meta.list_assay_types(),
             "cell_types": meta.list_cell_types(),
-            "note": "Use query parameter to search tracks (e.g. query='GATA1') and get usable assay identifiers.",
+            "note": "Use query parameter to search tracks (e.g. query='K562' or query='GATA1'). Use the 'identifier' field as assay_id for predictions.",
         }
 
     if oracle_name == "sei":
