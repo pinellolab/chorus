@@ -1,6 +1,12 @@
-# Chorus
+<p align="center">
+  <img src="logo.png" alt="Chorus logo" width="200">
+</p>
 
-A unified interface for genomic sequence oracles - deep learning models that predict genomic regulatory activity from DNA sequences.
+<h1 align="center">Chorus</h1>
+
+<p align="center">
+  <em>A unified interface for genomic sequence oracles — deep learning models that predict genomic regulatory activity from DNA sequences.</em>
+</p>
 
 ## Overview
 
