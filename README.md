@@ -13,7 +13,7 @@ Chorus provides a consistent, easy-to-use API for working with state-of-the-art 
 
 - **Enformer**: Predicts gene expression and chromatin states from DNA sequences
 - **Borzoi**: Enhanced model for regulatory genomics predictions
-- **ChromBPNet**: Predicts TF binding and chromatin accessibility at base-pair resolution
+- **ChromBPNet / BPNet**: Predicts chromatin accessibility (ChromBPNet) and TF binding (BPNet) at base-pair resolution
 - **Sei**: Sequence regulatory effect predictions across 21,907 chromatin profiles
 - **LegNet**: Regulatory regions activity prediction using models trained on MPRA data
 - **AlphaGenome**: Google DeepMind's model predicting 5,930 genomic tracks at single base-pair resolution from 1MB input
@@ -81,7 +81,7 @@ Chorus uses isolated conda environments for each oracle to avoid dependency conf
 chorus setup --oracle alphagenome   # JAX-based — recommended primary oracle (see AlphaGenome section below for auth)
 chorus setup --oracle enformer      # TensorFlow-based
 chorus setup --oracle borzoi        # PyTorch-based
-chorus setup --oracle chrombpnet    # TensorFlow-based
+chorus setup --oracle chrombpnet    # TensorFlow-based (includes BPNet for TF binding)
 chorus setup --oracle sei           # PyTorch-based
 chorus setup --oracle legnet        # PyTorch-based
 
@@ -293,7 +293,7 @@ Three notebooks are provided, from introductory to advanced:
 |----------|---------|----------------|
 | `examples/single_oracle_quickstart.ipynb` | Enformer | Deep single-oracle tutorial: predictions, region replacement, insertion, variant effects, gene expression, coolbox visualization |
 | `examples/comprehensive_oracle_showcase.ipynb` | All 6 | All oracles side by side, cross-oracle comparison, variant analysis with gene expression, sub-region scoring |
-| `examples/advanced_multi_oracle_analysis.ipynb` | Enformer + ChromBPNet + LegNet | CHIP-seq TF binding, strand-specific tracks, Interval API, quantile normalization, cell-type switching |
+| `examples/advanced_multi_oracle_analysis.ipynb` | Enformer + ChromBPNet/BPNet + LegNet | CHIP-seq TF binding, strand-specific tracks, Interval API, quantile normalization, cell-type switching |
 
 ## Key Features
 
@@ -657,7 +657,7 @@ mamba run -n chorus chorus-mcp
 
 Key features:
 - **Auto-centering**: `region` is optional in variant tools — auto-sized for each oracle's output window
-- **ChromBPNet params**: `load_oracle("chrombpnet", assay="CHIP", cell_type="K562", TF="GATA1")`
+- **ChromBPNet/BPNet params**: `load_oracle("chrombpnet", assay="CHIP", cell_type="K562", TF="GATA1")`
 - **TSS warnings**: `predict_variant_effect_on_gene` warns when the target gene TSS is outside the output window
 - **Mixed-resolution**: AlphaGenome's 1bp DNASE + 128bp histone tracks score correctly in a single call
 
@@ -791,7 +791,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 Chorus integrates several groundbreaking models:
 - Enformer (Avsec et al., 2021)
 - Borzoi (Linder et al., 2023)
-- ChromBPNet (Agarwal et al., 2021)
+- ChromBPNet / BPNet (Agarwal et al., 2021)
 - Sei (Chen et al., 2022)
 - LegNet (Penzar et al., 2023)
 - AlphaGenome (Google DeepMind, 2026)
