@@ -425,16 +425,40 @@ Enhanced Enformer with improved performance and RNA-tracks predictions.
 - Track metadata: Included in the package (file with all 7,610 human track definitions)
 
 
-### ChromBPNet
+### ChromBPNet / BPNet
 
-Base-pair resolution for chromatin accessibility and TF binding predictions (uses TF-specific tracks)
+Base-pair resolution for chromatin accessibility and TF binding predictions. This oracle supports two model types through the same interface:
 
-- Sequence length: 2114 bp input
-- Output: 1000 bins 
-- Bin size: 1 bp
-- Track types: DNase accessibility, TF binding (CHIP-Seq) 
-- Track identifiers: 
-  - ENCODE IDs (e.g., ENCFF574YLK for DNase:K562)
+- **ChromBPNet** (`assay="DNASE"` or `assay="ATAC"`): Predicts chromatin accessibility at base-pair resolution. Models are downloaded from ENCODE.
+- **BPNet** (`assay="CHIP"`, `TF="GATA1"`): Predicts transcription factor binding at base-pair resolution. Models are downloaded from JASPAR.
+
+Specs:
+- Sequence length: 2,114 bp input
+- Output: 1,000 bins at 1 bp resolution
+- Track types: DNase/ATAC accessibility, TF binding (ChIP-seq)
+
+```python
+# ChromBPNet: chromatin accessibility
+oracle = chorus.create_oracle('chrombpnet', use_environment=True,
+                              reference_fasta=str(genome_path))
+oracle.load_pretrained_model(assay="DNASE", cell_type="K562")
+
+# BPNet: TF-specific binding prediction
+oracle.load_pretrained_model(assay="CHIP", cell_type="K562", TF="GATA1")
+```
+
+#### Loading Custom Models
+
+You can load your own ChromBPNet/BPNet weights (e.g. trained on a new cell type):
+
+```python
+oracle.load_pretrained_model(
+    assay="DNASE",                   # DNASE, ATAC, or CHIP
+    cell_type="HepG2",              # your cell type label
+    weights='path/to/weights',      # path to your model weights
+    is_custom=True                  # enables custom weight paths
+)
+```
 
 ### Sei
 
