@@ -212,6 +212,14 @@ class AlphaGenomeOracle(OracleBase):
 
         full_seq = input_interval.sequence
 
+        # AlphaGenome uses smart positional embeddings and handles variable-
+        # length input natively.  N-padding (which extend() adds near
+        # chromosome edges) produces near-zero signal and should be avoided.
+        # The model requires input lengths that are compatible with its
+        # internal architecture — empirically, powers of 2 from 2^15 (32kb)
+        # to 2^20 (1MB) all work reliably.
+        full_seq = self._strip_n_padding(full_seq)
+
         if self.use_environment:
             raw_result = self._predict_in_environment(full_seq, assay_ids)
         else:
@@ -338,6 +346,65 @@ class AlphaGenomeOracle(OracleBase):
             resolutions.append(info["resolution"])
 
         return {"values": collected, "resolutions": resolutions}
+
+    # ------------------------------------------------------------------
+    # N-padding removal
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _strip_n_padding(seq: str) -> str:
+        """Remove N-padding and round to a valid AlphaGenome input length.
+
+        AlphaGenome handles variable-length input natively via smart positional
+        embeddings, but requires lengths compatible with its architecture.
+        Empirically, powers of 2 from 2^15 (32,768) to 2^20 (1,048,576) all
+        work.  N-padding (from chromosome edges) produces near-zero signal and
+        should always be stripped.
+
+        Returns the sequence unchanged if it has no N-padding and is already a
+        valid length (the common case for mid-chromosome queries).
+        """
+        import math
+
+        _VALID_LENGTHS = [2**p for p in range(15, 21)]  # 32k to 1MB
+
+        # Fast path: already the target length with no edge Ns
+        if len(seq) == 1_048_576 and seq[0] != "N" and seq[-1] != "N":
+            return seq
+
+        # Strip leading/trailing N-runs
+        stripped = seq.strip("N")
+        if len(stripped) == len(seq):
+            # No N-padding was present — return as-is if valid length
+            if len(seq) in _VALID_LENGTHS:
+                return seq
+            # Round down to nearest valid length
+            for vl in reversed(_VALID_LENGTHS):
+                if vl <= len(seq):
+                    trim = len(seq) - vl
+                    trim_left = trim // 2
+                    return seq[trim_left:trim_left + vl]
+
+        # N-padding was stripped — round down to nearest valid length
+        for vl in reversed(_VALID_LENGTHS):
+            if vl <= len(stripped):
+                trim = len(stripped) - vl
+                trim_left = trim // 2
+                result = stripped[trim_left:trim_left + vl]
+                logger.info(
+                    "AlphaGenome: removed N-padding, using %d bp of %d bp "
+                    "real genome sequence (original %d bp with Ns)",
+                    vl, len(stripped), len(seq),
+                )
+                return result
+
+        # Sequence too short even after stripping
+        logger.warning(
+            "AlphaGenome: only %d bp of real genome sequence available "
+            "(minimum 32,768). Using what's available — predictions may fail.",
+            len(stripped),
+        )
+        return stripped
 
     # ------------------------------------------------------------------
     # Metadata helpers
