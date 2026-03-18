@@ -34,6 +34,21 @@ Key features:
 
 ## Installation
 
+### Upgrading
+
+The cleanest way to upgrade is to remove existing environments and reinstall:
+
+```bash
+cd chorus && git pull
+mamba env remove -n chorus -y
+# Repeat for each oracle you had installed:
+chorus remove --oracle enformer
+```
+
+Then follow the installation steps below.
+
+### Fresh Install
+
 ```bash
 # Clone the repository
 git clone https://github.com/pinellolab/chorus.git
