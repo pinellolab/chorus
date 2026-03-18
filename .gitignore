@@ -117,4 +117,9 @@ tmp/
 examples/*.png
 examples/*.bedgraph
 examples/*.csv
+examples/*_executed.ipynb
+examples/bedgraph_outputs/
 examples/variant_analysis_results/
+
+# MCP server output
+chorus_mcp_output/

@@ -40,7 +40,8 @@ from .annotations import (
     AnnotationManager,
     download_gencode,
     get_genes_in_region,
-    get_gene_tss
+    get_gene_tss,
+    get_gene_exons
 )
 
 __all__ = [
@@ -80,5 +81,6 @@ __all__ = [
     'AnnotationManager',
     'download_gencode',
     'get_genes_in_region',
-    'get_gene_tss'
+    'get_gene_tss',
+    'get_gene_exons'
 ]

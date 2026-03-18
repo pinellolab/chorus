@@ -2,7 +2,8 @@ from dataclasses import dataclass, field, asdict
 from dataclasses import replace as dt_replace
 import numpy as np 
 import pandas as pd
-import logging         
+import logging
+import re
 import tempfile
 import shutil
 import weakref
@@ -116,6 +117,64 @@ class OraclePredictionTrack:
         """
         if scoring_strategy is None:
             scoring_strategy = self.preferred_scoring_strategy
+
+        if scoring_strategy == 'mean':
+            return float(np.mean(self.values))
+        elif scoring_strategy == 'max':
+            return float(np.max(self.values))
+        elif scoring_strategy == 'sum':
+            return float(np.sum(self.values))
+        elif scoring_strategy == 'median':
+            return float(np.median(self.values))
+        else:
+            raise ValueError(f"Unknown scoring strategy: {scoring_strategy}")
+
+    def score_region(self, chrom: str, start: int, end: int,
+                     scoring_strategy: str | None = None) -> float | None:
+        """Score prediction values within a genomic sub-region.
+
+        Converts genomic coords to bin indices, slices the values array,
+        and applies the scoring strategy (mean/max/sum/median).
+
+        Returns None if the region does not overlap the prediction window.
+        """
+        if chrom != self.prediction_interval.reference.chrom:
+            return None
+
+        pred_start = self.prediction_interval.reference.start
+        pred_end = self.prediction_interval.reference.end
+
+        # No overlap
+        if start >= pred_end or end <= pred_start:
+            return None
+
+        # Clamp to prediction window
+        clamped_start = max(start, pred_start)
+        clamped_end = min(end, pred_end)
+
+        start_bin = (clamped_start - pred_start) // self.resolution
+        end_bin = (clamped_end - pred_start + self.resolution - 1) // self.resolution
+        end_bin = min(end_bin, len(self.values))
+        start_bin = min(start_bin, end_bin)
+
+        if start_bin >= end_bin:
+            return None
+
+        region_values = self.values[start_bin:end_bin]
+
+        if scoring_strategy is None:
+            scoring_strategy = self.preferred_scoring_strategy
+
+        if scoring_strategy == 'mean':
+            return float(np.mean(region_values))
+        elif scoring_strategy == 'max':
+            return float(np.max(region_values))
+        elif scoring_strategy == 'sum':
+            return float(np.sum(region_values))
+        elif scoring_strategy == 'median':
+            return float(np.median(region_values))
+        else:
+            raise ValueError(f"Unknown scoring strategy: {scoring_strategy}")
 
     def pos2bin(self, chrom: str, position: int) -> int | None:
         if chrom != self.prediction_interval.reference.chrom:
@@ -412,8 +471,16 @@ class RNAOraclePredictionTrack(OraclePredictionTrack, name='RNA'):
                                          color='#9467bd')
 
 class LentiMPRAOraclePredictionTrack(OraclePredictionTrack, name='LentiMPRA'):
-    coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(), 
+    coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(),
                                          color='#ff7f0e')
+
+class SpliceSitesOraclePredictionTrack(OraclePredictionTrack, name='SPLICE_SITES'):
+    coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(),
+                                         color='#8c564b')
+
+class ProCapOraclePredictionTrack(OraclePredictionTrack, name='PRO_CAP'):
+    coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(),
+                                         color='#e377c2')
 
 @dataclass
 class OraclePrediction:
@@ -430,16 +497,16 @@ class OraclePrediction:
         return chroms[0]
     
     @property
-    def start(self) -> str:
+    def start(self) -> int:
         return min(track.start for track in self.tracks.values())
 
     @property
-    def end(self) -> str:
-        return max(track.start for track in self.tracks.values())
+    def end(self) -> int:
+        return max(track.end for track in self.tracks.values())
 
     def add(self, assay_id: str, track: OraclePredictionTrack):
         if assay_id in self.tracks:
-            raise Exception("The following assay_id already exists: {assay_id}")
+            raise Exception(f"The following assay_id already exists: {assay_id}")
         self.tracks[assay_id] = track
 
     def __iter__(self):
@@ -457,9 +524,20 @@ class OraclePrediction:
     def values(self):
         return self.tracks.values()
 
-    def subset(self, track_ids: str) -> 'OraclePrediction':
+    def subset(self, track_ids: list[str]) -> 'OraclePrediction':
         selected = {ti: self[ti] for ti in track_ids}
         return OraclePrediction(selected)
+
+    def score_region(self, chrom: str, start: int, end: int,
+                     scoring_strategy: str | None = None) -> dict[str, float | None]:
+        """Score all tracks within a genomic sub-region.
+
+        Returns a dict mapping assay_id to the score (or None if no overlap).
+        """
+        return {
+            assay_id: track.score_region(chrom, start, end, scoring_strategy)
+            for assay_id, track in self.tracks.items()
+        }
 
     def save_predictions_as_bedgraph(
         self, 
@@ -492,7 +570,7 @@ class OraclePrediction:
             # Create track data
             
             # Save to file
-            clean_id = track_id.replace(':', '_')
+            clean_id = re.sub(r'[/:*?"<>|.\s]+', '_', track_id).strip('_')
             filename = f"{prefix}_{clean_id}.bedgraph" if prefix else f"{clean_id}.bedgraph"
             filepath = output_dir / filename
             
@@ -527,38 +605,180 @@ def minmax(arr: np.ndarray):
     else:
         return arr
 
-def analyze_gene_expression(predictions: OraclePrediction, 
-                            gene_name: str, 
+def score_variant_effect(
+    variant_result: dict,
+    chrom: str | None = None,
+    start: int | None = None,
+    end: int | None = None,
+    at_variant: bool = False,
+    window_bins: int = 1,
+    scoring_strategy: str = 'mean',
+) -> dict:
+    """Score variant effects focused on a sub-region or variant site.
+
+    Two modes:
+    - Region-based (chrom/start/end): scores ref and alt predictions in the
+      specified region, returns per-allele scores and effect (alt - ref).
+    - at_variant=True: extracts ±window_bins around the variant position.
+
+    Args:
+        variant_result: Return value of predict_variant_effect().
+        chrom: Chromosome for region-based scoring.
+        start: Region start for region-based scoring.
+        end: Region end for region-based scoring.
+        at_variant: If True, score around the variant position.
+        window_bins: Bins on each side when at_variant=True.
+        scoring_strategy: mean, max, sum, median, or abs_max.
+
+    Returns:
+        Dict of {allele_name: {assay_id: {ref_score, alt_score, effect}}}.
+    """
+    predictions = variant_result['predictions']
+    variant_info = variant_result['variant_info']
+    ref_pred = predictions['reference']
+
+    # Determine region
+    if at_variant:
+        # Parse variant position
+        pos_str = variant_info['position']
+        var_chrom, var_pos = pos_str.split(':')
+        var_pos = int(var_pos)
+
+        # Use the first track to determine bin boundaries
+        first_track = next(iter(ref_pred.values()))
+        var_bin = first_track.pos2bin(var_chrom, var_pos)
+        if var_bin is None:
+            raise ValueError(f"Variant position {pos_str} is outside the prediction window")
+
+        pred_start = first_track.prediction_interval.reference.start
+        resolution = first_track.resolution
+        region_start_bin = max(0, var_bin - window_bins)
+        region_end_bin = min(len(first_track.values), var_bin + window_bins + 1)
+        chrom = var_chrom
+        start = pred_start + region_start_bin * resolution
+        end = pred_start + region_end_bin * resolution
+    elif chrom is None or start is None or end is None:
+        raise ValueError("Either provide chrom/start/end or set at_variant=True")
+
+    # Apply abs_max strategy via post-processing
+    base_strategy = scoring_strategy if scoring_strategy != 'abs_max' else 'mean'
+
+    # Helper to score a slice of values using the given strategy
+    def _score_array(arr: np.ndarray, strategy: str) -> float:
+        if strategy == 'mean':
+            return float(np.mean(arr))
+        elif strategy == 'max':
+            return float(np.max(arr))
+        elif strategy == 'sum':
+            return float(np.sum(arr))
+        elif strategy == 'median':
+            return float(np.median(arr))
+        else:
+            raise ValueError(f"Unknown scoring strategy: {strategy}")
+
+    results = {}
+    for allele_name, alt_pred in predictions.items():
+        if allele_name == 'reference':
+            continue
+        allele_scores = {}
+        for assay_id in ref_pred.keys():
+            ref_track = ref_pred[assay_id]
+            alt_track = alt_pred[assay_id]
+
+            if at_variant:
+                # Compute per-track bin indices to handle mixed resolutions
+                # (e.g. AlphaGenome has 1bp DNASE + 128bp histone tracks)
+                t_var_bin = ref_track.pos2bin(var_chrom, var_pos)
+                if t_var_bin is not None:
+                    # Scale window_bins by resolution ratio so genomic window is consistent
+                    genomic_window = window_bins * resolution  # window in bp from first track
+                    t_window = max(1, genomic_window // ref_track.resolution)
+                    t_start = max(0, t_var_bin - t_window)
+                    t_end = min(len(ref_track.values), t_var_bin + t_window + 1)
+                    ref_vals = ref_track.values[t_start:t_end]
+                    alt_vals = alt_track.values[t_start:t_end]
+                else:
+                    ref_vals = np.array([])
+                    alt_vals = np.array([])
+
+                if len(ref_vals) == 0:
+                    ref_score = None
+                    alt_score = None
+                    effect = None
+                elif scoring_strategy == 'abs_max':
+                    ref_score = _score_array(ref_vals, 'mean')
+                    alt_score = _score_array(alt_vals, 'mean')
+                    diff = alt_vals - ref_vals
+                    effect = float(diff[np.argmax(np.abs(diff))]) if len(diff) > 0 else 0.0
+                else:
+                    ref_score = _score_array(ref_vals, base_strategy)
+                    alt_score = _score_array(alt_vals, base_strategy)
+                    effect = alt_score - ref_score
+            else:
+                ref_score = ref_track.score_region(chrom, start, end, base_strategy)
+                alt_score = alt_track.score_region(chrom, start, end, base_strategy)
+
+                if scoring_strategy == 'abs_max':
+                    pred_start_coord = ref_track.prediction_interval.reference.start
+                    s_bin = (max(start, pred_start_coord) - pred_start_coord) // ref_track.resolution
+                    e_bin = min(
+                        (min(end, ref_track.prediction_interval.reference.end) - pred_start_coord + ref_track.resolution - 1) // ref_track.resolution,
+                        len(ref_track.values)
+                    )
+                    if s_bin < e_bin:
+                        diff = alt_track.values[s_bin:e_bin] - ref_track.values[s_bin:e_bin]
+                        effect = float(diff[np.argmax(np.abs(diff))])
+                    else:
+                        effect = 0.0
+                    ref_score = ref_score if ref_score is not None else 0.0
+                    alt_score = alt_score if alt_score is not None else 0.0
+                else:
+                    if ref_score is not None and alt_score is not None:
+                        effect = alt_score - ref_score
+                    else:
+                        effect = None
+
+            allele_scores[assay_id] = {
+                'ref_score': ref_score,
+                'alt_score': alt_score,
+                'effect': effect,
+            }
+        results[allele_name] = allele_scores
+
+    return results
+
+
+def analyze_gene_expression(predictions: OraclePrediction,
+                            gene_name: str,
                             #chrom: str, start: int, end: int,
                             gtf_file: str,
                             expresion_track_ids: list[str] | None = None,
                             cage_window_bin_size: int = 5) -> dict[str, Any]:
         """Analyze predicted gene expression using CAGE signal at TSS.
-        
-        For now, we analyze gene expression by looking at CAGE signal
-        around the transcription start sites (TSS) of the gene.
-        
+
+        .. deprecated::
+            Use ``oracle.analyze_gene_expression()`` instead, which auto-detects
+            expression track types and supports both CAGE and RNA-seq quantification.
+
         Args:
             predictions: Dictionary of track predictions
             gene_name: Name of the gene to analyze
-            chrom: Chromosome of the predicted region
-            start: Start of the predicted region
-            end: End of the predicted region  
             gtf_file: Path to GTF file with gene annotations
             expresion_track_ids: List of CAGE track IDs to analyze
                           If None, uses all CAGE tracks in predictions
-                          
+            cage_window_bin_size: Bins around TSS for windowed max
+
         Returns:
-            Dictionary with gene expression analysis:
-            - tss_positions: List of TSS positions
-            - cage_signals: Dict of track_id -> signals at each TSS
-            - mean_expression: Dict of track_id -> mean expression
-            - max_expression: Dict of track_id -> max expression
-            
-        Note:
-            For Borzoi, we also need to sum RNA-seq signal over coding exons
-            as described in their paper, but Enformer doesn't have RNA-seq tracks.
+            Dictionary with gene expression analysis
         """
+        import warnings
+        warnings.warn(
+            "analyze_gene_expression() is deprecated. "
+            "Use oracle.analyze_gene_expression() instead, which supports "
+            "both CAGE and RNA-seq quantification.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         # TODO: add support for RNA-seq signal 
         from ..utils.annotations import get_gene_tss
         

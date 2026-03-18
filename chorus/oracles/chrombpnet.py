@@ -16,6 +16,7 @@ import json
 import os
 import sys
 import tarfile
+import urllib.request
 from pathlib import Path
 
 
@@ -145,14 +146,10 @@ class ChromBPNetOracle(OracleBase):
         if not os.path.exists(download_file_path):
 
             # Download from JASPAR
-            result = subprocess.run(
-                ["wget", "-P", download_path, download_link],
-                text=True,
-                capture_output=True
-            )
-            if result.returncode != 0:
-                raise RuntimeError(f"Execution failed: {result.stderr}")
-            
+            os.makedirs(download_path, exist_ok=True)
+            logger.info(f"Downloading {download_link}...")
+            urllib.request.urlretrieve(download_link, download_file_path)
+
             logger.info("Download completed!")
 
 
@@ -173,17 +170,13 @@ class ChromBPNetOracle(OracleBase):
         )
 
         if not os.path.exists(download_file_path):
-            
+
             # Download from ENCODE (tar file)
-            result = subprocess.run(
-                ["wget", "-P", download_path, download_link],
-                text=True,
-                capture_output=True
-            )
-            if result.returncode != 0:
-                raise RuntimeError(f"Execution Failed: {result.stderr}")
-            
-            logger.info("Dowload completed!")
+            os.makedirs(download_path, exist_ok=True)
+            logger.info(f"Downloading {download_link}...")
+            urllib.request.urlretrieve(download_link, download_file_path)
+
+            logger.info("Download completed!")
         
 
 

@@ -43,6 +43,7 @@ setup(
     entry_points={
         "console_scripts": [
             "chorus=chorus.cli.main:cli",
+            "chorus-mcp=chorus.mcp.server:main",
         ],
     },
     package_data={

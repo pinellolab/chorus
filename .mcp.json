@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "chorus": {
+      "type": "stdio",
+      "command": "mamba",
+      "args": ["run", "-n", "chorus", "chorus-mcp"],
+      "env": {
+        "CHORUS_NO_TIMEOUT": "1"
+      }
+    }
+  }
+}

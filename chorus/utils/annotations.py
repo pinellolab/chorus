@@ -263,6 +263,81 @@ class AnnotationManager:
         
         return pd.DataFrame(genes)
     
+    def get_exon_positions(self, gtf_path: Union[str, Path],
+                          gene_name: Optional[str] = None,
+                          gene_id: Optional[str] = None,
+                          chrom: Optional[str] = None) -> pd.DataFrame:
+        """Extract exon coordinates from GTF for a gene.
+
+        Args:
+            gtf_path: Path to GTF file
+            gene_name: Filter by gene name (e.g., 'MYC')
+            gene_id: Filter by gene ID (e.g., 'ENSG00000136997')
+            chrom: Filter by chromosome
+
+        Returns:
+            DataFrame with chrom, start, end, strand, gene_name, gene_id,
+            transcript_id, exon_number columns.
+        """
+        gtf_path = Path(gtf_path)
+
+        if str(gtf_path).endswith('.gz'):
+            open_func = gzip.open
+            mode = 'rt'
+        else:
+            open_func = open
+            mode = 'r'
+
+        exons = []
+
+        with open_func(gtf_path, mode) as f:
+            for line in f:
+                if line.startswith('#'):
+                    continue
+
+                parts = line.strip().split('\t')
+                if len(parts) < 9:
+                    continue
+
+                if parts[2] != 'exon':
+                    continue
+
+                seqname = parts[0]
+                feat_start = int(parts[3])
+                feat_end = int(parts[4])
+                strand = parts[6]
+                attributes = parts[8]
+
+                if chrom and seqname != chrom:
+                    continue
+
+                attr_dict = {}
+                for attr in attributes.strip().split(';'):
+                    if attr.strip():
+                        key_value = attr.strip().split(' ', 1)
+                        if len(key_value) == 2:
+                            key = key_value[0]
+                            value = key_value[1].strip('"')
+                            attr_dict[key] = value
+
+                if gene_name and attr_dict.get('gene_name') != gene_name:
+                    continue
+                if gene_id and attr_dict.get('gene_id') != gene_id:
+                    continue
+
+                exons.append({
+                    'chrom': seqname,
+                    'start': feat_start,
+                    'end': feat_end,
+                    'strand': strand,
+                    'gene_name': attr_dict.get('gene_name', ''),
+                    'gene_id': attr_dict.get('gene_id', ''),
+                    'transcript_id': attr_dict.get('transcript_id', ''),
+                    'exon_number': attr_dict.get('exon_number', ''),
+                })
+
+        return pd.DataFrame(exons)
+
     def get_tss_positions(self, gtf_path: Union[str, Path],
                          gene_name: Optional[str] = None,
                          gene_id: Optional[str] = None,
@@ -376,19 +451,48 @@ def download_gencode(version: str = 'v48', annotation_type: str = 'basic') -> Pa
 
 
 def sort_gtf(gtf_path: str, output_path: str) -> str:
-    """Sort GTF file.
-    
+    """Sort GTF file using gtfsort (Linux) or Python fallback (macOS).
+
     Args:
         gtf_path: Path to GTF file
-        
+        output_path: Path for sorted output
+
     Returns:
         Path to sorted GTF file
     """
-    cmd = f"gtfsort --input {gtf_path} --output {output_path}"
-    cmd = shlex.split(cmd)
-    res = subprocess.run(cmd)
-    if res.returncode != 0:
-        raise RuntimeError(f"Failed to sort GTF file: {res.stderr}")
+    if shutil.which("gtfsort"):
+        cmd = shlex.split(f"gtfsort --input {gtf_path} --output {output_path}")
+        res = subprocess.run(cmd)
+        if res.returncode != 0:
+            raise RuntimeError(f"Failed to sort GTF file: {res.stderr}")
+        return output_path
+
+    # Fallback: sort by chromosome and position using Python
+    logger.info("gtfsort not found (Linux-only); using Python fallback for GTF sorting")
+    header_lines = []
+    data_lines = []
+    with open(gtf_path) as f:
+        for line in f:
+            if line.startswith('#'):
+                header_lines.append(line)
+            else:
+                data_lines.append(line)
+
+    def _sort_key(line):
+        parts = line.split('\t', 5)
+        chrom = parts[0]
+        # Numeric sort for chr1-22, then chrX, chrY, chrM, others
+        chrom_order = chrom.replace('chr', '')
+        try:
+            chrom_num = int(chrom_order)
+        except ValueError:
+            chrom_num = {'X': 23, 'Y': 24, 'M': 25, 'MT': 25}.get(chrom_order, 100)
+        return (chrom_num, int(parts[3]) if len(parts) > 3 else 0)
+
+    data_lines.sort(key=_sort_key)
+    with open(output_path, 'w') as f:
+        f.writelines(header_lines)
+        f.writelines(data_lines)
     return output_path
 
 def get_genes_in_region(chrom: str, start: int, end: int,
@@ -414,11 +518,11 @@ def get_genes_in_region(chrom: str, start: int, end: int,
 
 def get_gene_tss(gene_name: str, annotation: str = 'gencode_v48_basic') -> pd.DataFrame:
     """Get TSS positions for a gene.
-    
+
     Args:
         gene_name: Gene name (e.g., 'GATA1')
         annotation: Annotation to use
-        
+
     Returns:
         DataFrame with TSS positions
     """
@@ -427,3 +531,49 @@ def get_gene_tss(gene_name: str, annotation: str = 'gencode_v48_basic') -> pd.Da
     if not gtf_path:
         raise ValueError(f"Could not find annotation: {annotation}")
     return manager.get_tss_positions(gtf_path, gene_name=gene_name)
+
+
+def get_gene_exons(gene_name: str, annotation: str = 'gencode_v48_basic',
+                   merge: bool = True) -> pd.DataFrame:
+    """Get exon coordinates for a gene, optionally merged across transcripts.
+
+    When merge=True (default), overlapping exons from different transcripts are
+    merged into a union to avoid double-counting when summing RNA-seq signal.
+
+    Args:
+        gene_name: Gene symbol (e.g., 'MYC', 'TP53')
+        annotation: Annotation to use
+        merge: Whether to merge overlapping exons across transcripts
+
+    Returns:
+        DataFrame with chrom, start, end, strand, gene_name columns.
+    """
+    manager = get_annotation_manager()
+    gtf_path = manager.get_annotation_path(annotation)
+    if not gtf_path:
+        raise ValueError(f"Could not find annotation: {annotation}")
+    exons = manager.get_exon_positions(gtf_path, gene_name=gene_name)
+
+    if len(exons) == 0 or not merge:
+        return exons
+
+    # Merge overlapping exons: sort by start, then merge intervals
+    merged_rows = []
+    for (chrom, strand, gname), group in exons.groupby(['chrom', 'strand', 'gene_name']):
+        intervals = sorted(zip(group['start'], group['end']), key=lambda x: x[0])
+        merged = [intervals[0]]
+        for s, e in intervals[1:]:
+            if s <= merged[-1][1]:
+                merged[-1] = (merged[-1][0], max(merged[-1][1], e))
+            else:
+                merged.append((s, e))
+        for s, e in merged:
+            merged_rows.append({
+                'chrom': chrom,
+                'start': s,
+                'end': e,
+                'strand': strand,
+                'gene_name': gname,
+            })
+
+    return pd.DataFrame(merged_rows)
