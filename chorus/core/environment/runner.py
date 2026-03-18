@@ -274,14 +274,14 @@ except Exception as e:
     def import_oracle_in_environment(
         self,
         oracle: str,
-        timeout: Optional[int] = 30
+        timeout: Optional[int] = 120
     ) -> Dict[str, Any]:
         """
         Import an oracle module in its environment and get metadata.
-        
+
         Args:
             oracle: Name of the oracle
-            timeout: Timeout in seconds
+            timeout: Timeout in seconds (default: 120, NFS can be slow)
             
         Returns:
             Dictionary with oracle metadata

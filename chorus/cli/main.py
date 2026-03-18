@@ -345,8 +345,8 @@ def main(argv: Optional[List[str]] = None):
     )
     health_parser.add_argument(
         '--timeout',
-        help='Timeout for health check per single oracle (default: 30 seconds)',
-        default=30,
+        help='Timeout for health check per single oracle (default: 120 seconds)',
+        default=120,
         type=int
     )
     health_parser.add_argument(
