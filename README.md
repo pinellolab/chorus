@@ -1,8 +1,8 @@
+# <p align="center">Chorus</p>
+
 <p align="center">
   <img src="logo.png" alt="Chorus logo" width="300">
-</p>
-<h1 align="center">Chorus</h1>
-<p align="center">
+  <br><br>
   <em>A unified interface for genomic sequence oracles — deep learning models that predict genomic regulatory activity from DNA sequences.</em>
 </p>
 
