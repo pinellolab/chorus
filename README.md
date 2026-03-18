@@ -430,11 +430,26 @@ Enhanced Enformer with improved performance and RNA-tracks predictions.
 Base-pair resolution for chromatin accessibility and TF binding predictions (uses TF-specific tracks)
 
 - Sequence length: 2114 bp input
-- Output: 1000 bins 
+- Output: 1000 bins
 - Bin size: 1 bp
-- Track types: DNase accessibility, TF binding (CHIP-Seq) 
-- Track identifiers: 
+- Track types: DNase accessibility, TF binding (CHIP-Seq)
+- Track identifiers:
   - ENCODE IDs (e.g., ENCFF574YLK for DNase:K562)
+
+#### Loading Custom ChromBPNet Models
+
+You can load your own ChromBPNet weights (e.g. trained on a new cell type or assay):
+
+```python
+oracle = chorus.create_oracle('chrombpnet', use_environment=True,
+                              reference_fasta=str(genome_path))
+oracle.load_pretrained_model(
+    assay="DNASE",                   # DNASE, ATAC, or CHIP
+    cell_type="HepG2",              # your cell type label
+    weights='path/to/weights',      # path to your model weights
+    is_custom=True                  # enables custom weight paths
+)
+```
 
 ### Sei
 
