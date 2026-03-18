@@ -1,8 +1,7 @@
 <div align="center">
 
-<img src="logo.png" alt="Chorus" width="280">
-
-### **Chorus**
+## **Chorus**
+<img src="logo.png" alt="Chorus" width="250">
 
 *A unified interface for genomic sequence oracles — deep learning models that predict genomic regulatory activity from DNA sequences.*
 
