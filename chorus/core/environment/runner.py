@@ -105,7 +105,8 @@ except Exception as e:
         try:
             # Run the script file instead of passing code as argument
             env_name = self.env_manager.get_environment_name(oracle)
-            running_command = shlex.split(f"mamba run -n {env_name} python {code_path}")
+            conda_exe = self.env_manager.conda_exe
+            running_command = shlex.split(f"{conda_exe} run -n {env_name} python {code_path}")
 
             env = os.environ.copy()
             
