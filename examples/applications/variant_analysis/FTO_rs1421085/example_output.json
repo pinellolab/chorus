@@ -1,0 +1,532 @@
+{
+  "variant": {
+    "chrom": "chr16",
+    "position": 53767042,
+    "ref_allele": "T",
+    "alt_alleles": [
+      "C"
+    ]
+  },
+  "oracle": "alphagenome",
+  "gene_name": "IRX3",
+  "nearby_genes": [
+    "IRX3",
+    "RPGRIP1L",
+    "FTO",
+    "AKTIP",
+    "RBL2",
+    "CHD9"
+  ],
+  "alleles": {
+    "alt_1": {
+      "scores_by_layer": {
+        "chromatin_accessibility": [
+          {
+            "assay_id": "ATAC/UBERON:0002190 ATAC-seq/.",
+            "assay_type": "ATAC",
+            "cell_type": "subcutaneous",
+            "layer": "chromatin_accessibility",
+            "ref_value": 25.609764099121094,
+            "alt_value": 25.53806495666504,
+            "raw_score": -0.0038925413077676727
+          }
+        ],
+        "tss_activity": [
+          {
+            "assay_id": "CAGE/hCAGE CL:0002616/+",
+            "assay_type": "CAGE",
+            "cell_type": "perirenal",
+            "layer": "tss_activity",
+            "ref_value": 1.5850896835327148,
+            "alt_value": 1.5417251586914062,
+            "raw_score": -0.02440629470902568,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002616/+",
+            "assay_type": "CAGE",
+            "cell_type": "perirenal",
+            "layer": "tss_activity",
+            "ref_value": 46.83367919921875,
+            "alt_value": 46.867401123046875,
+            "raw_score": 0.0010167169299608967,
+            "region_label": "IRX3 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002616/+",
+            "assay_type": "CAGE",
+            "cell_type": "perirenal",
+            "layer": "tss_activity",
+            "ref_value": 4146.68017578125,
+            "alt_value": 4132.283203125,
+            "raw_score": -0.00501643613950551,
+            "region_label": "RPGRIP1L TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002616/+",
+            "assay_type": "CAGE",
+            "cell_type": "perirenal",
+            "layer": "tss_activity",
+            "ref_value": 4224.8056640625,
+            "alt_value": 4210.1943359375,
+            "raw_score": -0.004996968519792033,
+            "region_label": "FTO TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002616/+",
+            "assay_type": "CAGE",
+            "cell_type": "perirenal",
+            "layer": "tss_activity",
+            "ref_value": 6.108924865722656,
+            "alt_value": 6.1020660400390625,
+            "raw_score": -0.0013926114841676907,
+            "region_label": "AKTIP TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002616/+",
+            "assay_type": "CAGE",
+            "cell_type": "perirenal",
+            "layer": "tss_activity",
+            "ref_value": 1837.74462890625,
+            "alt_value": 1843.7786865234375,
+            "raw_score": 0.004726622878170191,
+            "region_label": "RBL2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002616/-",
+            "assay_type": "CAGE",
+            "cell_type": "perirenal",
+            "layer": "tss_activity",
+            "ref_value": 0.5071566104888916,
+            "alt_value": 0.4935483932495117,
+            "raw_score": -0.013085353004075321,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002616/-",
+            "assay_type": "CAGE",
+            "cell_type": "perirenal",
+            "layer": "tss_activity",
+            "ref_value": 552.2893676757812,
+            "alt_value": 554.2554931640625,
+            "raw_score": 0.005117560084732608,
+            "region_label": "IRX3 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002616/-",
+            "assay_type": "CAGE",
+            "cell_type": "perirenal",
+            "layer": "tss_activity",
+            "ref_value": 714.9052124023438,
+            "alt_value": 714.2191772460938,
+            "raw_score": -0.0013831636170388653,
+            "region_label": "RPGRIP1L TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002616/-",
+            "assay_type": "CAGE",
+            "cell_type": "perirenal",
+            "layer": "tss_activity",
+            "ref_value": 715.3709716796875,
+            "alt_value": 714.6735229492188,
+            "raw_score": -0.0014052718446280474,
+            "region_label": "FTO TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002616/-",
+            "assay_type": "CAGE",
+            "cell_type": "perirenal",
+            "layer": "tss_activity",
+            "ref_value": 1122.7921142578125,
+            "alt_value": 1124.2757568359375,
+            "raw_score": 0.0019034055200419149,
+            "region_label": "AKTIP TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002616/-",
+            "assay_type": "CAGE",
+            "cell_type": "perirenal",
+            "layer": "tss_activity",
+            "ref_value": 8.94481086730957,
+            "alt_value": 8.951805114746094,
+            "raw_score": 0.001014299769987499,
+            "region_label": "RBL2 TSS"
+          }
+        ],
+        "gene_expression": [
+          {
+            "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "subcutaneous",
+            "layer": "gene_expression",
+            "ref_value": 0.5239227414131165,
+            "alt_value": 0.525695264339447,
+            "raw_score": 0.0033710427079088365,
+            "region_label": "IRX3 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "subcutaneous",
+            "layer": "gene_expression",
+            "ref_value": 0.011141518097636955,
+            "alt_value": 0.011141235042097313,
+            "raw_score": -2.3313298786682748e-05,
+            "region_label": "RPGRIP1L (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "subcutaneous",
+            "layer": "gene_expression",
+            "ref_value": 162.64010928509953,
+            "alt_value": 162.67419896443914,
+            "raw_score": 0.00020957866912868102,
+            "region_label": "FTO (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "subcutaneous",
+            "layer": "gene_expression",
+            "ref_value": 38.61289191246033,
+            "alt_value": 38.63482931527224,
+            "raw_score": 0.0005679607137209464,
+            "region_label": "AKTIP (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "subcutaneous",
+            "layer": "gene_expression",
+            "ref_value": 325.55331143465907,
+            "alt_value": 325.5657404119318,
+            "raw_score": 3.8177163029898775e-05,
+            "region_label": "RBL2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "subcutaneous",
+            "layer": "gene_expression",
+            "ref_value": 207.99932635271992,
+            "alt_value": 207.89772768373842,
+            "raw_score": -0.0004885737056453932,
+            "region_label": "CHD9 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "subcutaneous",
+            "layer": "gene_expression",
+            "ref_value": 74.76016235351562,
+            "alt_value": 74.99775695800781,
+            "raw_score": 0.003173009239402033,
+            "region_label": "IRX3 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "subcutaneous",
+            "layer": "gene_expression",
+            "ref_value": 21.376592908586776,
+            "alt_value": 21.382700783865793,
+            "raw_score": 0.0002856730839102461,
+            "region_label": "RPGRIP1L (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "subcutaneous",
+            "layer": "gene_expression",
+            "ref_value": 0.07553520171265853,
+            "alt_value": 0.07538272165938427,
+            "raw_score": -0.00199427379666061,
+            "region_label": "FTO (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "subcutaneous",
+            "layer": "gene_expression",
+            "ref_value": 132.91904518821022,
+            "alt_value": 133.00717717950994,
+            "raw_score": 0.0006628254326799884,
+            "region_label": "AKTIP (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "subcutaneous",
+            "layer": "gene_expression",
+            "ref_value": 9.842600735751065,
+            "alt_value": 9.840689832513982,
+            "raw_score": -0.00019414529203493213,
+            "region_label": "RBL2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "subcutaneous",
+            "layer": "gene_expression",
+            "ref_value": 0.24785938969364874,
+            "alt_value": 0.24771958810311775,
+            "raw_score": -0.0005619272535535389,
+            "region_label": "CHD9 (exons)"
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "ATAC/UBERON:0002190 ATAC-seq/.",
+          "assay_type": "ATAC",
+          "cell_type": "subcutaneous",
+          "layer": "chromatin_accessibility",
+          "ref_value": 25.609764099121094,
+          "alt_value": 25.53806495666504,
+          "raw_score": -0.0038925413077676727
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002616/+",
+          "assay_type": "CAGE",
+          "cell_type": "perirenal",
+          "layer": "tss_activity",
+          "ref_value": 1.5850896835327148,
+          "alt_value": 1.5417251586914062,
+          "raw_score": -0.02440629470902568,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002616/+",
+          "assay_type": "CAGE",
+          "cell_type": "perirenal",
+          "layer": "tss_activity",
+          "ref_value": 46.83367919921875,
+          "alt_value": 46.867401123046875,
+          "raw_score": 0.0010167169299608967,
+          "region_label": "IRX3 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002616/+",
+          "assay_type": "CAGE",
+          "cell_type": "perirenal",
+          "layer": "tss_activity",
+          "ref_value": 4146.68017578125,
+          "alt_value": 4132.283203125,
+          "raw_score": -0.00501643613950551,
+          "region_label": "RPGRIP1L TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002616/+",
+          "assay_type": "CAGE",
+          "cell_type": "perirenal",
+          "layer": "tss_activity",
+          "ref_value": 4224.8056640625,
+          "alt_value": 4210.1943359375,
+          "raw_score": -0.004996968519792033,
+          "region_label": "FTO TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002616/+",
+          "assay_type": "CAGE",
+          "cell_type": "perirenal",
+          "layer": "tss_activity",
+          "ref_value": 6.108924865722656,
+          "alt_value": 6.1020660400390625,
+          "raw_score": -0.0013926114841676907,
+          "region_label": "AKTIP TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002616/+",
+          "assay_type": "CAGE",
+          "cell_type": "perirenal",
+          "layer": "tss_activity",
+          "ref_value": 1837.74462890625,
+          "alt_value": 1843.7786865234375,
+          "raw_score": 0.004726622878170191,
+          "region_label": "RBL2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002616/-",
+          "assay_type": "CAGE",
+          "cell_type": "perirenal",
+          "layer": "tss_activity",
+          "ref_value": 0.5071566104888916,
+          "alt_value": 0.4935483932495117,
+          "raw_score": -0.013085353004075321,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002616/-",
+          "assay_type": "CAGE",
+          "cell_type": "perirenal",
+          "layer": "tss_activity",
+          "ref_value": 552.2893676757812,
+          "alt_value": 554.2554931640625,
+          "raw_score": 0.005117560084732608,
+          "region_label": "IRX3 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002616/-",
+          "assay_type": "CAGE",
+          "cell_type": "perirenal",
+          "layer": "tss_activity",
+          "ref_value": 714.9052124023438,
+          "alt_value": 714.2191772460938,
+          "raw_score": -0.0013831636170388653,
+          "region_label": "RPGRIP1L TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002616/-",
+          "assay_type": "CAGE",
+          "cell_type": "perirenal",
+          "layer": "tss_activity",
+          "ref_value": 715.3709716796875,
+          "alt_value": 714.6735229492188,
+          "raw_score": -0.0014052718446280474,
+          "region_label": "FTO TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002616/-",
+          "assay_type": "CAGE",
+          "cell_type": "perirenal",
+          "layer": "tss_activity",
+          "ref_value": 1122.7921142578125,
+          "alt_value": 1124.2757568359375,
+          "raw_score": 0.0019034055200419149,
+          "region_label": "AKTIP TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002616/-",
+          "assay_type": "CAGE",
+          "cell_type": "perirenal",
+          "layer": "tss_activity",
+          "ref_value": 8.94481086730957,
+          "alt_value": 8.951805114746094,
+          "raw_score": 0.001014299769987499,
+          "region_label": "RBL2 TSS"
+        },
+        {
+          "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "subcutaneous",
+          "layer": "gene_expression",
+          "ref_value": 0.5239227414131165,
+          "alt_value": 0.525695264339447,
+          "raw_score": 0.0033710427079088365,
+          "region_label": "IRX3 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "subcutaneous",
+          "layer": "gene_expression",
+          "ref_value": 0.011141518097636955,
+          "alt_value": 0.011141235042097313,
+          "raw_score": -2.3313298786682748e-05,
+          "region_label": "RPGRIP1L (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "subcutaneous",
+          "layer": "gene_expression",
+          "ref_value": 162.64010928509953,
+          "alt_value": 162.67419896443914,
+          "raw_score": 0.00020957866912868102,
+          "region_label": "FTO (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "subcutaneous",
+          "layer": "gene_expression",
+          "ref_value": 38.61289191246033,
+          "alt_value": 38.63482931527224,
+          "raw_score": 0.0005679607137209464,
+          "region_label": "AKTIP (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "subcutaneous",
+          "layer": "gene_expression",
+          "ref_value": 325.55331143465907,
+          "alt_value": 325.5657404119318,
+          "raw_score": 3.8177163029898775e-05,
+          "region_label": "RBL2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "subcutaneous",
+          "layer": "gene_expression",
+          "ref_value": 207.99932635271992,
+          "alt_value": 207.89772768373842,
+          "raw_score": -0.0004885737056453932,
+          "region_label": "CHD9 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "subcutaneous",
+          "layer": "gene_expression",
+          "ref_value": 74.76016235351562,
+          "alt_value": 74.99775695800781,
+          "raw_score": 0.003173009239402033,
+          "region_label": "IRX3 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "subcutaneous",
+          "layer": "gene_expression",
+          "ref_value": 21.376592908586776,
+          "alt_value": 21.382700783865793,
+          "raw_score": 0.0002856730839102461,
+          "region_label": "RPGRIP1L (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "subcutaneous",
+          "layer": "gene_expression",
+          "ref_value": 0.07553520171265853,
+          "alt_value": 0.07538272165938427,
+          "raw_score": -0.00199427379666061,
+          "region_label": "FTO (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "subcutaneous",
+          "layer": "gene_expression",
+          "ref_value": 132.91904518821022,
+          "alt_value": 133.00717717950994,
+          "raw_score": 0.0006628254326799884,
+          "region_label": "AKTIP (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "subcutaneous",
+          "layer": "gene_expression",
+          "ref_value": 9.842600735751065,
+          "alt_value": 9.840689832513982,
+          "raw_score": -0.00019414529203493213,
+          "region_label": "RBL2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/UBERON:0002190 total RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "subcutaneous",
+          "layer": "gene_expression",
+          "ref_value": 0.24785938969364874,
+          "alt_value": 0.24771958810311775,
+          "raw_score": -0.0005619272535535389,
+          "region_label": "CHD9 (exons)"
+        }
+      ]
+    }
+  }
+}

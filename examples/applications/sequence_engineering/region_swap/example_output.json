@@ -1,0 +1,144 @@
+{
+  "variant": {
+    "chrom": "chr1",
+    "position": 1001000,
+    "ref_allele": "wt",
+    "alt_alleles": [
+      "replacement"
+    ]
+  },
+  "oracle": "alphagenome",
+  "gene_name": "HES4",
+  "nearby_genes": [
+    "HES4",
+    "ISG15"
+  ],
+  "alleles": {
+    "replacement": {
+      "scores_by_layer": {
+        "chromatin_accessibility": [
+          {
+            "assay_id": "DNASE:K562",
+            "assay_type": "DNASE",
+            "cell_type": "K562",
+            "layer": "chromatin_accessibility",
+            "ref_value": 1287.426513671875,
+            "alt_value": 4496.78125,
+            "raw_score": 1.8036032428173767
+          }
+        ],
+        "tss_activity": [
+          {
+            "assay_id": "CAGE:K562",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 544.0988159179688,
+            "alt_value": 2717.052734375,
+            "raw_score": 2.3179837553260105,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE:K562",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 446.6563720703125,
+            "alt_value": 446.6563720703125,
+            "raw_score": 0.0,
+            "region_label": "HES4 TSS"
+          },
+          {
+            "assay_id": "CAGE:K562",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 518.4716186523438,
+            "alt_value": 2043.460693359375,
+            "raw_score": 1.976603491281531,
+            "region_label": "ISG15 TSS"
+          }
+        ],
+        "histone_marks": [
+          {
+            "assay_id": "H3K27ac:K562",
+            "assay_type": "CHIP",
+            "cell_type": "K562",
+            "layer": "histone_marks",
+            "ref_value": 3573.970458984375,
+            "alt_value": 4894.8369140625,
+            "raw_score": 0.45362418047246195
+          },
+          {
+            "assay_id": "H3K4me3:K562",
+            "assay_type": "CHIP",
+            "cell_type": "K562",
+            "layer": "histone_marks",
+            "ref_value": 2312.86962890625,
+            "alt_value": 4090.15087890625,
+            "raw_score": 0.8221991633256824
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "DNASE:K562",
+          "assay_type": "DNASE",
+          "cell_type": "K562",
+          "layer": "chromatin_accessibility",
+          "ref_value": 1287.426513671875,
+          "alt_value": 4496.78125,
+          "raw_score": 1.8036032428173767
+        },
+        {
+          "assay_id": "CAGE:K562",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 544.0988159179688,
+          "alt_value": 2717.052734375,
+          "raw_score": 2.3179837553260105,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE:K562",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 446.6563720703125,
+          "alt_value": 446.6563720703125,
+          "raw_score": 0.0,
+          "region_label": "HES4 TSS"
+        },
+        {
+          "assay_id": "CAGE:K562",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 518.4716186523438,
+          "alt_value": 2043.460693359375,
+          "raw_score": 1.976603491281531,
+          "region_label": "ISG15 TSS"
+        },
+        {
+          "assay_id": "H3K27ac:K562",
+          "assay_type": "CHIP",
+          "cell_type": "K562",
+          "layer": "histone_marks",
+          "ref_value": 3573.970458984375,
+          "alt_value": 4894.8369140625,
+          "raw_score": 0.45362418047246195
+        },
+        {
+          "assay_id": "H3K4me3:K562",
+          "assay_type": "CHIP",
+          "cell_type": "K562",
+          "layer": "histone_marks",
+          "ref_value": 2312.86962890625,
+          "alt_value": 4090.15087890625,
+          "raw_score": 0.8221991633256824
+        }
+      ]
+    }
+  }
+}

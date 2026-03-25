@@ -1,0 +1,1258 @@
+{
+  "variant": {
+    "chrom": "chr5",
+    "position": 1295046,
+    "ref_allele": "T",
+    "alt_alleles": [
+      "G"
+    ]
+  },
+  "oracle": "alphagenome",
+  "gene_name": "TERT",
+  "nearby_genes": [
+    "TERT",
+    "CLPTM1L",
+    "SLC6A18",
+    "SLC6A19",
+    "SLC6A3",
+    "LPCAT1",
+    "SLC12A7",
+    "NKD2",
+    "TRIP13",
+    "BRD9",
+    "ZDHHC11",
+    "MRPL36",
+    "NDUFS6",
+    "ZDHHC11B"
+  ],
+  "alleles": {
+    "alt_1": {
+      "scores_by_layer": {
+        "chromatin_accessibility": [
+          {
+            "assay_id": "DNASE/CL:2000045 DNase-seq/.",
+            "assay_type": "DNASE",
+            "cell_type": "foreskin",
+            "layer": "chromatin_accessibility",
+            "ref_value": 32.765724182128906,
+            "alt_value": 32.86347198486328,
+            "raw_score": 0.004170399071824393
+          }
+        ],
+        "histone_marks": [
+          {
+            "assay_id": "CHIP_HISTONE/CL:2000045 Histone ChIP-seq H3K27ac/.",
+            "assay_type": "CHIP",
+            "cell_type": "foreskin",
+            "layer": "histone_marks",
+            "ref_value": 2498.0,
+            "alt_value": 2551.5,
+            "raw_score": 0.030560059678460146
+          },
+          {
+            "assay_id": "CHIP_HISTONE/CL:2000045 Histone ChIP-seq H3K4me1/.",
+            "assay_type": "CHIP",
+            "cell_type": "foreskin",
+            "layer": "histone_marks",
+            "ref_value": 8135.0,
+            "alt_value": 8101.0,
+            "raw_score": -0.006041594171063443
+          }
+        ],
+        "tss_activity": [
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/+",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 5.0168914794921875,
+            "alt_value": 5.519575119018555,
+            "raw_score": 0.11575961043422593,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/+",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 4.980808258056641,
+            "alt_value": 5.479312896728516,
+            "raw_score": 0.11550036340423468,
+            "region_label": "TERT TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/+",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 298.59796142578125,
+            "alt_value": 300.2107849121094,
+            "raw_score": 0.007745619712942945,
+            "region_label": "CLPTM1L TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/+",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 0.657936692237854,
+            "alt_value": 0.6534936428070068,
+            "raw_score": -0.00387142024941487,
+            "region_label": "SLC6A18 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/+",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 76.30816650390625,
+            "alt_value": 75.85710144042969,
+            "raw_score": -0.00844225415779104,
+            "region_label": "SLC6A19 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/+",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 7.683724880218506,
+            "alt_value": 7.6279072761535645,
+            "raw_score": -0.009303346895174001,
+            "region_label": "SLC6A3 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/+",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 22.861099243164062,
+            "alt_value": 22.82837677001953,
+            "raw_score": -0.001979831236852635,
+            "region_label": "LPCAT1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/+",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 10.10693359375,
+            "alt_value": 10.098007202148438,
+            "raw_score": -0.0011599275772625633,
+            "region_label": "SLC12A7 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/+",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 643.2587890625,
+            "alt_value": 643.595703125,
+            "raw_score": 0.000754257771055337,
+            "region_label": "NKD2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/+",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 2286.81982421875,
+            "alt_value": 2287.055419921875,
+            "raw_score": 0.000148558575012899,
+            "region_label": "TRIP13 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/+",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 2332.19873046875,
+            "alt_value": 2332.102294921875,
+            "raw_score": -5.963056583997705e-05,
+            "region_label": "BRD9 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/+",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 0.7365036010742188,
+            "alt_value": 0.7331843376159668,
+            "raw_score": -0.0027602980302924135,
+            "region_label": "ZDHHC11 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/+",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 7072.1240234375,
+            "alt_value": 7055.91015625,
+            "raw_score": -0.003310915706810474,
+            "region_label": "MRPL36 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/+",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 7074.34375,
+            "alt_value": 7058.1318359375,
+            "raw_score": -0.0033094766248007125,
+            "region_label": "NDUFS6 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/+",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 42.638187408447266,
+            "alt_value": 42.56428146362305,
+            "raw_score": -0.002445429974592838,
+            "region_label": "ZDHHC11B TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/-",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 76.79827117919922,
+            "alt_value": 83.5613784790039,
+            "raw_score": 0.12026079880630279,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/-",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 76.91676330566406,
+            "alt_value": 83.6906967163086,
+            "raw_score": 0.12026974950889449,
+            "region_label": "TERT TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/-",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 3471.32080078125,
+            "alt_value": 3473.808837890625,
+            "raw_score": 0.0010333703671593195,
+            "region_label": "CLPTM1L TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/-",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 0.141282320022583,
+            "alt_value": 0.1410980224609375,
+            "raw_score": -0.00023298936979323262,
+            "region_label": "SLC6A18 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/-",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 0.19501042366027832,
+            "alt_value": 0.19484257698059082,
+            "raw_score": -0.00020264976360302625,
+            "region_label": "SLC6A19 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/-",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 23.740636825561523,
+            "alt_value": 23.561511993408203,
+            "raw_score": -0.010483260885046248,
+            "region_label": "SLC6A3 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/-",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 5372.205078125,
+            "alt_value": 5374.0,
+            "raw_score": 0.000481852531300994,
+            "region_label": "LPCAT1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/-",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 1547.5164794921875,
+            "alt_value": 1538.7393798828125,
+            "raw_score": -0.008200558989116794,
+            "region_label": "SLC12A7 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/-",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 3.0013580322265625,
+            "alt_value": 3.005828857421875,
+            "raw_score": 0.0016110621862909765,
+            "region_label": "NKD2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/-",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 4338.67041015625,
+            "alt_value": 4351.43212890625,
+            "raw_score": 0.004236324065494143,
+            "region_label": "TRIP13 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/-",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 4357.982421875,
+            "alt_value": 4370.646484375,
+            "raw_score": 0.004185355528533618,
+            "region_label": "BRD9 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/-",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 0.862116813659668,
+            "alt_value": 0.8606958389282227,
+            "raw_score": -0.0011013357314213876,
+            "region_label": "ZDHHC11 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/-",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 5706.6845703125,
+            "alt_value": 5714.4736328125,
+            "raw_score": 0.001967449523793324,
+            "region_label": "MRPL36 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/-",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 45.98675537109375,
+            "alt_value": 46.128761291503906,
+            "raw_score": 0.0043536156393543645,
+            "region_label": "NDUFS6 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE CL:0002566/-",
+            "assay_type": "CAGE",
+            "cell_type": "dark",
+            "layer": "tss_activity",
+            "ref_value": 87.77793884277344,
+            "alt_value": 87.21366882324219,
+            "raw_score": -0.00919899341832941,
+            "region_label": "ZDHHC11B TSS"
+          }
+        ],
+        "gene_expression": [
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.002930333837866783,
+            "alt_value": 0.0031029293313622475,
+            "raw_score": 0.042976821365737806,
+            "region_label": "TERT (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.045629964155309344,
+            "alt_value": 0.04565229836632224,
+            "raw_score": 0.00047885226699958134,
+            "region_label": "CLPTM1L (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.04466660817464193,
+            "alt_value": 0.04487850268681844,
+            "raw_score": 0.0046292999942447715,
+            "region_label": "SLC6A18 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.3518846829732259,
+            "alt_value": 0.34945881366729736,
+            "raw_score": -0.006898134231538698,
+            "region_label": "SLC6A19 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.00173445774570984,
+            "alt_value": 0.0017368791296201594,
+            "raw_score": 0.0008851160597765812,
+            "region_label": "SLC6A3 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.18046920640128,
+            "alt_value": 0.18057571138654435,
+            "raw_score": 0.0005867317409025449,
+            "region_label": "LPCAT1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.5628039240837097,
+            "alt_value": 0.5625466903050741,
+            "raw_score": -0.0004563509875573019,
+            "region_label": "SLC12A7 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 22.834852045232598,
+            "alt_value": 22.789938493208453,
+            "raw_score": -0.0019687366128939877,
+            "region_label": "NKD2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 163.93079082782452,
+            "alt_value": 163.88861083984375,
+            "raw_score": -0.00025733517091294653,
+            "region_label": "TRIP13 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.12045742483700023,
+            "alt_value": 0.12033793505500345,
+            "raw_score": -0.0009842839805248246,
+            "region_label": "BRD9 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.008870498778728338,
+            "alt_value": 0.008844428480817722,
+            "raw_score": -0.00264472830797858,
+            "region_label": "ZDHHC11 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.2223962148030599,
+            "alt_value": 0.22304534912109375,
+            "raw_score": 0.0029015398916405997,
+            "region_label": "MRPL36 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 616.0959167480469,
+            "alt_value": 616.38232421875,
+            "raw_score": 0.00046476603249056447,
+            "region_label": "NDUFS6 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.006417274475097656,
+            "alt_value": 0.006384372711181641,
+            "raw_score": -0.004445696845997888,
+            "region_label": "ZDHHC11B (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 13.674903750419617,
+            "alt_value": 14.126633405685425,
+            "raw_score": 0.032497261549848847,
+            "region_label": "TERT (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 668.0549172794117,
+            "alt_value": 669.0851835363052,
+            "raw_score": 0.001540997714668909,
+            "region_label": "CLPTM1L (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.010993039856354395,
+            "alt_value": 0.01099683220187823,
+            "raw_score": 0.0003161622159732474,
+            "region_label": "SLC6A18 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.002392343245446682,
+            "alt_value": 0.002374681644141674,
+            "raw_score": -0.005219913239872504,
+            "region_label": "SLC6A19 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.7765515692093793,
+            "alt_value": 0.7707647435805377,
+            "raw_score": -0.007470201522658718,
+            "region_label": "SLC6A3 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 1110.036342075893,
+            "alt_value": 1110.5413643973213,
+            "raw_score": 0.0004548562960055027,
+            "region_label": "LPCAT1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 299.91355387369794,
+            "alt_value": 299.7157389322917,
+            "raw_score": -0.0006597886099527877,
+            "region_label": "SLC12A7 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.016291488300670277,
+            "alt_value": 0.01630360429937189,
+            "raw_score": 0.0007004461203244926,
+            "region_label": "NKD2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.020292736016787015,
+            "alt_value": 0.020237716344686654,
+            "raw_score": -0.0025873086100897114,
+            "region_label": "TRIP13 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 206.98119399126838,
+            "alt_value": 207.24440630744485,
+            "raw_score": 0.0012708585879475463,
+            "region_label": "BRD9 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 2.836458059457632,
+            "alt_value": 2.8299026489257812,
+            "raw_score": -0.002312983873703741,
+            "region_label": "ZDHHC11 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 745.5089213053385,
+            "alt_value": 745.2984466552734,
+            "raw_score": -0.00028236293115243975,
+            "region_label": "MRPL36 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 0.0881035178899765,
+            "alt_value": 0.08822981268167496,
+            "raw_score": 0.0014163904459991428,
+            "region_label": "NDUFS6 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "foreskin",
+            "layer": "gene_expression",
+            "ref_value": 1.489471435546875,
+            "alt_value": 1.486541748046875,
+            "raw_score": -0.0019675456517559927,
+            "region_label": "ZDHHC11B (exons)"
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "DNASE/CL:2000045 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "foreskin",
+          "layer": "chromatin_accessibility",
+          "ref_value": 32.765724182128906,
+          "alt_value": 32.86347198486328,
+          "raw_score": 0.004170399071824393
+        },
+        {
+          "assay_id": "CHIP_HISTONE/CL:2000045 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "foreskin",
+          "layer": "histone_marks",
+          "ref_value": 2498.0,
+          "alt_value": 2551.5,
+          "raw_score": 0.030560059678460146
+        },
+        {
+          "assay_id": "CHIP_HISTONE/CL:2000045 Histone ChIP-seq H3K4me1/.",
+          "assay_type": "CHIP",
+          "cell_type": "foreskin",
+          "layer": "histone_marks",
+          "ref_value": 8135.0,
+          "alt_value": 8101.0,
+          "raw_score": -0.006041594171063443
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/+",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 5.0168914794921875,
+          "alt_value": 5.519575119018555,
+          "raw_score": 0.11575961043422593,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/+",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 4.980808258056641,
+          "alt_value": 5.479312896728516,
+          "raw_score": 0.11550036340423468,
+          "region_label": "TERT TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/+",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 298.59796142578125,
+          "alt_value": 300.2107849121094,
+          "raw_score": 0.007745619712942945,
+          "region_label": "CLPTM1L TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/+",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 0.657936692237854,
+          "alt_value": 0.6534936428070068,
+          "raw_score": -0.00387142024941487,
+          "region_label": "SLC6A18 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/+",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 76.30816650390625,
+          "alt_value": 75.85710144042969,
+          "raw_score": -0.00844225415779104,
+          "region_label": "SLC6A19 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/+",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 7.683724880218506,
+          "alt_value": 7.6279072761535645,
+          "raw_score": -0.009303346895174001,
+          "region_label": "SLC6A3 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/+",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 22.861099243164062,
+          "alt_value": 22.82837677001953,
+          "raw_score": -0.001979831236852635,
+          "region_label": "LPCAT1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/+",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 10.10693359375,
+          "alt_value": 10.098007202148438,
+          "raw_score": -0.0011599275772625633,
+          "region_label": "SLC12A7 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/+",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 643.2587890625,
+          "alt_value": 643.595703125,
+          "raw_score": 0.000754257771055337,
+          "region_label": "NKD2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/+",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 2286.81982421875,
+          "alt_value": 2287.055419921875,
+          "raw_score": 0.000148558575012899,
+          "region_label": "TRIP13 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/+",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 2332.19873046875,
+          "alt_value": 2332.102294921875,
+          "raw_score": -5.963056583997705e-05,
+          "region_label": "BRD9 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/+",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 0.7365036010742188,
+          "alt_value": 0.7331843376159668,
+          "raw_score": -0.0027602980302924135,
+          "region_label": "ZDHHC11 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/+",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 7072.1240234375,
+          "alt_value": 7055.91015625,
+          "raw_score": -0.003310915706810474,
+          "region_label": "MRPL36 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/+",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 7074.34375,
+          "alt_value": 7058.1318359375,
+          "raw_score": -0.0033094766248007125,
+          "region_label": "NDUFS6 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/+",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 42.638187408447266,
+          "alt_value": 42.56428146362305,
+          "raw_score": -0.002445429974592838,
+          "region_label": "ZDHHC11B TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/-",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 76.79827117919922,
+          "alt_value": 83.5613784790039,
+          "raw_score": 0.12026079880630279,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/-",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 76.91676330566406,
+          "alt_value": 83.6906967163086,
+          "raw_score": 0.12026974950889449,
+          "region_label": "TERT TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/-",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 3471.32080078125,
+          "alt_value": 3473.808837890625,
+          "raw_score": 0.0010333703671593195,
+          "region_label": "CLPTM1L TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/-",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 0.141282320022583,
+          "alt_value": 0.1410980224609375,
+          "raw_score": -0.00023298936979323262,
+          "region_label": "SLC6A18 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/-",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 0.19501042366027832,
+          "alt_value": 0.19484257698059082,
+          "raw_score": -0.00020264976360302625,
+          "region_label": "SLC6A19 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/-",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 23.740636825561523,
+          "alt_value": 23.561511993408203,
+          "raw_score": -0.010483260885046248,
+          "region_label": "SLC6A3 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/-",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 5372.205078125,
+          "alt_value": 5374.0,
+          "raw_score": 0.000481852531300994,
+          "region_label": "LPCAT1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/-",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 1547.5164794921875,
+          "alt_value": 1538.7393798828125,
+          "raw_score": -0.008200558989116794,
+          "region_label": "SLC12A7 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/-",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 3.0013580322265625,
+          "alt_value": 3.005828857421875,
+          "raw_score": 0.0016110621862909765,
+          "region_label": "NKD2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/-",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 4338.67041015625,
+          "alt_value": 4351.43212890625,
+          "raw_score": 0.004236324065494143,
+          "region_label": "TRIP13 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/-",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 4357.982421875,
+          "alt_value": 4370.646484375,
+          "raw_score": 0.004185355528533618,
+          "region_label": "BRD9 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/-",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 0.862116813659668,
+          "alt_value": 0.8606958389282227,
+          "raw_score": -0.0011013357314213876,
+          "region_label": "ZDHHC11 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/-",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 5706.6845703125,
+          "alt_value": 5714.4736328125,
+          "raw_score": 0.001967449523793324,
+          "region_label": "MRPL36 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/-",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 45.98675537109375,
+          "alt_value": 46.128761291503906,
+          "raw_score": 0.0043536156393543645,
+          "region_label": "NDUFS6 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE CL:0002566/-",
+          "assay_type": "CAGE",
+          "cell_type": "dark",
+          "layer": "tss_activity",
+          "ref_value": 87.77793884277344,
+          "alt_value": 87.21366882324219,
+          "raw_score": -0.00919899341832941,
+          "region_label": "ZDHHC11B TSS"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.002930333837866783,
+          "alt_value": 0.0031029293313622475,
+          "raw_score": 0.042976821365737806,
+          "region_label": "TERT (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.045629964155309344,
+          "alt_value": 0.04565229836632224,
+          "raw_score": 0.00047885226699958134,
+          "region_label": "CLPTM1L (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.04466660817464193,
+          "alt_value": 0.04487850268681844,
+          "raw_score": 0.0046292999942447715,
+          "region_label": "SLC6A18 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.3518846829732259,
+          "alt_value": 0.34945881366729736,
+          "raw_score": -0.006898134231538698,
+          "region_label": "SLC6A19 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.00173445774570984,
+          "alt_value": 0.0017368791296201594,
+          "raw_score": 0.0008851160597765812,
+          "region_label": "SLC6A3 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.18046920640128,
+          "alt_value": 0.18057571138654435,
+          "raw_score": 0.0005867317409025449,
+          "region_label": "LPCAT1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.5628039240837097,
+          "alt_value": 0.5625466903050741,
+          "raw_score": -0.0004563509875573019,
+          "region_label": "SLC12A7 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 22.834852045232598,
+          "alt_value": 22.789938493208453,
+          "raw_score": -0.0019687366128939877,
+          "region_label": "NKD2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 163.93079082782452,
+          "alt_value": 163.88861083984375,
+          "raw_score": -0.00025733517091294653,
+          "region_label": "TRIP13 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.12045742483700023,
+          "alt_value": 0.12033793505500345,
+          "raw_score": -0.0009842839805248246,
+          "region_label": "BRD9 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.008870498778728338,
+          "alt_value": 0.008844428480817722,
+          "raw_score": -0.00264472830797858,
+          "region_label": "ZDHHC11 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.2223962148030599,
+          "alt_value": 0.22304534912109375,
+          "raw_score": 0.0029015398916405997,
+          "region_label": "MRPL36 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 616.0959167480469,
+          "alt_value": 616.38232421875,
+          "raw_score": 0.00046476603249056447,
+          "region_label": "NDUFS6 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.006417274475097656,
+          "alt_value": 0.006384372711181641,
+          "raw_score": -0.004445696845997888,
+          "region_label": "ZDHHC11B (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 13.674903750419617,
+          "alt_value": 14.126633405685425,
+          "raw_score": 0.032497261549848847,
+          "region_label": "TERT (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 668.0549172794117,
+          "alt_value": 669.0851835363052,
+          "raw_score": 0.001540997714668909,
+          "region_label": "CLPTM1L (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.010993039856354395,
+          "alt_value": 0.01099683220187823,
+          "raw_score": 0.0003161622159732474,
+          "region_label": "SLC6A18 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.002392343245446682,
+          "alt_value": 0.002374681644141674,
+          "raw_score": -0.005219913239872504,
+          "region_label": "SLC6A19 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.7765515692093793,
+          "alt_value": 0.7707647435805377,
+          "raw_score": -0.007470201522658718,
+          "region_label": "SLC6A3 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 1110.036342075893,
+          "alt_value": 1110.5413643973213,
+          "raw_score": 0.0004548562960055027,
+          "region_label": "LPCAT1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 299.91355387369794,
+          "alt_value": 299.7157389322917,
+          "raw_score": -0.0006597886099527877,
+          "region_label": "SLC12A7 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.016291488300670277,
+          "alt_value": 0.01630360429937189,
+          "raw_score": 0.0007004461203244926,
+          "region_label": "NKD2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.020292736016787015,
+          "alt_value": 0.020237716344686654,
+          "raw_score": -0.0025873086100897114,
+          "region_label": "TRIP13 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 206.98119399126838,
+          "alt_value": 207.24440630744485,
+          "raw_score": 0.0012708585879475463,
+          "region_label": "BRD9 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 2.836458059457632,
+          "alt_value": 2.8299026489257812,
+          "raw_score": -0.002312983873703741,
+          "region_label": "ZDHHC11 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 745.5089213053385,
+          "alt_value": 745.2984466552734,
+          "raw_score": -0.00028236293115243975,
+          "region_label": "MRPL36 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 0.0881035178899765,
+          "alt_value": 0.08822981268167496,
+          "raw_score": 0.0014163904459991428,
+          "region_label": "NDUFS6 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/CL:2000045 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "foreskin",
+          "layer": "gene_expression",
+          "ref_value": 1.489471435546875,
+          "alt_value": 1.486541748046875,
+          "raw_score": -0.0019675456517559927,
+          "region_label": "ZDHHC11B (exons)"
+        }
+      ]
+    }
+  }
+}

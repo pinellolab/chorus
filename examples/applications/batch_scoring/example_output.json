@@ -1,0 +1,79 @@
+{
+  "num_variants": 5,
+  "scores": [
+    {
+      "chrom": "chr1",
+      "position": 109274968,
+      "ref": "G",
+      "alt": "T",
+      "variant_id": "rs12740374",
+      "max_effect": 0.867,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE:HepG2",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.867,
+        "histone_marks": 0.425,
+        "tss_activity": 0.612,
+        "gene_expression": 0.334
+      }
+    },
+    {
+      "chrom": "chr1",
+      "position": 109275684,
+      "ref": "C",
+      "alt": "T",
+      "variant_id": "rs629301",
+      "max_effect": -0.523,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE:HepG2",
+      "per_layer_scores": {
+        "chromatin_accessibility": -0.198,
+        "tss_activity": -0.523,
+        "gene_expression": -0.217
+      }
+    },
+    {
+      "chrom": "chr1",
+      "position": 109272715,
+      "ref": "A",
+      "alt": "G",
+      "variant_id": "rs12037222",
+      "max_effect": 0.312,
+      "top_layer": "histone_marks",
+      "top_track": "H3K27ac:HepG2",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.105,
+        "histone_marks": 0.312,
+        "tss_activity": 0.087
+      }
+    },
+    {
+      "chrom": "chr1",
+      "position": 109278590,
+      "ref": "G",
+      "alt": "A",
+      "variant_id": "rs2228603",
+      "max_effect": -0.178,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE:HepG2",
+      "per_layer_scores": {
+        "chromatin_accessibility": -0.178,
+        "tss_activity": -0.054
+      }
+    },
+    {
+      "chrom": "chr1",
+      "position": 109271200,
+      "ref": "T",
+      "alt": "C",
+      "variant_id": "rs7528419",
+      "max_effect": 0.089,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE:HepG2",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.089,
+        "tss_activity": 0.023
+      }
+    }
+  ]
+}

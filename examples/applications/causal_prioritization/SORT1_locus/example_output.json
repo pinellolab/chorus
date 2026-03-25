@@ -1,0 +1,253 @@
+{
+  "sentinel": "rs12740374",
+  "oracle": "oracle",
+  "gene_name": "SORT1",
+  "population": "CEU",
+  "cell_types": [
+    "HepG2"
+  ],
+  "n_variants": 11,
+  "weights": {
+    "max_effect": 0.35,
+    "n_layers": 0.25,
+    "convergence": 0.2,
+    "ref_activity": 0.2
+  },
+  "top_candidate": {
+    "variant_id": "rs12740374",
+    "composite": 0.9696720573793194,
+    "max_effect": 0.44513575852065046,
+    "n_layers_affected": 3,
+    "convergence": 1.0,
+    "top_layer": "chromatin_accessibility"
+  },
+  "rankings": [
+    {
+      "variant_id": "rs12740374",
+      "chrom": "chr1",
+      "position": 109274968,
+      "ref": "G",
+      "alt": "T",
+      "r2": 1.0,
+      "is_sentinel": true,
+      "composite": 0.9697,
+      "max_effect": 0.4451,
+      "n_layers_affected": 3,
+      "convergence": 1.0,
+      "ref_activity": 7098.9417,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/EFO:0001187 DNase-seq/.",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.4451,
+        "histone_marks": 0.1792,
+        "tss_activity": 0.253
+      }
+    },
+    {
+      "variant_id": "rs4970836",
+      "chrom": "chr1",
+      "position": 109279175,
+      "ref": "G",
+      "alt": "A",
+      "r2": 0.907,
+      "is_sentinel": false,
+      "composite": 0.6362,
+      "max_effect": -0.3982,
+      "n_layers_affected": 1,
+      "convergence": 1.0,
+      "ref_activity": 1663.4838,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE EFO:0001187/-",
+      "per_layer_scores": {
+        "chromatin_accessibility": -0.0417,
+        "histone_marks": -0.0155,
+        "tss_activity": -0.3982
+      }
+    },
+    {
+      "variant_id": "rs1624712",
+      "chrom": "chr1",
+      "position": 109275908,
+      "ref": "C",
+      "alt": "T",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "composite": 0.529,
+      "max_effect": 0.1207,
+      "n_layers_affected": 1,
+      "convergence": 1.0,
+      "ref_activity": 6309.1199,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/EFO:0001187 DNase-seq/.",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.1207,
+        "histone_marks": 0.0294,
+        "tss_activity": 0.0322
+      }
+    },
+    {
+      "variant_id": "rs660240",
+      "chrom": "chr1",
+      "position": 109275216,
+      "ref": "T",
+      "alt": "C",
+      "r2": 0.9509,
+      "is_sentinel": false,
+      "composite": 0.259,
+      "max_effect": 0.075,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 8367.8383,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE EFO:0001187/-",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.0705,
+        "histone_marks": 0.0323,
+        "tss_activity": 0.075
+      }
+    },
+    {
+      "variant_id": "rs142678968",
+      "chrom": "chr1",
+      "position": 109275536,
+      "ref": "C",
+      "alt": "T",
+      "r2": 0.9509,
+      "is_sentinel": false,
+      "composite": 0.2134,
+      "max_effect": -0.0437,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 7491.5024,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE EFO:0001187/+",
+      "per_layer_scores": {
+        "chromatin_accessibility": -0.0229,
+        "histone_marks": -0.0012,
+        "tss_activity": -0.0437
+      }
+    },
+    {
+      "variant_id": "rs1626484",
+      "chrom": "chr1",
+      "position": 109275684,
+      "ref": "G",
+      "alt": "T",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "composite": 0.2128,
+      "max_effect": 0.0662,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 6727.6557,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE EFO:0001187/+",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.0092,
+        "histone_marks": 0.0013,
+        "tss_activity": 0.0662
+      }
+    },
+    {
+      "variant_id": "rs7528419",
+      "chrom": "chr1",
+      "position": 109274570,
+      "ref": "A",
+      "alt": "G",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "composite": 0.1937,
+      "max_effect": 0.0235,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 7333.0288,
+      "top_layer": "histone_marks",
+      "top_track": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.0144,
+        "histone_marks": 0.0235,
+        "tss_activity": 0.0171
+      }
+    },
+    {
+      "variant_id": "rs56960352",
+      "chrom": "chr1",
+      "position": 109278685,
+      "ref": "G",
+      "alt": "T",
+      "r2": 0.907,
+      "is_sentinel": false,
+      "composite": 0.0635,
+      "max_effect": -0.0174,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 2085.8937,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/EFO:0001187 DNase-seq/.",
+      "per_layer_scores": {
+        "chromatin_accessibility": -0.0174,
+        "histone_marks": -0.0052,
+        "tss_activity": 0.0134
+      }
+    },
+    {
+      "variant_id": "rs1277930",
+      "chrom": "chr1",
+      "position": 109279521,
+      "ref": "G",
+      "alt": "A",
+      "r2": 0.907,
+      "is_sentinel": false,
+      "composite": 0.0522,
+      "max_effect": -0.0237,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1402.2493,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE EFO:0001187/-",
+      "per_layer_scores": {
+        "chromatin_accessibility": -0.0061,
+        "histone_marks": -0.0054,
+        "tss_activity": -0.0237
+      }
+    },
+    {
+      "variant_id": "rs599839",
+      "chrom": "chr1",
+      "position": 109279544,
+      "ref": "G",
+      "alt": "A",
+      "r2": 0.907,
+      "is_sentinel": false,
+      "composite": 0.0432,
+      "max_effect": 0.0132,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1372.9547,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE EFO:0001187/-",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.0042,
+        "histone_marks": 0.0036,
+        "tss_activity": 0.0132
+      }
+    },
+    {
+      "variant_id": "rs602633",
+      "chrom": "chr1",
+      "position": 109278889,
+      "ref": "T",
+      "alt": "G",
+      "r2": 0.8582,
+      "is_sentinel": false,
+      "composite": 0.0,
+      "max_effect": 0.0,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 0.0,
+      "top_layer": "error",
+      "top_track": "Command '['mamba', 'run', '-n', 'chorus-alphagenome', 'python', '/tmp/tmpffpl3q51.py']' timed out after 600 seconds",
+      "per_layer_scores": {}
+    }
+  ]
+}

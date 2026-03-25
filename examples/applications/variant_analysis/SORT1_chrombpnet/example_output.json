@@ -1,0 +1,43 @@
+{
+  "variant": {
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "T"
+    ]
+  },
+  "oracle": "chrombpnet",
+  "gene_name": "CELSR2",
+  "nearby_genes": [
+    "CELSR2"
+  ],
+  "alleles": {
+    "T": {
+      "scores_by_layer": {
+        "chromatin_accessibility": [
+          {
+            "assay_id": "ATAC:HepG2",
+            "assay_type": "ATAC",
+            "cell_type": "HepG2",
+            "layer": "chromatin_accessibility",
+            "ref_value": 675.668701171875,
+            "alt_value": 917.7987060546875,
+            "raw_score": 0.4412991657074812
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "ATAC:HepG2",
+          "assay_type": "ATAC",
+          "cell_type": "HepG2",
+          "layer": "chromatin_accessibility",
+          "ref_value": 675.668701171875,
+          "alt_value": 917.7987060546875,
+          "raw_score": 0.4412991657074812
+        }
+      ]
+    }
+  }
+}

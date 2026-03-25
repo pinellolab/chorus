@@ -1,0 +1,390 @@
+{
+  "variant": {
+    "chrom": "chr2",
+    "position": 60490908,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "T"
+    ]
+  },
+  "oracle": "alphagenome",
+  "gene_name": "BCL11A",
+  "nearby_genes": [
+    "BCL11A",
+    "PAPOLG",
+    "REL",
+    "PUS10"
+  ],
+  "alleles": {
+    "alt_1": {
+      "scores_by_layer": {
+        "chromatin_accessibility": [
+          {
+            "assay_id": "DNASE/EFO:0002067 DNase-seq/.",
+            "assay_type": "DNASE",
+            "cell_type": "K562",
+            "layer": "chromatin_accessibility",
+            "ref_value": 9.574264526367188,
+            "alt_value": 8.767005920410156,
+            "raw_score": -0.11456904648405458
+          }
+        ],
+        "histone_marks": [
+          {
+            "assay_id": "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.",
+            "assay_type": "CHIP",
+            "cell_type": "K562",
+            "layer": "histone_marks",
+            "ref_value": 1261.0,
+            "alt_value": 1260.75,
+            "raw_score": -0.00028582368412240135
+          }
+        ],
+        "tss_activity": [
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.1328452229499817,
+            "alt_value": 0.12629586458206177,
+            "raw_score": -0.008364907673296985,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 2.161742687225342,
+            "alt_value": 2.156944513320923,
+            "raw_score": -0.0021910573535492647,
+            "region_label": "BCL11A TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 2581.75830078125,
+            "alt_value": 2587.760986328125,
+            "raw_score": 0.0033491313012109594,
+            "region_label": "PAPOLG TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 1873.264404296875,
+            "alt_value": 1874.8717041015625,
+            "raw_score": 0.0012366717006558109,
+            "region_label": "REL TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 1.8548154830932617,
+            "alt_value": 1.6960983276367188,
+            "raw_score": -0.08252438900994871,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 422.5411682128906,
+            "alt_value": 425.7286682128906,
+            "raw_score": 0.010816829642126883,
+            "region_label": "BCL11A TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 18.980060577392578,
+            "alt_value": 18.971466064453125,
+            "raw_score": -0.0006207152732375413,
+            "region_label": "PAPOLG TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 68.9577865600586,
+            "alt_value": 68.88512420654297,
+            "raw_score": -0.001499248348532698,
+            "region_label": "REL TSS"
+          }
+        ],
+        "gene_expression": [
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.029452356975525618,
+            "alt_value": 0.029263095930218697,
+            "raw_score": -0.00623438183387158,
+            "region_label": "BCL11A (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 174.9046075994318,
+            "alt_value": 175.1910067471591,
+            "raw_score": 0.001636110615316788,
+            "region_label": "PAPOLG (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 433.2139365456321,
+            "alt_value": 432.47790111194956,
+            "raw_score": -0.0017004524671918578,
+            "region_label": "REL (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 2.6250965313778982,
+            "alt_value": 2.6204164574543634,
+            "raw_score": -0.0017837307594571724,
+            "region_label": "PUS10 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 13.256476640701294,
+            "alt_value": 13.187996208667755,
+            "raw_score": -0.005178806676981134,
+            "region_label": "BCL11A (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.14415678923780267,
+            "alt_value": 0.14445367455482483,
+            "raw_score": 0.002043184656389756,
+            "region_label": "PAPOLG (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 2.9662307392467153,
+            "alt_value": 2.95920484716242,
+            "raw_score": -0.002370635757160642,
+            "region_label": "REL (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 43.711934407552086,
+            "alt_value": 43.73082817925347,
+            "raw_score": 0.0004321304429558434,
+            "region_label": "PUS10 (exons)"
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "DNASE/EFO:0002067 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "K562",
+          "layer": "chromatin_accessibility",
+          "ref_value": 9.574264526367188,
+          "alt_value": 8.767005920410156,
+          "raw_score": -0.11456904648405458
+        },
+        {
+          "assay_id": "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "K562",
+          "layer": "histone_marks",
+          "ref_value": 1261.0,
+          "alt_value": 1260.75,
+          "raw_score": -0.00028582368412240135
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.1328452229499817,
+          "alt_value": 0.12629586458206177,
+          "raw_score": -0.008364907673296985,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 2.161742687225342,
+          "alt_value": 2.156944513320923,
+          "raw_score": -0.0021910573535492647,
+          "region_label": "BCL11A TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 2581.75830078125,
+          "alt_value": 2587.760986328125,
+          "raw_score": 0.0033491313012109594,
+          "region_label": "PAPOLG TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 1873.264404296875,
+          "alt_value": 1874.8717041015625,
+          "raw_score": 0.0012366717006558109,
+          "region_label": "REL TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 1.8548154830932617,
+          "alt_value": 1.6960983276367188,
+          "raw_score": -0.08252438900994871,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 422.5411682128906,
+          "alt_value": 425.7286682128906,
+          "raw_score": 0.010816829642126883,
+          "region_label": "BCL11A TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 18.980060577392578,
+          "alt_value": 18.971466064453125,
+          "raw_score": -0.0006207152732375413,
+          "region_label": "PAPOLG TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 68.9577865600586,
+          "alt_value": 68.88512420654297,
+          "raw_score": -0.001499248348532698,
+          "region_label": "REL TSS"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.029452356975525618,
+          "alt_value": 0.029263095930218697,
+          "raw_score": -0.00623438183387158,
+          "region_label": "BCL11A (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 174.9046075994318,
+          "alt_value": 175.1910067471591,
+          "raw_score": 0.001636110615316788,
+          "region_label": "PAPOLG (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 433.2139365456321,
+          "alt_value": 432.47790111194956,
+          "raw_score": -0.0017004524671918578,
+          "region_label": "REL (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 2.6250965313778982,
+          "alt_value": 2.6204164574543634,
+          "raw_score": -0.0017837307594571724,
+          "region_label": "PUS10 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 13.256476640701294,
+          "alt_value": 13.187996208667755,
+          "raw_score": -0.005178806676981134,
+          "region_label": "BCL11A (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.14415678923780267,
+          "alt_value": 0.14445367455482483,
+          "raw_score": 0.002043184656389756,
+          "region_label": "PAPOLG (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 2.9662307392467153,
+          "alt_value": 2.95920484716242,
+          "raw_score": -0.002370635757160642,
+          "region_label": "REL (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 43.711934407552086,
+          "alt_value": 43.73082817925347,
+          "raw_score": 0.0004321304429558434,
+          "region_label": "PUS10 (exons)"
+        }
+      ]
+    }
+  }
+}

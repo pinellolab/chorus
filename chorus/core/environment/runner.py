@@ -1,6 +1,7 @@
 """Runner for executing code in oracle-specific environments."""
 
 import os
+import shutil
 import sys
 import json
 import pickle
@@ -11,6 +12,29 @@ from typing import Any, Dict, Optional, Callable
 import shlex
 
 logger = logging.getLogger(__name__)
+
+
+def _find_mamba() -> str:
+    """Locate the mamba executable, falling back to conda."""
+    exe = shutil.which("mamba")
+    if exe:
+        return exe
+    # Common install locations
+    for candidate in [
+        "/data/pinello/SHARED_SOFTWARE/miniforge3/bin/mamba",
+        os.path.expanduser("~/miniforge3/bin/mamba"),
+        os.path.expanduser("~/mambaforge/bin/mamba"),
+    ]:
+        if os.path.isfile(candidate):
+            return candidate
+    # Fall back to conda
+    exe = shutil.which("conda")
+    if exe:
+        return exe
+    raise FileNotFoundError(
+        "Neither mamba nor conda found on PATH. "
+        "Set PATH to include your miniforge3/bin directory."
+    )
 
 
 ORACLE_CLASS_MAP = {
@@ -105,7 +129,8 @@ except Exception as e:
         try:
             # Run the script file instead of passing code as argument
             env_name = self.env_manager.get_environment_name(oracle)
-            running_command = shlex.split(f"mamba run -n {env_name} python {code_path}")
+            mamba_exe = getattr(self.env_manager, 'conda_exe', None) or _find_mamba()
+            running_command = shlex.split(f"{mamba_exe} run -n {env_name} python {code_path}")
 
             env = os.environ.copy()
             

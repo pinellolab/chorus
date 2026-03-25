@@ -1,0 +1,4014 @@
+{
+  "variant": {
+    "chrom": "chr11",
+    "position": 5254983,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "C"
+    ]
+  },
+  "oracle": "alphagenome",
+  "gene_name": "HBG2",
+  "nearby_genes": [
+    "HBG2",
+    "ENSG00000284931",
+    "HBG1",
+    "HBD",
+    "HBB",
+    "OR51B4",
+    "OR51V1",
+    "OR51B2",
+    "OR51B6",
+    "OR52A1",
+    "OR52A5",
+    "HBE1",
+    "OR51M1",
+    "OR51B5",
+    "OR51Q1",
+    "OR52E1",
+    "OR51I1",
+    "OR52E2",
+    "OR51I2",
+    "OR52J3",
+    "ENSG00000239920",
+    "OR52D1",
+    "UBQLN3",
+    "OR51L1",
+    "UBQLNL",
+    "OR52H1",
+    "OR51A2",
+    "OR51A4",
+    "OR52B6",
+    "OR51G1",
+    "OR51G2",
+    "OR51A7",
+    "TRIM6",
+    "TRIM6-TRIM34",
+    "OR51T1",
+    "TRIM34",
+    "OR51S1",
+    "MMP26",
+    "OR51F2",
+    "OR52R1",
+    "TRIM22",
+    "OR52P1",
+    "OR56B1",
+    "OR51F1",
+    "OR52N4",
+    "OR56B2P",
+    "OR52N5",
+    "TRIM5"
+  ],
+  "alleles": {
+    "alt_1": {
+      "scores_by_layer": {
+        "chromatin_accessibility": [
+          {
+            "assay_id": "DNASE/EFO:0002067 DNase-seq/.",
+            "assay_type": "DNASE",
+            "cell_type": "K562",
+            "layer": "chromatin_accessibility",
+            "ref_value": 307.0872802734375,
+            "alt_value": 308.8951416015625,
+            "raw_score": 0.008441016834191937
+          }
+        ],
+        "tf_binding": [
+          {
+            "assay_id": "CHIP_TF/EFO:0002067 TF ChIP-seq CTCF/.",
+            "assay_type": "CHIP",
+            "cell_type": "K562",
+            "layer": "tf_binding",
+            "ref_value": 544.5,
+            "alt_value": 483.25,
+            "raw_score": -0.17182714772035354
+          }
+        ],
+        "histone_marks": [
+          {
+            "assay_id": "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.",
+            "assay_type": "CHIP",
+            "cell_type": "K562",
+            "layer": "histone_marks",
+            "ref_value": 8482.0,
+            "alt_value": 8228.0,
+            "raw_score": -0.04385743901816638
+          }
+        ],
+        "tss_activity": [
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 48.12591552734375,
+            "alt_value": 48.814483642578125,
+            "raw_score": 0.020080975048282195,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 112.0510025024414,
+            "alt_value": 104.59207153320312,
+            "raw_score": -0.09847227270439694,
+            "region_label": "HBG2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 112.1247329711914,
+            "alt_value": 104.66775512695312,
+            "raw_score": -0.09837918614117769,
+            "region_label": "ENSG00000284931 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 54.33795166015625,
+            "alt_value": 53.28546142578125,
+            "raw_score": -0.02770337205966231,
+            "region_label": "HBG1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 30.680572509765625,
+            "alt_value": 30.486434936523438,
+            "raw_score": -0.00886799002702728,
+            "region_label": "HBD TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 10.255176544189453,
+            "alt_value": 10.257465362548828,
+            "raw_score": 0.00029335223485737956,
+            "region_label": "HBB TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 9.574081420898438,
+            "alt_value": 9.596649169921875,
+            "raw_score": 0.003075792948461574,
+            "region_label": "OR51B4 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 1.0173215866088867,
+            "alt_value": 1.0134506225585938,
+            "raw_score": -0.002770993777804583,
+            "region_label": "OR51V1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 3.4606399536132812,
+            "alt_value": 3.4741334915161133,
+            "raw_score": 0.004357597903540069,
+            "region_label": "OR51B2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 5.61614990234375,
+            "alt_value": 5.620384216308594,
+            "raw_score": 0.0009230247000107393,
+            "region_label": "OR51B6 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 2.098123550415039,
+            "alt_value": 2.0907363891601562,
+            "raw_score": -0.003444067590494913,
+            "region_label": "OR52A1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.3941974639892578,
+            "alt_value": 0.39275503158569336,
+            "raw_score": -0.0014933805040158337,
+            "region_label": "OR52A5 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 144.4178466796875,
+            "alt_value": 143.6826629638672,
+            "raw_score": -0.0073122806498032164,
+            "region_label": "HBE1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 10.863645553588867,
+            "alt_value": 10.877828598022461,
+            "raw_score": 0.0017237186008358788,
+            "region_label": "OR51M1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 6.722770690917969,
+            "alt_value": 6.759788513183594,
+            "raw_score": 0.006898798792745282,
+            "region_label": "OR51B5 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 10.41268539428711,
+            "alt_value": 10.476219177246094,
+            "raw_score": 0.008009130251245328,
+            "region_label": "OR51Q1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.35742664337158203,
+            "alt_value": 0.3558354377746582,
+            "raw_score": -0.0016921510847374395,
+            "region_label": "OR52E1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 2.9650535583496094,
+            "alt_value": 2.986675262451172,
+            "raw_score": 0.007845740936047325,
+            "region_label": "OR51I1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.36838531494140625,
+            "alt_value": 0.36609315872192383,
+            "raw_score": -0.0024186573177794237,
+            "region_label": "OR52E2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 2.6786346435546875,
+            "alt_value": 2.6871719360351562,
+            "raw_score": 0.003344294995112857,
+            "region_label": "OR51I2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.7869620323181152,
+            "alt_value": 0.7824559211730957,
+            "raw_score": -0.0036425813624859334,
+            "region_label": "OR52J3 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 2.3267345428466797,
+            "alt_value": 2.3336710929870605,
+            "raw_score": 0.0030050212115260294,
+            "region_label": "ENSG00000239920 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 5.7715911865234375,
+            "alt_value": 5.79345703125,
+            "raw_score": 0.004651037367102732,
+            "region_label": "OR52D1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 2.1126413345336914,
+            "alt_value": 2.123843193054199,
+            "raw_score": 0.005182690037819357,
+            "region_label": "UBQLN3 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.4541759490966797,
+            "alt_value": 0.4529414176940918,
+            "raw_score": -0.0012253048051947748,
+            "region_label": "OR51L1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.5759487152099609,
+            "alt_value": 0.577216625213623,
+            "raw_score": 0.0011602357476880145,
+            "region_label": "UBQLNL TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.37097835540771484,
+            "alt_value": 0.3720993995666504,
+            "raw_score": 0.0011792045893144181,
+            "region_label": "OR52H1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.2269153594970703,
+            "alt_value": 0.22651052474975586,
+            "raw_score": -0.0004761122733570177,
+            "region_label": "OR51A2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.22566425800323486,
+            "alt_value": 0.22480905055999756,
+            "raw_score": -0.0010069920639986245,
+            "region_label": "OR51A4 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 1.507674217224121,
+            "alt_value": 1.5189170837402344,
+            "raw_score": 0.006453699473548129,
+            "region_label": "OR52B6 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.3724098205566406,
+            "alt_value": 0.37185096740722656,
+            "raw_score": -0.0005875933380139269,
+            "region_label": "OR51G1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.31256103515625,
+            "alt_value": 0.31232547760009766,
+            "raw_score": -0.00025893517099938556,
+            "region_label": "OR51G2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.5114461183547974,
+            "alt_value": 0.5102205872535706,
+            "raw_score": -0.001170259933605629,
+            "region_label": "OR51A7 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 2035.898193359375,
+            "alt_value": 2044.5228271484375,
+            "raw_score": 0.006095762708415504,
+            "region_label": "TRIM6 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 2035.3955078125,
+            "alt_value": 2044.0120849609375,
+            "raw_score": 0.006091580567599149,
+            "region_label": "TRIM6-TRIM34 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 2.0015759468078613,
+            "alt_value": 2.0104050636291504,
+            "raw_score": 0.0042374492496741484,
+            "region_label": "OR51T1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 548.6832275390625,
+            "alt_value": 546.7868041992188,
+            "raw_score": -0.004985946206939594,
+            "region_label": "TRIM34 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.9647917747497559,
+            "alt_value": 0.9652533531188965,
+            "raw_score": 0.00033888507919711927,
+            "region_label": "OR51S1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.4858829379081726,
+            "alt_value": 0.48451194167137146,
+            "raw_score": -0.0013317620670315674,
+            "region_label": "MMP26 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.6661419868469238,
+            "alt_value": 0.6659493446350098,
+            "raw_score": -0.00016681653439571997,
+            "region_label": "OR51F2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.4380035400390625,
+            "alt_value": 0.43828916549682617,
+            "raw_score": 0.0002865288585050697,
+            "region_label": "OR52R1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 288.68609619140625,
+            "alt_value": 289.98193359375,
+            "raw_score": 0.006439139755433157,
+            "region_label": "TRIM22 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.30611562728881836,
+            "alt_value": 0.3075566291809082,
+            "raw_score": 0.0015908088622247603,
+            "region_label": "OR52P1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.20318329334259033,
+            "alt_value": 0.20282793045043945,
+            "raw_score": -0.00042616616321666844,
+            "region_label": "OR56B1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.37215185165405273,
+            "alt_value": 0.3716278076171875,
+            "raw_score": -0.0005510907115527698,
+            "region_label": "OR51F1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.1454160213470459,
+            "alt_value": 0.1453479528427124,
+            "raw_score": -8.573741754107162e-05,
+            "region_label": "OR52N4 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.29191720485687256,
+            "alt_value": 0.2907872200012207,
+            "raw_score": -0.001262415966658202,
+            "region_label": "OR56B2P TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.05057266354560852,
+            "alt_value": 0.05051109194755554,
+            "raw_score": -8.455544807653426e-05,
+            "region_label": "OR52N5 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 14.657630920410156,
+            "alt_value": 14.607864379882812,
+            "raw_score": -0.004592794783394528,
+            "region_label": "TRIM5 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 9231.384765625,
+            "alt_value": 8875.34375,
+            "raw_score": -0.05673781129736118,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 9629.505859375,
+            "alt_value": 9229.51953125,
+            "raw_score": -0.06119972925933594,
+            "region_label": "HBG2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 9510.140625,
+            "alt_value": 9124.3193359375,
+            "raw_score": -0.05974332073832643,
+            "region_label": "ENSG00000284931 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 5810.87255859375,
+            "alt_value": 5748.87353515625,
+            "raw_score": -0.015472842994183831,
+            "region_label": "HBG1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 5055.337890625,
+            "alt_value": 5015.07421875,
+            "raw_score": -0.011534180396633106,
+            "region_label": "HBD TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 8225.97265625,
+            "alt_value": 8306.9677734375,
+            "raw_score": 0.01413397151447799,
+            "region_label": "HBB TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 39.45655822753906,
+            "alt_value": 39.50736999511719,
+            "raw_score": 0.0018108285093661005,
+            "region_label": "OR51B4 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.9867992401123047,
+            "alt_value": 0.9881887435913086,
+            "raw_score": 0.0010086218465696212,
+            "region_label": "OR51V1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 16.2166748046875,
+            "alt_value": 16.219383239746094,
+            "raw_score": 0.00022693920602757085,
+            "region_label": "OR51B2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 10.106414794921875,
+            "alt_value": 10.13482666015625,
+            "raw_score": 0.003685916494835668,
+            "region_label": "OR51B6 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 8.952871322631836,
+            "alt_value": 8.881595611572266,
+            "raw_score": -0.010368774502686673,
+            "region_label": "OR52A1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.8759660720825195,
+            "alt_value": 0.8765792846679688,
+            "raw_score": 0.00047150863203896954,
+            "region_label": "OR52A5 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 11450.29296875,
+            "alt_value": 11381.78515625,
+            "raw_score": -0.008656901090762751,
+            "region_label": "HBE1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 32.79803466796875,
+            "alt_value": 32.698944091796875,
+            "raw_score": -0.004235969910700598,
+            "region_label": "OR51M1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 118.07344055175781,
+            "alt_value": 119.38265991210938,
+            "raw_score": 0.015775944702363418,
+            "region_label": "OR51B5 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 19.47711181640625,
+            "alt_value": 19.582199096679688,
+            "raw_score": 0.00738488911677987,
+            "region_label": "OR51Q1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.19403862953186035,
+            "alt_value": 0.1940387487411499,
+            "raw_score": 1.44034403918884e-07,
+            "region_label": "OR52E1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 22.703216552734375,
+            "alt_value": 22.873504638671875,
+            "raw_score": 0.010327522370640317,
+            "region_label": "OR51I1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.8706338405609131,
+            "alt_value": 0.8652164936065674,
+            "raw_score": -0.004184099663999356,
+            "region_label": "OR52E2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 15.722305297851562,
+            "alt_value": 15.815078735351562,
+            "raw_score": 0.007981786502988471,
+            "region_label": "OR51I2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.2369375228881836,
+            "alt_value": 0.23604130744934082,
+            "raw_score": -0.0010456746413914134,
+            "region_label": "OR52J3 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 8.41139030456543,
+            "alt_value": 8.4163818359375,
+            "raw_score": 0.0007649612149439293,
+            "region_label": "ENSG00000239920 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 30.749038696289062,
+            "alt_value": 30.816299438476562,
+            "raw_score": 0.0030531348770760666,
+            "region_label": "OR52D1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 35.30860900878906,
+            "alt_value": 35.844696044921875,
+            "raw_score": 0.02114529079277683,
+            "region_label": "UBQLN3 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.37747788429260254,
+            "alt_value": 0.3767375946044922,
+            "raw_score": -0.0007755473714825494,
+            "region_label": "OR51L1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 2.8238115310668945,
+            "alt_value": 2.8297624588012695,
+            "raw_score": 0.0022434945223151976,
+            "region_label": "UBQLNL TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 1.589127540588379,
+            "alt_value": 1.5865211486816406,
+            "raw_score": -0.0014530464573939248,
+            "region_label": "OR52H1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.42684364318847656,
+            "alt_value": 0.4271831512451172,
+            "raw_score": 0.00034323895831874624,
+            "region_label": "OR51A2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.1804647445678711,
+            "alt_value": 0.17990326881408691,
+            "raw_score": -0.000686366105836139,
+            "region_label": "OR51A4 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 3.0433311462402344,
+            "alt_value": 3.0569000244140625,
+            "raw_score": 0.004833385899612454,
+            "region_label": "OR52B6 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.6132817268371582,
+            "alt_value": 0.611931324005127,
+            "raw_score": -0.0012081183798468653,
+            "region_label": "OR51G1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.2037513256072998,
+            "alt_value": 0.20340490341186523,
+            "raw_score": -0.00041524648947381334,
+            "region_label": "OR51G2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.2664233446121216,
+            "alt_value": 0.2662738561630249,
+            "raw_score": -0.00017030558912952258,
+            "region_label": "OR51A7 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 95.1107177734375,
+            "alt_value": 95.34194946289062,
+            "raw_score": 0.0034667949993922196,
+            "region_label": "TRIM6 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 95.31851196289062,
+            "alt_value": 95.51138305664062,
+            "raw_score": 0.002886007517110893,
+            "region_label": "TRIM6-TRIM34 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 1.1191577911376953,
+            "alt_value": 1.125964641571045,
+            "raw_score": 0.0046265887196684586,
+            "region_label": "OR51T1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 12.286687850952148,
+            "alt_value": 12.249246597290039,
+            "raw_score": -0.004071184825540966,
+            "region_label": "TRIM34 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.8495025634765625,
+            "alt_value": 0.8502321243286133,
+            "raw_score": 0.000568978008283839,
+            "region_label": "OR51S1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.16463182866573334,
+            "alt_value": 0.16477787494659424,
+            "raw_score": 0.00018090441117988112,
+            "region_label": "MMP26 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.2256467342376709,
+            "alt_value": 0.22569990158081055,
+            "raw_score": 6.258132666834254e-05,
+            "region_label": "OR51F2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.5248284339904785,
+            "alt_value": 0.5248279571533203,
+            "raw_score": -4.5115286126101057e-07,
+            "region_label": "OR52R1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.5982792377471924,
+            "alt_value": 0.599478006362915,
+            "raw_score": 0.0010816691112357697,
+            "region_label": "TRIM22 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.1310889720916748,
+            "alt_value": 0.13138103485107422,
+            "raw_score": 0.00037247565330057855,
+            "region_label": "OR52P1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.08628225326538086,
+            "alt_value": 0.08612525463104248,
+            "raw_score": -0.00020852547301314624,
+            "region_label": "OR56B1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.27845025062561035,
+            "alt_value": 0.2781798839569092,
+            "raw_score": -0.0003051334241388582,
+            "region_label": "OR51F1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.14862722158432007,
+            "alt_value": 0.14857923984527588,
+            "raw_score": -6.026712717778535e-05,
+            "region_label": "OR52N4 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.1567164659500122,
+            "alt_value": 0.15632951259613037,
+            "raw_score": -0.0004827017664900705,
+            "region_label": "OR56B2P TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.7036600112915039,
+            "alt_value": 0.7048766613006592,
+            "raw_score": 0.0010299170452611548,
+            "region_label": "OR52N5 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 1038.7059326171875,
+            "alt_value": 1036.4244384765625,
+            "raw_score": -0.0031692778190396294,
+            "region_label": "TRIM5 TSS"
+          }
+        ],
+        "gene_expression": [
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 5.725729465484619,
+            "alt_value": 5.481606960296631,
+            "raw_score": -0.04356388333964522,
+            "region_label": "HBG2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 6.25919771194458,
+            "alt_value": 6.009057521820068,
+            "raw_score": -0.04077744847136271,
+            "region_label": "ENSG00000284931 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 3.7179431915283203,
+            "alt_value": 3.681035359700521,
+            "raw_score": -0.009973853465682275,
+            "region_label": "HBG1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 1.0451972961425782,
+            "alt_value": 1.0379249572753906,
+            "raw_score": -0.006975483900750985,
+            "region_label": "HBD (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.3230453332265218,
+            "alt_value": 0.3201698462168376,
+            "raw_score": -0.008913324232776854,
+            "region_label": "HBB (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 6.1236419677734375,
+            "alt_value": 6.16632080078125,
+            "raw_score": 0.0069442131116906535,
+            "region_label": "OR51B4 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.3105316162109375,
+            "alt_value": 0.30811023712158203,
+            "raw_score": -0.00780286202660715,
+            "region_label": "OR51V1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 3.2933197021484375,
+            "alt_value": 3.308563232421875,
+            "raw_score": 0.004616543781157994,
+            "region_label": "OR51B2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 10.695556640625,
+            "alt_value": 10.791168212890625,
+            "raw_score": 0.008898825208662847,
+            "region_label": "OR51B6 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.32982850074768066,
+            "alt_value": 0.3272222876548767,
+            "raw_score": -0.007909031364929545,
+            "region_label": "OR52A1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.11169274648030598,
+            "alt_value": 0.11087845762570699,
+            "raw_score": -0.007251975394941649,
+            "region_label": "OR52A5 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 1.8168182373046875,
+            "alt_value": 1.8341564178466796,
+            "raw_score": 0.009492707930402092,
+            "region_label": "HBE1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 27.115147908528645,
+            "alt_value": 27.294016520182293,
+            "raw_score": 0.006574726266605523,
+            "region_label": "OR51M1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 4.0487060546875,
+            "alt_value": 4.1026763916015625,
+            "raw_score": 0.013238953415600944,
+            "region_label": "OR51B5 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 30.014312744140625,
+            "alt_value": 30.080413818359375,
+            "raw_score": 0.0021998236728083373,
+            "region_label": "OR51Q1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.02367308735847473,
+            "alt_value": 0.023457884788513184,
+            "raw_score": -0.00876041880974535,
+            "region_label": "OR52E1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.28407955169677734,
+            "alt_value": 0.2869710922241211,
+            "raw_score": 0.010091830796226905,
+            "region_label": "OR51I1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.022532224655151367,
+            "alt_value": 0.02232980728149414,
+            "raw_score": -0.008638918295819526,
+            "region_label": "OR52E2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.5845811367034912,
+            "alt_value": 0.5868439674377441,
+            "raw_score": 0.0038568009687491973,
+            "region_label": "OR51I2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.3911781311035156,
+            "alt_value": 0.38742733001708984,
+            "raw_score": -0.009610053067043697,
+            "region_label": "OR52J3 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 1.7326039671897888,
+            "alt_value": 1.6652541756629944,
+            "raw_score": -0.039624361116726216,
+            "region_label": "ENSG00000239920 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 1.8200607299804688,
+            "alt_value": 1.8263320922851562,
+            "raw_score": 0.003437880067734158,
+            "region_label": "OR52D1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.023423612117767334,
+            "alt_value": 0.023712754249572754,
+            "raw_score": 0.011769102627652541,
+            "region_label": "UBQLN3 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.09546906749407451,
+            "alt_value": 0.09499853849411011,
+            "raw_score": -0.004889445524580059,
+            "region_label": "OR51L1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.03051742911338806,
+            "alt_value": 0.03060699999332428,
+            "raw_score": 0.0028379168356541234,
+            "region_label": "UBQLNL (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.02776467800140381,
+            "alt_value": 0.027938544750213623,
+            "raw_score": 0.006026258731983142,
+            "region_label": "OR52H1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.03481876850128174,
+            "alt_value": 0.03466081619262695,
+            "raw_score": -0.004419515486172376,
+            "region_label": "OR51A2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.08701300621032715,
+            "alt_value": 0.08672893047332764,
+            "raw_score": -0.003232876452576276,
+            "region_label": "OR51A4 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.037124693393707275,
+            "alt_value": 0.037408292293548584,
+            "raw_score": 0.007411188662409496,
+            "region_label": "OR52B6 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.058632850646972656,
+            "alt_value": 0.058500051498413086,
+            "raw_score": -0.002229429505585605,
+            "region_label": "OR51G1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.12116622924804688,
+            "alt_value": 0.12096989154815674,
+            "raw_score": -0.0016084284584979632,
+            "region_label": "OR51G2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.11904668807983398,
+            "alt_value": 0.11860275268554688,
+            "raw_score": -0.003704877429812461,
+            "region_label": "OR51A7 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 335.17454020182294,
+            "alt_value": 336.7552083333333,
+            "raw_score": 0.0047048559640693296,
+            "region_label": "TRIM6 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 99.14824458530971,
+            "alt_value": 99.46327754429409,
+            "raw_score": 0.0031723240170619593,
+            "region_label": "TRIM6-TRIM34 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 1.8019437789916992,
+            "alt_value": 1.8058271408081055,
+            "raw_score": 0.002151584353020497,
+            "region_label": "OR51T1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 27.388238694932724,
+            "alt_value": 27.276646931966145,
+            "raw_score": -0.004082614792681794,
+            "region_label": "TRIM34 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.06726431846618652,
+            "alt_value": 0.06726479530334473,
+            "raw_score": 6.985135185304961e-06,
+            "region_label": "OR51S1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.4264950752258301,
+            "alt_value": 0.4242873191833496,
+            "raw_score": -0.005177782724744516,
+            "region_label": "MMP26 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.4865875244140625,
+            "alt_value": 0.48311710357666016,
+            "raw_score": -0.007142984592515702,
+            "region_label": "OR51F2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.4820995330810547,
+            "alt_value": 0.4824199676513672,
+            "raw_score": 0.0006630690468424944,
+            "region_label": "OR52R1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 41.76094627380371,
+            "alt_value": 41.726234436035156,
+            "raw_score": -0.0008315290549872162,
+            "region_label": "TRIM22 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.1960310935974121,
+            "alt_value": 0.19678926467895508,
+            "raw_score": 0.003840592297624437,
+            "region_label": "OR52P1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.3219517469406128,
+            "alt_value": 0.3211556673049927,
+            "raw_score": -0.002468054225193242,
+            "region_label": "OR56B1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.4204826354980469,
+            "alt_value": 0.4193000793457031,
+            "raw_score": -0.0028096488783344135,
+            "region_label": "OR51F1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.993437647819519,
+            "alt_value": 0.9942672252655029,
+            "raw_score": 0.0008338698922393036,
+            "region_label": "OR52N4 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.07718675583600998,
+            "alt_value": 0.07721184194087982,
+            "raw_score": 0.00032079705881722306,
+            "region_label": "OR56B2P (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.0019001857144758105,
+            "alt_value": 0.0018876090180128813,
+            "raw_score": -0.004345944125225944,
+            "region_label": "OR52N5 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.23258146217891149,
+            "alt_value": 0.23306357860565186,
+            "raw_score": 0.002061891201656492,
+            "region_label": "TRIM5 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 4389.9970703125,
+            "alt_value": 4219.6328125,
+            "raw_score": -0.0395804375289181,
+            "region_label": "HBG2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 4334.56640625,
+            "alt_value": 4185.453125,
+            "raw_score": -0.03500660370808621,
+            "region_label": "ENSG00000284931 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 3045.6927083333335,
+            "alt_value": 3006.734375,
+            "raw_score": -0.012873796902887464,
+            "region_label": "HBG1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 343.98125,
+            "alt_value": 343.188671875,
+            "raw_score": -0.002306783648249912,
+            "region_label": "HBD (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 452.05360921223956,
+            "alt_value": 451.0778401692708,
+            "raw_score": -0.0021608532455879154,
+            "region_label": "HBB (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 1194.625,
+            "alt_value": 1195.30859375,
+            "raw_score": 0.0005720604106905146,
+            "region_label": "OR51B4 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.04430735111236572,
+            "alt_value": 0.0445370078086853,
+            "raw_score": 0.005056058258036903,
+            "region_label": "OR51V1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 424.044921875,
+            "alt_value": 424.01171875,
+            "raw_score": -7.830384227325968e-05,
+            "region_label": "OR51B2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 127.8798828125,
+            "alt_value": 128.5341796875,
+            "raw_score": 0.005103411141301793,
+            "region_label": "OR51B6 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 34.79902648925781,
+            "alt_value": 34.83594512939453,
+            "raw_score": 0.0010603173210283262,
+            "region_label": "OR52A1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 1.8833370208740234,
+            "alt_value": 1.8891655604044597,
+            "raw_score": 0.003088377362409986,
+            "region_label": "OR52A5 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 1426.45390625,
+            "alt_value": 1425.598046875,
+            "raw_score": -0.0006001705541038464,
+            "region_label": "HBE1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 154.4422607421875,
+            "alt_value": 155.5294189453125,
+            "raw_score": 0.007014548215307359,
+            "region_label": "OR51M1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 1078.36328125,
+            "alt_value": 1083.8828125,
+            "raw_score": 0.005105374591159798,
+            "region_label": "OR51B5 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 153.13916015625,
+            "alt_value": 154.376953125,
+            "raw_score": 0.008050255253579412,
+            "region_label": "OR51Q1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.014664620161056519,
+            "alt_value": 0.014764636754989624,
+            "raw_score": 0.0063645750086414555,
+            "region_label": "OR52E1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 561.9609375,
+            "alt_value": 565.91796875,
+            "raw_score": 0.007016782469685483,
+            "region_label": "OR51I1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.06031656265258789,
+            "alt_value": 0.06047642230987549,
+            "raw_score": 0.002603727690944791,
+            "region_label": "OR52E2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 299.349609375,
+            "alt_value": 301.6392822265625,
+            "raw_score": 0.007619695944495732,
+            "region_label": "OR51I2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.00858674943447113,
+            "alt_value": 0.008574813604354858,
+            "raw_score": -0.0012458098158098332,
+            "region_label": "OR52J3 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 995.6351273059845,
+            "alt_value": 956.0177971869707,
+            "raw_score": -0.04060428161615993,
+            "region_label": "ENSG00000239920 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 483.62109375,
+            "alt_value": 487.0185546875,
+            "raw_score": 0.007000471940996983,
+            "region_label": "OR52D1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 24.891693115234375,
+            "alt_value": 25.21337890625,
+            "raw_score": 0.012840112091142039,
+            "region_label": "UBQLN3 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.030819957454999287,
+            "alt_value": 0.03074804941813151,
+            "raw_score": -0.002262398054503413,
+            "region_label": "OR51L1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 38.733642578125,
+            "alt_value": 38.869903564453125,
+            "raw_score": 0.0035116337201920593,
+            "region_label": "UBQLNL (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 6.467765808105469,
+            "alt_value": 6.461967468261719,
+            "raw_score": -0.0008967614949069433,
+            "region_label": "OR52H1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.05091094970703125,
+            "alt_value": 0.05119001865386963,
+            "raw_score": 0.005361518144141834,
+            "region_label": "OR51A2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.029660888016223907,
+            "alt_value": 0.02965162694454193,
+            "raw_score": -0.0003020940099532579,
+            "region_label": "OR51A4 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 4.3777008056640625,
+            "alt_value": 4.39495849609375,
+            "raw_score": 0.003933534531224127,
+            "region_label": "OR52B6 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.040061116218566895,
+            "alt_value": 0.03992736339569092,
+            "raw_score": -0.003262725255043911,
+            "region_label": "OR51G1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.549689456820488,
+            "alt_value": 0.5530417114496231,
+            "raw_score": 0.0060689243040383724,
+            "region_label": "OR51G2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.01152174174785614,
+            "alt_value": 0.011519595980644226,
+            "raw_score": -0.00017137800228008478,
+            "region_label": "OR51A7 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 2.2672530280219183,
+            "alt_value": 2.2829812367757163,
+            "raw_score": 0.006910132661867284,
+            "region_label": "TRIM6 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.5113280841282436,
+            "alt_value": 0.5133053915841239,
+            "raw_score": 0.0038520269358384724,
+            "region_label": "TRIM6-TRIM34 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.06061673164367676,
+            "alt_value": 0.06094306707382202,
+            "raw_score": 0.005282238921036077,
+            "region_label": "OR51T1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.0907040966881646,
+            "alt_value": 0.09043629964192708,
+            "raw_score": -0.0029245021029740918,
+            "region_label": "TRIM34 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.10783958435058594,
+            "alt_value": 0.10829973220825195,
+            "raw_score": 0.004218850113105131,
+            "region_label": "OR51S1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.0036746151745319366,
+            "alt_value": 0.0036665312945842743,
+            "raw_score": -0.0017308115213626556,
+            "region_label": "MMP26 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.013628780841827393,
+            "alt_value": 0.013590127229690552,
+            "raw_score": -0.002645795975053427,
+            "region_label": "OR51F2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.034913063049316406,
+            "alt_value": 0.035012006759643555,
+            "raw_score": 0.0027513014030888295,
+            "region_label": "OR52R1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.015526292845606804,
+            "alt_value": 0.015512917190790176,
+            "raw_score": -0.0008096837383602801,
+            "region_label": "TRIM22 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.06304764747619629,
+            "alt_value": 0.06283807754516602,
+            "raw_score": -0.0032774591314343945,
+            "region_label": "OR52P1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.0685044378042221,
+            "alt_value": 0.06820371747016907,
+            "raw_score": -0.004336021982467612,
+            "region_label": "OR56B1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.023671090602874756,
+            "alt_value": 0.023754894733428955,
+            "raw_score": 0.0033910992484273384,
+            "region_label": "OR51F1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.0214366614818573,
+            "alt_value": 0.021393239498138428,
+            "raw_score": -0.0019371890791101134,
+            "region_label": "OR52N4 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.10783715546131134,
+            "alt_value": 0.10743246972560883,
+            "raw_score": -0.003725198157294107,
+            "region_label": "OR56B2P (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 0.6503478288650513,
+            "alt_value": 0.648905873298645,
+            "raw_score": -0.002216256759499328,
+            "region_label": "OR52N5 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "K562",
+            "layer": "gene_expression",
+            "ref_value": 236.73104858398438,
+            "alt_value": 236.47250911167689,
+            "raw_score": -0.0010927153911367738,
+            "region_label": "TRIM5 (exons)"
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "DNASE/EFO:0002067 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "K562",
+          "layer": "chromatin_accessibility",
+          "ref_value": 307.0872802734375,
+          "alt_value": 308.8951416015625,
+          "raw_score": 0.008441016834191937
+        },
+        {
+          "assay_id": "CHIP_TF/EFO:0002067 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "K562",
+          "layer": "tf_binding",
+          "ref_value": 544.5,
+          "alt_value": 483.25,
+          "raw_score": -0.17182714772035354
+        },
+        {
+          "assay_id": "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "K562",
+          "layer": "histone_marks",
+          "ref_value": 8482.0,
+          "alt_value": 8228.0,
+          "raw_score": -0.04385743901816638
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 48.12591552734375,
+          "alt_value": 48.814483642578125,
+          "raw_score": 0.020080975048282195,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 112.0510025024414,
+          "alt_value": 104.59207153320312,
+          "raw_score": -0.09847227270439694,
+          "region_label": "HBG2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 112.1247329711914,
+          "alt_value": 104.66775512695312,
+          "raw_score": -0.09837918614117769,
+          "region_label": "ENSG00000284931 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 54.33795166015625,
+          "alt_value": 53.28546142578125,
+          "raw_score": -0.02770337205966231,
+          "region_label": "HBG1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 30.680572509765625,
+          "alt_value": 30.486434936523438,
+          "raw_score": -0.00886799002702728,
+          "region_label": "HBD TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 10.255176544189453,
+          "alt_value": 10.257465362548828,
+          "raw_score": 0.00029335223485737956,
+          "region_label": "HBB TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 9.574081420898438,
+          "alt_value": 9.596649169921875,
+          "raw_score": 0.003075792948461574,
+          "region_label": "OR51B4 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 1.0173215866088867,
+          "alt_value": 1.0134506225585938,
+          "raw_score": -0.002770993777804583,
+          "region_label": "OR51V1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 3.4606399536132812,
+          "alt_value": 3.4741334915161133,
+          "raw_score": 0.004357597903540069,
+          "region_label": "OR51B2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 5.61614990234375,
+          "alt_value": 5.620384216308594,
+          "raw_score": 0.0009230247000107393,
+          "region_label": "OR51B6 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 2.098123550415039,
+          "alt_value": 2.0907363891601562,
+          "raw_score": -0.003444067590494913,
+          "region_label": "OR52A1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.3941974639892578,
+          "alt_value": 0.39275503158569336,
+          "raw_score": -0.0014933805040158337,
+          "region_label": "OR52A5 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 144.4178466796875,
+          "alt_value": 143.6826629638672,
+          "raw_score": -0.0073122806498032164,
+          "region_label": "HBE1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 10.863645553588867,
+          "alt_value": 10.877828598022461,
+          "raw_score": 0.0017237186008358788,
+          "region_label": "OR51M1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 6.722770690917969,
+          "alt_value": 6.759788513183594,
+          "raw_score": 0.006898798792745282,
+          "region_label": "OR51B5 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 10.41268539428711,
+          "alt_value": 10.476219177246094,
+          "raw_score": 0.008009130251245328,
+          "region_label": "OR51Q1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.35742664337158203,
+          "alt_value": 0.3558354377746582,
+          "raw_score": -0.0016921510847374395,
+          "region_label": "OR52E1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 2.9650535583496094,
+          "alt_value": 2.986675262451172,
+          "raw_score": 0.007845740936047325,
+          "region_label": "OR51I1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.36838531494140625,
+          "alt_value": 0.36609315872192383,
+          "raw_score": -0.0024186573177794237,
+          "region_label": "OR52E2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 2.6786346435546875,
+          "alt_value": 2.6871719360351562,
+          "raw_score": 0.003344294995112857,
+          "region_label": "OR51I2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.7869620323181152,
+          "alt_value": 0.7824559211730957,
+          "raw_score": -0.0036425813624859334,
+          "region_label": "OR52J3 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 2.3267345428466797,
+          "alt_value": 2.3336710929870605,
+          "raw_score": 0.0030050212115260294,
+          "region_label": "ENSG00000239920 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 5.7715911865234375,
+          "alt_value": 5.79345703125,
+          "raw_score": 0.004651037367102732,
+          "region_label": "OR52D1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 2.1126413345336914,
+          "alt_value": 2.123843193054199,
+          "raw_score": 0.005182690037819357,
+          "region_label": "UBQLN3 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.4541759490966797,
+          "alt_value": 0.4529414176940918,
+          "raw_score": -0.0012253048051947748,
+          "region_label": "OR51L1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.5759487152099609,
+          "alt_value": 0.577216625213623,
+          "raw_score": 0.0011602357476880145,
+          "region_label": "UBQLNL TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.37097835540771484,
+          "alt_value": 0.3720993995666504,
+          "raw_score": 0.0011792045893144181,
+          "region_label": "OR52H1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.2269153594970703,
+          "alt_value": 0.22651052474975586,
+          "raw_score": -0.0004761122733570177,
+          "region_label": "OR51A2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.22566425800323486,
+          "alt_value": 0.22480905055999756,
+          "raw_score": -0.0010069920639986245,
+          "region_label": "OR51A4 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 1.507674217224121,
+          "alt_value": 1.5189170837402344,
+          "raw_score": 0.006453699473548129,
+          "region_label": "OR52B6 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.3724098205566406,
+          "alt_value": 0.37185096740722656,
+          "raw_score": -0.0005875933380139269,
+          "region_label": "OR51G1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.31256103515625,
+          "alt_value": 0.31232547760009766,
+          "raw_score": -0.00025893517099938556,
+          "region_label": "OR51G2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.5114461183547974,
+          "alt_value": 0.5102205872535706,
+          "raw_score": -0.001170259933605629,
+          "region_label": "OR51A7 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 2035.898193359375,
+          "alt_value": 2044.5228271484375,
+          "raw_score": 0.006095762708415504,
+          "region_label": "TRIM6 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 2035.3955078125,
+          "alt_value": 2044.0120849609375,
+          "raw_score": 0.006091580567599149,
+          "region_label": "TRIM6-TRIM34 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 2.0015759468078613,
+          "alt_value": 2.0104050636291504,
+          "raw_score": 0.0042374492496741484,
+          "region_label": "OR51T1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 548.6832275390625,
+          "alt_value": 546.7868041992188,
+          "raw_score": -0.004985946206939594,
+          "region_label": "TRIM34 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.9647917747497559,
+          "alt_value": 0.9652533531188965,
+          "raw_score": 0.00033888507919711927,
+          "region_label": "OR51S1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.4858829379081726,
+          "alt_value": 0.48451194167137146,
+          "raw_score": -0.0013317620670315674,
+          "region_label": "MMP26 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.6661419868469238,
+          "alt_value": 0.6659493446350098,
+          "raw_score": -0.00016681653439571997,
+          "region_label": "OR51F2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.4380035400390625,
+          "alt_value": 0.43828916549682617,
+          "raw_score": 0.0002865288585050697,
+          "region_label": "OR52R1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 288.68609619140625,
+          "alt_value": 289.98193359375,
+          "raw_score": 0.006439139755433157,
+          "region_label": "TRIM22 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.30611562728881836,
+          "alt_value": 0.3075566291809082,
+          "raw_score": 0.0015908088622247603,
+          "region_label": "OR52P1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.20318329334259033,
+          "alt_value": 0.20282793045043945,
+          "raw_score": -0.00042616616321666844,
+          "region_label": "OR56B1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.37215185165405273,
+          "alt_value": 0.3716278076171875,
+          "raw_score": -0.0005510907115527698,
+          "region_label": "OR51F1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.1454160213470459,
+          "alt_value": 0.1453479528427124,
+          "raw_score": -8.573741754107162e-05,
+          "region_label": "OR52N4 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.29191720485687256,
+          "alt_value": 0.2907872200012207,
+          "raw_score": -0.001262415966658202,
+          "region_label": "OR56B2P TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.05057266354560852,
+          "alt_value": 0.05051109194755554,
+          "raw_score": -8.455544807653426e-05,
+          "region_label": "OR52N5 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 14.657630920410156,
+          "alt_value": 14.607864379882812,
+          "raw_score": -0.004592794783394528,
+          "region_label": "TRIM5 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 9231.384765625,
+          "alt_value": 8875.34375,
+          "raw_score": -0.05673781129736118,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 9629.505859375,
+          "alt_value": 9229.51953125,
+          "raw_score": -0.06119972925933594,
+          "region_label": "HBG2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 9510.140625,
+          "alt_value": 9124.3193359375,
+          "raw_score": -0.05974332073832643,
+          "region_label": "ENSG00000284931 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 5810.87255859375,
+          "alt_value": 5748.87353515625,
+          "raw_score": -0.015472842994183831,
+          "region_label": "HBG1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 5055.337890625,
+          "alt_value": 5015.07421875,
+          "raw_score": -0.011534180396633106,
+          "region_label": "HBD TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 8225.97265625,
+          "alt_value": 8306.9677734375,
+          "raw_score": 0.01413397151447799,
+          "region_label": "HBB TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 39.45655822753906,
+          "alt_value": 39.50736999511719,
+          "raw_score": 0.0018108285093661005,
+          "region_label": "OR51B4 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.9867992401123047,
+          "alt_value": 0.9881887435913086,
+          "raw_score": 0.0010086218465696212,
+          "region_label": "OR51V1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 16.2166748046875,
+          "alt_value": 16.219383239746094,
+          "raw_score": 0.00022693920602757085,
+          "region_label": "OR51B2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 10.106414794921875,
+          "alt_value": 10.13482666015625,
+          "raw_score": 0.003685916494835668,
+          "region_label": "OR51B6 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 8.952871322631836,
+          "alt_value": 8.881595611572266,
+          "raw_score": -0.010368774502686673,
+          "region_label": "OR52A1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.8759660720825195,
+          "alt_value": 0.8765792846679688,
+          "raw_score": 0.00047150863203896954,
+          "region_label": "OR52A5 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 11450.29296875,
+          "alt_value": 11381.78515625,
+          "raw_score": -0.008656901090762751,
+          "region_label": "HBE1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 32.79803466796875,
+          "alt_value": 32.698944091796875,
+          "raw_score": -0.004235969910700598,
+          "region_label": "OR51M1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 118.07344055175781,
+          "alt_value": 119.38265991210938,
+          "raw_score": 0.015775944702363418,
+          "region_label": "OR51B5 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 19.47711181640625,
+          "alt_value": 19.582199096679688,
+          "raw_score": 0.00738488911677987,
+          "region_label": "OR51Q1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.19403862953186035,
+          "alt_value": 0.1940387487411499,
+          "raw_score": 1.44034403918884e-07,
+          "region_label": "OR52E1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 22.703216552734375,
+          "alt_value": 22.873504638671875,
+          "raw_score": 0.010327522370640317,
+          "region_label": "OR51I1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.8706338405609131,
+          "alt_value": 0.8652164936065674,
+          "raw_score": -0.004184099663999356,
+          "region_label": "OR52E2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 15.722305297851562,
+          "alt_value": 15.815078735351562,
+          "raw_score": 0.007981786502988471,
+          "region_label": "OR51I2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.2369375228881836,
+          "alt_value": 0.23604130744934082,
+          "raw_score": -0.0010456746413914134,
+          "region_label": "OR52J3 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 8.41139030456543,
+          "alt_value": 8.4163818359375,
+          "raw_score": 0.0007649612149439293,
+          "region_label": "ENSG00000239920 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 30.749038696289062,
+          "alt_value": 30.816299438476562,
+          "raw_score": 0.0030531348770760666,
+          "region_label": "OR52D1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 35.30860900878906,
+          "alt_value": 35.844696044921875,
+          "raw_score": 0.02114529079277683,
+          "region_label": "UBQLN3 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.37747788429260254,
+          "alt_value": 0.3767375946044922,
+          "raw_score": -0.0007755473714825494,
+          "region_label": "OR51L1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 2.8238115310668945,
+          "alt_value": 2.8297624588012695,
+          "raw_score": 0.0022434945223151976,
+          "region_label": "UBQLNL TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 1.589127540588379,
+          "alt_value": 1.5865211486816406,
+          "raw_score": -0.0014530464573939248,
+          "region_label": "OR52H1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.42684364318847656,
+          "alt_value": 0.4271831512451172,
+          "raw_score": 0.00034323895831874624,
+          "region_label": "OR51A2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.1804647445678711,
+          "alt_value": 0.17990326881408691,
+          "raw_score": -0.000686366105836139,
+          "region_label": "OR51A4 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 3.0433311462402344,
+          "alt_value": 3.0569000244140625,
+          "raw_score": 0.004833385899612454,
+          "region_label": "OR52B6 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.6132817268371582,
+          "alt_value": 0.611931324005127,
+          "raw_score": -0.0012081183798468653,
+          "region_label": "OR51G1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.2037513256072998,
+          "alt_value": 0.20340490341186523,
+          "raw_score": -0.00041524648947381334,
+          "region_label": "OR51G2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.2664233446121216,
+          "alt_value": 0.2662738561630249,
+          "raw_score": -0.00017030558912952258,
+          "region_label": "OR51A7 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 95.1107177734375,
+          "alt_value": 95.34194946289062,
+          "raw_score": 0.0034667949993922196,
+          "region_label": "TRIM6 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 95.31851196289062,
+          "alt_value": 95.51138305664062,
+          "raw_score": 0.002886007517110893,
+          "region_label": "TRIM6-TRIM34 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 1.1191577911376953,
+          "alt_value": 1.125964641571045,
+          "raw_score": 0.0046265887196684586,
+          "region_label": "OR51T1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 12.286687850952148,
+          "alt_value": 12.249246597290039,
+          "raw_score": -0.004071184825540966,
+          "region_label": "TRIM34 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.8495025634765625,
+          "alt_value": 0.8502321243286133,
+          "raw_score": 0.000568978008283839,
+          "region_label": "OR51S1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.16463182866573334,
+          "alt_value": 0.16477787494659424,
+          "raw_score": 0.00018090441117988112,
+          "region_label": "MMP26 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.2256467342376709,
+          "alt_value": 0.22569990158081055,
+          "raw_score": 6.258132666834254e-05,
+          "region_label": "OR51F2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.5248284339904785,
+          "alt_value": 0.5248279571533203,
+          "raw_score": -4.5115286126101057e-07,
+          "region_label": "OR52R1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.5982792377471924,
+          "alt_value": 0.599478006362915,
+          "raw_score": 0.0010816691112357697,
+          "region_label": "TRIM22 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.1310889720916748,
+          "alt_value": 0.13138103485107422,
+          "raw_score": 0.00037247565330057855,
+          "region_label": "OR52P1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.08628225326538086,
+          "alt_value": 0.08612525463104248,
+          "raw_score": -0.00020852547301314624,
+          "region_label": "OR56B1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.27845025062561035,
+          "alt_value": 0.2781798839569092,
+          "raw_score": -0.0003051334241388582,
+          "region_label": "OR51F1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.14862722158432007,
+          "alt_value": 0.14857923984527588,
+          "raw_score": -6.026712717778535e-05,
+          "region_label": "OR52N4 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.1567164659500122,
+          "alt_value": 0.15632951259613037,
+          "raw_score": -0.0004827017664900705,
+          "region_label": "OR56B2P TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.7036600112915039,
+          "alt_value": 0.7048766613006592,
+          "raw_score": 0.0010299170452611548,
+          "region_label": "OR52N5 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 1038.7059326171875,
+          "alt_value": 1036.4244384765625,
+          "raw_score": -0.0031692778190396294,
+          "region_label": "TRIM5 TSS"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 5.725729465484619,
+          "alt_value": 5.481606960296631,
+          "raw_score": -0.04356388333964522,
+          "region_label": "HBG2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 6.25919771194458,
+          "alt_value": 6.009057521820068,
+          "raw_score": -0.04077744847136271,
+          "region_label": "ENSG00000284931 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 3.7179431915283203,
+          "alt_value": 3.681035359700521,
+          "raw_score": -0.009973853465682275,
+          "region_label": "HBG1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 1.0451972961425782,
+          "alt_value": 1.0379249572753906,
+          "raw_score": -0.006975483900750985,
+          "region_label": "HBD (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.3230453332265218,
+          "alt_value": 0.3201698462168376,
+          "raw_score": -0.008913324232776854,
+          "region_label": "HBB (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 6.1236419677734375,
+          "alt_value": 6.16632080078125,
+          "raw_score": 0.0069442131116906535,
+          "region_label": "OR51B4 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.3105316162109375,
+          "alt_value": 0.30811023712158203,
+          "raw_score": -0.00780286202660715,
+          "region_label": "OR51V1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 3.2933197021484375,
+          "alt_value": 3.308563232421875,
+          "raw_score": 0.004616543781157994,
+          "region_label": "OR51B2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 10.695556640625,
+          "alt_value": 10.791168212890625,
+          "raw_score": 0.008898825208662847,
+          "region_label": "OR51B6 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.32982850074768066,
+          "alt_value": 0.3272222876548767,
+          "raw_score": -0.007909031364929545,
+          "region_label": "OR52A1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.11169274648030598,
+          "alt_value": 0.11087845762570699,
+          "raw_score": -0.007251975394941649,
+          "region_label": "OR52A5 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 1.8168182373046875,
+          "alt_value": 1.8341564178466796,
+          "raw_score": 0.009492707930402092,
+          "region_label": "HBE1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 27.115147908528645,
+          "alt_value": 27.294016520182293,
+          "raw_score": 0.006574726266605523,
+          "region_label": "OR51M1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 4.0487060546875,
+          "alt_value": 4.1026763916015625,
+          "raw_score": 0.013238953415600944,
+          "region_label": "OR51B5 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 30.014312744140625,
+          "alt_value": 30.080413818359375,
+          "raw_score": 0.0021998236728083373,
+          "region_label": "OR51Q1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.02367308735847473,
+          "alt_value": 0.023457884788513184,
+          "raw_score": -0.00876041880974535,
+          "region_label": "OR52E1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.28407955169677734,
+          "alt_value": 0.2869710922241211,
+          "raw_score": 0.010091830796226905,
+          "region_label": "OR51I1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.022532224655151367,
+          "alt_value": 0.02232980728149414,
+          "raw_score": -0.008638918295819526,
+          "region_label": "OR52E2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.5845811367034912,
+          "alt_value": 0.5868439674377441,
+          "raw_score": 0.0038568009687491973,
+          "region_label": "OR51I2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.3911781311035156,
+          "alt_value": 0.38742733001708984,
+          "raw_score": -0.009610053067043697,
+          "region_label": "OR52J3 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 1.7326039671897888,
+          "alt_value": 1.6652541756629944,
+          "raw_score": -0.039624361116726216,
+          "region_label": "ENSG00000239920 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 1.8200607299804688,
+          "alt_value": 1.8263320922851562,
+          "raw_score": 0.003437880067734158,
+          "region_label": "OR52D1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.023423612117767334,
+          "alt_value": 0.023712754249572754,
+          "raw_score": 0.011769102627652541,
+          "region_label": "UBQLN3 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.09546906749407451,
+          "alt_value": 0.09499853849411011,
+          "raw_score": -0.004889445524580059,
+          "region_label": "OR51L1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.03051742911338806,
+          "alt_value": 0.03060699999332428,
+          "raw_score": 0.0028379168356541234,
+          "region_label": "UBQLNL (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.02776467800140381,
+          "alt_value": 0.027938544750213623,
+          "raw_score": 0.006026258731983142,
+          "region_label": "OR52H1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.03481876850128174,
+          "alt_value": 0.03466081619262695,
+          "raw_score": -0.004419515486172376,
+          "region_label": "OR51A2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.08701300621032715,
+          "alt_value": 0.08672893047332764,
+          "raw_score": -0.003232876452576276,
+          "region_label": "OR51A4 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.037124693393707275,
+          "alt_value": 0.037408292293548584,
+          "raw_score": 0.007411188662409496,
+          "region_label": "OR52B6 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.058632850646972656,
+          "alt_value": 0.058500051498413086,
+          "raw_score": -0.002229429505585605,
+          "region_label": "OR51G1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.12116622924804688,
+          "alt_value": 0.12096989154815674,
+          "raw_score": -0.0016084284584979632,
+          "region_label": "OR51G2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.11904668807983398,
+          "alt_value": 0.11860275268554688,
+          "raw_score": -0.003704877429812461,
+          "region_label": "OR51A7 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 335.17454020182294,
+          "alt_value": 336.7552083333333,
+          "raw_score": 0.0047048559640693296,
+          "region_label": "TRIM6 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 99.14824458530971,
+          "alt_value": 99.46327754429409,
+          "raw_score": 0.0031723240170619593,
+          "region_label": "TRIM6-TRIM34 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 1.8019437789916992,
+          "alt_value": 1.8058271408081055,
+          "raw_score": 0.002151584353020497,
+          "region_label": "OR51T1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 27.388238694932724,
+          "alt_value": 27.276646931966145,
+          "raw_score": -0.004082614792681794,
+          "region_label": "TRIM34 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.06726431846618652,
+          "alt_value": 0.06726479530334473,
+          "raw_score": 6.985135185304961e-06,
+          "region_label": "OR51S1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.4264950752258301,
+          "alt_value": 0.4242873191833496,
+          "raw_score": -0.005177782724744516,
+          "region_label": "MMP26 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.4865875244140625,
+          "alt_value": 0.48311710357666016,
+          "raw_score": -0.007142984592515702,
+          "region_label": "OR51F2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.4820995330810547,
+          "alt_value": 0.4824199676513672,
+          "raw_score": 0.0006630690468424944,
+          "region_label": "OR52R1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 41.76094627380371,
+          "alt_value": 41.726234436035156,
+          "raw_score": -0.0008315290549872162,
+          "region_label": "TRIM22 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.1960310935974121,
+          "alt_value": 0.19678926467895508,
+          "raw_score": 0.003840592297624437,
+          "region_label": "OR52P1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.3219517469406128,
+          "alt_value": 0.3211556673049927,
+          "raw_score": -0.002468054225193242,
+          "region_label": "OR56B1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.4204826354980469,
+          "alt_value": 0.4193000793457031,
+          "raw_score": -0.0028096488783344135,
+          "region_label": "OR51F1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.993437647819519,
+          "alt_value": 0.9942672252655029,
+          "raw_score": 0.0008338698922393036,
+          "region_label": "OR52N4 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.07718675583600998,
+          "alt_value": 0.07721184194087982,
+          "raw_score": 0.00032079705881722306,
+          "region_label": "OR56B2P (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.0019001857144758105,
+          "alt_value": 0.0018876090180128813,
+          "raw_score": -0.004345944125225944,
+          "region_label": "OR52N5 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.23258146217891149,
+          "alt_value": 0.23306357860565186,
+          "raw_score": 0.002061891201656492,
+          "region_label": "TRIM5 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 4389.9970703125,
+          "alt_value": 4219.6328125,
+          "raw_score": -0.0395804375289181,
+          "region_label": "HBG2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 4334.56640625,
+          "alt_value": 4185.453125,
+          "raw_score": -0.03500660370808621,
+          "region_label": "ENSG00000284931 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 3045.6927083333335,
+          "alt_value": 3006.734375,
+          "raw_score": -0.012873796902887464,
+          "region_label": "HBG1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 343.98125,
+          "alt_value": 343.188671875,
+          "raw_score": -0.002306783648249912,
+          "region_label": "HBD (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 452.05360921223956,
+          "alt_value": 451.0778401692708,
+          "raw_score": -0.0021608532455879154,
+          "region_label": "HBB (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 1194.625,
+          "alt_value": 1195.30859375,
+          "raw_score": 0.0005720604106905146,
+          "region_label": "OR51B4 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.04430735111236572,
+          "alt_value": 0.0445370078086853,
+          "raw_score": 0.005056058258036903,
+          "region_label": "OR51V1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 424.044921875,
+          "alt_value": 424.01171875,
+          "raw_score": -7.830384227325968e-05,
+          "region_label": "OR51B2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 127.8798828125,
+          "alt_value": 128.5341796875,
+          "raw_score": 0.005103411141301793,
+          "region_label": "OR51B6 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 34.79902648925781,
+          "alt_value": 34.83594512939453,
+          "raw_score": 0.0010603173210283262,
+          "region_label": "OR52A1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 1.8833370208740234,
+          "alt_value": 1.8891655604044597,
+          "raw_score": 0.003088377362409986,
+          "region_label": "OR52A5 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 1426.45390625,
+          "alt_value": 1425.598046875,
+          "raw_score": -0.0006001705541038464,
+          "region_label": "HBE1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 154.4422607421875,
+          "alt_value": 155.5294189453125,
+          "raw_score": 0.007014548215307359,
+          "region_label": "OR51M1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 1078.36328125,
+          "alt_value": 1083.8828125,
+          "raw_score": 0.005105374591159798,
+          "region_label": "OR51B5 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 153.13916015625,
+          "alt_value": 154.376953125,
+          "raw_score": 0.008050255253579412,
+          "region_label": "OR51Q1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.014664620161056519,
+          "alt_value": 0.014764636754989624,
+          "raw_score": 0.0063645750086414555,
+          "region_label": "OR52E1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 561.9609375,
+          "alt_value": 565.91796875,
+          "raw_score": 0.007016782469685483,
+          "region_label": "OR51I1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.06031656265258789,
+          "alt_value": 0.06047642230987549,
+          "raw_score": 0.002603727690944791,
+          "region_label": "OR52E2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 299.349609375,
+          "alt_value": 301.6392822265625,
+          "raw_score": 0.007619695944495732,
+          "region_label": "OR51I2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.00858674943447113,
+          "alt_value": 0.008574813604354858,
+          "raw_score": -0.0012458098158098332,
+          "region_label": "OR52J3 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 995.6351273059845,
+          "alt_value": 956.0177971869707,
+          "raw_score": -0.04060428161615993,
+          "region_label": "ENSG00000239920 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 483.62109375,
+          "alt_value": 487.0185546875,
+          "raw_score": 0.007000471940996983,
+          "region_label": "OR52D1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 24.891693115234375,
+          "alt_value": 25.21337890625,
+          "raw_score": 0.012840112091142039,
+          "region_label": "UBQLN3 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.030819957454999287,
+          "alt_value": 0.03074804941813151,
+          "raw_score": -0.002262398054503413,
+          "region_label": "OR51L1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 38.733642578125,
+          "alt_value": 38.869903564453125,
+          "raw_score": 0.0035116337201920593,
+          "region_label": "UBQLNL (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 6.467765808105469,
+          "alt_value": 6.461967468261719,
+          "raw_score": -0.0008967614949069433,
+          "region_label": "OR52H1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.05091094970703125,
+          "alt_value": 0.05119001865386963,
+          "raw_score": 0.005361518144141834,
+          "region_label": "OR51A2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.029660888016223907,
+          "alt_value": 0.02965162694454193,
+          "raw_score": -0.0003020940099532579,
+          "region_label": "OR51A4 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 4.3777008056640625,
+          "alt_value": 4.39495849609375,
+          "raw_score": 0.003933534531224127,
+          "region_label": "OR52B6 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.040061116218566895,
+          "alt_value": 0.03992736339569092,
+          "raw_score": -0.003262725255043911,
+          "region_label": "OR51G1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.549689456820488,
+          "alt_value": 0.5530417114496231,
+          "raw_score": 0.0060689243040383724,
+          "region_label": "OR51G2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.01152174174785614,
+          "alt_value": 0.011519595980644226,
+          "raw_score": -0.00017137800228008478,
+          "region_label": "OR51A7 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 2.2672530280219183,
+          "alt_value": 2.2829812367757163,
+          "raw_score": 0.006910132661867284,
+          "region_label": "TRIM6 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.5113280841282436,
+          "alt_value": 0.5133053915841239,
+          "raw_score": 0.0038520269358384724,
+          "region_label": "TRIM6-TRIM34 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.06061673164367676,
+          "alt_value": 0.06094306707382202,
+          "raw_score": 0.005282238921036077,
+          "region_label": "OR51T1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.0907040966881646,
+          "alt_value": 0.09043629964192708,
+          "raw_score": -0.0029245021029740918,
+          "region_label": "TRIM34 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.10783958435058594,
+          "alt_value": 0.10829973220825195,
+          "raw_score": 0.004218850113105131,
+          "region_label": "OR51S1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.0036746151745319366,
+          "alt_value": 0.0036665312945842743,
+          "raw_score": -0.0017308115213626556,
+          "region_label": "MMP26 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.013628780841827393,
+          "alt_value": 0.013590127229690552,
+          "raw_score": -0.002645795975053427,
+          "region_label": "OR51F2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.034913063049316406,
+          "alt_value": 0.035012006759643555,
+          "raw_score": 0.0027513014030888295,
+          "region_label": "OR52R1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.015526292845606804,
+          "alt_value": 0.015512917190790176,
+          "raw_score": -0.0008096837383602801,
+          "region_label": "TRIM22 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.06304764747619629,
+          "alt_value": 0.06283807754516602,
+          "raw_score": -0.0032774591314343945,
+          "region_label": "OR52P1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.0685044378042221,
+          "alt_value": 0.06820371747016907,
+          "raw_score": -0.004336021982467612,
+          "region_label": "OR56B1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.023671090602874756,
+          "alt_value": 0.023754894733428955,
+          "raw_score": 0.0033910992484273384,
+          "region_label": "OR51F1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.0214366614818573,
+          "alt_value": 0.021393239498138428,
+          "raw_score": -0.0019371890791101134,
+          "region_label": "OR52N4 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.10783715546131134,
+          "alt_value": 0.10743246972560883,
+          "raw_score": -0.003725198157294107,
+          "region_label": "OR56B2P (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 0.6503478288650513,
+          "alt_value": 0.648905873298645,
+          "raw_score": -0.002216256759499328,
+          "region_label": "OR52N5 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "K562",
+          "layer": "gene_expression",
+          "ref_value": 236.73104858398438,
+          "alt_value": 236.47250911167689,
+          "raw_score": -0.0010927153911367738,
+          "region_label": "TRIM5 (exons)"
+        }
+      ]
+    }
+  }
+}

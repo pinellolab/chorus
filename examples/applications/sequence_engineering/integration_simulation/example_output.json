@@ -1,0 +1,85 @@
+{
+  "variant": {
+    "chrom": "chr19",
+    "position": 55115000,
+    "ref_allele": "wt",
+    "alt_alleles": [
+      "insertion"
+    ]
+  },
+  "oracle": "alphagenome",
+  "gene_name": "PPP1R12C",
+  "nearby_genes": [
+    "PPP1R12C"
+  ],
+  "alleles": {
+    "insertion": {
+      "scores_by_layer": {
+        "chromatin_accessibility": [
+          {
+            "assay_id": "DNASE:K562",
+            "assay_type": "DNASE",
+            "cell_type": "K562",
+            "layer": "chromatin_accessibility",
+            "ref_value": 1941.7694091796875,
+            "alt_value": 1040.3572998046875,
+            "raw_score": -0.8996495187380269
+          }
+        ],
+        "tss_activity": [
+          {
+            "assay_id": "CAGE:K562",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 273.46417236328125,
+            "alt_value": 686.139892578125,
+            "raw_score": 1.3239860056143455,
+            "region_label": "variant site"
+          }
+        ],
+        "histone_marks": [
+          {
+            "assay_id": "H3K27ac:K562",
+            "assay_type": "CHIP",
+            "cell_type": "K562",
+            "layer": "histone_marks",
+            "ref_value": 4941.7001953125,
+            "alt_value": 4455.4326171875,
+            "raw_score": -0.1494101089357741
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "DNASE:K562",
+          "assay_type": "DNASE",
+          "cell_type": "K562",
+          "layer": "chromatin_accessibility",
+          "ref_value": 1941.7694091796875,
+          "alt_value": 1040.3572998046875,
+          "raw_score": -0.8996495187380269
+        },
+        {
+          "assay_id": "CAGE:K562",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 273.46417236328125,
+          "alt_value": 686.139892578125,
+          "raw_score": 1.3239860056143455,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "H3K27ac:K562",
+          "assay_type": "CHIP",
+          "cell_type": "K562",
+          "layer": "histone_marks",
+          "ref_value": 4941.7001953125,
+          "alt_value": 4455.4326171875,
+          "raw_score": -0.1494101089357741
+        }
+      ]
+    }
+  }
+}

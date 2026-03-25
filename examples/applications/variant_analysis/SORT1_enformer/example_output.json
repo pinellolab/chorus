@@ -1,0 +1,169 @@
+{
+  "variant": {
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "T"
+    ]
+  },
+  "oracle": "enformer",
+  "gene_name": "PSRC1",
+  "nearby_genes": [
+    "PSRC1",
+    "CELSR2",
+    "MYBPHL",
+    "SARS1",
+    "SORT1"
+  ],
+  "alleles": {
+    "T": {
+      "scores_by_layer": {
+        "chromatin_accessibility": [
+          {
+            "assay_id": "DNASE:HepG2",
+            "assay_type": "DNASE",
+            "cell_type": "HepG2",
+            "layer": "chromatin_accessibility",
+            "ref_value": 4.556196212768555,
+            "alt_value": 9.11239242553711,
+            "raw_score": 0.8639549025234109
+          }
+        ],
+        "tss_activity": [
+          {
+            "assay_id": "CAGE:HepG2",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 2.655245542526245,
+            "alt_value": 4.779441833496094,
+            "raw_score": 0.6609618439316589,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE:HepG2",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 7.566540718078613,
+            "alt_value": 7.566540718078613,
+            "raw_score": 0.0,
+            "region_label": "PSRC1 TSS"
+          },
+          {
+            "assay_id": "CAGE:HepG2",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 7.439938545227051,
+            "alt_value": 7.439938545227051,
+            "raw_score": 0.0,
+            "region_label": "CELSR2 TSS"
+          },
+          {
+            "assay_id": "CAGE:HepG2",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 3.4489994049072266,
+            "alt_value": 3.4489994049072266,
+            "raw_score": 0.0,
+            "region_label": "MYBPHL TSS"
+          }
+        ],
+        "histone_marks": [
+          {
+            "assay_id": "H3K27ac:HepG2",
+            "assay_type": "CHIP",
+            "cell_type": "HepG2",
+            "layer": "histone_marks",
+            "ref_value": 38.694679260253906,
+            "alt_value": 44.743324279785156,
+            "raw_score": 0.20461557462911542
+          }
+        ],
+        "tf_binding": [
+          {
+            "assay_id": "CTCF:HepG2",
+            "assay_type": "CHIP",
+            "cell_type": "HepG2",
+            "layer": "tf_binding",
+            "ref_value": 1.9307183027267456,
+            "alt_value": 0.5792154669761658,
+            "raw_score": -0.8920462796438837
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "DNASE:HepG2",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "layer": "chromatin_accessibility",
+          "ref_value": 4.556196212768555,
+          "alt_value": 9.11239242553711,
+          "raw_score": 0.8639549025234109
+        },
+        {
+          "assay_id": "CAGE:HepG2",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 2.655245542526245,
+          "alt_value": 4.779441833496094,
+          "raw_score": 0.6609618439316589,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE:HepG2",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 7.566540718078613,
+          "alt_value": 7.566540718078613,
+          "raw_score": 0.0,
+          "region_label": "PSRC1 TSS"
+        },
+        {
+          "assay_id": "CAGE:HepG2",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 7.439938545227051,
+          "alt_value": 7.439938545227051,
+          "raw_score": 0.0,
+          "region_label": "CELSR2 TSS"
+        },
+        {
+          "assay_id": "CAGE:HepG2",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 3.4489994049072266,
+          "alt_value": 3.4489994049072266,
+          "raw_score": 0.0,
+          "region_label": "MYBPHL TSS"
+        },
+        {
+          "assay_id": "H3K27ac:HepG2",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "layer": "histone_marks",
+          "ref_value": 38.694679260253906,
+          "alt_value": 44.743324279785156,
+          "raw_score": 0.20461557462911542
+        },
+        {
+          "assay_id": "CTCF:HepG2",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "layer": "tf_binding",
+          "ref_value": 1.9307183027267456,
+          "alt_value": 0.5792154669761658,
+          "raw_score": -0.8920462796438837
+        }
+      ]
+    }
+  }
+}

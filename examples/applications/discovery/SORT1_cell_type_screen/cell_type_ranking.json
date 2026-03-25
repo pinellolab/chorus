@@ -1,0 +1,302 @@
+[
+  {
+    "rank": 1,
+    "cell_type": "LNCaP clone FGC",
+    "effect": 1.9052,
+    "n_tracks": 3
+  },
+  {
+    "rank": 2,
+    "cell_type": "epithelial cell of proximal tubule",
+    "effect": 1.6227,
+    "n_tracks": 9
+  },
+  {
+    "rank": 3,
+    "cell_type": "renal cortical epithelial cell",
+    "effect": 1.4804,
+    "n_tracks": 7
+  },
+  {
+    "rank": 4,
+    "cell_type": "MM.1S",
+    "effect": 1.4021,
+    "n_tracks": 11
+  },
+  {
+    "rank": 5,
+    "cell_type": "epithelial cell of prostate",
+    "effect": 1.3991,
+    "n_tracks": 5
+  },
+  {
+    "rank": 6,
+    "cell_type": "T47D",
+    "effect": 1.3778,
+    "n_tracks": 2
+  },
+  {
+    "rank": 7,
+    "cell_type": "Caki2",
+    "effect": 1.3732,
+    "n_tracks": 5
+  },
+  {
+    "rank": 8,
+    "cell_type": "RPMI8226",
+    "effect": 1.3343,
+    "n_tracks": 1
+  },
+  {
+    "rank": 9,
+    "cell_type": "RCC",
+    "effect": 1.3026,
+    "n_tracks": 1
+  },
+  {
+    "rank": 10,
+    "cell_type": "MG63",
+    "effect": 1.2978,
+    "n_tracks": 7
+  },
+  {
+    "rank": 11,
+    "cell_type": "NCI-H929",
+    "effect": 1.295,
+    "n_tracks": 10
+  },
+  {
+    "rank": 12,
+    "cell_type": "kidney epithelial cell",
+    "effect": 1.2876,
+    "n_tracks": 8
+  },
+  {
+    "rank": 13,
+    "cell_type": "MCF-7",
+    "effect": 1.254,
+    "n_tracks": 90
+  },
+  {
+    "rank": 14,
+    "cell_type": "thyroid gland",
+    "effect": 1.2407,
+    "n_tracks": 17
+  },
+  {
+    "rank": 15,
+    "cell_type": "bronchial epithelial cell",
+    "effect": 1.2301,
+    "n_tracks": 10
+  },
+  {
+    "rank": 16,
+    "cell_type": "memory B cell",
+    "effect": 1.2234,
+    "n_tracks": 2
+  },
+  {
+    "rank": 17,
+    "cell_type": "RCC 7860",
+    "effect": 1.2114,
+    "n_tracks": 1
+  },
+  {
+    "rank": 18,
+    "cell_type": "epithelial cell of esophagus",
+    "effect": 1.1981,
+    "n_tracks": 4
+  },
+  {
+    "rank": 19,
+    "cell_type": "MCF 10A",
+    "effect": 1.1978,
+    "n_tracks": 6
+  },
+  {
+    "rank": 20,
+    "cell_type": "thyroid gland",
+    "effect": 1.1784,
+    "n_tracks": 17
+  },
+  {
+    "rank": 21,
+    "cell_type": "body of pancreas",
+    "effect": 1.1632,
+    "n_tracks": 14
+  },
+  {
+    "rank": 22,
+    "cell_type": "NCI-H460",
+    "effect": 1.1579,
+    "n_tracks": 11
+  },
+  {
+    "rank": 23,
+    "cell_type": "right lobe of liver",
+    "effect": 1.1519,
+    "n_tracks": 15
+  },
+  {
+    "rank": 24,
+    "cell_type": "left lobe of liver",
+    "effect": 1.1386,
+    "n_tracks": 6
+  },
+  {
+    "rank": 25,
+    "cell_type": "mucosa of gallbladder",
+    "effect": 1.1143,
+    "n_tracks": 6
+  },
+  {
+    "rank": 26,
+    "cell_type": "HeLa-S3",
+    "effect": 1.0986,
+    "n_tracks": 57
+  },
+  {
+    "rank": 27,
+    "cell_type": "left colon",
+    "effect": 1.0958,
+    "n_tracks": 6
+  },
+  {
+    "rank": 28,
+    "cell_type": "body of pancreas",
+    "effect": 1.0797,
+    "n_tracks": 14
+  },
+  {
+    "rank": 29,
+    "cell_type": "Panc1",
+    "effect": 1.0723,
+    "n_tracks": 18
+  },
+  {
+    "rank": 30,
+    "cell_type": "ACHN",
+    "effect": 1.0712,
+    "n_tracks": 1
+  },
+  {
+    "rank": 31,
+    "cell_type": "mammary gland epithelial cell",
+    "effect": 1.0687,
+    "n_tracks": 23
+  },
+  {
+    "rank": 32,
+    "cell_type": "stomach",
+    "effect": 1.0568,
+    "n_tracks": 25
+  },
+  {
+    "rank": 33,
+    "cell_type": "mucosa of descending colon",
+    "effect": 1.0358,
+    "n_tracks": 10
+  },
+  {
+    "rank": 34,
+    "cell_type": "PC-9",
+    "effect": 1.0315,
+    "n_tracks": 18
+  },
+  {
+    "rank": 35,
+    "cell_type": "M059J",
+    "effect": 1.024,
+    "n_tracks": 5
+  },
+  {
+    "rank": 36,
+    "cell_type": "NCI-H929",
+    "effect": 1.0195,
+    "n_tracks": 10
+  },
+  {
+    "rank": 37,
+    "cell_type": "GM12865",
+    "effect": 1.0174,
+    "n_tracks": 2
+  },
+  {
+    "rank": 38,
+    "cell_type": "amniotic epithelial cell",
+    "effect": 0.997,
+    "n_tracks": 3
+  },
+  {
+    "rank": 39,
+    "cell_type": "GM12878",
+    "effect": 0.9824,
+    "n_tracks": 122
+  },
+  {
+    "rank": 40,
+    "cell_type": "glomerular visceral epithelial cell",
+    "effect": 0.9805,
+    "n_tracks": 1
+  },
+  {
+    "rank": 41,
+    "cell_type": "lower lobe of left lung",
+    "effect": 0.9717,
+    "n_tracks": 13
+  },
+  {
+    "rank": 42,
+    "cell_type": "prostate gland",
+    "effect": 0.9685,
+    "n_tracks": 16
+  },
+  {
+    "rank": 43,
+    "cell_type": "kidney tubule cell",
+    "effect": 0.9666,
+    "n_tracks": 1
+  },
+  {
+    "rank": 44,
+    "cell_type": "MCF-7",
+    "effect": 0.9642,
+    "n_tracks": 90
+  },
+  {
+    "rank": 45,
+    "cell_type": "naive B cell",
+    "effect": 0.9569,
+    "n_tracks": 5
+  },
+  {
+    "rank": 46,
+    "cell_type": "pancreas",
+    "effect": 0.9538,
+    "n_tracks": 18
+  },
+  {
+    "rank": 47,
+    "cell_type": "stomach",
+    "effect": 0.9501,
+    "n_tracks": 25
+  },
+  {
+    "rank": 48,
+    "cell_type": "keratinocyte",
+    "effect": 0.9481,
+    "n_tracks": 18
+  },
+  {
+    "rank": 49,
+    "cell_type": "small intestine",
+    "effect": 0.9365,
+    "n_tracks": 14
+  },
+  {
+    "rank": 50,
+    "cell_type": "transverse colon",
+    "effect": 0.9324,
+    "n_tracks": 18
+  }
+]

@@ -1,0 +1,314 @@
+<!DOCTYPE html><html lang='en'><head>
+<meta charset='utf-8'>
+<title>Causal Prioritization — rs12740374</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+       max-width: 1200px; margin: 0 auto; padding: 1rem; background: #f8f9fa; }
+h1 { font-size: 1.5rem; margin-bottom: 0.3rem; }
+h2 { font-size: 1.15rem; border-bottom: 1px solid #dee2e6; padding-bottom: 0.3rem;
+     margin-top: 1.5rem; }
+.meta { font-size: 0.92rem; margin: 0.15rem 0; color: #495057; }
+.summary-box { margin: 0.8rem 0; padding: 0.7rem 1rem; background: #f0f7ff;
+               border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 0.95rem; }
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 1rem; }
+thead { background: #343a40; color: white; }
+th, td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid #dee2e6; }
+th { cursor: pointer; user-select: none; }
+th:hover { background: #495057; }
+tbody tr:hover { background: #e9ecef; }
+.badge-sentinel { background: #ffc107; color: #333; padding: 0.15rem 0.4rem;
+                  border-radius: 3px; font-size: 0.8rem; font-weight: 600; }
+.badge-top { background: #28a745; color: white; padding: 0.15rem 0.4rem;
+             border-radius: 3px; font-size: 0.8rem; font-weight: 600; }
+.r2-cell { font-weight: 600; }
+.r2-high { color: #D43F3A; }
+.r2-med { color: #F0AD4E; }
+.r2-low { color: #357EBD; }
+details { margin: 0.5rem 0; border: 1px solid #dee2e6; border-radius: 4px; }
+details summary { padding: 0.5rem 0.8rem; background: #f8f9fa; cursor: pointer;
+                  font-size: 0.92rem; }
+details summary:hover { background: #e9ecef; }
+details[open] summary { border-bottom: 1px solid #dee2e6; }
+.detail-card { padding: 0.6rem 0.8rem; }
+.detail-card table { font-size: 0.85rem; }
+.detail-card th { background: #6c757d; }
+.locus-plot { text-align: center; margin: 1rem 0; }
+.locus-plot img { max-width: 100%; border: 1px solid #dee2e6; border-radius: 4px; }
+.footer { margin-top: 2rem; padding-top: 0.5rem; border-top: 1px solid #dee2e6;
+          font-size: 0.8rem; color: #6c757d; }
+</style>
+</head><body>
+<h1>Causal Variant Prioritization Report</h1>
+<p class="meta"><b>Sentinel:</b> rs12740374</p>
+<p class="meta"><b>Oracle:</b> alphagenome</p>
+<p class="meta"><b>Cell type(s):</b> HepG2</p>
+<p class="meta"><b>Gene:</b> SORT1</p>
+<p class="meta"><b>Nearby genes:</b> PSRC1, CELSR2, MYBPHL, SARS1, ELAPOR1</p>
+<p class="meta"><b>Variants scored:</b> 11</p>
+<div class="summary-box"><b>Top candidate:</b> rs12740374 (composite=0.970)<br>Chromatin accessibility (DNASE/ATAC): +0.45. TSS activity (CAGE/PRO-CAP): +0.25. Histone modifications (ChIP-Histone): +0.18<br>The sentinel SNP is the top candidate.</div>
+<h2>Interactive Genome Browser</h2>
+<p style="font-size:.85rem;color:#6b7280">Top track: composite causal score per variant (bar height = score). Signal tracks show ref (grey) vs alt (colored) for the top candidate. Red stripe marks the sentinel. Zoom and pan to explore.</p>
+
+<div id="igv-causal" style="margin: 1rem 0; min-height: 400px;"></div>
+<script src="https://cdn.jsdelivr.net/npm/igv@3.1.1/dist/igv.min.js"></script>
+<script>
+(async function() {
+    try {
+        const browser = await igv.createBrowser(
+            document.getElementById("igv-causal"),
+            {"genome":"hg38","locus":"chr1:108777057-109777057","showRuler":true,"showNavigation":true,"showCenterGuide":true,"roi":[{"name":"Sentinel","color":"rgba(255, 0, 0, 0.12)","features":[{"chr":"chr1","start":109274967,"end":109274969}]}],"tracks":[{"name":"Composite Causal Score","type":"wig","height":60,"color":"rgb(59,130,246)","min":0,"max":1.0,"features":[{"chr":"chr1","start":109274918,"end":109275018,"value":0.9697},{"chr":"chr1","start":109279125,"end":109279225,"value":0.6362},{"chr":"chr1","start":109275858,"end":109275958,"value":0.529},{"chr":"chr1","start":109275166,"end":109275266,"value":0.259},{"chr":"chr1","start":109275486,"end":109275586,"value":0.2134},{"chr":"chr1","start":109275634,"end":109275734,"value":0.2128},{"chr":"chr1","start":109274520,"end":109274620,"value":0.1937},{"chr":"chr1","start":109278635,"end":109278735,"value":0.0635},{"chr":"chr1","start":109279471,"end":109279571,"value":0.0522},{"chr":"chr1","start":109279494,"end":109279594,"value":0.0432},{"chr":"chr1","start":109278839,"end":109278939,"value":0.0}]},{"name":"Max |Effect|","type":"wig","height":50,"color":"rgb(220,53,69)","min":0,"features":[{"chr":"chr1","start":109274918,"end":109275018,"value":0.4451},{"chr":"chr1","start":109279125,"end":109279225,"value":0.3982},{"chr":"chr1","start":109275858,"end":109275958,"value":0.1207},{"chr":"chr1","start":109275166,"end":109275266,"value":0.075},{"chr":"chr1","start":109275486,"end":109275586,"value":0.0437},{"chr":"chr1","start":109275634,"end":109275734,"value":0.0662},{"chr":"chr1","start":109274520,"end":109274620,"value":0.0235},{"chr":"chr1","start":109278635,"end":109278735,"value":0.0174},{"chr":"chr1","start":109279471,"end":109279571,"value":0.0237},{"chr":"chr1","start":109279494,"end":109279594,"value":0.0132},{"chr":"chr1","start":109278839,"end":109278939,"value":0.0}]},{"name":"LD Variants (colored by r\u00b2)","type":"annotation","displayMode":"EXPANDED","height":40,"features":[{"chr":"chr1","start":109274967,"end":109274969,"name":"rs12740374 (sentinel) r\u00b2=1.00 composite=0.970","color":"rgb(212,63,58)"},{"chr":"chr1","start":109279174,"end":109279176,"name":"rs4970836 r\u00b2=0.91 composite=0.636","color":"rgb(212,63,58)"},{"chr":"chr1","start":109275907,"end":109275909,"name":"rs1624712 r\u00b2=1.00 composite=0.529","color":"rgb(212,63,58)"},{"chr":"chr1","start":109275215,"end":109275217,"name":"rs660240 r\u00b2=0.95 composite=0.259","color":"rgb(212,63,58)"},{"chr":"chr1","start":109275535,"end":109275537,"name":"rs142678968 r\u00b2=0.95 composite=0.213","color":"rgb(212,63,58)"},{"chr":"chr1","start":109275683,"end":109275685,"name":"rs1626484 r\u00b2=1.00 composite=0.213","color":"rgb(212,63,58)"},{"chr":"chr1","start":109274569,"end":109274571,"name":"rs7528419 r\u00b2=1.00 composite=0.194","color":"rgb(212,63,58)"},{"chr":"chr1","start":109278684,"end":109278686,"name":"rs56960352 r\u00b2=0.91 composite=0.064","color":"rgb(212,63,58)"},{"chr":"chr1","start":109279520,"end":109279522,"name":"rs1277930 r\u00b2=0.91 composite=0.052","color":"rgb(212,63,58)"},{"chr":"chr1","start":109279543,"end":109279545,"name":"rs599839 r\u00b2=0.91 composite=0.043","color":"rgb(212,63,58)"},{"chr":"chr1","start":109278888,"end":109278890,"name":"rs602633 r\u00b2=0.86 composite=0.000","color":"rgb(212,63,58)"}]}]}
+        );
+        console.log("IGV causal browser created");
+    } catch(e) {
+        console.error("IGV error:", e);
+        document.getElementById("igv-causal").innerHTML =
+            '<p style="color:red;padding:1rem">Error loading IGV browser: ' + e.message + '</p>';
+    }
+})();
+</script>
+
+<h2>Variant Rankings</h2>
+<table class="sortable"><thead><tr>
+<th>Rank</th><th>Variant</th><th>r²</th>
+<th>Max Effect</th><th>Layers</th><th>Convergence</th>
+<th>Ref Activity</th><th>Composite ▾</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td>rs12740374 <span class="badge-sentinel">sentinel</span> <span class="badge-top">top</span></td>
+<td class="r2-cell r2-high">1.00</td>
+<td>+0.445</td>
+<td>3</td>
+<td>1.00</td>
+<td>7098.9</td>
+<td><b>0.970</b></td>
+</tr>
+<tr>
+<td>2</td>
+<td>rs4970836</td>
+<td class="r2-cell r2-high">0.91</td>
+<td>-0.398</td>
+<td>1</td>
+<td>1.00</td>
+<td>1663.5</td>
+<td><b>0.636</b></td>
+</tr>
+<tr>
+<td>3</td>
+<td>rs1624712</td>
+<td class="r2-cell r2-high">1.00</td>
+<td>+0.121</td>
+<td>1</td>
+<td>1.00</td>
+<td>6309.1</td>
+<td><b>0.529</b></td>
+</tr>
+<tr>
+<td>4</td>
+<td>rs660240</td>
+<td class="r2-cell r2-high">0.95</td>
+<td>+0.075</td>
+<td>0</td>
+<td>0.00</td>
+<td>8367.8</td>
+<td><b>0.259</b></td>
+</tr>
+<tr>
+<td>5</td>
+<td>rs142678968</td>
+<td class="r2-cell r2-high">0.95</td>
+<td>-0.044</td>
+<td>0</td>
+<td>0.00</td>
+<td>7491.5</td>
+<td><b>0.213</b></td>
+</tr>
+<tr>
+<td>6</td>
+<td>rs1626484</td>
+<td class="r2-cell r2-high">1.00</td>
+<td>+0.066</td>
+<td>0</td>
+<td>0.00</td>
+<td>6727.7</td>
+<td><b>0.213</b></td>
+</tr>
+<tr>
+<td>7</td>
+<td>rs7528419</td>
+<td class="r2-cell r2-high">1.00</td>
+<td>+0.024</td>
+<td>0</td>
+<td>0.00</td>
+<td>7333.0</td>
+<td><b>0.194</b></td>
+</tr>
+<tr>
+<td>8</td>
+<td>rs56960352</td>
+<td class="r2-cell r2-high">0.91</td>
+<td>-0.017</td>
+<td>0</td>
+<td>0.00</td>
+<td>2085.9</td>
+<td><b>0.064</b></td>
+</tr>
+<tr>
+<td>9</td>
+<td>rs1277930</td>
+<td class="r2-cell r2-high">0.91</td>
+<td>-0.024</td>
+<td>0</td>
+<td>0.00</td>
+<td>1402.2</td>
+<td><b>0.052</b></td>
+</tr>
+<tr>
+<td>10</td>
+<td>rs599839</td>
+<td class="r2-cell r2-high">0.91</td>
+<td>+0.013</td>
+<td>0</td>
+<td>0.00</td>
+<td>1373.0</td>
+<td><b>0.043</b></td>
+</tr>
+<tr>
+<td>11</td>
+<td>rs602633</td>
+<td class="r2-cell r2-high">0.86</td>
+<td>+0.000</td>
+<td>0</td>
+<td>0.00</td>
+<td>0.0</td>
+<td><b>0.000</b></td>
+</tr>
+</tbody></table>
+<h2>Variant Details</h2>
+<details open>
+<summary><b>rs12740374</b> — composite: 0.970 ★ sentinel — Top candidate</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,274,968 G>T | <b>r²:</b> 1.00 | <b>Top layer:</b> chromatin_accessibility</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>+0.445</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>+0.253</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>+0.179</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs4970836</b> — composite: 0.636</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,279,175 G>A | <b>r²:</b> 0.91 | <b>Top layer:</b> tss_activity</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>-0.398</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>-0.042</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>-0.015</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs1624712</b> — composite: 0.529</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,275,908 C>T | <b>r²:</b> 1.00 | <b>Top layer:</b> chromatin_accessibility</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>+0.121</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>+0.032</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>+0.029</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs660240</b> — composite: 0.259</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,275,216 T>C | <b>r²:</b> 0.95 | <b>Top layer:</b> tss_activity</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>+0.075</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>+0.070</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>+0.032</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs142678968</b> — composite: 0.213</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,275,536 C>T | <b>r²:</b> 0.95 | <b>Top layer:</b> tss_activity</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>-0.044</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>-0.023</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>-0.001</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs1626484</b> — composite: 0.213</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,275,684 G>T | <b>r²:</b> 1.00 | <b>Top layer:</b> tss_activity</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>+0.066</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>+0.009</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>+0.001</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs7528419</b> — composite: 0.194</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,274,570 A>G | <b>r²:</b> 1.00 | <b>Top layer:</b> histone_marks</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>+0.024</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>+0.017</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>+0.014</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs56960352</b> — composite: 0.064</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,278,685 G>T | <b>r²:</b> 0.91 | <b>Top layer:</b> chromatin_accessibility</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>-0.017</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>+0.013</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>-0.005</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs1277930</b> — composite: 0.052</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,279,521 G>A | <b>r²:</b> 0.91 | <b>Top layer:</b> tss_activity</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>-0.024</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>-0.006</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>-0.005</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs599839</b> — composite: 0.043</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,279,544 G>A | <b>r²:</b> 0.91 | <b>Top layer:</b> tss_activity</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>+0.013</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>+0.004</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>+0.004</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs602633</b> — composite: 0.000</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,278,889 T>G | <b>r²:</b> 0.86 | <b>Top layer:</b> error</p>
+</div></details>
+<div class="footer">Generated by Chorus <code>fine_map_causal_variant</code></div>
+<script>
+document.querySelectorAll('.sortable th').forEach(th => {
+  th.addEventListener('click', function() {
+    const table = this.closest('table');
+    const idx = Array.from(this.parentNode.children).indexOf(this);
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    const asc = this.dataset.sort !== 'asc';
+    rows.sort((a, b) => {
+      let va = a.children[idx]?.textContent?.trim() || '';
+      let vb = b.children[idx]?.textContent?.trim() || '';
+      let na = parseFloat(va), nb = parseFloat(vb);
+      if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
+      return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+    this.dataset.sort = asc ? 'asc' : 'desc';
+    const tbody = table.querySelector('tbody');
+    rows.forEach(r => tbody.appendChild(r));
+  });
+});
+</script>
+</body></html>

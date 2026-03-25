@@ -1,0 +1,1258 @@
+{
+  "variant": {
+    "chrom": "chr5",
+    "position": 1295228,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "A"
+    ]
+  },
+  "oracle": "alphagenome",
+  "gene_name": "TERT",
+  "nearby_genes": [
+    "TERT",
+    "CLPTM1L",
+    "SLC6A18",
+    "SLC6A19",
+    "SLC6A3",
+    "LPCAT1",
+    "SLC12A7",
+    "NKD2",
+    "TRIP13",
+    "BRD9",
+    "ZDHHC11",
+    "MRPL36",
+    "NDUFS6",
+    "ZDHHC11B"
+  ],
+  "alleles": {
+    "alt_1": {
+      "scores_by_layer": {
+        "chromatin_accessibility": [
+          {
+            "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+            "assay_type": "DNASE",
+            "cell_type": "HepG2",
+            "layer": "chromatin_accessibility",
+            "ref_value": 36.79554748535156,
+            "alt_value": 35.104103088378906,
+            "raw_score": -0.06605348436933581
+          }
+        ],
+        "histone_marks": [
+          {
+            "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+            "assay_type": "CHIP",
+            "cell_type": "HepG2",
+            "layer": "histone_marks",
+            "ref_value": 2159.5,
+            "alt_value": 1850.75,
+            "raw_score": -0.22247589372579557
+          },
+          {
+            "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K4me3/.",
+            "assay_type": "CHIP",
+            "cell_type": "HepG2",
+            "layer": "histone_marks",
+            "ref_value": 3459.0,
+            "alt_value": 3573.5,
+            "raw_score": 0.046969414387340265
+          }
+        ],
+        "tss_activity": [
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 24.48880958557129,
+            "alt_value": 20.94648551940918,
+            "raw_score": -0.21587406913041954,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 23.905000686645508,
+            "alt_value": 20.66798973083496,
+            "raw_score": -0.20087013860478625,
+            "region_label": "TERT TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 412.1728515625,
+            "alt_value": 411.85113525390625,
+            "raw_score": -0.0011237895118245268,
+            "region_label": "CLPTM1L TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 1.0954606533050537,
+            "alt_value": 1.0872712135314941,
+            "raw_score": -0.0056493600939919305,
+            "region_label": "SLC6A18 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 342.7451171875,
+            "alt_value": 339.89447021484375,
+            "raw_score": -0.012014023415790368,
+            "region_label": "SLC6A19 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 1.2664439678192139,
+            "alt_value": 1.273620367050171,
+            "raw_score": 0.004560888763293763,
+            "region_label": "SLC6A3 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 22.741226196289062,
+            "alt_value": 22.729103088378906,
+            "raw_score": -0.0007368791540288325,
+            "region_label": "LPCAT1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 22.948097229003906,
+            "alt_value": 23.061294555664062,
+            "raw_score": 0.006803232383204484,
+            "region_label": "SLC12A7 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 566.594482421875,
+            "alt_value": 564.841552734375,
+            "raw_score": -0.004462439705521442,
+            "region_label": "NKD2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 3438.59716796875,
+            "alt_value": 3436.01611328125,
+            "raw_score": -0.0010829967661362115,
+            "region_label": "TRIP13 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 3525.869384765625,
+            "alt_value": 3523.49658203125,
+            "raw_score": -0.0009709412001073692,
+            "region_label": "BRD9 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 2.248807907104492,
+            "alt_value": 2.2447729110717773,
+            "raw_score": -0.0017929304889339615,
+            "region_label": "ZDHHC11 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 8781.205078125,
+            "alt_value": 8768.2939453125,
+            "raw_score": -0.002122534447435436,
+            "region_label": "MRPL36 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 8784.04296875,
+            "alt_value": 8771.125,
+            "raw_score": -0.0021229725488937545,
+            "region_label": "NDUFS6 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 43.93910598754883,
+            "alt_value": 43.91898727416992,
+            "raw_score": -0.000646022354853993,
+            "region_label": "ZDHHC11B TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 127.71044921875,
+            "alt_value": 102.57085418701172,
+            "raw_score": -0.31351110977358615,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 187.545654296875,
+            "alt_value": 152.5532684326172,
+            "raw_score": -0.29617467795370434,
+            "region_label": "TERT TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 4567.48046875,
+            "alt_value": 4583.4453125,
+            "raw_score": 0.005032800399512412,
+            "region_label": "CLPTM1L TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 0.1344771385192871,
+            "alt_value": 0.13325214385986328,
+            "raw_score": -0.001558646268668533,
+            "region_label": "SLC6A18 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 0.8139257431030273,
+            "alt_value": 0.8138136863708496,
+            "raw_score": -8.912640778379995e-05,
+            "region_label": "SLC6A19 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 3.838252544403076,
+            "alt_value": 3.8568263053894043,
+            "raw_score": 0.005527815928879844,
+            "region_label": "SLC6A3 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 3427.955078125,
+            "alt_value": 3433.88427734375,
+            "raw_score": 0.0024924908623342886,
+            "region_label": "LPCAT1 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 2052.0537109375,
+            "alt_value": 2059.4892578125,
+            "raw_score": 0.005215571281265921,
+            "region_label": "SLC12A7 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 2.665933609008789,
+            "alt_value": 2.6732025146484375,
+            "raw_score": 0.0028577798180451546,
+            "region_label": "NKD2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 6017.4443359375,
+            "alt_value": 6016.173828125,
+            "raw_score": -0.0003045884810115162,
+            "region_label": "TRIP13 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 6055.43115234375,
+            "alt_value": 6054.685546875,
+            "raw_score": -0.00017762069839591526,
+            "region_label": "BRD9 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 2.844207763671875,
+            "alt_value": 2.8406753540039062,
+            "raw_score": -0.001326289597706506,
+            "region_label": "ZDHHC11 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 4940.62109375,
+            "alt_value": 4951.8251953125,
+            "raw_score": 0.003267309397290609,
+            "region_label": "MRPL36 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 102.56043243408203,
+            "alt_value": 102.43911743164062,
+            "raw_score": -0.0016910237008665513,
+            "region_label": "NDUFS6 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 61.89629364013672,
+            "alt_value": 61.7811164855957,
+            "raw_score": -0.00264431859366954,
+            "region_label": "ZDHHC11B TSS"
+          }
+        ],
+        "gene_expression": [
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.004022739827632904,
+            "alt_value": 0.0034263667184859514,
+            "raw_score": -0.12639647350935426,
+            "region_label": "TERT (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.08703659913119148,
+            "alt_value": 0.08658089707879459,
+            "raw_score": -0.005189722949305133,
+            "region_label": "CLPTM1L (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.06742083032925923,
+            "alt_value": 0.06584965189297994,
+            "raw_score": -0.02323121899487822,
+            "region_label": "SLC6A18 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 15.441078821818033,
+            "alt_value": 15.292991002400717,
+            "raw_score": -0.009636167939669458,
+            "region_label": "SLC6A19 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.0005991787731866626,
+            "alt_value": 0.0005972676307839505,
+            "raw_score": -0.0011957920696368184,
+            "region_label": "SLC6A3 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.1128240099975041,
+            "alt_value": 0.11274760748658862,
+            "raw_score": -0.0006714590741209095,
+            "region_label": "LPCAT1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 1.2825913826624553,
+            "alt_value": 1.2888232072194417,
+            "raw_score": 0.004843243496906188,
+            "region_label": "SLC12A7 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 8.341152928092264,
+            "alt_value": 8.363485206257213,
+            "raw_score": 0.002673463240999992,
+            "region_label": "NKD2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 182.69316218449518,
+            "alt_value": 182.87715031550482,
+            "raw_score": 0.0010065759372533708,
+            "region_label": "TRIP13 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.12486642949721392,
+            "alt_value": 0.12505647715400248,
+            "raw_score": 0.00150877659651509,
+            "region_label": "BRD9 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.11628166070351234,
+            "alt_value": 0.11555778292509225,
+            "raw_score": -0.006191257381327036,
+            "region_label": "ZDHHC11 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.23676649729410806,
+            "alt_value": 0.2361300786336263,
+            "raw_score": -0.0026802427043202625,
+            "region_label": "MRPL36 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 649.2779846191406,
+            "alt_value": 648.2958984375,
+            "raw_score": -0.0015137247570499964,
+            "region_label": "NDUFS6 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.0014721155166625977,
+            "alt_value": 0.0014719963073730469,
+            "raw_score": -4.8222731935142093e-05,
+            "region_label": "ZDHHC11B (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 14.078758120536804,
+            "alt_value": 11.453405797481537,
+            "raw_score": -0.2063637298477662,
+            "region_label": "TERT (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 547.834088493796,
+            "alt_value": 548.5329930922564,
+            "raw_score": 0.0012749441859867066,
+            "region_label": "CLPTM1L (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.0007269825631131729,
+            "alt_value": 0.0006652475179483494,
+            "raw_score": -0.036401930667495426,
+            "region_label": "SLC6A18 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.0021657474959890046,
+            "alt_value": 0.0021155965514481068,
+            "raw_score": -0.015968560182003957,
+            "region_label": "SLC6A19 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.22396931402823506,
+            "alt_value": 0.22610337243360631,
+            "raw_score": 0.009441288188312559,
+            "region_label": "SLC6A3 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 420.74428013392856,
+            "alt_value": 420.517822265625,
+            "raw_score": -0.0005383752215921449,
+            "region_label": "LPCAT1 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 477.4878781636556,
+            "alt_value": 478.4559720357259,
+            "raw_score": 0.002025416403701595,
+            "region_label": "SLC12A7 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.020565738054839047,
+            "alt_value": 0.02053798328746449,
+            "raw_score": -0.0012878132256841862,
+            "region_label": "NKD2 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.032783183913964495,
+            "alt_value": 0.03280118107795715,
+            "raw_score": 0.0005325836654737435,
+            "region_label": "TRIP13 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 205.04552145565256,
+            "alt_value": 205.16156993192786,
+            "raw_score": 0.000565801596345121,
+            "region_label": "BRD9 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 18.075006338266228,
+            "alt_value": 18.04332733154297,
+            "raw_score": -0.0017540820710770751,
+            "region_label": "ZDHHC11 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 717.737164815267,
+            "alt_value": 717.4397583007812,
+            "raw_score": -0.0004144521828638729,
+            "region_label": "MRPL36 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.14178002625703812,
+            "alt_value": 0.1415300965309143,
+            "raw_score": -0.0017519868388169767,
+            "region_label": "NDUFS6 (exons)"
+          },
+          {
+            "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+            "assay_type": "RNA",
+            "cell_type": "HepG2",
+            "layer": "gene_expression",
+            "ref_value": 0.3273162841796875,
+            "alt_value": 0.32724761962890625,
+            "raw_score": -0.00020916334459842456,
+            "region_label": "ZDHHC11B (exons)"
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "layer": "chromatin_accessibility",
+          "ref_value": 36.79554748535156,
+          "alt_value": 35.104103088378906,
+          "raw_score": -0.06605348436933581
+        },
+        {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "layer": "histone_marks",
+          "ref_value": 2159.5,
+          "alt_value": 1850.75,
+          "raw_score": -0.22247589372579557
+        },
+        {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K4me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "layer": "histone_marks",
+          "ref_value": 3459.0,
+          "alt_value": 3573.5,
+          "raw_score": 0.046969414387340265
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 24.48880958557129,
+          "alt_value": 20.94648551940918,
+          "raw_score": -0.21587406913041954,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 23.905000686645508,
+          "alt_value": 20.66798973083496,
+          "raw_score": -0.20087013860478625,
+          "region_label": "TERT TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 412.1728515625,
+          "alt_value": 411.85113525390625,
+          "raw_score": -0.0011237895118245268,
+          "region_label": "CLPTM1L TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 1.0954606533050537,
+          "alt_value": 1.0872712135314941,
+          "raw_score": -0.0056493600939919305,
+          "region_label": "SLC6A18 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 342.7451171875,
+          "alt_value": 339.89447021484375,
+          "raw_score": -0.012014023415790368,
+          "region_label": "SLC6A19 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 1.2664439678192139,
+          "alt_value": 1.273620367050171,
+          "raw_score": 0.004560888763293763,
+          "region_label": "SLC6A3 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 22.741226196289062,
+          "alt_value": 22.729103088378906,
+          "raw_score": -0.0007368791540288325,
+          "region_label": "LPCAT1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 22.948097229003906,
+          "alt_value": 23.061294555664062,
+          "raw_score": 0.006803232383204484,
+          "region_label": "SLC12A7 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 566.594482421875,
+          "alt_value": 564.841552734375,
+          "raw_score": -0.004462439705521442,
+          "region_label": "NKD2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 3438.59716796875,
+          "alt_value": 3436.01611328125,
+          "raw_score": -0.0010829967661362115,
+          "region_label": "TRIP13 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 3525.869384765625,
+          "alt_value": 3523.49658203125,
+          "raw_score": -0.0009709412001073692,
+          "region_label": "BRD9 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 2.248807907104492,
+          "alt_value": 2.2447729110717773,
+          "raw_score": -0.0017929304889339615,
+          "region_label": "ZDHHC11 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 8781.205078125,
+          "alt_value": 8768.2939453125,
+          "raw_score": -0.002122534447435436,
+          "region_label": "MRPL36 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 8784.04296875,
+          "alt_value": 8771.125,
+          "raw_score": -0.0021229725488937545,
+          "region_label": "NDUFS6 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 43.93910598754883,
+          "alt_value": 43.91898727416992,
+          "raw_score": -0.000646022354853993,
+          "region_label": "ZDHHC11B TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 127.71044921875,
+          "alt_value": 102.57085418701172,
+          "raw_score": -0.31351110977358615,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 187.545654296875,
+          "alt_value": 152.5532684326172,
+          "raw_score": -0.29617467795370434,
+          "region_label": "TERT TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 4567.48046875,
+          "alt_value": 4583.4453125,
+          "raw_score": 0.005032800399512412,
+          "region_label": "CLPTM1L TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 0.1344771385192871,
+          "alt_value": 0.13325214385986328,
+          "raw_score": -0.001558646268668533,
+          "region_label": "SLC6A18 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 0.8139257431030273,
+          "alt_value": 0.8138136863708496,
+          "raw_score": -8.912640778379995e-05,
+          "region_label": "SLC6A19 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 3.838252544403076,
+          "alt_value": 3.8568263053894043,
+          "raw_score": 0.005527815928879844,
+          "region_label": "SLC6A3 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 3427.955078125,
+          "alt_value": 3433.88427734375,
+          "raw_score": 0.0024924908623342886,
+          "region_label": "LPCAT1 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 2052.0537109375,
+          "alt_value": 2059.4892578125,
+          "raw_score": 0.005215571281265921,
+          "region_label": "SLC12A7 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 2.665933609008789,
+          "alt_value": 2.6732025146484375,
+          "raw_score": 0.0028577798180451546,
+          "region_label": "NKD2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 6017.4443359375,
+          "alt_value": 6016.173828125,
+          "raw_score": -0.0003045884810115162,
+          "region_label": "TRIP13 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 6055.43115234375,
+          "alt_value": 6054.685546875,
+          "raw_score": -0.00017762069839591526,
+          "region_label": "BRD9 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 2.844207763671875,
+          "alt_value": 2.8406753540039062,
+          "raw_score": -0.001326289597706506,
+          "region_label": "ZDHHC11 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 4940.62109375,
+          "alt_value": 4951.8251953125,
+          "raw_score": 0.003267309397290609,
+          "region_label": "MRPL36 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 102.56043243408203,
+          "alt_value": 102.43911743164062,
+          "raw_score": -0.0016910237008665513,
+          "region_label": "NDUFS6 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 61.89629364013672,
+          "alt_value": 61.7811164855957,
+          "raw_score": -0.00264431859366954,
+          "region_label": "ZDHHC11B TSS"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.004022739827632904,
+          "alt_value": 0.0034263667184859514,
+          "raw_score": -0.12639647350935426,
+          "region_label": "TERT (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.08703659913119148,
+          "alt_value": 0.08658089707879459,
+          "raw_score": -0.005189722949305133,
+          "region_label": "CLPTM1L (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.06742083032925923,
+          "alt_value": 0.06584965189297994,
+          "raw_score": -0.02323121899487822,
+          "region_label": "SLC6A18 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 15.441078821818033,
+          "alt_value": 15.292991002400717,
+          "raw_score": -0.009636167939669458,
+          "region_label": "SLC6A19 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.0005991787731866626,
+          "alt_value": 0.0005972676307839505,
+          "raw_score": -0.0011957920696368184,
+          "region_label": "SLC6A3 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.1128240099975041,
+          "alt_value": 0.11274760748658862,
+          "raw_score": -0.0006714590741209095,
+          "region_label": "LPCAT1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 1.2825913826624553,
+          "alt_value": 1.2888232072194417,
+          "raw_score": 0.004843243496906188,
+          "region_label": "SLC12A7 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 8.341152928092264,
+          "alt_value": 8.363485206257213,
+          "raw_score": 0.002673463240999992,
+          "region_label": "NKD2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 182.69316218449518,
+          "alt_value": 182.87715031550482,
+          "raw_score": 0.0010065759372533708,
+          "region_label": "TRIP13 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.12486642949721392,
+          "alt_value": 0.12505647715400248,
+          "raw_score": 0.00150877659651509,
+          "region_label": "BRD9 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.11628166070351234,
+          "alt_value": 0.11555778292509225,
+          "raw_score": -0.006191257381327036,
+          "region_label": "ZDHHC11 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.23676649729410806,
+          "alt_value": 0.2361300786336263,
+          "raw_score": -0.0026802427043202625,
+          "region_label": "MRPL36 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 649.2779846191406,
+          "alt_value": 648.2958984375,
+          "raw_score": -0.0015137247570499964,
+          "region_label": "NDUFS6 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.0014721155166625977,
+          "alt_value": 0.0014719963073730469,
+          "raw_score": -4.8222731935142093e-05,
+          "region_label": "ZDHHC11B (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 14.078758120536804,
+          "alt_value": 11.453405797481537,
+          "raw_score": -0.2063637298477662,
+          "region_label": "TERT (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 547.834088493796,
+          "alt_value": 548.5329930922564,
+          "raw_score": 0.0012749441859867066,
+          "region_label": "CLPTM1L (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.0007269825631131729,
+          "alt_value": 0.0006652475179483494,
+          "raw_score": -0.036401930667495426,
+          "region_label": "SLC6A18 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.0021657474959890046,
+          "alt_value": 0.0021155965514481068,
+          "raw_score": -0.015968560182003957,
+          "region_label": "SLC6A19 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.22396931402823506,
+          "alt_value": 0.22610337243360631,
+          "raw_score": 0.009441288188312559,
+          "region_label": "SLC6A3 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 420.74428013392856,
+          "alt_value": 420.517822265625,
+          "raw_score": -0.0005383752215921449,
+          "region_label": "LPCAT1 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 477.4878781636556,
+          "alt_value": 478.4559720357259,
+          "raw_score": 0.002025416403701595,
+          "region_label": "SLC12A7 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.020565738054839047,
+          "alt_value": 0.02053798328746449,
+          "raw_score": -0.0012878132256841862,
+          "region_label": "NKD2 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.032783183913964495,
+          "alt_value": 0.03280118107795715,
+          "raw_score": 0.0005325836654737435,
+          "region_label": "TRIP13 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 205.04552145565256,
+          "alt_value": 205.16156993192786,
+          "raw_score": 0.000565801596345121,
+          "region_label": "BRD9 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 18.075006338266228,
+          "alt_value": 18.04332733154297,
+          "raw_score": -0.0017540820710770751,
+          "region_label": "ZDHHC11 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 717.737164815267,
+          "alt_value": 717.4397583007812,
+          "raw_score": -0.0004144521828638729,
+          "region_label": "MRPL36 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.14178002625703812,
+          "alt_value": 0.1415300965309143,
+          "raw_score": -0.0017519868388169767,
+          "region_label": "NDUFS6 (exons)"
+        },
+        {
+          "assay_id": "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "HepG2",
+          "layer": "gene_expression",
+          "ref_value": 0.3273162841796875,
+          "alt_value": 0.32724761962890625,
+          "raw_score": -0.00020916334459842456,
+          "region_label": "ZDHHC11B (exons)"
+        }
+      ]
+    }
+  }
+}

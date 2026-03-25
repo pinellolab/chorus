@@ -1,0 +1,6 @@
+chrom	position	ref	alt	variant_id	max_effect	top_layer	top_track	layer_chromatin_accessibility	layer_histone_marks	layer_tss_activity	layer_gene_expression
+chr1	109274968	G	T	rs12740374	0.867	chromatin_accessibility	DNASE:HepG2	0.867	0.425	0.612	0.334
+chr1	109275684	C	T	rs629301	-0.523	tss_activity	CAGE:HepG2	-0.198		-0.523	-0.217
+chr1	109272715	A	G	rs12037222	0.312	histone_marks	H3K27ac:HepG2	0.105	0.312	0.087	
+chr1	109278590	G	A	rs2228603	-0.178	chromatin_accessibility	DNASE:HepG2	-0.178		-0.054	
+chr1	109271200	T	C	rs7528419	0.089	chromatin_accessibility	DNASE:HepG2	0.089		0.023	
