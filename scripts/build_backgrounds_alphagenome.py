@@ -24,7 +24,7 @@ from collections import defaultdict
 
 import numpy as np
 
-sys.path.insert(0, '/PHShome/lp698/chorus')
+import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')); sys.path.insert(0, REPO_ROOT)
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
 parser = argparse.ArgumentParser()
@@ -41,7 +41,7 @@ parser.add_argument("--n-cdf-points", type=int, default=10000)
 parser.add_argument("--perbin-bins", type=int, default=32)
 args = parser.parse_args()
 
-log_dir = "/PHShome/lp698/chorus/logs"
+log_dir = os.path.join(REPO_ROOT, "logs")
 os.makedirs(log_dir, exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -387,7 +387,7 @@ def build_variant_backgrounds():
         tracks_by_ot[t['output_type']].append((t_i, t))
 
     import pysam
-    ref = pysam.FastaFile('/PHShome/lp698/chorus/genomes/hg38.fa')
+    ref = pysam.FastaFile(os.path.join(REPO_ROOT, 'genomes/hg38.fa'))
 
     # Generate SNPs
     random.seed(42)
@@ -523,7 +523,7 @@ def build_baseline_backgrounds():
     )
 
     import pysam
-    ref = pysam.FastaFile('/PHShome/lp698/chorus/genomes/hg38.fa')
+    ref = pysam.FastaFile(os.path.join(REPO_ROOT, 'genomes/hg38.fa'))
 
     # Position sets
     random.seed(789)
