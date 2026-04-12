@@ -22,7 +22,8 @@ import time
 
 import numpy as np
 
-sys.path.insert(0, '/PHShome/lp698/chorus')
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, REPO_ROOT)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--oracle", choices=["alphagenome", "enformer", "chrombpnet", "all"], default="all")
@@ -33,7 +34,7 @@ args = parser.parse_args()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-BASE = '/PHShome/lp698/chorus/examples/applications'
+BASE = os.path.join(REPO_ROOT, 'examples/applications')
 
 # ══════════════════════════════════════════════════════════════════
 # Example definitions
@@ -290,7 +291,7 @@ if args.oracle in ("alphagenome", "all"):
         logger.info("Loading AlphaGenome oracle (via env runner)...")
         oracle = AlphaGenomeOracle(
             use_environment=True,
-            reference_fasta='/PHShome/lp698/chorus/genomes/hg38.fa',
+            reference_fasta=os.path.join(REPO_ROOT, 'genomes/hg38.fa'),
             device=f'cuda:{args.gpu}',
             predict_timeout=900, model_load_timeout=1200,
         )
@@ -321,7 +322,7 @@ if args.oracle in ("enformer", "all"):
 
         oracle = EnformerOracle(
             use_environment=True,
-            reference_fasta='/PHShome/lp698/chorus/genomes/hg38.fa',
+            reference_fasta=os.path.join(REPO_ROOT, 'genomes/hg38.fa'),
             device=f'cuda:{args.gpu}',
             predict_timeout=600, model_load_timeout=900,
         )
@@ -349,7 +350,7 @@ if args.oracle in ("chrombpnet", "all"):
 
         oracle = ChromBPNetOracle(
             use_environment=True,
-            reference_fasta='/PHShome/lp698/chorus/genomes/hg38.fa',
+            reference_fasta=os.path.join(REPO_ROOT, 'genomes/hg38.fa'),
             device=f'cuda:{args.gpu}',
             model_load_timeout=600, predict_timeout=300,
         )

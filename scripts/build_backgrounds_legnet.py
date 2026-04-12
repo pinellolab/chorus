@@ -22,7 +22,7 @@ from collections import defaultdict
 
 import numpy as np
 
-sys.path.insert(0, '/PHShome/lp698/chorus')
+import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')); sys.path.insert(0, REPO_ROOT)
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
 parser = argparse.ArgumentParser()
@@ -33,7 +33,7 @@ parser.add_argument("--reservoir-size", type=int, default=50000)
 parser.add_argument("--n-cdf-points", type=int, default=10000)
 args = parser.parse_args()
 
-log_dir = "/PHShome/lp698/chorus/logs"
+log_dir = os.path.join(REPO_ROOT, "logs")
 os.makedirs(log_dir, exist_ok=True)
 logging.basicConfig(
     level=logging.INFO,
@@ -111,7 +111,7 @@ def load_setup():
     device = torch.device(args.device or ('cuda:0' if torch.cuda.is_available() else 'cpu'))
     logger.info("Device: %s", device)
 
-    ref = pysam.FastaFile("/PHShome/lp698/chorus/genomes/hg38.fa")
+    ref = pysam.FastaFile(os.path.join(REPO_ROOT, "genomes/hg38.fa"))
     cell_types = list(LEGNET_AVAILABLE_CELLTYPES)
 
     def get_sequence(chrom, pos):

@@ -23,7 +23,8 @@ import os
 import sys
 import time
 
-sys.path.insert(0, "/PHShome/lp698/chorus")
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, REPO_ROOT)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gpu", type=int, default=1)
@@ -38,7 +39,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-BASE = "/PHShome/lp698/chorus/examples/applications"
+BASE = os.path.join(REPO_ROOT, "examples/applications")
 
 # ══════════════════════════════════════════════════════════════════════
 # Output helpers
@@ -395,7 +396,7 @@ def main():
     t0 = time.time()
     oracle = AlphaGenomeOracle(
         use_environment=False,
-        reference_fasta="/PHShome/lp698/chorus/genomes/hg38.fa",
+        reference_fasta=os.path.join(REPO_ROOT, "genomes/hg38.fa"),
         device=f"cuda:{args.gpu}",
     )
     oracle.load_pretrained_model()
