@@ -4,6 +4,11 @@ Given a GWAS sentinel variant and its LD proxies, score all variants across
 regulatory layers and identify the most likely causal variant using
 `fine_map_causal_variant`.
 
+> Natural language works — describe your locus, sentinel, and gene in
+> plain English (or paste an LD-proxy list). The prompts below are
+> concrete demonstrations; the SORT1 locus example shows how the
+> ranked output looks and which per-layer scores to inspect.
+
 ## Example Prompts
 
 ### For a geneticist (GWAS fine-mapping)

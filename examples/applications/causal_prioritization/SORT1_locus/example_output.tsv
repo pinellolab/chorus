@@ -1,0 +1,12 @@
+rank	variant_id	chrom	position	ref	alt	r2	is_sentinel	gene_name	max_effect	n_layers_affected	convergence	ref_activity	composite	top_layer	top_track	layer_chromatin_accessibility	layer_tss_activity	layer_gene_expression	layer_histone_marks	layer_tf_binding	layer_splicing
+1	rs12740374	chr1	109274968	G	T	1.0	True	SORT1	1.9085	5	1.0	2544.759	0.9539	chromatin_accessibility	DNASE/EFO:0005726 DNase-seq/.	1.9085	1.2648	0.2851	1.0	1.0358	-0.0101
+2	rs660240	chr1	109275216	T	C	0.9509	False	SORT1	0.2054	3	1.0	2894.1772	0.5452	tss_activity	PROCAP/ENCSR182QNJ/-	0.1182	0.2054	0.041	-0.093	0.1203	-0.0018
+3	rs7528419	chr1	109274570	A	G	1.0	False	SORT1	0.2121	2	1.0	2742.4048	0.464	tss_activity	PROCAP/ENCSR860TYZ/+	0.1773	0.2121	0.0566	0.0804	0.0768	-0.0733
+4	rs56960352	chr1	109278685	G	T	0.907	False	SORT1	-0.5831	3	1.0	1418.0998	0.4237	chromatin_accessibility	DNASE/EFO:0005715 DNase-seq/.	-0.5831	-0.1616	0.0183	-0.1264	-0.0902	0.0003
+5	rs142678968	chr1	109275536	C	T	0.9509	False	SORT1	0.1223	1	1.0	2636.6113	0.3701	gene_expression	RNA_SEQ/UBERON:0002113 polyA plus RNA-seq/-	-0.0748	-0.0645	0.1223	-0.0312	-0.0831	0.0132
+6	rs4970836	chr1	109279175	G	A	0.907	False	SORT1	-0.5518	2	1.0	1377.0314	0.3498	tss_activity	CAGE/hCAGE UBERON:0002038/-	-0.1976	-0.5518	0.0124	-0.0274	-0.0894	0.0001
+7	rs1624712	chr1	109275908	C	T	1.0	False	SORT1	0.297	3	0.3333	2273.7556	0.3478	chromatin_accessibility	DNASE/UBERON:0000473 DNase-seq/.	0.297	0.093	-0.019	0.1608	-0.175	-0.0011
+8	rs602633	chr1	109278889	T	G	0.8582	False	SORT1	-0.3138	3	0.3333	1381.0625	0.2334	chromatin_accessibility	DNASE/CL:0000351 DNase-seq/.	-0.3138	-0.1039	-0.0154	-0.046	0.1259	-0.0001
+9	rs1626484	chr1	109275684	G	T	1.0	False	SORT1	-0.193	2	0.0	2513.4812	0.2301	gene_expression	RNA_SEQ/UBERON:0000996 total RNA-seq/+	0.0345	0.1276	-0.193	-0.0245	0.0264	0.0024
+10	rs599839	chr1	109279544	G	A	0.907	False	SORT1	-0.1522	1	1.0	1450.5859	0.2196	gene_expression	RNA_SEQ/CL:0000221 polyA plus RNA-seq/-	-0.0524	0.0411	-0.1522	-0.0316	0.0351	-0.0044
+11	rs1277930	chr1	109279521	G	A	0.907	False	SORT1	-0.1013	1	1.0	1456.5377	0.2105	chromatin_accessibility	DNASE/CL:0000863 DNase-seq/.	-0.1013	0.0498	0.0524	-0.0485	-0.0655	0.0083

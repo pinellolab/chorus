@@ -8,12 +8,13 @@
     ]
   },
   "oracle": "chrombpnet",
-  "gene_name": "CELSR2",
+  "gene_name": "SORT1",
   "nearby_genes": [
+    "SORT1",
     "CELSR2"
   ],
   "alleles": {
-    "T": {
+    "alt_1": {
       "scores_by_layer": {
         "chromatin_accessibility": [
           {
@@ -21,9 +22,12 @@
             "assay_type": "ATAC",
             "cell_type": "HepG2",
             "layer": "chromatin_accessibility",
-            "ref_value": 675.668701171875,
-            "alt_value": 917.7987060546875,
-            "raw_score": 0.4412991657074812
+            "ref_value": 686.5375729824882,
+            "alt_value": 635.6635888748569,
+            "raw_score": -0.11090729888458001,
+            "description": "ATAC:HepG2",
+            "quantile_score": 0.96721823290665,
+            "ref_signal_percentile": 0.8198
           }
         ]
       },
@@ -33,11 +37,24 @@
           "assay_type": "ATAC",
           "cell_type": "HepG2",
           "layer": "chromatin_accessibility",
-          "ref_value": 675.668701171875,
-          "alt_value": 917.7987060546875,
-          "raw_score": 0.4412991657074812
+          "ref_value": 686.5375729824882,
+          "alt_value": 635.6635888748569,
+          "raw_score": -0.11090729888458001,
+          "description": "ATAC:HepG2",
+          "quantile_score": 0.96721823290665,
+          "ref_signal_percentile": 0.8198
         }
       ]
     }
+  },
+  "analysis_request": {
+    "user_prompt": "Load ChromBPNet with the HepG2 ATAC model and score rs12740374 (chr1:109274968 G>T) \u2014 I want base-resolution chromatin effects around the CEBP motif.",
+    "tool_name": "analyze_variant_multilayer",
+    "oracle_name": "chrombpnet",
+    "normalizer_name": "per-track background CDFs",
+    "tracks_requested": "ATAC:HepG2",
+    "cell_types": [],
+    "notes": [],
+    "generated_at": "2026-04-12 02:21 UTC"
   }
 }

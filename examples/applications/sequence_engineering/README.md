@@ -3,6 +3,11 @@
 Predict effects of sequence modifications: region replacement and construct
 insertion. Both tools reuse the multi-layer scoring infrastructure.
 
+> These examples show what the output of a swap/insertion looks like.
+> Describe your own edit in plain language (the region, the construct
+> sequence, the tissue you care about) and Claude will call the right
+> tool. No special prompt format is required.
+
 ## Region Swap — `analyze_region_swap`
 
 Replace a genomic region with a custom sequence and score effects across

@@ -10,14 +10,16 @@ preserving the shape of peaks and effects.
 
 import json
 import logging
+from pathlib import Path
 from typing import Optional
 
 import numpy as np
 
 logger = logging.getLogger(__name__)
 
-# IGV.js CDN
+# IGV.js: prefer local cached copy (inlined), fall back to CDN
 _IGV_CDN = "https://cdn.jsdelivr.net/npm/igv@3.1.1/dist/igv.min.js"
+_IGV_LOCAL = Path.home() / ".chorus" / "lib" / "igv.min.js"
 
 # Vivid alt colours that contrast strongly with the grey ref
 _LAYER_COLORS = {
@@ -33,6 +35,31 @@ _LAYER_COLORS = {
 
 _REF_COLOR = "180,180,180"  # light grey — strong contrast with vivid alt
 
+# Layer-aware CDF percentile thresholds for IGV visualization.
+# floor_pctile = noise threshold (anything below maps to 0).
+# peak_pctile  = "1.0" reference point.
+#
+# Sharp signals (CAGE, TF, DNASE) use floor=p95 / peak=p99 — captures
+# all real peaks while suppressing model noise.  Broad histone marks
+# use floor=p90 / peak=p99 to preserve their domain shape.
+_LAYER_FLOOR_PCTILE = {
+    "tss_activity":              0.95,  # CAGE/PRO-CAP — sharp TSS peaks
+    "tf_binding":                0.95,  # ChIP-TF — sharp binding peaks
+    "chromatin_accessibility":   0.95,  # DNASE/ATAC — focused peaks
+    "splicing":                  0.95,  # SPLICE — sharp signals
+    "histone_marks":             0.90,  # ChIP-Histone — broad domains
+    "gene_expression":           0.90,  # RNA-seq — broad coverage
+    "promoter_activity":         0.95,
+    "regulatory_classification": 0.95,
+}
+_PEAK_PCTILE = 0.99
+_DEFAULT_FLOOR_PCTILE = 0.95
+# Display max: tall enough to show strong peaks (>>p99) without
+# saturating most bins.  1.0 = p99 (top 1% threshold), so 3.0 captures
+# 3x stronger than the genome-wide top 1%.  Bins above 3.0 clip but
+# this is rare for real biology.
+_DISPLAY_MAX = 3.0
+
 
 def build_igv_html(
     ref_pred,
@@ -44,6 +71,8 @@ def build_igv_html(
     gene_name: Optional[str] = None,
     genome: str = "hg38",
     bin_size: int = 0,
+    normalizer=None,
+    oracle_name: Optional[str] = None,
 ) -> str:
     """Build the IGV.js browser configuration as an HTML fragment.
 
@@ -57,6 +86,10 @@ def build_igv_html(
         gene_name: Gene to mention in the header.
         genome: IGV genome identifier (default hg38).
         bin_size: Downsample bin size in bp.  0 = auto-detect.
+        normalizer: Optional QuantileNormalizer with baseline backgrounds.
+            When provided, signal values are mapped to genome-wide activity
+            percentiles [0, 1], making all tracks directly comparable.
+        oracle_name: Oracle name for baseline lookup (required if normalizer given).
 
     Returns:
         HTML string containing the IGV.js browser div + script.
@@ -95,7 +128,13 @@ def build_igv_html(
         }],
     })
 
-    # Signal tracks grouped by assay
+    # When a PerTrackNormalizer is available, rescale raw bin values
+    # using CDF-derived noise floor (p95) and peak threshold (p99).
+    # This preserves peak shape (linear transform) while making tracks
+    # comparable across cell types: 1.0 = top 1% of bins genome-wide.
+    # Falls back to raw autoscale when no normalizer is available.
+    use_floor = normalizer is not None and oracle_name is not None
+
     for assay_id in assay_ids:
         ref_track = ref_pred[assay_id]
         alt_track = alt_pred[assay_id]
@@ -106,35 +145,75 @@ def build_igv_html(
         t_start = ref_track.prediction_interval.reference.start
         t_res = ref_track.resolution
 
+        ref_vals = ref_track.values
+        alt_vals = alt_track.values
+
+        # Apply layer-aware floor-subtract + rescale when available
+        floor_ok = False
+        if use_floor:
+            from .normalization import PerTrackNormalizer
+            if isinstance(normalizer, PerTrackNormalizer):
+                floor_p = _LAYER_FLOOR_PCTILE.get(layer, _DEFAULT_FLOOR_PCTILE)
+                ref_fl = normalizer.perbin_floor_rescale_batch(
+                    oracle_name, assay_id, ref_vals,
+                    floor_pctile=floor_p,
+                    peak_pctile=_PEAK_PCTILE,
+                    max_value=_DISPLAY_MAX,
+                )
+                if ref_fl is not None:
+                    alt_fl = normalizer.perbin_floor_rescale_batch(
+                        oracle_name, assay_id, alt_vals,
+                        floor_pctile=floor_p,
+                        peak_pctile=_PEAK_PCTILE,
+                        max_value=_DISPLAY_MAX,
+                    )
+                    ref_vals = ref_fl
+                    alt_vals = alt_fl
+                    floor_ok = True
+
         ref_features = _downsample_to_features(
-            ref_track.values, variant_chrom, t_start, t_res, bin_size,
+            ref_vals, variant_chrom, t_start, t_res, bin_size,
+            skip_zeros=not floor_ok,
         )
         alt_features = _downsample_to_features(
-            alt_track.values, variant_chrom, t_start, t_res, bin_size,
+            alt_vals, variant_chrom, t_start, t_res, bin_size,
+            skip_zeros=not floor_ok,
         )
 
         group_id = assay_id.replace(":", "_").replace(" ", "_")
+        if floor_ok:
+            scale_cfg = {"min": 0, "max": _DISPLAY_MAX, "autoscale": False}
+            name_suffix = ""
+        else:
+            scale_cfg = {"autoscale": True, "autoscaleGroup": group_id}
+            name_suffix = ""
+
+        # Build a human-readable display name from track metadata
+        display_name = assay_id
+        meta = getattr(ref_track, "metadata", None)
+        if meta and isinstance(meta, dict) and meta.get("description"):
+            display_name = meta["description"]
+        elif hasattr(ref_track, "assay_type") and hasattr(ref_track, "cell_type"):
+            display_name = f"{ref_track.assay_type}:{ref_track.cell_type}"
 
         # Merged overlay: ref (grey) + alt (coloured) on same panel
         tracks.append({
-            "name": assay_id,
+            "name": f"{display_name}{name_suffix}",
             "type": "merged",
             "height": 80,
             "tracks": [
                 {
                     "type": "wig",
-                    "name": f"{assay_id} ref",
+                    "name": f"{display_name} ref",
                     "color": f"rgb({_REF_COLOR})",
-                    "autoscale": True,
-                    "autoscaleGroup": group_id,
+                    **scale_cfg,
                     "features": ref_features,
                 },
                 {
                     "type": "wig",
-                    "name": f"{assay_id} alt",
+                    "name": f"{display_name} alt",
                     "color": f"rgb({rgb})",
-                    "autoscale": True,
-                    "autoscaleGroup": group_id,
+                    **scale_cfg,
                     "features": alt_features,
                 },
             ],
@@ -167,9 +246,16 @@ def build_igv_html(
     # Build HTML fragment
     options_json = json.dumps(igv_options, separators=(",", ":"))
 
+    # Inline IGV.js from local cache (no network needed) or fall back to CDN
+    if _IGV_LOCAL.exists():
+        igv_js = _IGV_LOCAL.read_text()
+        igv_script_tag = f"<script>{igv_js}</script>"
+    else:
+        igv_script_tag = f'<script src="{_IGV_CDN}"></script>'
+
     html = f"""
 <div id="igv-div" style="margin: 1rem 0; min-height: 400px;"></div>
-<script src="{_IGV_CDN}"></script>
+{igv_script_tag}
 <script>
 (async function() {{
     try {{
@@ -195,11 +281,14 @@ def _downsample_to_features(
     start: int,
     resolution: int,
     bin_size: int,
+    skip_zeros: bool = True,
 ) -> list[dict]:
     """Downsample a signal array into IGV wig features.
 
     Aggregates bins by taking the mean over each output bin.
-    Skips bins with near-zero signal to reduce JSON size.
+    When *skip_zeros* is True (default for raw data), bins with near-zero
+    signal are omitted to reduce JSON size.  Set to False for
+    percentile-normalized data to avoid gaps.
     """
     n = len(values)
     vals = values.astype(np.float64)
@@ -208,14 +297,17 @@ def _downsample_to_features(
     bins_per = max(1, bin_size // resolution)
 
     features = []
-    threshold = float(np.percentile(np.abs(vals[vals != 0]), 5)) if np.any(vals != 0) else 0
+    if skip_zeros:
+        threshold = float(np.percentile(np.abs(vals[vals != 0]), 5)) if np.any(vals != 0) else 0
+    else:
+        threshold = -1  # never skip
 
     for i in range(0, n, bins_per):
         chunk = vals[i:i + bins_per]
         v = float(np.mean(chunk))
 
-        # Skip near-zero bins to reduce JSON size
-        if abs(v) < threshold * 0.1:
+        # Skip near-zero bins to reduce JSON size (only for raw data)
+        if skip_zeros and abs(v) < threshold * 0.1:
             continue
 
         feat_start = start + i * resolution

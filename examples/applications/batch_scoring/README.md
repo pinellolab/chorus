@@ -4,6 +4,10 @@ Score multiple variants and rank by regulatory effect magnitude using
 `score_variant_batch`. Useful for prioritizing variants from VCFs,
 GWAS fine-mapping, or ClinVar triage.
 
+> Paste a variant list in any format — rsIDs, VCF lines, space-separated
+> coordinates — and ask Claude to score them. It'll parse the input and
+> build the `variants` argument for you. No need to hand-craft JSON.
+
 ## Example Prompts
 
 ### For a geneticist (VCF triage)
@@ -91,17 +95,24 @@ d = result.to_dict()                        # JSON for pipelines
 ### [example_output.md](example_output.md)
 
 ```
-| Rank | Variant | ID | Max Effect | Top Layer | Top Track |
-|------|---------|-----|-----------|-----------|-----------|
-| 1 | chr1:109274968 G>T | rs12740374 | +0.867 | chromatin_accessibility | DNASE:HepG2 |
-| 2 | chr1:109275684 C>T | rs629301 | -0.523 | tss_activity | CAGE:HepG2 |
-| 3 | chr1:109272715 A>G | rs12037222 | +0.312 | histone_marks | H3K27ac:HepG2 |
-| 4 | chr1:109278590 G>A | rs2228603 | -0.178 | chromatin_accessibility | DNASE:HepG2 |
-| 5 | chr1:109271200 T>C | rs7528419 | +0.089 | chromatin_accessibility | DNASE:HepG2 |
+| Rank | Variant | ID | Max Effect | Quantile | Ref %ile | Top Layer | Top Track |
+|------|---------|-----|-----------|----------|---------|-----------|-----------|
+| 1 | chr1:109274968 G>T | rs12740374 | +0.867 | 0.97 | 0.91 | chromatin | DNASE:HepG2 |
+| 2 | chr1:109275684 C>T | rs629301 | -0.523 | 0.89 | 0.85 | tss_activity | CAGE:HepG2 |
+| 3 | chr1:109272715 A>G | rs12037222 | +0.312 | 0.78 | 0.72 | histone | H3K27ac:HepG2 |
+| 4 | chr1:109278590 G>A | rs2228603 | -0.178 | 0.61 | 0.44 | chromatin | DNASE:HepG2 |
+| 5 | chr1:109271200 T>C | rs7528419 | +0.089 | 0.42 | 0.38 | chromatin | DNASE:HepG2 |
 ```
 
-**Interpretation**: rs12740374 is the clear top hit — strongest chromatin
-opening effect, consistent with its known role as the causal GWAS variant.
+**Columns**:
+- **Max Effect**: Raw effect score (log2FC or diff depending on layer)
+- **Quantile**: Effect magnitude ranked against ~10K random SNPs [0,1]
+- **Ref %ile**: Reference signal activity percentile genome-wide [0,1]
+  — high values mean the variant is in an already-active regulatory region
+
+**Interpretation**: rs12740374 is the clear top hit — 97th percentile
+effect on a region that is already in the 91st percentile of genome-wide
+chromatin accessibility, consistent with disrupting an active enhancer.
 rs629301 shows a moderate TSS effect. The remaining variants have smaller
 effects consistent with being in linkage disequilibrium but not causal.
 

@@ -15,6 +15,11 @@ from .scorers import (
 from .normalization import (
     BackgroundDistribution,
     QuantileNormalizer,
+    PerTrackNormalizer,
+    get_normalizer,
+    get_pertrack_normalizer,
+    download_backgrounds,
+    download_pertrack_backgrounds,
 )
 from .variant_report import (
     TrackScore,
@@ -23,8 +28,10 @@ from .variant_report import (
 )
 from .discovery import (
     CellTypeHit,
+    TrackEffect,
     discover_cell_types,
     discover_and_report,
+    discover_variant_effects,
 )
 from .region_swap import analyze_region_swap
 from .integration import simulate_integration
@@ -49,12 +56,19 @@ __all__ = [
     "score_variant_multilayer",
     "BackgroundDistribution",
     "QuantileNormalizer",
+    "PerTrackNormalizer",
+    "get_normalizer",
+    "get_pertrack_normalizer",
+    "download_backgrounds",
+    "download_pertrack_backgrounds",
     "TrackScore",
     "VariantReport",
     "build_variant_report",
     "CellTypeHit",
+    "TrackEffect",
     "discover_cell_types",
     "discover_and_report",
+    "discover_variant_effects",
     "analyze_region_swap",
     "simulate_integration",
     "BatchVariantScore",

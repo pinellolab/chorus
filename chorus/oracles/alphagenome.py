@@ -422,7 +422,17 @@ class AlphaGenomeOracle(OracleBase):
     def get_all_assay_ids(self) -> List[str]:
         from .alphagenome_source.alphagenome_metadata import get_metadata
 
-        return list(get_metadata()._track_index_map.keys())
+        metadata = get_metadata()
+        ids = []
+        for aid, idx in metadata._track_index_map.items():
+            # Skip padding tracks (placeholder slots in AlphaGenome metadata)
+            if '/Padding/' in aid:
+                continue
+            info = metadata.get_track_info(idx)
+            if info and info.get('name', '').lower() == 'padding':
+                continue
+            ids.append(aid)
+        return ids
 
     def get_track_info(
         self, query: str = None

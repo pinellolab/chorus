@@ -7,73 +7,119 @@
       "ref": "G",
       "alt": "T",
       "variant_id": "rs12740374",
-      "max_effect": 0.867,
+      "gene_name": "SORT1",
+      "cell_type": "multi-tissue",
+      "max_effect": 1.9084787157480703,
+      "max_quantile": null,
       "top_layer": "chromatin_accessibility",
-      "top_track": "DNASE:HepG2",
+      "top_track": "DNASE/EFO:0005726 DNase-seq/.",
       "per_layer_scores": {
-        "chromatin_accessibility": 0.867,
-        "histone_marks": 0.425,
-        "tss_activity": 0.612,
-        "gene_expression": 0.334
-      }
+        "chromatin_accessibility": 1.9084787157480703,
+        "tss_activity": 1.2647798872106824,
+        "gene_expression": 0.2850554874169975,
+        "histone_marks": 1.0,
+        "tf_binding": 1.0358242052222926,
+        "splicing": -0.010053787221623195
+      },
+      "top_track_description": "DNASE:LNCaP clone FGC"
+    },
+    {
+      "chrom": "chr1",
+      "position": 109279175,
+      "ref": "G",
+      "alt": "A",
+      "variant_id": "rs4970836",
+      "gene_name": "SORT1",
+      "cell_type": "multi-tissue",
+      "max_effect": -0.5518435458632369,
+      "max_quantile": null,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE UBERON:0002038/-",
+      "per_layer_scores": {
+        "chromatin_accessibility": -0.19758376943279002,
+        "tss_activity": -0.5518435458632369,
+        "gene_expression": 0.012441581841404563,
+        "histone_marks": -0.027356455723938782,
+        "tf_binding": -0.08939147369411081,
+        "splicing": 7.179717591409341e-05
+      },
+      "top_track_description": "CAGE:substantia nigra"
+    },
+    {
+      "chrom": "chr1",
+      "position": 109274570,
+      "ref": "A",
+      "alt": "G",
+      "variant_id": "rs7528419",
+      "gene_name": "SORT1",
+      "cell_type": "multi-tissue",
+      "max_effect": 0.2120966765734459,
+      "max_quantile": null,
+      "top_layer": "tss_activity",
+      "top_track": "PROCAP/ENCSR860TYZ/+",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.17729269312822923,
+        "tss_activity": 0.2120966765734459,
+        "gene_expression": 0.056574661615827034,
+        "histone_marks": 0.08037626719209925,
+        "tf_binding": 0.07682935069174886,
+        "splicing": -0.07327051969288209
+      },
+      "top_track_description": "PRO_CAP:MCF 10A"
+    },
+    {
+      "chrom": "chr1",
+      "position": 109275216,
+      "ref": "T",
+      "alt": "C",
+      "variant_id": "rs660240",
+      "gene_name": "SORT1",
+      "cell_type": "multi-tissue",
+      "max_effect": 0.20541199104663485,
+      "max_quantile": null,
+      "top_layer": "tss_activity",
+      "top_track": "PROCAP/ENCSR182QNJ/-",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.11824803822477031,
+        "tss_activity": 0.20541199104663485,
+        "gene_expression": 0.04102320923959014,
+        "histone_marks": -0.09301894085760927,
+        "tf_binding": 0.12029423371771175,
+        "splicing": -0.0017689404236232158
+      },
+      "top_track_description": "PRO_CAP:Caco-2"
     },
     {
       "chrom": "chr1",
       "position": 109275684,
-      "ref": "C",
-      "alt": "T",
-      "variant_id": "rs629301",
-      "max_effect": -0.523,
-      "top_layer": "tss_activity",
-      "top_track": "CAGE:HepG2",
-      "per_layer_scores": {
-        "chromatin_accessibility": -0.198,
-        "tss_activity": -0.523,
-        "gene_expression": -0.217
-      }
-    },
-    {
-      "chrom": "chr1",
-      "position": 109272715,
-      "ref": "A",
-      "alt": "G",
-      "variant_id": "rs12037222",
-      "max_effect": 0.312,
-      "top_layer": "histone_marks",
-      "top_track": "H3K27ac:HepG2",
-      "per_layer_scores": {
-        "chromatin_accessibility": 0.105,
-        "histone_marks": 0.312,
-        "tss_activity": 0.087
-      }
-    },
-    {
-      "chrom": "chr1",
-      "position": 109278590,
       "ref": "G",
-      "alt": "A",
-      "variant_id": "rs2228603",
-      "max_effect": -0.178,
-      "top_layer": "chromatin_accessibility",
-      "top_track": "DNASE:HepG2",
+      "alt": "T",
+      "variant_id": "rs1626484",
+      "gene_name": "SORT1",
+      "cell_type": "multi-tissue",
+      "max_effect": -0.19296680591313664,
+      "max_quantile": null,
+      "top_layer": "gene_expression",
+      "top_track": "RNA_SEQ/UBERON:0000996 total RNA-seq/+",
       "per_layer_scores": {
-        "chromatin_accessibility": -0.178,
-        "tss_activity": -0.054
-      }
-    },
-    {
-      "chrom": "chr1",
-      "position": 109271200,
-      "ref": "T",
-      "alt": "C",
-      "variant_id": "rs7528419",
-      "max_effect": 0.089,
-      "top_layer": "chromatin_accessibility",
-      "top_track": "DNASE:HepG2",
-      "per_layer_scores": {
-        "chromatin_accessibility": 0.089,
-        "tss_activity": 0.023
-      }
+        "chromatin_accessibility": 0.03453591854516564,
+        "tss_activity": 0.127607467368042,
+        "gene_expression": -0.19296680591313664,
+        "histone_marks": -0.02446062799471222,
+        "tf_binding": 0.02635132694695214,
+        "splicing": 0.002371615253171025
+      },
+      "top_track_description": "RNA:vagina"
     }
-  ]
+  ],
+  "analysis_request": {
+    "user_prompt": "I have 5 candidate SNPs from the SORT1 GWAS locus. Score all of them in HepG2 with AlphaGenome and rank by regulatory effect size. Target gene SORT1.",
+    "tool_name": "score_variant_batch",
+    "oracle_name": "alphagenome",
+    "normalizer_name": "per-track background CDFs",
+    "tracks_requested": "all oracle tracks (discovery mode)",
+    "cell_types": [],
+    "notes": [],
+    "generated_at": "2026-04-12 14:14 UTC"
+  }
 }

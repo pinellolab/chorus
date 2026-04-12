@@ -150,7 +150,7 @@ class LegNetOracle(OracleBase):
     
     def _load_direct(self):
         try:
-            import torch 
+            import torch
             from .legnet_source.model_usage import load_model
 
             model = load_model(self.get_training_config_path(), self.get_model_weights_path())
@@ -158,6 +158,8 @@ class LegNetOracle(OracleBase):
             model.to(device)
             model.eval()
             self._model = model # Predictor model
+            self.loaded = True
+            logger.info("LegNet model loaded successfully!")
 
         except Exception as e:
             raise ModelNotLoadedError(f"Failed to load LegNet model: {str(e)}")
@@ -274,7 +276,7 @@ class LegNetOracle(OracleBase):
 
             template, arg = self.get_predict_template()
             template = template.replace(arg, arg_file.name)
-            model_predictions = self.run_code_in_environment(template, timeout=self.model_load_timeout)
+            model_predictions = self.run_code_in_environment(template, timeout=self.predict_timeout)
             predictions = np.array(model_predictions['preds'], dtype=np.float32)
         return predictions
         

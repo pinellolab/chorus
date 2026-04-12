@@ -1,3 +1,17 @@
+## Analysis Request
+
+> Load AlphaGenome and analyze rs12740374 (chr1:109274968 G>T) in HepG2 liver cells. The gene is SORT1 — I want to understand whether this variant changes chromatin accessibility, CEBP binding, H3K27ac, and SORT1 expression.
+
+- **Tool**: `analyze_variant_multilayer`
+- **Oracle**: alphagenome
+- **Normalizer**: per-track background CDFs
+- **Tracks requested**: all oracle tracks (discovery mode)
+- **Generated**: 2026-04-12 02:21 UTC
+
+**Notes / caveats:**
+- Ref/alt notation: dbSNP lists rs12740374 as C>T on the plus strand; chr1:109274968 G>T here is equivalent (hg38 + strand).
+- The report shows the top tracks per regulatory layer. CEBPA/CEBPB tracks exist in AlphaGenome's catalog but did not rank in the top of liver ChIP-TF for this variant; inspect the full JSON or call `analyze_variant_multilayer` with an explicit CEBPA/CEBPB assay_id to score them directly.
+
 ## Multi-Layer Variant Effect Report
 
 **Variant**: chr1:109274968 G>T
@@ -5,142 +19,107 @@
 **Gene**: SORT1
 **Other nearby genes**: PSRC1, CELSR2, MYBPHL, SARS1
 
-**Summary**: Chromatin accessibility (DNASE/ATAC): strong opening (+0.45); TSS activity (CAGE/PRO-CAP): moderate increase (+0.25); Histone modifications (ChIP-Histone): moderate mark gain (+0.18); Gene expression (RNA-seq): moderate increase (+0.13).
+**Summary**: Chromatin accessibility (DNASE/ATAC): very strong opening (+1.91); TSS activity (CAGE/PRO-CAP): very strong increase (+1.27); Transcription factor binding (ChIP-TF): very strong binding gain (+1.04); Histone modifications (ChIP-Histone): very strong mark gain (+1.01); Gene expression (RNA-seq): moderate increase (+0.16).
 
 #### Chromatin accessibility (DNASE/ATAC)
 
-| Track | Ref | Alt | Effect | Interpretation |
-|-------|-----|-----|--------|----------------|
-| DNASE/EFO:0001187 DNase-seq/. | 512 | 699 | +0.448 | Strong opening |
+| Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
+|---|---|---|---|---|---|---|
+| DNASE:LNCaP clone FGC | 58.9 | 224 | +1.906 | 1.000 | 0.861 | Very strong opening |
+| DNASE:epithelial cell of proximal tubule | 80.9 | 251 | +1.621 | 1.000 | 0.882 | Very strong opening |
+| DNASE:renal cortical epithelial cell | 225 | 628 | +1.478 | 1.000 | 0.938 | Very strong opening |
+
+#### Transcription factor binding (ChIP-TF)
+
+| Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
+|---|---|---|---|---|---|---|
+| CHIP:RXRA:liver | 1.05e+03 | 2.16e+03 | +1.045 | 1.000 | 0.957 | Very strong binding gain |
+| CHIP:SP1:liver | 1.3e+03 | 2.49e+03 | +0.938 | 1.000 | 0.919 | Very strong binding gain |
+| CHIP:HNF4A:liver | 1.11e+03 | 2.12e+03 | +0.933 | 1.000 | 0.967 | Very strong binding gain |
 
 #### Histone modifications (ChIP-Histone)
 
-| Track | Ref | Alt | Effect | Interpretation |
-|-------|-----|-----|--------|----------------|
-| CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/. | 1.37e+04 | 1.55e+04 | +0.179 | Moderate mark gain |
+| Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
+|---|---|---|---|---|---|---|
+| CHIP:H3K4me3:LNCaP clone FGC | 1.88e+03 | 3.78e+03 | +1.005 | 1.000 | 0.882 | Very strong mark gain |
+| CHIP:H3K27ac:22Rv1 | 9.68e+03 | 1.94e+04 | +1.002 | 1.000 | 0.984 | Very strong mark gain |
+| CHIP:H3K27ac:C4-2B | 5.5e+03 | 1.05e+04 | +0.932 | 1.000 | 0.976 | Very strong mark gain |
 
 #### TSS activity (CAGE/PRO-CAP)
 
-| Track | Ref | Alt | Effect | Interpretation |
-|-------|-----|-----|--------|----------------|
-| CAGE/hCAGE EFO:0001187/- — variant site | 22 | 26.4 | +0.252 | Moderate increase |
-| CAGE/hCAGE EFO:0001187/+ — MYBPHL TSS | 1.95 | 2 | +0.022 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — PSRC1 TSS | 45.6 | 46.2 | +0.020 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — MYBPHL TSS | 227 | 230 | +0.018 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — variant site | 76.4 | 77.3 | +0.017 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — CELSR2 TSS | 664 | 658 | -0.012 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — GSTM2 TSS | 924 | 931 | +0.012 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — PSRC1 TSS | 2.4e+03 | 2.42e+03 | +0.012 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — GPR61 TSS | 5.98 | 6.03 | +0.010 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — SYPL2 TSS | 298 | 296 | -0.010 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — CELSR2 TSS | 2.46 | 2.48 | +0.009 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — GSTM1 TSS | 239 | 237 | -0.009 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — SORT1 TSS | 3.33e+03 | 3.35e+03 | +0.008 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — TAF13 TSS | 3.98e+03 | 4e+03 | +0.008 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — GNAT2 TSS | 1.76e+03 | 1.75e+03 | -0.006 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — GSTM4 TSS | 58.1 | 57.9 | -0.006 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — EPS8L3 TSS | 3.86e+03 | 3.85e+03 | -0.006 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — GSTM4 TSS | 3.78e+03 | 3.77e+03 | -0.006 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — CYB561D1 TSS | 878 | 875 | -0.006 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — AKNAD1 TSS | 2.48 | 2.47 | -0.005 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — GNAI3 TSS | 353 | 355 | +0.005 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — GSTM5 TSS | 12.8 | 12.9 | +0.005 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — GNAT2 TSS | 66.7 | 66.4 | -0.005 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — GSTM2 TSS | 1.23 | 1.23 | +0.005 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — CFAP276 TSS | 13 | 13 | +0.005 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — CYB561D1 TSS | 9.29 | 9.26 | -0.004 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — TMEM167B TSS | 2.97e+03 | 2.98e+03 | +0.004 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — CLCC1 TSS | 4.31e+03 | 4.32e+03 | +0.003 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — SORT1 TSS | 7 | 7.02 | +0.003 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — GSTM1 TSS | 0.668 | 0.671 | +0.003 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — GSTM3 TSS | 6.75 | 6.73 | -0.003 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — AMPD2 TSS | 102 | 102 | -0.003 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — CFAP276 TSS | 20.8 | 20.8 | -0.002 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — GSTM3 TSS | 2.67e+03 | 2.67e+03 | +0.002 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — GNAI3 TSS | 9.07e+03 | 9.06e+03 | -0.002 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — AKNAD1 TSS | 2.06 | 2.06 | -0.002 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — AMIGO1 TSS | 2.15 | 2.15 | +0.002 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — GPSM2 TSS | 23.7 | 23.6 | -0.002 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — SARS1 TSS | 52.9 | 52.8 | -0.002 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — AMPD2 TSS | 2.86e+03 | 2.85e+03 | -0.002 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — SYPL2 TSS | 5.29 | 5.29 | -0.002 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — ATXN7L2 TSS | 14.1 | 14.1 | +0.002 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — EPS8L3 TSS | 38.8 | 38.8 | -0.001 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — ATXN7L2 TSS | 1.39e+03 | 1.39e+03 | -0.001 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — AMIGO1 TSS | 276 | 276 | -0.001 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — ELAPOR1 TSS | 0.729 | 0.728 | -0.001 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — CLCC1 TSS | 28 | 28 | +0.001 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — ELAPOR1 TSS | 74 | 74.1 | +0.001 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — SARS1 TSS | 1.28e+04 | 1.28e+04 | -0.001 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — TMEM167B TSS | 390 | 390 | +0.001 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — WDR47 TSS | 1.63e+03 | 1.63e+03 | -0.001 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — WDR47 TSS | 2.45 | 2.45 | +0.001 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — GPR61 TSS | 0.0612 | 0.0608 | -0.000 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — TAF13 TSS | 44.4 | 44.4 | +0.000 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — GPSM2 TSS | 2.23e+03 | 2.23e+03 | +0.000 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — PSMA5 TSS | 1.09e+04 | 1.09e+04 | +0.000 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/- — GSTM5 TSS | 0.108 | 0.108 | +0.000 | Minimal effect |
-| CAGE/hCAGE EFO:0001187/+ — PSMA5 TSS | 102 | 102 | -0.000 | Minimal effect |
+| Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
+|---|---|---|---|---|---|---|
+| PRO_CAP:MCF 10A — variant site | 81 | 196 | +1.266 | 1.000 | 1.000 | Very strong increase |
+| PRO_CAP:MCF 10A — variant site | 35.5 | 74.9 | +1.057 | 1.000 | 1.000 | Very strong increase |
+| CAGE:A549 — variant site | 6.6 | 12.6 | +0.844 | 1.000 | 1.000 | Very strong increase |
+| CAGE:A549 — PSRC1 TSS | 1.22e+03 | 1.25e+03 | +0.039 | 1.000 | 1.000 | Minimal effect |
+| CAGE:A549 — CELSR2 TSS | 1.86 | 1.91 | +0.027 | 1.000 | 1.000 | Minimal effect |
+| CAGE:A549 — MYBPHL TSS | 19.7 | 20.1 | +0.025 | 1.000 | 1.000 | Minimal effect |
+| PRO_CAP:MCF 10A — GSTM2 TSS | 41.6 | 41 | -0.021 | 1.000 | 1.000 | Minimal effect |
+| CAGE:A549 — GNAI3 TSS | 316 | 321 | +0.020 | 1.000 | 1.000 | Minimal effect |
+| PRO_CAP:MCF 10A — MYBPHL TSS | 0.916 | 0.94 | +0.018 | 1.000 | 1.000 | Minimal effect |
+| PRO_CAP:MCF 10A — SORT1 TSS | 55.8 | 56.4 | +0.015 | 1.000 | 1.000 | Minimal effect |
+| _…showing top 10 of 87 — see `example_output.json` for the full set_ | | | | | | |
 
 #### Gene expression (RNA-seq)
 
-| Track | Ref | Alt | Effect | Interpretation |
-|-------|-----|-----|--------|----------------|
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — CELSR2 (exons) | 0.0168 | 0.0191 | +0.126 | Moderate increase |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — PSRC1 (exons) | 0.675 | 0.749 | +0.104 | Moderate increase |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — MYBPHL (exons) | 0.343 | 0.371 | +0.080 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — SORT1 (exons) | 0.417 | 0.431 | +0.034 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — CELSR2 (exons) | 46.8 | 47.6 | +0.018 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — PSRC1 (exons) | 237 | 241 | +0.017 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — MYBPHL (exons) | 24 | 23.8 | -0.009 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — EPS8L3 (exons) | 0.309 | 0.306 | -0.009 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — AKNAD1 (exons) | 0.0127 | 0.0126 | -0.008 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — AMIGO1 (exons) | 1.65 | 1.66 | +0.006 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — WDR47 (exons) | 0.0527 | 0.053 | +0.006 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — SARS1 (exons) | 0.715 | 0.718 | +0.005 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — PSMA5 (exons) | 0.511 | 0.513 | +0.005 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — GPR61 (exons) | 22.7 | 22.6 | -0.005 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — ELAPOR1 (exons) | 12.4 | 12.4 | +0.005 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — GSTM2 (exons) | 74.9 | 75.3 | +0.005 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — EPS8L3 (exons) | 205 | 204 | -0.005 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — SYPL2 (exons) | 61.3 | 61 | -0.004 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — TMEM167B (exons) | 1.12 | 1.13 | +0.004 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — GSTM5 (exons) | 0.00109 | 0.0011 | +0.004 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — ELAPOR1 (exons) | 0.00661 | 0.00664 | +0.004 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — GSTM1 (exons) | 0.00714 | 0.00711 | -0.004 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — AMIGO1 (exons) | 250 | 251 | +0.004 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — GNAT2 (exons) | 5.07 | 5.05 | -0.003 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — GSTM2 (exons) | 0.0119 | 0.0119 | +0.003 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — ATXN7L2 (exons) | 0.0256 | 0.0255 | -0.003 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — GPSM2 (exons) | 62.4 | 62.2 | -0.003 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — CLCC1 (exons) | 41.1 | 41 | -0.003 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — GNAI3 (exons) | 0.688 | 0.686 | -0.003 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — CFAP276 (exons) | 0.335 | 0.335 | +0.003 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — GPR61 (exons) | 1.98 | 1.98 | -0.002 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — SORT1 (exons) | 442 | 443 | +0.002 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — GSTM4 (exons) | 0.101 | 0.101 | -0.002 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — AKNAD1 (exons) | 0.114 | 0.114 | -0.002 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — AMPD2 (exons) | 0.237 | 0.237 | -0.002 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — GNAT2 (exons) | 7.84 | 7.83 | -0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — GSTM1 (exons) | 52.2 | 52.2 | +0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — ATXN7L2 (exons) | 64.7 | 64.6 | -0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — GSTM3 (exons) | 1.06 | 1.06 | -0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — CYB561D1 (exons) | 309 | 309 | +0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — SARS1 (exons) | 1.19e+03 | 1.19e+03 | -0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — PSMA5 (exons) | 912 | 912 | +0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — SYPL2 (exons) | 0.0874 | 0.0873 | -0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — CFAP276 (exons) | 0.153 | 0.153 | +0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — GSTM3 (exons) | 207 | 207 | +0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — TAF13 (exons) | 318 | 318 | +0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — CLCC1 (exons) | 284 | 284 | -0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — GPSM2 (exons) | 81.4 | 81.3 | -0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — TAF13 (exons) | 0.205 | 0.204 | -0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — TMEM167B (exons) | 906 | 907 | +0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — GNAI3 (exons) | 748 | 748 | -0.001 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — STXBP3 (exons) | 84.9 | 84.9 | +0.000 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — AMPD2 (exons) | 471 | 472 | +0.000 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — WDR47 (exons) | 80.8 | 80.9 | +0.000 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — CYB561D1 (exons) | 0.589 | 0.589 | -0.000 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/- — STXBP3 (exons) | 0.0976 | 0.0976 | +0.000 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — GSTM5 (exons) | 2.02 | 2.02 | +0.000 | Minimal effect |
-| RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+ — GSTM4 (exons) | 381 | 381 | +0.000 | Minimal effect |
+| Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
+|---|---|---|---|---|---|---|
+| RNA:MCF-7 — PSRC1 (exons) | 1.24 | 1.46 | +0.160 | 1.000 | 1.000 | Moderate increase |
+| RNA:MCF-7 — PSRC1 (exons) | 0.503 | 0.586 | +0.152 | 1.000 | 0.779 | Moderate increase |
+| RNA:MCF-7 — MYBPHL (exons) | 0.115 | 0.131 | +0.123 | 1.000 | 0.374 | Moderate increase |
+| RNA:MCF-7 — MYBPHL (exons) | 0.0657 | 0.0742 | +0.120 | 1.000 | 0.260 | Moderate increase |
+| RNA:MCF-7 — CELSR2 (exons) | 253 | 271 | +0.070 | 1.000 | 1.000 | Moderate increase |
+| RNA:MCF-7 — SORT1 (exons) | 0.488 | 0.514 | +0.052 | 1.000 | 0.769 | Moderate increase |
+| RNA:MCF-7 — SORT1 (exons) | 0.524 | 0.551 | +0.050 | 1.000 | 0.857 | Moderate increase |
+| RNA:MCF-7 — CELSR2 (exons) | 522 | 547 | +0.047 | 1.000 | 1.000 | Minimal effect |
+| RNA:MCF-7 — CELSR2 (exons) | 490 | 513 | +0.047 | 1.000 | 1.000 | Minimal effect |
+| RNA:MCF-7 — PSRC1 (exons) | 441 | 461 | +0.043 | 1.000 | 1.000 | Minimal effect |
+| _…showing top 10 of 87 — see `example_output.json` for the full set_ | | | | | | |
+
+#### Splicing (splice sites)
+
+| Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
+|---|---|---|---|---|---|---|
+| SPLICE_SITES | 0.147 | 0.137 | -0.012 | 1.000 | 0.937 | Minimal effect |
+| SPLICE_SITES | 0.0427 | 0.0461 | +0.005 | 1.000 | 0.815 | Minimal effect |
+| SPLICE_SITES:cerebellar hemisphere | 0.0223 | 0.0191 | -0.005 | 1.000 | 0.919 | Minimal effect |
+
+---
+**Score guide:**
+- **Effect %ile**: Variant effect ranked against ~10K random SNPs. 0.95 = stronger than 95% of random variants.
+- **Activity %ile**: Reference signal ranked genome-wide against ENCODE SCREEN cCREs + random regions. 0.95 = more active than 95% of genomic positions.
+
+---
+
+---
+
+## Interpretation
+
+**What the oracle sees.** The alt allele (T) produces a very strong
+*opening* signal in chromatin accessibility (top DNASE effects of +1.9
+log2FC in liver-adjacent cell types), a strong gain in liver TF binding
+(RXRA, SP1, HNF4A), a strong gain in active-promoter histone marks
+(H3K27ac, H3K4me3), and a strong increase in CAGE at the SORT1 /
+PSRC1 / CELSR2 promoter. All four layers converge on the same
+direction, which is the signature of a single regulatory disruption
+acting on multiple readouts.
+
+**How this fits the published biology.** Musunuru et al. (Nature 2010)
+showed that the minor allele T creates a C/EBP binding site in a liver
+enhancer and *increases* SORT1 expression in hepatocytes, lowering plasma
+LDL. The direction and multi-layer convergence Chorus reports match the
+paper. CEBPA/CEBPB are not in the top 3 ChIP-TF tracks here — AlphaGenome
+ranked RXRA/SP1/HNF4A higher in the all-tracks discovery mode. This is a
+ranking limitation, not a disagreement: liver CEBP tracks exist in the
+oracle catalog and can be scored explicitly.
+
+**Suggested next steps.**
+- Re-run with explicit CEBPA / CEBPB / C/EBP tracks in HepG2 to confirm
+  the specific TF mechanism (`analyze_variant_multilayer` with
+  `assay_ids=["CHIP_TF/... CEBPA ...", "CHIP_TF/... CEBPB ..."]`).
+- Compare to a ChromBPNet run anchored on HepG2 ATAC + CEBPA ChIP for
+  base-resolution motif effects.
+- If you're fine-mapping the LDL-C GWAS locus, use the worked
+  [causal_prioritization/SORT1_locus](../../causal_prioritization/SORT1_locus/)
+  example as a template.

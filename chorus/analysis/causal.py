@@ -14,8 +14,9 @@ from typing import Optional
 
 import numpy as np
 
+from .analysis_request import AnalysisRequest
 from .normalization import QuantileNormalizer
-from .variant_report import VariantReport, build_variant_report
+from .variant_report import VariantReport, build_variant_report, _describe_normalizer
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,7 @@ class CausalResult:
     gene_name: str | None
     cell_types: list[str] = field(default_factory=list)
     nearby_genes: list[str] = field(default_factory=list)
+    analysis_request: AnalysisRequest | None = None
 
     def top_candidate(self) -> CausalVariantScore:
         """Return the highest-ranked variant."""
@@ -124,7 +126,7 @@ class CausalResult:
 
     def to_dict(self) -> dict:
         """Convert to JSON-serializable dict."""
-        return {
+        result = {
             "sentinel": self.sentinel_id,
             "oracle": self.oracle_name,
             "gene_name": self.gene_name,
@@ -170,6 +172,9 @@ class CausalResult:
                 for s in self.scores
             ],
         }
+        if self.analysis_request is not None:
+            result["analysis_request"] = self.analysis_request.to_dict()
+        return result
 
     def to_html(self, output_path: str | None = None) -> str:
         """Generate a self-contained HTML report.
@@ -197,7 +202,10 @@ class CausalResult:
 
     def to_markdown(self) -> str:
         """Generate a markdown summary."""
-        lines = [
+        lines: list[str] = []
+        if self.analysis_request is not None:
+            lines.append(self.analysis_request.to_markdown())
+        lines += [
             "## Causal Variant Prioritization Report",
             "",
             f"**Sentinel**: {self.sentinel_id}",
@@ -224,18 +232,15 @@ class CausalResult:
             lines.append("")
 
         # Ranked table
-        lines.append("| Rank | Variant | r² | Gene | Cell Type | Max Effect | Layers | Convergence | Composite |")
-        lines.append("|------|---------|-----|------|-----------|-----------|--------|-------------|-----------|")
+        lines.append("| Rank | Variant | r² | Max Effect | Layers | Convergence | Top Layer | Composite |")
+        lines.append("|------|---------|-----|-----------|--------|-------------|-----------|-----------|")
         for i, s in enumerate(self.scores, 1):
             sentinel_mark = " ★" if s.is_sentinel else ""
             sign = "+" if s.max_effect >= 0 else ""
-            gene = s.gene_name or "—"
-            ct = s.cell_type or "—"
             lines.append(
                 f"| {i} | {s.variant_id}{sentinel_mark} | {s.r2:.2f} "
-                f"| {gene} | {ct} "
                 f"| {sign}{s.max_effect:.3f} | {s.n_layers_affected} "
-                f"| {s.convergence_score:.2f} | {s.composite:.3f} |"
+                f"| {s.convergence_score:.2f} | {s.top_layer or '—'} | {s.composite:.3f} |"
             )
         lines.append("")
         return "\n".join(lines)
@@ -249,25 +254,39 @@ def prioritize_causal_variants(
     oracle,
     lead_variant: dict,
     ld_variants: list,
-    assay_ids: list[str],
+    assay_ids: list[str] | None,
     gene_name: str | None = None,
     oracle_name: str | None = None,
     weights: CausalWeights | None = None,
     normalizer: QuantileNormalizer | None = None,
+    analysis_request: AnalysisRequest | None = None,
 ) -> CausalResult:
     """Score and rank LD variants by composite causal evidence.
 
+    Each variant is scored multi-layer, then ranked by a composite score
+    combining: (1) max effect magnitude across layers,
+    (2) number of layers with meaningful effect,
+    (3) directional convergence across layers (same sign = more causal),
+    and (4) baseline activity at the variant site (active regions weigh more).
+
     Args:
         oracle: A loaded Chorus oracle.
-        lead_variant: Dict with chrom, pos, ref, alt, id.
-        ld_variants: List of LDVariant objects.
-        assay_ids: Track identifiers for scoring.
+        lead_variant: Dict with ``chrom``, ``pos``, ``ref``, ``alt``, ``id``.
+        ld_variants: List of :class:`LDVariant` objects in LD with the sentinel.
+        assay_ids: Track identifiers for scoring. Pass ``None`` to let the
+            oracle score all tracks (recommended for AlphaGenome).
         gene_name: Target gene for expression scoring.
         weights: Scoring weights (default: CausalWeights()).
         normalizer: Optional quantile normalizer.
+        analysis_request: Optional :class:`AnalysisRequest` with the user's
+            prompt; rendered at the top of the report for traceability.
 
     Returns:
-        CausalResult with variants ranked by composite score.
+        :class:`CausalResult` with variants ranked by composite score.
+        Supports ``to_markdown()``, ``to_dict()``, ``to_dataframe()``, and
+        ``to_html()``. The top-ranked variant is the most likely causal SNP;
+        use the per-layer scores in ``result.scores[0].per_layer_scores``
+        to understand the mechanism.
     """
     if weights is None:
         weights = CausalWeights()
@@ -306,20 +325,30 @@ def prioritize_causal_variants(
                 normalizer=normalizer,
             )
 
-            # Capture nearby genes and cell types from first report
+            # Capture nearby genes from first report
             if not nearby_genes and report.nearby_genes:
                 nearby_genes = report.nearby_genes
+            # Record ONLY the cell type of each variant's strongest-effect
+            # track — collecting all 600+ cell types scored per variant
+            # would make the rendered report unreadable.
+            _best_abs = 0.0
+            _best_ct = ""
             for allele_scores in report.allele_scores.values():
                 for ts in allele_scores:
-                    if ts.cell_type:
-                        cell_types.add(ts.cell_type)
+                    if ts.raw_score is None:
+                        continue
+                    if abs(ts.raw_score) > _best_abs:
+                        _best_abs = abs(ts.raw_score)
+                        _best_ct = ts.cell_type or ""
+            if _best_ct:
+                cell_types.add(_best_ct)
 
             # Extract per-layer scores
             cs = _extract_component_scores(ldv, report, weights)
             raw_scores.append(cs)
 
         except Exception as exc:
-            logger.error("Failed to score %s: %s", ldv.variant_id, exc)
+            logger.error("Failed to score %s: %s", ldv.variant_id, exc, exc_info=True)
             raw_scores.append(CausalVariantScore(
                 variant_id=ldv.variant_id,
                 chrom=ldv.chrom,
@@ -343,6 +372,25 @@ def prioritize_causal_variants(
     # Sort by composite descending
     raw_scores.sort(key=lambda s: s.composite, reverse=True)
 
+    # Ensure every CausalResult carries provenance metadata
+    if analysis_request is None:
+        analysis_request = AnalysisRequest(
+            tool_name="fine_map_causal_variant",
+            oracle_name=oracle_name,
+            normalizer_name=_describe_normalizer(normalizer),
+            tracks_requested=(
+                "all oracle tracks" if not assay_ids else f"{len(assay_ids)} tracks"
+            ),
+            cell_types=sorted(cell_types),
+        )
+    else:
+        if analysis_request.oracle_name is None:
+            analysis_request.oracle_name = oracle_name
+        if analysis_request.normalizer_name is None:
+            analysis_request.normalizer_name = _describe_normalizer(normalizer)
+        if not analysis_request.cell_types:
+            analysis_request.cell_types = sorted(cell_types)
+
     return CausalResult(
         sentinel_id=sentinel_id,
         population="",
@@ -353,6 +401,7 @@ def prioritize_causal_variants(
         oracle_name=oracle_name,
         gene_name=gene_name,
         nearby_genes=nearby_genes,
+        analysis_request=analysis_request,
     )
 
 
@@ -905,6 +954,8 @@ def _build_causal_html(result: CausalResult) -> str:
 
     # Header
     p.append("<h1>Causal Variant Prioritization Report</h1>")
+    if result.analysis_request is not None:
+        p.append(result.analysis_request.to_html_fragment())
     p.append(f'<p class="meta"><b>Sentinel:</b> {html_mod.escape(result.sentinel_id)}</p>')
     p.append(f'<p class="meta"><b>Oracle:</b> {html_mod.escape(result.oracle_name)}</p>')
     if result.cell_types:

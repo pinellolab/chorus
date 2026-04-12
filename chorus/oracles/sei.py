@@ -179,6 +179,8 @@ class SeiOracle(OracleBase):
             self._projector = projector
             self._target_list = targets
             self._classes_list = classes
+            self.loaded = True
+            logger.info("Sei model loaded successfully!")
         except Exception as e:
             raise ModelNotLoadedError(f"Failed to load Sei model: {str(e)}")
 
@@ -445,8 +447,8 @@ class SeiOracle(OracleBase):
 
             template, arg = self.get_predict_template()
             template = template.replace(arg, arg_file.name)
-            model_predictions = self.run_code_in_environment(template, timeout=self.model_load_timeout)
-            
+            model_predictions = self.run_code_in_environment(template, timeout=self.predict_timeout)
+
             selected_preds = np.array(model_predictions['selected_preds'], dtype=np.float32)
             selected_classes = np.array(model_predictions['selected_classes'], dtype=np.float32)
         return selected_preds, selected_classes

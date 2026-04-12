@@ -7,6 +7,11 @@ that Chorus produces consistent findings with the published results.
 with AlphaGenome", Nature 649:1206-1218 (January 2026).
 [DOI: 10.1038/s41586-025-10014-0](https://www.nature.com/articles/s41586-025-10014-0)
 
+> These are replication runs — same variants, same expected biology as
+> the paper. They also serve as reference outputs: open any
+> `example_output.md` or HTML report to see what a "good" Chorus run
+> looks like on a well-characterised regulatory variant.
+
 ## Scoring formula verification
 
 Our scoring implementations (in `chorus/analysis/scorers.py`) match the

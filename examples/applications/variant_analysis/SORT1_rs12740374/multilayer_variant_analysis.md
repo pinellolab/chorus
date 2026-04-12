@@ -24,6 +24,25 @@ specification.
 | Promoter activity (MPRA) | full output | mean | diff | [-1, 1] |
 | Splicing | 501bp | sum | log2FC | [0, 1] |
 
+## Normalization
+
+Reports include two types of genome-wide context when background distributions
+are available (built by `scripts/build_backgrounds_*.py`):
+
+- **Effect quantile** — How unusual is this variant's effect compared to ~10K
+  random SNPs? A quantile of 0.95 means the effect is larger than 95% of random
+  variant effects on this layer.
+
+- **Ref signal percentile (Ref %ile)** — How active is this region in the
+  reference genome? A percentile of 0.90 means the predicted signal at this
+  locus is higher than 90% of genomic positions. This contextualises the
+  variant's effect: disrupting a highly active element (high ref percentile)
+  is more likely to be functionally significant.
+
+The combination is powerful: a variant with a 95th percentile effect on a track
+that is already in the 91st percentile of genome-wide activity is disrupting a
+highly active regulatory element — strong evidence for functional impact.
+
 ---
 
 ## Example MCP Prompts
@@ -137,7 +156,7 @@ Do a complete multi-oracle analysis of rs12740374:
 ## Python API Usage
 
 ```python
-from chorus.analysis import build_variant_report, QuantileNormalizer
+from chorus.analysis import build_variant_report, get_normalizer
 
 # Assume oracle is loaded and variant_result obtained:
 # variant_result = oracle.predict_variant_effect(
@@ -160,7 +179,7 @@ df = report.to_dataframe()    # For programmatic analysis
 d = report.to_dict()          # JSON-serializable
 
 # With quantile normalization (when backgrounds are pre-computed)
-normalizer = QuantileNormalizer()  # loads from ~/.chorus/backgrounds/
+normalizer = get_normalizer("alphagenome")  # loads from ~/.chorus/backgrounds/
 report = build_variant_report(
     variant_result,
     oracle_name="alphagenome",

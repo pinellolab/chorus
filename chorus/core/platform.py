@@ -136,6 +136,14 @@ PLATFORM_ADAPTATIONS: Dict[str, Dict[str, EnvironmentAdaptation]] = {
                 "tensorflow-probability": "tensorflow-probability==0.23.0",
                 "tensorflow-estimator": None,  # remove, bundled in TF 2.15
                 "modisco-lite": None,  # remove from pip, install post with --no-deps
+                "nvidia-cublas-cu11": None,
+                "nvidia-cuda-cupti-cu11": None,
+                "nvidia-cuda-runtime-cu11": None,
+                "nvidia-cudnn-cu11": None,
+                "nvidia-cufft-cu11": None,
+                "nvidia-curand-cu11": None,
+                "nvidia-cusolver-cu11": None,
+                "nvidia-cusparse-cu11": None,
             },
             pip_add=[
                 "protobuf>=3.20.3,<5.0",
@@ -163,6 +171,14 @@ PLATFORM_ADAPTATIONS: Dict[str, Dict[str, EnvironmentAdaptation]] = {
         "macos_arm64": EnvironmentAdaptation(
             pip_replace={
                 "tensorflow": "tensorflow>=2.15.0,<2.17.0",
+                "nvidia-cublas-cu11": None,
+                "nvidia-cuda-cupti-cu11": None,
+                "nvidia-cuda-runtime-cu11": None,
+                "nvidia-cudnn-cu11": None,
+                "nvidia-cufft-cu11": None,
+                "nvidia-curand-cu11": None,
+                "nvidia-cusolver-cu11": None,
+                "nvidia-cusparse-cu11": None,
             },
             pip_add=[
                 "setuptools<81",  # tensorflow_hub needs pkg_resources
@@ -171,6 +187,7 @@ PLATFORM_ADAPTATIONS: Dict[str, Dict[str, EnvironmentAdaptation]] = {
                 "TensorFlow <2.13 is not available for Apple Silicon; "
                 "broadening range to >=2.15",
                 "Pinned setuptools<81 (tensorflow_hub requires pkg_resources)",
+                "CUDA nvidia-* packages removed (not available on macOS)",
             ],
         ),
     },

@@ -3,10 +3,13 @@
 Hypothesis-driven multi-layer variant analysis using `analyze_variant_multilayer`.
 Each example shows a real GWAS/clinical variant scored across regulatory layers.
 
-## Example Prompts
+> The prompts below are **demonstrations, not templates**. Ask Claude
+> about *your own* variant in plain language (rsID, coordinates, cell
+> type, target gene), and the right tool call happens automatically.
+> These concrete examples exist so you can see what the outputs look
+> like (MD / JSON / TSV / HTML) before running your own questions.
 
-Copy any prompt below into Claude to run the analysis. Claude will call the
-MCP tools automatically.
+## Example Prompts
 
 ### For a biologist
 
@@ -91,8 +94,31 @@ background distribution of effects seen across many variants:
 - Range is [0, 1] for unsigned layers (chromatin, TF, histone, TSS, splicing)
 - Range is [-1, 1] for signed layers (gene expression, MPRA)
 
-Quantile scores appear when a pre-computed normalizer is available. The SORT1
-example includes them; others do not.
+### Reference signal percentile (Ref %ile)
+
+When baseline backgrounds are available, each track also shows the **reference
+signal activity percentile** — how active this region is genome-wide:
+- **Ref %ile 0.91** means the reference signal at this locus is higher than
+  91% of genomic positions for this track
+- A variant with a high effect quantile (0.95) on a track with a high ref
+  percentile (0.91) is disrupting a highly active regulatory element — strong
+  evidence for functional impact
+- A high effect on a low-activity region (ref %ile < 0.2) may be less
+  biologically meaningful
+
+### Background availability
+
+Quantile and percentile scores appear automatically when pre-computed
+backgrounds exist in `~/.chorus/backgrounds/`. These are built once per
+oracle by the `scripts/build_backgrounds_*.py` scripts and auto-loaded
+when an oracle is loaded via MCP or the Python API.
+
+Backgrounds are available for all 6 oracles: AlphaGenome, Enformer, Borzoi,
+ChromBPNet, Sei, and LegNet. They are hosted on HuggingFace at
+[lucapinello/chorus-backgrounds](https://huggingface.co/datasets/lucapinello/chorus-backgrounds)
+and **downloaded automatically** when an oracle is loaded. No manual setup needed.
+
+To rebuild after adding new tracks or models, run `scripts/build_backgrounds_<oracle>.py`.
 
 ## Oracle compatibility
 

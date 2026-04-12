@@ -1,8 +1,16 @@
 # Chorus Application Examples
 
-Each subfolder contains worked examples with outputs in all three formats
-(markdown, JSON, HTML). Copy any example prompt below into Claude to reproduce
-the analysis or adapt it for your own variants.
+> **These are demonstrations, not rigid templates.** Chorus is designed to
+> be driven through Claude in natural language — ask in your own words
+> about your own variants, cell types, or constructs, and Claude will pick
+> the right tool and arguments. The concrete examples below exist so you
+> can see what the outputs look like (markdown, JSON, TSV, HTML) before
+> trying your own questions. Every generated report carries the original
+> prompt at the top so you (or a collaborator) can tell a month later
+> exactly what was asked.
+
+Each subfolder contains worked examples with outputs in four formats
+(markdown, JSON, TSV, HTML).
 
 ## Which tool do I use?
 
@@ -52,7 +60,10 @@ changes a regulatory signal. The formula depends on the layer:
 
 **Quantile scores** (when shown): compare a variant's effect against thousands
 of background variants. A quantile of 0.86 means the effect is larger than 86%
-of random variants — strong evidence for functionality.
+of random variants — strong evidence for functionality. Use
+`get_normalizer('alphagenome')` in the Python API to load a normalizer, or
+rely on MCP auto-loading (backgrounds load automatically with the oracle when
+files exist in `~/.chorus/backgrounds/`).
 
 ## Which oracle should I use?
 

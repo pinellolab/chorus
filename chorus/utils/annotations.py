@@ -559,3 +559,100 @@ def get_gene_exons(gene_name: str, annotation: str = 'gencode_v48_basic',
             })
 
     return pd.DataFrame(merged_rows)
+
+
+# ---------------------------------------------------------------------------
+# ENCODE SCREEN cCRE utilities
+# ---------------------------------------------------------------------------
+
+_CCRE_URL = "https://downloads.wenglab.org/Registry-V4/GRCh38-cCREs.bed"
+_CCRE_FILENAME = "GRCh38-cCREs.bed"
+
+_ccre_cache: pd.DataFrame | None = None
+
+
+def get_screen_ccres(cache_dir: str | None = None) -> pd.DataFrame:
+    """Load ENCODE SCREEN cCREs (candidate cis-Regulatory Elements).
+
+    Downloads the Registry V4 BED file on first call and caches it.
+    Returns a DataFrame with columns: chrom, start, end, ccre_id, element_id, category.
+
+    Categories: PLS (promoter-like), pELS (proximal enhancer-like),
+    dELS (distal enhancer-like), CA-CTCF, CA-H3K4me3, CA-TF, CA, TF.
+    """
+    global _ccre_cache
+    if _ccre_cache is not None:
+        return _ccre_cache
+
+    if cache_dir is None:
+        cache_dir = str(CHORUS_ANNOTATIONS_DIR)
+    bed_path = Path(cache_dir) / _CCRE_FILENAME
+
+    if not bed_path.exists():
+        logger.info("Downloading SCREEN cCREs from %s ...", _CCRE_URL)
+        Path(cache_dir).mkdir(parents=True, exist_ok=True)
+        import urllib.request
+        urllib.request.urlretrieve(_CCRE_URL, str(bed_path))
+        logger.info("Downloaded %s", bed_path)
+
+    logger.info("Loading %s ...", bed_path)
+    df = pd.read_csv(
+        bed_path, sep="\t", header=None,
+        names=["chrom", "start", "end", "ccre_id", "element_id", "category"],
+        dtype={"chrom": str, "start": int, "end": int},
+    )
+    # Filter to main chromosomes
+    valid_chroms = {f"chr{i}" for i in range(1, 23)} | {"chrX"}
+    df = df[df["chrom"].isin(valid_chroms)].copy()
+    _ccre_cache = df
+    logger.info("Loaded %d cCREs across %d categories", len(df), df["category"].nunique())
+    return df
+
+
+def sample_ccre_positions(
+    n_per_category: dict[str, int] | None = None,
+    seed: int = 42,
+) -> list[tuple[str, int]]:
+    """Sample genomic positions from SCREEN cCREs with stratification.
+
+    Args:
+        n_per_category: Dict mapping category -> number of positions.
+            Default: balanced across PLS, dELS, pELS, CA-CTCF, CA-H3K4me3, CA-TF, CA, TF.
+        seed: Random seed.
+
+    Returns:
+        List of (chrom, center_position) tuples.
+    """
+    import random
+
+    if n_per_category is None:
+        n_per_category = {
+            "PLS": 5000,
+            "dELS": 5000,
+            "pELS": 3000,
+            "CA-CTCF": 2000,
+            "CA-H3K4me3": 2000,
+            "CA-TF": 1500,
+            "CA": 1500,
+            "TF": 1000,
+        }
+
+    df = get_screen_ccres()
+    rng = random.Random(seed)
+    positions = []
+
+    for category, n in n_per_category.items():
+        cat_df = df[df["category"] == category]
+        if len(cat_df) == 0:
+            logger.warning("No cCREs for category '%s'", category)
+            continue
+        indices = rng.sample(range(len(cat_df)), min(n, len(cat_df)))
+        for idx in indices:
+            row = cat_df.iloc[idx]
+            center = (row["start"] + row["end"]) // 2
+            positions.append((row["chrom"], center))
+
+    rng.shuffle(positions)
+    logger.info("Sampled %d positions from %d cCRE categories",
+                len(positions), len(n_per_category))
+    return positions

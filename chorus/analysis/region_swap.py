@@ -21,6 +21,7 @@ def analyze_region_swap(
     assay_ids: list[str],
     gene_name: str | None = None,
     normalizer: QuantileNormalizer | None = None,
+    oracle_name: str | None = None,
 ) -> VariantReport:
     """Predict effects of replacing a genomic region with a custom sequence.
 
@@ -46,8 +47,9 @@ def analyze_region_swap(
     start, end = int(start_str), int(end_str)
     midpoint = (start + end) // 2
 
-    # Get wild-type prediction
-    wt_pred = oracle.predict(region, assay_ids)
+    # Get wild-type prediction using (chrom, start, end) tuple so oracle
+    # fetches genomic sequence, not interprets region string as raw DNA.
+    wt_pred = oracle.predict((chrom, start, end), assay_ids)
 
     # Get replacement prediction
     swap_result = oracle.predict_region_replacement(
@@ -71,7 +73,7 @@ def analyze_region_swap(
 
     report = build_variant_report(
         variant_result,
-        oracle_name=getattr(oracle, "name", "oracle"),
+        oracle_name=oracle_name or getattr(oracle, "name", None) or oracle.__class__.__name__.lower().replace("oracle", ""),
         gene_name=gene_name,
         normalizer=normalizer,
     )

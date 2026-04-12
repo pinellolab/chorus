@@ -23,11 +23,34 @@ Key features:
 - 📊 Built-in visualization tools for genomic tracks
 - 🔬 Variant effect prediction
 - 🎯 In silico mutagenesis and sequence optimization
-- 📈 Track normalization and comparison utilities
+- 📈 Per-track quantile normalization with pre-computed genome-wide backgrounds (auto-downloaded from HuggingFace)
 - 🚀 Enhanced sequence editing logic
 - 🔧 Isolated conda environments for each oracle to avoid dependency conflicts
 - 🧪 Sub-region scoring, gene expression analysis (CAGE + RNA-seq), and variant-to-gene effect prediction
 - 🤖 MCP server for AI assistant integration (Claude, etc.)
+
+## 👉 Start here: Worked application examples
+
+The fastest way to see what Chorus can do is to browse the
+[`examples/applications/`](examples/applications/) folder. Every subfolder is a
+concrete, ready-to-reproduce use case with full outputs in **Markdown, JSON,
+TSV, and HTML** (with an embedded IGV browser):
+
+| I want to... | Example |
+|---|---|
+| Analyze a GWAS / clinical variant in a specific cell type | [variant_analysis/SORT1_rs12740374](examples/applications/variant_analysis/SORT1_rs12740374/) |
+| Find which tissues a variant affects most | [discovery/SORT1_cell_type_screen](examples/applications/discovery/SORT1_cell_type_screen/) |
+| Fine-map a GWAS locus to the causal SNP | [causal_prioritization/SORT1_locus](examples/applications/causal_prioritization/SORT1_locus/) |
+| Score a batch of variants from a VCF | [batch_scoring/](examples/applications/batch_scoring/) |
+| Predict the effect of an engineered sequence edit | [sequence_engineering/region_swap](examples/applications/sequence_engineering/region_swap/) |
+| Replicate a published regulatory variant finding | [validation/HBG2_HPFH](examples/applications/validation/HBG2_HPFH/) |
+
+These examples were generated through Claude Code using Chorus's MCP server —
+the same way you'll use it. Every report preserves the original prompt at the
+top, so you can see exactly what was asked and reproduce it.
+See [`examples/applications/README.md`](examples/applications/README.md) for
+the full list with per-persona ("Geneticist", "Bioinformatician", "Clinician",
+"Computational biologist") starting points.
 
 ## Prerequisites
 
@@ -652,8 +675,20 @@ mamba run -n chorus chorus-mcp
 
 - **Discovery**: `list_oracles`, `list_tracks`, `list_genomes`, `get_genes_in_region`, `get_gene_tss`
 - **Lifecycle**: `load_oracle`, `unload_oracle`, `oracle_status`
-- **Prediction**: `predict`, `predict_variant_effect`, `predict_region_replacement`, `predict_region_insertion`
-- **Scoring & Analysis**: `score_prediction_region`, `score_variant_effect_at_region`, `predict_variant_effect_on_gene`
+- **Low-level prediction**: `predict`, `predict_variant_effect`, `predict_region_replacement`, `predict_region_insertion`
+- **Scoring primitives**: `score_prediction_region`, `score_variant_effect_at_region`, `predict_variant_effect_on_gene`
+- **Multi-layer analysis (recommended for most users)**:
+    - `analyze_variant_multilayer` — score a variant across chromatin, TF, histone, CAGE, RNA, splicing in one call
+    - `discover_variant` — find top tracks/cell types for a variant without pre-selecting assays
+    - `discover_variant_cell_types` — screen hundreds of cell types to find where a variant matters most
+    - `score_variant_batch` — rank many variants (VCF / GWAS set / credible set) by effect magnitude
+    - `fine_map_causal_variant` — prioritize the causal SNP in a GWAS locus using multi-layer convergence
+    - `analyze_region_swap`, `simulate_integration` — score sequence engineering edits (promoter swaps, construct insertions)
+
+Every analysis tool accepts an optional `user_prompt` parameter and writes it into the top of the report so an HTML/MD opened later still shows the original question. See
+[`examples/applications/`](examples/applications/) for worked outputs of each tool, or read the
+[MCP Walkthrough](docs/MCP_WALKTHROUGH.md) for a step-by-step guide showing what you type in Claude
+and what comes back.
 
 Key features:
 - **Auto-centering**: `region` is optional in variant tools — auto-sized for each oracle's output window

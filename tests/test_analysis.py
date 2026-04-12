@@ -586,7 +586,8 @@ class TestVariantReport:
 
         report = build_variant_report(variant_result, oracle_name="test")
         md = report.to_markdown()
-        assert "H3K27ac:K562" in md
+        # Track label comes from description (or falls back to assay_type:cell_type)
+        assert "CHIP:K562" in md or "H3K27ac:K562" in md
         assert "Histone modifications" in md
 
     def test_to_dataframe(self):
@@ -698,10 +699,32 @@ class TestInterpretScore:
     def test_quantile_based_interpretation(self):
         from chorus.analysis.variant_report import _interpret_score
 
-        # Quantile takes precedence over raw score thresholds
+        # Quantile contributes to the strength label, but the raw-magnitude
+        # gate prevents "very strong" from being applied to sub-0.7 effects.
+        # With raw=0.5 + quantile=0.95, the result is "Strong" (not "Very
+        # strong") because |0.5| < 0.7. This is the post-audit honest-label
+        # behavior — a tiny raw effect can never be "very strong" just
+        # because its quantile rank is high.
         result = _interpret_score(0.5, 0.95, "tss_activity")
+        assert "Strong" in result
+        assert "increase" in result
+
+    def test_quantile_high_with_high_raw(self):
+        from chorus.analysis.variant_report import _interpret_score
+
+        # When both raw and quantile are high, the label is "Very strong".
+        result = _interpret_score(1.5, 0.95, "tss_activity")
         assert "Very strong" in result
         assert "increase" in result
+
+    def test_quantile_high_but_tiny_raw(self):
+        from chorus.analysis.variant_report import _interpret_score
+
+        # High quantile + near-zero raw → still "Minimal" because the
+        # magnitude gate kicks in before the quantile check. Prevents
+        # "very strong" labels on 0.001 log2FC rows with quantile=1.0.
+        result = _interpret_score(0.001, 1.0, "chromatin_accessibility")
+        assert "Minimal" in result
 
     def test_very_strong_mark_loss(self):
         from chorus.analysis.variant_report import _interpret_score
@@ -867,7 +890,7 @@ class TestHTMLOutput:
             )
             report = build_variant_report(vr, "test", normalizer=norm)
             html = report.to_html()
-            assert "Quantile" in html  # quantile column header
+            assert "Effect %ile" in html  # effect percentile column header
 
     def test_to_html_has_igv_browser(self):
         from chorus.analysis.variant_report import build_variant_report
@@ -1465,7 +1488,7 @@ class TestEnrichedCausalFields:
         assert d["rankings"][0]["gene_name"] == "SORT1"
         assert d["rankings"][0]["cell_type"] == "K562"
 
-    def test_causal_to_markdown_includes_gene_cell_type(self):
+    def test_causal_to_markdown_includes_top_layer(self):
         from chorus.analysis.causal import CausalVariantScore, CausalResult, CausalWeights
 
         scores = [
@@ -1484,10 +1507,10 @@ class TestEnrichedCausalFields:
             oracle_name="test", gene_name="SORT1",
         )
         md = result.to_markdown()
-        assert "Gene" in md
-        assert "Cell Type" in md
-        assert "SORT1" in md
-        assert "K562" in md
+        assert "Top Layer" in md
+        assert "chromatin_accessibility" in md
+        assert "SORT1" in md  # gene in report header
+        assert "★" in md  # sentinel marker
 
     def test_causal_html_has_per_layer_columns(self):
         from chorus.analysis.causal import CausalVariantScore, CausalResult, CausalWeights
@@ -1618,3 +1641,586 @@ class TestBuildBackgrounds:
             assert normalizer.has_background(key)
             q = normalizer.normalize(key, 0.5, signed=False)
             assert q is not None
+
+
+# ── get_normalizer + auto-loading tests ──────────────────────────────
+
+
+class TestGetNormalizer:
+    def test_returns_none_when_no_backgrounds(self):
+        from chorus.analysis.normalization import get_normalizer
+
+        with tempfile.TemporaryDirectory() as td:
+            result = get_normalizer("nonexistent_oracle", cache_dir=td)
+            assert result is None
+
+    def test_returns_none_when_dir_missing(self):
+        from chorus.analysis.normalization import get_normalizer
+
+        result = get_normalizer("test", cache_dir="/tmp/chorus_no_such_dir_xyz")
+        assert result is None
+
+    def test_loads_matching_backgrounds(self):
+        from chorus.analysis.normalization import get_normalizer, BackgroundDistribution
+
+        with tempfile.TemporaryDirectory() as td:
+            # Create two background files for "myoracle"
+            scores1 = np.random.randn(1000).astype(np.float64)
+            scores2 = np.abs(np.random.randn(500)).astype(np.float64)
+            np.save(os.path.join(td, "myoracle_chromatin_accessibility.npy"), np.sort(scores1))
+            np.save(os.path.join(td, "myoracle_tf_binding.npy"), np.sort(scores2))
+            # Also create a file for a different oracle — should NOT be loaded
+            np.save(os.path.join(td, "other_oracle_chromatin.npy"), np.sort(scores1))
+
+            normalizer = get_normalizer("myoracle", cache_dir=td)
+            assert normalizer is not None
+            assert normalizer.has_background("myoracle_chromatin_accessibility")
+            assert normalizer.has_background("myoracle_tf_binding")
+            # get_normalizer only eagerly loads myoracle_* files
+            assert "other_oracle_chromatin" not in normalizer._distributions
+
+    def test_normalizer_produces_quantile_scores(self):
+        from chorus.analysis.normalization import get_normalizer
+
+        with tempfile.TemporaryDirectory() as td:
+            scores = np.sort(np.abs(np.random.randn(10_000))).astype(np.float64)
+            np.save(os.path.join(td, "testorc_chromatin_accessibility.npy"), scores)
+
+            normalizer = get_normalizer("testorc", cache_dir=td)
+            assert normalizer is not None
+            q = normalizer.normalize("testorc_chromatin_accessibility", 0.5, signed=False)
+            assert q is not None
+            assert 0.0 <= q <= 1.0
+
+    def test_summary_method(self):
+        from chorus.analysis.normalization import get_normalizer
+
+        with tempfile.TemporaryDirectory() as td:
+            scores = np.sort(np.random.randn(1000)).astype(np.float64)
+            np.save(os.path.join(td, "sumoracle_layer1.npy"), scores)
+
+            normalizer = get_normalizer("sumoracle", cache_dir=td)
+            assert normalizer is not None
+            summary = normalizer.summary()
+            assert "sumoracle_layer1" in summary
+            info = summary["sumoracle_layer1"]
+            assert info["n_scores"] == 1000
+            assert "median" in info
+            assert "p95" in info
+            assert "p99" in info
+
+    def test_build_variant_report_with_normalizer(self):
+        """build_variant_report with auto-loaded normalizer produces quantile scores."""
+        from chorus.analysis.normalization import get_normalizer
+        from chorus.analysis.variant_report import build_variant_report
+
+        # Create a variant result with a DNASE track
+        ref_vals = np.ones(1000, dtype=np.float32) * 5.0
+        alt_vals = np.ones(1000, dtype=np.float32) * 10.0
+        variant_result = _make_variant_result(
+            {"DNASE:K562": ref_vals},
+            {"DNASE:K562": alt_vals},
+        )
+
+        with tempfile.TemporaryDirectory() as td:
+            # Create a background for chromatin_accessibility
+            bg_scores = np.sort(np.abs(np.random.randn(10_000))).astype(np.float64)
+            np.save(os.path.join(td, "test_oracle_chromatin_accessibility.npy"), bg_scores)
+
+            normalizer = get_normalizer("test_oracle", cache_dir=td)
+            report = build_variant_report(
+                variant_result, oracle_name="test_oracle", normalizer=normalizer,
+            )
+            # Check that quantile scores were set on at least one track
+            has_quantile = False
+            for allele, scores in report.allele_scores.items():
+                for ts in scores:
+                    if ts.quantile_score is not None:
+                        has_quantile = True
+                        break
+            assert has_quantile, "Expected quantile scores when normalizer is provided"
+
+    def test_build_variant_report_without_normalizer(self):
+        """build_variant_report without normalizer produces no quantile scores (backward compat)."""
+        from chorus.analysis.variant_report import build_variant_report
+
+        ref_vals = np.ones(1000, dtype=np.float32) * 5.0
+        alt_vals = np.ones(1000, dtype=np.float32) * 10.0
+        variant_result = _make_variant_result(
+            {"DNASE:K562": ref_vals},
+            {"DNASE:K562": alt_vals},
+        )
+        report = build_variant_report(variant_result, oracle_name="test_oracle")
+        for allele, scores in report.allele_scores.items():
+            for ts in scores:
+                assert ts.quantile_score is None
+
+
+# ---------------------------------------------------------------------------
+# CDF compression and per-bin normalization tests
+# ---------------------------------------------------------------------------
+
+class TestCompactCDF:
+    """Test BackgroundDistribution CDF compression."""
+
+    def test_compact_cdf_basic(self):
+        """Compressing to 10K points gives same percentiles within tolerance."""
+        from chorus.analysis.normalization import BackgroundDistribution
+
+        rng = np.random.RandomState(42)
+        # Simulate a realistic per-bin distribution: lognormal (many low, few high)
+        raw = np.abs(rng.lognormal(mean=2.0, sigma=2.0, size=1_000_000))
+        full = BackgroundDistribution(raw)
+        compact = full.to_compact_cdf(n_points=10_000)
+
+        assert len(compact.sorted_scores) == 10_000
+        assert compact.is_compact
+        assert not full.is_compact
+        assert compact.nbytes < full.nbytes / 10  # >10x compression
+
+        # Percentile accuracy: check at 100 random test values
+        test_values = rng.choice(raw, size=100)
+        for v in test_values:
+            full_q = full.raw_to_quantile(float(v), signed=False)
+            compact_q = compact.raw_to_quantile(float(v), signed=False)
+            assert abs(full_q - compact_q) < 0.002, (
+                f"value={v:.4f}: full={full_q:.4f} compact={compact_q:.4f}"
+            )
+
+    def test_compact_cdf_batch(self):
+        """Batch percentile mapping matches within tolerance."""
+        from chorus.analysis.normalization import BackgroundDistribution
+
+        rng = np.random.RandomState(123)
+        raw = np.abs(rng.lognormal(mean=3.0, sigma=1.5, size=500_000))
+        full = BackgroundDistribution(raw)
+        compact = full.to_compact_cdf(n_points=5_000)
+
+        test = rng.choice(raw, size=1000)
+        full_q = full.raw_to_quantile_batch(test, signed=False)
+        compact_q = compact.raw_to_quantile_batch(test, signed=False)
+        max_diff = np.max(np.abs(full_q - compact_q))
+        assert max_diff < 0.005, f"Max batch diff: {max_diff:.6f}"
+
+    def test_compact_cdf_preserves_extremes(self):
+        """Compact CDF handles min, max, and out-of-range values."""
+        from chorus.analysis.normalization import BackgroundDistribution
+
+        raw = np.array([0.0, 1.0, 2.0, 5.0, 10.0, 100.0, 1000.0] * 1000)
+        full = BackgroundDistribution(raw)
+        compact = full.to_compact_cdf(n_points=100)
+
+        # Below min → near 0
+        assert compact.raw_to_quantile(-1.0, signed=False) < 0.01
+        # At max → near 1
+        assert compact.raw_to_quantile(1000.0, signed=False) > 0.99
+        # Above max → 1.0
+        assert compact.raw_to_quantile(9999.0, signed=False) == 1.0
+
+    def test_compact_cdf_small_distribution(self):
+        """Small distributions (<= n_points) are returned unchanged."""
+        from chorus.analysis.normalization import BackgroundDistribution
+
+        raw = np.arange(100, dtype=np.float64)
+        dist = BackgroundDistribution(raw)
+        compact = dist.to_compact_cdf(n_points=10_000)
+        assert compact is dist  # same object, not copied
+
+    def test_compact_cdf_signed(self):
+        """Compact CDF works with signed distributions."""
+        from chorus.analysis.normalization import BackgroundDistribution
+
+        rng = np.random.RandomState(99)
+        raw = rng.normal(0, 1, size=500_000)
+        full = BackgroundDistribution(raw)
+        compact = full.to_compact_cdf(n_points=10_000)
+
+        # Median of normal(0,1) should map to ~0.0 in signed mode
+        q_full = full.raw_to_quantile(0.0, signed=True)
+        q_compact = compact.raw_to_quantile(0.0, signed=True)
+        assert abs(q_full - q_compact) < 0.005
+        assert abs(q_full) < 0.05  # near 0 for signed median
+
+    def test_compact_save_load(self):
+        """Compact CDF can be saved and loaded."""
+        from chorus.analysis.normalization import BackgroundDistribution
+
+        rng = np.random.RandomState(77)
+        raw = np.abs(rng.lognormal(2, 2, size=100_000))
+        dist = BackgroundDistribution(raw)
+
+        with tempfile.NamedTemporaryFile(suffix=".npy", delete=False) as f:
+            path = f.name
+
+        try:
+            # Save compact
+            dist.save(path, compact=True)
+            size_compact = os.path.getsize(path)
+
+            # Load and verify
+            loaded = BackgroundDistribution.load(path)
+            assert len(loaded.sorted_scores) == 10_000
+            assert loaded.is_compact
+
+            # Save full for size comparison
+            dist.save(path, compact=False)
+            size_full = os.path.getsize(path)
+
+            assert size_compact < size_full / 5  # >5x compression
+        finally:
+            os.unlink(path)
+
+
+class TestPerBinNormalization:
+    """Test the per-bin normalization pipeline end-to-end."""
+
+    def test_normalize_perbin_batch(self):
+        """normalize_perbin_batch returns [0,1] percentiles."""
+        from chorus.analysis.normalization import (
+            QuantileNormalizer, BackgroundDistribution,
+        )
+
+        rng = np.random.RandomState(42)
+        perbin_scores = np.abs(rng.lognormal(2, 2, size=50_000))
+
+        normalizer = QuantileNormalizer(cache_dir=tempfile.mkdtemp())
+        key = normalizer.perbin_key("test_oracle", "chromatin_accessibility")
+        normalizer.set_background(key, BackgroundDistribution(perbin_scores))
+
+        # Test with random bin values
+        test_vals = np.abs(rng.lognormal(2, 2, size=100))
+        result = normalizer.normalize_perbin_batch(
+            "test_oracle", "chromatin_accessibility", test_vals
+        )
+        assert result is not None
+        assert result.shape == (100,)
+        assert np.all(result >= 0)
+        assert np.all(result <= 1)
+
+    def test_perbin_vs_baseline_different_scale(self):
+        """Per-bin and summary baselines give different percentiles for same value."""
+        from chorus.analysis.normalization import (
+            QuantileNormalizer, BackgroundDistribution,
+        )
+
+        # Summary baseline: window sums (high values, e.g. 501bp sums)
+        summary_scores = np.array([100, 200, 500, 1000, 2000, 5000, 10000.0])
+        # Per-bin baseline: individual bin values (low values, e.g. single bins)
+        perbin_scores = np.array([0.1, 0.5, 1.0, 5.0, 10.0, 50.0, 100.0])
+
+        normalizer = QuantileNormalizer(cache_dir=tempfile.mkdtemp())
+        normalizer.set_background(
+            "test_chromatin_accessibility_baseline",
+            BackgroundDistribution(summary_scores),
+        )
+        normalizer.set_background(
+            "test_chromatin_accessibility_perbin",
+            BackgroundDistribution(perbin_scores),
+        )
+
+        # A value of 10.0: low in summary scale, high in per-bin scale
+        summary_pctile = normalizer.normalize_baseline("test", "chromatin_accessibility", 10.0)
+        perbin_pctile = normalizer.normalize_perbin_batch(
+            "test", "chromatin_accessibility", np.array([10.0])
+        )[0]
+
+        # Summary: 10 < 100 (min) → very low percentile
+        assert summary_pctile < 0.2
+        # Per-bin: 10 is between 5 and 50 → moderate-high percentile
+        assert perbin_pctile > 0.5
+
+    def test_compact_cdf_in_normalizer(self):
+        """Compact CDF works correctly inside QuantileNormalizer."""
+        from chorus.analysis.normalization import (
+            QuantileNormalizer, BackgroundDistribution,
+        )
+
+        rng = np.random.RandomState(42)
+        raw = np.abs(rng.lognormal(2, 2, size=100_000))
+
+        normalizer = QuantileNormalizer(cache_dir=tempfile.mkdtemp())
+        # Store compact CDF
+        dist = BackgroundDistribution(raw).to_compact_cdf()
+        normalizer.set_background(
+            "test_chromatin_accessibility_perbin", dist
+        )
+
+        test_vals = np.array([0.0, np.median(raw), raw.max()])
+        result = normalizer.normalize_perbin_batch(
+            "test", "chromatin_accessibility", test_vals
+        )
+        assert result is not None
+        assert result[0] < 0.1   # min → low percentile
+        assert 0.4 < result[1] < 0.6  # median → ~0.5
+        assert result[2] > 0.9   # max → high percentile
+
+    def test_has_perbin(self):
+        """has_perbin correctly detects per-bin distributions."""
+        from chorus.analysis.normalization import (
+            QuantileNormalizer, BackgroundDistribution,
+        )
+
+        normalizer = QuantileNormalizer(cache_dir=tempfile.mkdtemp())
+        assert not normalizer.has_perbin("test", "chromatin_accessibility")
+
+        normalizer.set_background(
+            "test_chromatin_accessibility_perbin",
+            BackgroundDistribution(np.arange(100, dtype=np.float64)),
+        )
+        assert normalizer.has_perbin("test", "chromatin_accessibility")
+
+    def test_perbin_missing_returns_none(self):
+        """normalize_perbin_batch returns None when no perbin exists."""
+        from chorus.analysis.normalization import QuantileNormalizer
+
+        normalizer = QuantileNormalizer(cache_dir=tempfile.mkdtemp())
+        result = normalizer.normalize_perbin_batch(
+            "nonexistent", "chromatin_accessibility", np.array([1.0, 2.0])
+        )
+        assert result is None
+
+
+# ---------------------------------------------------------------------------
+# Per-Track Normalizer Tests
+# ---------------------------------------------------------------------------
+
+class TestPerTrackNormalizer:
+    """Tests for PerTrackNormalizer — per-track CDF normalization."""
+
+    def _make_normalizer(self, n_tracks=3, n_points=100, with_perbin=True):
+        """Create a PerTrackNormalizer with fake CDFs for testing."""
+        from chorus.analysis.normalization import PerTrackNormalizer
+
+        tmpdir = tempfile.mkdtemp()
+        rng = np.random.default_rng(42)
+        track_ids = [f"TRACK_{i}" for i in range(n_tracks)]
+
+        effect = np.sort(rng.standard_normal((n_tracks, n_points)), axis=1)
+        summary = np.sort(rng.exponential(5, (n_tracks, n_points)), axis=1)
+        signed = np.array([False, True, False][:n_tracks])
+
+        kwargs = dict(
+            oracle_name="test_oracle",
+            track_ids=track_ids,
+            effect_cdfs=effect,
+            summary_cdfs=summary,
+            signed_flags=signed,
+            cache_dir=tmpdir,
+            n_points=n_points,
+        )
+        if with_perbin:
+            perbin = np.sort(rng.exponential(1, (n_tracks, n_points)), axis=1)
+            kwargs["perbin_cdfs"] = perbin
+
+        PerTrackNormalizer.build_and_save(**kwargs)
+        norm = PerTrackNormalizer(cache_dir=tmpdir)
+        return norm, track_ids, tmpdir
+
+    def test_build_and_load_roundtrip(self):
+        norm, track_ids, _ = self._make_normalizer()
+        assert norm.has_oracle("test_oracle")
+        assert norm.n_tracks("test_oracle") == 3
+        assert norm.track_ids("test_oracle") == track_ids
+
+    def test_effect_percentile_unsigned(self):
+        norm, track_ids, _ = self._make_normalizer()
+        result = norm.effect_percentile("test_oracle", track_ids[0], 0.0, signed=False)
+        assert result is not None
+        assert 0.0 <= result <= 1.0
+
+    def test_effect_percentile_signed(self):
+        norm, track_ids, _ = self._make_normalizer()
+        result = norm.effect_percentile("test_oracle", track_ids[1], 0.0, signed=True)
+        assert result is not None
+        assert -1.0 <= result <= 1.0
+
+    def test_activity_percentile(self):
+        norm, track_ids, _ = self._make_normalizer()
+        result = norm.activity_percentile("test_oracle", track_ids[0], 5.0)
+        assert result is not None
+        assert 0.0 <= result <= 1.0
+
+    def test_perbin_floor_rescale_batch(self):
+        norm, track_ids, _ = self._make_normalizer()
+        vals = np.array([0.0, 0.5, 1.0, 5.0, 10.0])
+        result = norm.perbin_floor_rescale_batch(
+            "test_oracle", track_ids[0], vals,
+            floor_pctile=0.5, peak_pctile=0.9, max_value=3.0,
+        )
+        assert result is not None
+        assert result.shape == vals.shape
+        assert result.min() >= 0.0
+        assert result.max() <= 3.0
+
+    def test_perbin_floor_rescale_preserves_peak_order(self):
+        norm, track_ids, _ = self._make_normalizer()
+        vals = np.array([0.1, 1.0, 5.0, 10.0, 50.0])
+        result = norm.perbin_floor_rescale_batch(
+            "test_oracle", track_ids[0], vals,
+            floor_pctile=0.5, peak_pctile=0.9,
+        )
+        assert result is not None
+        # Monotonically increasing (or equal for clipped values)
+        diffs = np.diff(result)
+        assert np.all(diffs >= -1e-9), f"Not monotonic: {result}"
+
+    def test_missing_track_returns_none(self):
+        norm, _, _ = self._make_normalizer()
+        assert norm.effect_percentile("test_oracle", "NONEXISTENT", 0.5) is None
+        assert norm.activity_percentile("test_oracle", "NONEXISTENT", 0.5) is None
+        assert norm.perbin_floor_rescale_batch(
+            "test_oracle", "NONEXISTENT", np.array([1.0]),
+        ) is None
+
+    def test_missing_oracle_returns_none(self):
+        norm, track_ids, _ = self._make_normalizer()
+        assert norm.effect_percentile("no_oracle", track_ids[0], 0.5) is None
+
+    def test_perbin_none_for_scalar_oracles(self):
+        """When perbin_cdfs is absent, perbin methods return None."""
+        norm, track_ids, _ = self._make_normalizer(with_perbin=False)
+        result = norm.perbin_percentile_batch(
+            "test_oracle", track_ids[0], np.array([1.0]),
+        )
+        assert result is None
+        result2 = norm.perbin_floor_rescale_batch(
+            "test_oracle", track_ids[0], np.array([1.0]),
+        )
+        assert result2 is None
+
+    def test_get_denominator_padding_vs_compaction(self):
+        """Denominator uses count when < CDF width (padding case)."""
+        from chorus.analysis.normalization import PerTrackNormalizer
+
+        tmpdir = tempfile.mkdtemp()
+        track_ids = ["T0", "T1"]
+        effect = np.sort(np.random.default_rng(1).standard_normal((2, 100)), axis=1)
+        summary = np.sort(np.random.default_rng(2).exponential(1, (2, 100)), axis=1)
+
+        # T0 has 50 samples (padded to 100), T1 has 200 (compacted to 100)
+        PerTrackNormalizer.build_and_save(
+            oracle_name="test",
+            track_ids=track_ids,
+            effect_cdfs=effect,
+            summary_cdfs=summary,
+            effect_counts=np.array([50, 200]),
+            summary_counts=np.array([50, 200]),
+            signed_flags=np.array([False, False]),
+            cache_dir=tmpdir,
+        )
+        norm = PerTrackNormalizer(cache_dir=tmpdir)
+        entry = norm._ensure_loaded("test")
+
+        # T0: count=50 < width=100 → use count
+        assert norm._get_denominator(entry, "effect_cdfs", 0) == 50
+        # T1: count=200 > width=100 → use width
+        assert norm._get_denominator(entry, "effect_cdfs", 1) == 100
+
+    def test_get_pertrack_normalizer_factory(self):
+        """get_pertrack_normalizer returns None when no file exists."""
+        from chorus.analysis.normalization import get_pertrack_normalizer
+
+        result = get_pertrack_normalizer("nonexistent_oracle_xyz",
+                                         cache_dir=tempfile.mkdtemp())
+        assert result is None
+
+    def test_is_signed(self):
+        norm, track_ids, _ = self._make_normalizer()
+        assert norm.is_signed("test_oracle", track_ids[0]) is False
+        assert norm.is_signed("test_oracle", track_ids[1]) is True
+        assert norm.is_signed("test_oracle", track_ids[2]) is False
+
+
+class TestIGVRawFlag:
+    """Tests for the igv_raw parameter in variant report generation."""
+
+    def test_build_variant_report_igv_raw_propagates(self):
+        """igv_raw flag is stored on the VariantReport."""
+        from chorus.analysis.variant_report import VariantReport
+        import dataclasses
+
+        fields = {f.name for f in dataclasses.fields(VariantReport)}
+        assert "_igv_raw" in fields
+
+        report = VariantReport(
+            chrom="chr1", position=100, ref_allele="A",
+            alt_alleles=["G"], oracle_name="test", gene_name=None,
+            _igv_raw=True,
+        )
+        assert report._igv_raw is True
+
+        report2 = VariantReport(
+            chrom="chr1", position=100, ref_allele="A",
+            alt_alleles=["G"], oracle_name="test", gene_name=None,
+            _igv_raw=False,
+        )
+        assert report2._igv_raw is False
+
+    def test_build_variant_report_accepts_igv_raw(self):
+        """build_variant_report accepts igv_raw parameter."""
+        import inspect
+        from chorus.analysis.variant_report import build_variant_report
+
+        sig = inspect.signature(build_variant_report)
+        assert "igv_raw" in sig.parameters
+
+    def test_discover_variant_effects_accepts_igv_raw(self):
+        """discover_variant_effects accepts igv_raw parameter."""
+        import inspect
+        from chorus.analysis.discovery import discover_variant_effects
+
+        sig = inspect.signature(discover_variant_effects)
+        assert "igv_raw" in sig.parameters
+
+    def test_layer_floor_thresholds_exist(self):
+        """Layer-aware floor thresholds are defined for all known layers."""
+        from chorus.analysis._igv_report import _LAYER_FLOOR_PCTILE
+
+        expected_layers = [
+            "tss_activity", "tf_binding", "chromatin_accessibility",
+            "histone_marks", "gene_expression", "splicing",
+        ]
+        for layer in expected_layers:
+            assert layer in _LAYER_FLOOR_PCTILE, f"Missing threshold for {layer}"
+            assert 0.0 < _LAYER_FLOOR_PCTILE[layer] < 1.0
+
+
+class TestMCPPerTrackNormalization:
+    """Tests for MCP state manager integration with PerTrackNormalizer."""
+
+    def test_state_prefers_pertrack_over_legacy(self):
+        """State manager loads PerTrackNormalizer when NPZ exists."""
+        from chorus.analysis.normalization import PerTrackNormalizer
+
+        tmpdir = tempfile.mkdtemp()
+        # Create a fake pertrack NPZ
+        track_ids = ["T0"]
+        PerTrackNormalizer.build_and_save(
+            oracle_name="test_oracle",
+            track_ids=track_ids,
+            effect_cdfs=np.sort(np.random.default_rng(1).standard_normal((1, 100)), axis=1),
+            summary_cdfs=np.sort(np.random.default_rng(2).exponential(1, (1, 100)), axis=1),
+            signed_flags=np.array([False]),
+            cache_dir=tmpdir,
+        )
+
+        # Simulate what _auto_load_normalizer does
+        from chorus.analysis.normalization import get_pertrack_normalizer
+        norm = get_pertrack_normalizer("test_oracle", cache_dir=tmpdir)
+        assert isinstance(norm, PerTrackNormalizer)
+
+    def test_analyze_variant_accepts_igv_raw(self):
+        """MCP analyze_variant_multilayer accepts igv_raw parameter."""
+        import inspect
+        from chorus.mcp.server import analyze_variant_multilayer
+
+        sig = inspect.signature(analyze_variant_multilayer)
+        assert "igv_raw" in sig.parameters
+
+    def test_discover_variant_accepts_igv_raw(self):
+        """MCP discover_variant accepts igv_raw parameter."""
+        import inspect
+        from chorus.mcp.server import discover_variant
+
+        sig = inspect.signature(discover_variant)
+        assert "igv_raw" in sig.parameters

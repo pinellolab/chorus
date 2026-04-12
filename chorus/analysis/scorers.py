@@ -4,7 +4,8 @@ Each regulatory layer requires a different scoring approach — different
 window sizes, aggregation methods, and effect formulas.  This module
 defines those strategies and applies them to raw oracle predictions.
 
-Scoring strategies follow the AlphaGenome framework:
+Variant Effect Scoring
+======================
 
 | Layer                | Window  | Aggregation | Formula                          |
 |----------------------|---------|-------------|----------------------------------|
@@ -16,6 +17,30 @@ Scoring strategies follow the AlphaGenome framework:
 | Promoter activity      | full  | mean        | alt - ref                        |
 | Regulatory class (Sei) | full  | mean        | alt - ref                        |
 | Splicing               | 501 bp| sum         | log2[(sum_alt+1)/(sum_ref+1)]    |
+
+Baseline Signal Interpretation
+==============================
+
+Baseline background distributions (built from ~25K genomic positions)
+contextualise raw predicted signal levels.  The activity percentile
+indicates where a region's signal ranks genome-wide.
+
+| Layer                | Signal Measured              | High Percentile Means            |
+|----------------------|------------------------------|----------------------------------|
+| chromatin_accessibility| 501 bp sum of DNASE/ATAC    | Active regulatory element        |
+| tf_binding            | 501 bp sum of ChIP-TF       | Transcription factor is bound    |
+| histone_marks         | 2001 bp sum of histone ChIP  | Strong histone mark deposition   |
+| tss_activity          | 501 bp sum of CAGE/PRO-CAP  | Active promoter / TSS            |
+| gene_expression       | Mean exon RNA-seq coverage   | Highly expressed gene            |
+| splicing              | 501 bp sum of splice scores  | Active splice junction           |
+| promoter_activity     | Mean MPRA activity score     | Strong synthetic promoter        |
+| regulatory_classification | Mean Sei class probability | Confident regulatory class call  |
+
+The baselines are built by the ``scripts/build_backgrounds_*.py`` scripts
+using the same window/aggregation as variant scoring, scored at 20K
+protein-coding TSSs and 5K random positions per oracle.  Files are stored
+as ``~/.chorus/backgrounds/{oracle}_{layer}_baseline.npy`` and auto-loaded
+by ``chorus.analysis.normalization.get_normalizer()``.
 """
 
 import logging
@@ -146,9 +171,16 @@ def classify_track_layer(track) -> str:
     if assay_type in ("DNASE", "ATAC"):
         return "chromatin_accessibility"
     if assay_type == "CHIP":
-        upper_id = assay_id.upper()
+        # Check assay_id, description, and metadata for histone patterns
+        search_text = assay_id
+        metadata = getattr(track, "metadata", None)
+        if metadata and isinstance(metadata, dict):
+            desc = metadata.get("description", "")
+            if desc:
+                search_text = f"{assay_id} {desc}"
+        upper_text = search_text.upper()
         for pattern in _HISTONE_PATTERNS:
-            if pattern.upper() in upper_id:
+            if pattern.upper() in upper_text:
                 return "histone_marks"
         return "tf_binding"
     if assay_type in ("CAGE", "PRO_CAP"):

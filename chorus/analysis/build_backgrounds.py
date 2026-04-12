@@ -1,37 +1,28 @@
-"""Build background distributions for quantile normalization.
+"""Legacy in-library API to build per-layer background distributions.
 
-Provides functions to compute variant-effect and baseline-signal
-background distributions across genomic loci, enabling quantile-based
-interpretation of observed scores.
+.. note::
+    This module produces the **legacy per-layer** backgrounds (one CDF
+    per regulatory layer per oracle) used by :class:`QuantileNormalizer`.
+
+    The current production system uses **per-track** CDFs built by the
+    standalone scripts in ``scripts/build_backgrounds_<oracle>.py`` and
+    consumed via :class:`PerTrackNormalizer` (one CDF per individual
+    track, e.g. one per ENCODE assay).  See ``scripts/`` for the
+    per-track build pipeline.
+
+This module is kept as a quick convenience API for small-scale tests
+and notebooks.  For production use, prefer the standalone build scripts.
 
 Two types of backgrounds:
 
-1. **Variant effect backgrounds** — score common SNPs across cell types
-   to establish the typical range of variant effects per layer.
+1. **Variant effect backgrounds** — score common SNPs to establish the
+   typical range of variant effects per layer.
 
 2. **Baseline signal backgrounds** — sample wild-type prediction values
    at random positions to contextualise ref_value (is this region active?).
 
-Usage::
-
-    from chorus.analysis.build_backgrounds import (
-        build_variant_backgrounds,
-        build_baseline_backgrounds,
-        get_common_snps,
-    )
-
-    # Build variant effect backgrounds for AlphaGenome
-    normalizer = build_variant_backgrounds(
-        oracle, "alphagenome", assay_ids, n_variants=500,
-    )
-
-    # Build baseline signal backgrounds
-    baselines = build_baseline_backgrounds(
-        oracle, "alphagenome", assay_ids, n_positions=1000,
-    )
-
 Backgrounds are cached under ``~/.chorus/backgrounds/`` by default
-and keyed by ``{oracle}_{layer}``.
+and keyed by ``{oracle}_{layer}.npy``.
 """
 
 import logging

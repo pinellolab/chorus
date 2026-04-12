@@ -2,6 +2,11 @@
 
 Find which cell types are most affected by a variant — no prior knowledge needed.
 
+> Ask Claude in plain language about any variant where you *don't* know
+> the relevant tissue. The prompts below are concrete demonstrations so
+> you can see the output format (ranked cell types + a full multi-layer
+> report for each top hit); adapt them freely to your own variants.
+
 ## Example Prompts
 
 ### For a biologist

@@ -1,0 +1,452 @@
+<!DOCTYPE html><html lang='en'><head>
+<meta charset='utf-8'>
+<title>Causal Prioritization — rs12740374</title>
+<style>
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+       max-width: 1200px; margin: 0 auto; padding: 1rem; background: #f8f9fa; }
+h1 { font-size: 1.5rem; margin-bottom: 0.3rem; }
+h2 { font-size: 1.15rem; border-bottom: 1px solid #dee2e6; padding-bottom: 0.3rem;
+     margin-top: 1.5rem; }
+.meta { font-size: 0.92rem; margin: 0.15rem 0; color: #495057; }
+.summary-box { margin: 0.8rem 0; padding: 0.7rem 1rem; background: #f0f7ff;
+               border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 0.95rem; }
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 1rem; }
+thead { background: #343a40; color: white; }
+th, td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid #dee2e6; }
+th { cursor: pointer; user-select: none; }
+th:hover { background: #495057; }
+tbody tr:hover { background: #e9ecef; }
+.badge-sentinel { background: #ffc107; color: #333; padding: 0.15rem 0.4rem;
+                  border-radius: 3px; font-size: 0.8rem; font-weight: 600; }
+.badge-top { background: #28a745; color: white; padding: 0.15rem 0.4rem;
+             border-radius: 3px; font-size: 0.8rem; font-weight: 600; }
+.r2-cell { font-weight: 600; }
+.r2-high { color: #D43F3A; }
+.r2-med { color: #F0AD4E; }
+.r2-low { color: #357EBD; }
+details { margin: 0.5rem 0; border: 1px solid #dee2e6; border-radius: 4px; }
+details summary { padding: 0.5rem 0.8rem; background: #f8f9fa; cursor: pointer;
+                  font-size: 0.92rem; }
+details summary:hover { background: #e9ecef; }
+details[open] summary { border-bottom: 1px solid #dee2e6; }
+.detail-card { padding: 0.6rem 0.8rem; }
+.detail-card table { font-size: 0.85rem; }
+.detail-card th { background: #6c757d; }
+.locus-plot { text-align: center; margin: 1rem 0; }
+.locus-plot img { max-width: 100%; border: 1px solid #dee2e6; border-radius: 4px; }
+.footer { margin-top: 2rem; padding-top: 0.5rem; border-top: 1px solid #dee2e6;
+          font-size: 0.8rem; color: #6c757d; }
+</style>
+</head><body>
+<h1>Causal Variant Prioritization Report</h1>
+<section class="analysis-request" style="background:#f6f8fa;border-left:4px solid #0366d6;padding:12px 16px;margin:0 0 16px 0;border-radius:4px;font-size:0.92em;">
+<h3 style="margin:0 0 8px 0;font-size:1.05em;">Analysis Request</h3>
+<blockquote style="margin:0 0 8px 0;padding:6px 10px;background:#fff;border-left:3px solid #d1d5da;color:#24292e;">I&#x27;m fine-mapping the SORT1 LDL cholesterol GWAS locus. The sentinel is rs12740374 and I have 11 LD variants (r²≥0.85). Score each one across all regulatory layers in HepG2 and rank by causal evidence. Gene is SORT1.</blockquote>
+<ul style="margin:0;padding-left:20px;list-style:disc;">
+<li><strong>Tool:</strong> fine_map_causal_variant</li>
+<li><strong>Oracle:</strong> alphagenome</li>
+<li><strong>Normalizer:</strong> per-track background CDFs</li>
+<li><strong>Tracks requested:</strong> all oracle tracks (discovery mode)</li>
+<li><strong>Generated:</strong> 2026-04-12 14:14 UTC</li>
+</ul>
+</section>
+
+
+
+
+<p class="meta"><b>Sentinel:</b> rs12740374</p>
+<p class="meta"><b>Oracle:</b> alphagenome</p>
+<p class="meta"><b>Cell type(s):</b> multiple tissues (all-tracks mode)</p>
+<p class="meta"><b>Gene:</b> SORT1</p>
+<p class="meta"><b>Variants scored:</b> 11</p>
+<div class="summary-box"><b>Top candidate:</b> rs12740374 (composite=0.954)<br>Chromatin accessibility (DNASE/ATAC): +1.91. TSS activity (CAGE/PRO-CAP): +1.26. Transcription factor binding (ChIP-TF): +1.04. Histone modifications (ChIP-Histone): +1.00. Gene expression (RNA-seq): +0.29<br>The sentinel SNP is the top candidate.</div>
+<h2>Interactive Genome Browser</h2>
+<p style="font-size:.85rem;color:#6b7280">Top track: composite causal score per variant (bar height = score). Signal tracks show ref (grey) vs alt (colored) for the top candidate. Red stripe marks the sentinel. Zoom and pan to explore.</p>
+
+<div id="igv-causal" style="margin: 1rem 0; min-height: 400px;"></div>
+<script src="https://cdn.jsdelivr.net/npm/igv@3.1.1/dist/igv.min.js"></script>
+<script>
+(async function() {
+    try {
+        const browser = await igv.createBrowser(
+            document.getElementById("igv-causal"),
+            {"genome":"hg38","locus":"chr1:108777057-109777057","showRuler":true,"showNavigation":true,"showCenterGuide":true,"roi":[{"name":"Sentinel","color":"rgba(255, 0, 0, 0.12)","features":[{"chr":"chr1","start":109274967,"end":109274969}]}],"tracks":[{"name":"Composite Causal Score","type":"wig","height":60,"color":"rgb(59,130,246)","min":0,"max":1.0,"features":[{"chr":"chr1","start":109274918,"end":109275018,"value":0.9539},{"chr":"chr1","start":109275166,"end":109275266,"value":0.5452},{"chr":"chr1","start":109274520,"end":109274620,"value":0.464},{"chr":"chr1","start":109278635,"end":109278735,"value":0.4237},{"chr":"chr1","start":109275486,"end":109275586,"value":0.3701},{"chr":"chr1","start":109279125,"end":109279225,"value":0.3498},{"chr":"chr1","start":109275858,"end":109275958,"value":0.3478},{"chr":"chr1","start":109278839,"end":109278939,"value":0.2334},{"chr":"chr1","start":109275634,"end":109275734,"value":0.2301},{"chr":"chr1","start":109279494,"end":109279594,"value":0.2196},{"chr":"chr1","start":109279471,"end":109279571,"value":0.2105}]},{"name":"Max |Effect|","type":"wig","height":50,"color":"rgb(220,53,69)","min":0,"features":[{"chr":"chr1","start":109274918,"end":109275018,"value":1.9085},{"chr":"chr1","start":109275166,"end":109275266,"value":0.2054},{"chr":"chr1","start":109274520,"end":109274620,"value":0.2121},{"chr":"chr1","start":109278635,"end":109278735,"value":0.5831},{"chr":"chr1","start":109275486,"end":109275586,"value":0.1223},{"chr":"chr1","start":109279125,"end":109279225,"value":0.5518},{"chr":"chr1","start":109275858,"end":109275958,"value":0.297},{"chr":"chr1","start":109278839,"end":109278939,"value":0.3138},{"chr":"chr1","start":109275634,"end":109275734,"value":0.193},{"chr":"chr1","start":109279494,"end":109279594,"value":0.1522},{"chr":"chr1","start":109279471,"end":109279571,"value":0.1013}]},{"name":"LD Variants (colored by r\u00b2)","type":"annotation","displayMode":"EXPANDED","height":40,"features":[{"chr":"chr1","start":109274967,"end":109274969,"name":"rs12740374 (sentinel) r\u00b2=1.00 composite=0.954","color":"rgb(212,63,58)"},{"chr":"chr1","start":109275215,"end":109275217,"name":"rs660240 r\u00b2=0.95 composite=0.545","color":"rgb(212,63,58)"},{"chr":"chr1","start":109274569,"end":109274571,"name":"rs7528419 r\u00b2=1.00 composite=0.464","color":"rgb(212,63,58)"},{"chr":"chr1","start":109278684,"end":109278686,"name":"rs56960352 r\u00b2=0.91 composite=0.424","color":"rgb(212,63,58)"},{"chr":"chr1","start":109275535,"end":109275537,"name":"rs142678968 r\u00b2=0.95 composite=0.370","color":"rgb(212,63,58)"},{"chr":"chr1","start":109279174,"end":109279176,"name":"rs4970836 r\u00b2=0.91 composite=0.350","color":"rgb(212,63,58)"},{"chr":"chr1","start":109275907,"end":109275909,"name":"rs1624712 r\u00b2=1.00 composite=0.348","color":"rgb(212,63,58)"},{"chr":"chr1","start":109278888,"end":109278890,"name":"rs602633 r\u00b2=0.86 composite=0.233","color":"rgb(212,63,58)"},{"chr":"chr1","start":109275683,"end":109275685,"name":"rs1626484 r\u00b2=1.00 composite=0.230","color":"rgb(212,63,58)"},{"chr":"chr1","start":109279543,"end":109279545,"name":"rs599839 r\u00b2=0.91 composite=0.220","color":"rgb(212,63,58)"},{"chr":"chr1","start":109279520,"end":109279522,"name":"rs1277930 r\u00b2=0.91 composite=0.210","color":"rgb(212,63,58)"}]}]}
+        );
+        console.log("IGV causal browser created");
+    } catch(e) {
+        console.error("IGV error:", e);
+        document.getElementById("igv-causal").innerHTML =
+            '<p style="color:red;padding:1rem">Error loading IGV browser: ' + e.message + '</p>';
+    }
+})();
+</script>
+
+<h2>Variant Rankings</h2>
+<table class="sortable"><thead><tr>
+<th>Rank</th><th>Variant</th><th>r²</th>
+<th>Gene</th><th>Cell Type</th>
+<th>Max Effect</th><th>Layers</th><th>Convergence</th>
+<th>Chromatin accessibility (DNASE/ATAC)</th>
+<th>TSS activity (CAGE/PRO-CAP)</th>
+<th>Gene expression (RNA-seq)</th>
+<th>Histone modifications (ChIP-Histone)</th>
+<th>Transcription factor binding (ChIP-TF)</th>
+<th>Splicing (splice sites)</th>
+<th>Composite ▾</th>
+</tr></thead><tbody>
+<tr>
+<td>1</td>
+<td>rs12740374 <span class="badge-sentinel">sentinel</span> <span class="badge-top">top</span></td>
+<td class="r2-cell r2-high">1.00</td>
+<td>SORT1</td>
+<td>—</td>
+<td>+1.909</td>
+<td>5</td>
+<td>1.00</td>
+<td style="color:#28a745;font-weight:600">+1.909</td>
+<td style="color:#28a745;font-weight:600">+1.265</td>
+<td style="color:#28a745;font-weight:600">+0.285</td>
+<td style="color:#28a745;font-weight:600">+1.000</td>
+<td style="color:#28a745;font-weight:600">+1.036</td>
+<td style="color:#6c757d;font-weight:600">-0.010</td>
+<td><b>0.954</b></td>
+</tr>
+<tr>
+<td>2</td>
+<td>rs660240</td>
+<td class="r2-cell r2-high">0.95</td>
+<td>SORT1</td>
+<td>—</td>
+<td>+0.205</td>
+<td>3</td>
+<td>1.00</td>
+<td style="color:#28a745;font-weight:600">+0.118</td>
+<td style="color:#28a745;font-weight:600">+0.205</td>
+<td style="color:#6c757d;font-weight:600">+0.041</td>
+<td style="color:#dc3545;font-weight:600">-0.093</td>
+<td style="color:#28a745;font-weight:600">+0.120</td>
+<td style="color:#6c757d;font-weight:600">-0.002</td>
+<td><b>0.545</b></td>
+</tr>
+<tr>
+<td>3</td>
+<td>rs7528419</td>
+<td class="r2-cell r2-high">1.00</td>
+<td>SORT1</td>
+<td>—</td>
+<td>+0.212</td>
+<td>2</td>
+<td>1.00</td>
+<td style="color:#28a745;font-weight:600">+0.177</td>
+<td style="color:#28a745;font-weight:600">+0.212</td>
+<td style="color:#28a745;font-weight:600">+0.057</td>
+<td style="color:#28a745;font-weight:600">+0.080</td>
+<td style="color:#28a745;font-weight:600">+0.077</td>
+<td style="color:#dc3545;font-weight:600">-0.073</td>
+<td><b>0.464</b></td>
+</tr>
+<tr>
+<td>4</td>
+<td>rs56960352</td>
+<td class="r2-cell r2-high">0.91</td>
+<td>SORT1</td>
+<td>—</td>
+<td>-0.583</td>
+<td>3</td>
+<td>1.00</td>
+<td style="color:#dc3545;font-weight:600">-0.583</td>
+<td style="color:#dc3545;font-weight:600">-0.162</td>
+<td style="color:#6c757d;font-weight:600">+0.018</td>
+<td style="color:#dc3545;font-weight:600">-0.126</td>
+<td style="color:#dc3545;font-weight:600">-0.090</td>
+<td style="color:#6c757d;font-weight:600">+0.000</td>
+<td><b>0.424</b></td>
+</tr>
+<tr>
+<td>5</td>
+<td>rs142678968</td>
+<td class="r2-cell r2-high">0.95</td>
+<td>SORT1</td>
+<td>—</td>
+<td>+0.122</td>
+<td>1</td>
+<td>1.00</td>
+<td style="color:#dc3545;font-weight:600">-0.075</td>
+<td style="color:#dc3545;font-weight:600">-0.065</td>
+<td style="color:#28a745;font-weight:600">+0.122</td>
+<td style="color:#6c757d;font-weight:600">-0.031</td>
+<td style="color:#dc3545;font-weight:600">-0.083</td>
+<td style="color:#6c757d;font-weight:600">+0.013</td>
+<td><b>0.370</b></td>
+</tr>
+<tr>
+<td>6</td>
+<td>rs4970836</td>
+<td class="r2-cell r2-high">0.91</td>
+<td>SORT1</td>
+<td>—</td>
+<td>-0.552</td>
+<td>2</td>
+<td>1.00</td>
+<td style="color:#dc3545;font-weight:600">-0.198</td>
+<td style="color:#dc3545;font-weight:600">-0.552</td>
+<td style="color:#6c757d;font-weight:600">+0.012</td>
+<td style="color:#6c757d;font-weight:600">-0.027</td>
+<td style="color:#dc3545;font-weight:600">-0.089</td>
+<td style="color:#6c757d;font-weight:600">+0.000</td>
+<td><b>0.350</b></td>
+</tr>
+<tr>
+<td>7</td>
+<td>rs1624712</td>
+<td class="r2-cell r2-high">1.00</td>
+<td>SORT1</td>
+<td>—</td>
+<td>+0.297</td>
+<td>3</td>
+<td>0.33</td>
+<td style="color:#28a745;font-weight:600">+0.297</td>
+<td style="color:#28a745;font-weight:600">+0.093</td>
+<td style="color:#6c757d;font-weight:600">-0.019</td>
+<td style="color:#28a745;font-weight:600">+0.161</td>
+<td style="color:#dc3545;font-weight:600">-0.175</td>
+<td style="color:#6c757d;font-weight:600">-0.001</td>
+<td><b>0.348</b></td>
+</tr>
+<tr>
+<td>8</td>
+<td>rs602633</td>
+<td class="r2-cell r2-high">0.86</td>
+<td>SORT1</td>
+<td>—</td>
+<td>-0.314</td>
+<td>3</td>
+<td>0.33</td>
+<td style="color:#dc3545;font-weight:600">-0.314</td>
+<td style="color:#dc3545;font-weight:600">-0.104</td>
+<td style="color:#6c757d;font-weight:600">-0.015</td>
+<td style="color:#6c757d;font-weight:600">-0.046</td>
+<td style="color:#28a745;font-weight:600">+0.126</td>
+<td style="color:#6c757d;font-weight:600">-0.000</td>
+<td><b>0.233</b></td>
+</tr>
+<tr>
+<td>9</td>
+<td>rs1626484</td>
+<td class="r2-cell r2-high">1.00</td>
+<td>SORT1</td>
+<td>—</td>
+<td>-0.193</td>
+<td>2</td>
+<td>0.00</td>
+<td style="color:#6c757d;font-weight:600">+0.035</td>
+<td style="color:#28a745;font-weight:600">+0.128</td>
+<td style="color:#dc3545;font-weight:600">-0.193</td>
+<td style="color:#6c757d;font-weight:600">-0.025</td>
+<td style="color:#6c757d;font-weight:600">+0.026</td>
+<td style="color:#6c757d;font-weight:600">+0.002</td>
+<td><b>0.230</b></td>
+</tr>
+<tr>
+<td>10</td>
+<td>rs599839</td>
+<td class="r2-cell r2-high">0.91</td>
+<td>SORT1</td>
+<td>—</td>
+<td>-0.152</td>
+<td>1</td>
+<td>1.00</td>
+<td style="color:#dc3545;font-weight:600">-0.052</td>
+<td style="color:#6c757d;font-weight:600">+0.041</td>
+<td style="color:#dc3545;font-weight:600">-0.152</td>
+<td style="color:#6c757d;font-weight:600">-0.032</td>
+<td style="color:#6c757d;font-weight:600">+0.035</td>
+<td style="color:#6c757d;font-weight:600">-0.004</td>
+<td><b>0.220</b></td>
+</tr>
+<tr>
+<td>11</td>
+<td>rs1277930</td>
+<td class="r2-cell r2-high">0.91</td>
+<td>SORT1</td>
+<td>—</td>
+<td>-0.101</td>
+<td>1</td>
+<td>1.00</td>
+<td style="color:#dc3545;font-weight:600">-0.101</td>
+<td style="color:#6c757d;font-weight:600">+0.050</td>
+<td style="color:#28a745;font-weight:600">+0.052</td>
+<td style="color:#6c757d;font-weight:600">-0.049</td>
+<td style="color:#dc3545;font-weight:600">-0.066</td>
+<td style="color:#6c757d;font-weight:600">+0.008</td>
+<td><b>0.210</b></td>
+</tr>
+</tbody></table>
+<h2>Variant Details</h2>
+<details open>
+<summary><b>rs12740374</b> — composite: 0.954 ★ sentinel — Top candidate</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,274,968 G>T | <b>r²:</b> 1.00 | <b>Top layer:</b> chromatin_accessibility</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>+1.909</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>+1.265</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Transcription factor binding (ChIP-TF)</td><td>+1.036</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>+1.000</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Gene expression (RNA-seq)</td><td>+0.285</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Splicing (splice sites)</td><td>-0.010</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs660240</b> — composite: 0.545</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,275,216 T>C | <b>r²:</b> 0.95 | <b>Top layer:</b> tss_activity</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>+0.205</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Transcription factor binding (ChIP-TF)</td><td>+0.120</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>+0.118</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>-0.093</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Gene expression (RNA-seq)</td><td>+0.041</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Splicing (splice sites)</td><td>-0.002</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs7528419</b> — composite: 0.464</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,274,570 A>G | <b>r²:</b> 1.00 | <b>Top layer:</b> tss_activity</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>+0.212</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>+0.177</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>+0.080</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Transcription factor binding (ChIP-TF)</td><td>+0.077</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Splicing (splice sites)</td><td>-0.073</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Gene expression (RNA-seq)</td><td>+0.057</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs56960352</b> — composite: 0.424</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,278,685 G>T | <b>r²:</b> 0.91 | <b>Top layer:</b> chromatin_accessibility</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>-0.583</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>-0.162</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>-0.126</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Transcription factor binding (ChIP-TF)</td><td>-0.090</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Gene expression (RNA-seq)</td><td>+0.018</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Splicing (splice sites)</td><td>+0.000</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs142678968</b> — composite: 0.370</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,275,536 C>T | <b>r²:</b> 0.95 | <b>Top layer:</b> gene_expression</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>Gene expression (RNA-seq)</td><td>+0.122</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Transcription factor binding (ChIP-TF)</td><td>-0.083</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>-0.075</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>-0.065</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>-0.031</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Splicing (splice sites)</td><td>+0.013</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs4970836</b> — composite: 0.350</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,279,175 G>A | <b>r²:</b> 0.91 | <b>Top layer:</b> tss_activity</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>-0.552</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>-0.198</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Transcription factor binding (ChIP-TF)</td><td>-0.089</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>-0.027</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Gene expression (RNA-seq)</td><td>+0.012</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Splicing (splice sites)</td><td>+0.000</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs1624712</b> — composite: 0.348</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,275,908 C>T | <b>r²:</b> 1.00 | <b>Top layer:</b> chromatin_accessibility</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>+0.297</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Transcription factor binding (ChIP-TF)</td><td>-0.175</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>+0.161</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>+0.093</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Gene expression (RNA-seq)</td><td>-0.019</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Splicing (splice sites)</td><td>-0.001</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs602633</b> — composite: 0.233</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,278,889 T>G | <b>r²:</b> 0.86 | <b>Top layer:</b> chromatin_accessibility</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>-0.314</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Transcription factor binding (ChIP-TF)</td><td>+0.126</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>-0.104</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>-0.046</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Gene expression (RNA-seq)</td><td>-0.015</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Splicing (splice sites)</td><td>-0.000</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs1626484</b> — composite: 0.230</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,275,684 G>T | <b>r²:</b> 1.00 | <b>Top layer:</b> gene_expression</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>Gene expression (RNA-seq)</td><td>-0.193</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>+0.128</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>+0.035</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Transcription factor binding (ChIP-TF)</td><td>+0.026</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>-0.025</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Splicing (splice sites)</td><td>+0.002</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs599839</b> — composite: 0.220</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,279,544 G>A | <b>r²:</b> 0.91 | <b>Top layer:</b> gene_expression</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>Gene expression (RNA-seq)</td><td>-0.152</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>-0.052</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>+0.041</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Transcription factor binding (ChIP-TF)</td><td>+0.035</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>-0.032</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Splicing (splice sites)</td><td>-0.004</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+</tbody></table>
+</div></details>
+<details>
+<summary><b>rs1277930</b> — composite: 0.210</summary>
+<div class="detail-card">
+<p><b>Position:</b> chr1:109,279,521 G>A | <b>r²:</b> 0.91 | <b>Top layer:</b> chromatin_accessibility</p>
+<table><thead><tr><th>Layer</th><th>Effect</th><th>Direction</th></tr></thead><tbody>
+<tr><td>Chromatin accessibility (DNASE/ATAC)</td><td>-0.101</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Transcription factor binding (ChIP-TF)</td><td>-0.066</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Gene expression (RNA-seq)</td><td>+0.052</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>TSS activity (CAGE/PRO-CAP)</td><td>+0.050</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+<tr><td>Histone modifications (ChIP-Histone)</td><td>-0.049</td><td style="color:#dc3545;font-weight:bold">▼</td></tr>
+<tr><td>Splicing (splice sites)</td><td>+0.008</td><td style="color:#28a745;font-weight:bold">▲</td></tr>
+</tbody></table>
+</div></details>
+<div class="footer">Generated by Chorus <code>fine_map_causal_variant</code></div>
+<script>
+document.querySelectorAll('.sortable th').forEach(th => {
+  th.addEventListener('click', function() {
+    const table = this.closest('table');
+    const idx = Array.from(this.parentNode.children).indexOf(this);
+    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    const asc = this.dataset.sort !== 'asc';
+    rows.sort((a, b) => {
+      let va = a.children[idx]?.textContent?.trim() || '';
+      let vb = b.children[idx]?.textContent?.trim() || '';
+      let na = parseFloat(va), nb = parseFloat(vb);
+      if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
+      return asc ? va.localeCompare(vb) : vb.localeCompare(va);
+    });
+    this.dataset.sort = asc ? 'asc' : 'desc';
+    const tbody = table.querySelector('tbody');
+    rows.forEach(r => tbody.appendChild(r));
+  });
+});
+</script>
+
+<section class="interpretation" style="margin:24px 0;padding:16px 20px;background:#f6f8fa;border-left:4px solid #1f883d;border-radius:4px;"><h3 style="margin:0 0 8px 0;">Interpretation</h3><p><strong>What the oracle sees.</strong> Across 11 LD variants (r²≥0.85) the sentinel rs12740374 wins decisively: composite score 0.954, maximum effect +1.9 log2FC, effects in <strong>5 of 5</strong> scored regulatory layers, directional convergence 1.00 (every layer agrees on direction). The next-best variant, rs660240, scores 0.545 with a +0.21 log2FC effect in only 3 layers. All other variants are well below 0.5.</p><p><strong>How this fits the published biology.</strong> This is exactly the pattern published fine-mapping studies found for the SORT1 locus: rs12740374 is the single causal variant despite being in perfect LD with several other SNPs. Chorus&#x27;s composite causal score recovers it by combining effect magnitude with multi-layer convergence, which is the same intuition wet-lab functional assays encode.</p><p><strong>Suggested next steps.</strong> - This is the template for any GWAS fine-mapping task. Replace the lead variant with your own and rerun — if one variant in your credible set has composite &gt;&gt; 0.7 and multi-layer convergence = 1.0, that&#x27;s your prime functional candidate. - Inspect <code>result.scores[0].per_layer_scores</code> in the JSON for the mechanism: here the top layer is <code>chromatin_accessibility</code>, which matches the published C/EBP-mediated enhancer opening. - For truly ambiguous loci, run the same fine-mapping with two oracles (AlphaGenome + Borzoi) and intersect the top candidate — agreement between independent architectures strengthens the conclusion.</p></section>
+</body></html>

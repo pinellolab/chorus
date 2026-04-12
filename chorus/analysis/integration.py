@@ -21,6 +21,7 @@ def simulate_integration(
     assay_ids: list[str],
     gene_name: str | None = None,
     normalizer: QuantileNormalizer | None = None,
+    oracle_name: str | None = None,
 ) -> VariantReport:
     """Predict effects of inserting a construct at a genomic position.
 
@@ -42,9 +43,9 @@ def simulate_integration(
     chrom, pos_str = position.split(":")
     pos = int(pos_str)
 
-    # Get wild-type prediction (minimal region, oracle will extend)
-    wt_region = f"{chrom}:{pos}-{pos + 1}"
-    wt_pred = oracle.predict(wt_region, assay_ids)
+    # Get wild-type prediction using (chrom, start, end) tuple so oracle
+    # fetches genomic sequence, not interprets string as raw DNA.
+    wt_pred = oracle.predict((chrom, pos, pos + 1), assay_ids)
 
     # Get insertion prediction
     ins_result = oracle.predict_region_insertion_at(
@@ -68,7 +69,7 @@ def simulate_integration(
 
     report = build_variant_report(
         variant_result,
-        oracle_name=getattr(oracle, "name", "oracle"),
+        oracle_name=oracle_name or getattr(oracle, "name", None) or oracle.__class__.__name__.lower().replace("oracle", ""),
         gene_name=gene_name,
         normalizer=normalizer,
     )

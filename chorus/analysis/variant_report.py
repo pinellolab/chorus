@@ -15,7 +15,8 @@ from .scorers import (
     classify_track_layer,
     score_track_effect,
 )
-from .normalization import QuantileNormalizer
+from .normalization import QuantileNormalizer, PerTrackNormalizer
+from .analysis_request import AnalysisRequest
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +51,8 @@ class TrackScore:
     alt_value: float | None
     raw_score: float | None
     quantile_score: float | None = None
+    ref_signal_percentile: float | None = None
+    description: str | None = None  # human-readable track description
     note: str | None = None
     region_label: str | None = None  # e.g. "SORT1 (exons)", "variant site"
 
@@ -63,8 +66,12 @@ class TrackScore:
             "alt_value": self.alt_value,
             "raw_score": self.raw_score,
         }
+        if self.description is not None:
+            d["description"] = self.description
         if self.quantile_score is not None:
             d["quantile_score"] = self.quantile_score
+        if self.ref_signal_percentile is not None:
+            d["ref_signal_percentile"] = self.ref_signal_percentile
         if self.note is not None:
             d["note"] = self.note
         if self.region_label is not None:
@@ -84,8 +91,15 @@ class VariantReport:
     gene_name: str | None
     allele_scores: dict[str, list[TrackScore]] = field(default_factory=dict)
     nearby_genes: list[str] = field(default_factory=list)
+    # Optional: preserve the user's original prompt + how the report was made
+    analysis_request: AnalysisRequest | None = None
     # Optional: raw predictions for track plots (set by build_variant_report)
     _predictions: dict | None = field(default=None, repr=False)
+    # Optional: normalizer for percentile-mode visualizations
+    _normalizer: object | None = field(default=None, repr=False)
+    # When True, IGV browser uses raw signal with autoscale instead of
+    # the layer-aware floor rescale (default).  Table scores are unaffected.
+    _igv_raw: bool = field(default=False, repr=False)
 
     # ------------------------------------------------------------------
     # Serialisation
@@ -105,6 +119,8 @@ class VariantReport:
             "nearby_genes": self.nearby_genes,
             "alleles": {},
         }
+        if self.analysis_request is not None:
+            result["analysis_request"] = self.analysis_request.to_dict()
         for allele, scores in self.allele_scores.items():
             by_layer: dict[str, list[dict]] = {}
             for ts in scores:
@@ -133,6 +149,7 @@ class VariantReport:
                     "alt_value": ts.alt_value,
                     "raw_score": ts.raw_score,
                     "quantile_score": ts.quantile_score,
+                    "ref_signal_percentile": ts.ref_signal_percentile,
                     "note": ts.note,
                 })
         return pd.DataFrame(rows)
@@ -201,9 +218,20 @@ class VariantReport:
     # Markdown report
     # ------------------------------------------------------------------
 
-    def to_markdown(self) -> str:
-        """Generate a markdown report with tables organised by layer."""
+    def to_markdown(self, max_rows_per_layer: int = 10) -> str:
+        """Generate a markdown report with tables organised by layer.
+
+        Args:
+            max_rows_per_layer: Cap the number of rows shown per regulatory
+                layer. When a layer has more scored tracks than this, the
+                report shows the top-*N* by effect magnitude and a footer
+                row "(showing top N of M tracks — see example_output.json
+                for the full set)". Default 10 keeps reports scannable;
+                pass ``None`` to show everything.
+        """
         lines: list[str] = []
+        if self.analysis_request is not None:
+            lines.append(self.analysis_request.to_markdown())
         lines.append("## Multi-Layer Variant Effect Report")
         lines.append("")
         lines.append(
@@ -240,35 +268,45 @@ class VariantReport:
                     ordered.append(l)
 
             has_quantile = any(ts.quantile_score is not None for ts in scores)
+            has_baseline = any(ts.ref_signal_percentile is not None for ts in scores)
 
             for layer_name in ordered:
-                layer_scores = _sort_layer_scores(by_layer[layer_name])
+                layer_scores_full = _sort_layer_scores(by_layer[layer_name])
+                total_in_layer = len(layer_scores_full)
+                # Cap the rendered table so reports stay scannable. Tracks
+                # after the cap are still in JSON/TSV for programmatic use.
+                if max_rows_per_layer is not None and total_in_layer > max_rows_per_layer:
+                    layer_scores = layer_scores_full[:max_rows_per_layer]
+                    truncated = True
+                else:
+                    layer_scores = layer_scores_full
+                    truncated = False
                 cfg = LAYER_CONFIGS.get(layer_name)
                 display = cfg.description if cfg else layer_name
 
                 lines.append(f"#### {display}")
                 lines.append("")
 
+                # Build table header dynamically
+                header_cols = ["Track", "Ref", "Alt", "Effect"]
                 if has_quantile:
-                    lines.append(
-                        "| Track | Ref | Alt | Effect | Quantile | Interpretation |"
-                    )
-                    lines.append(
-                        "|-------|-----|-----|--------|----------|----------------|"
-                    )
-                else:
-                    lines.append("| Track | Ref | Alt | Effect | Interpretation |")
-                    lines.append("|-------|-----|-----|--------|----------------|")
+                    header_cols.append("Effect %ile")
+                if has_baseline:
+                    header_cols.append("Activity %ile")
+                header_cols.append("Interpretation")
+                lines.append("| " + " | ".join(header_cols) + " |")
+                lines.append("|" + "|".join(["---"] * len(header_cols)) + "|")
 
                 for ts in layer_scores:
                     # Track label: include region_label if present
-                    track_label = ts.assay_id
+                    track_label = ts.description or ts.assay_id
                     if ts.region_label:
                         track_label += f" — {ts.region_label}"
 
                     if ts.raw_score is None:
                         note = ts.note or "Not scored"
-                        dash = "| — " * (3 if not has_quantile else 4)
+                        n_dash = len(header_cols) - 2  # track + note
+                        dash = "| — " * n_dash
                         lines.append(f"| {track_label} {dash}| {note} |")
                         continue
 
@@ -280,23 +318,46 @@ class VariantReport:
                         ts.raw_score, ts.quantile_score, layer_name,
                     )
 
+                    cols = [track_label, ref_str, alt_str, score_str]
                     if has_quantile:
-                        q_str = (
-                            f"{ts.quantile_score:.2f}"
+                        cols.append(
+                            f"{ts.quantile_score:.3f}"
                             if ts.quantile_score is not None
                             else "—"
                         )
-                        lines.append(
-                            f"| {track_label} | {ref_str} | {alt_str} "
-                            f"| {score_str} | {q_str} | {interp} |"
+                    if has_baseline:
+                        cols.append(
+                            f"{ts.ref_signal_percentile:.3f}"
+                            if ts.ref_signal_percentile is not None
+                            else "—"
                         )
-                    else:
-                        lines.append(
-                            f"| {track_label} | {ref_str} | {alt_str} "
-                            f"| {score_str} | {interp} |"
-                        )
+                    cols.append(interp)
+                    lines.append("| " + " | ".join(cols) + " |")
 
+                if truncated:
+                    lines.append(
+                        f"| _…showing top {len(layer_scores)} of "
+                        f"{total_in_layer} — see `example_output.json` for "
+                        f"the full set_ |" + " |" * (len(header_cols) - 1)
+                    )
                 lines.append("")
+
+        # Add explanation of normalization columns
+        if has_quantile or has_baseline:
+            lines.append("---")
+            lines.append("**Score guide:**")
+            if has_quantile:
+                lines.append(
+                    "- **Effect %ile**: Variant effect ranked against ~10K random SNPs. "
+                    "0.95 = stronger than 95% of random variants."
+                )
+            if has_baseline:
+                lines.append(
+                    "- **Activity %ile**: Reference signal ranked genome-wide against "
+                    "ENCODE SCREEN cCREs + random regions. "
+                    "0.95 = more active than 95% of genomic positions."
+                )
+            lines.append("")
 
         return "\n".join(lines)
 
@@ -358,8 +419,32 @@ def _interpret_score(
     quantile_score: float | None,
     layer: str,
 ) -> str:
-    """Generate a human-readable interpretation of a score."""
-    # Determine magnitude via quantile (preferred) or raw thresholds
+    """Generate a human-readable interpretation of a score.
+
+    Magnitude comes from the effect percentile when available, but we ALSO
+    gate on the absolute raw score so near-zero effects can never be
+    labeled "very strong" just because their quantile ranks high against a
+    mostly-zero background. A tiny raw effect with quantile=1.0 is still a
+    tiny raw effect.
+    """
+    abs_raw = abs(raw_score)
+
+    # Hard-override: a genuinely tiny raw effect is Minimal regardless of
+    # what the background distribution says. Layer-specific cutoffs mirror
+    # the thresholds in the README "Quick guide to magnitudes" table.
+    _MIN_MAGNITUDE = {
+        "chromatin_accessibility": 0.1,
+        "tf_binding": 0.1,
+        "histone_marks": 0.1,
+        "tss_activity": 0.1,
+        "gene_expression": 0.05,
+        "promoter_activity": 0.05,
+        "splicing": 0.05,
+    }
+    if abs_raw < _MIN_MAGNITUDE.get(layer, 0.1):
+        return "Minimal effect"
+
+    # Determine strength label via quantile (preferred) or raw thresholds
     if quantile_score is not None:
         mag = abs(quantile_score)
         if mag < 0.5:
@@ -371,15 +456,18 @@ def _interpret_score(
         else:
             strength = "Very strong"
     else:
-        mag = abs(raw_score)
-        if mag < 0.1:
-            strength = "Minimal"
-        elif mag < 0.3:
+        if abs_raw < 0.3:
             strength = "Moderate"
-        elif mag < 0.7:
+        elif abs_raw < 0.7:
             strength = "Strong"
         else:
             strength = "Very strong"
+
+    # Cap strength by raw magnitude: you can't be "very strong" at 0.15 log2FC.
+    if abs_raw < 0.3 and strength in ("Strong", "Very strong"):
+        strength = "Moderate"
+    elif abs_raw < 0.7 and strength == "Very strong":
+        strength = "Strong"
 
     if strength == "Minimal":
         return "Minimal effect"
@@ -415,16 +503,119 @@ def _interpret_score(
 # Report builder
 # ---------------------------------------------------------------------------
 
-def _apply_normalization(ts: TrackScore, normalizer, oracle_name: str, layer: str):
-    """Apply quantile normalization to a TrackScore in place."""
-    if normalizer is not None and ts.raw_score is not None:
-        layer_cfg = LAYER_CONFIGS.get(layer)
-        use_signed = layer_cfg.signed if layer_cfg else True
-        bg_key = QuantileNormalizer.background_key(oracle_name, layer)
-        raw_for_norm = abs(ts.raw_score) if not use_signed else ts.raw_score
-        ts.quantile_score = normalizer.normalize(
-            bg_key, raw_for_norm, signed=use_signed,
-        )
+def _track_description(track) -> str | None:
+    """Extract a human-readable description from a track's metadata.
+
+    For CHIP tracks, ensures the TF name or histone mark is included
+    (e.g. ``CHIP:CTCF:K562`` instead of just ``CHIP:K562``).
+    """
+    meta = getattr(track, "metadata", None)
+    if meta and isinstance(meta, dict):
+        desc = meta.get("description", "")
+        name = meta.get("name", "")
+
+        # For CHIP tracks: if the description lacks TF/mark info but
+        # the name has it (common in AlphaGenome metadata), extract it.
+        if desc and desc.startswith("CHIP:") and ":" not in desc[5:]:
+            # Description is just "CHIP:cell_type" — missing TF/mark
+            # Try to extract from name (e.g. "CL:0000062 TF ChIP-seq CTCF")
+            if name:
+                import re
+                # Look for TF name after "TF ChIP-seq " or mark after "Histone ChIP-seq "
+                tf_match = re.search(r'TF ChIP-seq\s+(\S+)', name)
+                hist_match = re.search(r'Histone ChIP-seq\s+(\S+)', name)
+                if tf_match:
+                    tf_name = tf_match.group(1)
+                    cell = desc.split(":", 1)[1] if ":" in desc else ""
+                    return f"CHIP:{tf_name}:{cell}"
+                elif hist_match:
+                    mark = hist_match.group(1)
+                    cell = desc.split(":", 1)[1] if ":" in desc else ""
+                    return f"CHIP:{mark}:{cell}"
+
+        if desc:
+            return desc
+
+    # Fallback: assay_type:cell_type
+    at = getattr(track, "assay_type", "")
+    ct = getattr(track, "cell_type", "")
+    if at and ct:
+        return f"{at}:{ct}"
+    return None
+
+
+def _parse_cell_type_from_description(description: str, assay_type: str = "") -> str:
+    """Extract a proper cell type name from a track description.
+
+    Handles various formats:
+    - ``DNASE:K562`` → ``K562``
+    - ``CHIP:H3K27ac:GM12878`` → ``GM12878``
+    - ``CHIP:HNF4A:liver male adult (32 years)`` → ``liver``
+    - ``CAGE:Clontech Human Universal...`` → ``Universal RNA control``
+    - ``CAGE:adipose tissue, adult, pool1`` → ``adipose tissue``
+    """
+    parts = description.split(":")
+    if len(parts) >= 3 and parts[0] == "CHIP":
+        # CHIP:mark:cell_type or CHIP:TF:cell_type
+        ct = parts[2].strip()
+        # Take first word/phrase before comma
+        ct = ct.split(",")[0].strip()
+        return ct
+    if len(parts) >= 2:
+        ct = parts[1].strip()
+        # Skip known commercial/control names
+        control_words = {"clontech", "sabiosciences", "universal rna", "xpressref"}
+        if any(w in ct.lower() for w in control_words):
+            return "Universal RNA control"
+        # Take first meaningful part (before comma)
+        ct = ct.split(",")[0].strip()
+        return ct
+    return description
+
+
+def _apply_normalization(
+    ts: TrackScore, normalizer, oracle_name: str, layer: str,
+    assay_id: str | None = None,
+):
+    """Apply quantile normalization to a TrackScore in place.
+
+    Sets both ``quantile_score`` (variant effect vs background variants)
+    and ``ref_signal_percentile`` (reference signal vs genome-wide baseline).
+
+    Supports both :class:`PerTrackNormalizer` (preferred, per-track CDFs)
+    and legacy :class:`QuantileNormalizer` (per-layer CDFs).
+    """
+    if normalizer is None:
+        return
+
+    layer_cfg = LAYER_CONFIGS.get(layer)
+    use_signed = layer_cfg.signed if layer_cfg else True
+
+    if isinstance(normalizer, PerTrackNormalizer) and assay_id is not None:
+        # Per-track normalization
+        if ts.raw_score is not None:
+            raw_for_norm = ts.raw_score if use_signed else abs(ts.raw_score)
+            ts.quantile_score = normalizer.effect_percentile(
+                oracle_name, assay_id, raw_for_norm, signed=use_signed,
+            )
+
+        if ts.ref_value is not None:
+            pctile = normalizer.activity_percentile(oracle_name, assay_id, ts.ref_value)
+            if pctile is not None:
+                ts.ref_signal_percentile = pctile
+    else:
+        # Legacy per-layer normalization
+        if ts.raw_score is not None:
+            bg_key = QuantileNormalizer.background_key(oracle_name, layer)
+            raw_for_norm = abs(ts.raw_score) if not use_signed else ts.raw_score
+            ts.quantile_score = normalizer.normalize(
+                bg_key, raw_for_norm, signed=use_signed,
+            )
+
+        if ts.ref_value is not None:
+            pctile = normalizer.normalize_baseline(oracle_name, layer, ts.ref_value)
+            if pctile is not None:
+                ts.ref_signal_percentile = pctile
 
 
 def _find_nearby_genes(
@@ -470,11 +661,24 @@ def _find_nearby_genes(
         return []
 
 
+def _describe_normalizer(normalizer) -> str:
+    """One-line human-readable description of a normalizer for AnalysisRequest."""
+    if normalizer is None:
+        return "none"
+    if isinstance(normalizer, PerTrackNormalizer):
+        return "per-track background CDFs"
+    if isinstance(normalizer, QuantileNormalizer):
+        return "per-layer quantile background"
+    return type(normalizer).__name__
+
+
 def build_variant_report(
     variant_result: dict,
     oracle_name: str,
     gene_name: str | None = None,
     normalizer: QuantileNormalizer | None = None,
+    igv_raw: bool = False,
+    analysis_request: AnalysisRequest | None = None,
 ) -> VariantReport:
     """Build a multi-layer variant report from oracle predictions.
 
@@ -491,7 +695,11 @@ def build_variant_report(
             ``None``, nearby genes are auto-detected for non-coding
             variant interpretation.
         normalizer: Optional :class:`QuantileNormalizer` with pre-computed
-            background distributions.
+            background distributions.  Used for table scores AND IGV
+            visualization (rescaled view) unless ``igv_raw=True``.
+        igv_raw: When ``True``, the IGV browser shows raw signal values
+            with per-track autoscale instead of the layer-aware
+            floor-rescale view.  Table scores still use the normalizer.
 
     Returns:
         A :class:`VariantReport` with per-track, per-layer scores.
@@ -577,6 +785,11 @@ def build_variant_report(
             layer = classify_track_layer(ref_track)
             at = getattr(ref_track, "assay_type", "")
             ct = getattr(ref_track, "cell_type", "")
+            desc = _track_description(ref_track)
+
+            # Fix cell type from description (handles CHIP:mark:cell, CAGE quirks)
+            if desc:
+                ct = _parse_cell_type_from_description(desc, at)
 
             # --- RNA tracks: one row per gene (exon-based scoring) ---
             if layer == "gene_expression":
@@ -587,7 +800,7 @@ def build_variant_report(
                         gene_exons=exons,
                     )
                     ts = TrackScore(
-                        assay_id=assay_id, assay_type=at, cell_type=ct,
+                        assay_id=assay_id, assay_type=at, cell_type=ct, description=desc,
                         layer=layer,
                         ref_value=result["ref_value"] if result else None,
                         alt_value=result["alt_value"] if result else None,
@@ -596,12 +809,12 @@ def build_variant_report(
                     )
                     if result is None:
                         ts.note = f"{gn} exons outside prediction window"
-                    _apply_normalization(ts, normalizer, oracle_name, layer)
+                    _apply_normalization(ts, normalizer, oracle_name, layer, assay_id=assay_id)
                     scores.append(ts)
                     scored_any = True
                 if not scored_any:
                     scores.append(TrackScore(
-                        assay_id=assay_id, assay_type=at, cell_type=ct,
+                        assay_id=assay_id, assay_type=at, cell_type=ct, description=desc,
                         layer=layer, ref_value=None, alt_value=None,
                         raw_score=None,
                         note="No nearby genes found for exon-based scoring",
@@ -615,7 +828,7 @@ def build_variant_report(
                     ref_track, alt_track, var_chrom, var_pos,
                 )
                 ts = TrackScore(
-                    assay_id=assay_id, assay_type=at, cell_type=ct,
+                    assay_id=assay_id, assay_type=at, cell_type=ct, description=desc,
                     layer=layer,
                     ref_value=result["ref_value"] if result else None,
                     alt_value=result["alt_value"] if result else None,
@@ -624,7 +837,7 @@ def build_variant_report(
                 )
                 if result is None:
                     ts.note = "Outside scoring window"
-                _apply_normalization(ts, normalizer, oracle_name, layer)
+                _apply_normalization(ts, normalizer, oracle_name, layer, assay_id=assay_id)
                 scores.append(ts)
 
                 # 2) Per-gene TSS rows (pick the most active TSS per gene)
@@ -651,7 +864,7 @@ def build_variant_report(
                             if ref_v > best_ref:
                                 best_ref = ref_v
                                 best_ts = TrackScore(
-                                    assay_id=assay_id, assay_type=at, cell_type=ct,
+                                    assay_id=assay_id, assay_type=at, cell_type=ct, description=desc,
                                     layer=layer,
                                     ref_value=float(ref_v),
                                     alt_value=float(alt_v),
@@ -659,7 +872,7 @@ def build_variant_report(
                                     region_label=f"{gn} TSS",
                                 )
                     if best_ts is not None:
-                        _apply_normalization(best_ts, normalizer, oracle_name, layer)
+                        _apply_normalization(best_ts, normalizer, oracle_name, layer, assay_id=assay_id)
                         scores.append(best_ts)
                 continue
 
@@ -670,7 +883,7 @@ def build_variant_report(
             )
 
             ts = TrackScore(
-                assay_id=assay_id, assay_type=at, cell_type=ct,
+                assay_id=assay_id, assay_type=at, cell_type=ct, description=desc,
                 layer=layer,
                 ref_value=result["ref_value"] if result else None,
                 alt_value=result["alt_value"] if result else None,
@@ -678,13 +891,26 @@ def build_variant_report(
             )
             if result is None:
                 ts.note = "Outside scoring window"
-            _apply_normalization(ts, normalizer, oracle_name, layer)
+            _apply_normalization(ts, normalizer, oracle_name, layer, assay_id=assay_id)
             scores.append(ts)
 
         allele_scores[allele_name] = scores
 
     # Use the resolved gene name (auto-detected or user-provided)
     report_gene = resolved_gene_name or gene_name
+
+    # If the caller didn't build an AnalysisRequest themselves, synthesize a
+    # minimal one so every report still carries oracle / normalizer / timestamp.
+    if analysis_request is None:
+        analysis_request = AnalysisRequest(
+            oracle_name=oracle_name,
+            normalizer_name=_describe_normalizer(normalizer),
+        )
+    else:
+        if analysis_request.oracle_name is None:
+            analysis_request.oracle_name = oracle_name
+        if analysis_request.normalizer_name is None:
+            analysis_request.normalizer_name = _describe_normalizer(normalizer)
 
     report = VariantReport(
         chrom=var_chrom,
@@ -694,15 +920,20 @@ def build_variant_report(
         oracle_name=oracle_name,
         gene_name=report_gene,
         allele_scores=allele_scores,
+        analysis_request=analysis_request,
+        _normalizer=normalizer,
+        _igv_raw=igv_raw,
     )
 
     # Attach nearby genes info for the report
     if nearby_genes:
         report.nearby_genes = nearby_genes
 
-    # Stash raw predictions for HTML track plots (only when few tracks)
+    # Stash raw predictions for HTML track plots
+    # The discovery pipeline filters to ~20 selected tracks before calling
+    # build_variant_report, so this threshold must accommodate that.
     n_tracks = len(ref_pred.tracks)
-    if n_tracks <= 20:
+    if n_tracks <= 50:
         report._predictions = predictions
 
     return report
@@ -939,6 +1170,8 @@ def _build_html_report(report: "VariantReport") -> str:
 
     # Header
     parts.append(f"<h1>Multi-Layer Variant Effect Report</h1>")
+    if report.analysis_request is not None:
+        parts.append(report.analysis_request.to_html_fragment())
     parts.append(f'<p class="meta"><b>Variant:</b> {report.chrom}:{report.position} '
                  f'{html_mod.escape(report.ref_allele)}&gt;'
                  f'{html_mod.escape(",".join(report.alt_alleles))}</p>')
@@ -972,6 +1205,7 @@ def _build_html_report(report: "VariantReport") -> str:
                 ordered.append(l)
 
         has_quantile = any(ts.quantile_score is not None for ts in scores)
+        has_baseline = any(ts.ref_signal_percentile is not None for ts in scores)
         # Compute max |score| for bar scaling
         raw_scores = [abs(ts.raw_score) for ts in scores if ts.raw_score is not None]
         max_abs = max(raw_scores) if raw_scores else 1.0
@@ -986,12 +1220,14 @@ def _build_html_report(report: "VariantReport") -> str:
             parts.append("<th>Track</th><th>Cell Type</th>"
                          "<th>Ref</th><th>Alt</th><th>Effect</th>")
             if has_quantile:
-                parts.append("<th>Quantile</th>")
+                parts.append('<th title="Variant effect percentile vs random SNPs">Effect %ile</th>')
+            if has_baseline:
+                parts.append('<th title="Reference signal activity percentile genome-wide">Activity %ile</th>')
             parts.append("<th>Interpretation</th></tr></thead><tbody>")
 
             for ts in layer_scores:
                 parts.append("<tr>")
-                track_label = ts.assay_id
+                track_label = ts.description or ts.assay_id
                 if ts.region_label:
                     track_label += f' <span style="color:#6b7280;font-weight:normal">— {ts.region_label}</span>'
                 parts.append(f"<td>{track_label}</td>")
@@ -999,7 +1235,7 @@ def _build_html_report(report: "VariantReport") -> str:
 
                 if ts.raw_score is None:
                     note = ts.note or "Not scored"
-                    cols = 4 if has_quantile else 3
+                    cols = 3 + (1 if has_quantile else 0) + (1 if has_baseline else 0)
                     parts.append(f'<td colspan="{cols}" class="note">'
                                  f'{html_mod.escape(note)}</td>')
                     parts.append("</tr>")
@@ -1018,8 +1254,12 @@ def _build_html_report(report: "VariantReport") -> str:
                 )
 
                 if has_quantile:
-                    q_str = f"{ts.quantile_score:.2f}" if ts.quantile_score is not None else "—"
+                    q_str = f"{ts.quantile_score:.3f}" if ts.quantile_score is not None else "—"
                     parts.append(f"<td>{q_str}</td>")
+
+                if has_baseline:
+                    rsp_str = f"{ts.ref_signal_percentile:.3f}" if ts.ref_signal_percentile is not None else "—"
+                    parts.append(f"<td>{rsp_str}</td>")
 
                 interp = _interpret_score(ts.raw_score, ts.quantile_score, layer_name)
                 badge_cls = _score_color_class(ts.raw_score, ts.quantile_score)
@@ -1031,6 +1271,29 @@ def _build_html_report(report: "VariantReport") -> str:
 
         # --- Track signal figure (matplotlib) ---
         _render_track_figure(parts, report, allele)
+
+    # Explanation of normalization columns
+    if has_quantile or has_baseline:
+        parts.append('<div style="margin-top:2rem;padding:1rem;background:#f1f3f5;'
+                     'border-radius:6px;font-size:.82rem;color:#495057">')
+        parts.append('<b>Score interpretation guide</b><br>')
+        if has_quantile:
+            parts.append(
+                '<b>Effect %ile</b>: How unusual is this variant\'s effect? '
+                'Compared to ~10,000 random SNPs scored genome-wide. '
+                'A value of 0.95 means the effect is larger than 95% of random variants. '
+                'Range [0,1] for unsigned layers (chromatin, TF, histone, TSS, splicing); '
+                '[-1,1] for signed layers (gene expression, MPRA).<br>'
+            )
+        if has_baseline:
+            parts.append(
+                '<b>Activity %ile</b>: How active is this region genome-wide? '
+                'Reference signal ranked against ~26,000 positions sampled from '
+                'ENCODE SCREEN cCREs (promoters, enhancers, CTCF sites) and random regions. '
+                'A value of 0.95 means the predicted signal here is higher than 95% of '
+                'genome-wide positions — indicating a highly active regulatory element.'
+            )
+        parts.append('</div>')
 
     parts.append(f'<div class="footer">Generated by Chorus '
                  f'<code>analyze_variant_multilayer</code></div>')
@@ -1066,6 +1329,10 @@ def _render_track_figure(
         from ._igv_report import build_igv_html
 
         alt_alleles_str = ",".join(report.alt_alleles) if report.alt_alleles else allele
+        # Pass normalizer=None when igv_raw is set so the IGV uses raw
+        # autoscale instead of the rescaled view (table scores still use
+        # the normalizer, only IGV is affected).
+        igv_normalizer = None if report._igv_raw else report._normalizer
         igv_html = build_igv_html(
             ref_pred, alt_pred,
             variant_chrom=report.chrom,
@@ -1073,6 +1340,8 @@ def _render_track_figure(
             ref_allele=report.ref_allele,
             alt_allele=alt_alleles_str,
             gene_name=report.gene_name,
+            normalizer=igv_normalizer,
+            oracle_name=report.oracle_name,
         )
 
         if igv_html:
@@ -1084,6 +1353,24 @@ def _render_track_figure(
                 'Zoom in/out and pan to explore. '
                 'Gene track (RefSeq) loaded automatically.</p>'
             )
+            # Scale legend
+            from .normalization import PerTrackNormalizer
+            if report._igv_raw:
+                parts.append(
+                    '<p style="font-size:.85rem;color:#6b7280;margin-top:-.5rem">'
+                    'Signal shown as <b>raw model output</b> with per-track '
+                    'autoscale. Each track has its own Y-axis range — peak '
+                    'heights are NOT comparable across tracks or cell types.</p>'
+                )
+            elif isinstance(report._normalizer, PerTrackNormalizer):
+                parts.append(
+                    '<p style="font-size:.85rem;color:#6b7280;margin-top:-.5rem">'
+                    'Signal rescaled using each track\'s genome-wide noise '
+                    'floor (p95) and peak threshold (p99): '
+                    '<b>0</b> = noise floor, <b>1.0</b> = top 1% of bins '
+                    'genome-wide. Peak shape preserved; tracks comparable '
+                    'across cell types.</p>'
+                )
             parts.append(igv_html)
 
     except Exception as exc:
