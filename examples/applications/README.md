@@ -9,47 +9,59 @@
 > prompt at the top so you (or a collaborator) can tell a month later
 > exactly what was asked.
 
-Each subfolder contains worked examples with outputs in four formats
-(markdown, JSON, TSV, HTML).
-
 ## Which tool do I use?
 
-| I want to... | Tool | Category |
-|--------------|------|----------|
+| I want to... | Tool | Example |
+|---|---|---|
 | Analyze a known variant in a known cell type | `analyze_variant_multilayer` | [variant_analysis/](variant_analysis/) |
 | Find which cell types a variant affects | `discover_variant_cell_types` | [discovery/](discovery/) |
-| Swap a promoter/enhancer and predict effects | `analyze_region_swap` | [sequence_engineering/](sequence_engineering/) |
-| Predict disruption from a construct insertion | `simulate_integration` | [sequence_engineering/](sequence_engineering/) |
 | Score many variants and rank by effect | `score_variant_batch` | [batch_scoring/](batch_scoring/) |
 | Fine-map a GWAS locus to find the causal variant | `fine_map_causal_variant` | [causal_prioritization/](causal_prioritization/) |
+| Swap a promoter/enhancer and predict effects | `analyze_region_swap` | [sequence_engineering/](sequence_engineering/) |
+| Predict disruption from a construct insertion | `simulate_integration` | [sequence_engineering/](sequence_engineering/) |
 
 ## Quick start by role
 
 **Biologist / Geneticist** — Start with [variant_analysis/](variant_analysis/).
-Paste a prompt like: *"Load AlphaGenome and analyze rs12740374 (chr1:109274968 G>T)
-in HepG2 cells. Use DNASE, CEBPA ChIP, H3K27ac, CAGE, and RNA tracks. Gene is SORT1."*
+Example prompt: *"Analyze rs12740374 (chr1:109274968 G>T) in HepG2 cells
+using DNASE, CEBPA ChIP, H3K27ac, and CAGE tracks. Gene is SORT1."*
 
 **Bioinformatician** — Start with [batch_scoring/](batch_scoring/) if you have
-a VCF, or [variant_analysis/](variant_analysis/) for single variants. All outputs
-are available as JSON, TSV, and pandas DataFrames for downstream pipelines.
+a VCF or variant list. All outputs are available as JSON, TSV, and pandas
+DataFrames for downstream pipelines.
 
 **Computational biologist** — See the [scoring strategies](variant_analysis/SORT1_rs12740374/multilayer_variant_analysis.md)
 for details on per-layer window sizes, aggregation, and effect formulas.
-The [variant analysis README](variant_analysis/) has a full oracle compatibility table.
 
 **MD / Clinical researcher** — Start with [discovery/](discovery/) if you don't
 know the relevant tissue, or [variant_analysis/](variant_analysis/) if you do.
-The HTML reports provide visual summaries with color-coded effect badges.
+The HTML reports provide visual summaries with an embedded genome browser.
+
+## Which oracle should I use?
+
+| Oracle | Best for | Output window | Resolution | Key layers |
+|--------|----------|--------------|------------|------------|
+| **AlphaGenome** | Comprehensive multi-layer analysis | 1 Mb | 1 bp | DNASE, ChIP-TF, ChIP-Histone, CAGE, RNA, PRO-CAP, splicing |
+| **Enformer** | General-purpose, lightweight | 114 kb | 128 bp | DNASE, ChIP-TF, ChIP-Histone, CAGE |
+| **Borzoi** | Distal gene expression effects | 197 kb | 32 bp | DNASE, ChIP-TF, ChIP-Histone, CAGE, RNA |
+| **ChromBPNet** | Base-resolution motif disruption | 1 kb | 1 bp | DNASE/ATAC or ChIP-TF (one assay per model) |
+| **Sei** | Regulatory element classification | 4 kb | — | 40 sequence classes |
+| **LegNet** | Promoter activity (MPRA) | 230 bp | — | MPRA activity score |
+
+**Recommendation**: Start with **AlphaGenome** for the broadest coverage.
+Use **ChromBPNet** as a second opinion for base-resolution motif effects.
+All analysis tools work with any oracle — they automatically adapt to
+the available layers.
 
 ## Understanding the scores
 
-All tools produce **effect scores** measuring how much a variant/modification
-changes a regulatory signal. The formula depends on the layer:
+All tools produce **effect scores** measuring how much a variant or
+modification changes a regulatory signal:
 
 | Score type | Layers | How to read it |
 |-----------|--------|---------------|
-| **log2FC** | Chromatin, TF binding, Histone, TSS | +1.0 means alt is 2x ref; -1.0 means alt is 0.5x ref |
-| **logFC** | Gene expression (RNA) | +0.7 means alt is ~2x ref expression |
+| **log2FC** | Chromatin, TF binding, Histone, TSS | +1.0 = alt is 2x ref; -1.0 = alt is 0.5x ref |
+| **logFC** | Gene expression (RNA) | +0.7 = alt is ~2x ref expression |
 | **diff** | Promoter activity (MPRA) | Simple difference in activity units |
 
 **Quick guide to magnitudes (log2FC):**
@@ -58,84 +70,49 @@ changes a regulatory signal. The formula depends on the layer:
 - 0.3–0.7: Strong — likely functional
 - \> 0.7: Very strong — high-confidence regulatory effect
 
-**Quantile scores** (when shown): compare a variant's effect against thousands
-of background variants. A quantile of 0.86 means the effect is larger than 86%
-of random variants — strong evidence for functionality. Use
-`get_normalizer('alphagenome')` in the Python API to load a normalizer, or
-rely on MCP auto-loading (backgrounds load automatically with the oracle when
-files exist in `~/.chorus/backgrounds/`).
+**Effect percentile** (when shown): compares a variant's effect against
+~10,000 random SNPs scored on the same oracle. A percentile of 0.95 means
+the effect is larger than 95% of random variants.
 
-## Which oracle should I use?
-
-| Oracle | Best for | Layers available | Window |
-|--------|----------|-----------------|--------|
-| **AlphaGenome** | Comprehensive analysis | All 7 layers (DNASE, ChIP-TF, ChIP-Histone, CAGE, RNA, PRO-CAP, splicing) | 1 Mb |
-| **Enformer** | General-purpose | Chromatin, TF, Histone, CAGE (no RNA) | 114 kb |
-| **Borzoi** | Distal gene expression | Chromatin, TF, Histone, CAGE, RNA | 196 kb |
-| **ChromBPNet** | Motif-resolution TF binding | Chromatin, TF only (DNASE/ATAC, ChIP-TF) | 1 kb |
-| **Sei** | Regulatory element classification | Sequence class only | 4 kb |
-| **LegNet** | Promoter activity (MPRA) | MPRA only | 230 bp |
-
-All analysis tools work with any oracle — they automatically adapt to the
-available track types. If an oracle doesn't support a layer (e.g., Enformer
-has no RNA), that layer is simply omitted from the report.
-
-### Loading ChromBPNet
-
-ChromBPNet requires specifying the assay and cell type at load time:
-
-```
-load_oracle('chrombpnet', assay='ATAC', cell_type='K562')           # chromatin accessibility
-load_oracle('chrombpnet', assay='CHIP', cell_type='K562', TF='GATA1')  # TF binding
-```
-
-ChromBPNet generates its own track IDs (e.g. `ATAC:K562`, `CHIP:K562:GATA1:+`),
-so you do not need to specify `assay_ids` — just pass any placeholder list.
-
-### Combining oracles
-
-You can load multiple oracles simultaneously and run separate analyses with
-each. This is the recommended approach for deep variant characterization:
-
-```
-1. Load AlphaGenome → analyze_variant_multilayer (broad multi-layer view)
-2. Load ChromBPNet (ATAC, K562) → analyze_variant_multilayer (base-resolution chromatin)
-3. Load ChromBPNet (CHIP, K562, TF=GATA1) → analyze_variant_multilayer (motif disruption)
-4. Compare results across oracles
-```
+**Activity percentile** (when shown): ranks the reference signal at the
+variant site against ~30,000 genome-wide positions including ENCODE cCREs.
+A value of 0.95 means the site is already in the top 5% of regulatory
+activity — a strong regulatory element.
 
 ## Categories
 
 ### [variant_analysis/](variant_analysis/)
 Hypothesis-driven analysis of known variants in specific cell types.
-Four worked examples: SORT1, BCL11A, FTO, TERT.
+Four worked examples: SORT1 (HepG2 liver), BCL11A (K562 erythroid),
+FTO (metabolic), TERT promoter (K562).
 
 ### [discovery/](discovery/)
 Discovery mode — screen hundreds of cell types to find where a variant
 has the strongest impact, then run full multi-layer analysis.
 
+### [batch_scoring/](batch_scoring/)
+Score multiple variants from a VCF or variant list and rank by effect.
+Output: per-track columns showing raw + percentile for each assay.
+
+### [causal_prioritization/](causal_prioritization/)
+Fine-map a GWAS locus — score all LD variants across specific tracks
+and identify the most likely causal variant using multi-layer convergence.
+
 ### [sequence_engineering/](sequence_engineering/)
 Region swap and integration simulation — predict effects of sequence
 modifications on local regulatory activity.
 
-### [batch_scoring/](batch_scoring/)
-Score multiple variants from a VCF or variant list and rank by effect magnitude.
-
-### [causal_prioritization/](causal_prioritization/)
-Fine-map a GWAS locus — score all LD variants and identify the most likely
-causal variant using multi-layer convergence evidence. Includes locus plot.
-
 ### [validation/](validation/)
 Replication of key examples from the AlphaGenome Nature paper (Avsec et al.
-2026) to verify that Chorus produces consistent findings. Includes SORT1
-with C/EBP tracks, TERT in melanocytes, and HBG2 HPFH variant.
+2026) to verify that Chorus produces consistent findings.
 
 ## Output Formats
+
+Every analysis tool produces outputs in four formats:
 
 | Format | Method | Best for |
 |--------|--------|----------|
 | Markdown | `report.to_markdown()` | Claude reasoning, quick review in terminal |
 | JSON | `report.to_dict()` | Programmatic analysis, pipelines, notebooks |
-| HTML | `report.to_html(path)` | Visual review, sharing with collaborators |
-| DataFrame | `report.to_dataframe()` | pandas/R analysis, filtering, plotting |
-| TSV | `result.to_tsv(path)` | Batch scoring: Excel, R, command-line tools |
+| TSV | `report.to_tsv(path)` or `report.to_dataframe()` | Excel, R, pandas |
+| HTML | `report.to_html(path)` | Visual review with embedded IGV genome browser |
