@@ -91,6 +91,17 @@ class VariantReport:
     gene_name: str | None
     allele_scores: dict[str, list[TrackScore]] = field(default_factory=dict)
     nearby_genes: list[str] = field(default_factory=list)
+    # Descriptive title for the report — defaults to "Multi-Layer Variant
+    # Effect Report" but should be overridden for region swaps, insertions,
+    # discovery reports, etc.
+    report_title: str = "Multi-Layer Variant Effect Report"
+    # For region swaps / insertions: the full affected region in the genome.
+    # When set, the IGV browser highlights this entire region (not just a
+    # point-variant marker). Format: (start, end) in 0-based coordinates.
+    modification_region: tuple[int, int] | None = None
+    # Human-readable description of the modification (what was inserted/replaced,
+    # how long, what it represents). Rendered in the report header.
+    modification_description: str | None = None
     # Optional: preserve the user's original prompt + how the report was made
     analysis_request: AnalysisRequest | None = None
     # Optional: raw predictions for track plots (set by build_variant_report)
@@ -121,6 +132,10 @@ class VariantReport:
         }
         if self.analysis_request is not None:
             result["analysis_request"] = self.analysis_request.to_dict()
+        if self.modification_description:
+            result["modification_description"] = self.modification_description
+        if self.modification_region:
+            result["modification_region"] = list(self.modification_region)
         for allele, scores in self.allele_scores.items():
             by_layer: dict[str, list[dict]] = {}
             for ts in scores:
@@ -232,7 +247,7 @@ class VariantReport:
         lines: list[str] = []
         if self.analysis_request is not None:
             lines.append(self.analysis_request.to_markdown())
-        lines.append("## Multi-Layer Variant Effect Report")
+        lines.append(f"## {self.report_title}")
         lines.append("")
         lines.append(
             f"**Variant**: {self.chrom}:{self.position} "
@@ -244,6 +259,11 @@ class VariantReport:
             if self.nearby_genes and len(self.nearby_genes) > 1:
                 others = [g for g in self.nearby_genes if g != self.gene_name][:4]
                 lines.append(f"**Other nearby genes**: {', '.join(others)}")
+        if self.modification_description:
+            lines.append(f"**Modification**: {self.modification_description}")
+        if self.modification_region:
+            s, e = self.modification_region
+            lines.append(f"**Modified region**: {self.chrom}:{s+1:,}-{e:,} ({e-s:,} bp)")
         lines.append("")
 
         # Summary
@@ -251,6 +271,8 @@ class VariantReport:
         lines.append(f"**Summary**: {summary}")
         lines.append("")
 
+        has_quantile = False
+        has_baseline = False
         for allele, scores in self.allele_scores.items():
             if len(self.alt_alleles) > 1:
                 lines.append(f"### Allele: {allele}")
@@ -1169,7 +1191,7 @@ def _build_html_report(report: "VariantReport") -> str:
     parts.append("</head><body>")
 
     # Header
-    parts.append(f"<h1>Multi-Layer Variant Effect Report</h1>")
+    parts.append(f"<h1>{report.report_title}</h1>")
     if report.analysis_request is not None:
         parts.append(report.analysis_request.to_html_fragment())
     parts.append(f'<p class="meta"><b>Variant:</b> {report.chrom}:{report.position} '
@@ -1182,6 +1204,13 @@ def _build_html_report(report: "VariantReport") -> str:
         others = [g for g in report.nearby_genes if g != report.gene_name][:4]
         parts.append(f'<p class="meta"><b>Other nearby genes:</b> '
                      f'{html_mod.escape(", ".join(others))}</p>')
+    if report.modification_description:
+        parts.append(f'<p class="meta"><b>Modification:</b> '
+                     f'{html_mod.escape(report.modification_description)}</p>')
+    if report.modification_region:
+        s, e = report.modification_region
+        parts.append(f'<p class="meta"><b>Modified region:</b> '
+                     f'{report.chrom}:{s+1:,}-{e:,} ({e-s:,} bp)</p>')
 
     # Summary
     summary = _build_summary(report.allele_scores)
@@ -1342,6 +1371,7 @@ def _render_track_figure(
             gene_name=report.gene_name,
             normalizer=igv_normalizer,
             oracle_name=report.oracle_name,
+            modification_region=report.modification_region,
         )
 
         if igv_html:

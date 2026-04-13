@@ -77,5 +77,11 @@ def analyze_region_swap(
         gene_name=gene_name,
         normalizer=normalizer,
     )
+    report.report_title = "Region Swap Analysis Report"
+    report.modification_region = (start, end)
+    report.modification_description = (
+        f"Replaced {end - start:,} bp region ({chrom}:{start+1:,}-{end:,}) "
+        f"with a {len(replacement_sequence):,} bp custom sequence"
+    )
 
     return report

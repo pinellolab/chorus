@@ -1,48 +1,33 @@
 ## Analysis Request
 
-> I have 5 candidate SNPs from the SORT1 GWAS locus. Score all of them in HepG2 with AlphaGenome and rank by regulatory effect size. Target gene SORT1.
+> Score 5 SORT1-locus GWAS variants in HepG2 liver cells using DNASE, CEBPA/CEBPB ChIP, H3K27ac, and CAGE tracks. Rank by regulatory effect. Gene is SORT1.
 
 - **Tool**: `score_variant_batch`
 - **Oracle**: alphagenome
 - **Normalizer**: per-track background CDFs
-- **Tracks requested**: all oracle tracks (discovery mode)
-- **Generated**: 2026-04-12 14:14 UTC
+- **Tracks requested**: 6 HepG2 tracks
+- **Generated**: 2026-04-13 03:07 UTC
 
 ## Batch Variant Scoring Results
 
 **5 variants scored**
 
-| Rank | Variant | ID | Gene | Cell Type | Max Effect | Top Layer | Top Track |
-|------|---------|-----|------|-----------|-----------|-----------|-----------|
-| 1 | chr1:109274968 G>T | rs12740374 | SORT1 | multi-tissue | +1.908 | chromatin_accessibility | DNASE:LNCaP clone FGC |
-| 2 | chr1:109279175 G>A | rs4970836 | SORT1 | multi-tissue | -0.552 | tss_activity | CAGE:substantia nigra |
-| 3 | chr1:109274570 A>G | rs7528419 | SORT1 | multi-tissue | +0.212 | tss_activity | PRO_CAP:MCF 10A |
-| 4 | chr1:109275216 T>C | rs660240 | SORT1 | multi-tissue | +0.205 | tss_activity | PRO_CAP:Caco-2 |
-| 5 | chr1:109275684 G>T | rs1626484 | SORT1 | multi-tissue | -0.193 | gene_expression | RNA:vagina |
+| Variant | ID | DNASE:HepG2 | CHIP:CEBPA:HepG2 | CHIP:CEBPB:HepG2 | CHIP:H3K27ac:HepG2 | CAGE:HepG2 | CAGE:HepG2 |
+|---------|-----|---|---|---|---|---|---|
+| chr1:109274968 G>T | rs12740374 | +0.449 (100%) | +0.375 (100%) | +0.262 (100%) | +0.181 (100%) | -0.005 (100%) | -0.006 (100%) |
+| chr1:109279175 G>A | rs4970836 | -0.040 (100%) | -0.031 (100%) | -0.027 (100%) | -0.015 (100%) | +0.002 (100%) | -0.001 (100%) |
+| chr1:109275216 T>C | rs660240 | +0.069 (100%) | +0.023 (100%) | +0.013 (100%) | +0.031 (100%) | -0.003 (100%) | +0.003 (100%) |
+| chr1:109275684 G>T | rs1626484 | +0.005 (100%) | +0.011 (100%) | +0.001 (21%) | +0.000 (43%) | -0.004 (100%) | +0.002 (100%) |
+| chr1:109274570 A>G | rs7528419 | +0.011 (100%) | +0.005 (100%) | +0.013 (100%) | +0.022 (100%) | -0.001 (100%) | +0.002 (100%) |
 
----
+Each cell shows: **raw effect** (effect percentile).
+Effect percentile ranks this variant's effect against ~10K random SNPs.
 
----
+**Track identifiers** (for tracing back to oracle data):
 
-## Interpretation
-
-**What the oracle sees.** Out of 5 SORT1-locus SNPs, rs12740374 is the
-clear top hit with a +1.9 log2FC chromatin effect, 10x larger than the
-next-strongest variant. The other 4 variants have |max_effect| in the
-0.2 range and would not reach any meaningful regulatory threshold on
-their own.
-
-**How this fits the published biology.** Consistent with the
-fine-mapping result: one functional variant among several in LD. Batch
-scoring is the fastest way to triage a credible set or a candidate list
-from a VCF — the top variant is the one to escalate to full multi-layer
-analysis.
-
-**Suggested next steps.**
-- For any list of >5 variants, run this batch-scoring step first, sort
-  by `max_effect`, and only run the full `analyze_variant_multilayer`
-  on the top 1–3 hits. This saves 5–10x compute.
-- The `Top Track` column uses AlphaGenome's native assay IDs (e.g.
-  `DNASE/EFO:0005726 DNase-seq/.`). Look up the cell type via
-  `list_tracks(oracle_name="alphagenome", filter="EFO:0005726")` or in
-  the HTML report column.
+- DNASE:HepG2: `DNASE/EFO:0001187 DNase-seq/.`
+- CHIP:CEBPA:HepG2: `CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.`
+- CHIP:CEBPB:HepG2: `CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.`
+- CHIP:H3K27ac:HepG2: `CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.`
+- CAGE:HepG2: `CAGE/hCAGE EFO:0001187/+`
+- CAGE:HepG2: `CAGE/hCAGE EFO:0001187/-`

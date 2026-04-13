@@ -16,7 +16,7 @@ import numpy as np
 
 from .analysis_request import AnalysisRequest
 from .normalization import QuantileNormalizer
-from .variant_report import VariantReport, build_variant_report, _describe_normalizer
+from .variant_report import TrackScore, VariantReport, build_variant_report, _describe_normalizer
 
 logger = logging.getLogger(__name__)
 
@@ -70,6 +70,9 @@ class CausalVariantScore:
     # Context fields
     gene_name: str = ""
     cell_type: str = ""
+
+    # Per-track detail — keyed by assay_id, preserves raw + percentile per track
+    track_scores: dict[str, "TrackScore"] = field(default_factory=dict)
 
     # Back-reference (not serialized)
     _variant_report: VariantReport | None = field(default=None, repr=False)
@@ -231,19 +234,74 @@ class CausalResult:
                 lines.append("The sentinel SNP itself is the top candidate.")
             lines.append("")
 
-        # Ranked table
-        lines.append("| Rank | Variant | r² | Max Effect | Layers | Convergence | Top Layer | Composite |")
-        lines.append("|------|---------|-----|-----------|--------|-------------|-----------|-----------|")
-        for i, s in enumerate(self.scores, 1):
-            sentinel_mark = " ★" if s.is_sentinel else ""
-            sign = "+" if s.max_effect >= 0 else ""
-            lines.append(
-                f"| {i} | {s.variant_id}{sentinel_mark} | {s.r2:.2f} "
-                f"| {sign}{s.max_effect:.3f} | {s.n_layers_affected} "
-                f"| {s.convergence_score:.2f} | {s.top_layer or '—'} | {s.composite:.3f} |"
-            )
+        # Ranked table — per-track columns if available
+        has_tracks = any(s.track_scores for s in self.scores)
+        if has_tracks:
+            lines.append(self._per_track_table())
+        else:
+            lines.append(self._summary_table())
         lines.append("")
         return "\n".join(lines)
+
+    def _summary_table(self) -> str:
+        """Legacy table without per-track detail."""
+        rows = ["| Rank | Variant | r² | Max Effect | Layers | Convergence | Composite |",
+                "|------|---------|-----|-----------|--------|-------------|-----------|"]
+        for i, s in enumerate(self.scores, 1):
+            mark = " ★" if s.is_sentinel else ""
+            sign = "+" if s.max_effect >= 0 else ""
+            rows.append(
+                f"| {i} | {s.variant_id}{mark} | {s.r2:.2f} "
+                f"| {sign}{s.max_effect:.3f} | {s.n_layers_affected} "
+                f"| {s.convergence_score:.2f} | {s.composite:.3f} |"
+            )
+        return "\n".join(rows)
+
+    def _per_track_table(self) -> str:
+        """Per-track columns: each scored track gets its own column."""
+        from .batch_scoring import _track_display_name
+
+        # Ordered columns from the union of all variants' track_scores
+        col_order: list[str] = []
+        col_labels: dict[str, str] = {}
+        seen: set[str] = set()
+        for s in self.scores:
+            for tid, ts in s.track_scores.items():
+                if tid not in seen:
+                    col_order.append(tid)
+                    col_labels[tid] = _track_display_name(ts)
+                    seen.add(tid)
+
+        # Build header
+        header = "| Rank | Variant | r² |"
+        sep = "|------|---------|-----|"
+        for tid in col_order:
+            header += f" {col_labels[tid]} |"
+            sep += "---|"
+        header += " Composite |"
+        sep += "-----------|"
+
+        rows = [header, sep]
+        for i, s in enumerate(self.scores, 1):
+            mark = " ★" if s.is_sentinel else ""
+            row = f"| {i} | {s.variant_id}{mark} | {s.r2:.2f} |"
+            for tid in col_order:
+                ts = s.track_scores.get(tid)
+                if ts and ts.raw_score is not None:
+                    sign = "+" if ts.raw_score >= 0 else ""
+                    cell = f"{sign}{ts.raw_score:.3f}"
+                    if ts.quantile_score is not None:
+                        cell += f" ({ts.quantile_score:.0%})"
+                    row += f" {cell} |"
+                else:
+                    row += " — |"
+            row += f" {s.composite:.3f} |"
+            rows.append(row)
+
+        rows.append("")
+        rows.append("Each cell: **raw effect** (effect percentile). "
+                     "Composite score combines effect magnitude, layer convergence, and baseline activity.")
+        return "\n".join(rows)
 
 
 # ---------------------------------------------------------------------------
@@ -467,14 +525,13 @@ def _extract_component_scores(
     # Ref activity
     ref_activity = float(np.mean(ref_activity_vals)) if ref_activity_vals else 0.0
 
-    # Extract gene name and cell types from the report
+    # Extract gene name from the report
     gene = report.gene_name or ""
-    var_cell_types: set[str] = set()
-    for allele_scores in report.allele_scores.values():
-        for ts in allele_scores:
-            if ts.cell_type:
-                var_cell_types.add(ts.cell_type)
-    cell_type_str = ", ".join(sorted(var_cell_types))
+
+    # Collect per-track scores keyed by assay_id
+    per_track: dict[str, TrackScore] = {}
+    for ts in track_scores:
+        per_track[ts.assay_id] = ts
 
     return CausalVariantScore(
         variant_id=ldv.variant_id,
@@ -494,7 +551,8 @@ def _extract_component_scores(
         top_layer=top_layer,
         top_track=top_track,
         gene_name=gene,
-        cell_type=cell_type_str,
+        cell_type="",
+        track_scores=per_track,
         _variant_report=report,
     )
 

@@ -73,5 +73,11 @@ def simulate_integration(
         gene_name=gene_name,
         normalizer=normalizer,
     )
+    report.report_title = "Integration Simulation Report"
+    report.modification_region = (pos, pos + len(construct_sequence))
+    report.modification_description = (
+        f"Inserted {len(construct_sequence):,} bp construct at "
+        f"{chrom}:{pos+1:,}"
+    )
 
     return report

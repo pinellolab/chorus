@@ -210,14 +210,29 @@ def regen_causal(oracle, norm):
     # Mark the sentinel
     ld_variants[0].is_sentinel = True
 
+    from chorus.analysis.analysis_request import AnalysisRequest
+
+    ar = AnalysisRequest(
+        user_prompt=(
+            "Fine-map the SORT1 LDL cholesterol GWAS locus. Sentinel is "
+            "rs12740374 with 11 LD variants (r²≥0.85). Score each variant "
+            "across HepG2 DNASE, CEBPA/CEBPB ChIP, H3K27ac, and CAGE. "
+            "Rank by composite causal evidence. Gene is SORT1."
+        ),
+        tool_name="fine_map_causal_variant",
+        oracle_name="alphagenome",
+        tracks_requested=f"{len(HEPG2_TRACKS)} HepG2 tracks",
+    )
+
     result = prioritize_causal_variants(
         oracle,
         lead_variant={"id": "rs12740374", "chrom": "chr1", "pos": 109274968, "ref": "G", "alt": "T"},
         ld_variants=ld_variants,
-        assay_ids=None,  # AlphaGenome: None means predict all tracks
+        assay_ids=HEPG2_TRACKS,
         gene_name="SORT1",
         oracle_name="alphagenome",
         normalizer=norm,
+        analysis_request=ar,
     )
 
     os.makedirs(out_dir, exist_ok=True)
@@ -270,6 +285,8 @@ def regen_region_swap(oracle, norm):
         "CAGE/hCAGE EFO:0002067/+",
     ]
 
+    from chorus.analysis.analysis_request import AnalysisRequest
+
     # Use the SORT1 enhancer region (well-assembled, real signal in K562)
     report = analyze_region_swap(
         oracle,
@@ -278,6 +295,17 @@ def regen_region_swap(oracle, norm):
         assay_ids=assay_ids,
         gene_name="SORT1",
         normalizer=norm,
+        oracle_name="alphagenome",
+    )
+    report.analysis_request = AnalysisRequest(
+        user_prompt=(
+            "Replace the SORT1 enhancer region chr1:109274500-109275500 with a "
+            f"{len(replacement)} bp GFP/reporter construct sequence and predict "
+            "effects on K562 DNASE, H3K27ac, H3K4me3, and CAGE."
+        ),
+        tool_name="analyze_region_swap",
+        oracle_name="alphagenome",
+        tracks_requested=f"{len(assay_ids)} K562 tracks",
     )
     save_variant_report(report, out_dir, "region_swap_SORT1_K562_report.html")
 
@@ -306,6 +334,8 @@ def regen_integration(oracle, norm):
 
     # Insert construct at a well-assembled locus on chr19 (GAPDH region ~ chr12 but
     # for K562 we pick PPP1R12C on chr19 which is assembled and transcribed)
+    from chorus.analysis.analysis_request import AnalysisRequest
+
     report = simulate_integration(
         oracle,
         position="chr19:55115000",
@@ -313,6 +343,17 @@ def regen_integration(oracle, norm):
         assay_ids=assay_ids,
         gene_name="PPP1R12C",
         normalizer=norm,
+        oracle_name="alphagenome",
+    )
+    report.analysis_request = AnalysisRequest(
+        user_prompt=(
+            f"Insert a {len(construct)} bp CMV promoter construct at "
+            "chr19:55115000 (PPP1R12C locus / AAVS1 safe harbour) and predict "
+            "local disruption in K562 using DNASE, H3K27ac, and CAGE tracks."
+        ),
+        tool_name="simulate_integration",
+        oracle_name="alphagenome",
+        tracks_requested=f"{len(assay_ids)} K562 tracks",
     )
     save_variant_report(report, out_dir, "integration_CMV_PPP1R12C_report.html")
 
@@ -338,6 +379,16 @@ def regen_tert_chr5(oracle, norm):
     if report is None:
         logger.warning("  no report returned")
         return
+    from chorus.analysis.analysis_request import AnalysisRequest
+    report.analysis_request = AnalysisRequest(
+        user_prompt=(
+            "Validate the TERT chr5:1295046 T>G variant from the AlphaGenome "
+            "paper. Score across all tracks in discovery mode. Gene is TERT."
+        ),
+        tool_name="discover_variant",
+        oracle_name="alphagenome",
+        tracks_requested="all tracks (discovery mode)",
+    )
     with open(f"{out_dir}/example_output.md", "w") as fh:
         fh.write(report.to_markdown())
     with open(f"{out_dir}/example_output.json", "w") as fh:
@@ -352,12 +403,22 @@ def regen_tert_chr5(oracle, norm):
         logger.info("  ✓ %s (%.0f KB)", os.path.basename(target), os.path.getsize(target)/1024)
 
 
+HEPG2_TRACKS = [
+    "DNASE/EFO:0001187 DNase-seq/.",
+    "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+    "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",
+    "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+    "CAGE/hCAGE EFO:0001187/+",
+    "CAGE/hCAGE EFO:0001187/-",
+]
+
+
 def regen_batch(oracle, norm):
-    """batch_scoring — rank 5 SORT1-locus variants by regulatory effect."""
+    """batch_scoring — rank 5 SORT1-locus variants in HepG2 liver tracks."""
     from chorus.analysis.batch_scoring import score_variant_batch
 
     out_dir = f"{BASE}/batch_scoring"
-    logger.info("=== BATCH SCORING: SORT1 locus (5 variants) ===")
+    logger.info("=== BATCH SCORING: SORT1 locus (5 variants × HepG2 tracks) ===")
 
     variants = [
         {"chrom": "chr1", "pos": 109274968, "ref": "G", "alt": "T", "id": "rs12740374"},
@@ -367,21 +428,40 @@ def regen_batch(oracle, norm):
         {"chrom": "chr1", "pos": 109274570, "ref": "A", "alt": "G", "id": "rs7528419"},
     ]
 
+    from chorus.analysis.analysis_request import AnalysisRequest
+
+    ar = AnalysisRequest(
+        user_prompt=(
+            "Score 5 SORT1-locus GWAS variants in HepG2 liver cells using "
+            "DNASE, CEBPA/CEBPB ChIP, H3K27ac, and CAGE tracks. Rank by "
+            "regulatory effect. Gene is SORT1."
+        ),
+        tool_name="score_variant_batch",
+        oracle_name="alphagenome",
+        tracks_requested=f"{len(HEPG2_TRACKS)} HepG2 tracks",
+    )
+
     result = score_variant_batch(
         oracle,
         variants=variants,
-        assay_ids=None,
+        assay_ids=HEPG2_TRACKS,
         gene_name="SORT1",
         normalizer=norm,
+        oracle_name="alphagenome",
+        analysis_request=ar,
     )
 
     os.makedirs(out_dir, exist_ok=True)
     with open(f"{out_dir}/example_output.md", "w") as fh:
-        fh.write(result.to_markdown())
+        fh.write(result.to_markdown(display_mode="by_assay"))
     with open(f"{out_dir}/example_output.json", "w") as fh:
         json.dump(result.to_dict(), fh, indent=2, default=str)
     result.to_tsv(f"{out_dir}/example_output.tsv")
-    logger.info("  ✓ batch: %d variants ranked", len(result.scores))
+    result.to_html(
+        output_path=f"{out_dir}/batch_sort1_locus_scoring.html",
+        display_mode="by_assay",
+    )
+    logger.info("  ✓ batch: %d variants × %d tracks", len(result.scores), len(HEPG2_TRACKS))
 
 
 # ══════════════════════════════════════════════════════════════════════

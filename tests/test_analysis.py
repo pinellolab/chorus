@@ -907,8 +907,8 @@ class TestHTMLOutput:
         assert "igv.createBrowser" in html
         assert "igv-div" in html
         assert "Interactive Genome Browser" in html
-        # Has the variant ROI
-        assert '"name":"Variant"' in html or "'name':'Variant'" in html
+        # Has the modification ROI
+        assert '"name":"Modification"' in html or "'name':'Modification'" in html
 
 
 # ── Region swap tests ────────────────────────────────────────────────
@@ -985,7 +985,7 @@ class TestRegionSwap:
             assay_ids=["DNASE:K562"],
         )
         md = report.to_markdown()
-        assert "Multi-Layer" in md
+        assert "Region Swap" in md
         assert "DNASE:K562" in md
 
 
@@ -1386,10 +1386,10 @@ class TestEnrichedBatchFields:
         result = BatchResult(scores=scores)
         d = result.to_dict()
         assert d["scores"][0]["gene_name"] == "SORT1"
-        assert d["scores"][0]["cell_type"] == "K562"
         assert d["scores"][0]["max_quantile"] == 0.95
+        assert d["scores"][0]["max_effect"] == 0.5
 
-    def test_batch_to_markdown_includes_gene_cell_type(self):
+    def test_batch_to_markdown_summary_mode(self):
         from chorus.analysis.batch_scoring import BatchVariantScore, BatchResult
 
         scores = [
@@ -1402,28 +1402,36 @@ class TestEnrichedBatchFields:
             ),
         ]
         result = BatchResult(scores=scores)
-        md = result.to_markdown()
-        assert "Gene" in md
-        assert "Cell Type" in md
-        assert "SORT1" in md
-        assert "K562" in md
+        md = result.to_markdown(display_mode="summary")
+        assert "Max Effect" in md
+        assert "Top Layer" in md
+        assert "rs1" in md
+        assert "+0.500" in md
 
-    def test_batch_to_dataframe_includes_new_columns(self):
+    def test_batch_to_dataframe_per_track(self):
         from chorus.analysis.batch_scoring import BatchVariantScore, BatchResult
+        from chorus.analysis.variant_report import TrackScore
 
+        ts = TrackScore(
+            assay_id="DNASE:K562", assay_type="DNASE", cell_type="K562",
+            layer="chromatin_accessibility", ref_value=100, alt_value=200,
+            raw_score=0.5, quantile_score=0.9, description="DNASE:K562",
+        )
         scores = [
             BatchVariantScore(
                 chrom="chr1", position=100, ref="A", alt="G",
                 variant_id="rs1", max_effect=0.5,
                 top_layer="chromatin_accessibility", top_track="DNASE:K562",
-                per_layer_scores={"chromatin_accessibility": 0.5},
                 gene_name="SORT1", cell_type="K562", max_quantile=0.9,
+                track_scores={"DNASE:K562": ts},
             ),
         ]
         result = BatchResult(scores=scores)
         df = result.to_dataframe()
         assert "gene_name" in df.columns
-        assert "cell_type" in df.columns
+        assert "DNASE:K562_raw" in df.columns
+        assert "DNASE:K562_pctile" in df.columns
+        assert df["DNASE:K562_raw"].iloc[0] == 0.5
         assert "max_quantile" in df.columns
         assert df.iloc[0]["gene_name"] == "SORT1"
 
@@ -1488,7 +1496,7 @@ class TestEnrichedCausalFields:
         assert d["rankings"][0]["gene_name"] == "SORT1"
         assert d["rankings"][0]["cell_type"] == "K562"
 
-    def test_causal_to_markdown_includes_top_layer(self):
+    def test_causal_to_markdown_summary_mode(self):
         from chorus.analysis.causal import CausalVariantScore, CausalResult, CausalWeights
 
         scores = [
@@ -1507,8 +1515,7 @@ class TestEnrichedCausalFields:
             oracle_name="test", gene_name="SORT1",
         )
         md = result.to_markdown()
-        assert "Top Layer" in md
-        assert "chromatin_accessibility" in md
+        assert "Composite" in md
         assert "SORT1" in md  # gene in report header
         assert "★" in md  # sentinel marker
 
@@ -1570,7 +1577,8 @@ class TestEnrichedCausalFields:
             gene_name="SORT1",
         )
         assert result.scores[0].gene_name == "SORT1"
-        assert result.scores[0].cell_type == "K562"
+        # track_scores should be populated with the per-track detail
+        assert "DNASE:K562" in result.scores[0].track_scores
 
 
 # ── Background distribution building tests ────────────────────────────

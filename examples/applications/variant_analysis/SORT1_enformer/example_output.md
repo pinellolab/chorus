@@ -1,12 +1,11 @@
 ## Analysis Request
 
-> Run discovery mode on rs12740374 (chr1:109274968 G>T) using Enformer — I want to compare its predictions to AlphaGenome on the same variant. Gene is SORT1.
+> Analyze chr1:109274968 G>T using Enformer discovery mode. Gene: SORT1.
 
 - **Tool**: `discover_variant`
 - **Oracle**: enformer
-- **Normalizer**: per-track background CDFs
-- **Tracks requested**: all Enformer tracks
-- **Generated**: 2026-04-12 02:21 UTC
+- **Tracks requested**: all Enformer tracks (discovery mode)
+- **Generated**: 2026-04-13 11:27 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -26,6 +25,12 @@
 | DNASE:epithelial cell of proximal tubule | 1.78 | 4.98 | +1.108 | 1.000 | 0.916 | Very strong opening |
 | DNASE:MCF 10A treated with 1 uM tamoxifen for 24 hours | 3.21 | 7.81 | +1.064 | 0.999 | 0.909 | Very strong opening |
 | DNASE:placenta female embryo (105 days) | 4.19 | 9.79 | +1.058 | 0.999 | 0.916 | Very strong opening |
+| DNASE:epithelial cell of prostate | 2.65 | 6.56 | +1.053 | 1.000 | 0.933 | Very strong opening |
+| DNASE:MCF-7 | 8.92 | 19.5 | +1.047 | 1.000 | 0.963 | Very strong opening |
+| DNASE:T47D | 6.94 | 15.2 | +1.030 | 1.000 | 0.934 | Very strong opening |
+| DNASE:epithelial cell of esophagus | 3.53 | 8.16 | +1.016 | 0.999 | 0.921 | Very strong opening |
+| DNASE:MCF-7 treated with 100 nM estradiol for 1 hour | 8.73 | 18.2 | +0.980 | 1.000 | 0.953 | Very strong opening |
+| _…showing top 10 of 12 — see `example_output.json` for the full set_ | | | | | | |
 
 #### Transcription factor binding (ChIP-TF)
 
@@ -36,6 +41,12 @@
 | CHIP:HNF4A:liver female child (4 years) | 13.9 | 30.3 | +1.072 | 0.999 | 0.925 | Very strong binding gain |
 | CHIP:FOS:MCF-7 | 21.9 | 43.6 | +0.961 | 0.999 | 0.989 | Very strong binding gain |
 | CHIP:SP1:liver male adult (32 years) | 19.1 | 37.6 | +0.942 | 0.999 | 0.911 | Very strong binding gain |
+| CHIP:STAT3:MCF 10A originated from MCF 10A treated with 1 uM afimoxifene for 36 hours | 28.7 | 54.5 | +0.903 | 0.999 | 0.955 | Very strong binding gain |
+| CHIP:YY1:liver male adult (32 years) | 8.42 | 16.5 | +0.897 | 0.999 | 0.861 | Very strong binding gain |
+| CHIP:STAT3:MCF 10A genetically modified using stable transfection treated with 1 uM afimoxifene for 12 hours | 28 | 51.7 | +0.860 | 0.999 | 0.970 | Very strong binding gain |
+| CHIP:GATA3:MCF-7 | 37.8 | 67.6 | +0.824 | 0.999 | 0.998 | Very strong binding gain |
+| CHIP:RXRA:liver female child (4 years) | 15.1 | 27.4 | +0.817 | 0.999 | 0.929 | Very strong binding gain |
+| _…showing top 10 of 12 — see `example_output.json` for the full set_ | | | | | | |
 
 #### Histone modifications (ChIP-Histone)
 
@@ -46,6 +57,12 @@
 | CHIP:H3K27ac:22Rv1 | 79.2 | 130 | +0.712 | 1.000 | 0.875 | Very strong mark gain |
 | CHIP:H3K4me1:common myeloid progenitor, CD34-positive female adult (33 years) | 96.7 | 61 | -0.657 | 0.999 | 0.830 | Strong mark loss |
 | CHIP:H3K27ac:liver male adult (31 year) | 58.3 | 91.2 | +0.637 | 0.999 | 0.825 | Strong mark gain |
+| CHIP:H3K27ac:psoas muscle female adult (30 years) | 26.5 | 41.7 | +0.636 | 1.000 | 0.813 | Strong mark gain |
+| CHIP:H3K27ac:gastrocnemius medialis female adult (53 years) | 92.6 | 142 | +0.615 | 0.999 | 0.853 | Strong mark gain |
+| CHIP:H3K4me3:liver male adult (78 years) | 30.6 | 47.2 | +0.610 | 0.999 | 0.761 | Strong mark gain |
+| CHIP:H3K27ac:heart left ventricle male adult (32 years) | 43 | 65.7 | +0.601 | 0.999 | 0.833 | Strong mark gain |
+| CHIP:H3K27ac:gastrocnemius medialis male adult (37 years) | 106 | 162 | +0.600 | 1.000 | 0.852 | Strong mark gain |
+| _…showing top 10 of 12 — see `example_output.json` for the full set_ | | | | | | |
 
 #### TSS activity (CAGE/PRO-CAP)
 
@@ -56,40 +73,14 @@
 | CAGE:breast carcinoma cell line:MCF7 — variant site | 6.46 | 9.03 | +0.427 | 1.000 | 0.926 | Strong increase |
 | CAGE:kidney, adult, pool1 — variant site | 3.16 | 4.58 | +0.426 | 0.998 | 0.883 | Strong increase |
 | CAGE:liver, adult, pool1 — variant site | 0.283 | 0.693 | +0.401 | 0.999 | 0.816 | Strong increase |
-| CAGE:liver, adult, pool1 — PSRC1 TSS | 6.88 | 7.51 | +0.111 | 0.991 | 0.918 | Moderate increase |
-| CAGE:kidney, adult, pool1 — PSRC1 TSS | 20.7 | 22 | +0.082 | 0.985 | 0.918 | Minimal effect |
-| CAGE:liver, adult, pool1 — CELSR2 TSS | 8.38 | 8.7 | +0.048 | 0.977 | 0.921 | Minimal effect |
-| CAGE:liver, adult, pool1 — MYBPHL TSS | 1.16 | 1.23 | +0.043 | 0.974 | 0.879 | Minimal effect |
-| CAGE:placenta, adult, pool1 — MYBPHL TSS | 1.3 | 1.37 | +0.042 | 0.967 | 0.867 | Minimal effect |
-| _…showing top 10 of 20 — see `example_output.json` for the full set_ | | | | | | |
+| CAGE:Skeletal muscle cells differentiated into Myotubes - multinucleated, — variant site | 2.06 | 1.37 | -0.368 | 0.998 | 0.879 | Strong decrease |
+| CAGE:Astrocyte - cerebellum, — variant site | 3.35 | 2.43 | -0.344 | 0.998 | 0.895 | Strong decrease |
+| CAGE:endometrioid adenocarcinoma cell line:JHUEM-1 — variant site | 3.26 | 4.33 | +0.322 | 0.999 | 0.908 | Strong increase |
+| CAGE:colon carcinoma cell line:CACO-2 — variant site | 2.49 | 3.36 | +0.322 | 0.999 | 0.904 | Strong increase |
+| CAGE:kidney, fetal, pool1 — variant site | 4.28 | 5.59 | +0.321 | 0.998 | 0.883 | Strong increase |
+| _…showing top 10 of 48 — see `example_output.json` for the full set_ | | | | | | |
 
 ---
 **Score guide:**
 - **Effect %ile**: Variant effect ranked against ~10K random SNPs. 0.95 = stronger than 95% of random variants.
 - **Activity %ile**: Reference signal ranked genome-wide against ENCODE SCREEN cCREs + random regions. 0.95 = more active than 95% of genomic positions.
-
----
-
----
-
-## Interpretation
-
-**What the oracle sees.** Enformer shows the same signal Musunuru reported
-and AlphaGenome reproduces in the main SORT1 example: a strong DNASE
-opening around the variant, gain of liver ChIP-TF signal, and a CAGE
-increase at the SORT1 promoter. Effect magnitudes are in the "strong"
-(0.3–0.7) to "very strong" (>0.7) range depending on the track.
-
-**How this fits the published biology.** The direction of effect matches
-Musunuru et al. 2010 and is consistent with the AlphaGenome result on the
-same variant. Enformer has narrower input context (114 kb output window)
-than AlphaGenome (1 Mb), which is why the top tracks differ slightly
-between the two oracles — Enformer is more conservative about distal TSS
-scoring.
-
-**Suggested next steps.**
-- Compare side-by-side with the AlphaGenome SORT1 example. Agreement
-  between two independent architectures is a stronger signal than either
-  alone.
-- If your target gene is far from the variant (>100 kb), prefer Borzoi
-  or AlphaGenome — Enformer's 114 kb output window will miss it.

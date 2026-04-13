@@ -40,71 +40,85 @@ BASE = os.path.join(REPO_ROOT, 'examples/applications')
 # Example definitions
 # ══════════════════════════════════════════════════════════════════
 
+# ── Track ID constants ──────────────────────────────────────────────
+# Biologically motivated track sets per cell type.
+
+HEPG2_TRACKS = [
+    "DNASE/EFO:0001187 DNase-seq/.",                         # DNASE
+    "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",  # CEBPA
+    "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",              # CEBPB
+    "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",   # H3K27ac
+    "CAGE/hCAGE EFO:0001187/+",                              # CAGE +
+    "CAGE/hCAGE EFO:0001187/-",                              # CAGE -
+]
+
+K562_TRACKS = [
+    "DNASE/EFO:0002067 DNase-seq/.",                         # DNASE
+    "CHIP_TF/EFO:0002067 TF ChIP-seq GATA1/.",              # GATA1
+    "CHIP_TF/EFO:0002067 TF ChIP-seq TAL1/.",               # TAL1
+    "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.",   # H3K27ac
+    "CAGE/hCAGE EFO:0002067/+",                              # CAGE +
+    "CAGE/hCAGE EFO:0002067/-",                              # CAGE -
+]
+
+
 ALPHAGENOME_EXAMPLES = [
-    # variant_analysis
+    # variant_analysis — each uses specific cell-type tracks
     {
-        "name": "SORT1 rs12740374 (AlphaGenome)",
+        "name": "SORT1 rs12740374 (HepG2)",
         "dir": f"{BASE}/variant_analysis/SORT1_rs12740374",
         "type": "variant",
         "position": "chr1:109274968",
         "ref": "G", "alt": "T",
         "gene": "SORT1",
+        "assay_ids": HEPG2_TRACKS,
         "html_name": "rs12740374_SORT1_alphagenome_report.html",
+        "user_prompt": "Analyze rs12740374 (chr1:109274968 G>T) in HepG2 liver cells using DNASE, CEBPA/CEBPB ChIP, H3K27ac, and CAGE tracks. Gene is SORT1.",
     },
     {
-        "name": "BCL11A rs1427407",
+        "name": "BCL11A rs1427407 (K562 erythroid)",
         "dir": f"{BASE}/variant_analysis/BCL11A_rs1427407",
         "type": "variant",
         "position": "chr2:60490908",
         "ref": "G", "alt": "T",
         "gene": "BCL11A",
+        "assay_ids": K562_TRACKS,
         "html_name": "rs1427407_BCL11A_alphagenome_report.html",
+        "user_prompt": "Analyze rs1427407 (chr2:60490908 G>T) in K562 erythroid cells using DNASE, GATA1/TAL1 ChIP, H3K27ac, and CAGE tracks. Gene is BCL11A.",
     },
     {
-        "name": "FTO rs1421085",
+        "name": "FTO rs1421085 (HepG2 — nearest liver/metabolic)",
         "dir": f"{BASE}/variant_analysis/FTO_rs1421085",
         "type": "variant",
         "position": "chr16:53767042",
         "ref": "T", "alt": "C",
         "gene": "FTO",
+        "assay_ids": HEPG2_TRACKS,
         "html_name": "rs1421085_FTO_alphagenome_report.html",
+        "user_prompt": "Analyze rs1421085 (chr16:53767042 T>C) in HepG2 cells. Gene is FTO. Using HepG2 as the nearest available metabolic cell type.",
     },
     {
-        "name": "TERT promoter (C228T)",
+        "name": "TERT promoter C228T (K562)",
         "dir": f"{BASE}/variant_analysis/TERT_promoter",
         "type": "variant",
         "position": "chr5:1295228",
         "ref": "G", "alt": "A",
         "gene": "TERT",
+        "assay_ids": K562_TRACKS,
         "html_name": "TERT_promoter_alphagenome_report.html",
+        "user_prompt": "Analyze the TERT C228T promoter mutation (chr5:1295228 G>A) in K562 cells using DNASE, GATA1/TAL1 ChIP, H3K27ac, and CAGE tracks.",
     },
-    # validation
+    # validation — forced HepG2 CEBP tracks to match the paper
     {
         "name": "SORT1 with CEBP (validation)",
         "dir": f"{BASE}/validation/SORT1_rs12740374_with_CEBP",
         "type": "variant",
         "position": "chr1:109274968",
         "ref": "G", "alt": "T",
-        "gene": "CELSR2",
-        "html_name": "chr1_109274968_G_T_CELSR2_alphagenome_report.html",
-    },
-    {
-        "name": "TERT chr5:1295046 (validation)",
-        "dir": f"{BASE}/validation/TERT_chr5_1295046",
-        "type": "variant",
-        "position": "chr5:1295046",
-        "ref": "T", "alt": "G",
-        "gene": "TERT",
-        "html_name": "chr5_1295046_T_G_TERT_alphagenome_report.html",
-    },
-    {
-        "name": "HBG2 HPFH (validation)",
-        "dir": f"{BASE}/validation/HBG2_HPFH",
-        "type": "variant",
-        "position": "chr11:5254983",
-        "ref": "G", "alt": "C",
-        "gene": "HBG2",
-        "html_name": "chr11_5254983_G_C_HBG2_alphagenome_report.html",
+        "gene": "SORT1",
+        "assay_ids": HEPG2_TRACKS,
+        "html_name": "rs12740374_SORT1_CEBP_validation_report.html",
+        "user_prompt": "Validate AlphaGenome paper finding: rs12740374 (chr1:109274968 G>T) should show CEBPA/CEBPB binding gain in HepG2. Using forced HepG2 tracks.",
     },
 ]
 
@@ -153,52 +167,72 @@ CHROMBPNET_EXAMPLES = [
 
 
 def regenerate_variant_alphagenome(oracle, norm, example):
-    """Regenerate a variant analysis example using AlphaGenome."""
-    from chorus.analysis.discovery import discover_variant_effects
-    import glob
+    """Regenerate a variant analysis example using AlphaGenome with specific tracks."""
+    from chorus.analysis.variant_report import build_variant_report
+    from chorus.analysis.analysis_request import AnalysisRequest
 
     out_dir = example["dir"]
-    logger.info("Regenerating: %s → %s", example["name"], out_dir)
+    os.makedirs(out_dir, exist_ok=True)
+    assay_ids = example.get("assay_ids")
+    logger.info("Regenerating: %s → %s (%d tracks)", example["name"], out_dir,
+                len(assay_ids) if assay_ids else 0)
 
-    result = discover_variant_effects(
-        oracle, oracle_name="alphagenome",
+    # Predict with specific tracks
+    variant_result = oracle.predict_variant_effect(
+        genomic_region=f'{example["position"]}-{int(example["position"].split(":")[1]) + 1}',
         variant_position=example["position"],
         alleles=[example["ref"], example["alt"]],
-        gene_name=example["gene"],
-        normalizer=norm,
-        output_path=out_dir,
-        top_n_per_layer=10, top_n_cell_types=8,
+        assay_ids=assay_ids,
     )
 
-    report = result.get("report")
-    if report is None:
-        logger.warning("  No report generated for %s", example["name"])
-        return False
+    # Build analysis request with user prompt
+    ar = AnalysisRequest(
+        user_prompt=example.get("user_prompt"),
+        tool_name="analyze_variant_multilayer",
+        oracle_name="alphagenome",
+        tracks_requested=f"{len(assay_ids)} HepG2/K562 tracks" if assay_ids else "all tracks",
+    )
 
-    # Save markdown + JSON
+    report = build_variant_report(
+        variant_result,
+        oracle_name="alphagenome",
+        gene_name=example["gene"],
+        normalizer=norm,
+        analysis_request=ar,
+    )
+
+    # Save MD
     md = report.to_markdown()
     with open(f'{out_dir}/example_output.md', 'w') as f:
         f.write(md)
+
+    # Save JSON
     d = report.to_dict()
     with open(f'{out_dir}/example_output.json', 'w') as f:
         json.dump(d, f, indent=2, default=str)
 
-    # Rename the auto-generated HTML to the expected name
-    htmls = sorted(glob.glob(f'{out_dir}/chr*.html'), key=os.path.getmtime)
-    if htmls:
-        target = f'{out_dir}/{example["html_name"]}'
-        os.rename(htmls[-1], target)
-        logger.info("  ✓ HTML: %s (%s)", example["html_name"],
-                     f"{os.path.getsize(target)/1024:.0f} KB")
+    # Save TSV
+    try:
+        df = report.to_dataframe()
+        df.to_csv(f'{out_dir}/example_output.tsv', sep='\t', index=False)
+    except Exception as exc:
+        logger.warning("  TSV failed: %s", exc)
 
-    logger.info("  ✓ %s: %d tracks scored, %d selected",
-                example["name"], result["total_tracks_scored"], result["selected_tracks"])
+    # Save HTML
+    target = f'{out_dir}/{example["html_name"]}'
+    report.to_html(output_path=target)
+    logger.info("  ✓ HTML: %s (%s)", example["html_name"],
+                 f"{os.path.getsize(target)/1024:.0f} KB")
+
+    n_tracks = sum(len(scores) for scores in report.allele_scores.values())
+    logger.info("  ✓ %s: %d tracks scored", example["name"], n_tracks)
     return True
 
 
 def regenerate_enformer_discovery(oracle, norm, example, igv_raw=False):
     """Regenerate an Enformer discovery example."""
     from chorus.analysis.discovery import discover_variant_effects
+    from chorus.analysis.analysis_request import AnalysisRequest
     import glob
 
     out_dir = example["dir"]
@@ -220,12 +254,27 @@ def regenerate_enformer_discovery(oracle, norm, example, igv_raw=False):
         logger.warning("  No report generated")
         return False
 
-    md = report.to_markdown()
-    with open(f'{out_dir}/example_output.md', 'w') as f:
-        f.write(md)
-    d = report.to_dict()
-    with open(f'{out_dir}/example_output.json', 'w') as f:
-        json.dump(d, f, indent=2, default=str)
+    report.analysis_request = AnalysisRequest(
+        user_prompt=example.get("user_prompt",
+            f"Analyze {example['position']} {example['ref']}>{example['alt']} "
+            f"using Enformer discovery mode. Gene: {example['gene']}."),
+        tool_name="discover_variant",
+        oracle_name="enformer",
+        tracks_requested="all Enformer tracks (discovery mode)",
+    )
+
+    # Only write MD/JSON if this is the PRIMARY example for this directory
+    # (Enformer validation shares a dir with AlphaGenome validation — only
+    # write the HTML, don't overwrite the AG-generated MD/JSON/TSV).
+    is_primary = not os.path.exists(f'{out_dir}/example_output.md') or \
+                 example["dir"].endswith("SORT1_enformer")
+    if is_primary:
+        md = report.to_markdown()
+        with open(f'{out_dir}/example_output.md', 'w') as f:
+            f.write(md)
+        d = report.to_dict()
+        with open(f'{out_dir}/example_output.json', 'w') as f:
+            json.dump(d, f, indent=2, default=str)
 
     htmls = sorted(glob.glob(f'{out_dir}/chr*.html'), key=os.path.getmtime)
     if htmls:
@@ -240,6 +289,7 @@ def regenerate_enformer_discovery(oracle, norm, example, igv_raw=False):
 def regenerate_chrombpnet(oracle, norm, example):
     """Regenerate a ChromBPNet example."""
     from chorus.analysis.variant_report import build_variant_report
+    from chorus.analysis.analysis_request import AnalysisRequest
 
     out_dir = example["dir"]
     logger.info("Regenerating: %s → %s", example["name"], out_dir)
@@ -252,8 +302,20 @@ def regenerate_chrombpnet(oracle, norm, example):
         assay_ids=[],
     )
 
+    ar = AnalysisRequest(
+        user_prompt=(
+            f"Score {example['position']} {example['ref']}>{example['alt']} "
+            f"using ChromBPNet {example['assay']} model in {example['cell_type']}. "
+            f"Gene: {example['gene']}."
+        ),
+        tool_name="analyze_variant_multilayer",
+        oracle_name="chrombpnet",
+        tracks_requested=f"{example['assay']}:{example['cell_type']}",
+    )
+
     report = build_variant_report(result, oracle_name="chrombpnet",
-                                   gene_name=example["gene"], normalizer=norm)
+                                   gene_name=example["gene"], normalizer=norm,
+                                   analysis_request=ar)
 
     md = report.to_markdown()
     with open(f'{out_dir}/example_output.md', 'w') as f:

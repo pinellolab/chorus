@@ -22,11 +22,11 @@
             "assay_type": "ATAC",
             "cell_type": "HepG2",
             "layer": "chromatin_accessibility",
-            "ref_value": 686.5375729824882,
-            "alt_value": 635.6635888748569,
-            "raw_score": -0.11090729888458001,
+            "ref_value": 686.526312878821,
+            "alt_value": 635.6817746232264,
+            "raw_score": -0.11084246228747868,
             "description": "ATAC:HepG2",
-            "quantile_score": 0.96721823290665,
+            "quantile_score": 0.9671141638047663,
             "ref_signal_percentile": 0.8198
           }
         ]
@@ -37,24 +37,24 @@
           "assay_type": "ATAC",
           "cell_type": "HepG2",
           "layer": "chromatin_accessibility",
-          "ref_value": 686.5375729824882,
-          "alt_value": 635.6635888748569,
-          "raw_score": -0.11090729888458001,
+          "ref_value": 686.526312878821,
+          "alt_value": 635.6817746232264,
+          "raw_score": -0.11084246228747868,
           "description": "ATAC:HepG2",
-          "quantile_score": 0.96721823290665,
+          "quantile_score": 0.9671141638047663,
           "ref_signal_percentile": 0.8198
         }
       ]
     }
   },
   "analysis_request": {
-    "user_prompt": "Load ChromBPNet with the HepG2 ATAC model and score rs12740374 (chr1:109274968 G>T) \u2014 I want base-resolution chromatin effects around the CEBP motif.",
+    "user_prompt": "Score chr1:109274968 G>T using ChromBPNet ATAC model in HepG2. Gene: SORT1.",
     "tool_name": "analyze_variant_multilayer",
     "oracle_name": "chrombpnet",
     "normalizer_name": "per-track background CDFs",
     "tracks_requested": "ATAC:HepG2",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-04-12 02:21 UTC"
+    "generated_at": "2026-04-13 11:31 UTC"
   }
 }

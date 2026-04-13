@@ -73,6 +73,7 @@ def build_igv_html(
     bin_size: int = 0,
     normalizer=None,
     oracle_name: Optional[str] = None,
+    modification_region: Optional[tuple[int, int]] = None,
 ) -> str:
     """Build the IGV.js browser configuration as an HTML fragment.
 
@@ -113,18 +114,28 @@ def build_igv_html(
     # Build tracks
     tracks = []
 
-    # Variant annotation track
+    # Variant / modification annotation track.
+    # For region swaps and insertions, highlight the full affected region.
+    # For point variants, highlight the single nucleotide position.
+    if modification_region is not None:
+        marker_start, marker_end = modification_region
+        marker_label = f"{variant_chrom}:{marker_start+1:,}-{marker_end:,} ({ref_allele}>{alt_allele})"
+    else:
+        marker_start = variant_pos - 1
+        marker_end = variant_pos + max(len(ref_allele), 1)
+        marker_label = f"{variant_chrom}:{variant_pos:,} {ref_allele}>{alt_allele}"
+
     tracks.append({
-        "name": f"Variant: {ref_allele}>{alt_allele}",
+        "name": f"Modification: {ref_allele}>{alt_allele}",
         "type": "annotation",
         "displayMode": "EXPANDED",
         "height": 25,
         "color": "red",
         "features": [{
             "chr": variant_chrom,
-            "start": variant_pos - 1,
-            "end": variant_pos + max(len(ref_allele), 1),
-            "name": f"{variant_chrom}:{variant_pos:,} {ref_allele}>{alt_allele}",
+            "start": marker_start,
+            "end": marker_end,
+            "name": marker_label,
         }],
     })
 
@@ -219,14 +230,14 @@ def build_igv_html(
             ],
         })
 
-    # ROI: variant position as red stripe across all tracks
+    # ROI: red stripe across all tracks highlighting the modification
     roi = [{
-        "name": "Variant",
+        "name": "Modification",
         "color": "rgba(255, 0, 0, 0.12)",
         "features": [{
             "chr": variant_chrom,
-            "start": variant_pos - 1,
-            "end": variant_pos + max(len(ref_allele), 1),
+            "start": marker_start,
+            "end": marker_end,
         }],
     }]
 
