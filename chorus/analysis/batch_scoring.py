@@ -48,13 +48,25 @@ class BatchVariantScore:
 
 
 def _track_display_name(ts: TrackScore) -> str:
-    """Human-readable short name for a track (e.g. 'DNASE:HepG2')."""
+    """Human-readable short name for a track (e.g. 'DNASE:HepG2').
+
+    When two tracks share the same description (e.g. CAGE+/CAGE- have
+    `description='CAGE:HepG2'` but different assay_ids ending in `/+` vs
+    `/-`), a strand suffix is appended so table columns remain unique.
+    """
     desc = ts.description or ""
-    if desc:
-        return desc
-    if ts.assay_type and ts.cell_type:
-        return f"{ts.assay_type}:{ts.cell_type}"
-    return ts.assay_id
+    if not desc and ts.assay_type and ts.cell_type:
+        desc = f"{ts.assay_type}:{ts.cell_type}"
+    if not desc:
+        return ts.assay_id
+    # Append strand suffix when the assay_id carries one (common for
+    # CAGE, PRO-CAP, splicing) to distinguish otherwise-identical labels.
+    aid = ts.assay_id or ""
+    if aid.endswith("/+"):
+        return f"{desc} (+)"
+    if aid.endswith("/-"):
+        return f"{desc} (-)"
+    return desc
 
 
 @dataclass

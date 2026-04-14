@@ -1,5 +1,10 @@
 # Chorus API Documentation
 
+> **This is the authoritative reference** for all public APIs (oracle
+> methods, analysis layer, utilities, normalization, and MCP tools).
+> For a one-line-per-method cheat sheet, see
+> [`METHOD_REFERENCE.md`](METHOD_REFERENCE.md).
+
 ## Table of Contents
 1. [Overview](#overview)
 2. [Core Classes](#core-classes)

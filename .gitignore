@@ -123,3 +123,5 @@ examples/variant_analysis_results/
 
 # MCP server output
 chorus_mcp_output/
+# Local run logs (regenerate scripts, background jobs, etc.)
+logs/

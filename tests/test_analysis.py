@@ -2232,3 +2232,158 @@ class TestMCPPerTrackNormalization:
 
         sig = inspect.signature(discover_variant)
         assert "igv_raw" in sig.parameters
+
+
+class TestReportMetadataFields:
+    """Coverage for new VariantReport fields added in the redesign:
+    report_title, modification_region, modification_description.
+    """
+
+    def _make(self, **overrides):
+        from chorus.analysis.variant_report import VariantReport
+        kw = dict(
+            chrom="chr1", position=100, ref_allele="G",
+            alt_alleles=["T"], oracle_name="test", gene_name="TEST",
+        )
+        kw.update(overrides)
+        return VariantReport(**kw)
+
+    def test_report_title_renders_in_markdown(self):
+        r = self._make(report_title="Region Swap Analysis Report")
+        md = r.to_markdown()
+        assert "## Region Swap Analysis Report" in md
+
+    def test_report_title_renders_in_html(self):
+        r = self._make(report_title="Integration Simulation Report")
+        html = r.to_html()
+        assert "<h1>Integration Simulation Report</h1>" in html
+
+    def test_modification_region_renders_in_markdown(self):
+        r = self._make(modification_region=(1000, 2000))
+        md = r.to_markdown()
+        assert "Modified region" in md
+        assert "chr1:1,001-2,000" in md
+        assert "1,000 bp" in md
+
+    def test_modification_description_renders_in_markdown(self):
+        r = self._make(modification_description="Inserted 366 bp CMV construct")
+        md = r.to_markdown()
+        assert "**Modification**: Inserted 366 bp CMV construct" in md
+
+    def test_modification_fields_in_dict(self):
+        r = self._make(
+            modification_region=(1000, 2000),
+            modification_description="Replaced 1000 bp region with reporter",
+        )
+        d = r.to_dict()
+        assert d["modification_description"] == "Replaced 1000 bp region with reporter"
+        assert d["modification_region"] == [1000, 2000]
+
+
+class TestBatchDisplayModes:
+    """Coverage for BatchResult.to_markdown display_mode values."""
+
+    def _result(self):
+        from chorus.analysis.batch_scoring import BatchVariantScore, BatchResult
+        from chorus.analysis.variant_report import TrackScore
+
+        ts_dnase = TrackScore(
+            assay_id="DNASE/EFO:0001187/.", assay_type="DNASE", cell_type="HepG2",
+            layer="chromatin_accessibility", ref_value=100, alt_value=150,
+            raw_score=0.5, quantile_score=0.95, description="DNASE:HepG2",
+        )
+        ts_cebpa = TrackScore(
+            assay_id="CHIP_TF/EFO:0001187/CEBPA/.", assay_type="CHIP",
+            cell_type="HepG2", layer="tf_binding", ref_value=50,
+            alt_value=100, raw_score=1.0, quantile_score=0.99,
+            description="CHIP:CEBPA:HepG2",
+        )
+        ts_cage_plus = TrackScore(
+            assay_id="CAGE/EFO:0001187/+", assay_type="CAGE", cell_type="HepG2",
+            layer="tss_activity", ref_value=20, alt_value=25,
+            raw_score=0.3, quantile_score=0.85, description="CAGE:HepG2",
+        )
+        ts_cage_minus = TrackScore(
+            assay_id="CAGE/EFO:0001187/-", assay_type="CAGE", cell_type="HepG2",
+            layer="tss_activity", ref_value=22, alt_value=24,
+            raw_score=0.13, quantile_score=0.7, description="CAGE:HepG2",
+        )
+        scores = [
+            BatchVariantScore(
+                chrom="chr1", position=100, ref="G", alt="T", variant_id="rs1",
+                max_effect=1.0, top_layer="tf_binding", top_track="CHIP:CEBPA:HepG2",
+                track_scores={
+                    "DNASE/EFO:0001187/.": ts_dnase,
+                    "CHIP_TF/EFO:0001187/CEBPA/.": ts_cebpa,
+                    "CAGE/EFO:0001187/+": ts_cage_plus,
+                    "CAGE/EFO:0001187/-": ts_cage_minus,
+                },
+            ),
+        ]
+        return BatchResult(scores=scores)
+
+    def test_by_assay_mode(self):
+        result = self._result()
+        md = result.to_markdown(display_mode="by_assay")
+        assert "DNASE:HepG2" in md
+        assert "CHIP:CEBPA:HepG2" in md
+        # CAGE +/- must be disambiguated via strand suffix
+        assert "CAGE:HepG2 (+)" in md
+        assert "CAGE:HepG2 (-)" in md
+
+    def test_by_cell_type_mode(self):
+        result = self._result()
+        md = result.to_markdown(display_mode="by_cell_type")
+        # Per-track columns render the same regardless of mode (current impl);
+        # ensure the display_mode param is accepted without error and output is non-empty.
+        assert len(md) > 0
+        assert "rs1" in md
+
+    def test_track_id_footnote_present(self):
+        result = self._result()
+        md = result.to_markdown(display_mode="by_assay")
+        # Track IDs are listed in a footnote for traceability
+        assert "Track identifiers" in md
+        assert "`DNASE/EFO:0001187/.`" in md
+
+    def test_cage_strand_disambiguation_in_dataframe(self):
+        result = self._result()
+        df = result.to_dataframe()
+        # Columns must be unique (was previously duplicating CAGE:HepG2)
+        assert len(df.columns) == len(set(df.columns))
+        assert "CAGE:HepG2 (+)_raw" in df.columns
+        assert "CAGE:HepG2 (-)_raw" in df.columns
+
+
+class TestSafeToolDecorator:
+    """The MCP _safe_tool decorator converts exceptions into structured dicts."""
+
+    def test_wraps_successful_call(self):
+        from chorus.mcp.server import _safe_tool
+
+        @_safe_tool
+        def ok():
+            return {"result": 42}
+
+        assert ok() == {"result": 42}
+
+    def test_catches_exception_and_returns_error_dict(self):
+        from chorus.mcp.server import _safe_tool
+
+        @_safe_tool
+        def boom():
+            raise ValueError("something broke")
+
+        result = boom()
+        assert result["error"] == "something broke"
+        assert result["error_type"] == "ValueError"
+        assert result["tool"] == "boom"
+
+    def test_preserves_function_name(self):
+        from chorus.mcp.server import _safe_tool
+
+        @_safe_tool
+        def my_tool():
+            return {}
+
+        assert my_tool.__name__ == "my_tool"

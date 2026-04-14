@@ -1219,6 +1219,8 @@ def _build_html_report(report: "VariantReport") -> str:
                  f'<b>Summary:</b> {html_mod.escape(summary)}</p>')
 
     # Per-allele sections
+    has_quantile = False
+    has_baseline = False
     for allele, scores in report.allele_scores.items():
         if len(report.alt_alleles) > 1:
             parts.append(f"<h2>Allele: {html_mod.escape(allele)}</h2>")
