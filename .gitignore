@@ -125,3 +125,6 @@ examples/variant_analysis_results/
 chorus_mcp_output/
 # Local run logs (regenerate scripts, background jobs, etc.)
 logs/
+
+# Claude Code harness state (per-developer, not for the repo)
+.claude/
