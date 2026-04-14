@@ -62,9 +62,40 @@ the full list with per-persona ("Geneticist", "Bioinformatician", "Clinician",
 
 ## Installation
 
+### Fresh Install
+
+```bash
+# Clone the repository
+git clone https://github.com/pinellolab/chorus.git
+cd chorus
+
+# 1. Create the base chorus environment (uses the root environment.yml;
+#    the per-oracle YAMLs in environments/ are installed for you by
+#    `chorus setup` in the next step)
+mamba env create -f environment.yml
+mamba activate chorus
+
+# 2. Install the chorus package + CLI (registers `chorus` and `chorus-mcp` commands)
+pip install -e .
+
+# 3. Set up at least one oracle environment (see below)
+chorus setup --oracle enformer   # lightweight CPU-friendly starter
+
+# 4. Download the reference genome your analyses will need
+chorus genome download hg38
+
+# Verify installation
+python -c "import chorus; print(f'chorus {chorus.__version__}')"
+```
+
+> **Two env files, one source of truth.** The root `environment.yml` is
+> what you install. The per-oracle files in `environments/` are consumed
+> internally by `chorus setup --oracle <name>` — you don't install them
+> directly.
+
 ### Upgrading
 
-The cleanest way to upgrade is to remove existing environments and reinstall:
+After the first install, to upgrade cleanly:
 
 ```bash
 cd chorus && git pull
@@ -73,25 +104,7 @@ mamba env remove -n chorus -y
 chorus remove --oracle enformer
 ```
 
-Then follow the installation steps below.
-
-### Fresh Install
-
-```bash
-# Clone the repository
-git clone https://github.com/pinellolab/chorus.git
-cd chorus
-
-# Create the base chorus environment
-mamba env create -f environment.yml
-mamba activate chorus
-
-# Install chorus package
-pip install -e .
-
-# Verify installation
-python -c "import chorus; print(f'chorus {chorus.__version__}')"
-```
+Then re-run the Fresh Install steps above.
 
 ### Setting Up Oracle Environments
 
@@ -151,6 +164,13 @@ Genomes are stored in the `genomes/` directory within your Chorus installation.
 
 ## Quick Start
 
+> **Prefer a notebook?** Open [`examples/single_oracle_quickstart.ipynb`](examples/single_oracle_quickstart.ipynb)
+> for a full walkthrough using Enformer + the GATA1 locus. The code below is the
+> minimum viable snippet.
+>
+> **Prerequisite for the snippet:** you've run `chorus setup --oracle enformer`
+> and `chorus genome download hg38` (both in the Installation section).
+
 ### Minimal Working Example
 
 ```python
@@ -163,7 +183,10 @@ oracle = chorus.create_oracle('enformer', use_environment=True,
                               reference_fasta=str(genome_path))
 oracle.load_pretrained_model()
 
-# 2. Predict DNase accessibility at the beta-globin locus
+# 2. Predict DNase accessibility at the beta-globin locus.
+#    'ENCFF413AHU' is the ENCODE track ID for DNase-seq in K562 cells;
+#    use `oracle.list_tracks()` or see the "Discovering Tracks" section
+#    below to find track IDs for other assays and cell types.
 predictions = oracle.predict(('chr11', 5247000, 5248000), ['ENCFF413AHU'])
 
 # 3. Check the result
@@ -536,6 +559,11 @@ export HF_TOKEN="hf_your_token_here"
 mamba run -n chorus-alphagenome huggingface-cli login
 ```
 
+> **For MCP users**: Claude Code inherits environment variables from the
+> shell where you start `claude`. Make sure `HF_TOKEN` is exported in that
+> shell (e.g. add the `export` to your `~/.bashrc` or `~/.zshrc`).
+> Option B (cached token) also works without any shell export.
+
 5. **Set up the environment and verify**:
 ```bash
 chorus setup --oracle alphagenome
@@ -792,6 +820,20 @@ oracle = chorus.create_oracle('enformer',
                              use_environment=True,
                              device='cpu')
 ```
+
+## Further reading
+
+After the Quick Start, these documents go deeper:
+
+| Doc | When to read it |
+|---|---|
+| [`docs/MCP_WALKTHROUGH.md`](docs/MCP_WALKTHROUGH.md) | Step-by-step Claude Code conversations with Chorus |
+| [`docs/variant_analysis_framework.md`](docs/variant_analysis_framework.md) | 5-layer scoring strategy, track selection by disease area |
+| [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md) | Full Python API reference (oracles, analysis, utilities, MCP tools) |
+| [`docs/METHOD_REFERENCE.md`](docs/METHOD_REFERENCE.md) | Method-level reference for advanced users |
+| [`docs/VISUALIZATION_GUIDE.md`](docs/VISUALIZATION_GUIDE.md) | pyGenomeTracks + IGV visualization patterns |
+| [`docs/IMPLEMENTATION_GUIDE.md`](docs/IMPLEMENTATION_GUIDE.md) | Notes for extending Chorus with new oracles |
+| [`examples/applications/`](examples/applications/) | Worked examples for every MCP tool (variant analysis, batch, causal, discovery, sequence engineering) |
 
 ## Contributing
 
