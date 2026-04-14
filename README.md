@@ -922,3 +922,214 @@ Chorus integrates several groundbreaking models:
 - AlphaGenome (Google DeepMind, 2026)
 
 For visualization tasks we extensively use [coolbox package](https://github.com/GangCaoLab/CoolBox)
+
+---
+
+## Appendix: Per-track background distributions
+
+This appendix describes how the per-track CDFs that power Chorus's
+effect/activity percentiles were computed, what the numbers mean, and how
+to use them from both the Python API and an MCP/Claude session.
+
+### What they are and why they exist
+
+A raw `log2FC = +0.45` in a DNase-seq track is hard to interpret. Is it
+strong? Is the underlying region even active? The per-track backgrounds
+turn that raw number into two complementary genome-aware percentiles:
+
+| Percentile | What it measures | Computed from |
+|---|---|---|
+| **Effect percentile** | How unusual is *this* variant's effect on this track? | The distribution of variant-effect scores from ~10K random SNPs scored on the same track |
+| **Activity percentile** | How active is the reference signal at the variant site, genome-wide? | The distribution of window-summed signal at ~31.5K diverse genomic positions |
+
+Both range `[0, 1]` for unsigned layers (chromatin, ChIP, CAGE,
+splicing). For signed layers (gene expression, MPRA, Sei), the effect
+percentile ranges `[-1, 1]` (preserving the direction of effect).
+
+The backgrounds are stored as 10,000-point CDFs per track in NPZ files
+(one file per oracle, `~/.chorus/backgrounds/{oracle}_pertrack.npz`).
+Each oracle's NPZ contains three matrices:
+
+- `effect_cdfs (n_tracks × 10000)` — for the effect percentile
+- `summary_cdfs (n_tracks × 10000)` — for the activity percentile
+- `perbin_cdfs (n_tracks × 10000)` — for IGV per-bin rescaling
+  (omitted for scalar-output oracles like Sei and LegNet)
+
+### How they were calculated
+
+The build scripts live in [`scripts/`](scripts/) — one per oracle. Each
+performs three reservoir-sampled passes:
+
+#### 1. Variant effect distribution
+
+10,000 random SNPs sampled uniformly across `chr1`–`chr22`, well away
+from chromosome edges. For each SNP:
+
+1. Predict reference and alternate alleles across the full output window.
+2. For each track, score the variant effect using the layer-specific
+   formula:
+   - **log2FC** for unsigned signal layers (chromatin, TF binding, histone
+     marks, TSS) — variant effect = `log2((sum_alt + ε) / (sum_ref + ε))`
+     in a layer-appropriate window (501 bp for DNase/ChIP-TF/CAGE,
+     2001 bp for histone marks, full transcript for RNA).
+   - **logFC** for gene expression — `log2(mean_alt / mean_ref)` averaged
+     over GENCODE protein-coding exons of the target gene.
+   - **diff** for promoter MPRA — simple `alt - ref` activity difference.
+3. Add `|effect|` (unsigned) or raw `effect` (signed) to that track's
+   reservoir.
+
+Result: per-track histograms over real human-genome variant effects.
+
+#### 2. Activity (window-sum) distribution
+
+~31,500 positions per track sampled to approximate the genome-wide
+distribution of regulatory activity:
+
+| Position type | Count | Purpose |
+|---|---|---|
+| Random intergenic | 15,000 | Genome-wide null (most genome is silent) |
+| ENCODE SCREEN cCREs (per category) | ~11,500 | PLS, dELS, pELS, CA-CTCF, CA-TF, TF, CA-H3K4me3, CA |
+| Protein-coding TSSs | 3,000 | Sharp signals: CAGE, H3K4me3, promoter activity |
+| Gene-body midpoints (>10 kb genes) | 2,000 | RNA-seq, H3K36me3, broad gene-body marks |
+
+For each position, the layer-appropriate window-sum is added to the
+track's reservoir.
+
+**RNA-seq exon-precise sampling** (Borzoi, AlphaGenome): RNA tracks only
+collect bins overlapping merged GENCODE v48 protein-coding exons —
+intronic bins would distort the activity baseline.
+
+**CAGE summary routing**: CAGE tracks skip cCRE positions for the summary
+CDF since CAGE biology lives at TSSs, not enhancers.
+
+#### 3. Per-bin distribution (for IGV visualization)
+
+At each of the same ~31,500 positions, **32 random bins** from the full
+output window are added to the perbin reservoir. This captures the
+per-bin (not per-window) distribution at the track's native resolution
+(1 bp for ATAC/CAGE/RNA/PRO-CAP/splice; 128 bp for ChIP-Histone/TF in
+AlphaGenome).
+
+The per-bin CDFs are used by `perbin_floor_rescale_batch` to rescale
+raw IGV bin values onto a uniform `[0, 1.5]` display scale where
+`1.0` always corresponds to the top-1% genome-wide bin value for that
+track. This makes overlaid tracks visually comparable across cell types.
+
+### Sample sizes per oracle
+
+| Oracle | Tracks | Effect samples / track | Activity samples / track | NPZ size |
+|---|---|---|---|---|
+| AlphaGenome | 5,168 | 10,000 | 31,500 | 260 MB |
+| Enformer | 5,313 | 10,000 | 31,500 | 520 MB |
+| Borzoi | 7,611 | 10,000 | 31,500 | 770 MB |
+| ChromBPNet | per-model | 10,000 | 31,500 | 2.4 MB |
+| Sei | 40 classes | 10,000 | 31,500 | 2.8 MB |
+| LegNet | 3 cell types | 10,000 | 31,500 | 210 KB |
+
+Effect and activity reservoirs are converted to 10,000-point CDFs (sorted
+sample arrays) — so a percentile lookup is a single O(log n) bisect.
+
+### Using backgrounds from the Python API
+
+Auto-load (downloads from HuggingFace if not cached):
+
+```python
+from chorus.analysis.normalization import get_pertrack_normalizer
+
+norm = get_pertrack_normalizer("alphagenome")
+# → ~/.chorus/backgrounds/alphagenome_pertrack.npz (auto-downloaded if missing)
+```
+
+Look up an effect or activity percentile for a single track:
+
+```python
+track_id = "DNASE/EFO:0001187 DNase-seq/."  # HepG2 DNase
+
+# How unusual is a +0.45 log2FC effect? (unsigned: pass abs value)
+eff_pct = norm.effect_percentile("alphagenome", track_id, abs(0.45),
+                                 signed=False)
+# → 0.962  (stronger than 96.2% of random SNPs in this track)
+
+# How active is the reference signal at the variant site?
+act_pct = norm.activity_percentile("alphagenome", track_id, ref_value=512.0)
+# → 0.962  (top 4% of genome-wide regulatory activity for this track)
+```
+
+Pass it into the analysis layer to get percentiles attached to every
+report:
+
+```python
+from chorus.analysis.variant_report import build_variant_report
+
+report = build_variant_report(
+    variant_result,
+    oracle_name="alphagenome",
+    gene_name="SORT1",
+    normalizer=norm,    # ← this is what populates the Effect %ile / Activity %ile columns
+)
+```
+
+Or pre-download all six oracles' backgrounds once:
+
+```python
+from chorus.analysis.normalization import download_pertrack_backgrounds
+for o in ["alphagenome", "enformer", "borzoi", "chrombpnet", "sei", "legnet"]:
+    download_pertrack_backgrounds(o)
+```
+
+### Using backgrounds via MCP / Claude
+
+You don't have to do anything. The MCP server auto-attaches the
+appropriate normalizer when you call any analysis tool
+(`analyze_variant_multilayer`, `score_variant_batch`,
+`fine_map_causal_variant`, `analyze_region_swap`, `simulate_integration`,
+`discover_variant`, `discover_variant_cell_types`).
+
+The first call for a given oracle triggers a one-time HuggingFace
+download (a few hundred MB), cached at `~/.chorus/backgrounds/`.
+Subsequent calls reuse the cache.
+
+In the resulting report, every track row gets two extra columns —
+`Effect %ile` and `Activity %ile` — and the IGV browser uses the per-bin
+CDFs to rescale bin heights for cross-cell-type comparability.
+
+### Documented ranges and how to read the numbers
+
+| Column | Range | Reading |
+|---|---|---|
+| **Raw effect** (e.g. log2FC) | unbounded; biologically meaningful units | `+1.0` = alt is 2× ref; `-1.0` = alt is 0.5× ref |
+| **Effect percentile** (unsigned) | `[0, 1]` | `0.95` = stronger than 95% of ~10K random SNPs in the same track |
+| **Effect percentile** (signed) | `[-1, 1]` | `+0.95` = strongly above-baseline gain; `-0.95` = strongly above-baseline loss |
+| **Activity percentile** | `[0, 1]` | `0.95` = reference signal at this site is in the top 5% genome-wide for this track |
+| **IGV per-bin display value** | `[0, 1.5]` | `1.0` = top-1% bin value genome-wide for this track; `0` = below the noise floor |
+
+**Sanity-check rule of thumb:** a *biologically interesting* variant
+typically shows **effect percentile > 0.95** AND **activity percentile >
+0.5** in the same track — i.e. an unusually large effect at a site that
+already has real regulatory activity.
+
+A high effect percentile with very low activity is usually noise (small
+absolute change at a silent site that just happens to be larger than
+most random-SNP-at-silent-sites changes).
+
+### Reproducing or extending the backgrounds
+
+Each oracle has a build script at `scripts/build_backgrounds_<oracle>.py`.
+Each takes ~4–22 GPU-hours per oracle depending on the track count and
+output window. To rebuild a single oracle:
+
+```bash
+mamba run -n chorus-alphagenome python scripts/build_backgrounds_alphagenome.py --part variants  --gpu 0
+mamba run -n chorus-alphagenome python scripts/build_backgrounds_alphagenome.py --part baselines --gpu 1
+mamba run -n chorus              python scripts/build_backgrounds_alphagenome.py --part merge
+```
+
+The variants and baselines parts can run in parallel on separate GPUs.
+The merge step runs CPU-only and combines the interim NPZ files into the
+final `{oracle}_pertrack.npz`. See [`scripts/README.md`](scripts/README.md)
+for the full per-oracle commands and runtimes.
+
+If you've rebuilt a background and want to share it: drop the resulting
+`{oracle}_pertrack.npz` into `~/.chorus/backgrounds/`. The downloader
+will not overwrite local files — it only fetches when the file is
+missing.
