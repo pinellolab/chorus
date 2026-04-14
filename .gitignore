@@ -128,3 +128,7 @@ logs/
 
 # Claude Code harness state (per-developer, not for the repo)
 .claude/
+
+# Audit prompt files containing real API tokens (never commit)
+AUDIT_PROMPT_WITH_TOKENS*
+*_WITH_TOKENS.md
