@@ -770,6 +770,19 @@ export HF_TOKEN="hf_your_token_here"
 # Or: mamba run -n chorus-alphagenome huggingface-cli login
 ```
 
+### LDlink Token (for causal prioritization)
+The `fine_map_causal_variant` tool can auto-fetch LD proxies from LDlink.
+This requires a free token — register at <https://ldlink.nih.gov/?tab=apiaccess>
+and pass it via the `ldlink_token` parameter or set:
+
+```bash
+export LDLINK_TOKEN="your_token_here"
+```
+
+Without a token, you can still use fine-mapping by providing LD variants
+manually via the `ld_variants` parameter (see
+[causal_prioritization/](examples/applications/causal_prioritization/)).
+
 ### CUDA/GPU Support
 The isolated environments include GPU support. On Linux with NVIDIA GPUs, Chorus auto-detects CUDA and installs GPU-enabled packages during `chorus setup`. On macOS with Apple Silicon, AlphaGenome defaults to CPU because the JAX Metal backend does not yet support all required operations.
 
