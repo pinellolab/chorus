@@ -5,8 +5,7 @@
       "command": "mamba",
       "args": ["run", "-n", "chorus", "chorus-mcp"],
       "env": {
-        "CHORUS_NO_TIMEOUT": "1",
-        "PATH": "/data/pinello/SHARED_SOFTWARE/miniforge3/bin:/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/bin:/usr/local/bin:/usr/bin:/bin"
+        "CHORUS_NO_TIMEOUT": "1"
       }
     }
   }
