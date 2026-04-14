@@ -162,6 +162,41 @@ Supported genomes:
 
 Genomes are stored in the `genomes/` directory within your Chorus installation.
 
+### Per-track background distributions (auto-downloaded)
+
+Chorus converts every raw prediction into an **effect percentile** and
+**activity percentile** against ~10,000 random SNPs and ~30,000 genome-wide
+positions scored on the same oracle. These pre-computed per-track CDFs are
+what let a user interpret a `+0.45` log2FC as `0.962 activity %ile`.
+
+**Nothing to configure.** On the first variant analysis for a given
+oracle, the relevant backgrounds are automatically fetched from the public
+HuggingFace dataset
+[`lucapinello/chorus-backgrounds`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds)
+and cached at `~/.chorus/backgrounds/`.
+
+| Oracle | File size | Tracks covered |
+|---|---|---|
+| AlphaGenome | ~260 MB | 5,168 |
+| Enformer | ~520 MB | 5,313 |
+| Borzoi | ~770 MB | 7,611 |
+| ChromBPNet | ~2.4 MB | per-model |
+| Sei | ~2.8 MB | 40 classes |
+| LegNet | ~210 KB | 3 cell types |
+
+> **The backgrounds dataset is public — no HuggingFace token required.**
+> `HF_TOKEN` is only needed for the gated AlphaGenome model itself (see
+> the AlphaGenome section below). Causal prioritization with auto-LD-fetch
+> needs a separate free LDlink token (see Troubleshooting).
+
+To pre-download all backgrounds (optional, avoids the first-use wait):
+
+```python
+from chorus.analysis.normalization import download_pertrack_backgrounds
+for oracle in ["alphagenome", "enformer", "borzoi", "chrombpnet", "sei", "legnet"]:
+    download_pertrack_backgrounds(oracle)
+```
+
 ## Quick Start
 
 > **Prefer a notebook?** Open [`examples/single_oracle_quickstart.ipynb`](examples/single_oracle_quickstart.ipynb)
