@@ -1358,6 +1358,17 @@ def fine_map_causal_variant(
         except LDLinkError as exc:
             return {"error": str(exc)}
 
+    # When the caller passed an rsID with no coordinates, backfill chrom/pos/
+    # ref/alt onto the sentinel from the LDlink-resolved variant list (which
+    # always carries them). Without this, prioritize_causal_variants raises
+    # KeyError: 'chrom' on lead_dict['chrom'].
+    if "chrom" not in lead_dict and ld_list:
+        sentinel_entry = next((v for v in ld_list if getattr(v, "is_sentinel", False)), ld_list[0])
+        lead_dict.setdefault("chrom", sentinel_entry.chrom)
+        lead_dict.setdefault("pos", sentinel_entry.position)
+        lead_dict.setdefault("ref", sentinel_entry.ref)
+        lead_dict.setdefault("alt", sentinel_entry.alt)
+
     from chorus.analysis.analysis_request import AnalysisRequest
 
     ar = AnalysisRequest(

@@ -6,7 +6,15 @@ from chorus.oracles.sei_source.annotations import SeiClassesList, SeiTargetList
 with open("__ARGS_FILE_NAME__") as inp:  # to be formatted by calling script 
     args = json.load(inp)
 
-device = torch.device(args['device'])
+_dev = args['device']
+if _dev is None or _dev == 'auto':
+    if torch.cuda.is_available():
+        _dev = 'cuda:0'
+    elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+        _dev = 'mps'
+    else:
+        _dev = 'cpu'
+device = torch.device(_dev)
 
 model = Sei(sequence_length=args['sequence_length'], n_genomic_features=args['n_genomic_features'])
 model_weights = torch.load(args['model_weights'], map_location='cpu', weights_only=True)
@@ -25,7 +33,7 @@ result = {
     'loaded': True,
     'model_class': str(type(model)),
     'description': 'Sei model loaded successfully',
-    'device': args['device'],
+    'device': _dev,
     'classes': classes.list_class_types(),
     'groups': classes.list_group_types(),
     'assays': targets.list_assay_types(),

@@ -149,6 +149,11 @@ PLATFORM_ADAPTATIONS: Dict[str, Dict[str, EnvironmentAdaptation]] = {
                 "protobuf>=3.20.3,<5.0",
                 "hdf5plugin",
                 "numba",
+                # Apple's Metal-backed TensorFlow plugin. Once installed it
+                # registers a 'GPU' physical device that tf.config sees, so
+                # ChromBPNet's existing GPU auto-detect picks it up without
+                # further code changes.
+                "tensorflow-metal>=1.1.0",
             ],
             post_install=[
                 PostInstallStep(
@@ -164,6 +169,7 @@ PLATFORM_ADAPTATIONS: Dict[str, Dict[str, EnvironmentAdaptation]] = {
                 "TensorFlow 2.8 is not available for Apple Silicon; using 2.15.1",
                 "igraph/leidenalg installed via conda to avoid source compilation",
                 "modisco-lite installed with --no-deps to skip pinned igraph build",
+                "tensorflow-metal added so ChromBPNet uses Apple GPU/Metal",
             ],
         ),
     },
@@ -182,12 +188,15 @@ PLATFORM_ADAPTATIONS: Dict[str, Dict[str, EnvironmentAdaptation]] = {
             },
             pip_add=[
                 "setuptools<81",  # tensorflow_hub needs pkg_resources
+                # See chrombpnet entry — Metal-backed TF for Apple Silicon.
+                "tensorflow-metal>=1.1.0",
             ],
             notes=[
                 "TensorFlow <2.13 is not available for Apple Silicon; "
                 "broadening range to >=2.15",
                 "Pinned setuptools<81 (tensorflow_hub requires pkg_resources)",
                 "CUDA nvidia-* packages removed (not available on macOS)",
+                "tensorflow-metal added so Enformer uses Apple GPU/Metal",
             ],
         ),
     },
