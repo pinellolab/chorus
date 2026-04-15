@@ -115,6 +115,7 @@ tmp/
 
 # Example outputs
 examples/*.png
+examples/applications/**/*_screenshot.png
 examples/*.bedgraph
 examples/*.csv
 examples/*_executed.ipynb

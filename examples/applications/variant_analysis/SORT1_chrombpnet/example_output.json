@@ -22,11 +22,11 @@
             "assay_type": "ATAC",
             "cell_type": "HepG2",
             "layer": "chromatin_accessibility",
-            "ref_value": 686.526312878821,
-            "alt_value": 635.6817746232264,
-            "raw_score": -0.11084246228747868,
+            "ref_value": 686.530073389993,
+            "alt_value": 635.6635888748569,
+            "raw_score": -0.11089156202257182,
             "description": "ATAC:HepG2",
-            "quantile_score": 0.9671141638047663,
+            "quantile_score": 0.96721823290665,
             "ref_signal_percentile": 0.8198
           }
         ]
@@ -37,11 +37,11 @@
           "assay_type": "ATAC",
           "cell_type": "HepG2",
           "layer": "chromatin_accessibility",
-          "ref_value": 686.526312878821,
-          "alt_value": 635.6817746232264,
-          "raw_score": -0.11084246228747868,
+          "ref_value": 686.530073389993,
+          "alt_value": 635.6635888748569,
+          "raw_score": -0.11089156202257182,
           "description": "ATAC:HepG2",
-          "quantile_score": 0.9671141638047663,
+          "quantile_score": 0.96721823290665,
           "ref_signal_percentile": 0.8198
         }
       ]
@@ -55,6 +55,6 @@
     "tracks_requested": "ATAC:HepG2",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-04-13 11:31 UTC"
+    "generated_at": "2026-04-15 05:31 UTC"
   }
 }
