@@ -1151,3 +1151,58 @@ class TestPrompts:
         assert isinstance(result, str)
         assert "SORT1" in result
         assert "HepG2" in result
+
+
+class TestFineMapRsidBackfill:
+    """Regression test: fine_map_causal_variant with rsID-only lead must not KeyError.
+
+    Without the chrom/pos/ref/alt backfill from the LD-resolved sentinel,
+    downstream prioritize_causal_variants raises KeyError: 'chrom'.
+    """
+
+    def test_rsid_only_lead_backfills_coordinates(self):
+        from chorus.mcp import server as srv
+
+        @dataclass
+        class FakeLD:
+            variant_id: str
+            chrom: str
+            position: int
+            ref: str
+            alt: str
+            r2: float = 1.0
+            is_sentinel: bool = False
+
+        ld_list = [
+            FakeLD("rs12740374", "chr1", 109274968, "G", "T", 1.0, is_sentinel=True),
+            FakeLD("rs4970836", "chr1", 109279175, "G", "A", 0.9),
+        ]
+
+        captured = {}
+
+        def fake_prioritize(oracle, lead_dict, ld_variants, assay_ids, **kwargs):
+            captured["lead_dict"] = dict(lead_dict)
+            r = MagicMock()
+            r.to_dict.return_value = {"rankings": []}
+            r.to_markdown.return_value = "# causal"
+            return r
+
+        with patch.object(srv, "_state") as mock_state, \
+             patch("chorus.utils.ld.ld_variants_from_list", return_value=ld_list), \
+             patch("chorus.analysis.causal.prioritize_causal_variants", side_effect=fake_prioritize):
+            mock_state.return_value.get_oracle.return_value = MagicMock()
+            mock_state.return_value.get_normalizer.return_value = None
+            mock_state.return_value.output_dir = None
+
+            result = srv.fine_map_causal_variant(
+                oracle_name="alphagenome",
+                lead_variant="rs12740374",
+                ld_variants=[{"chrom": "chr1", "pos": 109274968, "ref": "G", "alt": "T"}],
+            )
+
+        assert "error" not in result, f"Unexpected error: {result.get('error')}"
+        ld = captured["lead_dict"]
+        assert ld["chrom"] == "chr1"
+        assert ld["pos"] == 109274968
+        assert ld["ref"] == "G"
+        assert ld["alt"] == "T"
