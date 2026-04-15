@@ -97,17 +97,6 @@ ALPHAGENOME_EXAMPLES = [
         "html_name": "rs1421085_FTO_alphagenome_report.html",
         "user_prompt": "Analyze rs1421085 (chr16:53767042 T>C) in HepG2 cells. Gene is FTO. Using HepG2 as the nearest available metabolic cell type.",
     },
-    {
-        "name": "TERT promoter C228T (K562)",
-        "dir": f"{BASE}/variant_analysis/TERT_promoter",
-        "type": "variant",
-        "position": "chr5:1295228",
-        "ref": "G", "alt": "A",
-        "gene": "TERT",
-        "assay_ids": K562_TRACKS,
-        "html_name": "TERT_promoter_alphagenome_report.html",
-        "user_prompt": "Analyze the TERT C228T promoter mutation (chr5:1295228 G>A) in K562 cells using DNASE, GATA1/TAL1 ChIP, H3K27ac, and CAGE tracks.",
-    },
     # validation — forced HepG2 CEBP tracks to match the paper
     {
         "name": "SORT1 with CEBP (validation)",

@@ -433,6 +433,25 @@ class PerTrackNormalizer:
             return int(counts[idx])
         return cdf_width
 
+    def _has_samples(self, entry: dict, cdf_key: str, idx: int) -> bool:
+        """True iff the track has at least one background sample stored.
+
+        Tracks that failed to build (e.g. an ENCODE download that timed out
+        during the ChromBPNet background build — see
+        ``audits/2026-04-16_application_and_normalization_audit.md``
+        finding #1) can land in the committed NPZ with ``counts[idx] == 0``
+        and a zero-filled CDF row. Without this guard, every lookup returns
+        ``rank / cdf_width`` where ``rank`` collapses to the top of the row,
+        silently producing ``quantile = 1.0`` for every raw_score including 0.
+        Treat those tracks as "no background available" and let callers
+        render them as "—" instead of a false 100th-percentile.
+        """
+        counts_key = cdf_key.replace("_cdfs", "_counts")
+        counts = entry.get(counts_key)
+        if counts is None:
+            return True  # pre-count-tracking NPZs assumed valid
+        return bool(int(counts[idx]) > 0)
+
     def _lookup(
         self,
         oracle_name: str,
@@ -444,7 +463,8 @@ class PerTrackNormalizer:
         """Binary-search a single value against one track's CDF row.
 
         Returns percentile in [0, 1] (unsigned) or [-1, 1] (signed),
-        or ``None`` if the CDF is missing.
+        or ``None`` if the CDF is missing / the track has no background
+        samples stored.
         """
         entry = self._ensure_loaded(oracle_name)
         if entry is None:
@@ -454,6 +474,8 @@ class PerTrackNormalizer:
             return None
         idx = entry["track_index"].get(track_id)
         if idx is None:
+            return None
+        if not self._has_samples(entry, cdf_key, idx):
             return None
         row = cdf_matrix[idx]
         rank = np.searchsorted(row, raw_value, side="right")
@@ -480,6 +502,8 @@ class PerTrackNormalizer:
             return None
         idx = entry["track_index"].get(track_id)
         if idx is None:
+            return None
+        if not self._has_samples(entry, cdf_key, idx):
             return None
         row = cdf_matrix[idx]
         ranks = np.searchsorted(row, raw_values, side="right")
