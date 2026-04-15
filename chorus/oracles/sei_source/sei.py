@@ -97,10 +97,13 @@ class BSplineTransformation(nn.Module):
             self._spline_tr = spline_factory(spatial_dim, self._df, log=self._log)
             if self._scaled:
                 self._spline_tr = self._spline_tr / spatial_dim
-            if input.is_cuda:
+            # Move the lazily-built spline matrix onto whatever device the input
+            # is on. Original code only handled CUDA; MPS (Apple Silicon) and
+            # any other accelerator hit the matmul mismatch otherwise.
+            if input.device.type != 'cpu':
                 self._spline_tr = self._spline_tr.to(input.device)
-        
-        return  torch.matmul(input, self._spline_tr)
+
+        return torch.matmul(input, self._spline_tr)
 
 
 

@@ -54,8 +54,10 @@ class LegNetOracle(OracleBase):
                          model_load_timeout=model_load_timeout,
                          predict_timeout=predict_timeout,
                          device=device)
+        # Sentinel; resolved to a real torch device inside _load_direct, where
+        # torch is importable (chorus-legnet env). 'auto' = cuda > mps > cpu.
         if self.device is None:
-            self.device = 'cpu'
+            self.device = 'auto'
 
         self.download_dir = LEGNET_MODELS_DIR
 
@@ -153,6 +155,15 @@ class LegNetOracle(OracleBase):
             import torch
             from .legnet_source.model_usage import load_model
 
+            # Resolve 'auto' sentinel: cuda > mps > cpu.
+            if self.device == 'auto':
+                if torch.cuda.is_available():
+                    self.device = 'cuda:0'
+                elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+                    self.device = 'mps'
+                else:
+                    self.device = 'cpu'
+                logger.info(f"LegNet auto-detected device: {self.device}")
             model = load_model(self.get_training_config_path(), self.get_model_weights_path())
             device = torch.device(self.device)
             model.to(device)

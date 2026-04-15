@@ -7,9 +7,11 @@ with open("__ARGS_FILE_NAME__") as inp:  # to be formatted by calling script
 
 flashzoi = Borzoi.from_pretrained(f'johahi/borzoi-replicate-{args["fold"]}')
 device = args['device']
-if device is None:
+if device is None or device == 'auto':
     if torch.cuda.is_available():
         device = 'cuda:0'
+    elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+        device = 'mps'
     else:
         device = 'cpu'
 

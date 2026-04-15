@@ -48,8 +48,10 @@ class SeiOracle(OracleBase):
                          model_load_timeout=model_load_timeout,
                          predict_timeout=predict_timeout,
                          device=device)
+        # Sentinel; resolved to a real torch device inside _load_direct, where
+        # torch is importable (chorus-sei env). 'auto' means: prefer cuda > mps > cpu.
         if self.device is None:
-            self.device = 'cpu'
+            self.device = 'auto'
 
         # Sei-specific parameters
         self.sequence_length = SEI_WINDOW # Sei input length
@@ -153,12 +155,24 @@ class SeiOracle(OracleBase):
     
     def _load_direct(self):
         try:
-            import torch 
+            import torch
             from .sei_source.sei import Sei, SeiProjector, SeiNormalizer
             from .sei_source.annotations import SeiClassesList, SeiTargetList
 
+            # Resolve 'auto' sentinel: cuda > mps > cpu.
+            if self.device == 'auto':
+                if torch.cuda.is_available():
+                    self.device = 'cuda:0'
+                elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+                    self.device = 'mps'
+                else:
+                    self.device = 'cpu'
+                logger.info(f"Sei auto-detected device: {self.device}")
             device = torch.device(self.device)
             model = Sei(sequence_length=self.sequence_length, n_genomic_features=self.n_targets)
+            # Load weights to CPU first so map_location works regardless of target
+            # device (mps doesn't accept arbitrary state dicts loaded with
+            # map_location='mps' across torch versions); then move to device.
             model_weights = torch.load(self.get_model_weights_path(), map_location='cpu', weights_only=True)
             model_weights = {key.replace("module.model.", ""): value for key, value in model_weights.items()}
             model.load_state_dict(model_weights)
@@ -513,24 +527,23 @@ class SeiOracle(OracleBase):
         return "https://zenodo.org/record/4906997/files/sei_model.tar.gz"
 
     def _download_sei_model(self):
-        import urllib.request
         from pathlib import Path
         import tarfile
         import shutil
-        
+
         # Create download link
         download_link = self.get_zenodo_link()
         download_path = self.download_dir
-        
+
         logger.info(f"Downloading Sei model into {download_path}...")
-        
+
         download_file_path = os.path.join(
-            download_path, 
+            download_path,
             os.path.basename(download_link)
         )
 
         if not Path(download_file_path).exists():
-            urllib.request.urlretrieve(download_link, filename=download_file_path)
+            self._download_with_resume(download_link, download_file_path)
             logger.info("Download completed!")
         else:
             logger.info("Sei model archive is already downloaded!")
@@ -542,10 +555,94 @@ class SeiOracle(OracleBase):
         except (tarfile.TarError, EOFError) as e:
             logger.warning(f"Archive appears corrupt ({e}), re-downloading...")
             Path(download_file_path).unlink(missing_ok=True)
-            urllib.request.urlretrieve(download_link, filename=download_file_path)
+            self._download_with_resume(download_link, download_file_path)
             with tarfile.open(download_file_path, "r:gz") as tar:
                 tar.extractall(path=download_path)
         logger.info("Sei model downloaded and extracted successfully!")
 
         info_file_path = self.get_model_dir_path() / "seqclass_info.txt"
         shutil.copy(info_file_path, self.get_classes_names())
+
+    @staticmethod
+    def _download_with_resume(url: str, dest: str, chunk_bytes: int = 4 * 1024 * 1024) -> None:
+        """Streamed HTTP download with ``Range`` resume + single-flight lock.
+
+        Replaces ``urllib.request.urlretrieve`` which on macOS observed throughput
+        as low as ~80 KB/s for the SEI Zenodo tarball (cross-platform; see
+        2026-04-14 macOS audit). This implementation:
+
+        * Uses a chunked ``urlopen`` read loop (stdlib only — no new deps).
+        * Resumes a partial download if ``dest.partial`` already exists, by
+          sending a ``Range: bytes=<offset>-`` header and appending.
+        * Holds an exclusive ``fcntl.flock`` on ``dest.lock`` so two concurrent
+          calls (e.g. ``chorus health`` racing a manual ``create_oracle('sei')``)
+          don't overwrite each other's partial file.
+
+        Falls back to a single fresh download if the server doesn't support
+        Range requests.
+        """
+        import fcntl
+        import urllib.request
+        import urllib.error
+        from pathlib import Path
+
+        dest_p = Path(dest)
+        partial_p = dest_p.with_suffix(dest_p.suffix + ".partial")
+        lock_p = dest_p.with_suffix(dest_p.suffix + ".lock")
+        dest_p.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(lock_p, "w") as lock_f:
+            fcntl.flock(lock_f.fileno(), fcntl.LOCK_EX)
+            try:
+                # If a previous fully-completed download exists, just return.
+                if dest_p.exists():
+                    return
+
+                already = partial_p.stat().st_size if partial_p.exists() else 0
+                req = urllib.request.Request(url)
+                if already > 0:
+                    req.add_header("Range", f"bytes={already}-")
+                    logger.info(f"Resuming Sei download at byte {already:,}")
+
+                try:
+                    resp = urllib.request.urlopen(req, timeout=60)
+                except urllib.error.HTTPError as exc:
+                    if exc.code == 416 and already > 0:  # Range not satisfiable
+                        # Already have everything; promote to dest.
+                        partial_p.rename(dest_p)
+                        return
+                    raise
+
+                # If the server ignored Range and sent the full file, restart.
+                status = getattr(resp, "status", None) or resp.getcode()
+                if already > 0 and status != 206:
+                    logger.warning("Server ignored Range header; restarting from 0")
+                    already = 0
+                    partial_p.unlink(missing_ok=True)
+
+                total = None
+                cl = resp.headers.get("Content-Length")
+                if cl is not None:
+                    total = int(cl) + already
+
+                mode = "ab" if already > 0 else "wb"
+                downloaded = already
+                last_log = downloaded
+                with open(partial_p, mode) as out:
+                    while True:
+                        chunk = resp.read(chunk_bytes)
+                        if not chunk:
+                            break
+                        out.write(chunk)
+                        downloaded += len(chunk)
+                        if total and downloaded - last_log > 100 * 1024 * 1024:
+                            pct = 100.0 * downloaded / total
+                            logger.info(
+                                f"  Sei download: {downloaded/1e9:.2f}/{total/1e9:.2f} GB ({pct:.1f}%)"
+                            )
+                            last_log = downloaded
+
+                partial_p.rename(dest_p)
+            finally:
+                fcntl.flock(lock_f.fileno(), fcntl.LOCK_UN)
+                lock_p.unlink(missing_ok=True)
