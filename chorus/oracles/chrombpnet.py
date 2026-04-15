@@ -201,14 +201,25 @@ class ChromBPNetOracle(OracleBase):
         
 
 
-        # Now extract the file in the same download folder
-        extract_folder = os.path.join(
-            download_path,
-            "models"
-        )
-
-        with tarfile.open(download_file_path, "r:gz") as tar:
-            tar.extractall(path=extract_folder)
+        # Now extract the file in the same download folder. Guard against
+        # two callers racing the same extraction: tarfile.extractall creates
+        # subdirectories without exist_ok=True, so the loser hits
+        # FileExistsError on paths the winner already wrote. Use an fcntl
+        # lock on <extract_folder>.lock and skip if extraction has already
+        # produced fold_0 weights.
+        import fcntl
+        extract_folder = os.path.join(download_path, "models")
+        os.makedirs(extract_folder, exist_ok=True)
+        lock_path = extract_folder + ".extract.lock"
+        with open(lock_path, "w") as lock_fh:
+            fcntl.flock(lock_fh, fcntl.LOCK_EX)
+            try:
+                fold0_dir = os.path.join(extract_folder, "fold_0")
+                if not os.path.isdir(fold0_dir):
+                    with tarfile.open(download_file_path, "r:gz") as tar:
+                        tar.extractall(path=extract_folder)
+            finally:
+                fcntl.flock(lock_fh, fcntl.LOCK_UN)
 
         for fold in range(5):
             # Now select model coming from fold 0 (ChromBPNet was trained with CV)
