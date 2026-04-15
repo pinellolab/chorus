@@ -976,9 +976,20 @@ def _build_causal_igv(result: CausalResult) -> str:
 
     options_json = json_mod.dumps(igv_options, separators=(",", ":"))
 
+    # Prefer the locally-cached igv.min.js (populated on first report
+    # generation by _igv_report._ensure_igv_local) so the rendered HTML is
+    # self-contained offline. Fall back to the CDN tag if the cache is
+    # unavailable for any reason.
+    from chorus.analysis._igv_report import _ensure_igv_local
+    _local_igv = _ensure_igv_local()
+    _igv_script_tag = (
+        f"<script>{_local_igv.read_text()}</script>" if _local_igv is not None
+        else f'<script src="{_IGV_CDN}"></script>'
+    )
+
     return f"""
 <div id="igv-causal" style="margin: 1rem 0; min-height: 400px;"></div>
-<script src="{_IGV_CDN}"></script>
+{_igv_script_tag}
 <script>
 (async function() {{
     try {{

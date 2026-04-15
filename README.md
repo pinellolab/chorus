@@ -43,7 +43,7 @@ TSV, and HTML** (with an embedded IGV browser):
 | Fine-map a GWAS locus to the causal SNP | [causal_prioritization/SORT1_locus](examples/applications/causal_prioritization/SORT1_locus/) |
 | Score a batch of variants from a VCF | [batch_scoring/](examples/applications/batch_scoring/) |
 | Predict the effect of an engineered sequence edit | [sequence_engineering/region_swap](examples/applications/sequence_engineering/region_swap/) |
-| Replicate a published regulatory variant finding | [validation/HBG2_HPFH](examples/applications/validation/HBG2_HPFH/) |
+| Replicate a published regulatory variant finding | [validation/SORT1_rs12740374_with_CEBP](examples/applications/validation/SORT1_rs12740374_with_CEBP/) |
 
 These examples were generated through Claude Code using Chorus's MCP server —
 the same way you'll use it. Every report preserves the original prompt at the

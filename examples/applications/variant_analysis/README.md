@@ -46,10 +46,11 @@ results in biological terms.
 
 ### For an MD / clinical researcher
 
-> A patient has a VUS at chr5:1295228 (C>T) in the TERT promoter region.
-> This position is a known cancer mutation hotspot. Can you predict whether
-> this variant activates TERT expression? I need to understand the mechanism
-> to inform a clinical genetics report.
+> A patient has a VUS at chr2:60490908 G>T (rs1427407) in the BCL11A
+> erythroid enhancer. Can you show which regulatory layer is affected
+> in K562 cells — chromatin accessibility, GATA1/TAL1 binding, histone
+> marks, or BCL11A expression? I need to understand the mechanism to
+> interpret the patient's elevated fetal hemoglobin.
 
 ## Track selection tips
 
@@ -217,14 +218,6 @@ Alters ARID5B binding, affecting IRX3/IRX5 expression ~500kb away.
 
 Key finding: Subtle local effects — this variant acts over very long range,
 illustrating the limits and strengths of different oracle window sizes.
-
-### [TERT_promoter/](TERT_promoter/)
-**TERT promoter** (chr5:1295228 G>A) — Recurrent cancer hotspot mutation
-(~70% melanomas, ~80% glioblastomas). Creates de novo ETS/GABP binding
-site activating telomerase.
-
-Key finding: Moderate chromatin effects, TSS activity changes at TERT
-promoter, detectable across multiple cancer cell types.
 
 ### [SORT1_chrombpnet/](SORT1_chrombpnet/)
 **rs12740374 via ChromBPNet** — Same SORT1 variant analyzed at **1bp resolution**

@@ -17,9 +17,41 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-# IGV.js: prefer local cached copy (inlined), fall back to CDN
+# IGV.js: prefer local cached copy (inlined), fall back to CDN.
+#
+# The committed HTML reports need IGV.js to render the embedded genome
+# browser. To stay robust when the viewer is offline / behind a proxy / on
+# a network that MITMs TLS (observed during the 2026-04-16 audit:
+# `net::ERR_CERT_AUTHORITY_INVALID` on 2/19 reports), we lazy-download
+# the bundle once into ``~/.chorus/lib/igv.min.js`` the first time
+# ``build_igv_html`` runs on a machine, then inline the JS into every
+# subsequent report. If the download fails we silently fall back to the
+# CDN <script> tag so report generation still succeeds.
 _IGV_CDN = "https://cdn.jsdelivr.net/npm/igv@3.1.1/dist/igv.min.js"
 _IGV_LOCAL = Path.home() / ".chorus" / "lib" / "igv.min.js"
+
+
+def _ensure_igv_local() -> Path | None:
+    """Ensure ``_IGV_LOCAL`` exists; download it from the CDN on first use.
+
+    Returns the local path when the file is available, ``None`` if the
+    download failed (callers then fall back to the CDN <script> tag).
+    """
+    if _IGV_LOCAL.exists() and _IGV_LOCAL.stat().st_size > 0:
+        return _IGV_LOCAL
+    try:
+        from chorus.utils.http import download_with_resume
+        _IGV_LOCAL.parent.mkdir(parents=True, exist_ok=True)
+        download_with_resume(_IGV_CDN, _IGV_LOCAL, label="igv.min.js")
+        if _IGV_LOCAL.exists() and _IGV_LOCAL.stat().st_size > 0:
+            logger.info("Cached igv.min.js to %s — future reports will inline it.", _IGV_LOCAL)
+            return _IGV_LOCAL
+    except Exception as exc:
+        logger.warning(
+            "Could not pre-cache igv.min.js (%s); reports will reference %s at view time.",
+            exc, _IGV_CDN,
+        )
+    return None
 
 # Vivid alt colours that contrast strongly with the grey ref
 _LAYER_COLORS = {
@@ -257,9 +289,10 @@ def build_igv_html(
     # Build HTML fragment
     options_json = json.dumps(igv_options, separators=(",", ":"))
 
-    # Inline IGV.js from local cache (no network needed) or fall back to CDN
-    if _IGV_LOCAL.exists():
-        igv_js = _IGV_LOCAL.read_text()
+    # Inline IGV.js from local cache (no network needed) or fall back to CDN.
+    local = _ensure_igv_local()
+    if local is not None:
+        igv_js = local.read_text()
         igv_script_tag = f"<script>{igv_js}</script>"
     else:
         igv_script_tag = f'<script src="{_IGV_CDN}"></script>'
