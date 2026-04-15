@@ -41,3 +41,32 @@ for the same variant.
   specific TF motif disruption at base resolution
 - **Complement AlphaGenome**: Use ChromBPNet for the detailed local
   view, AlphaGenome for the broad multi-layer context
+
+## Why AlphaGenome DNASE and ChromBPNet ATAC can disagree
+
+Both oracles report chromatin accessibility at the same locus in HepG2,
+but raw effects can diverge (sometimes in sign). Three reasons:
+
+1. **Different training data.** AlphaGenome's DNASE:HepG2 track
+   summarises ENCODE DNase-seq with a smoothing kernel over ~128 bp
+   bins. ChromBPNet's ATAC:HepG2 is a bias-corrected profile fit to a
+   single ENCODE ATAC-seq experiment at 1 bp resolution. DNase and Tn5
+   have different cut-site biases, each handled differently by the two
+   models.
+
+2. **Different receptive fields.** AlphaGenome uses a 1 Mb window;
+   ChromBPNet uses ~2 kb. For a variant whose effect depends on
+   long-range enhancer–promoter contact (rs12740374 sits in a SORT1
+   liver enhancer ~30 kb from the TSS), broader context can change the
+   predicted direction.
+
+3. **Effect aggregation.** AlphaGenome's reported effect is a binned
+   sum over ~128 bp; ChromBPNet's is the peak height at the variant
+   itself. A motif-shift of 1–2 bp can raise the local peak
+   (ChromBPNet opening) while redistributing signal across the wider
+   window (AlphaGenome neutral or opposite).
+
+**Practical rule.** Agreement across both oracles ≈ a strong, robust
+signal. Disagreement is informative — usually the effect is either
+base-resolution-local (trust ChromBPNet) or long-range-context
+(trust AlphaGenome), not that one is wrong.
