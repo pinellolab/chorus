@@ -31,9 +31,9 @@ ChromBPNet/Enformer Metal (tensorflow-metal landed in PR #7)
 |---|---|---|---|
 | **1** | **HIGH** | `chrombpnet_pertrack.npz:DNASE:hindbrain` has 0 background samples and an all-zeros CDF → `effect_percentile()` returns 1.0 for every raw score, silently claiming "100th percentile" | `chorus/analysis/normalization.py:_lookup` *(graceful None)* + rebuild the track |
 | **2** | **MEDIUM** | HTML reports load IGV.js via `https://cdn.jsdelivr.net/npm/igv@3.1.1/dist/igv.min.js` (2/19 reports failed on cert error in this audit, no fallback) | `chorus/analysis/variant_report.py:to_html` — bundle locally or add SRI + fallback URL |
-| **3** | **LOW** | `examples/applications/variant_analysis/TERT_promoter/example_output.md` shows negative effects in K562 but the published biology (Horn/Huang 2013) is melanoma-specific promoter activation. No caveat about why K562 is the wrong cell for C228T's mechanism. | `example_output.md` (docs-only) |
-| **4** | **LOW** | ChromBPNet ATAC and AlphaGenome DNASE disagree on rs12740374 direction in HepG2 (+0.45 vs -0.11). Both pass QC; cross-oracle non-comparability caveat in README applies, but no example explicitly teaches this. | Add an application note pointing to this as a real example of oracle-specific modelling choices |
-| **5** | **LOW** | HBG2_HPFH's "tracks_requested" header says "all oracle tracks (discovery mode)" — the committed MD caveats that BCL11A/ZBTB7A are absent from AlphaGenome's catalog; still worth pinning the caveat in the app's README | `examples/applications/validation/HBG2_HPFH/example_output.md` footer |
+| **3** | **MEDIUM** | **Remove** `examples/applications/variant_analysis/TERT_promoter/` — C228T's published biology is melanoma-specific promoter activation, but the example runs in K562 (erythroleukemia) and shows the opposite direction (negative effects). Rather than add a "wrong cell type" caveat, drop the example: the SORT1 / FTO / BCL11A trio already covers variant-analysis well. | Delete dir + update `examples/applications/variant_analysis/README.md` table + `scripts/regenerate_examples.py` + `scripts/internal/inject_analysis_request.py` |
+| **4** | **LOW** | ChromBPNet ATAC and AlphaGenome DNASE disagree on rs12740374 direction in HepG2 (+0.45 vs -0.11). Both pass QC; cross-oracle non-comparability caveat in README applies, but no example explicitly teaches this. | Add a short application note pointing to this as a real example of oracle-specific modelling choices |
+| **5** | **MEDIUM** | **Remove** `examples/applications/validation/HBG2_HPFH/` — the example is already self-documented as "Not reproduced" (`validation/README.md` L34) because BCL11A/ZBTB7A aren't in AlphaGenome's track catalog. Having a "validation failed" example at the same tier as the working ones is confusing. Keep SORT1_rs12740374_with_CEBP as the single validation example. | Delete dir + update `validation/README.md` + root `README.md` L46 + scripts |
 
 No bugs found in: CDF monotonicity, signed/unsigned handling, window-size alignment,
 pseudocount/formula consistency, per-bin rescale math, edge-case handling of
@@ -287,30 +287,38 @@ after the user has reviewed these findings.
    a `file://` or relative-path `<script src="...">` instead of the CDN URL.
    Add SRI hash as a fallback for the remote path.
 
-3. **(LOW) Cell-type caveat in TERT_promoter example.**
-   `examples/applications/variant_analysis/TERT_promoter/example_output.md` —
-   add a footer note explaining that the published C228T biology is melanoma-
-   specific promoter activation, and the K562 result (negative effects) reflects
-   the wrong cell lineage — not model failure.
+3. **(MEDIUM) Delete `variant_analysis/TERT_promoter/` example.**
+   C228T is a melanoma-specific gain-of-function mutation; running it in K562
+   produces the opposite direction (all negative effects) because K562 doesn't
+   express the ETS factors that bind the newly created motif. The three
+   remaining variant_analysis examples (SORT1 / FTO / BCL11A) cover the space
+   without misleading readers. Drop the example rather than caveat it.
+   Files to update: remove `examples/applications/variant_analysis/TERT_promoter/`,
+   remove its section from `examples/applications/variant_analysis/README.md`
+   (sections at L49 and L221-222), remove entries from
+   `scripts/regenerate_examples.py` and `scripts/internal/inject_analysis_request.py`.
 
 4. **(LOW) Cross-oracle disagreement note.**
-   Add a paragraph or small application README explaining why AlphaGenome DNASE
-   and ChromBPNet ATAC can disagree on the same variant in the same cell type,
-   with rs12740374 as a worked example. (Already covered implicitly by the
-   README's "percentiles are oracle-specific" caveat — this would make it
-   concrete.)
+   Add a short application note explaining why AlphaGenome DNASE and ChromBPNet
+   ATAC can disagree on the same variant in the same cell type, with rs12740374
+   as a worked example. Either a new `docs/cross_oracle_comparison.md` or a
+   callout in `variant_analysis/SORT1_chrombpnet/README.md`.
 
-5. **(LOW) Sharpen HBG2_HPFH footer.**
-   `examples/applications/validation/HBG2_HPFH/example_output.md` — tighten
-   the existing caveat about BCL11A/ZBTB7A catalog absence with a one-line
-   "if you need these tracks explicitly, see …" pointer.
+5. **(MEDIUM) Delete `validation/HBG2_HPFH/` example.**
+   `examples/applications/validation/README.md` L34 already self-documents this
+   as "Not reproduced" (BCL11A/ZBTB7A aren't in AlphaGenome's track catalog).
+   Having a "validation failed" example at the same tier as the working
+   SORT1_rs12740374_with_CEBP is confusing for a reader. Drop the directory,
+   drop the row in `validation/README.md`, drop the link from root `README.md:46`
+   (replace with SORT1_rs12740374_with_CEBP or delete the row).
 
 6. **(LOW) Noise-floor handling in quantile_score.**
-   When `|raw_score| < some_epsilon` (~1e-3) the effect-percentile becomes
-   numerically unstable (committed=1.0 vs fresh=0.21 for one CEBPB track in
-   the FTO rerun, because the abs-value CDF clusters very densely around 0).
-   Consider returning `None` or a "noise floor" flag for such tracks in the
-   MD/JSON output so readers don't misread noise as signal.
+   When `|raw_score| < epsilon` (~1e-3 for log2fc, ~1e-4 for logfc) the
+   effect-percentile becomes numerically unstable (committed=1.0 vs
+   rerun=0.21 for one CEBPB track in the FTO rerun, because the abs-value CDF
+   clusters very densely near 0). Emit `quantile_score=None` in that regime
+   and render "—" in the MD/HTML tables so readers don't misread noise as
+   signal. Patch point: `chorus/analysis/variant_report.py:_apply_normalization`.
 
 No fix needed for: the Enformer "0 signed tracks" observation (correct — no
 RNA-seq in Enformer's manifest), the mixed-direction summary wording (correct
