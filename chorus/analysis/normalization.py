@@ -702,8 +702,20 @@ class PerTrackNormalizer:
     # Summary / diagnostics
     # ------------------------------------------------------------------
 
-    def summary(self, oracle_name: str) -> dict:
-        """Return summary stats for a loaded oracle's CDFs."""
+    def summary(self, oracle_name: str | None = None) -> dict:
+        """Return summary stats for loaded oracles' CDFs.
+
+        When *oracle_name* is given, returns a dict describing that
+        oracle's CDFs. When omitted, returns a dict keyed by every
+        already-loaded oracle so callers can iterate without knowing the
+        oracle name up front — matches the signature shape of
+        :meth:`QuantileNormalizer.summary`.
+        """
+        if oracle_name is None:
+            return {name: self._summary_one(name) for name in sorted(self._loaded)}
+        return self._summary_one(oracle_name)
+
+    def _summary_one(self, oracle_name: str) -> dict:
         entry = self._ensure_loaded(oracle_name)
         if entry is None:
             return {}
@@ -861,29 +873,47 @@ def download_backgrounds(
     return downloaded
 
 
-def get_normalizer(oracle_name: str, cache_dir: str | None = None) -> QuantileNormalizer | None:
+def get_normalizer(
+    oracle_name: str, cache_dir: str | None = None,
+) -> "PerTrackNormalizer | QuantileNormalizer | None":
     """Auto-discover and load pre-computed backgrounds for an oracle.
 
-    Scans ``~/.chorus/backgrounds/`` (or *cache_dir*) for ``.npy`` files
-    matching ``{oracle_name}_*.npy`` and returns a ready-to-use
-    :class:`QuantileNormalizer` with all found backgrounds loaded.
+    **Preferred path**: if ``{oracle_name}_pertrack.npz`` exists (or can be
+    downloaded from the public ``lucapinello/chorus-backgrounds`` HuggingFace
+    dataset), returns a :class:`PerTrackNormalizer` — the newer per-track
+    CDF format that supports effect / activity / perbin percentiles.
 
-    If no local files are found, attempts to download them from the
-    ``lucapinello/chorus-backgrounds`` HuggingFace dataset.
+    **Legacy fallback**: if only old-format ``{oracle_name}_*.npy``
+    per-layer backgrounds are present, returns a
+    :class:`QuantileNormalizer` loaded with them.
 
-    Returns ``None`` if no background files exist for *oracle_name*.
+    Returns ``None`` only when neither format is available.
+
+    Both return types are accepted by
+    :meth:`chorus.core.result.OraclePrediction.to_percentile`, so callers
+    don't need to branch.
     """
     if cache_dir is None:
         cache_dir = str(Path.home() / ".chorus" / "backgrounds")
     bg_dir = Path(cache_dir)
 
-    # Check local first
+    # ── 1. Try the per-track NPZ first (new format, auto-downloaded from HF).
+    try:
+        pertrack = get_pertrack_normalizer(oracle_name, cache_dir=cache_dir)
+        if pertrack is not None and pertrack.n_tracks(oracle_name) > 0:
+            return pertrack
+    except Exception as exc:
+        logger.debug(
+            "Per-track normalizer unavailable for %s (%s); falling back to legacy .npy scan.",
+            oracle_name, exc,
+        )
+
+    # ── 2. Legacy per-layer .npy scan.
     if bg_dir.is_dir():
         matched = sorted(bg_dir.glob(f"{oracle_name}_*.npy"))
     else:
         matched = []
 
-    # Auto-download if nothing local
     if not matched:
         n = download_backgrounds(oracle_name, cache_dir=cache_dir)
         if n > 0 and bg_dir.is_dir():
@@ -894,11 +924,11 @@ def get_normalizer(oracle_name: str, cache_dir: str | None = None) -> QuantileNo
 
     normalizer = QuantileNormalizer(cache_dir=cache_dir)
     for path in matched:
-        # Key is the filename without .npy extension
-        key = path.stem
-        normalizer.get_background(key)  # triggers lazy load from disk
+        key = path.stem  # drop .npy
+        normalizer.get_background(key)  # lazy load
     logger.info(
-        "Auto-loaded %d background distributions for '%s'",
+        "Auto-loaded %d legacy-format backgrounds for '%s' "
+        "(new per-track format not yet available for this oracle)",
         len(matched), oracle_name,
     )
     return normalizer
