@@ -567,82 +567,9 @@ class SeiOracle(OracleBase):
     def _download_with_resume(url: str, dest: str, chunk_bytes: int = 4 * 1024 * 1024) -> None:
         """Streamed HTTP download with ``Range`` resume + single-flight lock.
 
-        Replaces ``urllib.request.urlretrieve`` which on macOS observed throughput
-        as low as ~80 KB/s for the SEI Zenodo tarball (cross-platform; see
-        2026-04-14 macOS audit). This implementation:
-
-        * Uses a chunked ``urlopen`` read loop (stdlib only — no new deps).
-        * Resumes a partial download if ``dest.partial`` already exists, by
-          sending a ``Range: bytes=<offset>-`` header and appending.
-        * Holds an exclusive ``fcntl.flock`` on ``dest.lock`` so two concurrent
-          calls (e.g. ``chorus health`` racing a manual ``create_oracle('sei')``)
-          don't overwrite each other's partial file.
-
-        Falls back to a single fresh download if the server doesn't support
-        Range requests.
+        Thin compatibility shim around :func:`chorus.utils.http.download_with_resume`.
+        Kept so any external callers of ``SeiOracle._download_with_resume`` keep
+        working after the helper moved into the shared utility module.
         """
-        import fcntl
-        import urllib.request
-        import urllib.error
-        from pathlib import Path
-
-        dest_p = Path(dest)
-        partial_p = dest_p.with_suffix(dest_p.suffix + ".partial")
-        lock_p = dest_p.with_suffix(dest_p.suffix + ".lock")
-        dest_p.parent.mkdir(parents=True, exist_ok=True)
-
-        with open(lock_p, "w") as lock_f:
-            fcntl.flock(lock_f.fileno(), fcntl.LOCK_EX)
-            try:
-                # If a previous fully-completed download exists, just return.
-                if dest_p.exists():
-                    return
-
-                already = partial_p.stat().st_size if partial_p.exists() else 0
-                req = urllib.request.Request(url)
-                if already > 0:
-                    req.add_header("Range", f"bytes={already}-")
-                    logger.info(f"Resuming Sei download at byte {already:,}")
-
-                try:
-                    resp = urllib.request.urlopen(req, timeout=60)
-                except urllib.error.HTTPError as exc:
-                    if exc.code == 416 and already > 0:  # Range not satisfiable
-                        # Already have everything; promote to dest.
-                        partial_p.rename(dest_p)
-                        return
-                    raise
-
-                # If the server ignored Range and sent the full file, restart.
-                status = getattr(resp, "status", None) or resp.getcode()
-                if already > 0 and status != 206:
-                    logger.warning("Server ignored Range header; restarting from 0")
-                    already = 0
-                    partial_p.unlink(missing_ok=True)
-
-                total = None
-                cl = resp.headers.get("Content-Length")
-                if cl is not None:
-                    total = int(cl) + already
-
-                mode = "ab" if already > 0 else "wb"
-                downloaded = already
-                last_log = downloaded
-                with open(partial_p, mode) as out:
-                    while True:
-                        chunk = resp.read(chunk_bytes)
-                        if not chunk:
-                            break
-                        out.write(chunk)
-                        downloaded += len(chunk)
-                        if total and downloaded - last_log > 100 * 1024 * 1024:
-                            pct = 100.0 * downloaded / total
-                            logger.info(
-                                f"  Sei download: {downloaded/1e9:.2f}/{total/1e9:.2f} GB ({pct:.1f}%)"
-                            )
-                            last_log = downloaded
-
-                partial_p.rename(dest_p)
-            finally:
-                fcntl.flock(lock_f.fileno(), fcntl.LOCK_UN)
-                lock_p.unlink(missing_ok=True)
+        from chorus.utils.http import download_with_resume
+        download_with_resume(url, dest, chunk_bytes=chunk_bytes, label="Sei download")

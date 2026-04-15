@@ -145,15 +145,20 @@ class ChromBPNetOracle(OracleBase):
 
         if not os.path.exists(download_file_path):
 
-            # Download from JASPAR
+            # Download from JASPAR. Same resumable+locked helper as the
+            # ChromBPNet model download — see _download_chrombpnet_model.
+            from chorus.utils.http import download_with_resume
             os.makedirs(download_path, exist_ok=True)
             logger.info(f"Downloading {download_link}...")
-            urllib.request.urlretrieve(download_link, download_file_path)
+            download_with_resume(
+                download_link, download_file_path,
+                label=f"JASPAR motif {os.path.basename(download_link)}",
+            )
 
             logger.info("Download completed!")
 
 
-    def _download_chrombpnet_model(self): 
+    def _download_chrombpnet_model(self):
         
         # Get model's ENCODE idx
         idx = CHROMBPNET_MODELS_DICT[self.assay][self.cell_type]
@@ -171,10 +176,26 @@ class ChromBPNetOracle(OracleBase):
 
         if not os.path.exists(download_file_path):
 
-            # Download from ENCODE (tar file)
+            # Download from ENCODE (tar file).
+            #
+            # Use chunked+resumable+locked helper rather than urllib.urlretrieve.
+            # Two separate callers (e.g. pytest smoke fixture + a background
+            # build_backgrounds_chrombpnet job) racing the same URL were
+            # observed during the 2026-04-14 v2 audit to each write to the
+            # same partial .tar.gz path and the loser's tarfile.extractall()
+            # hit `EOFError: Compressed file ended before the end-of-stream
+            # marker was reached`. The new helper holds an fcntl lock on
+            # a sibling .lock file so only one writer proceeds at a time,
+            # and the second caller resumes (or returns) once the first
+            # finishes.
+            from chorus.utils.http import download_with_resume
             os.makedirs(download_path, exist_ok=True)
             logger.info(f"Downloading {download_link}...")
-            urllib.request.urlretrieve(download_link, download_file_path)
+            download_with_resume(
+                download_link,
+                download_file_path,
+                label=f"ChromBPNet {self.assay}:{self.cell_type}",
+            )
 
             logger.info("Download completed!")
         
