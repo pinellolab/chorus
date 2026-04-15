@@ -78,10 +78,15 @@ mamba activate chorus
 # 2. Install the chorus package + CLI (registers `chorus` and `chorus-mcp` commands)
 pip install -e .
 
-# 3. Set up at least one oracle environment (see below)
+# 3. Register the chorus env as a Jupyter kernel so the example notebooks
+#    in examples/*.ipynb pick up the right Python (the kernel they ship with
+#    is plain `python3`, which on a fresh machine doesn't have chorus installed)
+python -m ipykernel install --user --name chorus --display-name "Python 3 (chorus)"
+
+# 4. Set up at least one oracle environment (see below)
 chorus setup --oracle enformer   # lightweight CPU-friendly starter
 
-# 4. Download the reference genome your analyses will need
+# 5. Download the reference genome your analyses will need
 chorus genome download hg38
 
 # Verify installation
@@ -817,6 +822,26 @@ chorus remove --oracle enformer
 chorus setup --oracle enformer
 ```
 
+#### Two mamba installs ⇒ `chorus health` reports phantom failures
+
+If you have both `~/.local/share/mamba/` (typical when `mamba` is installed via
+brew/pip) **and** a `~/miniforge3/` (typical when you originally installed via
+the Miniforge installer), `mamba env create` may put the new `chorus` env in
+one root while the per-oracle `chorus-*` envs live in the other. `chorus health`
+then fails with `mamba list -n chorus-<oracle>` returning non-zero because the
+running mamba is looking under the wrong root.
+
+**Fix:** point `MAMBA_ROOT_PREFIX` at the root that contains the oracle envs
+before invoking `chorus`:
+
+```bash
+export MAMBA_ROOT_PREFIX=$HOME/miniforge3   # or wherever your chorus-* envs live
+mamba env list                              # confirm chorus-* envs show up
+chorus health
+```
+
+Add the export to your shell rc file if you want it persistent.
+
 ### Memory Issues
 Some oracles require a significant memory (~8-16 GB) for predictions. Solutions:
 - Force CPU usage: `device='cpu'`
@@ -847,7 +872,22 @@ manually via the `ld_variants` parameter (see
 [causal_prioritization/](examples/applications/causal_prioritization/)).
 
 ### CUDA/GPU Support
-The isolated environments include GPU support. On Linux with NVIDIA GPUs, Chorus auto-detects CUDA and installs GPU-enabled packages during `chorus setup`. On macOS with Apple Silicon, AlphaGenome defaults to CPU because the JAX Metal backend does not yet support all required operations.
+The isolated environments include GPU support. On Linux with NVIDIA GPUs, Chorus auto-detects CUDA and installs GPU-enabled packages during `chorus setup`.
+
+**On macOS with Apple Silicon**, Chorus auto-detects Apple GPU acceleration where supported:
+
+| Oracle | Backend | macOS GPU path |
+|---|---|---|
+| Borzoi, Sei, LegNet | PyTorch | **MPS** auto-detected via `torch.backends.mps.is_available()` |
+| ChromBPNet, Enformer | TensorFlow | **Metal** via `tensorflow-metal` (added automatically by `chorus setup` on macOS arm64) |
+| AlphaGenome | JAX | **CPU** — `jax-metal` is installed but Apple's plugin doesn't yet support all ops AlphaGenome needs (e.g. `default_memory_space`); Chorus falls back to CPU |
+
+You can always force a specific device:
+```python
+oracle = chorus.create_oracle('borzoi', use_environment=True, device='mps')   # Apple GPU
+oracle = chorus.create_oracle('borzoi', use_environment=True, device='cpu')   # force CPU
+oracle = chorus.create_oracle('borzoi', use_environment=True, device='cuda:0')  # NVIDIA
+```
 
 To force CPU usage when GPU causes issues:
 ```python
