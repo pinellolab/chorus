@@ -595,6 +595,22 @@ def _parse_cell_type_from_description(description: str, assay_type: str = "") ->
     return description
 
 
+# When |raw_score| is below this threshold, the variant effect is
+# indistinguishable from numerical noise in the oracle's forward pass. The
+# per-track effect-CDFs are very densely clustered near zero (most random
+# SNPs have near-zero effects), so a 1-2% raw-score drift can swing
+# quantile_score by 0.5+ in that regime.  Suppress the quantile_score to
+# None so readers don't over-interpret near-zero raw effects — see the
+# 2026-04-16 deep audit, finding #6.
+#
+# Value chosen empirically: for log2fc-based layers (chromatin, TF,
+# histone, CAGE, splicing) the bottom ~10% of the abs-effect CDF sits
+# below 1e-3 on most tracks. For logfc gene_expression (pseudocount
+# 0.001) the noise floor is ~2x smaller. A single conservative
+# threshold of 1e-3 covers both without hiding real effects.
+NOISE_FLOOR_RAW_SCORE = 1e-3
+
+
 def _apply_normalization(
     ts: TrackScore, normalizer, oracle_name: str, layer: str,
     assay_id: str | None = None,
@@ -606,6 +622,10 @@ def _apply_normalization(
 
     Supports both :class:`PerTrackNormalizer` (preferred, per-track CDFs)
     and legacy :class:`QuantileNormalizer` (per-layer CDFs).
+
+    When ``|raw_score| < NOISE_FLOOR_RAW_SCORE`` the quantile is suppressed
+    to ``None`` — the CDF is too densely packed near zero to produce a
+    stable percentile.
     """
     if normalizer is None:
         return
@@ -613,13 +633,18 @@ def _apply_normalization(
     layer_cfg = LAYER_CONFIGS.get(layer)
     use_signed = layer_cfg.signed if layer_cfg else True
 
+    in_noise_floor = (
+        ts.raw_score is not None and abs(ts.raw_score) < NOISE_FLOOR_RAW_SCORE
+    )
+
     if isinstance(normalizer, PerTrackNormalizer) and assay_id is not None:
         # Per-track normalization
-        if ts.raw_score is not None:
+        if ts.raw_score is not None and not in_noise_floor:
             raw_for_norm = ts.raw_score if use_signed else abs(ts.raw_score)
             ts.quantile_score = normalizer.effect_percentile(
                 oracle_name, assay_id, raw_for_norm, signed=use_signed,
             )
+        # else: leave ts.quantile_score at its default None
 
         if ts.ref_value is not None:
             pctile = normalizer.activity_percentile(oracle_name, assay_id, ts.ref_value)
@@ -627,7 +652,7 @@ def _apply_normalization(
                 ts.ref_signal_percentile = pctile
     else:
         # Legacy per-layer normalization
-        if ts.raw_score is not None:
+        if ts.raw_score is not None and not in_noise_floor:
             bg_key = QuantileNormalizer.background_key(oracle_name, layer)
             raw_for_norm = abs(ts.raw_score) if not use_signed else ts.raw_score
             ts.quantile_score = normalizer.normalize(

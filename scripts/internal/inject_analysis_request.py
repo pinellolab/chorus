@@ -104,26 +104,6 @@ EXAMPLES: dict[str, dict] = {
             "expression layer — check the RNA rows for those genes directly.",
         ],
     },
-    "variant_analysis/TERT_promoter": {
-        "user_prompt": (
-            "Can you analyze the TERT C228T promoter mutation "
-            "(chr5:1295228 G>A) for effects on TERT expression? "
-            "This is a recurrent somatic mutation in melanoma and glioblastoma."
-        ),
-        "tool_name": "analyze_variant_multilayer",
-        "oracle_name": "alphagenome",
-        "tracks_requested": "all oracle tracks (discovery mode)",
-        "notes": [
-            "Biological context: Horn/Huang 2013 (Science) report that C228T "
-            "creates a de novo GABPA/ETS binding site and ACTIVATES TERT "
-            "in melanoma / glioblastoma / bladder cancer. AlphaGenome is "
-            "trained on bulk tissue where TERT is largely silent, so its "
-            "CAGE prediction here reflects the endogenous chromatin state "
-            "(TERT repressed) rather than the cancer-specific reactivation. "
-            "This example is kept to illustrate how model training data "
-            "shapes predictions — interpret alongside the published biology.",
-        ],
-    },
     "variant_analysis/SORT1_enformer": {
         "user_prompt": (
             "Run discovery mode on rs12740374 (chr1:109274968 G>T) using "
@@ -164,28 +144,6 @@ EXAMPLES: dict[str, dict] = {
         "tool_name": "analyze_variant_multilayer",
         "oracle_name": "alphagenome",
         "tracks_requested": "all oracle tracks (discovery mode)",
-    },
-    "validation/HBG2_HPFH": {
-        "user_prompt": (
-            "Validate the HBG2 HPFH variant (chr11:5254983 G>C) — this is a "
-            "known hereditary persistence of fetal hemoglobin mutation. "
-            "Can you show the chromatin, BCL11A/KLF1 binding, and HBG2 "
-            "expression effects in erythroid cells?"
-        ),
-        "tool_name": "analyze_variant_multilayer",
-        "oracle_name": "alphagenome",
-        "tracks_requested": "all oracle tracks (discovery mode)",
-        "notes": [
-            "Published mechanism: HPFH variants in the HBG1/HBG2 promoters "
-            "disrupt binding of the BCL11A or ZBTB7A (LRF) fetal-globin "
-            "repressor complexes, re-activating fetal hemoglobin in adult "
-            "erythroid cells. Chorus is running AlphaGenome in all-tracks "
-            "discovery mode; BCL11A / ZBTB7A ChIP tracks are limited in the "
-            "oracle's catalog and may not rank in the top hits without "
-            "explicit assay_ids. For a cleaner test of the repressor-loss "
-            "hypothesis, call `analyze_variant_multilayer` with the BCL11A "
-            "and ZBTB7A ChIP tracks listed explicitly in erythroid cell types.",
-        ],
     },
     # ── discovery ────────────────────────────────────────────────
     "discovery/SORT1_cell_type_screen": {
@@ -356,36 +314,6 @@ type coverage lags what the paper used.
   "IRX5") so the RNA layer is scored at those specific TSSs.
 """,
 
-    "variant_analysis/TERT_promoter": """\
-**What the oracle sees.** Alt allele shows *decreases* across chromatin,
-TF binding, histone marks, and CAGE at the TERT TSS, with the strongest
-effect being a TSS drop (-1.2 log2FC). Top TF-binding losses are EP400,
-MNT, USF1 — none of the ETS family. This is the opposite direction from
-the published biology.
-
-**How this fits the published biology.** Horn / Huang 2013 (Science)
-showed the C228T mutation *creates* a de novo GABPA/ETS binding site and
-*activates* TERT in melanoma, glioblastoma and bladder cancer. AlphaGenome
-is trained on bulk-tissue data where TERT is largely silent in adult
-cells (telomerase is normally repressed), so its baseline prediction is a
-silent TERT promoter. A small sequence change in a silent region
-produces little CAGE signal and the oracle defaults to "decrease" because
-the reference is already higher than the predicted alt in absolute
-terms. **This is a real limitation of current bulk-tissue models**,
-not a Chorus bug.
-
-**Suggested next steps.**
-- Treat this example as a cautionary case: for cancer-reactivation
-  variants, always cross-check oracle predictions against the published
-  reporter-assay data.
-- If you have access, run ChromBPNet with a GABPA CHIP model in a
-  cancer cell line (A375, U87, T24) — base-resolution motif creation is
-  what drives this variant and a motif-scale model will see it.
-- For the foundation-model comparison, re-run this exact prompt with
-  Borzoi or Enformer and note whether the direction flips. No single
-  oracle yet handles cancer-specific TERT reactivation correctly.
-""",
-
     "variant_analysis/SORT1_enformer": """\
 **What the oracle sees.** Enformer shows the same signal Musunuru reported
 and AlphaGenome reproduces in the main SORT1 example: a strong DNASE
@@ -447,8 +375,8 @@ a cleaner, biology-driven readout than full discovery mode.
 """,
 
     "validation/TERT_chr5_1295046": """\
-**What the oracle sees.** In contrast to the C228T promoter example, this
-distal TERT variant (chr5:1295046 T>G) shows a clean *gain* signal
+**What the oracle sees.** This distal TERT variant (chr5:1295046 T>G)
+shows a clean *gain* signal
 across all four multi-layer layers: modest DNASE opening, strong TF
 binding gain in the ChIP-TF rows, strong histone mark gain, and a
 moderate CAGE increase. Effects are in the 0.2–0.5 log2FC range.
@@ -456,9 +384,7 @@ moderate CAGE increase. Effects are in the 0.2–0.5 log2FC range.
 **How this fits the published biology.** The validation set from the
 AlphaGenome Nature paper (Avsec et al. 2026) includes this variant as a
 positive control for distal ETS-family binding-site creation, and our
-Chorus output matches the paper's direction of effect. A useful
-contrast with the `variant_analysis/TERT_promoter` example, which is a
-known model blind-spot.
+Chorus output matches the paper's direction of effect.
 
 **Suggested next steps.**
 - Use this example as a reference for "what a well-behaved distal
@@ -467,32 +393,6 @@ known model blind-spot.
 - When in doubt about a TERT variant, score multiple nearby positions
   and compare directions — consistent gain or loss across neighbouring
   sites is more trustworthy than a single prediction.
-""",
-
-    "validation/HBG2_HPFH": """\
-**What the oracle sees.** Strong binding loss in CTCF (rank 1, -0.34 log2FC
-in endodermal cells) plus moderate chromatin closing, moderate TSS
-decrease, and moderate histone mark loss. The top TF hits are CTCF /
-RAD21 — not the BCL11A or ZBTB7A the HPFH literature points to.
-
-**How this fits the published biology.** HPFH variants in the HBG1/HBG2
-promoters disrupt binding of the BCL11A or ZBTB7A (LRF) fetal-globin
-repressor complexes, re-activating HbF in adult erythroid cells. Chorus
-reports regulatory disruption in the expected direction (binding loss,
-chromatin closing) but the oracle's TF ranking surfaces the wrong
-factors because BCL11A / ZBTB7A ChIP tracks are limited in AlphaGenome's
-training catalog. The loss-of-repression mechanism is not directly
-visible in the default top-N.
-
-**Suggested next steps.**
-- Re-run `analyze_variant_multilayer` with explicit `BCL11A` and
-  `ZBTB7A` ChIP assay_ids in erythroid cell types for a clean
-  repressor-loss readout.
-- If erythroid coverage is the bottleneck, complement with ChromBPNet
-  loaded for an erythroid ATAC model for base-resolution motif
-  disruption.
-- This is the flagship example of an oracle limitation driven by
-  **training data coverage**, not prediction accuracy.
 """,
 
     "discovery/SORT1_cell_type_screen": """\
