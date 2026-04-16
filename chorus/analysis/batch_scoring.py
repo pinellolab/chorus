@@ -107,13 +107,17 @@ class BatchResult:
                 ts = s.track_scores.get(tid)
                 display = _track_display_name(ts) if ts else tid
                 if ts and ts.raw_score is not None:
-                    row[f"{display}_raw"] = ts.raw_score
-                    row[f"{display}_pctile"] = ts.quantile_score
-                    row[f"{display}_activity"] = ts.ref_signal_percentile
+                    row[f"{display}_ref"] = ts.ref_value
+                    row[f"{display}_alt"] = ts.alt_value
+                    row[f"{display}_log2fc"] = ts.raw_score
+                    row[f"{display}_effect_pctile"] = ts.quantile_score
+                    row[f"{display}_activity_pctile"] = ts.ref_signal_percentile
                 else:
-                    row[f"{display}_raw"] = None
-                    row[f"{display}_pctile"] = None
-                    row[f"{display}_activity"] = None
+                    row[f"{display}_ref"] = None
+                    row[f"{display}_alt"] = None
+                    row[f"{display}_log2fc"] = None
+                    row[f"{display}_effect_pctile"] = None
+                    row[f"{display}_activity_pctile"] = None
             rows.append(row)
         return pd.DataFrame(rows)
 
@@ -186,13 +190,13 @@ class BatchResult:
                     col_labels[tid] = _track_display_name(ts)
                     seen.add(tid)
 
-        # Header
+        # Header — one group of columns per track: Ref | Alt | log2FC | %ile
         header = "| Variant | ID |"
         sep = "|---------|-----|"
         for tid in col_order:
             label = col_labels[tid]
-            header += f" {label} |"
-            sep += "---|"
+            header += f" {label} Ref | {label} Alt | {label} log2FC | {label} Effect %ile |"
+            sep += "---|---|---|---|"
         lines += [header, sep]
 
         # Rows
@@ -201,20 +205,25 @@ class BatchResult:
             for tid in col_order:
                 ts = s.track_scores.get(tid)
                 if ts and ts.raw_score is not None:
+                    ref_str = f"{ts.ref_value:.3g}" if ts.ref_value is not None else "—"
+                    alt_str = f"{ts.alt_value:.3g}" if ts.alt_value is not None else "—"
                     sign = "+" if ts.raw_score >= 0 else ""
-                    cell = f"{sign}{ts.raw_score:.3f}"
+                    fc_str = f"{sign}{ts.raw_score:.3f}"
                     if ts.quantile_score is not None:
-                        cell += f" ({ts.quantile_score:.0%})"
-                    row += f" {cell} |"
+                        pct_str = "≥99th" if ts.quantile_score >= 0.99 else (
+                            "≤1st" if ts.quantile_score <= 0.01 else f"{ts.quantile_score:.2f}")
+                    else:
+                        pct_str = "—"
+                    row += f" {ref_str} | {alt_str} | {fc_str} | {pct_str} |"
                 else:
-                    row += " — |"
+                    row += " — | — | — | — |"
             lines.append(row)
 
         # Score guide + track ID footnote
         lines += [
             "",
-            "Each cell shows: **raw effect** (effect percentile).",
-            "Effect percentile ranks this variant's effect against ~10K random SNPs.",
+            "Each track shows: **Ref** (reference allele prediction), **Alt** (alternate allele prediction), "
+            "**log2FC** (log2 fold-change alt/ref), **Effect %ile** (ranked against ~10K random SNPs).",
             "",
             "**Track identifiers** (for tracing back to oracle data):",
             "",
@@ -300,9 +309,12 @@ class BatchResult:
                     seen.add(tid)
 
         parts.append("<table><thead><tr>")
-        parts.append("<th>Variant</th><th>ID</th>")
+        parts.append("<th rowspan='2'>Variant</th><th rowspan='2'>ID</th>")
         for tid in col_order:
-            parts.append(f"<th>{_html.escape(col_labels[tid])}</th>")
+            parts.append(f"<th colspan='4'>{_html.escape(col_labels[tid])}</th>")
+        parts.append("</tr><tr>")
+        for _ in col_order:
+            parts.append("<th>Ref</th><th>Alt</th><th>log2FC</th><th>Effect %ile</th>")
         parts.append("</tr></thead><tbody>")
 
         for s in self.scores:
@@ -313,17 +325,28 @@ class BatchResult:
             for tid in col_order:
                 ts = s.track_scores.get(tid)
                 if ts and ts.raw_score is not None:
+                    ref_str = f"{ts.ref_value:.3g}" if ts.ref_value is not None else "—"
+                    alt_str = f"{ts.alt_value:.3g}" if ts.alt_value is not None else "—"
                     sign = "+" if ts.raw_score >= 0 else ""
                     cls = "gain" if ts.raw_score > 0.1 else ("loss" if ts.raw_score < -0.1 else "neutral")
-                    pctile = f"<br><span class='pctile'>{ts.quantile_score:.0%}</span>" if ts.quantile_score is not None else ""
-                    parts.append(f"<td class='{cls}'>{sign}{ts.raw_score:.3f}{pctile}</td>")
+                    if ts.quantile_score is not None:
+                        pct_str = "≥99th" if ts.quantile_score >= 0.99 else (
+                            "≤1st" if ts.quantile_score <= 0.01 else f"{ts.quantile_score:.2f}")
+                    else:
+                        pct_str = "—"
+                    parts.append(f"<td>{ref_str}</td><td>{alt_str}</td>"
+                                 f"<td class='{cls}'>{sign}{ts.raw_score:.3f}</td>"
+                                 f"<td>{pct_str}</td>")
                 else:
-                    parts.append("<td class='neutral'>—</td>")
+                    parts.append("<td>—</td><td>—</td><td>—</td><td>—</td>")
             parts.append("</tr>")
         parts.append("</tbody></table>")
         parts.append("<p style='font-size:0.85em;color:#6b7280;margin-top:8px;'>"
-                     "Each cell: raw effect score (effect percentile). "
-                     "Green = gain, red = loss. Percentile ranks against ~10K random SNPs.</p>")
+                     "Columns per track: <b>Ref</b> (reference allele prediction), "
+                     "<b>Alt</b> (alternate allele prediction), "
+                     "<b>log2FC</b> (log2 fold-change alt/ref), "
+                     "<b>Effect %ile</b> (ranked against ~10K random SNPs). "
+                     "Green = gain, red = loss.</p>")
 
     # ── JSON ────────────────────────────────────────────────────────────
 
