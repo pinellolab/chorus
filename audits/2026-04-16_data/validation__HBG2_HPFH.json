@@ -1,0 +1,184 @@
+{
+  "app_name": "validation__HBG2_HPFH",
+  "path": "examples/applications/validation/HBG2_HPFH",
+  "prompt": "Validate the HBG2 HPFH variant (chr11:5254983 G>C) \u2014 this is a known hereditary persistence of fetal hemoglobin mutation. Can you show the chromatin, BCL11A/KLF1 binding, and HBG2 expression effects in erythroid cells?",
+  "md_header": {
+    "tool": "analyze_variant_multilayer",
+    "oracle": "alphagenome",
+    "normalizer": "per-track background CDFs",
+    "tracks_requested": "all oracle tracks (discovery mode)",
+    "gene": "HBG2",
+    "generated": "2026-04-12 02:21 UTC"
+  },
+  "top_keys": [
+    "variant",
+    "oracle",
+    "gene_name",
+    "nearby_genes",
+    "alleles",
+    "analysis_request"
+  ],
+  "tool": "analyze_variant_multilayer",
+  "oracle": "alphagenome",
+  "variant": {
+    "chrom": "chr11",
+    "position": 5254983,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "C"
+    ]
+  },
+  "n_tracks_scored": 159,
+  "assay_ids": [
+    "ATAC/EFO:0009747 ATAC-seq/.",
+    "CAGE/hCAGE EFO:0001187/-",
+    "CAGE/hCAGE UBERON:0003729/-",
+    "CHIP_HISTONE/CL:0000222 Histone ChIP-seq H3K4me1/.",
+    "CHIP_HISTONE/CL:0000222 Histone ChIP-seq H3K4me3/.",
+    "CHIP_HISTONE/CL:0001059 Histone ChIP-seq H3K4me1/.",
+    "CHIP_TF/CL:0000223 TF ChIP-seq CTCF/.",
+    "CHIP_TF/EFO:0003042 TF ChIP-seq RAD21/.",
+    "CHIP_TF/EFO:0007950 TF ChIP-seq CTCF/.",
+    "DNASE/EFO:0002798 DNase-seq/.",
+    "DNASE/UBERON:0002048 DNase-seq/.",
+    "PROCAP/ENCSR182QNJ/-",
+    "SPLICE_SITES/acceptor/-",
+    "SPLICE_SITES/donor/-",
+    "SPLICE_SITE_USAGE/usage_UBERON:0000473 gtex Testis polyA plus RNA-seq/-"
+  ],
+  "layers_scored": [
+    "chromatin_accessibility",
+    "histone_marks",
+    "splicing",
+    "tf_binding",
+    "tss_activity"
+  ],
+  "track_selection_check": {
+    "cell_types_claimed_in_prompt": [
+      "erythroid"
+    ],
+    "cell_types_in_tracks": {
+      "endodermal cell": 1,
+      "H1": 1,
+      "GM23338": 1,
+      "Caco-2": 49,
+      "HepG2": 49,
+      "mouth mucosa": 49,
+      "WTC11": 1,
+      "NB4": 1,
+      "lung": 1,
+      "mesodermal cell": 2,
+      "common myeloid progenitor": 1,
+      "SPLICE_SITES": 2,
+      "testis": 1
+    },
+    "mismatches": [
+      {
+        "claimed": [
+          "erythroid"
+        ],
+        "seen_in_tracks": [
+          "Caco-2",
+          "GM23338",
+          "H1",
+          "HepG2",
+          "NB4",
+          "SPLICE_SITES",
+          "WTC11",
+          "common myeloid progenitor",
+          "endodermal cell",
+          "lung",
+          "mesodermal cell",
+          "mouth mucosa",
+          "testis"
+        ],
+        "severity": "MEDIUM"
+      }
+    ]
+  },
+  "md_vs_json_consistency": {
+    "summary_text": "Transcription factor binding (ChIP-TF): strong binding loss (-0.33); TSS activity (CAGE/PRO-CAP): moderate decrease (-0.23); Chromatin accessibility (DNASE/ATAC): moderate closing (-0.19); Histone modifications (ChIP-Histone): moderate mark loss (-0.16).",
+    "summary_direction": "negative",
+    "pos_word_hits": 0,
+    "neg_word_hits": 4,
+    "per_layer_dominant_sign": {
+      "tf_binding": "-",
+      "tss_activity": "-",
+      "chromatin_accessibility": "-",
+      "histone_marks": "-",
+      "splicing": "+"
+    },
+    "per_layer_dominant_magnitude": {
+      "tf_binding": "-0.335",
+      "tss_activity": "-0.230",
+      "chromatin_accessibility": "-0.187",
+      "histone_marks": "-0.156",
+      "splicing": "+0.006"
+    }
+  },
+  "tsv_vs_json_consistency": {
+    "tsv_rows": 15,
+    "json_tracks": 159,
+    "tsv_columns": [
+      "allele",
+      "layer",
+      "assay_id",
+      "assay_type",
+      "cell_type",
+      "description",
+      "ref_value",
+      "alt_value",
+      "raw_score",
+      "quantile_score",
+      "ref_signal_percentile",
+      "note"
+    ]
+  },
+  "html_files": [
+    "examples/applications/validation/HBG2_HPFH/chr11_5254983_G_C_HBG2_K562_alphagenome_report.html",
+    "examples/applications/validation/HBG2_HPFH/chr11_5254983_G_C_HBG2_alphagenome_report.html"
+  ],
+  "screenshots": [
+    "audits/2026-04-16_screenshots/validation__HBG2_HPFH__chr11_5254983_G_C_HBG2_K562_alphagenome_report.png",
+    "audits/2026-04-16_screenshots/validation__HBG2_HPFH__chr11_5254983_G_C_HBG2_alphagenome_report.png"
+  ],
+  "literature_claim": {
+    "paper": "Martyn 2018 Nat Genet",
+    "expected_direction": "-113 A>G creates TAL1/GATA1 binding, disrupts BCL11A/ZBTB7A repression",
+    "note": "BCL11A/ZBTB7A ChIP tracks may not be in AlphaGenome catalog; MD footer already caveats."
+  },
+  "flags": [
+    {
+      "category": "track_selection_mismatch",
+      "severity": "MEDIUM",
+      "detail": [
+        {
+          "claimed": [
+            "erythroid"
+          ],
+          "seen_in_tracks": [
+            "Caco-2",
+            "GM23338",
+            "H1",
+            "HepG2",
+            "NB4",
+            "SPLICE_SITES",
+            "WTC11",
+            "common myeloid progenitor",
+            "endodermal cell",
+            "lung",
+            "mesodermal cell",
+            "mouth mucosa",
+            "testis"
+          ],
+          "severity": "MEDIUM"
+        }
+      ]
+    },
+    {
+      "category": "summary_sign_mismatch",
+      "severity": "LOW",
+      "detail": "Summary reads 'negative' but these layers have positive dominant effect: ['splicing']"
+    }
+  ]
+}

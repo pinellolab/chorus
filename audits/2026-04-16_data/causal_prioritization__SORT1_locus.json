@@ -1,0 +1,84 @@
+{
+  "app_name": "causal_prioritization__SORT1_locus",
+  "path": "examples/applications/causal_prioritization/SORT1_locus",
+  "prompt": "Fine-map the SORT1 LDL cholesterol GWAS locus. Sentinel is rs12740374 with 11 LD variants (r\u00b2\u22650.85). Score each variant across HepG2 DNASE, CEBPA/CEBPB ChIP, H3K27ac, and CAGE. Rank by composite causal evidence. Gene is SORT1.",
+  "md_header": {
+    "tool": "fine_map_causal_variant",
+    "oracle": "alphagenome",
+    "normalizer": "per-track background CDFs",
+    "tracks_requested": "6 HepG2 tracks",
+    "cell_types": "HepG2",
+    "gene": "SORT1",
+    "generated": "2026-04-13 03:07 UTC"
+  },
+  "top_keys": [
+    "sentinel",
+    "oracle",
+    "gene_name",
+    "population",
+    "cell_types",
+    "n_variants",
+    "weights",
+    "top_candidate",
+    "rankings",
+    "analysis_request"
+  ],
+  "tool": "fine_map_causal_variant",
+  "oracle": "alphagenome",
+  "sentinel": "rs12740374",
+  "n_tracks_scored": 0,
+  "assay_ids": [],
+  "layers_scored": [],
+  "track_selection_check": {
+    "cell_types_claimed_in_prompt": [
+      "HepG2"
+    ],
+    "cell_types_in_tracks": {},
+    "mismatches": []
+  },
+  "md_vs_json_consistency": {
+    "summary_text": "",
+    "summary_direction": "mixed/neutral",
+    "pos_word_hits": 0,
+    "neg_word_hits": 0,
+    "per_layer_dominant_sign": {},
+    "per_layer_dominant_magnitude": {}
+  },
+  "tsv_vs_json_consistency": {
+    "tsv_rows": 11,
+    "json_tracks": 0,
+    "tsv_columns": [
+      "rank",
+      "variant_id",
+      "chrom",
+      "position",
+      "ref",
+      "alt",
+      "r2",
+      "is_sentinel",
+      "gene_name",
+      "cell_type",
+      "max_effect",
+      "n_layers_affected",
+      "convergence",
+      "ref_activity",
+      "composite",
+      "top_layer",
+      "top_track",
+      "layer_chromatin_accessibility",
+      "layer_tf_binding",
+      "layer_histone_marks",
+      "layer_tss_activity"
+    ]
+  },
+  "html_files": [
+    "examples/applications/causal_prioritization/SORT1_locus/rs12740374_SORT1_locus_causal_report.html"
+  ],
+  "screenshots": [
+    "audits/2026-04-16_screenshots/causal_prioritization__SORT1_locus__rs12740374_SORT1_locus_causal_report.png"
+  ],
+  "literature_claim": {
+    "note": "no published literature claim for this app"
+  },
+  "flags": []
+}

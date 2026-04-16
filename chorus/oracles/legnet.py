@@ -54,8 +54,10 @@ class LegNetOracle(OracleBase):
                          model_load_timeout=model_load_timeout,
                          predict_timeout=predict_timeout,
                          device=device)
+        # Sentinel; resolved to a real torch device inside _load_direct, where
+        # torch is importable (chorus-legnet env). 'auto' = cuda > mps > cpu.
         if self.device is None:
-            self.device = 'cpu'
+            self.device = 'auto'
 
         self.download_dir = LEGNET_MODELS_DIR
 
@@ -150,14 +152,25 @@ class LegNetOracle(OracleBase):
     
     def _load_direct(self):
         try:
-            import torch 
+            import torch
             from .legnet_source.model_usage import load_model
 
+            # Resolve 'auto' sentinel: cuda > mps > cpu.
+            if self.device == 'auto':
+                if torch.cuda.is_available():
+                    self.device = 'cuda:0'
+                elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+                    self.device = 'mps'
+                else:
+                    self.device = 'cpu'
+                logger.info(f"LegNet auto-detected device: {self.device}")
             model = load_model(self.get_training_config_path(), self.get_model_weights_path())
             device = torch.device(self.device)
             model.to(device)
             model.eval()
             self._model = model # Predictor model
+            self.loaded = True
+            logger.info("LegNet model loaded successfully!")
 
         except Exception as e:
             raise ModelNotLoadedError(f"Failed to load LegNet model: {str(e)}")
@@ -274,7 +287,7 @@ class LegNetOracle(OracleBase):
 
             template, arg = self.get_predict_template()
             template = template.replace(arg, arg_file.name)
-            model_predictions = self.run_code_in_environment(template, timeout=self.model_load_timeout)
+            model_predictions = self.run_code_in_environment(template, timeout=self.predict_timeout)
             predictions = np.array(model_predictions['preds'], dtype=np.float32)
         return predictions
         

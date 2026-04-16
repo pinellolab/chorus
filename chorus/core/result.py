@@ -197,6 +197,45 @@ class OraclePredictionTrack:
         else:
             raise NotImplementedError(normalization)
         return other
+
+    def to_percentile(self, normalizer, oracle_name: str) -> 'OraclePredictionTrack':
+        """Map all bin values to genome-wide activity percentiles [0, 1].
+
+        Uses the per-track CDF for this assay's per-bin distribution to
+        map raw values to genome-wide percentiles.  Supports both:
+        - :class:`PerTrackNormalizer` (preferred, per-track CDFs)
+        - Legacy :class:`QuantileNormalizer` (per-layer fallback)
+
+        Falls back to minmax normalization when no normalizer data exists.
+        """
+        from ..analysis.scorers import classify_track_layer
+        from ..analysis.normalization import PerTrackNormalizer
+
+        if isinstance(normalizer, PerTrackNormalizer):
+            pctiles = normalizer.perbin_percentile_batch(
+                oracle_name, self.assay_id, self.values,
+            )
+            if pctiles is not None:
+                other = self.copy()
+                other.values = pctiles
+                return other
+            return self.normalize("minmax")
+
+        # Legacy QuantileNormalizer path
+        layer = classify_track_layer(self)
+        pctiles = normalizer.normalize_perbin_batch(oracle_name, layer, self.values)
+        if pctiles is not None:
+            other = self.copy()
+            other.values = pctiles
+            return other
+
+        pctiles = normalizer.normalize_baseline_batch(oracle_name, layer, self.values)
+        if pctiles is not None:
+            other = self.copy()
+            other.values = pctiles
+            return other
+
+        return self.normalize("minmax")
     
     @property
     def chrom(self) -> str:
@@ -582,6 +621,19 @@ class OraclePrediction:
     def normalize(self, normalization: str = "minmax"):
         norm_tracks = {track_id: track.normalize(normalization) for track_id, track in self.tracks.items()}
         return OraclePrediction(norm_tracks)
+
+    def to_percentile(self, normalizer, oracle_name: str) -> 'OraclePrediction':
+        """Map all tracks to genome-wide activity percentiles [0, 1].
+
+        Returns a new OraclePrediction where each track's values are
+        activity percentiles derived from pre-computed baseline backgrounds.
+        Tracks without baselines fall back to minmax normalization.
+        """
+        pct_tracks = {
+            tid: track.to_percentile(normalizer, oracle_name)
+            for tid, track in self.tracks.items()
+        }
+        return OraclePrediction(pct_tracks)
 
     def join(self, other: 'OraclePrediction') -> 'OraclePrediction':
         joined = {**self.tracks, **other.tracks}

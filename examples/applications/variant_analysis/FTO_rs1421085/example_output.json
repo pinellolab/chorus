@@ -1,0 +1,454 @@
+{
+  "variant": {
+    "chrom": "chr16",
+    "position": 53767042,
+    "ref_allele": "T",
+    "alt_alleles": [
+      "C"
+    ]
+  },
+  "oracle": "alphagenome",
+  "gene_name": "FTO",
+  "nearby_genes": [
+    "FTO",
+    "RPGRIP1L",
+    "AKTIP",
+    "RBL2",
+    "IRX3",
+    "CHD9"
+  ],
+  "alleles": {
+    "alt_1": {
+      "scores_by_layer": {
+        "chromatin_accessibility": [
+          {
+            "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+            "assay_type": "DNASE",
+            "cell_type": "HepG2",
+            "layer": "chromatin_accessibility",
+            "ref_value": 112.47001647949219,
+            "alt_value": 110.17610168457031,
+            "raw_score": -0.029464426599394012,
+            "description": "DNASE:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 0.9028
+          }
+        ],
+        "tf_binding": [
+          {
+            "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+            "assay_type": "CHIP",
+            "cell_type": "HepG2",
+            "layer": "tf_binding",
+            "ref_value": 1001.0,
+            "alt_value": 984.0,
+            "raw_score": -0.024686878851469796,
+            "description": "CHIP:CEBPA:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 0.9265
+          },
+          {
+            "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",
+            "assay_type": "CHIP",
+            "cell_type": "HepG2",
+            "layer": "tf_binding",
+            "ref_value": 489.5,
+            "alt_value": 488.5,
+            "raw_score": -0.0029442766155436746,
+            "description": "CHIP:CEBPB:HepG2",
+            "quantile_score": 0.5474070193818753,
+            "ref_signal_percentile": 0.8243
+          }
+        ],
+        "histone_marks": [
+          {
+            "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+            "assay_type": "CHIP",
+            "cell_type": "HepG2",
+            "layer": "histone_marks",
+            "ref_value": 9195.5,
+            "alt_value": 8955.5,
+            "raw_score": -0.03814983593287307,
+            "description": "CHIP:H3K27ac:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 0.9932
+          }
+        ],
+        "tss_activity": [
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 3.9967117309570312,
+            "alt_value": 3.8801517486572266,
+            "raw_score": -0.03405297968522565,
+            "description": "CAGE:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 4729.279296875,
+            "alt_value": 4734.9423828125,
+            "raw_score": 0.0017261600772279799,
+            "description": "CAGE:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "FTO TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 4635.96435546875,
+            "alt_value": 4642.18896484375,
+            "raw_score": 0.00193535906434949,
+            "description": "CAGE:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "RPGRIP1L TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 2.2141551971435547,
+            "alt_value": 2.216568946838379,
+            "raw_score": 0.0010830210720401364,
+            "description": "CAGE:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "AKTIP TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 2759.181884765625,
+            "alt_value": 2755.239990234375,
+            "raw_score": -0.002061826592946294,
+            "description": "CAGE:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "RBL2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/+",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 78.16259765625,
+            "alt_value": 78.99209594726562,
+            "raw_score": 0.015038499710592453,
+            "description": "CAGE:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "IRX3 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 0.8452521562576294,
+            "alt_value": 0.8201236724853516,
+            "raw_score": -0.019781495044303044,
+            "description": "CAGE:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 1355.95166015625,
+            "alt_value": 1357.5242919921875,
+            "raw_score": 0.0016710355344598357,
+            "description": "CAGE:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "FTO TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 1358.1614990234375,
+            "alt_value": 1359.73046875,
+            "raw_score": 0.0016644375009784234,
+            "description": "CAGE:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "RPGRIP1L TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 1215.04833984375,
+            "alt_value": 1209.77099609375,
+            "raw_score": -0.0062745582628883105,
+            "description": "CAGE:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "AKTIP TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 6.329219818115234,
+            "alt_value": 6.318233489990234,
+            "raw_score": -0.002164188373552495,
+            "description": "CAGE:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "RBL2 TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0001187/-",
+            "assay_type": "CAGE",
+            "cell_type": "HepG2",
+            "layer": "tss_activity",
+            "ref_value": 1266.95654296875,
+            "alt_value": 1265.4586181640625,
+            "raw_score": -0.0017053630140174002,
+            "description": "CAGE:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "IRX3 TSS"
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "layer": "chromatin_accessibility",
+          "ref_value": 112.47001647949219,
+          "alt_value": 110.17610168457031,
+          "raw_score": -0.029464426599394012,
+          "description": "DNASE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.9028
+        },
+        {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "layer": "tf_binding",
+          "ref_value": 1001.0,
+          "alt_value": 984.0,
+          "raw_score": -0.024686878851469796,
+          "description": "CHIP:CEBPA:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.9265
+        },
+        {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "layer": "tf_binding",
+          "ref_value": 489.5,
+          "alt_value": 488.5,
+          "raw_score": -0.0029442766155436746,
+          "description": "CHIP:CEBPB:HepG2",
+          "quantile_score": 0.5474070193818753,
+          "ref_signal_percentile": 0.8243
+        },
+        {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "layer": "histone_marks",
+          "ref_value": 9195.5,
+          "alt_value": 8955.5,
+          "raw_score": -0.03814983593287307,
+          "description": "CHIP:H3K27ac:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.9932
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 3.9967117309570312,
+          "alt_value": 3.8801517486572266,
+          "raw_score": -0.03405297968522565,
+          "description": "CAGE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 4729.279296875,
+          "alt_value": 4734.9423828125,
+          "raw_score": 0.0017261600772279799,
+          "description": "CAGE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "FTO TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 4635.96435546875,
+          "alt_value": 4642.18896484375,
+          "raw_score": 0.00193535906434949,
+          "description": "CAGE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "RPGRIP1L TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 2.2141551971435547,
+          "alt_value": 2.216568946838379,
+          "raw_score": 0.0010830210720401364,
+          "description": "CAGE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "AKTIP TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 2759.181884765625,
+          "alt_value": 2755.239990234375,
+          "raw_score": -0.002061826592946294,
+          "description": "CAGE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "RBL2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 78.16259765625,
+          "alt_value": 78.99209594726562,
+          "raw_score": 0.015038499710592453,
+          "description": "CAGE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "IRX3 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 0.8452521562576294,
+          "alt_value": 0.8201236724853516,
+          "raw_score": -0.019781495044303044,
+          "description": "CAGE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 1355.95166015625,
+          "alt_value": 1357.5242919921875,
+          "raw_score": 0.0016710355344598357,
+          "description": "CAGE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "FTO TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 1358.1614990234375,
+          "alt_value": 1359.73046875,
+          "raw_score": 0.0016644375009784234,
+          "description": "CAGE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "RPGRIP1L TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 1215.04833984375,
+          "alt_value": 1209.77099609375,
+          "raw_score": -0.0062745582628883105,
+          "description": "CAGE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "AKTIP TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 6.329219818115234,
+          "alt_value": 6.318233489990234,
+          "raw_score": -0.002164188373552495,
+          "description": "CAGE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "RBL2 TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 1266.95654296875,
+          "alt_value": 1265.4586181640625,
+          "raw_score": -0.0017053630140174002,
+          "description": "CAGE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "IRX3 TSS"
+        }
+      ]
+    }
+  },
+  "analysis_request": {
+    "user_prompt": "Analyze rs1421085 (chr16:53767042 T>C) in HepG2 cells. Gene is FTO. Using HepG2 as the nearest available metabolic cell type.",
+    "tool_name": "analyze_variant_multilayer",
+    "oracle_name": "alphagenome",
+    "normalizer_name": "per-track background CDFs",
+    "tracks_requested": "6 HepG2/K562 tracks",
+    "cell_types": [],
+    "notes": [],
+    "generated_at": "2026-04-16 17:58 UTC"
+  }
+}

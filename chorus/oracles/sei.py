@@ -48,8 +48,10 @@ class SeiOracle(OracleBase):
                          model_load_timeout=model_load_timeout,
                          predict_timeout=predict_timeout,
                          device=device)
+        # Sentinel; resolved to a real torch device inside _load_direct, where
+        # torch is importable (chorus-sei env). 'auto' means: prefer cuda > mps > cpu.
         if self.device is None:
-            self.device = 'cpu'
+            self.device = 'auto'
 
         # Sei-specific parameters
         self.sequence_length = SEI_WINDOW # Sei input length
@@ -153,12 +155,24 @@ class SeiOracle(OracleBase):
     
     def _load_direct(self):
         try:
-            import torch 
+            import torch
             from .sei_source.sei import Sei, SeiProjector, SeiNormalizer
             from .sei_source.annotations import SeiClassesList, SeiTargetList
 
+            # Resolve 'auto' sentinel: cuda > mps > cpu.
+            if self.device == 'auto':
+                if torch.cuda.is_available():
+                    self.device = 'cuda:0'
+                elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+                    self.device = 'mps'
+                else:
+                    self.device = 'cpu'
+                logger.info(f"Sei auto-detected device: {self.device}")
             device = torch.device(self.device)
             model = Sei(sequence_length=self.sequence_length, n_genomic_features=self.n_targets)
+            # Load weights to CPU first so map_location works regardless of target
+            # device (mps doesn't accept arbitrary state dicts loaded with
+            # map_location='mps' across torch versions); then move to device.
             model_weights = torch.load(self.get_model_weights_path(), map_location='cpu', weights_only=True)
             model_weights = {key.replace("module.model.", ""): value for key, value in model_weights.items()}
             model.load_state_dict(model_weights)
@@ -179,6 +193,8 @@ class SeiOracle(OracleBase):
             self._projector = projector
             self._target_list = targets
             self._classes_list = classes
+            self.loaded = True
+            logger.info("Sei model loaded successfully!")
         except Exception as e:
             raise ModelNotLoadedError(f"Failed to load Sei model: {str(e)}")
 
@@ -445,8 +461,8 @@ class SeiOracle(OracleBase):
 
             template, arg = self.get_predict_template()
             template = template.replace(arg, arg_file.name)
-            model_predictions = self.run_code_in_environment(template, timeout=self.model_load_timeout)
-            
+            model_predictions = self.run_code_in_environment(template, timeout=self.predict_timeout)
+
             selected_preds = np.array(model_predictions['selected_preds'], dtype=np.float32)
             selected_classes = np.array(model_predictions['selected_classes'], dtype=np.float32)
         return selected_preds, selected_classes
@@ -511,24 +527,23 @@ class SeiOracle(OracleBase):
         return "https://zenodo.org/record/4906997/files/sei_model.tar.gz"
 
     def _download_sei_model(self):
-        import urllib.request
         from pathlib import Path
         import tarfile
         import shutil
-        
+
         # Create download link
         download_link = self.get_zenodo_link()
         download_path = self.download_dir
-        
+
         logger.info(f"Downloading Sei model into {download_path}...")
-        
+
         download_file_path = os.path.join(
-            download_path, 
+            download_path,
             os.path.basename(download_link)
         )
 
         if not Path(download_file_path).exists():
-            urllib.request.urlretrieve(download_link, filename=download_file_path)
+            self._download_with_resume(download_link, download_file_path)
             logger.info("Download completed!")
         else:
             logger.info("Sei model archive is already downloaded!")
@@ -540,10 +555,21 @@ class SeiOracle(OracleBase):
         except (tarfile.TarError, EOFError) as e:
             logger.warning(f"Archive appears corrupt ({e}), re-downloading...")
             Path(download_file_path).unlink(missing_ok=True)
-            urllib.request.urlretrieve(download_link, filename=download_file_path)
+            self._download_with_resume(download_link, download_file_path)
             with tarfile.open(download_file_path, "r:gz") as tar:
                 tar.extractall(path=download_path)
         logger.info("Sei model downloaded and extracted successfully!")
 
         info_file_path = self.get_model_dir_path() / "seqclass_info.txt"
         shutil.copy(info_file_path, self.get_classes_names())
+
+    @staticmethod
+    def _download_with_resume(url: str, dest: str, chunk_bytes: int = 4 * 1024 * 1024) -> None:
+        """Streamed HTTP download with ``Range`` resume + single-flight lock.
+
+        Thin compatibility shim around :func:`chorus.utils.http.download_with_resume`.
+        Kept so any external callers of ``SeiOracle._download_with_resume`` keep
+        working after the helper moved into the shared utility module.
+        """
+        from chorus.utils.http import download_with_resume
+        download_with_resume(url, dest, chunk_bytes=chunk_bytes, label="Sei download")

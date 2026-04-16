@@ -102,6 +102,18 @@ class AlphaGenomeOracle(OracleBase):
     def _load_direct(self, weights: str) -> None:
         try:
             import os
+            import platform as _platform
+
+            # JAX_PLATFORMS must be set BEFORE importing jax so the Metal
+            # plugin is never initialised on macOS (crashes with
+            # "UNIMPLEMENTED: default_memory_space").
+            force_cpu = (
+                _platform.system() == "Darwin"
+                and not (self.device and self.device.startswith("metal"))
+            )
+            if force_cpu:
+                os.environ["JAX_PLATFORMS"] = "cpu"
+
             import jax
             import huggingface_hub
             from alphagenome_research.model.dna_model import create_from_huggingface
@@ -121,9 +133,9 @@ class AlphaGenomeOracle(OracleBase):
                         "https://huggingface.co/google/alphagenome"
                     )
 
-            # Determine JAX device — AlphaGenome requires explicit device when no GPU
-            # NOTE: Metal is skipped in auto-detect (too experimental for AlphaGenome)
-            if self.device and self.device.startswith("cpu"):
+            if force_cpu:
+                jax_device = jax.devices("cpu")[0]
+            elif self.device and self.device.startswith("cpu"):
                 jax_device = jax.devices("cpu")[0]
             elif self.device and self.device.startswith("gpu"):
                 jax_device = jax.devices("gpu")[0]
@@ -422,7 +434,17 @@ class AlphaGenomeOracle(OracleBase):
     def get_all_assay_ids(self) -> List[str]:
         from .alphagenome_source.alphagenome_metadata import get_metadata
 
-        return list(get_metadata()._track_index_map.keys())
+        metadata = get_metadata()
+        ids = []
+        for aid, idx in metadata._track_index_map.items():
+            # Skip padding tracks (placeholder slots in AlphaGenome metadata)
+            if '/Padding/' in aid:
+                continue
+            info = metadata.get_track_info(idx)
+            if info and info.get('name', '').lower() == 'padding':
+                continue
+            ids.append(aid)
+        return ids
 
     def get_track_info(
         self, query: str = None
