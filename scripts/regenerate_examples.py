@@ -72,6 +72,7 @@ ALPHAGENOME_EXAMPLES = [
         "ref": "G", "alt": "T",
         "gene": "SORT1",
         "assay_ids": HEPG2_TRACKS,
+        "cell_type": "HepG2",
         "html_name": "rs12740374_SORT1_alphagenome_report.html",
         "user_prompt": "Analyze rs12740374 (chr1:109274968 G>T) in HepG2 liver cells using DNASE, CEBPA/CEBPB ChIP, H3K27ac, and CAGE tracks. Gene is SORT1.",
     },
@@ -83,6 +84,7 @@ ALPHAGENOME_EXAMPLES = [
         "ref": "G", "alt": "T",
         "gene": "BCL11A",
         "assay_ids": K562_TRACKS,
+        "cell_type": "K562",
         "html_name": "rs1427407_BCL11A_alphagenome_report.html",
         "user_prompt": "Analyze rs1427407 (chr2:60490908 G>T) in K562 erythroid cells using DNASE, GATA1/TAL1 ChIP, H3K27ac, and CAGE tracks. Gene is BCL11A.",
     },
@@ -94,6 +96,7 @@ ALPHAGENOME_EXAMPLES = [
         "ref": "T", "alt": "C",
         "gene": "FTO",
         "assay_ids": HEPG2_TRACKS,
+        "cell_type": "HepG2",
         "html_name": "rs1421085_FTO_alphagenome_report.html",
         "user_prompt": "Analyze rs1421085 (chr16:53767042 T>C) in HepG2 cells. Gene is FTO. Using HepG2 as the nearest available metabolic cell type.",
     },
@@ -106,6 +109,7 @@ ALPHAGENOME_EXAMPLES = [
         "ref": "G", "alt": "T",
         "gene": "SORT1",
         "assay_ids": HEPG2_TRACKS,
+        "cell_type": "HepG2",
         "html_name": "rs12740374_SORT1_CEBP_validation_report.html",
         "user_prompt": "Validate AlphaGenome paper finding: rs12740374 (chr1:109274968 G>T) should show CEBPA/CEBPB binding gain in HepG2. Using forced HepG2 tracks.",
     },
@@ -175,11 +179,20 @@ def regenerate_variant_alphagenome(oracle, norm, example):
     )
 
     # Build analysis request with user prompt
+    cell_label = example.get("cell_type", "").strip()
+    if assay_ids:
+        tracks_str = (
+            f"{len(assay_ids)} {cell_label} tracks"
+            if cell_label
+            else f"{len(assay_ids)} tracks"
+        )
+    else:
+        tracks_str = "all tracks"
     ar = AnalysisRequest(
         user_prompt=example.get("user_prompt"),
         tool_name="analyze_variant_multilayer",
         oracle_name="alphagenome",
-        tracks_requested=f"{len(assay_ids)} HepG2/K562 tracks" if assay_ids else "all tracks",
+        tracks_requested=tracks_str,
     )
 
     report = build_variant_report(

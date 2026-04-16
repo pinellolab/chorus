@@ -446,7 +446,7 @@
     "tool_name": "analyze_variant_multilayer",
     "oracle_name": "alphagenome",
     "normalizer_name": "per-track background CDFs",
-    "tracks_requested": "6 HepG2/K562 tracks",
+    "tracks_requested": "6 HepG2 tracks",
     "cell_types": [],
     "notes": [],
     "generated_at": "2026-04-16 17:58 UTC"
