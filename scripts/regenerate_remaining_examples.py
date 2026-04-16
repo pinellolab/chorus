@@ -130,7 +130,7 @@ def regen_discovery(oracle, norm):
     with open(f"{out_dir}/discovery_summary.json", "w") as fh:
         json.dump(result.get("hits", []), fh, indent=2, default=str)
 
-    # Attach user prompt to each sub-report
+    # Attach user prompt to each sub-report and re-write HTML
     from chorus.analysis.analysis_request import AnalysisRequest
     hits = result.get("hits", [])
     reports = result.get("reports", {})
@@ -146,6 +146,16 @@ def regen_discovery(oracle, norm):
             cell_types=[ct_name],
             tracks_requested=f"top tracks for {ct_name}",
         )
+        # Re-write HTML now that analysis_request is attached.
+        # Find the existing HTML for this cell type and overwrite it directly.
+        import glob as _glob
+        ct_safe = ct_name.replace(" ", "_").replace("/", "_")
+        existing = [f for f in _glob.glob(f"{out_dir}/*.html")
+                     if ct_safe in os.path.basename(f)]
+        if existing:
+            report.to_html(output_path=existing[0])
+        else:
+            report.to_html(output_path=out_dir)
 
     # Build a combined markdown that lists top cell types and best tracks
     md_lines = [
@@ -410,12 +420,10 @@ def regen_tert_chr5(oracle, norm):
         json.dump(report.to_dict(), fh, indent=2, default=str)
     _write_tsv(_variant_report_tsv_rows(report), f"{out_dir}/example_output.tsv")
 
-    htmls = sorted(glob.glob(f"{out_dir}/chr*.html"), key=os.path.getmtime)
-    if htmls:
-        target = f"{out_dir}/chr5_1295046_T_G_TERT_alphagenome_report.html"
-        if htmls[-1] != target:
-            os.rename(htmls[-1], target)
-        logger.info("  ✓ %s (%.0f KB)", os.path.basename(target), os.path.getsize(target)/1024)
+    # Re-write HTML with analysis_request attached
+    target = f"{out_dir}/chr5_1295046_T_G_TERT_alphagenome_report.html"
+    report.to_html(output_path=target)
+    logger.info("  ✓ %s (%.0f KB)", os.path.basename(target), os.path.getsize(target)/1024)
 
 
 HEPG2_TRACKS = [

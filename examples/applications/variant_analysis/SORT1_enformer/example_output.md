@@ -5,7 +5,7 @@
 - **Tool**: `discover_variant`
 - **Oracle**: enformer
 - **Tracks requested**: all Enformer tracks (discovery mode)
-- **Generated**: 2026-04-16 18:27 UTC
+- **Generated**: 2026-04-16 19:39 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -79,10 +79,6 @@
 | CAGE:colon carcinoma cell line:CACO-2 — variant site | 2.49 | 3.36 | +0.322 | ≥99th | 0.904 | Strong increase |
 | CAGE:kidney, fetal, pool1 — variant site | 4.28 | 5.59 | +0.321 | ≥99th | 0.883 | Strong increase |
 | _…showing top 10 of 48 — see `example_output.json` for the full set_ | | | | | | |
-
-## Interpretation
-
-Enformer detects strong DNASE effects at rs12740374 across multiple cell types, with very strong opening in multiple tissues (LNCaP +1.24, HeLa +1.15, proximal tubule +1.11). The cross-tissue pattern — strong effects across diverse cell types — suggests a broadly active regulatory element. Enformer also shows strong TF binding gains (HNF4A +1.13, RXRA +1.10) in liver, consistent with the hepatic enhancer mechanism. This complements AlphaGenome's focused HepG2 analysis with a panoramic tissue-wide view.
 
 ---
 **Score guide:**

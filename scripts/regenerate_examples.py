@@ -265,11 +265,11 @@ def regenerate_enformer_discovery(oracle, norm, example, igv_raw=False):
         with open(f'{out_dir}/example_output.json', 'w') as f:
             json.dump(d, f, indent=2, default=str)
 
-    htmls = sorted(glob.glob(f'{out_dir}/chr*.html'), key=os.path.getmtime)
-    if htmls:
-        target = f'{out_dir}/{example["html_name"]}'
-        os.rename(htmls[-1], target)
-        logger.info("  ✓ HTML: %s", example["html_name"])
+    # Re-write HTML with analysis_request attached (discover_variant_effects
+    # wrote it before the patch)
+    target = f'{out_dir}/{example["html_name"]}'
+    report.to_html(output_path=target)
+    logger.info("  ✓ HTML: %s", example["html_name"])
 
     logger.info("  ✓ Done")
     return True
