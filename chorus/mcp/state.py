@@ -98,10 +98,14 @@ class OracleStateManager:
         # Auto-load background distributions for quantile normalization
         self._auto_load_normalizer(name)
 
+        resolved_device = getattr(oracle, "device", None)
+        if resolved_device is None:
+            resolved_device = self._detect_device(oracle)
+
         result = {
             "name": name,
             "status": "loaded",
-            "device": getattr(oracle, "device", None),
+            "device": resolved_device,
             "load_time_seconds": self._load_times[name],
         }
         normalizer = self._normalizers.get(name)
@@ -126,6 +130,30 @@ class OracleStateManager:
         else:
             result["backgrounds"] = {"status": "none"}
         return result
+
+    @staticmethod
+    def _detect_device(oracle) -> str:
+        """Best-effort detection of the compute device when auto-detect was used.
+
+        Oracles run in isolated envs so we can't import their frameworks here.
+        Instead, check OS-level GPU availability.
+        """
+        import shutil
+        import subprocess
+        import sys
+        try:
+            if shutil.which("nvidia-smi"):
+                result = subprocess.run(
+                    ["nvidia-smi", "--query-gpu=count", "--format=csv,noheader"],
+                    capture_output=True, text=True, timeout=5,
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    return "gpu (auto-detected via nvidia-smi)"
+        except Exception:
+            pass
+        if sys.platform == "darwin":
+            return "mps (auto-detected, macOS)"
+        return "cpu (no GPU detected)"
 
     def get_oracle(self, name: str):
         """Return a loaded oracle or raise if not loaded."""
