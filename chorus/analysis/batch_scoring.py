@@ -79,7 +79,8 @@ class BatchResult:
     # ── Per-track dataframe ─────────────────────────────────────────────
 
     def to_dataframe(self):
-        """One row per variant. Per-track columns with ``_raw`` and ``_pctile`` suffixes."""
+        """One row per variant. Per-track columns with ``_ref``, ``_alt``, ``_log2fc``,
+        ``_effect_pctile``, and ``_activity_pctile`` suffixes."""
         import pandas as pd
 
         # Collect the union of all track IDs across all variants

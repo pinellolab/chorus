@@ -1429,9 +1429,15 @@ class TestEnrichedBatchFields:
         result = BatchResult(scores=scores)
         df = result.to_dataframe()
         assert "gene_name" in df.columns
-        assert "DNASE:K562_raw" in df.columns
-        assert "DNASE:K562_pctile" in df.columns
-        assert df["DNASE:K562_raw"].iloc[0] == 0.5
+        assert "DNASE:K562_ref" in df.columns
+        assert "DNASE:K562_alt" in df.columns
+        assert "DNASE:K562_log2fc" in df.columns
+        assert "DNASE:K562_effect_pctile" in df.columns
+        assert "DNASE:K562_activity_pctile" in df.columns
+        assert df["DNASE:K562_log2fc"].iloc[0] == 0.5
+        assert df["DNASE:K562_effect_pctile"].iloc[0] == 0.9
+        assert df["DNASE:K562_ref"].iloc[0] == 100
+        assert df["DNASE:K562_alt"].iloc[0] == 200
         assert "max_quantile" in df.columns
         assert df.iloc[0]["gene_name"] == "SORT1"
 
@@ -2351,8 +2357,8 @@ class TestBatchDisplayModes:
         df = result.to_dataframe()
         # Columns must be unique (was previously duplicating CAGE:HepG2)
         assert len(df.columns) == len(set(df.columns))
-        assert "CAGE:HepG2 (+)_raw" in df.columns
-        assert "CAGE:HepG2 (-)_raw" in df.columns
+        assert "CAGE:HepG2 (+)_log2fc" in df.columns
+        assert "CAGE:HepG2 (-)_log2fc" in df.columns
 
 
 class TestSafeToolDecorator:

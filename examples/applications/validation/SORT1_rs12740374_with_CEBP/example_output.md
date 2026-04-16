@@ -5,7 +5,7 @@
 - **Tool**: `analyze_variant_multilayer`
 - **Oracle**: alphagenome
 - **Normalizer**: per-track background CDFs
-- **Tracks requested**: 6 HepG2/K562 tracks
+- **Tracks requested**: 6 HepG2 tracks
 - **Generated**: 2026-04-16 18:02 UTC
 
 ## Multi-Layer Variant Effect Report
