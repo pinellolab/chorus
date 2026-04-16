@@ -29,6 +29,16 @@ Key features:
 - 🧪 Sub-region scoring, gene expression analysis (CAGE + RNA-seq), and variant-to-gene effect prediction
 - 🤖 MCP server for AI assistant integration (Claude, etc.)
 
+## Key terms
+
+| Term | Meaning |
+|------|---------|
+| **Oracle** | A deep learning model that predicts regulatory activity from DNA sequence (e.g. Enformer, AlphaGenome) |
+| **Track** | A single experimental measurement predicted by an oracle (e.g. DNase-seq in K562 cells) |
+| **assay_id** | The unique identifier for a track, used in API calls (e.g. `"ENCFF413AHU"` or `"DNASE/EFO:0001187 DNase-seq/."`) |
+| **Effect percentile** | How extreme a variant's effect is compared to ~10,000 random SNPs (≥99th = stronger than 99% of random variants) |
+| **log2FC** | Log2 fold-change between alternate and reference allele predictions — the raw effect size |
+
 ## 👉 Start here: Worked application examples
 
 The fastest way to see what Chorus can do is to browse the
@@ -39,7 +49,7 @@ TSV, and HTML** (with an embedded IGV browser):
 | I want to... | Example |
 |---|---|
 | Analyze a GWAS / clinical variant in a specific cell type | [variant_analysis/SORT1_rs12740374](examples/applications/variant_analysis/SORT1_rs12740374/) |
-| Find which tissues a variant affects most | [discovery/SORT1_cell_type_screen](examples/applications/discovery/SORT1_cell_type_screen/) |
+| I have a variant but don't know the relevant tissue | [discovery/SORT1_cell_type_screen](examples/applications/discovery/SORT1_cell_type_screen/) |
 | Fine-map a GWAS locus to the causal SNP | [causal_prioritization/SORT1_locus](examples/applications/causal_prioritization/SORT1_locus/) |
 | Score a batch of variants from a VCF | [batch_scoring/](examples/applications/batch_scoring/) |
 | Predict the effect of an engineered sequence edit | [sequence_engineering/region_swap](examples/applications/sequence_engineering/region_swap/) |

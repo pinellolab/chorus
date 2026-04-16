@@ -75,13 +75,23 @@ and ask Claude to construct the variants list.
 ```python
 from chorus.analysis import score_variant_batch
 
+# From a VCF file:
+import pandas as pd
+vcf = pd.read_csv("variants.vcf", sep="\t", comment="#", header=None,
+                   names=["CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO"])
+variants = [{"chrom": r.CHROM, "pos": r.POS, "ref": r.REF, "alt": r.ALT, "id": r.ID}
+            for _, r in vcf.iterrows()]
+
+# Or manually:
 variants = [
     {"chrom": "chr1", "pos": 109274968, "ref": "G", "alt": "T", "id": "rs12740374"},
     {"chrom": "chr1", "pos": 109275684, "ref": "C", "alt": "T", "id": "rs629301"},
     # ...
 ]
 
-result = score_variant_batch(oracle, variants, assay_ids=["DNASE:HepG2"])
+# For AlphaGenome, use full track IDs (find them with oracle.search_tracks('HepG2 DNase'))
+result = score_variant_batch(oracle, variants, assay_ids=["DNASE:HepG2"],
+                             oracle_name="alphagenome")  # oracle_name enables percentile normalization
 
 # Output formats
 print(result.to_markdown())                 # Ranked table

@@ -53,6 +53,13 @@
 | _…showing top 10 of 12 — see `example_output.json` for the full set_ | | | | | | |
 
 ---
+## Interpretation
+
+This variant shows **minimal effects in HepG2 liver cells** across all regulatory layers. This is biologically expected: published work (Claussnitzer et al., *NEJM* 2015) demonstrated that rs1421085 acts specifically in **adipocyte progenitors**, altering ARID5B binding to a super-enhancer and de-repressing IRX3/IRX5 expression ~500 kb away. The variant's mechanism is tissue-specific and long-range — neither of which would be visible in HepG2 liver cells.
+
+**To detect this variant's effect**, re-run with adipose tissue tracks (if available for your oracle) or use `discover_variant_cell_types` to screen all tissues. This example demonstrates that **cell-type selection is critical** for non-coding variant interpretation — a negative result in one tissue does not mean the variant is benign.
+
+---
 **Score guide:**
 - **Effect %ile**: Variant effect ranked against ~10K random SNPs. 0.95 = stronger than 95% of random variants.
 - **Activity %ile**: Reference signal ranked genome-wide against ENCODE SCREEN cCREs + random regions. 0.95 = more active than 95% of genomic positions.
