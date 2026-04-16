@@ -16,7 +16,7 @@ Chorus provides a consistent, easy-to-use API for working with state-of-the-art 
 - **ChromBPNet / BPNet**: Predicts chromatin accessibility (ChromBPNet) and TF binding (BPNet) at base-pair resolution
 - **Sei**: Sequence regulatory effect predictions across 21,907 chromatin profiles
 - **LegNet**: Regulatory regions activity prediction using models trained on MPRA data
-- **AlphaGenome**: Google DeepMind's model predicting 5,930 genomic tracks at single base-pair resolution from 1MB input
+- **AlphaGenome**: Google DeepMind's model predicting 5,731 genomic tracks at single base-pair resolution from 1MB input
 
 Key features:
 - 🧬 Unified API across different models
@@ -117,7 +117,7 @@ Then re-run the Fresh Install steps above.
 
 Chorus uses isolated conda environments for each oracle to avoid dependency conflicts between TensorFlow, PyTorch, and JAX models.
 
-**Which oracle to start with?** For variant analysis, **AlphaGenome** is the most comprehensive (1 Mb window, 1 bp resolution, 5,930 tracks) but requires ~16 GB RAM and benefits from a GPU. **Enformer** is a good lightweight alternative that runs comfortably on CPU with ~8 GB RAM.
+**Which oracle to start with?** For variant analysis, **AlphaGenome** is the most comprehensive (1 Mb window, 1 bp resolution, 5,731 tracks) but requires ~16 GB RAM and benefits from a GPU. **Enformer** is a good lightweight alternative that runs comfortably on CPU with ~8 GB RAM.
 
 ```bash
 # Set up all oracle environments
@@ -227,7 +227,7 @@ oracle.load_pretrained_model()
 
 # 2. Predict DNase accessibility at the beta-globin locus.
 #    'ENCFF413AHU' is the ENCODE track ID for DNase-seq in K562 cells;
-#    use `oracle.list_tracks()` or see the "Discovering Tracks" section
+#    use `list_tracks(oracle_name)` MCP tool or see the "Discovering Tracks" section
 #    below to find track IDs for other assays and cell types.
 predictions = oracle.predict(('chr11', 5247000, 5248000), ['ENCFF413AHU'])
 
@@ -502,14 +502,14 @@ epigenomic activity directly from DNA sequence.
 Enhanced Enformer with improved performance and RNA-tracks predictions.
 
 - Sequence length: 524,288 bp input, 196,608 bp output window
-- Output: 6,144 bins × 7,610 tracks
+- Output: 6,144 bins × 7,611 tracks
 - Bin size: 32 bp
 - Track types: Gene expression (CAGE, RNA-Seq), chromatin accessibility (DNase/ATAC), histone modifications (ChIP-seq)
 - Track identifiers: 
   - ENCODE IDs (e.g., ENCFF413AHU for DNase:K562)
   - CAGE IDs (e.g., CNhs11250 for CAGE:K562)
   - Descriptive names (e.g., 'DNase:K562', 'H3K4me3:HepG2')
-- Track metadata: Included in the package (file with all 7,610 human track definitions)
+- Track metadata: Included in the package (file with all 7,611 human track definitions)
 
 
 ### ChromBPNet / BPNet
@@ -557,7 +557,7 @@ Sequence regulatory effect predictions (uses custom track naming for 21,907 prof
 - Track types: DNase accessibility, TF binding (CHIP-Seq), histone modifications 
 - Track identifiers: 
   - custom Sei track identifiers
-- Track metadata: Included in the package (files with all 21907 human track definitions and 41 Sei-defined classes)
+- Track metadata: Included in the package (files with all 21907 human track definitions and 40 Sei-defined classes)
 
 
 ### LegNet
@@ -573,7 +573,7 @@ LegNet is a fully convolutional neural network designed for efficient modeling o
 
 ### AlphaGenome
 
-AlphaGenome (Google DeepMind, Nature 2026) predicts 5,930 human functional genomic tracks at single base-pair resolution from up to 1 MB of DNA sequence using a JAX-based model.
+AlphaGenome (Google DeepMind, Nature 2026) predicts 5,731 human functional genomic tracks at single base-pair resolution from up to 1 MB of DNA sequence using a JAX-based model.
 
 - Sequence length: 1,048,576 bp (1 MB) input
 - Output: 1,048,576 bins at single base-pair resolution
@@ -768,7 +768,7 @@ Key features:
 
 ### Variant Analysis with AlphaGenome (Recommended)
 
-AlphaGenome (1Mb window, 5930 tracks) is the recommended primary oracle for variant analysis.
+AlphaGenome (1Mb window, 5731 tracks) is the recommended primary oracle for variant analysis.
 It covers DNASE, ATAC, CAGE, RNA-seq, ChIP-seq histone marks, and TF binding in a single model.
 
 Example conversation with Claude:

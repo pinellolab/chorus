@@ -299,11 +299,12 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
         return {
             "oracle": oracle_name,
             "assay_types": ["LentiMPRA"],
-            "cell_types": ["HepG2", "K562"],
+            "cell_types": ["K562", "HepG2", "WTC11"],
             "note": "LegNet predicts lentiMPRA activity. Specify cell_type when loading.",
         }
 
-    return {"error": f"Unknown oracle: {oracle_name}"}
+    valid = ", ".join(ORACLE_SPECS.keys())
+    return {"error": f"Unknown oracle: '{oracle_name}'. Valid names: {valid}"}
 
 
 @mcp.tool()

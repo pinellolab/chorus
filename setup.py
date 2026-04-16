@@ -46,7 +46,22 @@ setup(
         ],
     },
     package_data={
-        "chorus": ["../environments/*.yml"],
+        "chorus": [
+            "oracles/borzoi_source/*.txt",
+            "oracles/borzoi_source/*.json",
+            "oracles/sei_source/*.txt",
+            "oracles/alphagenome_source/*.json",
+            "analysis/data/*.bed",
+        ],
     },
+    data_files=[
+        ("chorus_environments", [
+            f"environments/{f}" for f in [
+                "chorus-alphagenome.yml", "chorus-borzoi.yml", "chorus-chrombpnet.yml",
+                "chorus-enformer.yml", "chorus-legnet.yml", "chorus-sei.yml",
+                "chorus-base.yml",
+            ]
+        ]),
+    ],
     include_package_data=True,
 )
