@@ -343,9 +343,7 @@ class VariantReport:
                     cols = [track_label, ref_str, alt_str, score_str]
                     if has_quantile:
                         cols.append(
-                            f"{ts.quantile_score:.3f}"
-                            if ts.quantile_score is not None
-                            else "—"
+                            _fmt_percentile(ts.quantile_score)
                         )
                     if has_baseline:
                         cols.append(
@@ -435,6 +433,18 @@ def _sort_layer_scores(layer_scores: list["TrackScore"]) -> list["TrackScore"]:
 # ---------------------------------------------------------------------------
 # Interpretation helpers
 # ---------------------------------------------------------------------------
+
+
+def _fmt_percentile(q: float | None) -> str:
+    """Format a quantile score for display, avoiding misleading precision."""
+    if q is None:
+        return "—"
+    if q >= 0.99:
+        return "≥99th"
+    if q <= 0.01:
+        return "≤1st"
+    return f"{q:.2f}"
+
 
 def _interpret_score(
     raw_score: float,
@@ -1022,21 +1032,20 @@ tr:hover td { background: #e9ecef; }
 """
 
 
-def _score_color_class(raw_score, quantile_score):
-    """Return CSS class for interpretation badge."""
-    if quantile_score is not None:
-        mag = abs(quantile_score)
-    elif raw_score is not None:
-        mag = abs(raw_score)
-    else:
-        return "badge-minimal"
-    if mag < 0.1 if quantile_score is None else mag < 0.5:
-        return "badge-minimal"
-    if mag < 0.3 if quantile_score is None else mag < 0.75:
-        return "badge-moderate"
-    if mag < 0.7 if quantile_score is None else mag < 0.9:
+def _score_color_class(interpretation: str):
+    """Return CSS class for interpretation badge, derived from the label itself.
+
+    This ensures the badge color always matches the text — e.g. "Minimal effect"
+    never shows a red badge even when the percentile is high.
+    """
+    lower = interpretation.lower()
+    if "very strong" in lower:
+        return "badge-vstrong"
+    if "strong" in lower:
         return "badge-strong"
-    return "badge-vstrong"
+    if "moderate" in lower:
+        return "badge-moderate"
+    return "badge-minimal"
 
 
 def _bar_width(raw_score, max_abs=2.0):
@@ -1310,7 +1319,7 @@ def _build_html_report(report: "VariantReport") -> str:
                 )
 
                 if has_quantile:
-                    q_str = f"{ts.quantile_score:.3f}" if ts.quantile_score is not None else "—"
+                    q_str = _fmt_percentile(ts.quantile_score)
                     parts.append(f"<td>{q_str}</td>")
 
                 if has_baseline:
@@ -1318,7 +1327,7 @@ def _build_html_report(report: "VariantReport") -> str:
                     parts.append(f"<td>{rsp_str}</td>")
 
                 interp = _interpret_score(ts.raw_score, ts.quantile_score, layer_name)
-                badge_cls = _score_color_class(ts.raw_score, ts.quantile_score)
+                badge_cls = _score_color_class(interp)
                 parts.append(f'<td><span class="badge {badge_cls}">'
                              f'{html_mod.escape(interp)}</span></td>')
                 parts.append("</tr>")

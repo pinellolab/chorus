@@ -231,13 +231,17 @@ def build_igv_html(
             scale_cfg = {"autoscale": True, "autoscaleGroup": group_id}
             name_suffix = ""
 
-        # Build a human-readable display name from track metadata
-        display_name = assay_id
-        meta = getattr(ref_track, "metadata", None)
-        if meta and isinstance(meta, dict) and meta.get("description"):
-            display_name = meta["description"]
-        elif hasattr(ref_track, "assay_type") and hasattr(ref_track, "cell_type"):
-            display_name = f"{ref_track.assay_type}:{ref_track.cell_type}"
+        # Build a human-readable display name from track metadata.
+        # Use _track_description from variant_report for enriched CHIP names
+        # (e.g. "CHIP:CEBPA:HepG2" instead of generic "CHIP:HepG2").
+        from chorus.analysis.variant_report import _track_description
+        display_name = _track_description(ref_track) or assay_id
+        if display_name == assay_id:
+            meta = getattr(ref_track, "metadata", None)
+            if meta and isinstance(meta, dict) and meta.get("description"):
+                display_name = meta["description"]
+            elif hasattr(ref_track, "assay_type") and hasattr(ref_track, "cell_type"):
+                display_name = f"{ref_track.assay_type}:{ref_track.cell_type}"
 
         # Merged overlay: ref (grey) + alt (coloured) on same panel
         tracks.append({
