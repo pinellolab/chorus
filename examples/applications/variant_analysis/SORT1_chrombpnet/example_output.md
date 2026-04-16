@@ -6,7 +6,7 @@
 - **Oracle**: chrombpnet
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: ATAC:HepG2
-- **Generated**: 2026-04-15 05:31 UTC
+- **Generated**: 2026-04-16 18:30 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -21,12 +21,11 @@
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| ATAC:HepG2 | 687 | 636 | -0.111 | 0.967 | 0.820 | Moderate closing |
+| ATAC:HepG2 | 687 | 636 | -0.111 | 0.97 | 0.820 | Moderate closing |
 
----
 ## Interpretation
 
-ChromBPNet shows moderate chromatin closing (-0.11 log2FC) at rs12740374 in HepG2 ATAC. This is a single-assay, single-cell-type view at 1bp resolution — compare with the [AlphaGenome multi-layer analysis](../SORT1_rs12740374/example_output.md) which shows strong opening (+0.43) across a broader window. See the [cross-oracle comparison note](../SORT1_chrombpnet/README.md#why-alphagenome-dnase-and-chrombpnet-atac-can-disagree) for why these oracles can differ on the same variant.
+ChromBPNet shows moderate chromatin closing (-0.11 log2FC) at rs12740374 in HepG2 ATAC at 1bp resolution. Compare with the [AlphaGenome multi-layer analysis](../SORT1_rs12740374/example_output.md) which shows strong opening (+0.45) across a broader 1Mb window. See the [cross-oracle comparison note](../SORT1_chrombpnet/README.md#why-alphagenome-dnase-and-chrombpnet-atac-can-disagree) for why different oracles can report different effects on the same variant.
 
 ---
 **Score guide:**

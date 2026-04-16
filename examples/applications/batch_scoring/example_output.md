@@ -6,22 +6,21 @@
 - **Oracle**: alphagenome
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: 6 HepG2 tracks
-- **Generated**: 2026-04-15 05:12 UTC
+- **Generated**: 2026-04-16 18:08 UTC
 
 ## Batch Variant Scoring Results
 
 **5 variants scored**
 
-| Variant | ID | DNASE:HepG2 | CHIP:CEBPA:HepG2 | CHIP:CEBPB:HepG2 | CHIP:H3K27ac:HepG2 | CAGE:HepG2 (+) | CAGE:HepG2 (-) |
-|---------|-----|---|---|---|---|---|---|
-| chr1:109274968 G>T | rs12740374 | +0.448 (100%) | +0.376 (100%) | +0.269 (100%) | +0.180 (100%) | +0.001 (100%) | -0.003 (100%) |
-| chr1:109279175 G>A | rs4970836 | -0.041 (100%) | -0.032 (100%) | -0.027 (100%) | -0.014 (100%) | -0.004 (100%) | +0.001 (100%) |
-| chr1:109275216 T>C | rs660240 | +0.068 (100%) | +0.026 (100%) | +0.019 (100%) | +0.027 (100%) | -0.011 (100%) | +0.001 (100%) |
-| chr1:109275684 G>T | rs1626484 | +0.005 (100%) | +0.004 (100%) | +0.004 (78%) | -0.001 (44%) | -0.001 (100%) | +0.003 (100%) |
-| chr1:109274570 A>G | rs7528419 | +0.012 (100%) | +0.003 (79%) | +0.006 (100%) | +0.019 (100%) | +0.006 (100%) | -0.001 (100%) |
+| Variant | ID | DNASE:HepG2 Ref | DNASE:HepG2 Alt | DNASE:HepG2 log2FC | DNASE:HepG2 Effect %ile | CHIP:CEBPA:HepG2 Ref | CHIP:CEBPA:HepG2 Alt | CHIP:CEBPA:HepG2 log2FC | CHIP:CEBPA:HepG2 Effect %ile | CHIP:CEBPB:HepG2 Ref | CHIP:CEBPB:HepG2 Alt | CHIP:CEBPB:HepG2 log2FC | CHIP:CEBPB:HepG2 Effect %ile | CHIP:H3K27ac:HepG2 Ref | CHIP:H3K27ac:HepG2 Alt | CHIP:H3K27ac:HepG2 log2FC | CHIP:H3K27ac:HepG2 Effect %ile | CAGE:HepG2 (+) Ref | CAGE:HepG2 (+) Alt | CAGE:HepG2 (+) log2FC | CAGE:HepG2 (+) Effect %ile | CAGE:HepG2 (-) Ref | CAGE:HepG2 (-) Alt | CAGE:HepG2 (-) log2FC | CAGE:HepG2 (-) Effect %ile |
+|---------|-----|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| chr1:109274968 G>T | rs12740374 | 512 | 700 | +0.449 | ≥99th | 2.1e+03 | 2.72e+03 | +0.379 | ≥99th | 1.21e+03 | 1.47e+03 | +0.272 | ≥99th | 1.37e+04 | 1.55e+04 | +0.180 | ≥99th | 39 | 38.8 | -0.008 | ≥99th | 3.85e+03 | 3.84e+03 | -0.003 | ≥99th |
+| chr1:109279175 G>A | rs4970836 | 8.22 | 7.96 | -0.042 | ≥99th | 201 | 197 | -0.032 | ≥99th | 202 | 198 | -0.027 | ≥99th | 3.32e+03 | 3.28e+03 | -0.015 | ≥99th | 43.1 | 43.2 | +0.003 | ≥99th | 4.19e+03 | 4.19e+03 | -0.001 | — |
+| chr1:109275216 T>C | rs660240 | 398 | 418 | +0.069 | ≥99th | 1.28e+03 | 1.3e+03 | +0.028 | ≥99th | 768 | 780 | +0.022 | ≥99th | 1.63e+04 | 1.67e+04 | +0.029 | ≥99th | 45 | 45.1 | +0.003 | ≥99th | 4.31e+03 | 4.3e+03 | -0.002 | ≥99th |
+| chr1:109275684 G>T | rs1626484 | 69.4 | 69.6 | +0.003 | 0.77 | 541 | 542 | +0.003 | 0.71 | 512 | 514 | +0.007 | ≥99th | 1.34e+04 | 1.34e+04 | -0.003 | ≥99th | 37.3 | 37.4 | +0.002 | ≥99th | 3.94e+03 | 3.95e+03 | +0.006 | ≥99th |
+| chr1:109274570 A>G | rs7528419 | 118 | 119 | +0.018 | ≥99th | 957 | 964 | +0.011 | ≥99th | 776 | 780 | +0.007 | ≥99th | 1.46e+04 | 1.48e+04 | +0.020 | ≥99th | 40.6 | 40.5 | -0.004 | ≥99th | 4.3e+03 | 4.29e+03 | -0.002 | ≥99th |
 
-Each cell shows: **raw effect** (effect percentile).
-Effect percentile ranks this variant's effect against ~10K random SNPs.
+Each track shows: **Ref** (reference allele prediction), **Alt** (alternate allele prediction), **log2FC** (log2 fold-change alt/ref), **Effect %ile** (ranked against ~10K random SNPs).
 
 **Track identifiers** (for tracing back to oracle data):
 

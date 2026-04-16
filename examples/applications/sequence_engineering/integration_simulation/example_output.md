@@ -5,7 +5,7 @@
 - **Tool**: `simulate_integration`
 - **Oracle**: alphagenome
 - **Tracks requested**: 3 K562 tracks
-- **Generated**: 2026-04-15 05:12 UTC
+- **Generated**: 2026-04-16 18:08 UTC
 
 ## Integration Simulation Report
 
@@ -16,34 +16,34 @@
 **Modification**: Inserted 378 bp construct at chr19:55,115,001
 **Modified region**: chr19:55,115,001-55,115,378 (378 bp)
 
-**Summary**: TSS activity (CAGE/PRO-CAP): very strong decrease (-8.96); Chromatin accessibility (DNASE/ATAC): very strong opening (+4.22); Histone modifications (ChIP-Histone): very strong mark gain (+1.20).
+**Summary**: TSS activity (CAGE/PRO-CAP): very strong decrease (-8.96); Chromatin accessibility (DNASE/ATAC): very strong opening (+4.23); Histone modifications (ChIP-Histone): very strong mark gain (+1.20).
 
 #### Chromatin accessibility (DNASE/ATAC)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| DNASE:K562 | 24.4 | 473 | +4.223 | 1.000 | 0.764 | Very strong opening |
+| DNASE:K562 | 24.4 | 473 | +4.225 | ≥99th | 0.764 | Very strong opening |
 
 #### Histone modifications (ChIP-Histone)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:H3K27ac:K562 | 3.78e+03 | 8.66e+03 | +1.197 | 1.000 | 0.974 | Very strong mark gain |
+| CHIP:H3K27ac:K562 | 3.77e+03 | 8.66e+03 | +1.199 | ≥99th | 0.974 | Very strong mark gain |
 
 #### TSS activity (CAGE/PRO-CAP)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CAGE:K562 — RPL28 TSS | 7.04e+04 | 140 | -8.960 | 1.000 | 1.000 | Very strong decrease |
-| CAGE:K562 — ZNF628 TSS | 2.05e+03 | 7.09 | -7.985 | 1.000 | 1.000 | Very strong decrease |
-| CAGE:K562 — KMT5C TSS | 2.26e+03 | 22.3 | -6.601 | 1.000 | 1.000 | Very strong decrease |
-| CAGE:K562 — NAT14 TSS | 2.49e+03 | 40.6 | -5.905 | 1.000 | 1.000 | Very strong decrease |
-| CAGE:K562 — ZNF581 TSS | 14.9 | 516 | +5.026 | 1.000 | 1.000 | Very strong increase |
-| CAGE:K562 — ZNF865 TSS | 1.67e+03 | 125 | -3.729 | 1.000 | 1.000 | Very strong decrease |
-| CAGE:K562 — ISOC2 TSS | 5.85 | 70.5 | +3.384 | 1.000 | 1.000 | Very strong increase |
-| CAGE:K562 — TMEM238 TSS | 11.3 | 118 | +3.280 | 1.000 | 1.000 | Very strong increase |
-| CAGE:K562 — ZNF524 TSS | 825 | 98.1 | -3.059 | 1.000 | 1.000 | Very strong decrease |
-| CAGE:K562 — SSC5D TSS | 108 | 16 | -2.678 | 1.000 | 1.000 | Very strong decrease |
+| CAGE:K562 — RPL28 TSS | 7.03e+04 | 140 | -8.958 | ≥99th | 1.000 | Very strong decrease |
+| CAGE:K562 — ZNF628 TSS | 2.05e+03 | 7.11 | -7.984 | ≥99th | 1.000 | Very strong decrease |
+| CAGE:K562 — KMT5C TSS | 2.26e+03 | 22.4 | -6.596 | ≥99th | 1.000 | Very strong decrease |
+| CAGE:K562 — NAT14 TSS | 2.47e+03 | 40.7 | -5.888 | ≥99th | 1.000 | Very strong decrease |
+| CAGE:K562 — ZNF581 TSS | 14.9 | 516 | +5.023 | ≥99th | 1.000 | Very strong increase |
+| CAGE:K562 — ZNF865 TSS | 1.66e+03 | 125 | -3.725 | ≥99th | 1.000 | Very strong decrease |
+| CAGE:K562 — ISOC2 TSS | 5.84 | 70.5 | +3.386 | ≥99th | 1.000 | Very strong increase |
+| CAGE:K562 — TMEM238 TSS | 11.3 | 119 | +3.286 | ≥99th | 1.000 | Very strong increase |
+| CAGE:K562 — ZNF524 TSS | 825 | 97.9 | -3.062 | ≥99th | 1.000 | Very strong decrease |
+| CAGE:K562 — SSC5D TSS | 107 | 16 | -2.668 | ≥99th | 1.000 | Very strong decrease |
 | _…showing top 10 of 53 — see `example_output.json` for the full set_ | | | | | | |
 
 ---
