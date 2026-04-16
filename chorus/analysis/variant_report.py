@@ -1220,7 +1220,11 @@ def _build_html_report(report: "VariantReport") -> str:
     parts: list[str] = []
     parts.append("<!DOCTYPE html><html lang='en'><head>")
     parts.append("<meta charset='utf-8'>")
-    parts.append(f"<title>Variant Report — {report.chrom}:{report.position}</title>")
+    title_parts = [report.report_title or "Variant Report"]
+    if report.gene_name:
+        title_parts.append(report.gene_name)
+    title_parts.append(f"{report.chrom}:{report.position}")
+    parts.append(f"<title>{' — '.join(title_parts)}</title>")
     parts.append(f"<style>{_CSS}</style>")
     parts.append("</head><body>")
 

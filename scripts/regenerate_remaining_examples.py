@@ -130,9 +130,24 @@ def regen_discovery(oracle, norm):
     with open(f"{out_dir}/discovery_summary.json", "w") as fh:
         json.dump(result.get("hits", []), fh, indent=2, default=str)
 
-    # Build a combined markdown that lists top cell types and best tracks
+    # Attach user prompt to each sub-report
+    from chorus.analysis.analysis_request import AnalysisRequest
     hits = result.get("hits", [])
     reports = result.get("reports", {})
+    for ct_name, report in reports.items():
+        report.analysis_request = AnalysisRequest(
+            user_prompt=(
+                "Screen all cell types for variant rs12740374 (chr1:109274968 G>T) "
+                "using AlphaGenome. Find which cell types show the strongest "
+                "chromatin and regulatory effects. Gene is SORT1."
+            ),
+            tool_name="discover_variant_cell_types",
+            oracle_name="alphagenome",
+            cell_types=[ct_name],
+            tracks_requested=f"top tracks for {ct_name}",
+        )
+
+    # Build a combined markdown that lists top cell types and best tracks
     md_lines = [
         "## Discovery: SORT1 rs12740374 cell-type screen",
         "",
