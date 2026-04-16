@@ -50,6 +50,11 @@
 | CAGE:K562 — REL TSS | 1.87e+03 | 1.87e+03 | +0.000 | 0.048 | 1.000 | Minimal effect |
 
 ---
+## Interpretation
+
+This variant shows **moderate chromatin closing and TF binding loss in K562 erythroid cells**, consistent with its role as a fetal hemoglobin (HbF) regulatory variant. rs1427407 lies in an erythroid enhancer of BCL11A — a repressor of the fetal globin genes. The G>T change reduces GATA1 binding (-0.12) and chromatin accessibility (DNASE -0.11), weakening the enhancer. Reduced BCL11A expression de-represses HBG1/HBG2, increasing fetal hemoglobin. This mechanism is the basis for sickle cell disease therapies targeting the BCL11A enhancer (e.g. Casgevy/exa-cel). The moderate effect magnitudes reflect that this is one of several variants in a large LD block — the causal variant may be a nearby proxy.
+
+---
 **Score guide:**
-- **Effect %ile**: Variant effect ranked against ~10K random SNPs. 0.95 = stronger than 95% of random variants.
+- **Effect %ile**: Variant effect ranked against ~10K random SNPs. ≥99th = stronger than 99% of random variants.
 - **Activity %ile**: Reference signal ranked genome-wide against ENCODE SCREEN cCREs + random regions. 0.95 = more active than 95% of genomic positions.

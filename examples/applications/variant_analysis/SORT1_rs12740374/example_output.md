@@ -53,6 +53,11 @@
 | _…showing top 10 of 58 — see `example_output.json` for the full set_ | | | | | | |
 
 ---
+## Interpretation
+
+This variant shows **strong, convergent effects across multiple regulatory layers in HepG2 liver cells**, consistent with the published mechanism. The T allele at rs12740374 creates a C/EBP transcription factor binding site in a liver enhancer (Musunuru et al., 2010, *Nature*), leading to chromatin opening (DNASE +0.43), CEBPA/CEBPB binding gain (+0.37 / +0.22), H3K27ac activation (+0.18), and increased transcription (CAGE +0.15). This multi-layer agreement provides strong evidence that rs12740374 is the functional variant at the 1p13 GWAS locus. The downstream effect is increased SORT1 expression in liver, enhancing LDL cholesterol clearance.
+
+---
 **Score guide:**
-- **Effect %ile**: Variant effect ranked against ~10K random SNPs. 0.95 = stronger than 95% of random variants.
+- **Effect %ile**: Variant effect ranked against ~10K random SNPs. ≥99th = stronger than 99% of random variants.
 - **Activity %ile**: Reference signal ranked genome-wide against ENCODE SCREEN cCREs + random regions. 0.95 = more active than 95% of genomic positions.
