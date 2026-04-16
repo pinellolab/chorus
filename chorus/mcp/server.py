@@ -146,6 +146,32 @@ def _safe_tool(fn):
     return wrapper
 
 
+def _describe_tracks_requested(assay_ids, variant_result=None) -> str:
+    """Derive a human-readable label for tracks_requested.
+
+    If a single cell type is represented across the returned tracks, include
+    it in the label (e.g. "6 HepG2 tracks"). Otherwise fall back to plain
+    "N tracks" or "all oracle tracks".
+    """
+    if not assay_ids:
+        return "all oracle tracks"
+    cell_types: set[str] = set()
+    if variant_result is not None:
+        try:
+            ref_pred = variant_result.get("predictions", {}).get("reference")
+            if ref_pred is not None:
+                for tid in assay_ids:
+                    track = ref_pred.tracks.get(tid) if hasattr(ref_pred, "tracks") else None
+                    ct = getattr(track, "cell_type", None) if track else None
+                    if ct:
+                        cell_types.add(ct)
+        except Exception:
+            cell_types = set()
+    if len(cell_types) == 1:
+        return f"{len(assay_ids)} {cell_types.pop()} tracks"
+    return f"{len(assay_ids)} tracks"
+
+
 def _auto_region(oracle, position: str) -> str:
     """Compute an input region centered on a variant position.
 
@@ -881,9 +907,7 @@ def analyze_variant_multilayer(
         user_prompt=user_prompt,
         tool_name="analyze_variant_multilayer",
         oracle_name=oracle_name,
-        tracks_requested=(
-            "all oracle tracks" if not assay_ids else f"{len(assay_ids)} tracks"
-        ),
+        tracks_requested=_describe_tracks_requested(assay_ids, variant_result),
     )
 
     report = build_variant_report(
@@ -1107,7 +1131,7 @@ def analyze_region_swap(
         tool_name="analyze_region_swap",
         oracle_name=oracle_name,
         tracks_requested=(
-            "all oracle tracks" if not assay_ids else f"{len(assay_ids)} tracks"
+            _describe_tracks_requested(assay_ids)
         ),
         notes=[f"Region swap: {region}" + (f" — {description}" if description else "")],
     )
@@ -1171,7 +1195,7 @@ def simulate_integration(
         tool_name="simulate_integration",
         oracle_name=oracle_name,
         tracks_requested=(
-            "all oracle tracks" if not assay_ids else f"{len(assay_ids)} tracks"
+            _describe_tracks_requested(assay_ids)
         ),
         notes=[f"Integration at {position}" + (f" — {description}" if description else "")],
     )
@@ -1259,7 +1283,7 @@ def score_variant_batch(
         tool_name="score_variant_batch",
         oracle_name=oracle_name,
         tracks_requested=(
-            "all oracle tracks" if not assay_ids else f"{len(assay_ids)} tracks"
+            _describe_tracks_requested(assay_ids)
         ),
         notes=[f"Scoring {len(variants)} variants"],
     )
@@ -1389,7 +1413,7 @@ def fine_map_causal_variant(
         tool_name="fine_map_causal_variant",
         oracle_name=oracle_name,
         tracks_requested=(
-            "all oracle tracks" if not assay_ids else f"{len(assay_ids)} tracks"
+            _describe_tracks_requested(assay_ids)
         ),
         notes=[f"Sentinel {lead_variant}; {len(ld_list)} LD variants (r²≥{r2_threshold})"],
     )

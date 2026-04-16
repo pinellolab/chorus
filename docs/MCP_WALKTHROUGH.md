@@ -36,7 +36,7 @@ what a user types in natural language and what Claude returns.
 1. Calls `load_oracle("alphagenome")` — loads model weights (~30 s on GPU).
 2. Calls `discover_variant(oracle_name="alphagenome", position="chr1:109274968",
    ref_allele="G", alt_allele="T", gene_name="SORT1", user_prompt="Load AlphaGenome...")`
-   — scores all 5,930 tracks, ranks by effect, builds a multi-layer report.
+   — scores all 5,731 tracks, ranks by effect, builds a multi-layer report.
 3. Returns a markdown summary (inline) + saves an HTML report with an
    embedded IGV genome browser to the working directory.
 
@@ -159,7 +159,7 @@ produced the numbers, and when it was generated.
 - **Natural language works.** You don't need to memorise tool names or
   parameters. Describe what you want in plain English and Claude picks the
   right tool.
-- **AlphaGenome is recommended** for most users: 1 Mb window, 5,930
+- **AlphaGenome is recommended** for most users: 1 Mb window, 5,731
   tracks, single base-pair resolution, covers all regulatory layers.
 - **ChromBPNet** is useful as a second opinion at base resolution for
   specific TF binding questions.
@@ -169,3 +169,7 @@ produced the numbers, and when it was generated.
 - **Batch first, then detail.** For a list of >5 variants, use
   `score_variant_batch` to triage, then run full multi-layer analysis on
   only the top 1–3 hits.
+- **Manage loaded oracles.** Use `oracle_status` to see which oracles are
+  currently in memory, and `unload_oracle('<name>')` to free GPU/RAM when
+  you're done with one. Oracles are cached across tool calls, so you only
+  pay the load cost once per session.

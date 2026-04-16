@@ -2393,3 +2393,111 @@ class TestSafeToolDecorator:
             return {}
 
         assert my_tool.__name__ == "my_tool"
+
+
+class TestFmtPercentile:
+    """Tests for _fmt_percentile display helper."""
+
+    def test_none_returns_dash(self):
+        from chorus.analysis.variant_report import _fmt_percentile
+        assert _fmt_percentile(None) == "—"
+
+    def test_saturated_high(self):
+        from chorus.analysis.variant_report import _fmt_percentile
+        assert _fmt_percentile(1.0) == "≥99th"
+        assert _fmt_percentile(0.995) == "≥99th"
+
+    def test_saturated_low(self):
+        from chorus.analysis.variant_report import _fmt_percentile
+        assert _fmt_percentile(0.0) == "≤1st"
+        assert _fmt_percentile(0.005) == "≤1st"
+
+    def test_middle_range(self):
+        from chorus.analysis.variant_report import _fmt_percentile
+        assert _fmt_percentile(0.5) == "0.50"
+        assert _fmt_percentile(0.77) == "0.77"
+
+
+class TestScoreColorClass:
+    """Tests for _score_color_class interpretation-based color mapping."""
+
+    def test_minimal_gets_minimal_badge(self):
+        from chorus.analysis.variant_report import _score_color_class
+        assert _score_color_class("Minimal effect") == "badge-minimal"
+
+    def test_moderate_gets_moderate(self):
+        from chorus.analysis.variant_report import _score_color_class
+        assert _score_color_class("Moderate opening") == "badge-moderate"
+        assert _score_color_class("Moderate binding loss") == "badge-moderate"
+
+    def test_strong_gets_strong(self):
+        from chorus.analysis.variant_report import _score_color_class
+        assert _score_color_class("Strong opening") == "badge-strong"
+
+    def test_very_strong_gets_vstrong(self):
+        from chorus.analysis.variant_report import _score_color_class
+        assert _score_color_class("Very strong binding gain") == "badge-vstrong"
+
+    def test_case_insensitive(self):
+        from chorus.analysis.variant_report import _score_color_class
+        assert _score_color_class("MODERATE CLOSING") == "badge-moderate"
+
+
+class TestResolvedDeviceReporting:
+    """Tests for load_oracle resolved-device detection."""
+
+    def test_detect_device_reports_gpu_when_nvidia_smi(self):
+        from chorus.mcp.state import OracleStateManager
+        from unittest.mock import MagicMock, patch
+        oracle = MagicMock(spec=["device"])
+        oracle.device = None
+        with patch("shutil.which", return_value="/usr/bin/nvidia-smi"), \
+             patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="1\n")
+            result = OracleStateManager._detect_device(oracle)
+            assert "gpu" in result.lower()
+
+    def test_detect_device_falls_back_to_cpu(self):
+        from chorus.mcp.state import OracleStateManager
+        from unittest.mock import MagicMock, patch
+        oracle = MagicMock(spec=["device"])
+        oracle.device = None
+        with patch("shutil.which", return_value=None), \
+             patch("sys.platform", "linux"):
+            result = OracleStateManager._detect_device(oracle)
+            assert "cpu" in result.lower()
+
+
+class TestDescribeTracksRequested:
+    """Tests for MCP server's _describe_tracks_requested helper."""
+
+    def test_empty_returns_all_tracks(self):
+        from chorus.mcp.server import _describe_tracks_requested
+        assert _describe_tracks_requested(None) == "all oracle tracks"
+        assert _describe_tracks_requested([]) == "all oracle tracks"
+
+    def test_no_variant_result_returns_count(self):
+        from chorus.mcp.server import _describe_tracks_requested
+        assert _describe_tracks_requested(["a", "b", "c"]) == "3 tracks"
+
+    def test_uniform_cell_type_includes_label(self):
+        from chorus.mcp.server import _describe_tracks_requested
+        from unittest.mock import MagicMock
+        ref = MagicMock()
+        track1 = MagicMock()
+        track1.cell_type = "HepG2"
+        track2 = MagicMock()
+        track2.cell_type = "HepG2"
+        ref.tracks = {"a": track1, "b": track2}
+        variant_result = {"predictions": {"reference": ref}}
+        assert _describe_tracks_requested(["a", "b"], variant_result) == "2 HepG2 tracks"
+
+    def test_mixed_cell_types_omits_label(self):
+        from chorus.mcp.server import _describe_tracks_requested
+        from unittest.mock import MagicMock
+        ref = MagicMock()
+        t1 = MagicMock(); t1.cell_type = "HepG2"
+        t2 = MagicMock(); t2.cell_type = "K562"
+        ref.tracks = {"a": t1, "b": t2}
+        variant_result = {"predictions": {"reference": ref}}
+        assert _describe_tracks_requested(["a", "b"], variant_result) == "2 tracks"
