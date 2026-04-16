@@ -24,6 +24,11 @@
 | ATAC:HepG2 | 687 | 636 | -0.111 | 0.967 | 0.820 | Moderate closing |
 
 ---
+## Interpretation
+
+ChromBPNet shows moderate chromatin closing (-0.11 log2FC) at rs12740374 in HepG2 ATAC. This is a single-assay, single-cell-type view at 1bp resolution — compare with the [AlphaGenome multi-layer analysis](../SORT1_rs12740374/example_output.md) which shows strong opening (+0.43) across a broader window. See the [cross-oracle comparison note](../SORT1_chrombpnet/README.md#why-alphagenome-dnase-and-chrombpnet-atac-can-disagree) for why these oracles can differ on the same variant.
+
+---
 **Score guide:**
 - **Effect %ile**: Variant effect ranked against ~10K random SNPs. 0.95 = stronger than 95% of random variants.
 - **Activity %ile**: Reference signal ranked genome-wide against ENCODE SCREEN cCREs + random regions. 0.95 = more active than 95% of genomic positions.
