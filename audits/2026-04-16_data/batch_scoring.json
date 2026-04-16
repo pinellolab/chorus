@@ -1,0 +1,80 @@
+{
+  "app_name": "batch_scoring",
+  "path": "examples/applications/batch_scoring",
+  "prompt": "Score 5 SORT1-locus GWAS variants in HepG2 liver cells using DNASE, CEBPA/CEBPB ChIP, H3K27ac, and CAGE tracks. Rank by regulatory effect. Gene is SORT1.",
+  "md_header": {
+    "tool": "score_variant_batch",
+    "oracle": "alphagenome",
+    "normalizer": "per-track background CDFs",
+    "tracks_requested": "6 HepG2 tracks",
+    "generated": "2026-04-14 01:52 UTC"
+  },
+  "top_keys": [
+    "num_variants",
+    "analysis_request",
+    "scores"
+  ],
+  "tool": "score_variant_batch",
+  "oracle": "alphagenome",
+  "n_tracks_scored": 0,
+  "assay_ids": [],
+  "layers_scored": [],
+  "track_selection_check": {
+    "cell_types_claimed_in_prompt": [
+      "HepG2",
+      "liver"
+    ],
+    "cell_types_in_tracks": {},
+    "mismatches": []
+  },
+  "md_vs_json_consistency": {
+    "summary_text": "",
+    "summary_direction": "mixed/neutral",
+    "pos_word_hits": 0,
+    "neg_word_hits": 0,
+    "per_layer_dominant_sign": {},
+    "per_layer_dominant_magnitude": {}
+  },
+  "tsv_vs_json_consistency": {
+    "tsv_rows": 5,
+    "json_tracks": 0,
+    "tsv_columns": [
+      "variant_id",
+      "chrom",
+      "position",
+      "ref",
+      "alt",
+      "gene_name",
+      "max_effect",
+      "max_quantile",
+      "DNASE:HepG2_raw",
+      "DNASE:HepG2_pctile",
+      "DNASE:HepG2_activity",
+      "CHIP:CEBPA:HepG2_raw",
+      "CHIP:CEBPA:HepG2_pctile",
+      "CHIP:CEBPA:HepG2_activity",
+      "CHIP:CEBPB:HepG2_raw",
+      "CHIP:CEBPB:HepG2_pctile",
+      "CHIP:CEBPB:HepG2_activity",
+      "CHIP:H3K27ac:HepG2_raw",
+      "CHIP:H3K27ac:HepG2_pctile",
+      "CHIP:H3K27ac:HepG2_activity",
+      "CAGE:HepG2 (+)_raw",
+      "CAGE:HepG2 (+)_pctile",
+      "CAGE:HepG2 (+)_activity",
+      "CAGE:HepG2 (-)_raw",
+      "CAGE:HepG2 (-)_pctile",
+      "CAGE:HepG2 (-)_activity"
+    ]
+  },
+  "html_files": [
+    "examples/applications/batch_scoring/batch_sort1_locus_scoring.html"
+  ],
+  "screenshots": [
+    "audits/2026-04-16_screenshots/batch_scoring__batch_sort1_locus_scoring.png"
+  ],
+  "literature_claim": {
+    "note": "no published literature claim for this app"
+  },
+  "flags": []
+}

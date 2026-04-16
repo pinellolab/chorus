@@ -1,0 +1,103 @@
+{
+  "app_name": "variant_analysis__TERT_promoter",
+  "path": "examples/applications/variant_analysis/TERT_promoter",
+  "prompt": "Analyze the TERT C228T promoter mutation (chr5:1295228 G>A) in K562 cells using DNASE, GATA1/TAL1 ChIP, H3K27ac, and CAGE tracks.",
+  "md_header": {
+    "tool": "analyze_variant_multilayer",
+    "oracle": "alphagenome",
+    "normalizer": "per-track background CDFs",
+    "tracks_requested": "6 HepG2/K562 tracks",
+    "gene": "TERT",
+    "generated": "2026-04-12 23:55 UTC"
+  },
+  "top_keys": [
+    "variant",
+    "oracle",
+    "gene_name",
+    "nearby_genes",
+    "alleles",
+    "analysis_request"
+  ],
+  "tool": "analyze_variant_multilayer",
+  "oracle": "alphagenome",
+  "variant": {
+    "chrom": "chr5",
+    "position": 1295228,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "A"
+    ]
+  },
+  "n_tracks_scored": 34,
+  "assay_ids": [
+    "CAGE/hCAGE EFO:0002067/+",
+    "CAGE/hCAGE EFO:0002067/-",
+    "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.",
+    "CHIP_TF/EFO:0002067 TF ChIP-seq GATA1/.",
+    "CHIP_TF/EFO:0002067 TF ChIP-seq TAL1/.",
+    "DNASE/EFO:0002067 DNase-seq/."
+  ],
+  "layers_scored": [
+    "chromatin_accessibility",
+    "histone_marks",
+    "tf_binding",
+    "tss_activity"
+  ],
+  "track_selection_check": {
+    "cell_types_claimed_in_prompt": [
+      "K562"
+    ],
+    "cell_types_in_tracks": {
+      "K562": 34
+    },
+    "mismatches": []
+  },
+  "md_vs_json_consistency": {
+    "summary_text": "TSS activity (CAGE/PRO-CAP): strong decrease (-0.42); Histone modifications (ChIP-Histone): strong mark loss (-0.32); Chromatin accessibility (DNASE/ATAC): moderate closing (-0.20).",
+    "summary_direction": "negative",
+    "pos_word_hits": 0,
+    "neg_word_hits": 3,
+    "per_layer_dominant_sign": {
+      "chromatin_accessibility": "-",
+      "tf_binding": "-",
+      "histone_marks": "-",
+      "tss_activity": "-"
+    },
+    "per_layer_dominant_magnitude": {
+      "chromatin_accessibility": "-0.201",
+      "tf_binding": "-0.068",
+      "histone_marks": "-0.324",
+      "tss_activity": "-0.419"
+    }
+  },
+  "tsv_vs_json_consistency": {
+    "tsv_rows": 34,
+    "json_tracks": 34,
+    "tsv_columns": [
+      "allele",
+      "layer",
+      "assay_id",
+      "region_label",
+      "assay_type",
+      "cell_type",
+      "ref_value",
+      "alt_value",
+      "raw_score",
+      "quantile_score",
+      "ref_signal_percentile",
+      "note"
+    ]
+  },
+  "html_files": [
+    "examples/applications/variant_analysis/TERT_promoter/TERT_promoter_alphagenome_report.html"
+  ],
+  "screenshots": [
+    "audits/2026-04-16_screenshots/variant_analysis__TERT_promoter__TERT_promoter_alphagenome_report.png"
+  ],
+  "literature_claim": {
+    "paper": "Horn 2013 / Huang 2013 Science (C228T/C250T create ETS site)",
+    "expected_direction": "positive (promoter activation, CAGE increase)",
+    "note": "v1 audit agent survey noted the committed example shows DECREASE \u2014 confirm in audit whether the variant/allele orientation is correct"
+  },
+  "flags": []
+}

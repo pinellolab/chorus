@@ -193,7 +193,11 @@ class EnformerOracle(OracleBase):
             raise ValueError(f"Unsupported sequence type: {type(seq)}")
 
         input_interval = query_interval.extend(self.sequence_length)
-        prediction_interval = query_interval.extend(self.output_size)
+        # Enformer output covers the center 114,688 bp of the input (896 bins × 128 bp).
+        # The prediction_interval must reflect the actual output window, not the
+        # full input.  Slice the input interval to the center output_size.
+        offset = (len(input_interval) - self.output_size) // 2
+        prediction_interval = input_interval.slice(offset, offset + self.output_size)
         
         full_seq = input_interval.sequence
 
@@ -270,8 +274,8 @@ class EnformerOracle(OracleBase):
         
         # Get indices for requested assays
         assay_indices = self._get_assay_indices(assay_ids)
-        
-        return human_predictions[:, assay_indices].numpy()
+
+        return human_predictions.numpy()[:, assay_indices]
     
     def list_assay_types(self) -> List[str]:
         """Return all unique assay types from Enformer metadata."""

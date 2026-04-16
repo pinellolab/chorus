@@ -1,0 +1,100 @@
+{
+  "variant_analysis__SORT1_rs12740374": {
+    "prompt_first_80": "Analyze rs12740374 (chr1:109274968 G>T) in HepG2 liver cells using DNASE, CEBPA/",
+    "tool": "analyze_variant_multilayer",
+    "oracle": "alphagenome",
+    "n_tracks": 62,
+    "n_flags": 0
+  },
+  "validation__SORT1_rs12740374_with_CEBP": {
+    "prompt_first_80": "Validate AlphaGenome paper finding: rs12740374 (chr1:109274968 G>T) should show ",
+    "tool": "analyze_variant_multilayer",
+    "oracle": "alphagenome",
+    "n_tracks": 62,
+    "n_flags": 0
+  },
+  "causal_prioritization__SORT1_locus": {
+    "prompt_first_80": "Fine-map the SORT1 LDL cholesterol GWAS locus. Sentinel is rs12740374 with 11 LD",
+    "tool": "fine_map_causal_variant",
+    "oracle": "alphagenome",
+    "n_tracks": 0,
+    "n_flags": 0
+  },
+  "batch_scoring": {
+    "prompt_first_80": "Score 5 SORT1-locus GWAS variants in HepG2 liver cells using DNASE, CEBPA/CEBPB ",
+    "tool": "score_variant_batch",
+    "oracle": "alphagenome",
+    "n_tracks": 0,
+    "n_flags": 0
+  },
+  "discovery__SORT1_cell_type_screen": {
+    "prompt_first_80": "Screen all cell types to find where rs12740374 (chr1:109274968 G>T) has the stro",
+    "tool": "discover_variant_cell_types",
+    "oracle": "alphagenome",
+    "n_tracks": 0,
+    "n_flags": 0
+  },
+  "variant_analysis__SORT1_enformer": {
+    "prompt_first_80": "Analyze chr1:109274968 G>T using Enformer discovery mode. Gene: SORT1.",
+    "tool": "discover_variant",
+    "oracle": "enformer",
+    "n_tracks": 84,
+    "n_flags": 0
+  },
+  "variant_analysis__SORT1_chrombpnet": {
+    "prompt_first_80": "Score chr1:109274968 G>T using ChromBPNet ATAC model in HepG2. Gene: SORT1.",
+    "tool": "analyze_variant_multilayer",
+    "oracle": "chrombpnet",
+    "n_tracks": 1,
+    "n_flags": 0
+  },
+  "variant_analysis__TERT_promoter": {
+    "prompt_first_80": "Analyze the TERT C228T promoter mutation (chr5:1295228 G>A) in K562 cells using ",
+    "tool": "analyze_variant_multilayer",
+    "oracle": "alphagenome",
+    "n_tracks": 34,
+    "n_flags": 0
+  },
+  "validation__TERT_chr5_1295046": {
+    "prompt_first_80": "Validate the TERT chr5:1295046 T>G variant from the AlphaGenome paper. Score acr",
+    "tool": "discover_variant",
+    "oracle": "alphagenome",
+    "n_tracks": 85,
+    "n_flags": 0
+  },
+  "variant_analysis__FTO_rs1421085": {
+    "prompt_first_80": "Analyze rs1421085 (chr16:53767042 T>C) in HepG2 cells. Gene is FTO. Using HepG2 ",
+    "tool": "analyze_variant_multilayer",
+    "oracle": "alphagenome",
+    "n_tracks": 16,
+    "n_flags": 0
+  },
+  "variant_analysis__BCL11A_rs1427407": {
+    "prompt_first_80": "Analyze rs1427407 (chr2:60490908 G>T) in K562 erythroid cells using DNASE, GATA1",
+    "tool": "analyze_variant_multilayer",
+    "oracle": "alphagenome",
+    "n_tracks": 12,
+    "n_flags": 1
+  },
+  "validation__HBG2_HPFH": {
+    "prompt_first_80": "Validate the HBG2 HPFH variant (chr11:5254983 G>C) \u2014 this is a known hereditary ",
+    "tool": "analyze_variant_multilayer",
+    "oracle": "alphagenome",
+    "n_tracks": 159,
+    "n_flags": 2
+  },
+  "sequence_engineering__region_swap": {
+    "prompt_first_80": "Replace the SORT1 enhancer region chr1:109274500-109275500 with a 630 bp GFP/rep",
+    "tool": "analyze_region_swap",
+    "oracle": "alphagenome",
+    "n_tracks": 32,
+    "n_flags": 0
+  },
+  "sequence_engineering__integration_simulation": {
+    "prompt_first_80": "Insert a 378 bp CMV promoter construct at chr19:55115000 (PPP1R12C locus / AAVS1",
+    "tool": "simulate_integration",
+    "oracle": "alphagenome",
+    "n_tracks": 55,
+    "n_flags": 1
+  }
+}
