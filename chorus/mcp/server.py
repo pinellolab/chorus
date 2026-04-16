@@ -161,6 +161,7 @@ def _auto_region(oracle, position: str) -> str:
 # ── Discovery tools ──────────────────────────────────────────────────
 
 @mcp.tool()
+@_safe_tool
 def list_oracles() -> dict:
     """List all 6 genomic oracles with their specs, environment install status, and loaded status.
 
@@ -191,6 +192,7 @@ def list_oracles() -> dict:
 
 
 @mcp.tool()
+@_safe_tool
 def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
     """List or search available tracks/assays for an oracle.
 
@@ -305,6 +307,7 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
 
 
 @mcp.tool()
+@_safe_tool
 def list_genomes() -> dict:
     """List available reference genomes and their download status."""
     from chorus.utils.genome import GenomeManager
@@ -324,6 +327,7 @@ def list_genomes() -> dict:
 
 
 @mcp.tool()
+@_safe_tool
 def get_genes_in_region(chrom: str, start: int, end: int) -> dict:
     """Get gene annotations in a genomic region.
 
@@ -343,6 +347,7 @@ def get_genes_in_region(chrom: str, start: int, end: int) -> dict:
 
 
 @mcp.tool()
+@_safe_tool
 def get_gene_tss(gene_name: str) -> dict:
     """Get transcription start site (TSS) positions for a gene.
 
@@ -397,6 +402,7 @@ def load_oracle(
 
 
 @mcp.tool()
+@_safe_tool
 def unload_oracle(oracle_name: str) -> dict:
     """Unload an oracle to free memory.
 
@@ -408,6 +414,7 @@ def unload_oracle(oracle_name: str) -> dict:
 
 
 @mcp.tool()
+@_safe_tool
 def oracle_status() -> dict:
     """Show which oracles are currently loaded, their device, and load time."""
     return {"loaded_oracles": _state().list_loaded()}
@@ -416,6 +423,7 @@ def oracle_status() -> dict:
 # ── Prediction tools ─────────────────────────────────────────────────
 
 @mcp.tool()
+@_safe_tool
 def predict(
     oracle_name: str,
     region: str,
@@ -446,6 +454,7 @@ def predict(
 
 
 @mcp.tool()
+@_safe_tool
 def predict_variant_effect(
     oracle_name: str,
     position: str,
@@ -488,6 +497,7 @@ def predict_variant_effect(
 
 
 @mcp.tool()
+@_safe_tool
 def predict_region_replacement(
     oracle_name: str,
     region: str,
@@ -518,6 +528,7 @@ def predict_region_replacement(
 
 
 @mcp.tool()
+@_safe_tool
 def predict_region_insertion(
     oracle_name: str,
     position: str,
@@ -550,6 +561,7 @@ def predict_region_insertion(
 # ── Scoring & gene expression tools ──────────────────────────────────
 
 @mcp.tool()
+@_safe_tool
 def score_prediction_region(
     oracle_name: str,
     region: str,
@@ -611,6 +623,7 @@ def score_prediction_region(
 
 
 @mcp.tool()
+@_safe_tool
 def score_variant_effect_at_region(
     oracle_name: str,
     position: str,
@@ -705,6 +718,7 @@ def score_variant_effect_at_region(
 
 
 @mcp.tool()
+@_safe_tool
 def predict_variant_effect_on_gene(
     oracle_name: str,
     position: str,
@@ -900,7 +914,7 @@ def discover_variant(
     oracle_name: str,
     position: str,
     ref_allele: str,
-    alt_allele: str,
+    alt_alleles: list[str],
     gene_name: Optional[str] = None,
     top_n: int = 3,
     igv_raw: bool = False,
@@ -919,7 +933,7 @@ def discover_variant(
         oracle_name: A loaded oracle name.
         position: Variant position as "chr1:109274968".
         ref_allele: Reference allele (e.g. "G").
-        alt_allele: Alternate allele (e.g. "T").
+        alt_alleles: Alternate alleles (e.g. ["T"]).
         gene_name: Optional gene for expression analysis.
         top_n: Number of top tracks per regulatory layer to show.
         user_prompt: Original user prompt, forwarded into the report header.
@@ -935,7 +949,7 @@ def discover_variant(
         oracle,
         oracle_name=oracle_name,
         variant_position=position,
-        alleles=[ref_allele, alt_allele],
+        alleles=[ref_allele] + list(alt_alleles),
         top_n_per_layer=top_n,
         gene_name=gene_name,
         normalizer=normalizer,
@@ -946,8 +960,6 @@ def discover_variant(
     # Serialize: extract report as markdown, remove non-serializable VariantReport
     report = result.pop("report", None)
     if report is not None:
-        # Attach request metadata post-hoc (discover_variant_effects does not
-        # yet accept analysis_request, so we patch the field directly).
         report.analysis_request = AnalysisRequest(
             user_prompt=user_prompt,
             tool_name="discover_variant",

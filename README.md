@@ -104,9 +104,11 @@ After the first install, to upgrade cleanly:
 
 ```bash
 cd chorus && git pull
-mamba env remove -n chorus -y
-# Repeat for each oracle you had installed:
+# Remove oracle envs first (while the chorus CLI is still available):
 chorus remove --oracle enformer
+# Repeat for each oracle you had installed...
+# Then remove the base env:
+mamba env remove -n chorus -y
 ```
 
 Then re-run the Fresh Install steps above.

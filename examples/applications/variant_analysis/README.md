@@ -213,7 +213,7 @@ Key finding: Modest effect in K562 — demonstrates why cell-type selection
 matters (primary erythroid progenitors would show stronger effects).
 
 ### [FTO_rs1421085/](FTO_rs1421085/)
-**rs1421085** (chr16:53800954 T>C) — Obesity-associated variant in FTO locus.
+**rs1421085** (chr16:53767042 T>C) — Obesity-associated variant in FTO locus.
 Alters ARID5B binding, affecting IRX3/IRX5 expression ~500kb away.
 
 Key finding: Subtle local effects — this variant acts over very long range,
