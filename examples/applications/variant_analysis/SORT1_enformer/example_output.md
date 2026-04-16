@@ -81,6 +81,11 @@
 | _…showing top 10 of 48 — see `example_output.json` for the full set_ | | | | | | |
 
 ---
+## Interpretation
+
+Enformer detects strong DNASE effects at rs12740374 across multiple cell types, with the largest opening in HepG2 (+0.39) consistent with the known liver-specific enhancer mechanism. The cross-tissue pattern — strong effects in liver/intestinal cell types, mixed in others — supports the tissue-specificity of this regulatory variant. Enformer provides 5,313 ENCODE tracks at 128bp resolution over a 114kb output window, complementing AlphaGenome's broader 1Mb view.
+
+---
 **Score guide:**
-- **Effect %ile**: Variant effect ranked against ~10K random SNPs. 0.95 = stronger than 95% of random variants.
+- **Effect %ile**: Variant effect ranked against ~10K random SNPs. ≥99th = stronger than 99% of random variants.
 - **Activity %ile**: Reference signal ranked genome-wide against ENCODE SCREEN cCREs + random regions. 0.95 = more active than 95% of genomic positions.
