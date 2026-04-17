@@ -1,0 +1,101 @@
+{
+  "app_name": "sequence_engineering__region_swap",
+  "path": "examples/applications/sequence_engineering/region_swap",
+  "prompt": "Replace the SORT1 enhancer region chr1:109274500-109275500 with a 630 bp GFP/reporter construct sequence and predict effects on K562 DNASE, H3K27ac, H3K4me3, and CAGE.",
+  "md_header": {
+    "tool": "analyze_region_swap",
+    "oracle": "alphagenome",
+    "tracks_requested": "4 K562 tracks",
+    "gene": "SORT1",
+    "generated": "2026-04-13 03:07 UTC"
+  },
+  "top_keys": [
+    "variant",
+    "oracle",
+    "gene_name",
+    "nearby_genes",
+    "alleles",
+    "analysis_request",
+    "modification_description",
+    "modification_region"
+  ],
+  "tool": "analyze_region_swap",
+  "oracle": "alphagenome",
+  "variant": {
+    "chrom": "chr1",
+    "position": 109275000,
+    "ref_allele": "wt",
+    "alt_alleles": [
+      "replacement"
+    ]
+  },
+  "modification_region": [
+    109274500,
+    109275500
+  ],
+  "n_tracks_scored": 32,
+  "assay_ids": [
+    "CAGE/hCAGE EFO:0002067/+",
+    "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.",
+    "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K4me3/.",
+    "DNASE/EFO:0002067 DNase-seq/."
+  ],
+  "layers_scored": [
+    "chromatin_accessibility",
+    "histone_marks",
+    "tss_activity"
+  ],
+  "track_selection_check": {
+    "cell_types_claimed_in_prompt": [
+      "K562"
+    ],
+    "cell_types_in_tracks": {
+      "K562": 32
+    },
+    "mismatches": []
+  },
+  "md_vs_json_consistency": {
+    "summary_text": "TSS activity (CAGE/PRO-CAP): very strong decrease (-8.11); Chromatin accessibility (DNASE/ATAC): very strong closing (-3.29); Histone modifications (ChIP-Histone): very strong mark loss (-1.35).",
+    "summary_direction": "negative",
+    "pos_word_hits": 0,
+    "neg_word_hits": 3,
+    "per_layer_dominant_sign": {
+      "chromatin_accessibility": "-",
+      "histone_marks": "-",
+      "tss_activity": "-"
+    },
+    "per_layer_dominant_magnitude": {
+      "chromatin_accessibility": "-3.288",
+      "histone_marks": "-1.351",
+      "tss_activity": "-8.113"
+    }
+  },
+  "tsv_vs_json_consistency": {
+    "tsv_rows": 4,
+    "json_tracks": 32,
+    "tsv_columns": [
+      "allele",
+      "layer",
+      "assay_id",
+      "assay_type",
+      "cell_type",
+      "description",
+      "ref_value",
+      "alt_value",
+      "raw_score",
+      "quantile_score",
+      "ref_signal_percentile",
+      "note"
+    ]
+  },
+  "html_files": [
+    "examples/applications/sequence_engineering/region_swap/region_swap_SORT1_K562_report.html"
+  ],
+  "screenshots": [
+    "audits/2026-04-16_screenshots/sequence_engineering__region_swap__region_swap_SORT1_K562_report.png"
+  ],
+  "literature_claim": {
+    "note": "no published literature claim for this app"
+  },
+  "flags": []
+}

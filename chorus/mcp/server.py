@@ -121,6 +121,31 @@ def _state() -> OracleStateManager:
     return OracleStateManager()
 
 
+def _safe_tool(fn):
+    """Decorator that converts unhandled exceptions into a structured
+    ``{"error": ..., "error_type": ...}`` dict so Claude can recover
+    gracefully instead of seeing a raw traceback.
+
+    Wraps the function body only; does not interfere with FastMCP's
+    registration (apply *inside* ``@mcp.tool()``).
+    """
+    import functools
+
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except Exception as exc:
+            logger.exception("MCP tool %s failed", fn.__name__)
+            return {
+                "error": str(exc) or type(exc).__name__,
+                "error_type": type(exc).__name__,
+                "tool": fn.__name__,
+            }
+
+    return wrapper
+
+
 def _auto_region(oracle, position: str) -> str:
     """Compute an input region centered on a variant position.
 
@@ -136,6 +161,7 @@ def _auto_region(oracle, position: str) -> str:
 # ── Discovery tools ──────────────────────────────────────────────────
 
 @mcp.tool()
+@_safe_tool
 def list_oracles() -> dict:
     """List all 6 genomic oracles with their specs, environment install status, and loaded status.
 
@@ -166,6 +192,7 @@ def list_oracles() -> dict:
 
 
 @mcp.tool()
+@_safe_tool
 def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
     """List or search available tracks/assays for an oracle.
 
@@ -272,14 +299,16 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
         return {
             "oracle": oracle_name,
             "assay_types": ["LentiMPRA"],
-            "cell_types": ["HepG2", "K562"],
+            "cell_types": ["K562", "HepG2", "WTC11"],
             "note": "LegNet predicts lentiMPRA activity. Specify cell_type when loading.",
         }
 
-    return {"error": f"Unknown oracle: {oracle_name}"}
+    valid = ", ".join(ORACLE_SPECS.keys())
+    return {"error": f"Unknown oracle: '{oracle_name}'. Valid names: {valid}"}
 
 
 @mcp.tool()
+@_safe_tool
 def list_genomes() -> dict:
     """List available reference genomes and their download status."""
     from chorus.utils.genome import GenomeManager
@@ -299,6 +328,7 @@ def list_genomes() -> dict:
 
 
 @mcp.tool()
+@_safe_tool
 def get_genes_in_region(chrom: str, start: int, end: int) -> dict:
     """Get gene annotations in a genomic region.
 
@@ -318,6 +348,7 @@ def get_genes_in_region(chrom: str, start: int, end: int) -> dict:
 
 
 @mcp.tool()
+@_safe_tool
 def get_gene_tss(gene_name: str) -> dict:
     """Get transcription start site (TSS) positions for a gene.
 
@@ -334,6 +365,7 @@ def get_gene_tss(gene_name: str) -> dict:
 # ── Oracle lifecycle ─────────────────────────────────────────────────
 
 @mcp.tool()
+@_safe_tool
 def load_oracle(
     oracle_name: str,
     device: Optional[str] = None,
@@ -371,6 +403,7 @@ def load_oracle(
 
 
 @mcp.tool()
+@_safe_tool
 def unload_oracle(oracle_name: str) -> dict:
     """Unload an oracle to free memory.
 
@@ -382,6 +415,7 @@ def unload_oracle(oracle_name: str) -> dict:
 
 
 @mcp.tool()
+@_safe_tool
 def oracle_status() -> dict:
     """Show which oracles are currently loaded, their device, and load time."""
     return {"loaded_oracles": _state().list_loaded()}
@@ -390,6 +424,7 @@ def oracle_status() -> dict:
 # ── Prediction tools ─────────────────────────────────────────────────
 
 @mcp.tool()
+@_safe_tool
 def predict(
     oracle_name: str,
     region: str,
@@ -412,10 +447,15 @@ def predict(
     input_data = _parse_region(region)
 
     prediction = oracle.predict(input_data, assay_ids)
-    return serialize_prediction(prediction, output_dir=state.output_dir, prefix=f"{oracle_name}_wt_")
+    normalizer = state.get_normalizer(oracle_name)
+    return serialize_prediction(
+        prediction, output_dir=state.output_dir, prefix=f"{oracle_name}_wt_",
+        normalizer=normalizer, oracle_name=oracle_name,
+    )
 
 
 @mcp.tool()
+@_safe_tool
 def predict_variant_effect(
     oracle_name: str,
     position: str,
@@ -450,10 +490,15 @@ def predict_variant_effect(
         alleles=alleles,
         assay_ids=assay_ids,
     )
-    return serialize_variant_effect(result, output_dir=state.output_dir)
+    normalizer = state.get_normalizer(oracle_name)
+    return serialize_variant_effect(
+        result, output_dir=state.output_dir,
+        normalizer=normalizer, oracle_name=oracle_name,
+    )
 
 
 @mcp.tool()
+@_safe_tool
 def predict_region_replacement(
     oracle_name: str,
     region: str,
@@ -476,10 +521,15 @@ def predict_region_replacement(
         seq=replacement_sequence,
         assay_ids=assay_ids,
     )
-    return serialize_replacement_or_insertion(result, output_dir=state.output_dir, prefix=f"{oracle_name}_repl_")
+    normalizer = state.get_normalizer(oracle_name)
+    return serialize_replacement_or_insertion(
+        result, output_dir=state.output_dir, prefix=f"{oracle_name}_repl_",
+        normalizer=normalizer, oracle_name=oracle_name,
+    )
 
 
 @mcp.tool()
+@_safe_tool
 def predict_region_insertion(
     oracle_name: str,
     position: str,
@@ -502,12 +552,17 @@ def predict_region_insertion(
         seq=sequence,
         assay_ids=assay_ids,
     )
-    return serialize_replacement_or_insertion(result, output_dir=state.output_dir, prefix=f"{oracle_name}_ins_")
+    normalizer = state.get_normalizer(oracle_name)
+    return serialize_replacement_or_insertion(
+        result, output_dir=state.output_dir, prefix=f"{oracle_name}_ins_",
+        normalizer=normalizer, oracle_name=oracle_name,
+    )
 
 
 # ── Scoring & gene expression tools ──────────────────────────────────
 
 @mcp.tool()
+@_safe_tool
 def score_prediction_region(
     oracle_name: str,
     region: str,
@@ -539,15 +594,37 @@ def score_prediction_region(
         sc_chrom, sc_start, sc_end, scoring_strategy
     )
 
-    return {
+    result = {
         "input_region": region,
         "score_region": score_region,
         "scoring_strategy": scoring_strategy,
         "scores": {k: v for k, v in scores.items()},
     }
 
+    # Add activity percentiles when baselines available
+    normalizer = state.get_normalizer(oracle_name)
+    if normalizer is not None:
+        from chorus.analysis.scorers import classify_track_layer
+        from chorus.analysis.normalization import PerTrackNormalizer
+        percentiles = {}
+        for assay_id, score_val in scores.items():
+            if score_val is not None:
+                track = prediction[assay_id]
+                layer = classify_track_layer(track)
+                if isinstance(normalizer, PerTrackNormalizer):
+                    pctile = normalizer.activity_percentile(oracle_name, assay_id, score_val)
+                else:
+                    pctile = normalizer.normalize_baseline(oracle_name, layer, score_val)
+                if pctile is not None:
+                    percentiles[assay_id] = round(pctile, 4)
+        if percentiles:
+            result["activity_percentiles"] = percentiles
+
+    return result
+
 
 @mcp.tool()
+@_safe_tool
 def score_variant_effect_at_region(
     oracle_name: str,
     position: str,
@@ -607,15 +684,42 @@ def score_variant_effect_at_region(
 
     scores = _score_ve(variant_result, **kwargs)
 
-    return {
+    result = {
         "variant_info": variant_result["variant_info"],
         "scoring_strategy": scoring_strategy,
         "at_variant": at_variant,
         "scores": scores,
     }
 
+    # Add activity percentiles for reference scores
+    normalizer = state.get_normalizer(oracle_name)
+    if normalizer is not None:
+        from chorus.analysis.scorers import classify_track_layer
+        from chorus.analysis.normalization import PerTrackNormalizer
+        ref_pred = variant_result["predictions"].get("reference")
+        if ref_pred is not None:
+            percentiles = {}
+            for assay_id in scores:
+                allele_scores = scores[assay_id]
+                ref_val = allele_scores.get("reference") if isinstance(allele_scores, dict) else None
+                if ref_val is not None:
+                    track = ref_pred.get(assay_id)
+                    if track:
+                        layer = classify_track_layer(track)
+                        if isinstance(normalizer, PerTrackNormalizer):
+                            pctile = normalizer.activity_percentile(oracle_name, assay_id, ref_val)
+                        else:
+                            pctile = normalizer.normalize_baseline(oracle_name, layer, ref_val)
+                        if pctile is not None:
+                            percentiles[assay_id] = round(pctile, 4)
+            if percentiles:
+                result["ref_activity_percentiles"] = percentiles
+
+    return result
+
 
 @mcp.tool()
+@_safe_tool
 def predict_variant_effect_on_gene(
     oracle_name: str,
     position: str,
@@ -681,7 +785,663 @@ def predict_variant_effect_on_gene(
             f"or (2) pass a custom region spanning both variant and TSS."
         )
 
+    # Add baseline activity percentiles for reference expression levels
+    normalizer = state.get_normalizer(oracle_name)
+    if normalizer is not None and ref_expr:
+        from chorus.analysis.normalization import PerTrackNormalizer
+        expr_percentiles = {}
+        for assay_id, info in ref_expr.items():
+            ref_val = info.get("signal")
+            if ref_val is not None:
+                if isinstance(normalizer, PerTrackNormalizer):
+                    pctile = normalizer.activity_percentile(oracle_name, assay_id, ref_val)
+                else:
+                    pctile = normalizer.normalize_baseline(
+                        oracle_name, "tss_activity", ref_val,
+                    )
+                if pctile is not None:
+                    expr_percentiles[assay_id] = round(pctile, 4)
+        if expr_percentiles:
+            result["ref_expression_percentiles"] = expr_percentiles
+
     return result
+
+
+# ── Multi-layer analysis tools ────────────────────────────────────────
+
+@mcp.tool()
+@_safe_tool
+def analyze_variant_multilayer(
+    oracle_name: str,
+    position: str,
+    ref_allele: str,
+    alt_alleles: list[str],
+    assay_ids: list[str],
+    gene_name: Optional[str] = None,
+    region: Optional[str] = None,
+    igv_raw: bool = False,
+    user_prompt: Optional[str] = None,
+) -> dict:
+    """Analyze a variant's regulatory impact across all molecular layers.
+
+    Scores each track using modality-specific strategies:
+    - Chromatin (DNASE/ATAC): log2 fold-change of sum in 501bp window
+    - TF binding (ChIP-TF): log2 fold-change of sum in 501bp window
+    - Histone marks (ChIP-Histone): log2 fold-change of sum in 2001bp window
+    - TSS activity (CAGE): log2 fold-change of sum in 501bp window
+    - Gene expression (RNA): log fold-change of mean over gene exons
+    - Promoter activity (MPRA): simple difference
+
+    For non-coding variants, nearby genes are auto-detected within the
+    prediction window so that RNA expression effects can be scored even
+    without an explicit gene_name.
+
+    Returns a structured report with scores organized by regulatory layer,
+    plus a markdown summary for interpretation. Every report carries the
+    original user prompt at the top so it stays interpretable months later.
+
+    Args:
+        oracle_name: A loaded oracle name.
+        position: Variant position as "chr1:1050000".
+        ref_allele: Reference allele.
+        alt_alleles: Alternate alleles.
+        assay_ids: List of assay identifiers covering different layers
+                   (e.g. DNASE, CAGE, ChIP tracks for multi-layer coverage).
+                   Pass an empty list or None to score all tracks on
+                   oracles that support it (AlphaGenome, Enformer, Borzoi).
+        gene_name: Gene symbol for RNA expression scoring (e.g. "SORT1").
+                   If omitted, the nearest gene is auto-detected.
+        region: Input region as "chr1:1000000-1393216". If omitted, auto-centered.
+        igv_raw: When True, the IGV browser in the HTML report shows raw
+                 signal with autoscale instead of the layer-aware rescaled
+                 view. Table scores are unaffected.
+        user_prompt: The user's original natural-language question. Claude
+                     should forward this verbatim whenever calling from an
+                     MCP conversation — it is rendered at the top of the
+                     report for traceability.
+    """
+    from chorus.analysis.analysis_request import AnalysisRequest
+    from chorus.analysis.variant_report import build_variant_report
+
+    state = _state()
+    oracle = state.get_oracle(oracle_name)
+
+    if region is None:
+        region = _auto_region(oracle, position)
+
+    alleles = [ref_allele] + list(alt_alleles)
+    variant_result = oracle.predict_variant_effect(
+        genomic_region=region,
+        variant_position=position,
+        alleles=alleles,
+        assay_ids=assay_ids,
+    )
+
+    analysis_request = AnalysisRequest(
+        user_prompt=user_prompt,
+        tool_name="analyze_variant_multilayer",
+        oracle_name=oracle_name,
+        tracks_requested=(
+            "all oracle tracks" if not assay_ids else f"{len(assay_ids)} tracks"
+        ),
+    )
+
+    report = build_variant_report(
+        variant_result,
+        oracle_name=oracle_name,
+        gene_name=gene_name,
+        normalizer=state.get_normalizer(oracle_name),
+        igv_raw=igv_raw,
+        analysis_request=analysis_request,
+    )
+
+    result = report.to_dict()
+    result["markdown_report"] = report.to_markdown()
+
+    # Save HTML report to output directory
+    if state.output_dir:
+        try:
+            html_path = report.to_html(output_path=state.output_dir)
+            result["html_report_path"] = html_path
+        except Exception:
+            pass  # HTML generation is optional
+
+    return result
+
+
+@mcp.tool()
+@_safe_tool
+def discover_variant(
+    oracle_name: str,
+    position: str,
+    ref_allele: str,
+    alt_alleles: list[str],
+    gene_name: Optional[str] = None,
+    top_n: int = 3,
+    igv_raw: bool = False,
+    user_prompt: Optional[str] = None,
+) -> dict:
+    """Discover which cell types and regulatory layers are most affected by a variant.
+
+    Predicts variant effect across ALL available tracks (thousands for
+    Enformer/Borzoi/AlphaGenome, or iterates all models for ChromBPNet/LegNet),
+    ranks by effect magnitude, and returns the top hits with a full report.
+
+    This is the primary tool for variant interpretation — it tells you WHERE
+    the variant has impact without requiring you to pre-select tracks.
+
+    Args:
+        oracle_name: A loaded oracle name.
+        position: Variant position as "chr1:109274968".
+        ref_allele: Reference allele (e.g. "G").
+        alt_alleles: Alternate alleles (e.g. ["T"]).
+        gene_name: Optional gene for expression analysis.
+        top_n: Number of top tracks per regulatory layer to show.
+        user_prompt: Original user prompt, forwarded into the report header.
+    """
+    from chorus.analysis.analysis_request import AnalysisRequest
+    from chorus.analysis.discovery import discover_variant_effects
+
+    state = _state()
+    oracle = state.get_oracle(oracle_name)
+    normalizer = state.get_normalizer(oracle_name)
+
+    result = discover_variant_effects(
+        oracle,
+        oracle_name=oracle_name,
+        variant_position=position,
+        alleles=[ref_allele] + list(alt_alleles),
+        top_n_per_layer=top_n,
+        gene_name=gene_name,
+        normalizer=normalizer,
+        output_path=state.output_dir,
+        igv_raw=igv_raw,
+    )
+
+    # Serialize: extract report as markdown, remove non-serializable VariantReport
+    report = result.pop("report", None)
+    if report is not None:
+        report.analysis_request = AnalysisRequest(
+            user_prompt=user_prompt,
+            tool_name="discover_variant",
+            oracle_name=oracle_name,
+            tracks_requested="all oracle tracks",
+        )
+        result["markdown_report"] = report.to_markdown()
+        if state.output_dir:
+            try:
+                html_path = report.to_html(output_path=state.output_dir)
+                result["html_report_path"] = html_path
+            except Exception:
+                pass
+
+    return result
+
+
+@mcp.tool()
+@_safe_tool
+def discover_variant_cell_types(
+    oracle_name: str,
+    position: str,
+    ref_allele: str,
+    alt_alleles: list[str],
+    gene_name: Optional[str] = None,
+    top_n: int = 5,
+    min_effect: float = 0.15,
+    user_prompt: Optional[str] = None,
+) -> dict:
+    """Discovery mode: find which cell types are most affected by a variant.
+
+    Use this when you don't know which cell type is relevant — let the model
+    tell you where the variant matters most.
+
+    **Two-stage analysis:**
+    1. Screens all DNASE/ATAC tracks (~472 cell types on AlphaGenome, ~638
+       on Enformer) to rank cell types by chromatin effect magnitude.
+    2. For each top cell type, runs full multi-layer analysis (chromatin,
+       TF, histone, CAGE, RNA) limited to that cell type's tracks.
+
+    **Runtime expectations** (AlphaGenome, single A100):
+      - Stage 1 screen: ~30–60 s
+      - Stage 2 per-cell-type analysis: ~30 s × ``top_n``
+      - Typical end-to-end with default ``top_n=5``: 3–4 minutes
+
+    Args:
+        oracle_name: A loaded oracle name (ideally AlphaGenome for broadest
+            cell-type coverage).
+        position: Variant position as "chr1:1050000".
+        ref_allele: Reference allele.
+        alt_alleles: Alternate alleles.
+        gene_name: Optional gene to focus expression analysis on.
+        top_n: Number of top cell types to analyze in detail (default 5).
+        min_effect: Minimum |log2FC| in DNASE/ATAC to consider a cell type
+            hit (default 0.15).
+        user_prompt: Original user prompt, forwarded into each sub-report.
+
+    Returns:
+        Dict with:
+          - ``variant``: position + alleles
+          - ``cell_type_ranking``: ordered list of top cell-type hits with
+            effect size and best track
+          - ``reports``: one full :class:`VariantReport` per top cell type,
+            as both ``scores`` (dict) and ``markdown`` (string)
+    """
+    from chorus.analysis.analysis_request import AnalysisRequest
+    from chorus.analysis.discovery import discover_and_report
+
+    state = _state()
+    oracle = state.get_oracle(oracle_name)
+
+    alleles = [ref_allele] + list(alt_alleles)
+    result = discover_and_report(
+        oracle, position, alleles,
+        gene_name=gene_name,
+        top_n=top_n,
+        min_effect=min_effect,
+        normalizer=state.get_normalizer(oracle_name),
+        oracle_name=oracle_name,
+    )
+
+    # Format output
+    output = {
+        "variant": {"position": position, "ref": ref_allele, "alt": alt_alleles},
+        "cell_type_ranking": result["hits"],
+        "reports": {},
+    }
+
+    for ct_name, report in result.get("reports", {}).items():
+        # Attach the user's prompt to each per-cell-type sub-report so the
+        # HTML / markdown outputs all carry the original question.
+        report.analysis_request = AnalysisRequest(
+            user_prompt=user_prompt,
+            tool_name="discover_variant_cell_types",
+            oracle_name=oracle_name,
+            cell_types=[ct_name],
+            tracks_requested=f"top tracks for {ct_name}",
+        )
+        output["reports"][ct_name] = {
+            "scores": report.to_dict(),
+            "markdown": report.to_markdown(),
+        }
+
+    return output
+
+
+# ── Sequence engineering & batch scoring tools ────────────────────────
+
+@mcp.tool()
+@_safe_tool
+def analyze_region_swap(
+    oracle_name: str,
+    region: str,
+    replacement_sequence: str,
+    assay_ids: list[str],
+    gene_name: Optional[str] = None,
+    description: Optional[str] = None,
+    user_prompt: Optional[str] = None,
+) -> dict:
+    """Replace a genomic region with a custom sequence and score effects across all layers.
+
+    Compares wild-type vs replacement predictions using the same multi-layer
+    scoring as variant analysis (chromatin, TF binding, histone, CAGE, RNA).
+
+    Use cases: promoter swaps, enhancer replacements, regulatory element engineering.
+
+    Args:
+        oracle_name: A loaded oracle name.
+        region: Region to replace as "chr1:1000000-1001000".
+        replacement_sequence: DNA sequence to insert in place of the region.
+        assay_ids: List of assay identifiers for multi-layer scoring.
+        gene_name: Optional gene for expression scoring.
+        description: Optional short label for the swap (e.g. "SV40 promoter").
+        user_prompt: Original user prompt, rendered at the top of the report.
+    """
+    from chorus.analysis.analysis_request import AnalysisRequest
+    from chorus.analysis.region_swap import analyze_region_swap as _swap
+
+    state = _state()
+    oracle = state.get_oracle(oracle_name)
+
+    ar = AnalysisRequest(
+        user_prompt=user_prompt,
+        tool_name="analyze_region_swap",
+        oracle_name=oracle_name,
+        tracks_requested=(
+            "all oracle tracks" if not assay_ids else f"{len(assay_ids)} tracks"
+        ),
+        notes=[f"Region swap: {region}" + (f" — {description}" if description else "")],
+    )
+
+    report = _swap(
+        oracle, region, replacement_sequence, assay_ids,
+        gene_name=gene_name,
+        normalizer=state.get_normalizer(oracle_name),
+        oracle_name=oracle_name,
+    )
+    report.analysis_request = ar
+
+    result = report.to_dict()
+    result["markdown_report"] = report.to_markdown()
+    result["analysis_type"] = "region_swap"
+    if description:
+        result["description"] = description
+    if state.output_dir:
+        try:
+            html_path = report.to_html(output_path=state.output_dir)
+            result["html_report_path"] = html_path
+        except Exception:
+            pass
+    return result
+
+
+@mcp.tool()
+@_safe_tool
+def simulate_integration(
+    oracle_name: str,
+    position: str,
+    construct_sequence: str,
+    assay_ids: list[str],
+    gene_name: Optional[str] = None,
+    description: Optional[str] = None,
+    user_prompt: Optional[str] = None,
+) -> dict:
+    """Simulate inserting a construct at a genomic position and score disruption.
+
+    Compares wild-type vs insertion predictions across all regulatory layers.
+    Predicts how a viral vector, transgene cassette, or other construct would
+    affect local chromatin, TF binding, and gene expression.
+
+    Args:
+        oracle_name: A loaded oracle name.
+        position: Insertion point as "chr1:1050000".
+        construct_sequence: DNA sequence to insert.
+        assay_ids: List of assay identifiers for multi-layer scoring.
+        gene_name: Optional gene for expression scoring.
+        description: Optional short label (e.g. "AAV-GFP at AAVS1").
+        user_prompt: Original user prompt, rendered at the top of the report.
+    """
+    from chorus.analysis.analysis_request import AnalysisRequest
+    from chorus.analysis.integration import simulate_integration as _integrate
+
+    state = _state()
+    oracle = state.get_oracle(oracle_name)
+
+    ar = AnalysisRequest(
+        user_prompt=user_prompt,
+        tool_name="simulate_integration",
+        oracle_name=oracle_name,
+        tracks_requested=(
+            "all oracle tracks" if not assay_ids else f"{len(assay_ids)} tracks"
+        ),
+        notes=[f"Integration at {position}" + (f" — {description}" if description else "")],
+    )
+
+    report = _integrate(
+        oracle, position, construct_sequence, assay_ids,
+        gene_name=gene_name,
+        normalizer=state.get_normalizer(oracle_name),
+        oracle_name=oracle_name,
+    )
+    report.analysis_request = ar
+
+    result = report.to_dict()
+    result["markdown_report"] = report.to_markdown()
+    result["analysis_type"] = "integration_simulation"
+    if description:
+        result["description"] = description
+    if state.output_dir:
+        try:
+            html_path = report.to_html(output_path=state.output_dir)
+            result["html_report_path"] = html_path
+        except Exception:
+            pass
+    return result
+
+
+@mcp.tool()
+@_safe_tool
+def score_variant_batch(
+    oracle_name: str,
+    variants: list[dict],
+    assay_ids: list[str],
+    gene_name: Optional[str] = None,
+    top_n: int = 20,
+    user_prompt: Optional[str] = None,
+) -> dict:
+    """Score a batch of variants and rank by effect magnitude.
+
+    Processes multiple variants through multi-layer analysis and returns a
+    ranked table. Claude can parse VCF content (or any free-text variant
+    list) and construct the ``variants`` argument from it.
+
+    **Variant dict schema** — each entry in ``variants`` must be a dict with:
+
+    - ``chrom`` (str): chromosome, e.g. ``"chr1"``
+    - ``pos``   (int): 1-based genomic coordinate
+    - ``ref``   (str): reference allele, e.g. ``"G"``
+    - ``alt``   (str): alternate allele, e.g. ``"T"``
+    - ``id``    (str, optional): label, e.g. ``"rs12740374"`` — defaults to
+      ``"chrom:pos_ref>alt"`` if omitted
+
+    Example::
+
+        variants = [
+            {"chrom": "chr1", "pos": 109274968, "ref": "G", "alt": "T", "id": "rs12740374"},
+            {"chrom": "chr1", "pos": 109275684, "ref": "G", "alt": "T", "id": "rs1626484"},
+        ]
+
+    Args:
+        oracle_name: A loaded oracle name.
+        variants: List of variant dicts (schema above).
+        assay_ids: Track identifiers to score. Pass an empty list to let
+            the oracle score all available tracks (recommended for
+            AlphaGenome / Enformer / Borzoi).
+        gene_name: Optional gene for expression scoring.
+        top_n: Return only the top N variants by effect (default 20).
+        user_prompt: Original user prompt, rendered at the top of the report.
+
+    Returns:
+        Dict with:
+          - ``scores``: list of ranked variant dicts (top_n), each with
+            ``variant_id``, ``max_effect``, ``top_layer``, ``top_track``,
+            ``per_layer_scores``, and optional ``max_quantile``
+          - ``markdown_report``: ready-to-display markdown table
+          - ``analysis_request``: metadata (prompt, tool, oracle, normalizer)
+    """
+    from chorus.analysis.analysis_request import AnalysisRequest
+    from chorus.analysis.batch_scoring import score_variant_batch as _batch
+
+    state = _state()
+    oracle = state.get_oracle(oracle_name)
+
+    ar = AnalysisRequest(
+        user_prompt=user_prompt,
+        tool_name="score_variant_batch",
+        oracle_name=oracle_name,
+        tracks_requested=(
+            "all oracle tracks" if not assay_ids else f"{len(assay_ids)} tracks"
+        ),
+        notes=[f"Scoring {len(variants)} variants"],
+    )
+
+    batch_result = _batch(
+        oracle, variants, assay_ids,
+        gene_name=gene_name,
+        normalizer=state.get_normalizer(oracle_name),
+        analysis_request=ar,
+    )
+
+    # Truncate to top_n
+    result = batch_result.to_dict()
+    result["scores"] = result["scores"][:top_n]
+    result["markdown_report"] = batch_result.to_markdown()
+    result["analysis_type"] = "batch_scoring"
+    return result
+
+
+@mcp.tool()
+@_safe_tool
+def fine_map_causal_variant(
+    oracle_name: str,
+    lead_variant: str,
+    ld_variants: Optional[list[dict]] = None,
+    assay_ids: Optional[list[str]] = None,
+    gene_name: Optional[str] = None,
+    population: str = "CEU",
+    r2_threshold: float = 0.8,
+    ldlink_token: Optional[str] = None,
+    user_prompt: Optional[str] = None,
+) -> dict:
+    """Prioritize causal variants from a GWAS locus using multi-layer regulatory evidence.
+
+    Given a sentinel GWAS variant and its LD proxies, scores each variant
+    across all regulatory layers and ranks by a **composite causal score**
+    combining four components (each in [0, 1] after min-max normalization):
+
+    1. ``max_effect``    — largest |log2FC| across layers (weight 0.35)
+    2. ``n_layers``      — count of layers with effect above threshold (0.25)
+    3. ``convergence``   — directional agreement across layers (0.20)
+    4. ``ref_activity``  — baseline activity of the variant site (0.20)
+
+    A variant with a *strong effect in many layers, all in the same direction,
+    in an already-active region* ends up at the top of the ranking.
+
+    **Two modes:**
+
+    - **Auto-fetch**: provide only ``lead_variant`` + ``ldlink_token`` to
+      pull LD proxies from LDlink at the given ``population`` / ``r2_threshold``.
+    - **Manual**: provide ``ld_variants`` directly. Each dict needs
+      ``chrom``, ``pos``, ``ref``, ``alt``, and optional ``id``, ``r2``.
+
+    **Output (per-variant columns in the ranked table):**
+
+    - ``variant_id`` / rsID (★ marks the sentinel)
+    - ``r2`` to the sentinel
+    - ``max_effect`` (signed log2FC in the strongest layer)
+    - ``n_layers_affected`` — 0 means no layer above threshold
+    - ``convergence`` — 1.0 = all effects same sign, 0.0 = split
+    - ``composite`` — final ranking score; top row is the most likely
+      causal variant
+
+    Use ``result["rankings"][0]["per_layer_scores"]`` to read off *which*
+    layers drove the top candidate's score.
+
+    Args:
+        oracle_name: A loaded oracle name.
+        lead_variant: Sentinel variant as "rs12740374" or "chr1:109274968 G>T".
+        ld_variants: Optional list of LD variant dicts (schema above).
+            If omitted, auto-fetched from LDlink.
+        assay_ids: Track identifiers. Pass an empty list / None to score
+            all tracks (recommended for AlphaGenome).
+        gene_name: Target gene for expression scoring.
+        population: 1000 Genomes population for LD lookup (default CEU).
+        r2_threshold: Minimum r² for LD variants (default 0.8).
+        ldlink_token: LDlink API token. Register free at
+            https://ldlink.nih.gov/?tab=apiaccess
+        user_prompt: Original user prompt, rendered at the top of the report.
+    """
+    from chorus.analysis.causal import prioritize_causal_variants
+    from chorus.utils.ld import (
+        fetch_ld_variants,
+        ld_variants_from_list,
+        LDLinkError,
+    )
+
+    state = _state()
+    oracle = state.get_oracle(oracle_name)
+
+    # Parse lead_variant string
+    lead_dict = _parse_lead_variant(lead_variant)
+
+    # Get LD variants
+    if ld_variants is not None:
+        ld_list = ld_variants_from_list(
+            ld_variants,
+            sentinel_id=lead_dict.get("id"),
+        )
+    else:
+        try:
+            variant_id = lead_dict.get("id", lead_variant.strip())
+            ld_list = fetch_ld_variants(
+                variant_id,
+                population=population,
+                r2_threshold=r2_threshold,
+                token=ldlink_token,
+            )
+        except LDLinkError as exc:
+            return {"error": str(exc)}
+
+    # When the caller passed an rsID with no coordinates, backfill chrom/pos/
+    # ref/alt onto the sentinel from the LDlink-resolved variant list (which
+    # always carries them). Without this, prioritize_causal_variants raises
+    # KeyError: 'chrom' on lead_dict['chrom'].
+    if "chrom" not in lead_dict and ld_list:
+        sentinel_entry = next((v for v in ld_list if getattr(v, "is_sentinel", False)), ld_list[0])
+        lead_dict.setdefault("chrom", sentinel_entry.chrom)
+        lead_dict.setdefault("pos", sentinel_entry.position)
+        lead_dict.setdefault("ref", sentinel_entry.ref)
+        lead_dict.setdefault("alt", sentinel_entry.alt)
+
+    from chorus.analysis.analysis_request import AnalysisRequest
+
+    ar = AnalysisRequest(
+        user_prompt=user_prompt,
+        tool_name="fine_map_causal_variant",
+        oracle_name=oracle_name,
+        tracks_requested=(
+            "all oracle tracks" if not assay_ids else f"{len(assay_ids)} tracks"
+        ),
+        notes=[f"Sentinel {lead_variant}; {len(ld_list)} LD variants (r²≥{r2_threshold})"],
+    )
+
+    result = prioritize_causal_variants(
+        oracle, lead_dict, ld_list, assay_ids,
+        gene_name=gene_name,
+        oracle_name=oracle_name,
+        normalizer=state.get_normalizer(oracle_name),
+        analysis_request=ar,
+    )
+
+    output = result.to_dict()
+    output["markdown_report"] = result.to_markdown()
+    output["analysis_type"] = "causal_prioritization"
+    if state.output_dir:
+        try:
+            html_path = result.to_html(output_path=state.output_dir)
+            output["html_report_path"] = html_path
+        except Exception:
+            pass
+    return output
+
+
+def _parse_lead_variant(text: str) -> dict:
+    """Parse lead variant from various formats.
+
+    Accepts:
+    - "rs12740374" (rsID only — coordinates must come from LD lookup)
+    - "chr1:109274968 G>T"
+    - "chr1:109274968 G T"
+    """
+    text = text.strip()
+    parts = text.split()
+
+    if text.startswith("rs"):
+        return {"id": text}
+
+    if ":" in parts[0]:
+        chrom, pos_str = parts[0].split(":")
+        pos = int(pos_str)
+        result = {"chrom": chrom, "pos": pos, "id": f"{chrom}:{pos}"}
+        if len(parts) >= 2:
+            alleles = parts[1] if ">" in parts[1] else " ".join(parts[1:])
+            allele_parts = alleles.replace(">", " ").split()
+            if len(allele_parts) >= 1:
+                result["ref"] = allele_parts[0]
+            if len(allele_parts) >= 2:
+                result["alt"] = allele_parts[1]
+        return result
+
+    return {"id": text}
 
 
 # ── Prompts ──────────────────────────────────────────────────────────
@@ -705,14 +1465,23 @@ def getting_started() -> str:
         "relevant assays (e.g. 'DNASE K562', 'CAGE liver', 'GATA1').\n\n"
         "4. **Load an oracle**: Call `load_oracle(oracle_name)`. This takes 30s-5min. "
         "The oracle stays loaded for subsequent calls.\n\n"
-        "5. **Make predictions**: Use `predict()`, `predict_variant_effect()`, "
-        "`predict_region_replacement()`, or `predict_region_insertion()`.\n\n"
-        "6. **Analyse gene effects**: Use `predict_variant_effect_on_gene()` to get "
-        "fold-change in expression for a specific gene.\n\n"
+        "5. **Analyse a variant** (recommended): Use `analyze_variant_multilayer()` for a "
+        "complete multi-layer report with normalization, interpretation labels, and an IGV browser.\n\n"
+        "6. **Discover affected cell types**: Use `discover_variant()` to scan ALL tracks and find "
+        "which cell types and regulatory layers are most affected — no track pre-selection needed.\n\n"
+        "7. **Batch scoring**: Use `score_variant_batch()` to compare multiple variants side-by-side "
+        "on specific tracks.\n\n"
+        "8. **Fine-mapping**: Use `fine_map_causal_variant()` with an rsID + LDlink token to rank "
+        "LD proxies by composite causal evidence.\n\n"
+        "9. **Sequence engineering**: Use `analyze_region_swap()` or `simulate_integration()` for "
+        "in-silico mutagenesis and transgene insertion analysis.\n\n"
+        "## Low-level tools (for custom workflows)\n"
+        "- `predict()` — raw oracle prediction on a region\n"
+        "- `predict_variant_effect()` — per-track variant effects without normalization\n"
+        "- `predict_variant_effect_on_gene()` — fold-change in expression for a specific gene\n"
+        "- `predict_region_replacement()` / `predict_region_insertion()` — sequence edits\n\n"
         "## Tips\n"
-        "- Regions use the format `chrN:start-end` (e.g. `chr1:1000000-1393216`)\n"
-        "- Positions use `chrN:pos` (e.g. `chr1:1050000`)\n"
-        "- The `region` parameter is optional in variant tools - it auto-centers on the variant\n"
+        "- Positions use `chrN:pos` (e.g. `chr1:109274968`); regions auto-center on the variant\n"
         "- Call `oracle_status()` to see what's currently loaded\n"
         "- Call `unload_oracle(name)` to free memory when done\n"
     )
@@ -776,7 +1545,9 @@ def main():
         print("  oracle_status, predict, predict_variant_effect,")
         print("  predict_region_replacement, predict_region_insertion,")
         print("  score_prediction_region, score_variant_effect_at_region,")
-        print("  predict_variant_effect_on_gene")
+        print("  predict_variant_effect_on_gene, analyze_variant_multilayer,")
+        print("  discover_variant_cell_types, analyze_region_swap,")
+        print("  simulate_integration, score_variant_batch")
         print()
         print("Prompts provided: getting_started, analyze_variant")
         return

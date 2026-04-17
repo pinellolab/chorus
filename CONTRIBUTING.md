@@ -25,11 +25,11 @@ pip install -e .
 
 ### Step 2: Create Your Oracle Implementation
 
-Create a new file in `chorus/oracles/` named after your oracle (e.g., `borzoi.py`):
+Create a new file in `chorus/oracles/` named after your oracle (e.g., `mymodel.py`):
 
 ```python
-# chorus/oracles/borzoi.py
-"""Borzoi oracle implementation."""
+# chorus/oracles/mymodel.py
+"""MyModel oracle implementation."""
 
 import numpy as np
 from typing import List, Dict, Optional, Tuple, Union, Any
@@ -41,24 +41,24 @@ from ..core.exceptions import ModelNotLoadedError
 logger = logging.getLogger(__name__)
 
 
-class BorzoiOracle(OracleBase):
-    """Borzoi oracle implementation."""
+class MyModelOracle(OracleBase):
+    """MyModel oracle implementation."""
     
     def __init__(self, use_environment: bool = True, reference_fasta: Optional[str] = None):
         """
-        Initialize Borzoi oracle.
+        Initialize MyModel oracle.
         
         Args:
             use_environment: Whether to use isolated conda environment
             reference_fasta: Path to reference genome FASTA file
         """
         # Set oracle name before calling super().__init__
-        self.oracle_name = 'borzoi'
+        self.oracle_name = 'mymodel'
         
         super().__init__(use_environment=use_environment)
         
         # Model-specific parameters
-        self.sequence_length = 524288  # Example: Borzoi uses 524kb sequences
+        self.sequence_length = 524288  # Example: MyModel uses 524kb sequences
         self.bin_size = 128
         self.num_tracks = 7919  # Example track count
         
@@ -222,7 +222,7 @@ dependencies:
 ```bash
 # Any special setup commands
 # For example, downloading model weights:
-wget https://example.com/model_weights.pt -O ~/.cache/borzoi/weights.pt
+wget https://example.com/model_weights.pt -O ~/.cache/mymodel/weights.pt
 ```
 
 ### Step 5: Register Your Oracle
@@ -230,11 +230,11 @@ wget https://example.com/model_weights.pt -O ~/.cache/borzoi/weights.pt
 Add your oracle to `chorus/oracles/__init__.py`:
 
 ```python
-from .borzoi import BorzoiOracle
+from .mymodel import MyModelOracle
 
 ORACLES = {
     'enformer': EnformerOracle,
-    'borzoi': BorzoiOracle,  # Add your oracle
+    'mymodel': MyModelOracle,  # Add your oracle
     # ...
 }
 ```
@@ -242,30 +242,30 @@ ORACLES = {
 Update `chorus/__init__.py` to support environment isolation:
 
 ```python
-if oracle_name.lower() == 'borzoi':
-    from .oracles.borzoi import BorzoiOracle
-    return BorzoiOracle(use_environment=True, **kwargs)
+if oracle_name.lower() == 'mymodel':
+    from .oracles.mymodel import MyModelOracle
+    return MyModelOracle(use_environment=True, **kwargs)
 ```
 
 ### Step 6: Add Tests
 
-Create a test file `tests/test_borzoi.py`:
+Create a test file `tests/test_mymodel.py`:
 
 ```python
 import pytest
 import chorus
 
 
-def test_borzoi_creation():
-    """Test Borzoi oracle creation."""
-    oracle = chorus.create_oracle('borzoi', use_environment=False)
-    assert oracle.oracle_name == 'borzoi'
+def test_mymodel_creation():
+    """Test MyModel oracle creation."""
+    oracle = chorus.create_oracle('mymodel', use_environment=False)
+    assert oracle.oracle_name == 'mymodel'
     assert oracle.sequence_length == 524288
 
 
-def test_borzoi_tracks():
+def test_mymodel_tracks():
     """Test track listing."""
-    oracle = chorus.create_oracle('borzoi', use_environment=False)
+    oracle = chorus.create_oracle('mymodel', use_environment=False)
     assays = oracle.list_assay_types()
     assert 'DNase' in assays
     
@@ -278,7 +278,7 @@ def test_borzoi_tracks():
 
 ### Step 7: Create an Example Notebook
 
-Create `examples/borzoi_example.ipynb` demonstrating your oracle's features:
+Create `examples/mymodel_example.ipynb` demonstrating your oracle's features:
 
 ```python
 # Example notebook structure
@@ -319,7 +319,7 @@ BORZOI_ENV_CONFIG = {
         # ... other pip packages
     ],
     'post_install_commands': [
-        'wget https://example.com/weights.pt -O ~/.cache/borzoi/weights.pt',
+        'wget https://example.com/weights.pt -O ~/.cache/mymodel/weights.pt',
         # ... other setup commands
     ]
 }
@@ -367,11 +367,11 @@ BORZOI_ENV_CONFIG = {
 ```
 chorus/
 ├── oracles/
-│   └── borzoi.py          # Your oracle implementation
+│   └── mymodel.py          # Your oracle implementation
 ├── tests/
-│   └── test_borzoi.py     # Tests
+│   └── test_mymodel.py     # Tests
 ├── examples/
-│   └── borzoi_example.ipynb  # Example notebook
+│   └── mymodel_example.ipynb  # Example notebook
 └── README.md              # Updated with your oracle info
 ```
 
@@ -383,11 +383,9 @@ chorus/
 
 ## Current Priorities
 
-We're particularly interested in implementations for:
-1. **Borzoi** - Enhanced Enformer model
-2. **ChromBPNet** - Base-pair resolution TF binding
-3. **Sei** - Sequence regulatory effects
-4. **Basset** - Chromatin accessibility
-5. **DeepSEA** - Variant effects
+All six core oracles (Enformer, Borzoi, ChromBPNet, Sei, LegNet, AlphaGenome) are implemented. We're interested in contributions for:
+1. **Custom fine-tuned models** — models trained on specific tissues or conditions
+2. **Species-specific oracles** — mouse, drosophila, etc.
+3. **New architectures** — HyenaDNA, Evo, Nucleotide Transformer, etc.
 
 Thank you for contributing to Chorus! Your implementation will help make genomic deep learning models more accessible to the research community.
