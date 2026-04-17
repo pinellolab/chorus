@@ -1,0 +1,157 @@
+{
+  "app_name": "variant_analysis__SORT1_enformer",
+  "path": "examples/applications/variant_analysis/SORT1_enformer",
+  "prompt": "Analyze chr1:109274968 G>T using Enformer discovery mode. Gene: SORT1.",
+  "md_header": {
+    "tool": "discover_variant",
+    "oracle": "enformer",
+    "tracks_requested": "all Enformer tracks (discovery mode)",
+    "gene": "SORT1",
+    "generated": "2026-04-13 11:27 UTC"
+  },
+  "top_keys": [
+    "variant",
+    "oracle",
+    "gene_name",
+    "nearby_genes",
+    "alleles",
+    "analysis_request"
+  ],
+  "tool": "discover_variant",
+  "oracle": "enformer",
+  "variant": {
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "T"
+    ]
+  },
+  "n_tracks_scored": 84,
+  "assay_ids": [
+    "CNhs10622",
+    "CNhs10624",
+    "CNhs10627",
+    "CNhs10652",
+    "CNhs10736",
+    "CNhs11100",
+    "CNhs11280",
+    "CNhs11748",
+    "CNhs11930",
+    "CNhs11943",
+    "CNhs11984",
+    "CNhs12117",
+    "ENCFF057SLO",
+    "ENCFF062MFT",
+    "ENCFF088CPA",
+    "ENCFF160WPD",
+    "ENCFF176WVA",
+    "ENCFF202JSQ",
+    "ENCFF208VLV",
+    "ENCFF352PXN",
+    "ENCFF367ZVE",
+    "ENCFF402ZMX",
+    "ENCFF411ZPI",
+    "ENCFF419EMP",
+    "ENCFF457RRO",
+    "ENCFF491SLY",
+    "ENCFF499KPZ",
+    "ENCFF518NUV",
+    "ENCFF571HTM",
+    "ENCFF586QFS"
+  ],
+  "layers_scored": [
+    "chromatin_accessibility",
+    "histone_marks",
+    "tf_binding",
+    "tss_activity"
+  ],
+  "track_selection_check": {
+    "cell_types_claimed_in_prompt": [],
+    "cell_types_in_tracks": {
+      "LNCaP clone FGC": 1,
+      "HeLa-S3 G1b phase": 1,
+      "epithelial cell of proximal tubule": 1,
+      "MCF 10A treated with 1 uM tamoxifen for 24 hours": 1,
+      "placenta female embryo (105 days)": 1,
+      "epithelial cell of prostate": 1,
+      "MCF-7": 4,
+      "T47D": 1,
+      "epithelial cell of esophagus": 1,
+      "MCF-7 treated with 100 nM estradiol for 1 hour": 1,
+      "renal cortical epithelial cell": 1,
+      "liver male adult (32 years)": 4,
+      "liver female child (4 years)": 2,
+      "MCF 10A originated from MCF 10A treated with 1 uM afimoxifene for 36 hours": 1,
+      "MCF 10A genetically modified using stable transfection treated with 1 uM afimoxifene for 12 hours": 1,
+      "GM12878": 2,
+      "22Rv1 treated with 10 nM 17B-hydroxy-5a-androstan-3-one for 4 hours": 1,
+      "common myeloid progenitor": 3,
+      "22Rv1": 1,
+      "liver male adult (31 year)": 1,
+      "psoas muscle female adult (30 years)": 1,
+      "gastrocnemius medialis female adult (53 years)": 1,
+      "liver male adult (78 years)": 1,
+      "heart left ventricle male adult (32 years)": 1,
+      "gastrocnemius medialis male adult (37 years)": 1,
+      "liver female adult (25 years)": 1,
+      "breast carcinoma cell line": 8,
+      "placenta": 4,
+      "kidney": 8,
+      "liver": 4,
+      "Skeletal muscle cells differentiated into Myotubes - multinucleated": 4,
+      "Astrocyte - cerebellum": 4,
+      "endometrioid adenocarcinoma cell line": 4,
+      "colon carcinoma cell line": 4,
+      "clear cell carcinoma cell line": 4,
+      "ductal cell carcinoma cell line": 4
+    },
+    "mismatches": []
+  },
+  "md_vs_json_consistency": {
+    "summary_text": "Chromatin accessibility (DNASE/ATAC): very strong opening (+1.24); Transcription factor binding (ChIP-TF): very strong binding gain (+1.13); Histone modifications (ChIP-Histone): very strong mark gain (+0.73); TSS activity (CAGE/PRO-CAP): strong increase (+0.51).",
+    "summary_direction": "positive",
+    "pos_word_hits": 4,
+    "neg_word_hits": 0,
+    "per_layer_dominant_sign": {
+      "chromatin_accessibility": "+",
+      "tf_binding": "+",
+      "histone_marks": "+",
+      "tss_activity": "+"
+    },
+    "per_layer_dominant_magnitude": {
+      "chromatin_accessibility": "+1.236",
+      "tf_binding": "+1.126",
+      "histone_marks": "+0.734",
+      "tss_activity": "+0.505"
+    }
+  },
+  "tsv_vs_json_consistency": {
+    "tsv_rows": 20,
+    "json_tracks": 84,
+    "tsv_columns": [
+      "allele",
+      "layer",
+      "assay_id",
+      "assay_type",
+      "cell_type",
+      "description",
+      "ref_value",
+      "alt_value",
+      "raw_score",
+      "quantile_score",
+      "ref_signal_percentile",
+      "note"
+    ]
+  },
+  "html_files": [
+    "examples/applications/variant_analysis/SORT1_enformer/rs12740374_SORT1_enformer_report.html"
+  ],
+  "screenshots": [
+    "audits/2026-04-16_screenshots/variant_analysis__SORT1_enformer__rs12740374_SORT1_enformer_report.png"
+  ],
+  "literature_claim": {
+    "note": "no published literature claim for this app"
+  },
+  "flags": []
+}

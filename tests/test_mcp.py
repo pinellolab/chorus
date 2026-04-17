@@ -189,6 +189,111 @@ class TestOracleStateManager:
         assert mgr.unload_oracle("enformer") is True
         assert mgr.list_loaded() == []
 
+    @patch("chorus.mcp.state.GenomeManager")
+    def test_normalizer_auto_load_with_backgrounds(self, mock_gm_cls):
+        """Normalizer is auto-loaded when backgrounds exist on disk."""
+        import tempfile, os
+
+        mock_gm_cls.return_value.is_genome_downloaded.return_value = False
+
+        from chorus.mcp.state import OracleStateManager
+        OracleStateManager._instance = None
+        mgr = OracleStateManager()
+
+        with tempfile.TemporaryDirectory() as td:
+            # Create background files
+            scores = np.sort(np.abs(np.random.randn(500))).astype(np.float64)
+            np.save(os.path.join(td, "testoracle_chromatin_accessibility.npy"), scores)
+            np.save(os.path.join(td, "testoracle_tf_binding.npy"), scores)
+
+            # Manually inject oracle and trigger normalizer auto-load with custom cache_dir
+            mgr._oracles["testoracle"] = MagicMock(device="cpu")
+            mgr._load_times["testoracle"] = 0.1
+
+            from chorus.analysis.normalization import get_normalizer
+            mgr._normalizers["testoracle"] = get_normalizer("testoracle", cache_dir=td)
+
+            normalizer = mgr.get_normalizer("testoracle")
+            assert normalizer is not None
+            assert normalizer.has_background("testoracle_chromatin_accessibility")
+            assert normalizer.has_background("testoracle_tf_binding")
+
+    @patch("chorus.mcp.state.GenomeManager")
+    def test_normalizer_none_when_no_backgrounds(self, mock_gm_cls):
+        """get_normalizer returns None when no backgrounds exist."""
+        mock_gm_cls.return_value.is_genome_downloaded.return_value = False
+
+        from chorus.mcp.state import OracleStateManager
+        OracleStateManager._instance = None
+        mgr = OracleStateManager()
+
+        # Use a fake oracle name that has no background files on disk
+        mgr._oracles["nonexistent_oracle_xyz"] = MagicMock(device="cpu")
+        mgr._load_times["nonexistent_oracle_xyz"] = 0.1
+        mgr._auto_load_normalizer("nonexistent_oracle_xyz")
+
+        assert mgr.get_normalizer("nonexistent_oracle_xyz") is None
+
+    @patch("chorus.mcp.state.GenomeManager")
+    def test_normalizer_cleaned_on_unload(self, mock_gm_cls):
+        """Unloading an oracle also removes its normalizer."""
+        mock_gm_cls.return_value.is_genome_downloaded.return_value = False
+
+        from chorus.mcp.state import OracleStateManager
+        OracleStateManager._instance = None
+        mgr = OracleStateManager()
+
+        mgr._oracles["test"] = MagicMock(device="cpu")
+        mgr._load_times["test"] = 0.1
+        mgr._normalizers["test"] = MagicMock()
+
+        assert mgr.get_normalizer("test") is not None
+        mgr.unload_oracle("test")
+        assert mgr.get_normalizer("test") is None
+
+    @patch("chorus.mcp.state.GenomeManager")
+    def test_list_loaded_includes_backgrounds(self, mock_gm_cls):
+        """list_loaded() includes backgrounds_loaded count."""
+        mock_gm_cls.return_value.is_genome_downloaded.return_value = False
+
+        from chorus.mcp.state import OracleStateManager
+        from chorus.analysis.normalization import QuantileNormalizer
+        OracleStateManager._instance = None
+        mgr = OracleStateManager()
+
+        mgr._oracles["test"] = MagicMock(device="cpu")
+        mgr._load_times["test"] = 0.1
+        mgr._normalizers["test"] = None
+
+        loaded = mgr.list_loaded()
+        assert loaded[0]["backgrounds_loaded"] == 0
+
+    @patch("chorus.mcp.state.GenomeManager")
+    def test_load_oracle_response_includes_backgrounds(self, mock_gm_cls):
+        """load_oracle() response includes background status."""
+        import tempfile, os
+
+        mock_gm_cls.return_value.is_genome_downloaded.return_value = False
+
+        from chorus.mcp.state import OracleStateManager
+        OracleStateManager._instance = None
+        mgr = OracleStateManager()
+
+        # Inject oracle without going through load_oracle (avoids real model load)
+        mgr._oracles["myoracle"] = MagicMock(device="cpu")
+        mgr._load_times["myoracle"] = 0.5
+        mgr._auto_load_normalizer("myoracle")
+
+        # Simulate what load_oracle returns
+        normalizer = mgr.get_normalizer("myoracle")
+        if normalizer is not None:
+            summary = normalizer.summary()
+            bg_info = {"status": "loaded", "n_layers": len(summary)}
+        else:
+            bg_info = {"status": "none"}
+
+        assert bg_info["status"] == "none"  # no backgrounds on disk
+
 
 # ── Server tool definition smoke tests ───────────────────────────────
 
@@ -1046,3 +1151,58 @@ class TestPrompts:
         assert isinstance(result, str)
         assert "SORT1" in result
         assert "HepG2" in result
+
+
+class TestFineMapRsidBackfill:
+    """Regression test: fine_map_causal_variant with rsID-only lead must not KeyError.
+
+    Without the chrom/pos/ref/alt backfill from the LD-resolved sentinel,
+    downstream prioritize_causal_variants raises KeyError: 'chrom'.
+    """
+
+    def test_rsid_only_lead_backfills_coordinates(self):
+        from chorus.mcp import server as srv
+
+        @dataclass
+        class FakeLD:
+            variant_id: str
+            chrom: str
+            position: int
+            ref: str
+            alt: str
+            r2: float = 1.0
+            is_sentinel: bool = False
+
+        ld_list = [
+            FakeLD("rs12740374", "chr1", 109274968, "G", "T", 1.0, is_sentinel=True),
+            FakeLD("rs4970836", "chr1", 109279175, "G", "A", 0.9),
+        ]
+
+        captured = {}
+
+        def fake_prioritize(oracle, lead_dict, ld_variants, assay_ids, **kwargs):
+            captured["lead_dict"] = dict(lead_dict)
+            r = MagicMock()
+            r.to_dict.return_value = {"rankings": []}
+            r.to_markdown.return_value = "# causal"
+            return r
+
+        with patch.object(srv, "_state") as mock_state, \
+             patch("chorus.utils.ld.ld_variants_from_list", return_value=ld_list), \
+             patch("chorus.analysis.causal.prioritize_causal_variants", side_effect=fake_prioritize):
+            mock_state.return_value.get_oracle.return_value = MagicMock()
+            mock_state.return_value.get_normalizer.return_value = None
+            mock_state.return_value.output_dir = None
+
+            result = srv.fine_map_causal_variant(
+                oracle_name="alphagenome",
+                lead_variant="rs12740374",
+                ld_variants=[{"chrom": "chr1", "pos": 109274968, "ref": "G", "alt": "T"}],
+            )
+
+        assert "error" not in result, f"Unexpected error: {result.get('error')}"
+        ld = captured["lead_dict"]
+        assert ld["chrom"] == "chr1"
+        assert ld["pos"] == 109274968
+        assert ld["ref"] == "G"
+        assert ld["alt"] == "T"

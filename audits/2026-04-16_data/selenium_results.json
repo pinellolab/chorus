@@ -1,0 +1,381 @@
+[
+  {
+    "html": "examples/applications/batch_scoring/batch_sort1_locus_scoring.html",
+    "screenshot": "audits/2026-04-16_screenshots/batch_scoring__batch_sort1_locus_scoring.png",
+    "title": "Batch Variant Scoring Results",
+    "igv_loaded": false,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [],
+    "table_count": 1,
+    "tr_count": 6,
+    "page_height_px": 1000
+  },
+  {
+    "html": "examples/applications/causal_prioritization/SORT1_locus/rs12740374_SORT1_locus_causal_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/causal_prioritization__SORT1_locus__rs12740374_SORT1_locus_causal_report.png",
+    "title": "Causal Variant Prioritization Report",
+    "igv_loaded": false,
+    "analysis_request_count": 1,
+    "severe_errors": 2,
+    "severe_sample": [
+      "https://cdn.jsdelivr.net/npm/igv@3.1.1/dist/igv.min.js - Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID",
+      "file:///Users/lp698/chorus_test/chorus/examples/applications/causal_prioritization/SORT1_locus/rs12740374_SORT1_locus_causal_report.html 74:16 \"IGV error:\" ReferenceError: igv is not defined\n    at fi"
+    ],
+    "roi_coords": [
+      "chr1:109274967-109274969",
+      "chr1:109274918-109275018",
+      "chr1:109279125-109279225",
+      "chr1:109275858-109275958",
+      "chr1:109275166-109275266",
+      "chr1:109275634-109275734"
+    ],
+    "table_count": 12,
+    "tr_count": 67,
+    "page_height_px": 2351
+  },
+  {
+    "html": "examples/applications/discovery/SORT1_cell_type_screen/chr1_109274968_G_T_SORT1_oracle_LNCaP_clone_FGC_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/discovery__SORT1_cell_type_screen__chr1_109274968_G_T_SORT1_oracle_LNCaP_clone_FGC_report.png",
+    "title": "Multi-Layer Variant Effect Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr1:109274967-109274969",
+      "chr1:109274967-109274969",
+      "chr1:108750681-108751030",
+      "chr1:108751030-108751379",
+      "chr1:108751379-108751728",
+      "chr1:108751728-108752077"
+    ],
+    "table_count": 3,
+    "tr_count": 6,
+    "page_height_px": 1935
+  },
+  {
+    "html": "examples/applications/discovery/SORT1_cell_type_screen/chr1_109274968_G_T_SORT1_oracle_epithelial_cell_of_proximal_tubule_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/discovery__SORT1_cell_type_screen__chr1_109274968_G_T_SORT1_oracle_epithelial_cell_of_proximal_tubule_report.png",
+    "title": "Multi-Layer Variant Effect Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr1:109274967-109274969",
+      "chr1:109274967-109274969",
+      "chr1:108750681-108751030",
+      "chr1:108751030-108751379",
+      "chr1:108751379-108751728",
+      "chr1:108751728-108752077"
+    ],
+    "table_count": 6,
+    "tr_count": 127,
+    "page_height_px": 6701
+  },
+  {
+    "html": "examples/applications/discovery/SORT1_cell_type_screen/chr1_109274968_G_T_SORT1_oracle_renal_cortical_epithelial_cell_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/discovery__SORT1_cell_type_screen__chr1_109274968_G_T_SORT1_oracle_renal_cortical_epithelial_cell_report.png",
+    "title": "Multi-Layer Variant Effect Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr1:109274967-109274969",
+      "chr1:109274967-109274969",
+      "chr1:108750681-108751030",
+      "chr1:108751030-108751379",
+      "chr1:108751379-108751728",
+      "chr1:108751728-108752077"
+    ],
+    "table_count": 4,
+    "tr_count": 123,
+    "page_height_px": 6267
+  },
+  {
+    "html": "examples/applications/sequence_engineering/integration_simulation/integration_CMV_PPP1R12C_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/sequence_engineering__integration_simulation__integration_CMV_PPP1R12C_report.png",
+    "title": "Integration Simulation Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr19:55115000-55115378",
+      "chr19:55115000-55115378",
+      "chr19:54590713-54591062",
+      "chr19:54591062-54591411",
+      "chr19:54591411-54591760",
+      "chr19:54591760-54592109"
+    ],
+    "table_count": 3,
+    "tr_count": 58,
+    "page_height_px": 3525
+  },
+  {
+    "html": "examples/applications/sequence_engineering/region_swap/region_swap_SORT1_K562_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/sequence_engineering__region_swap__region_swap_SORT1_K562_report.png",
+    "title": "Region Swap Analysis Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr1:109274500-109275500",
+      "chr1:109274500-109275500",
+      "chr1:108750712-108751061",
+      "chr1:108751061-108751410",
+      "chr1:108751410-108751759",
+      "chr1:108751759-108752108"
+    ],
+    "table_count": 3,
+    "tr_count": 35,
+    "page_height_px": 2838
+  },
+  {
+    "html": "examples/applications/validation/HBG2_HPFH/chr11_5254983_G_C_HBG2_K562_alphagenome_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/validation__HBG2_HPFH__chr11_5254983_G_C_HBG2_K562_alphagenome_report.png",
+    "title": "Multi-Layer Variant Effect Report",
+    "igv_loaded": false,
+    "analysis_request_count": 1,
+    "severe_errors": 2,
+    "severe_sample": [
+      "https://cdn.jsdelivr.net/npm/igv@3.1.1/dist/igv.min.js - Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID",
+      "file:///Users/lp698/chorus_test/chorus/examples/applications/validation/HBG2_HPFH/chr11_5254983_G_C_HBG2_K562_alphagenome_report.html 1676:16 \"IGV error:\" ReferenceError: igv is not defined\n    at fil"
+    ],
+    "roi_coords": [
+      "chr11:5254982-5254984",
+      "chr11:5254982-5254984",
+      "chr11:4730696-4731045",
+      "chr11:4731045-4731394",
+      "chr11:4731394-4731743",
+      "chr11:4731743-4732092"
+    ],
+    "table_count": 5,
+    "tr_count": 202,
+    "page_height_px": 8568
+  },
+  {
+    "html": "examples/applications/validation/HBG2_HPFH/chr11_5254983_G_C_HBG2_alphagenome_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/validation__HBG2_HPFH__chr11_5254983_G_C_HBG2_alphagenome_report.png",
+    "title": "Multi-Layer Variant Effect Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr11:5254982-5254984",
+      "chr11:5254982-5254984",
+      "chr11:4730696-4730952",
+      "chr11:4730952-4731208",
+      "chr11:4731208-4731464",
+      "chr11:4731464-4731720"
+    ],
+    "table_count": 5,
+    "tr_count": 164,
+    "page_height_px": 8611
+  },
+  {
+    "html": "examples/applications/validation/SORT1_rs12740374_with_CEBP/chr1_109274968_G_T_CELSR2_alphagenome_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/validation__SORT1_rs12740374_with_CEBP__chr1_109274968_G_T_CELSR2_alphagenome_report.png",
+    "title": "Multi-Layer Variant Effect Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr1:109274967-109274969",
+      "chr1:109274967-109274969",
+      "chr1:108750681-108751030",
+      "chr1:108751030-108751379",
+      "chr1:108751379-108751728",
+      "chr1:108751728-108752077"
+    ],
+    "table_count": 6,
+    "tr_count": 192,
+    "page_height_px": 9738
+  },
+  {
+    "html": "examples/applications/validation/SORT1_rs12740374_with_CEBP/chr1_109274968_G_T_SORT1_enformer_RAW_autoscale.html",
+    "screenshot": "audits/2026-04-16_screenshots/validation__SORT1_rs12740374_with_CEBP__chr1_109274968_G_T_SORT1_enformer_RAW_autoscale.png",
+    "title": "Multi-Layer Variant Effect Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr1:109274967-109274969",
+      "chr1:109274967-109274969",
+      "chr1:109217625-109217753",
+      "chr1:109217753-109217881",
+      "chr1:109217881-109218009",
+      "chr1:109218009-109218137"
+    ],
+    "table_count": 4,
+    "tr_count": 88,
+    "page_height_px": 9005
+  },
+  {
+    "html": "examples/applications/validation/SORT1_rs12740374_with_CEBP/rs12740374_SORT1_CEBP_validation_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/validation__SORT1_rs12740374_with_CEBP__rs12740374_SORT1_CEBP_validation_report.png",
+    "title": "Multi-Layer Variant Effect Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr1:109274967-109274969",
+      "chr1:109274967-109274969",
+      "chr1:108750681-108751030",
+      "chr1:108751030-108751379",
+      "chr1:108751379-108751728",
+      "chr1:108751728-108752077"
+    ],
+    "table_count": 4,
+    "tr_count": 66,
+    "page_height_px": 4050
+  },
+  {
+    "html": "examples/applications/validation/TERT_chr5_1295046/chr5_1295046_T_G_TERT_alphagenome_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/validation__TERT_chr5_1295046__chr5_1295046_T_G_TERT_alphagenome_report.png",
+    "title": "Multi-Layer Variant Effect Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr5:1295045-1295047",
+      "chr5:1295045-1295047",
+      "chr5:770759-771015",
+      "chr5:771015-771271",
+      "chr5:771271-771527",
+      "chr5:771527-771783"
+    ],
+    "table_count": 6,
+    "tr_count": 91,
+    "page_height_px": 5883
+  },
+  {
+    "html": "examples/applications/variant_analysis/BCL11A_rs1427407/rs1427407_BCL11A_alphagenome_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/variant_analysis__BCL11A_rs1427407__rs1427407_BCL11A_alphagenome_report.png",
+    "title": "Multi-Layer Variant Effect Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr2:60490907-60490909",
+      "chr2:60490907-60490909",
+      "chr2:59966621-59966970",
+      "chr2:59966970-59967319",
+      "chr2:59967319-59967668",
+      "chr2:59967668-59968017"
+    ],
+    "table_count": 4,
+    "tr_count": 16,
+    "page_height_px": 2355
+  },
+  {
+    "html": "examples/applications/variant_analysis/FTO_rs1421085/rs1421085_FTO_alphagenome_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/variant_analysis__FTO_rs1421085__rs1421085_FTO_alphagenome_report.png",
+    "title": "Multi-Layer Variant Effect Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr16:53767041-53767043",
+      "chr16:53767041-53767043",
+      "chr16:53242755-53243104",
+      "chr16:53243104-53243453",
+      "chr16:53243453-53243802",
+      "chr16:53243802-53244151"
+    ],
+    "table_count": 4,
+    "tr_count": 20,
+    "page_height_px": 2489
+  },
+  {
+    "html": "examples/applications/variant_analysis/SORT1_chrombpnet/rs12740374_SORT1_chrombpnet_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/variant_analysis__SORT1_chrombpnet__rs12740374_SORT1_chrombpnet_report.png",
+    "title": "Multi-Layer Variant Effect Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr1:109274967-109274969",
+      "chr1:109274967-109274969",
+      "chr1:109274468-109274469",
+      "chr1:109274469-109274470",
+      "chr1:109274470-109274471",
+      "chr1:109274471-109274472"
+    ],
+    "table_count": 1,
+    "tr_count": 2,
+    "page_height_px": 1335
+  },
+  {
+    "html": "examples/applications/variant_analysis/SORT1_enformer/rs12740374_SORT1_enformer_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/variant_analysis__SORT1_enformer__rs12740374_SORT1_enformer_report.png",
+    "title": "Multi-Layer Variant Effect Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr1:109274967-109274969",
+      "chr1:109274967-109274969",
+      "chr1:109217625-109217753",
+      "chr1:109217753-109217881",
+      "chr1:109217881-109218009",
+      "chr1:109218009-109218137"
+    ],
+    "table_count": 4,
+    "tr_count": 88,
+    "page_height_px": 9021
+  },
+  {
+    "html": "examples/applications/variant_analysis/SORT1_rs12740374/rs12740374_SORT1_alphagenome_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/variant_analysis__SORT1_rs12740374__rs12740374_SORT1_alphagenome_report.png",
+    "title": "Multi-Layer Variant Effect Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr1:109274967-109274969",
+      "chr1:109274967-109274969",
+      "chr1:108750681-108751030",
+      "chr1:108751030-108751379",
+      "chr1:108751379-108751728",
+      "chr1:108751728-108752077"
+    ],
+    "table_count": 4,
+    "tr_count": 66,
+    "page_height_px": 4050
+  },
+  {
+    "html": "examples/applications/variant_analysis/TERT_promoter/TERT_promoter_alphagenome_report.html",
+    "screenshot": "audits/2026-04-16_screenshots/variant_analysis__TERT_promoter__TERT_promoter_alphagenome_report.png",
+    "title": "Multi-Layer Variant Effect Report",
+    "igv_loaded": true,
+    "analysis_request_count": 1,
+    "severe_errors": 0,
+    "severe_sample": [],
+    "roi_coords": [
+      "chr5:1295227-1295229",
+      "chr5:1295227-1295229",
+      "chr5:770941-771290",
+      "chr5:771290-771639",
+      "chr5:771639-771988",
+      "chr5:771988-772337"
+    ],
+    "table_count": 4,
+    "tr_count": 38,
+    "page_height_px": 3110
+  }
+]

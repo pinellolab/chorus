@@ -1,0 +1,60 @@
+{
+  "variant": {
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "T"
+    ]
+  },
+  "oracle": "chrombpnet",
+  "gene_name": "SORT1",
+  "nearby_genes": [
+    "SORT1",
+    "CELSR2"
+  ],
+  "alleles": {
+    "alt_1": {
+      "scores_by_layer": {
+        "chromatin_accessibility": [
+          {
+            "assay_id": "ATAC:HepG2",
+            "assay_type": "ATAC",
+            "cell_type": "HepG2",
+            "layer": "chromatin_accessibility",
+            "ref_value": 686.5428430783795,
+            "alt_value": 635.6748728468083,
+            "raw_score": -0.1108927878264346,
+            "description": "ATAC:HepG2",
+            "quantile_score": 0.96721823290665,
+            "ref_signal_percentile": 0.8198
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "ATAC:HepG2",
+          "assay_type": "ATAC",
+          "cell_type": "HepG2",
+          "layer": "chromatin_accessibility",
+          "ref_value": 686.5428430783795,
+          "alt_value": 635.6748728468083,
+          "raw_score": -0.1108927878264346,
+          "description": "ATAC:HepG2",
+          "quantile_score": 0.96721823290665,
+          "ref_signal_percentile": 0.8198
+        }
+      ]
+    }
+  },
+  "analysis_request": {
+    "user_prompt": "Score chr1:109274968 G>T using ChromBPNet ATAC model in HepG2. Gene: SORT1.",
+    "tool_name": "analyze_variant_multilayer",
+    "oracle_name": "chrombpnet",
+    "normalizer_name": "per-track background CDFs",
+    "tracks_requested": "ATAC:HepG2",
+    "cell_types": [],
+    "notes": [],
+    "generated_at": "2026-04-16 18:30 UTC"
+  }
+}

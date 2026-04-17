@@ -27,6 +27,7 @@ dependencies:
   - pyfaidx>=0.7.0
   - biopython>=1.79
   - samtools  # For genome indexing
+  - htslib    # Provides bgzip/tabix (coolbox visualization needs bgzip)
   # gtfsort: Linux-only (bioconda), install separately on Linux: mamba install -c bioconda gtfsort
 
   # Visualization tools
@@ -46,3 +47,4 @@ dependencies:
     - coolbox>=0.4.0
     - oxbow>=0.4.0
     - fastmcp>=3.0
+    - huggingface_hub>=0.20.0

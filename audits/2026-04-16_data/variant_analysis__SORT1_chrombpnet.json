@@ -1,0 +1,87 @@
+{
+  "app_name": "variant_analysis__SORT1_chrombpnet",
+  "path": "examples/applications/variant_analysis/SORT1_chrombpnet",
+  "prompt": "Score chr1:109274968 G>T using ChromBPNet ATAC model in HepG2. Gene: SORT1.",
+  "md_header": {
+    "tool": "analyze_variant_multilayer",
+    "oracle": "chrombpnet",
+    "normalizer": "per-track background CDFs",
+    "tracks_requested": "ATAC:HepG2",
+    "gene": "SORT1",
+    "generated": "2026-04-13 11:31 UTC"
+  },
+  "top_keys": [
+    "variant",
+    "oracle",
+    "gene_name",
+    "nearby_genes",
+    "alleles",
+    "analysis_request"
+  ],
+  "tool": "analyze_variant_multilayer",
+  "oracle": "chrombpnet",
+  "variant": {
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "T"
+    ]
+  },
+  "n_tracks_scored": 1,
+  "assay_ids": [
+    "ATAC:HepG2"
+  ],
+  "layers_scored": [
+    "chromatin_accessibility"
+  ],
+  "track_selection_check": {
+    "cell_types_claimed_in_prompt": [
+      "HepG2"
+    ],
+    "cell_types_in_tracks": {
+      "HepG2": 1
+    },
+    "mismatches": []
+  },
+  "md_vs_json_consistency": {
+    "summary_text": "Chromatin accessibility (DNASE/ATAC): moderate closing (-0.11).",
+    "summary_direction": "negative",
+    "pos_word_hits": 0,
+    "neg_word_hits": 1,
+    "per_layer_dominant_sign": {
+      "chromatin_accessibility": "-"
+    },
+    "per_layer_dominant_magnitude": {
+      "chromatin_accessibility": "-0.111"
+    }
+  },
+  "tsv_vs_json_consistency": {
+    "tsv_rows": 1,
+    "json_tracks": 1,
+    "tsv_columns": [
+      "allele",
+      "layer",
+      "assay_id",
+      "assay_type",
+      "cell_type",
+      "description",
+      "ref_value",
+      "alt_value",
+      "raw_score",
+      "quantile_score",
+      "ref_signal_percentile",
+      "note"
+    ]
+  },
+  "html_files": [
+    "examples/applications/variant_analysis/SORT1_chrombpnet/rs12740374_SORT1_chrombpnet_report.html"
+  ],
+  "screenshots": [
+    "audits/2026-04-16_screenshots/variant_analysis__SORT1_chrombpnet__rs12740374_SORT1_chrombpnet_report.png"
+  ],
+  "literature_claim": {
+    "note": "no published literature claim for this app"
+  },
+  "flags": []
+}

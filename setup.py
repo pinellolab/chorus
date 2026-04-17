@@ -22,12 +22,11 @@ setup(
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.10",
     install_requires=requirements + ["click>=8.0"],
     extras_require={
         "dev": [
@@ -47,7 +46,22 @@ setup(
         ],
     },
     package_data={
-        "chorus": ["../environments/*.yml"],
+        "chorus": [
+            "oracles/borzoi_source/*.txt",
+            "oracles/borzoi_source/*.json",
+            "oracles/sei_source/*.txt",
+            "oracles/alphagenome_source/*.json",
+            "analysis/data/*.bed",
+        ],
     },
+    data_files=[
+        ("chorus_environments", [
+            f"environments/{f}" for f in [
+                "chorus-alphagenome.yml", "chorus-borzoi.yml", "chorus-chrombpnet.yml",
+                "chorus-enformer.yml", "chorus-legnet.yml", "chorus-sei.yml",
+                "chorus-base.yml",
+            ]
+        ]),
+    ],
     include_package_data=True,
 )
