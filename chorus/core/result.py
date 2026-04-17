@@ -100,8 +100,12 @@ class OraclePredictionTrack:
             try:
                 impl = OraclePredictionTrack._registry[cls_name]
             except KeyError as e:
+                # Many oracles (Sei especially) return valid assay types
+                # like "Stem cell", "Multi-tissue", "H3K4me3" that aren't
+                # in the hardcoded registry. The generic fallback works
+                # correctly — log at debug level to avoid scaring users.
                 available = ", ".join(sorted(OraclePredictionTrack._registry))
-                logger.warning(f"Unknown implementation '{cls_name}'. Available: {available}")
+                logger.debug(f"Using generic track class for '{cls_name}'. Registered: {available}")
                 impl = cls
         else:
             impl = cls 
