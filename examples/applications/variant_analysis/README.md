@@ -132,7 +132,7 @@ Different oracles support different track types:
 | **Borzoi** | DNASE, ATAC | ChIP-TF | ChIP-Histone | CAGE | RNA | — | 196 kb |
 | **ChromBPNet** | DNASE, ATAC | ChIP-TF | — | — | — | — | 1 kb |
 | **Sei** | — | — | — | — | — | — | 4 kb |
-| **LegNet** | — | — | — | — | — | MPRA | 230 bp |
+| **LegNet** | — | — | — | — | — | MPRA | 200 bp |
 
 **Choosing an oracle:**
 - **AlphaGenome** (recommended): broadest coverage, 1bp resolution, all layers

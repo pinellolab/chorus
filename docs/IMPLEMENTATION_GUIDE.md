@@ -8,22 +8,39 @@ Chorus uses a modular architecture with the following key components:
 chorus/
 ├── core/
 │   ├── base.py          # Abstract base class for all oracles
-│   ├── track.py         # Track data structure
+│   ├── result.py        # OraclePrediction / OraclePredictionTrack
+│   ├── interval.py      # Genomic interval utilities
 │   ├── exceptions.py    # Custom exceptions
-│   └── environment/     # Environment management
-├── oracles/
-│   ├── enformer.py      # Enformer implementation
-│   ├── borzoi.py        # Placeholder
-│   ├── chrombpnet.py    # Placeholder
-│   └── sei.py           # Placeholder
+│   └── environment/     # Isolated conda-env runner (runner.py, manager.py)
+├── oracles/             # All 6 oracles fully implemented
+│   ├── enformer.py
+│   ├── borzoi.py
+│   ├── chrombpnet.py
+│   ├── sei.py
+│   ├── legnet.py
+│   └── alphagenome.py
+├── analysis/            # Multi-layer analysis + reporting
+│   ├── variant_report.py        # build_variant_report + HTML rendering
+│   ├── batch_scoring.py         # score_variant_batch (per-track TSV)
+│   ├── causal.py                # prioritize_causal_variants (LD fine-mapping)
+│   ├── discovery.py             # discover_variant_effects / discover_and_report
+│   ├── region_swap.py           # analyze_region_swap
+│   ├── integration.py           # simulate_integration
+│   ├── normalization.py         # PerTrackNormalizer (CDF-based percentiles)
+│   ├── analysis_request.py      # User-prompt preservation on every report
+│   └── _igv_report.py           # Self-contained IGV browser HTML
+├── mcp/                 # FastMCP server (22 tools)
+│   ├── server.py
+│   ├── state.py
+│   └── serializers.py
 ├── utils/
-│   ├── sequence.py      # DNA sequence utilities
-│   ├── genome.py        # Genome management
-│   ├── annotations.py   # Gene annotation handling
-│   ├── visualization.py # Plotting functions
-│   └── normalization.py # Signal normalization
+│   ├── genome.py        # Genome download + management
+│   ├── annotations.py   # GENCODE GTF utilities
+│   ├── ld.py            # LDlink LD-proxy fetching
+│   ├── http.py          # Resume-capable HTTP downloader
+│   └── visualization.py # pyGenomeTracks + coolbox helpers
 └── cli/
-    └── main.py          # Command-line interface
+    └── main.py          # `chorus` and `chorus-mcp` entry points
 ```
 
 ## Key Design Patterns

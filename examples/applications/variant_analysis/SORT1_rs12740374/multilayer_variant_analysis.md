@@ -14,7 +14,7 @@ specification.
 
 ## Scoring Strategies
 
-| Layer | Window | Aggregation | Formula | Quantile range |
+| Layer | Window | Aggregation | Formula | Effect percentile range |
 |-------|--------|-------------|---------|----------------|
 | Chromatin (DNASE/ATAC) | 501bp | sum | log2FC | [0, 1] |
 | TF binding (ChIP-TF) | 501bp | sum | log2FC | [0, 1] |

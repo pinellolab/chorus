@@ -112,8 +112,8 @@ fine_map_causal_variant(
 ## Example
 
 ### [SORT1_locus/](SORT1_locus/)
-rs12740374 (sentinel) + 6 LD variants at the SORT1/CELSR2 locus.
-The sentinel is correctly identified as the top candidate (composite=0.898)
+rs12740374 (sentinel) + 10 LD variants at the SORT1/CELSR2 locus.
+The sentinel is correctly identified as the top candidate (composite=0.964)
 with the strongest chromatin opening and convergent multi-layer effects.
 
 Output includes:

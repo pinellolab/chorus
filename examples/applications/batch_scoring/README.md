@@ -105,19 +105,23 @@ d = result.to_dict()                        # JSON for pipelines
 ### [example_output.md](example_output.md)
 
 ```
-| Rank | Variant | ID | Max Effect | Quantile | Ref %ile | Top Layer | Top Track |
-|------|---------|-----|-----------|----------|---------|-----------|-----------|
-| 1 | chr1:109274968 G>T | rs12740374 | +0.867 | 0.97 | 0.91 | chromatin | DNASE:HepG2 |
-| 2 | chr1:109275684 C>T | rs629301 | -0.523 | 0.89 | 0.85 | tss_activity | CAGE:HepG2 |
-| 3 | chr1:109272715 A>G | rs12037222 | +0.312 | 0.78 | 0.72 | histone | H3K27ac:HepG2 |
-| 4 | chr1:109278590 G>A | rs2228603 | -0.178 | 0.61 | 0.44 | chromatin | DNASE:HepG2 |
-| 5 | chr1:109271200 T>C | rs7528419 | +0.089 | 0.42 | 0.38 | chromatin | DNASE:HepG2 |
+| Variant | ID | DNASE:HepG2 Ref | DNASE:HepG2 Alt | DNASE:HepG2 log2FC | DNASE:HepG2 Effect %ile | CHIP:CEBPA:HepG2 Ref | CHIP:CEBPA:HepG2 Alt | CHIP:CEBPA:HepG2 log2FC | CHIP:CEBPA:HepG2 Effect %ile | …
+|---------|-----|------------------|------------------|---------------------|--------------------------|-----------------------|-----------------------|--------------------------|-------------------------------|---
+| chr1:109274968 G>T | rs12740374 | 512 | 699 | +0.449 | ≥99th | 2.1e+03 | 2.73e+03 | +0.377 | ≥99th | … |
+| chr1:109279175 G>A | rs4970836 | 8.21 | 7.96 | -0.039 | ≥99th | 201 | 198 | -0.027 | ≥99th | … |
+| chr1:109275216 T>C | rs660240 | 397 | 417 | +0.071 | ≥99th | 1.28e+03 | 1.3e+03 | +0.028 | ≥99th | … |
+| chr1:109275684 G>T | rs1626484 | 69.5 | 69.5 | +0.000 | — | 540 | 541 | +0.003 | 0.71 | … |
+| chr1:109274570 A>G | rs7528419 | 118 | 119 | +0.008 | ≥99th | 954 | 960 | +0.008 | ≥99th | … |
 ```
 
-**Columns**:
-- **Max Effect**: Raw effect score (log2FC or diff depending on layer)
-- **Quantile**: Effect magnitude ranked against ~10K random SNPs [0,1]
-- **Ref %ile**: Reference signal activity percentile genome-wide [0,1]
+The full table shows **4 columns per track** (Ref, Alt, log2FC, Effect %ile)
+so you can see both absolute allele predictions and the derived effect at a glance.
+
+**Columns per track**:
+- **Ref**: Reference-allele prediction (raw signal)
+- **Alt**: Alternate-allele prediction (raw signal)
+- **log2FC**: Log2 fold-change alt/ref (the effect size)
+- **Effect %ile**: log2FC magnitude ranked against ~10K random SNPs (`≥99th` for the saturated top bucket)
   — high values mean the variant is in an already-active regulatory region
 
 **Interpretation**: rs12740374 is the clear top hit — 97th percentile

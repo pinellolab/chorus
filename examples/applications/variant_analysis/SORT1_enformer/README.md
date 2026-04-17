@@ -1,53 +1,61 @@
-# SORT1 rs12740374 — Enformer Multi-Layer Analysis
+# SORT1 rs12740374 — Enformer Discovery Mode
 
 ## Variant: rs12740374 (chr1:109274968 G>T)
 
-Same variant as the AlphaGenome SORT1 example, but analyzed with
-**Enformer**. Enformer has a 114kb output window and supports chromatin,
-TF binding, histone marks, and CAGE — but **not RNA-seq**. This example
-shows how reports automatically adapt when a layer is unavailable.
+Same variant as the AlphaGenome SORT1 example, but scored with
+**Enformer** across all 5,313 ENCODE tracks in discovery mode. Enformer
+has a 114 kb output window and supports chromatin, TF binding, histone
+marks, and CAGE — but **not RNA-seq**. Discovery mode exposes the
+cross-tissue signature of this variant without pre-specifying cell type.
 
 ## Example prompt
 
-> Load Enformer and analyze rs12740374 (chr1:109274968 G>T) in HepG2
-> cells. Use DNASE, CTCF ChIP, H3K27ac, and CAGE tracks. Compare the
-> results with what AlphaGenome showed for the same variant.
+> Analyze chr1:109274968 G>T using Enformer discovery mode. Gene: SORT1.
 
 ## What Claude does
 
 1. `load_oracle('enformer')`
-2. `list_tracks('enformer', query='HepG2')` — finds DNASE, CTCF, H3K27ac, CAGE tracks
-3. `analyze_variant_multilayer('enformer', 'chr1:109274968', 'G', ['T'], assay_ids, gene_name='SORT1')`
-4. Report shows 4 layers (no RNA section — Enformer doesn't have RNA tracks)
+2. `discover_variant('enformer', 'chr1:109274968', 'G', ['T'], gene_name='SORT1')` — scores all tracks, ranks by effect magnitude
+3. Report shows the top tracks across 4 regulatory layers (no RNA section — Enformer doesn't have RNA tracks)
 
 ## Results
 
-**Summary**: TF binding: very strong binding loss (-0.89); Chromatin:
-very strong opening (+0.86); TSS activity: strong increase (+0.66);
-Histone marks: moderate mark gain (+0.20).
+**Summary**: Chromatin accessibility (DNASE/ATAC): very strong opening
+(+1.24); Transcription factor binding (ChIP-TF): very strong binding
+gain (+1.13); Histone modifications (ChIP-Histone): very strong mark
+gain (+0.73); TSS activity (CAGE/PRO-CAP): strong increase (+0.51).
 
-| Layer | Top Effect | Interpretation |
-|-------|-----------|----------------|
-| TF binding (CTCF) | -0.892 | Very strong binding loss |
-| Chromatin (DNASE) | +0.864 | Very strong opening |
-| TSS (CAGE) | +0.661 | Strong increase |
-| Histone (H3K27ac) | +0.205 | Moderate mark gain |
+Top hits by layer:
 
-**Key observation**: The report automatically omits the Gene expression
-(RNA-seq) section because Enformer doesn't support RNA tracks. The
-remaining 4 layers tell a coherent story — the variant opens chromatin,
-disrupts CTCF binding, increases TSS activity, and modestly gains
-H3K27ac marks.
+| Layer | Top Track | Effect | Interpretation |
+|-------|-----------|--------|----------------|
+| Chromatin | DNASE:LNCaP clone FGC | +1.236 | Very strong opening |
+| Chromatin | DNASE:HeLa-S3 G1b phase | +1.149 | Very strong opening |
+| TF binding | CHIP:HNF4A:liver (adult) | +1.125 | Very strong binding gain |
+| TF binding | CHIP:RXRA:liver (adult) | +1.100 | Very strong binding gain |
+| Histone | CHIP:H3K27ac:22Rv1 | +0.734 | Very strong mark gain |
+| CAGE | CAGE:breast MDA-MB-453 | +0.505 | Strong increase |
+
+**Key observations**:
+- The strongest hits span many cell types (LNCaP, HeLa, MCF-7, placenta,
+  kidney, esophagus) — consistent with a broadly active chromatin element
+- **Liver TF signature is clear**: HNF4A and RXRA (both liver-specific
+  transcription factors) show very strong binding gain in adult-liver
+  tracks, directly matching the Musunuru 2010 mechanism (C/EBP family +
+  liver nuclear factors upregulating SORT1)
+- The Gene expression (RNA-seq) section is automatically omitted because
+  Enformer doesn't have RNA tracks
 
 ## Cross-oracle comparison
 
-| Layer | AlphaGenome | Enformer | ChromBPNet |
-|-------|-------------|----------|------------|
-| Chromatin | +0.447 | +0.864 | +0.441 |
-| TF binding | — | -0.892 (CTCF) | — |
-| Histone | +0.178 | +0.205 | — |
-| TSS (CAGE) | +0.425 | +0.661 | — |
-| RNA | +0.07 | *not available* | — |
+Compare with the [AlphaGenome focused HepG2 analysis](../SORT1_rs12740374/)
+(+0.449 DNASE:HepG2, +0.378 CEBPA:HepG2) and the [ChromBPNet 1bp analysis](../SORT1_chrombpnet/)
+(−0.111 ATAC:HepG2 — opposite direction, see the ChromBPNet README for
+why). Enformer's discovery-mode panorama complements the other two.
 
-Each oracle captures a different aspect. Combining all three gives the
-most complete picture.
+## Output files
+
+- `rs12740374_SORT1_enformer_report.html` — interactive IGV report
+- `example_output.md` — markdown with all scored tracks
+- `example_output.json` — structured per-track scores
+- `example_output.tsv` — tab-separated summary

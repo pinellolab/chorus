@@ -30,7 +30,7 @@ AlphaGenome paper's recommended variant scoring formulas exactly:
 | Variant | Locus | Paper Claim | Chorus Result | Status |
 |---------|-------|-------------|---------------|--------|
 | rs12740374 (G>T) | SORT1 / Fig.3 | C/EBP binding gain + CELSR2/PSRC1 upregulation in HepG2 | CEBPA +0.379, CEBPB +0.269, DNASE +0.450, CAGE +0.250 | Confirmed |
-| chr5:1295046 (T>G) | TERT / Fig.4 | ETS/ELF1 binding gain + TERT expression increase in melanocytes | CAGE +0.120 at TERT TSS (correct direction). ELF1 binding cannot be validated — no melanocyte TF ChIP tracks available. | Partially confirmed |
+| chr5:1295046 (T>G) | TERT / Fig.4 | ETS/ELF1 binding gain + TERT expression increase in melanocytes | CAGE +0.34 at TERT TSS (correct direction). ELF1 binding cannot be validated — no melanocyte TF ChIP tracks available. | Partially confirmed |
 
 ## Validation examples
 
@@ -55,7 +55,7 @@ variant creates an ETS factor binding motif driving telomerase
 reactivation in melanoma.
 
 **Result**: TSS activity (CAGE) shows the expected increase at the TERT
-promoter (+0.120), confirming the direction of the paper's finding.
+promoter (+0.34), confirming the direction of the paper's finding.
 However, the ELF1 binding gain cannot be directly validated because
 AlphaGenome does not provide melanocyte ELF1 TF ChIP-seq tracks. The
 paper used ISM (in-silico mutagenesis) motif analysis to identify the ETS

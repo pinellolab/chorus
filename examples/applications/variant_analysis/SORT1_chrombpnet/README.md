@@ -22,11 +22,20 @@ base-pair resolution, revealing the exact position of the effect.
 
 ## Results
 
-**Summary**: Chromatin accessibility (DNASE/ATAC): strong opening (+0.44).
+**Summary**: Chromatin accessibility (DNASE/ATAC): moderate closing (-0.11).
 
 | Track | Ref | Alt | Effect | Interpretation |
 |-------|-----|-----|--------|----------------|
-| ATAC:HepG2 | 676 | 918 | +0.441 | Strong opening |
+| ATAC:HepG2 | 687 | 636 | -0.111 | Moderate closing |
+
+ChromBPNet reports moderate closing (-0.11 log2FC) at 1bp resolution
+in HepG2 ATAC. **The AlphaGenome DNASE analysis of the same variant
+shows strong opening (+0.45)** — opposite direction. See the
+"Why AlphaGenome DNASE and ChromBPNet ATAC can disagree" section
+below for the biological explanation. This is a legitimate divergence,
+not a bug: DNase-seq and ATAC-seq measure chromatin accessibility
+differently, and the two models use different window sizes and
+aggregation strategies.
 
 The report has only one layer (chromatin) because ChromBPNet is
 a single-assay oracle. Compare with the

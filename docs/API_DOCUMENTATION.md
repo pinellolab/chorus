@@ -742,11 +742,11 @@ the Python API. See `chorus/analysis/analysis_request.py`.
 - Use for high-level regulatory element classification, not per-track scoring
 
 ### LegNet
-- 230 bp input, MPRA-style promoter activity predictions
+- 200 bp input, MPRA-style promoter activity predictions
 - Scalar output per cell type; no per-bin tracks
 
 ### AlphaGenome
-- **1 Mb input / 1 bp resolution / 5,930 tracks** — the most comprehensive oracle
+- **1 Mb input / 1 bp resolution / 5,731 tracks** — the most comprehensive oracle
 - Requires HuggingFace gated-model access (see main README)
 - Recommended default for multi-layer variant analysis
 

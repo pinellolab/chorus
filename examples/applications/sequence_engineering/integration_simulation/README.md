@@ -1,48 +1,53 @@
-# Integration Simulation Example: GFP Cassette at AAVS1
+# Integration Simulation Example: CMV Cassette at AAVS1
 
 ## Scenario
 
-Simulate inserting a GFP expression cassette at the AAVS1 safe harbor
-locus (chr19:55115000, within the PPP1R12C gene). This is a standard
-gene therapy integration site — we want to predict both disruption of
-local chromatin and any new transcriptional activity from the cassette.
+Simulate inserting a 378 bp CMV-promoter construct at the AAVS1 safe
+harbor locus (chr19:55115000, within the PPP1R12C gene) in K562 cells.
+This is a standard gene therapy integration site — we want to predict
+both disruption of local chromatin and any new transcriptional activity
+from the cassette.
 
 ## Example prompt
 
-> I'm planning to integrate a GFP cassette at the AAVS1 safe harbor
-> site (chr19:55115000). Predict how this insertion would affect the
-> local chromatin environment and nearby gene PPP1R12C. Use AlphaGenome
-> with K562 DNASE, H3K27ac, and CAGE tracks.
+> Insert a 378 bp CMV promoter construct at chr19:55115000
+> (PPP1R12C locus / AAVS1 safe harbour) and predict local disruption
+> in K562 using DNASE, H3K27ac, and CAGE tracks.
 
 ## What Claude does
 
 1. Calls `load_oracle('alphagenome')`
-2. Calls `list_tracks('alphagenome', query='K562')` to find relevant tracks
-3. Calls `simulate_integration(oracle_name='alphagenome', position='chr19:55115000', construct_sequence='...', assay_ids=[...], gene_name='PPP1R12C')`
-4. Returns a report comparing wild-type vs post-insertion
+2. Calls `simulate_integration(oracle_name='alphagenome', position='chr19:55115000', construct_sequence='...', assay_ids=[...K562 tracks...], gene_name='PPP1R12C')`
+3. Returns a report comparing wild-type vs post-insertion
 
 ## Results summary
 
 | Layer | Effect | Interpretation |
 |-------|--------|----------------|
-| Chromatin (DNASE) | -0.900 log2FC | Very strong closing |
-| Histone H3K27ac | -0.149 log2FC | Moderate mark loss |
-| TSS (CAGE) variant site | +1.324 log2FC | Very strong increase |
+| Chromatin (DNASE:K562) | +4.224 log2FC | Very strong opening |
+| Histone H3K27ac:K562 | +1.199 log2FC | Very strong mark gain |
+| CAGE — RPL28 TSS | −8.957 log2FC | Very strong decrease |
+| CAGE — ZNF628 TSS | −7.988 log2FC | Very strong decrease |
+| CAGE — KMT5C TSS | −6.598 log2FC | Very strong decrease |
 
 **Key findings:**
-- **Chromatin disruption**: Strong closing at the insertion site — the
-  construct displaces the native open chromatin structure
-- **Histone mark reduction**: Moderate loss of H3K27ac, suggesting the
-  insertion partially disrupts the active chromatin state
-- **New TSS activity**: Strong CAGE increase at the insertion site,
-  consistent with the cassette's CMV promoter driving transcription
+- **Strong new chromatin opening** (DNASE +4.22): the inserted CMV
+  promoter creates a large nuclease-sensitive region at the site
+- **H3K27ac gain** (+1.20): active chromatin marks accumulate at the
+  construct, consistent with an active CMV promoter
+- **Nearby TSS silencing** (CAGE −8.96 at RPL28, −7.99 at ZNF628):
+  the construct appears to hijack local transcriptional resources
+  and disrupt neighbouring gene expression
 
-This pattern (local disruption + new activity) is typical of transgene
-insertions and demonstrates the value of multi-layer analysis for
-evaluating safe harbor sites.
+This pattern — strong new activity at the insertion site combined with
+disruption of nearby promoters — illustrates why "safe harbour" loci
+still require empirical validation. The prediction agrees with
+published observations that AAVS1 insertions can affect neighbouring
+PPP1R12C/TNNT3/TNNT1 expression in some cell types.
 
 ## Output files
 
-- `AAVS1_GFP_K562_alphagenome_report.html` — interactive HTML report
+- `integration_CMV_PPP1R12C_report.html` — interactive HTML report with IGV browser
 - `example_output.md` — markdown table
-- `example_output.json` — structured JSON
+- `example_output.json` — structured per-track scores
+- `example_output.tsv` — tab-separated summary
