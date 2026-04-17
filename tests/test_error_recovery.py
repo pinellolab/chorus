@@ -202,3 +202,115 @@ class TestEnvironmentFailurePaths:
         assert "chorus setup --oracle enformer" in msgs, (
             "log must quote the exact command the user needs to run"
         )
+
+
+# ---------------------------------------------------------------------------
+# v10 additions
+# ---------------------------------------------------------------------------
+
+class TestTFHubCorruptCacheRecovery:
+    """If TensorFlow Hub's on-disk cache has a partial/corrupt download
+    (missing ``saved_model.pb``), ``_load_enformer_with_tfhub_recovery``
+    must clear the bad directory and retry ``hub.load`` once."""
+
+    def test_corrupt_cache_is_cleared_and_retry_succeeds(self, tmp_path):
+        from chorus.oracles.enformer import _load_enformer_with_tfhub_recovery
+
+        bad_dir = tmp_path / "tfhub_modules" / "corrupt"
+        bad_dir.mkdir(parents=True)
+        (bad_dir / "variables").mkdir()  # partial — missing saved_model.pb
+
+        calls = []
+        class FakeHub:
+            def load(self, weights):
+                calls.append(weights)
+                if len(calls) == 1:
+                    raise ValueError(
+                        f"Trying to load a model of incompatible/unknown type. "
+                        f"'{bad_dir}' contains neither 'saved_model.pb' "
+                        f"nor 'saved_model.pbtxt'."
+                    )
+                return {"loaded": True}
+
+        result = _load_enformer_with_tfhub_recovery(FakeHub(), "https://tfhub.dev/enformer")
+        assert result == {"loaded": True}
+        assert len(calls) == 2, "should retry exactly once"
+        assert not bad_dir.exists(), "corrupt cache dir must be removed before retry"
+
+    def test_unrelated_errors_propagate_unchanged(self):
+        from chorus.oracles.enformer import _load_enformer_with_tfhub_recovery
+        class FakeHub:
+            def load(self, weights):
+                raise RuntimeError("network unreachable")
+        with pytest.raises(RuntimeError, match="network unreachable"):
+            _load_enformer_with_tfhub_recovery(FakeHub(), "https://tfhub.dev/enformer")
+
+
+class TestIGVFallbackViaHuggingFace:
+    """When stdlib urllib fails (SSL MITM), ``_ensure_igv_local`` must
+    try the HuggingFace mirror as a second fallback before giving up."""
+
+    def test_hf_fallback_when_cdn_fails(self, tmp_path, monkeypatch):
+        from chorus.analysis import _igv_report
+
+        monkeypatch.setattr(_igv_report, "_IGV_LOCAL", tmp_path / "igv.min.js")
+
+        # CDN path raises SSL error (stdlib urllib on MITM'd network)
+        def fake_download_with_resume(url, dest, **kw):
+            import ssl
+            raise ssl.SSLError("CERTIFICATE_VERIFY_FAILED")
+        monkeypatch.setattr(
+            "chorus.utils.http.download_with_resume", fake_download_with_resume
+        )
+
+        # HF path succeeds — writes to the local_dir param
+        hf_calls = []
+        def fake_hf_hub_download(repo_id, filename, repo_type, local_dir, **kw):
+            hf_calls.append((repo_id, filename, repo_type, local_dir))
+            target = Path(local_dir) / "igv.min.js"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("// fake igv.min.js payload " * 50)
+            return str(target)
+
+        import huggingface_hub as _hfh
+        monkeypatch.setattr(_hfh, "hf_hub_download", fake_hf_hub_download)
+
+        result = _igv_report._ensure_igv_local()
+        assert result is not None
+        assert result == tmp_path / "igv.min.js"
+        assert result.exists()
+        assert len(hf_calls) == 1
+        assert hf_calls[0][0] == "lucapinello/chorus-backgrounds"
+        assert hf_calls[0][1] == "igv.min.js"
+
+    def test_returns_none_when_both_fail(self, tmp_path, monkeypatch):
+        from chorus.analysis import _igv_report
+
+        monkeypatch.setattr(_igv_report, "_IGV_LOCAL", tmp_path / "igv.min.js")
+        monkeypatch.setattr(
+            "chorus.utils.http.download_with_resume",
+            lambda url, dest, **kw: (_ for _ in ()).throw(RuntimeError("cdn fail")),
+        )
+        import huggingface_hub as _hfh
+        monkeypatch.setattr(
+            _hfh, "hf_hub_download",
+            lambda *a, **kw: (_ for _ in ()).throw(FileNotFoundError("hf fail")),
+        )
+
+        assert _igv_report._ensure_igv_local() is None
+
+
+class TestChorusImportPatchesPath:
+    """Importing chorus must prepend the Python env's bin/ to PATH so
+    coolbox subprocess calls find bgzip/tabix when nbconvert is
+    launched outside ``mamba activate``."""
+
+    def test_env_bin_on_path_after_import(self):
+        import os
+        import sys
+        import chorus  # noqa: F401
+        env_bin = os.path.dirname(sys.executable)
+        assert env_bin in os.environ["PATH"].split(os.pathsep), (
+            f"{env_bin} must be on PATH after importing chorus so coolbox "
+            f"can find bgzip/tabix"
+        )

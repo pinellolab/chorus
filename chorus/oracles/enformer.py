@@ -16,6 +16,35 @@ from ..core.exceptions import ModelNotLoadedError
 
 logger = logging.getLogger(__name__)
 
+
+def _load_enformer_with_tfhub_recovery(hub, weights: str):
+    """Call ``hub.load(weights)`` with retry on a corrupt tfhub cache.
+
+    TensorFlow Hub stores downloaded models at ``tfhub_modules/<hash>/``. If
+    the first download was interrupted the directory exists but has no
+    ``saved_model.pb``/``saved_model.pbtxt`` — ``hub.load`` then raises
+    ``ValueError`` with the offending path in the message. We detect that
+    exact failure, wipe the bad directory, and retry once. Any other error
+    propagates.
+    """
+    import re
+    import shutil
+    try:
+        return hub.load(weights)
+    except Exception as exc:
+        msg = str(exc)
+        if "saved_model.pb" not in msg:
+            raise
+        m = re.search(r"'([^']*tfhub_modules[^']+)'", msg)
+        if not m:
+            raise
+        bad_dir = m.group(1)
+        if os.path.isdir(bad_dir):
+            logger.warning("Clearing corrupt tfhub cache at %s", bad_dir)
+            shutil.rmtree(bad_dir, ignore_errors=True)
+        return hub.load(weights)
+
+
 class EnformerOracle(OracleBase):
     """Enformer oracle with automatic environment management."""
     
@@ -133,7 +162,7 @@ class EnformerOracle(OracleBase):
                     logger.info("No GPU detected, using CPU")
             
             os.environ["TFHUB_DOWNLOAD_PROGRESS"] = "1"
-            enformer = hub.load(weights)
+            enformer = _load_enformer_with_tfhub_recovery(hub, weights)
             self._enformer_model = enformer.model
             self.model = self._enformer_model
             self._load_track_metadata()

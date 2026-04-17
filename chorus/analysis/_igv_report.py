@@ -29,26 +29,63 @@ logger = logging.getLogger(__name__)
 # CDN <script> tag so report generation still succeeds.
 _IGV_CDN = "https://cdn.jsdelivr.net/npm/igv@3.1.1/dist/igv.min.js"
 _IGV_LOCAL = Path.home() / ".chorus" / "lib" / "igv.min.js"
+# HuggingFace mirror — secondary fallback for environments where the
+# institutional proxy MITMs TLS and breaks stdlib ``urllib`` but leaves
+# ``huggingface_hub`` (httpx + certifi) working. Requires the file to
+# exist in the dataset; gracefully no-ops if it doesn't.
+_IGV_HF_REPO = "lucapinello/chorus-backgrounds"
+_IGV_HF_FILENAME = "igv.min.js"
 
 
 def _ensure_igv_local() -> Path | None:
-    """Ensure ``_IGV_LOCAL`` exists; download it from the CDN on first use.
+    """Ensure ``_IGV_LOCAL`` exists; download it on first use.
 
-    Returns the local path when the file is available, ``None`` if the
-    download failed (callers then fall back to the CDN <script> tag).
+    Tries (1) the CDN via stdlib ``urllib`` (``download_with_resume``),
+    then (2) the HuggingFace mirror via ``huggingface_hub`` if the CDN
+    path fails (typical on SSL-MITM institutional networks where
+    stdlib ``urllib`` rejects the proxy's self-signed cert but
+    ``httpx + certifi`` accepts it).
+
+    Returns the local path when the file is available, ``None`` if
+    both downloads failed (callers then fall back to a CDN <script>
+    tag in the rendered HTML).
     """
     if _IGV_LOCAL.exists() and _IGV_LOCAL.stat().st_size > 0:
         return _IGV_LOCAL
+    _IGV_LOCAL.parent.mkdir(parents=True, exist_ok=True)
+
+    # Attempt 1: CDN via stdlib urllib.
     try:
         from chorus.utils.http import download_with_resume
-        _IGV_LOCAL.parent.mkdir(parents=True, exist_ok=True)
         download_with_resume(_IGV_CDN, _IGV_LOCAL, label="igv.min.js")
         if _IGV_LOCAL.exists() and _IGV_LOCAL.stat().st_size > 0:
-            logger.info("Cached igv.min.js to %s — future reports will inline it.", _IGV_LOCAL)
+            logger.info("Cached igv.min.js from CDN to %s.", _IGV_LOCAL)
+            return _IGV_LOCAL
+    except Exception as exc:
+        logger.debug("CDN fetch of igv.min.js failed (%s); trying HF mirror.", exc)
+
+    # Attempt 2: HuggingFace mirror (works through SSL-MITM proxies
+    # where stdlib urllib fails — huggingface_hub uses httpx+certifi).
+    try:
+        from huggingface_hub import hf_hub_download
+        downloaded = hf_hub_download(
+            _IGV_HF_REPO,
+            filename=_IGV_HF_FILENAME,
+            repo_type="dataset",
+            local_dir=str(_IGV_LOCAL.parent),
+        )
+        # hf_hub_download returns the actual local path; move to
+        # canonical _IGV_LOCAL if different.
+        dp = Path(downloaded)
+        if dp != _IGV_LOCAL and dp.exists():
+            dp.replace(_IGV_LOCAL)
+        if _IGV_LOCAL.exists() and _IGV_LOCAL.stat().st_size > 0:
+            logger.info("Cached igv.min.js from HuggingFace mirror to %s.", _IGV_LOCAL)
             return _IGV_LOCAL
     except Exception as exc:
         logger.warning(
-            "Could not pre-cache igv.min.js (%s); reports will reference %s at view time.",
+            "Could not pre-cache igv.min.js from CDN or HF mirror (%s); "
+            "reports will reference %s at view time.",
             exc, _IGV_CDN,
         )
     return None
