@@ -208,6 +208,21 @@ class AnnotationManager:
         logger.info(f"Sorting annotation...")
         filepath = self.sort_annotation(filepath)
         logger.info(f"Sorted annotation to: {filepath}")
+
+        # Clean up any stale coolbox/tabix artefacts pointing at the old
+        # GTF. coolbox re-bgzips + re-indexes the GTF on first use; if a
+        # leftover ``.bgz``/``.tbi`` pair from a previous download lingers,
+        # its tabix index points at byte offsets in the old .bgz that no
+        # longer match the new one. The next ``tabix -p gff <file>.bgz``
+        # call then fails with "index file exists" (tabix requires ``-f``
+        # to overwrite). Deleting them here lets coolbox regenerate a
+        # consistent pair on its first GTF() call.
+        for suffix in (".bgz", ".bgz.tbi", ".gz.tbi"):
+            stale = filepath.with_suffix(filepath.suffix + suffix)
+            if stale.exists():
+                stale.unlink()
+                logger.info(f"Removed stale index artefact: {stale}")
+
         return filepath
 
     def sort_annotation(self, annotation_path: Path) -> Path:

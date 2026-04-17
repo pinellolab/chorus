@@ -314,3 +314,51 @@ class TestChorusImportPatchesPath:
             f"{env_bin} must be on PATH after importing chorus so coolbox "
             f"can find bgzip/tabix"
         )
+
+
+class TestStaleGTFIndexCleanup:
+    """When ``download_annotation`` refreshes a GTF, stale ``.bgz`` /
+    ``.tbi`` coolbox artefacts from a previous session must be removed
+    so that the next ``tabix -p gff`` call doesn't fail with "index
+    file exists"."""
+
+    def test_download_annotation_removes_stale_bgz_and_tbi(self, tmp_path, monkeypatch):
+        """Exercise the cleanup in download_annotation by priming a
+        directory with stale .bgz / .tbi and verifying they're gone
+        after a "download" (mocked to skip network)."""
+        from chorus.utils.annotations import AnnotationManager
+
+        mgr = AnnotationManager(str(tmp_path))
+
+        # Simulate a prior coolbox run: create the final GTF + stale
+        # coolbox artefacts.
+        gtf = tmp_path / "gencode.v48.basic.annotation.gtf"
+        gtf.write_text("# dummy gtf\n")
+        stale_bgz = tmp_path / "gencode.v48.basic.annotation.gtf.bgz"
+        stale_tbi = tmp_path / "gencode.v48.basic.annotation.gtf.bgz.tbi"
+        stale_bgz.write_bytes(b"\x1f\x8b")  # fake gzip magic bytes
+        stale_tbi.write_bytes(b"TBI\x01")
+        assert stale_bgz.exists() and stale_tbi.exists()
+
+        # Short-circuit the actual download + sort path — we're testing
+        # the cleanup branch, not the network fetch.
+        monkeypatch.setattr(
+            mgr, "annotation_exists", lambda p: None  # force re-download
+        )
+        monkeypatch.setattr(
+            mgr, "sort_annotation", lambda p: gtf  # return the GTF unchanged
+        )
+        import requests
+        fake_resp = MagicMock()
+        fake_resp.headers = {"content-length": "0"}
+        fake_resp.iter_content = lambda chunk_size: iter([])
+        fake_resp.raise_for_status = lambda: None
+        monkeypatch.setattr(requests, "get", lambda *a, **kw: fake_resp)
+
+        result = mgr.download_annotation("gencode_v48_basic")
+        assert result == gtf
+
+        # Stale coolbox artefacts must be gone — next coolbox call will
+        # regenerate them cleanly without the "index exists" error.
+        assert not stale_bgz.exists(), "stale .bgz must be removed"
+        assert not stale_tbi.exists(), "stale .tbi must be removed"
