@@ -1,7 +1,6 @@
 """Genome management utilities for downloading and managing reference genomes."""
 
 import gzip
-import urllib.request
 import shutil
 import logging
 from pathlib import Path
@@ -9,6 +8,7 @@ from typing import Dict, Optional, List
 import subprocess
 
 from ..core.globals import CHORUS_GENOMES_DIR
+from .http import download_with_resume
 
 logger = logging.getLogger(__name__)
 
@@ -121,20 +121,17 @@ class GenomeManager:
         gz_path = self.genomes_dir / f"{genome_id}.fa.gz"
         
         try:
-            # Download compressed file
+            # Download compressed file.
+            #
+            # Use the chunked+resumable helper rather than urllib.urlretrieve —
+            # UCSC's server occasionally cuts long connections mid-download
+            # (observed on macOS during the 2026-04-14 v2 audit: stall at ~36%
+            # with "retrieval incomplete: got only 363743871 out of 983659424
+            # bytes"). download_with_resume will pick up from the partial file
+            # on the next call via an HTTP Range request.
             logger.info(f"Downloading {genome_id} from {url}...")
             logger.info("This may take several minutes depending on your connection speed...")
-            
-            def download_progress(block_num, block_size, total_size):
-                downloaded = block_num * block_size
-                percent = min(100, (downloaded / total_size) * 100)
-                mb_downloaded = downloaded / (1024 * 1024)
-                mb_total = total_size / (1024 * 1024)
-                print(f"\rProgress: {percent:.1f}% ({mb_downloaded:.1f}/{mb_total:.1f} MB)", 
-                      end='', flush=True)
-            
-            urllib.request.urlretrieve(url, gz_path, reporthook=download_progress)
-            print()  # New line after progress
+            download_with_resume(url, gz_path, label=f"{genome_id} genome")
             
             # Decompress
             logger.info(f"Decompressing {genome_id}...")

@@ -1,0 +1,110 @@
+{
+  "app_name": "variant_analysis__BCL11A_rs1427407",
+  "path": "examples/applications/variant_analysis/BCL11A_rs1427407",
+  "prompt": "Analyze rs1427407 (chr2:60490908 G>T) in K562 erythroid cells using DNASE, GATA1/TAL1 ChIP, H3K27ac, and CAGE tracks. Gene is BCL11A.",
+  "md_header": {
+    "tool": "analyze_variant_multilayer",
+    "oracle": "alphagenome",
+    "normalizer": "per-track background CDFs",
+    "tracks_requested": "6 HepG2/K562 tracks",
+    "gene": "BCL11A",
+    "generated": "2026-04-12 23:44 UTC"
+  },
+  "top_keys": [
+    "variant",
+    "oracle",
+    "gene_name",
+    "nearby_genes",
+    "alleles",
+    "analysis_request"
+  ],
+  "tool": "analyze_variant_multilayer",
+  "oracle": "alphagenome",
+  "variant": {
+    "chrom": "chr2",
+    "position": 60490908,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "T"
+    ]
+  },
+  "n_tracks_scored": 12,
+  "assay_ids": [
+    "CAGE/hCAGE EFO:0002067/+",
+    "CAGE/hCAGE EFO:0002067/-",
+    "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.",
+    "CHIP_TF/EFO:0002067 TF ChIP-seq GATA1/.",
+    "CHIP_TF/EFO:0002067 TF ChIP-seq TAL1/.",
+    "DNASE/EFO:0002067 DNase-seq/."
+  ],
+  "layers_scored": [
+    "chromatin_accessibility",
+    "histone_marks",
+    "tf_binding",
+    "tss_activity"
+  ],
+  "track_selection_check": {
+    "cell_types_claimed_in_prompt": [
+      "K562",
+      "erythroid"
+    ],
+    "cell_types_in_tracks": {
+      "K562": 12
+    },
+    "mismatches": []
+  },
+  "md_vs_json_consistency": {
+    "summary_text": "Chromatin accessibility (DNASE/ATAC): moderate closing (-0.11); Transcription factor binding (ChIP-TF): moderate binding loss (-0.11).",
+    "summary_direction": "negative",
+    "pos_word_hits": 0,
+    "neg_word_hits": 2,
+    "per_layer_dominant_sign": {
+      "chromatin_accessibility": "-",
+      "tf_binding": "-",
+      "histone_marks": "+",
+      "tss_activity": "-"
+    },
+    "per_layer_dominant_magnitude": {
+      "chromatin_accessibility": "-0.113",
+      "tf_binding": "-0.111",
+      "histone_marks": "+0.001",
+      "tss_activity": "-0.076"
+    }
+  },
+  "tsv_vs_json_consistency": {
+    "tsv_rows": 12,
+    "json_tracks": 12,
+    "tsv_columns": [
+      "allele",
+      "layer",
+      "assay_id",
+      "region_label",
+      "assay_type",
+      "cell_type",
+      "ref_value",
+      "alt_value",
+      "raw_score",
+      "quantile_score",
+      "ref_signal_percentile",
+      "note"
+    ]
+  },
+  "html_files": [
+    "examples/applications/variant_analysis/BCL11A_rs1427407/rs1427407_BCL11A_alphagenome_report.html"
+  ],
+  "screenshots": [
+    "audits/2026-04-16_screenshots/variant_analysis__BCL11A_rs1427407__rs1427407_BCL11A_alphagenome_report.png"
+  ],
+  "literature_claim": {
+    "paper": "Bauer 2013 Science",
+    "expected_direction": "disrupts GATA1/TAL1 erythroid enhancer",
+    "note": "Erythroid cell type (like K562 erythroid differentiation). Expect CLOSING of DNASE/ATAC and TAL1/GATA1 binding loss in K562."
+  },
+  "flags": [
+    {
+      "category": "summary_sign_mismatch",
+      "severity": "LOW",
+      "detail": "Summary reads 'negative' but these layers have positive dominant effect: ['histone_marks']"
+    }
+  ]
+}

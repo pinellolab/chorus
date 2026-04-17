@@ -1,0 +1,109 @@
+{
+  "app_name": "variant_analysis__SORT1_rs12740374",
+  "path": "examples/applications/variant_analysis/SORT1_rs12740374",
+  "prompt": "Analyze rs12740374 (chr1:109274968 G>T) in HepG2 liver cells using DNASE, CEBPA/CEBPB ChIP, H3K27ac, and CAGE tracks. Gene is SORT1.",
+  "md_header": {
+    "tool": "analyze_variant_multilayer",
+    "oracle": "alphagenome",
+    "normalizer": "per-track background CDFs",
+    "tracks_requested": "6 HepG2/K562 tracks",
+    "gene": "SORT1",
+    "generated": "2026-04-12 23:39 UTC"
+  },
+  "top_keys": [
+    "variant",
+    "oracle",
+    "gene_name",
+    "nearby_genes",
+    "alleles",
+    "analysis_request"
+  ],
+  "tool": "analyze_variant_multilayer",
+  "oracle": "alphagenome",
+  "variant": {
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "T"
+    ]
+  },
+  "n_tracks_scored": 62,
+  "assay_ids": [
+    "CAGE/hCAGE EFO:0001187/+",
+    "CAGE/hCAGE EFO:0001187/-",
+    "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+    "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+    "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",
+    "DNASE/EFO:0001187 DNase-seq/."
+  ],
+  "layers_scored": [
+    "chromatin_accessibility",
+    "histone_marks",
+    "tf_binding",
+    "tss_activity"
+  ],
+  "track_selection_check": {
+    "cell_types_claimed_in_prompt": [
+      "HepG2",
+      "liver"
+    ],
+    "cell_types_in_tracks": {
+      "HepG2": 62
+    },
+    "mismatches": []
+  },
+  "md_vs_json_consistency": {
+    "summary_text": "Chromatin accessibility (DNASE/ATAC): strong opening (+0.45); Transcription factor binding (ChIP-TF): strong binding gain (+0.38); TSS activity (CAGE/PRO-CAP): moderate increase (+0.25); Histone modifications (ChIP-Histone): moderate mark gain (+0.18).",
+    "summary_direction": "positive",
+    "pos_word_hits": 4,
+    "neg_word_hits": 0,
+    "per_layer_dominant_sign": {
+      "chromatin_accessibility": "+",
+      "tf_binding": "+",
+      "histone_marks": "+",
+      "tss_activity": "+"
+    },
+    "per_layer_dominant_magnitude": {
+      "chromatin_accessibility": "+0.450",
+      "tf_binding": "+0.381",
+      "histone_marks": "+0.184",
+      "tss_activity": "+0.251"
+    }
+  },
+  "tsv_vs_json_consistency": {
+    "tsv_rows": 62,
+    "json_tracks": 62,
+    "tsv_columns": [
+      "allele",
+      "layer",
+      "assay_id",
+      "region_label",
+      "assay_type",
+      "cell_type",
+      "ref_value",
+      "alt_value",
+      "raw_score",
+      "quantile_score",
+      "ref_signal_percentile",
+      "note"
+    ]
+  },
+  "html_files": [
+    "examples/applications/variant_analysis/SORT1_rs12740374/rs12740374_SORT1_alphagenome_report.html"
+  ],
+  "screenshots": [
+    "audits/2026-04-16_screenshots/variant_analysis__SORT1_rs12740374__rs12740374_SORT1_alphagenome_report.png"
+  ],
+  "literature_claim": {
+    "paper": "Musunuru 2010 Nature",
+    "expected_direction": "positive (T-allele creates C/EBP site)",
+    "expected_tracks": [
+      "DNASE:HepG2 opening",
+      "CEBPA binding gain",
+      "CEBPB binding gain",
+      "SORT1 CAGE increase"
+    ]
+  },
+  "flags": []
+}

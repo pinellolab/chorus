@@ -159,9 +159,10 @@ def create_oracle(oracle_name: str, use_environment: bool = False, **kwargs):
             from .oracles.alphagenome import AlphaGenomeOracle
             return AlphaGenomeOracle(use_environment=True, **kwargs)
         else:
-            raise NotImplementedError(
-                f"Environment-isolated version of {oracle_name} not yet implemented.\n"
-                f"You can use the base version with use_environment=False"
+            valid = "enformer, borzoi, chrombpnet, sei, legnet, alphagenome"
+            raise ValueError(
+                f"Unknown oracle: '{oracle_name}'. "
+                f"Valid oracle names: {valid}"
             )
     else:
         # Use direct oracle (requires dependencies in current environment)
