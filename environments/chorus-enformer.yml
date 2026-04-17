@@ -28,8 +28,22 @@ dependencies:
   
   # TensorFlow ecosystem
   - pip:
-    # Enformer specific dependencies
-    - tensorflow>=2.8.0,<2.15.0
+    # Enformer specific dependencies.
+    # Pin TF to 2.13 — TF 2.14.1 hits "JIT compilation failed" on the
+    # Enformer saved_model's cross_replica_batch_norm/Rsqrt op under
+    # XLA (verified in 2026-04-15 fresh-install audit). TF 2.13.1 loads
+    # and runs the same saved_model cleanly.
+    - tensorflow==2.13.*
     - tensorflow-hub>=0.12.0
     - tensorflow-datasets>=4.0.0
     - setuptools<81  # tensorflow_hub requires pkg_resources
+    # CUDA support for GPU (Linux only — macOS adaptation removes these).
+    # TF 2.13 requires CUDA 11.8 + cuDNN 8.6.
+    - nvidia-cublas-cu11>=11.11
+    - nvidia-cuda-cupti-cu11>=11.8
+    - nvidia-cuda-runtime-cu11>=11.8
+    - nvidia-cudnn-cu11>=8.6,<9.0
+    - nvidia-cufft-cu11>=10.9
+    - nvidia-curand-cu11>=10.3
+    - nvidia-cusolver-cu11>=11.4
+    - nvidia-cusparse-cu11>=11.7

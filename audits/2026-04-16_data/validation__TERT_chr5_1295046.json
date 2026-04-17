@@ -1,0 +1,126 @@
+{
+  "app_name": "validation__TERT_chr5_1295046",
+  "path": "examples/applications/validation/TERT_chr5_1295046",
+  "prompt": "Validate the TERT chr5:1295046 T>G variant from the AlphaGenome paper. Score across all tracks in discovery mode. Gene is TERT.",
+  "md_header": {
+    "tool": "discover_variant",
+    "oracle": "alphagenome",
+    "tracks_requested": "all tracks (discovery mode)",
+    "gene": "TERT",
+    "generated": "2026-04-13 11:48 UTC"
+  },
+  "top_keys": [
+    "variant",
+    "oracle",
+    "gene_name",
+    "nearby_genes",
+    "alleles",
+    "analysis_request"
+  ],
+  "tool": "discover_variant",
+  "oracle": "alphagenome",
+  "variant": {
+    "chrom": "chr5",
+    "position": 1295046,
+    "ref_allele": "T",
+    "alt_alleles": [
+      "G"
+    ]
+  },
+  "n_tracks_scored": 85,
+  "assay_ids": [
+    "ATAC/EFO:0010836 ATAC-seq/.",
+    "CAGE/hCAGE EFO:0002067/+",
+    "CAGE/hCAGE EFO:0002784/+",
+    "CAGE/hCAGE EFO:0002784/-",
+    "CHIP_HISTONE/EFO:0002784 Histone ChIP-seq H3K27ac/.",
+    "CHIP_HISTONE/EFO:0005724 Histone ChIP-seq H3K27ac/.",
+    "CHIP_HISTONE/EFO:0006710 Histone ChIP-seq H3K27ac/.",
+    "CHIP_TF/EFO:0001187 TF ChIP-seq LIN54 genetically modified (insertion) using CRISPR targeting H. sapiens LIN54/.",
+    "CHIP_TF/EFO:0001203 TF ChIP-seq E2F1 stably expressing N-terminal HA-tagged E2F1/.",
+    "CHIP_TF/EFO:0002067 TF ChIP-seq E2F1/.",
+    "DNASE/EFO:0005338 DNase-seq/.",
+    "DNASE/EFO:0005724 DNase-seq/.",
+    "RNA_SEQ/EFO:0006711 total RNA-seq/+",
+    "RNA_SEQ/EFO:0006711 total RNA-seq/-",
+    "SPLICE_SITES/donor/-",
+    "SPLICE_SITE_USAGE/usage_EFO:0003042 polyA plus RNA-seq/-",
+    "SPLICE_SITE_USAGE/usage_NTR:0000856 polyA plus RNA-seq/-"
+  ],
+  "layers_scored": [
+    "chromatin_accessibility",
+    "gene_expression",
+    "histone_marks",
+    "splicing",
+    "tf_binding",
+    "tss_activity"
+  ],
+  "track_selection_check": {
+    "cell_types_claimed_in_prompt": [],
+    "cell_types_in_tracks": {
+      "K562": 16,
+      "HepG2": 1,
+      "MCF-7": 1,
+      "GM12878": 31,
+      "OCI-LY3": 1,
+      "MM.1S": 2,
+      "GM12865": 1,
+      "GM19025": 1,
+      "OCI-LY7": 28,
+      "H1": 1,
+      "SPLICE_SITES": 1,
+      "mesendoderm": 1
+    },
+    "mismatches": []
+  },
+  "md_vs_json_consistency": {
+    "summary_text": "Transcription factor binding (ChIP-TF): strong binding gain (+0.47); TSS activity (CAGE/PRO-CAP): strong increase (+0.34); Histone modifications (ChIP-Histone): moderate mark gain (+0.30); Chromatin accessibility (DNASE/ATAC): moderate opening (+0.21).",
+    "summary_direction": "positive",
+    "pos_word_hits": 4,
+    "neg_word_hits": 0,
+    "per_layer_dominant_sign": {
+      "tf_binding": "+",
+      "tss_activity": "+",
+      "histone_marks": "+",
+      "chromatin_accessibility": "+",
+      "gene_expression": "+",
+      "splicing": "+"
+    },
+    "per_layer_dominant_magnitude": {
+      "tf_binding": "+0.468",
+      "tss_activity": "+0.337",
+      "histone_marks": "+0.298",
+      "chromatin_accessibility": "+0.209",
+      "gene_expression": "+0.056",
+      "splicing": "+0.003"
+    }
+  },
+  "tsv_vs_json_consistency": {
+    "tsv_rows": 17,
+    "json_tracks": 85,
+    "tsv_columns": [
+      "allele",
+      "layer",
+      "assay_id",
+      "assay_type",
+      "cell_type",
+      "description",
+      "ref_value",
+      "alt_value",
+      "raw_score",
+      "quantile_score",
+      "ref_signal_percentile",
+      "note"
+    ]
+  },
+  "html_files": [
+    "examples/applications/validation/TERT_chr5_1295046/chr5_1295046_T_G_TERT_alphagenome_report.html"
+  ],
+  "screenshots": [
+    "audits/2026-04-16_screenshots/validation__TERT_chr5_1295046__chr5_1295046_T_G_TERT_alphagenome_report.png"
+  ],
+  "literature_claim": {
+    "note": "no published literature claim for this app"
+  },
+  "flags": []
+}

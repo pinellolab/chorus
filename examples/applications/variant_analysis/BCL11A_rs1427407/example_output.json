@@ -1,0 +1,346 @@
+{
+  "variant": {
+    "chrom": "chr2",
+    "position": 60490908,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "T"
+    ]
+  },
+  "oracle": "alphagenome",
+  "gene_name": "BCL11A",
+  "nearby_genes": [
+    "BCL11A",
+    "PAPOLG",
+    "REL",
+    "PUS10"
+  ],
+  "alleles": {
+    "alt_1": {
+      "scores_by_layer": {
+        "chromatin_accessibility": [
+          {
+            "assay_id": "DNASE/EFO:0002067 DNase-seq/.",
+            "assay_type": "DNASE",
+            "cell_type": "K562",
+            "layer": "chromatin_accessibility",
+            "ref_value": 9.56967544555664,
+            "alt_value": 8.766494750976562,
+            "raw_score": -0.11401830876760537,
+            "description": "DNASE:K562",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 0.5144
+          }
+        ],
+        "tf_binding": [
+          {
+            "assay_id": "CHIP_TF/EFO:0002067 TF ChIP-seq GATA1/.",
+            "assay_type": "CHIP",
+            "cell_type": "K562",
+            "layer": "tf_binding",
+            "ref_value": 447.0,
+            "alt_value": 434.0,
+            "raw_score": -0.042483331321513385,
+            "description": "CHIP:GATA1:K562",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 0.8822
+          },
+          {
+            "assay_id": "CHIP_TF/EFO:0002067 TF ChIP-seq TAL1/.",
+            "assay_type": "CHIP",
+            "cell_type": "K562",
+            "layer": "tf_binding",
+            "ref_value": 477.5,
+            "alt_value": 440.0,
+            "raw_score": -0.11774026892850492,
+            "description": "CHIP:TAL1:K562",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 0.9602
+          }
+        ],
+        "histone_marks": [
+          {
+            "assay_id": "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.",
+            "assay_type": "CHIP",
+            "cell_type": "K562",
+            "layer": "histone_marks",
+            "ref_value": 1260.5,
+            "alt_value": 1261.75,
+            "raw_score": 0.0014288354549023172,
+            "description": "CHIP:H3K27ac:K562",
+            "quantile_score": 0.6097433211105291,
+            "ref_signal_percentile": 0.9096
+          }
+        ],
+        "tss_activity": [
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 0.132682204246521,
+            "alt_value": 0.12672466039657593,
+            "raw_score": -0.007608137358271899,
+            "description": "CAGE:K562",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 0.597285781915733,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 2.1600162982940674,
+            "alt_value": 2.1584255695343018,
+            "raw_score": -0.0007264248337188728,
+            "description": "CAGE:K562",
+            "ref_signal_percentile": 1.0,
+            "region_label": "BCL11A TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 2587.71875,
+            "alt_value": 2589.55517578125,
+            "raw_score": 0.0010230787236066492,
+            "description": "CAGE:K562",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "PAPOLG TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/+",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 1874.1600341796875,
+            "alt_value": 1871.30419921875,
+            "raw_score": -0.002198873412377777,
+            "description": "CAGE:K562",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "REL TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 1.8503046035766602,
+            "alt_value": 1.6994686126708984,
+            "raw_score": -0.07844066170009198,
+            "description": "CAGE:K562",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 424.63104248046875,
+            "alt_value": 420.5895690917969,
+            "raw_score": -0.013764202057560843,
+            "description": "CAGE:K562",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "BCL11A TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 18.955524444580078,
+            "alt_value": 18.992847442626953,
+            "raw_score": 0.00269576542505082,
+            "description": "CAGE:K562",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "PAPOLG TSS"
+          },
+          {
+            "assay_id": "CAGE/hCAGE EFO:0002067/-",
+            "assay_type": "CAGE",
+            "cell_type": "K562",
+            "layer": "tss_activity",
+            "ref_value": 68.94244384765625,
+            "alt_value": 68.88288879394531,
+            "raw_score": -0.00122895879052904,
+            "description": "CAGE:K562",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 1.0,
+            "region_label": "REL TSS"
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "DNASE/EFO:0002067 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "K562",
+          "layer": "chromatin_accessibility",
+          "ref_value": 9.56967544555664,
+          "alt_value": 8.766494750976562,
+          "raw_score": -0.11401830876760537,
+          "description": "DNASE:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.5144
+        },
+        {
+          "assay_id": "CHIP_TF/EFO:0002067 TF ChIP-seq GATA1/.",
+          "assay_type": "CHIP",
+          "cell_type": "K562",
+          "layer": "tf_binding",
+          "ref_value": 447.0,
+          "alt_value": 434.0,
+          "raw_score": -0.042483331321513385,
+          "description": "CHIP:GATA1:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.8822
+        },
+        {
+          "assay_id": "CHIP_TF/EFO:0002067 TF ChIP-seq TAL1/.",
+          "assay_type": "CHIP",
+          "cell_type": "K562",
+          "layer": "tf_binding",
+          "ref_value": 477.5,
+          "alt_value": 440.0,
+          "raw_score": -0.11774026892850492,
+          "description": "CHIP:TAL1:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.9602
+        },
+        {
+          "assay_id": "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "K562",
+          "layer": "histone_marks",
+          "ref_value": 1260.5,
+          "alt_value": 1261.75,
+          "raw_score": 0.0014288354549023172,
+          "description": "CHIP:H3K27ac:K562",
+          "quantile_score": 0.6097433211105291,
+          "ref_signal_percentile": 0.9096
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.132682204246521,
+          "alt_value": 0.12672466039657593,
+          "raw_score": -0.007608137358271899,
+          "description": "CAGE:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.597285781915733,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 2.1600162982940674,
+          "alt_value": 2.1584255695343018,
+          "raw_score": -0.0007264248337188728,
+          "description": "CAGE:K562",
+          "ref_signal_percentile": 1.0,
+          "region_label": "BCL11A TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 2587.71875,
+          "alt_value": 2589.55517578125,
+          "raw_score": 0.0010230787236066492,
+          "description": "CAGE:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "PAPOLG TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 1874.1600341796875,
+          "alt_value": 1871.30419921875,
+          "raw_score": -0.002198873412377777,
+          "description": "CAGE:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "REL TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 1.8503046035766602,
+          "alt_value": 1.6994686126708984,
+          "raw_score": -0.07844066170009198,
+          "description": "CAGE:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 424.63104248046875,
+          "alt_value": 420.5895690917969,
+          "raw_score": -0.013764202057560843,
+          "description": "CAGE:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "BCL11A TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 18.955524444580078,
+          "alt_value": 18.992847442626953,
+          "raw_score": 0.00269576542505082,
+          "description": "CAGE:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "PAPOLG TSS"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/-",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 68.94244384765625,
+          "alt_value": 68.88288879394531,
+          "raw_score": -0.00122895879052904,
+          "description": "CAGE:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "REL TSS"
+        }
+      ]
+    }
+  },
+  "analysis_request": {
+    "user_prompt": "Analyze rs1427407 (chr2:60490908 G>T) in K562 erythroid cells using DNASE, GATA1/TAL1 ChIP, H3K27ac, and CAGE tracks. Gene is BCL11A.",
+    "tool_name": "analyze_variant_multilayer",
+    "oracle_name": "alphagenome",
+    "normalizer_name": "per-track background CDFs",
+    "tracks_requested": "6 K562 tracks",
+    "cell_types": [],
+    "notes": [],
+    "generated_at": "2026-04-17 06:36 UTC"
+  }
+}

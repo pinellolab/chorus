@@ -1,0 +1,79 @@
+{
+  "app_name": "discovery__SORT1_cell_type_screen",
+  "path": "examples/applications/discovery/SORT1_cell_type_screen",
+  "prompt": "Screen all cell types to find where rs12740374 (chr1:109274968 G>T) has the strongest regulatory impact. I don't have a specific tissue in mind \u2014 let the model tell me where this variant matters most. Gene is SORT1.",
+  "md_header": {
+    "tool": "discover_variant_cell_types",
+    "oracle": "alphagenome",
+    "normalizer": "per-track background CDFs",
+    "tracks_requested": "all DNASE/ATAC tracks (~472 cell types)",
+    "gene": "SORT1",
+    "generated": "2026-04-12 02:21 UTC"
+  },
+  "top_keys": [
+    "variant",
+    "oracle",
+    "gene",
+    "cell_type_ranking",
+    "reports",
+    "analysis_request"
+  ],
+  "tool": "discover_variant_cell_types",
+  "oracle": "alphagenome",
+  "variant": {
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref": "G",
+    "alt": "T",
+    "id": "rs12740374"
+  },
+  "n_tracks_scored": 0,
+  "assay_ids": [],
+  "layers_scored": [],
+  "track_selection_check": {
+    "cell_types_claimed_in_prompt": [],
+    "cell_types_in_tracks": {},
+    "mismatches": []
+  },
+  "md_vs_json_consistency": {
+    "summary_text": "Chromatin accessibility (DNASE/ATAC): very strong opening (+1.90); Histone modifications (ChIP-Histone): very strong mark gain (+1.00); Transcription factor binding (ChIP-TF): moderate binding gain (+0.23).",
+    "summary_direction": "positive",
+    "pos_word_hits": 3,
+    "neg_word_hits": 0,
+    "per_layer_dominant_sign": {},
+    "per_layer_dominant_magnitude": {}
+  },
+  "tsv_vs_json_consistency": {
+    "tsv_rows": 19,
+    "json_tracks": 0,
+    "tsv_columns": [
+      "allele",
+      "layer",
+      "assay_id",
+      "assay_type",
+      "cell_type",
+      "description",
+      "ref_value",
+      "alt_value",
+      "raw_score",
+      "quantile_score",
+      "ref_signal_percentile",
+      "note",
+      "focus_cell_type"
+    ]
+  },
+  "html_files": [
+    "examples/applications/discovery/SORT1_cell_type_screen/chr1_109274968_G_T_SORT1_oracle_LNCaP_clone_FGC_report.html",
+    "examples/applications/discovery/SORT1_cell_type_screen/chr1_109274968_G_T_SORT1_oracle_epithelial_cell_of_proximal_tubule_report.html",
+    "examples/applications/discovery/SORT1_cell_type_screen/chr1_109274968_G_T_SORT1_oracle_renal_cortical_epithelial_cell_report.html"
+  ],
+  "screenshots": [
+    "audits/2026-04-16_screenshots/discovery__SORT1_cell_type_screen__chr1_109274968_G_T_SORT1_oracle_LNCaP_clone_FGC_report.png",
+    "audits/2026-04-16_screenshots/discovery__SORT1_cell_type_screen__chr1_109274968_G_T_SORT1_oracle_epithelial_cell_of_proximal_tubule_report.png",
+    "audits/2026-04-16_screenshots/discovery__SORT1_cell_type_screen__chr1_109274968_G_T_SORT1_oracle_renal_cortical_epithelial_cell_report.png"
+  ],
+  "literature_claim": {
+    "note": "no published literature claim for this app"
+  },
+  "flags": []
+}

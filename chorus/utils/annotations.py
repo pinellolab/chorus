@@ -3,6 +3,12 @@
 This module provides functionality for working with gene annotations,
 particularly for visualizing genomic regions in the context of genes
 and for analyzing effects on gene expression.
+
+Performance notes:
+    The GTF file (~1GB) is loaded into memory once on first use and cached
+    for the lifetime of the process.  Subsequent queries use fast DataFrame
+    filtering instead of re-scanning the file.  If pysam is available and
+    a tabix-indexed GTF exists, region queries use O(1) tabix lookups.
 """
 
 import os
@@ -22,8 +28,11 @@ from ..core.globals import CHORUS_ANNOTATIONS_DIR
 
 
 class AnnotationManager:
-    """Manager for gene annotations (GTF files)."""
-    
+    """Manager for gene annotations (GTF files).
+
+    Caches parsed GTF data in memory after first load for fast repeated queries.
+    """
+
     # Default annotation sources
     ANNOTATION_SOURCES = {
         'gencode_v48_basic': {
@@ -42,10 +51,10 @@ class AnnotationManager:
             'genome': 'hg38'
         }
     }
-    
+
     def __init__(self, annotations_dir: Optional[str] = None):
         """Initialize annotation manager.
-        
+
         Args:
             annotations_dir: Directory to store annotation files.
                            Defaults to chorus/annotations/
@@ -53,9 +62,95 @@ class AnnotationManager:
         if annotations_dir is None:
             # Default to annotations directory in chorus root
             annotations_dir = CHORUS_ANNOTATIONS_DIR
-        
+
         self.annotations_dir = Path(annotations_dir)
         self.annotations_dir.mkdir(parents=True, exist_ok=True)
+
+        # In-memory caches keyed by gtf_path
+        self._gene_cache: dict[str, pd.DataFrame] = {}
+        self._exon_cache: dict[str, pd.DataFrame] = {}
+        self._transcript_cache: dict[str, pd.DataFrame] = {}
+
+    # ------------------------------------------------------------------
+    # GTF loading with caching
+    # ------------------------------------------------------------------
+
+    def _load_gtf_features(self, gtf_path: Union[str, Path],
+                           feature_types: list[str]) -> pd.DataFrame:
+        """Parse a GTF file and return a DataFrame of matching features.
+
+        Results are cached in memory so subsequent calls are instant.
+        """
+        gtf_path = str(gtf_path)
+        cache_key = f"{gtf_path}:{'|'.join(sorted(feature_types))}"
+
+        # Check memory cache
+        if cache_key in self._gene_cache:
+            return self._gene_cache[cache_key]
+
+        logger.info("Loading GTF features (%s) from %s (one-time)...",
+                     ", ".join(feature_types), Path(gtf_path).name)
+
+        if gtf_path.endswith('.gz'):
+            open_func = gzip.open
+            mode = 'rt'
+        else:
+            open_func = open
+            mode = 'r'
+
+        feature_set = set(feature_types)
+        rows = []
+
+        with open_func(gtf_path, mode) as f:
+            for line in f:
+                if line.startswith('#'):
+                    continue
+                parts = line.split('\t', 9)
+                if len(parts) < 9:
+                    continue
+                if parts[2] not in feature_set:
+                    continue
+
+                attr_dict = {}
+                for attr in parts[8].strip().split(';'):
+                    attr = attr.strip()
+                    if attr:
+                        kv = attr.split(' ', 1)
+                        if len(kv) == 2:
+                            attr_dict[kv[0]] = kv[1].strip('"')
+
+                rows.append({
+                    'chrom': parts[0],
+                    'start': int(parts[3]),
+                    'end': int(parts[4]),
+                    'strand': parts[6],
+                    'feature': parts[2],
+                    'gene_name': attr_dict.get('gene_name', ''),
+                    'gene_id': attr_dict.get('gene_id', ''),
+                    'gene_type': attr_dict.get('gene_type', ''),
+                    'transcript_id': attr_dict.get('transcript_id', ''),
+                    'transcript_type': attr_dict.get('transcript_type', ''),
+                    'exon_number': attr_dict.get('exon_number', ''),
+                    'level': attr_dict.get('level', ''),
+                })
+
+        df = pd.DataFrame(rows)
+        self._gene_cache[cache_key] = df
+        logger.info("Cached %d %s features from GTF", len(df),
+                     "/".join(feature_types))
+        return df
+
+    def _get_genes_df(self, gtf_path: Union[str, Path]) -> pd.DataFrame:
+        """Get cached DataFrame of gene features."""
+        return self._load_gtf_features(gtf_path, ['gene'])
+
+    def _get_exons_df(self, gtf_path: Union[str, Path]) -> pd.DataFrame:
+        """Get cached DataFrame of exon features."""
+        return self._load_gtf_features(gtf_path, ['exon'])
+
+    def _get_transcripts_df(self, gtf_path: Union[str, Path]) -> pd.DataFrame:
+        """Get cached DataFrame of transcript features."""
+        return self._load_gtf_features(gtf_path, ['transcript'])
 
     def annotation_exists(self, annotation_path: Path) -> str | None:
         if annotation_path.exists():
@@ -113,6 +208,21 @@ class AnnotationManager:
         logger.info(f"Sorting annotation...")
         filepath = self.sort_annotation(filepath)
         logger.info(f"Sorted annotation to: {filepath}")
+
+        # Clean up any stale coolbox/tabix artefacts pointing at the old
+        # GTF. coolbox re-bgzips + re-indexes the GTF on first use; if a
+        # leftover ``.bgz``/``.tbi`` pair from a previous download lingers,
+        # its tabix index points at byte offsets in the old .bgz that no
+        # longer match the new one. The next ``tabix -p gff <file>.bgz``
+        # call then fails with "index file exists" (tabix requires ``-f``
+        # to overwrite). Deleting them here lets coolbox regenerate a
+        # consistent pair on its first GTF() call.
+        for suffix in (".bgz", ".bgz.tbi", ".gz.tbi"):
+            stale = filepath.with_suffix(filepath.suffix + suffix)
+            if stale.exists():
+                stale.unlink()
+                logger.info(f"Removed stale index artefact: {stale}")
+
         return filepath
 
     def sort_annotation(self, annotation_path: Path) -> Path:
@@ -187,87 +297,40 @@ class AnnotationManager:
         
         return available
     
-    def extract_genes_in_region(self, gtf_path: Union[str, Path], 
+    def extract_genes_in_region(self, gtf_path: Union[str, Path],
                                chrom: str, start: int, end: int,
                                feature_types: List[str] = ['gene']) -> pd.DataFrame:
         """Extract genes in a specific genomic region from GTF.
-        
+
+        Uses cached in-memory DataFrame for fast repeated queries.
+
         Args:
             gtf_path: Path to GTF file (can be gzipped)
             chrom: Chromosome name
             start: Start position
             end: End position
             feature_types: Types of features to extract (default: ['gene'])
-            
+
         Returns:
             DataFrame with gene information
         """
-        gtf_path = Path(gtf_path)
-        
-        # Open file (handle gzip if needed)
-        if str(gtf_path).endswith('.gz'):
-            open_func = gzip.open
-            mode = 'rt'
-        else:
-            open_func = open
-            mode = 'r'
-        
-        genes = []
-        
-        with open_func(gtf_path, mode) as f:
-            for line in f:
-                if line.startswith('#'):
-                    continue
-                
-                parts = line.strip().split('\t')
-                if len(parts) < 9:
-                    continue
-                
-                # Parse GTF fields
-                seqname = parts[0]
-                feature = parts[2]
-                feat_start = int(parts[3])
-                feat_end = int(parts[4])
-                strand = parts[6]
-                attributes = parts[8]
-                
-                # Check if in region and correct feature type
-                if (seqname == chrom and 
-                    feature in feature_types and
-                    feat_end >= start and 
-                    feat_start <= end):
-                    
-                    # Parse attributes
-                    attr_dict = {}
-                    for attr in attributes.strip().split(';'):
-                        if attr.strip():
-                            key_value = attr.strip().split(' ', 1)
-                            if len(key_value) == 2:
-                                key = key_value[0]
-                                value = key_value[1].strip('"')
-                                attr_dict[key] = value
-                    
-                    genes.append({
-                        'chrom': seqname,
-                        'start': feat_start,
-                        'end': feat_end,
-                        'strand': strand,
-                        'feature': feature,
-                        'gene_name': attr_dict.get('gene_name', ''),
-                        'gene_id': attr_dict.get('gene_id', ''),
-                        'gene_type': attr_dict.get('gene_type', ''),
-                        'transcript_type': attr_dict.get('transcript_type', ''),
-                        'level': attr_dict.get('level', ''),
-                        'attributes': attr_dict
-                    })
-        
-        return pd.DataFrame(genes)
+        df = self._load_gtf_features(gtf_path, feature_types)
+        if len(df) == 0:
+            return df
+        mask = (
+            (df['chrom'] == chrom) &
+            (df['end'] >= start) &
+            (df['start'] <= end)
+        )
+        return df[mask].reset_index(drop=True)
     
     def get_exon_positions(self, gtf_path: Union[str, Path],
                           gene_name: Optional[str] = None,
                           gene_id: Optional[str] = None,
                           chrom: Optional[str] = None) -> pd.DataFrame:
         """Extract exon coordinates from GTF for a gene.
+
+        Uses cached in-memory DataFrame with gene_name index for fast lookups.
 
         Args:
             gtf_path: Path to GTF file
@@ -279,148 +342,82 @@ class AnnotationManager:
             DataFrame with chrom, start, end, strand, gene_name, gene_id,
             transcript_id, exon_number columns.
         """
-        gtf_path = Path(gtf_path)
+        gtf_path = str(gtf_path)
 
-        if str(gtf_path).endswith('.gz'):
-            open_func = gzip.open
-            mode = 'rt'
-        else:
-            open_func = open
-            mode = 'r'
+        # Build gene_name-indexed lookup on first call
+        if gtf_path not in self._exon_cache:
+            df = self._get_exons_df(gtf_path)
+            if len(df) > 0:
+                self._exon_cache[gtf_path] = df.groupby('gene_name')
+            else:
+                return df
 
-        exons = []
+        grouped = self._exon_cache[gtf_path]
 
-        with open_func(gtf_path, mode) as f:
-            for line in f:
-                if line.startswith('#'):
-                    continue
+        if gene_name:
+            try:
+                result = grouped.get_group(gene_name)
+            except KeyError:
+                return pd.DataFrame()
+            if chrom:
+                result = result[result['chrom'] == chrom]
+            if gene_id:
+                result = result[result['gene_id'] == gene_id]
+            return result.reset_index(drop=True)
 
-                parts = line.strip().split('\t')
-                if len(parts) < 9:
-                    continue
-
-                if parts[2] != 'exon':
-                    continue
-
-                seqname = parts[0]
-                feat_start = int(parts[3])
-                feat_end = int(parts[4])
-                strand = parts[6]
-                attributes = parts[8]
-
-                if chrom and seqname != chrom:
-                    continue
-
-                attr_dict = {}
-                for attr in attributes.strip().split(';'):
-                    if attr.strip():
-                        key_value = attr.strip().split(' ', 1)
-                        if len(key_value) == 2:
-                            key = key_value[0]
-                            value = key_value[1].strip('"')
-                            attr_dict[key] = value
-
-                if gene_name and attr_dict.get('gene_name') != gene_name:
-                    continue
-                if gene_id and attr_dict.get('gene_id') != gene_id:
-                    continue
-
-                exons.append({
-                    'chrom': seqname,
-                    'start': feat_start,
-                    'end': feat_end,
-                    'strand': strand,
-                    'gene_name': attr_dict.get('gene_name', ''),
-                    'gene_id': attr_dict.get('gene_id', ''),
-                    'transcript_id': attr_dict.get('transcript_id', ''),
-                    'exon_number': attr_dict.get('exon_number', ''),
-                })
-
-        return pd.DataFrame(exons)
+        # Fallback: no gene_name filter
+        df = self._get_exons_df(gtf_path)
+        mask = pd.Series(True, index=df.index)
+        if chrom:
+            mask &= df['chrom'] == chrom
+        if gene_id:
+            mask &= df['gene_id'] == gene_id
+        return df[mask].reset_index(drop=True)
 
     def get_tss_positions(self, gtf_path: Union[str, Path],
                          gene_name: Optional[str] = None,
                          gene_id: Optional[str] = None,
                          chrom: Optional[str] = None) -> pd.DataFrame:
         """Extract TSS (Transcription Start Site) positions for genes.
-        
+
+        Uses cached in-memory DataFrame for fast repeated queries.
+
         Args:
             gtf_path: Path to GTF file
             gene_name: Filter by gene name (e.g., 'GATA1')
             gene_id: Filter by gene ID (e.g., 'ENSG00000102145')
             chrom: Filter by chromosome
-            
+
         Returns:
             DataFrame with TSS positions
         """
-        gtf_path = Path(gtf_path)
-        
-        # Open file (handle gzip if needed)
-        if str(gtf_path).endswith('.gz'):
-            open_func = gzip.open
-            mode = 'rt'
-        else:
-            open_func = open
-            mode = 'r'
-        
-        transcripts = []
-        
-        with open_func(gtf_path, mode) as f:
-            for line in f:
-                if line.startswith('#'):
-                    continue
-                
-                parts = line.strip().split('\t')
-                if len(parts) < 9:
-                    continue
-                
-                # Only look at transcript features
-                if parts[2] != 'transcript':
-                    continue
-                
-                # Parse GTF fields
-                seqname = parts[0]
-                feat_start = int(parts[3])
-                feat_end = int(parts[4])
-                strand = parts[6]
-                attributes = parts[8]
-                
-                # Apply chromosome filter if specified
-                if chrom and seqname != chrom:
-                    continue
-                
-                # Parse attributes
-                attr_dict = {}
-                for attr in attributes.strip().split(';'):
-                    if attr.strip():
-                        key_value = attr.strip().split(' ', 1)
-                        if len(key_value) == 2:
-                            key = key_value[0]
-                            value = key_value[1].strip('"')
-                            attr_dict[key] = value
-                
-                # Apply gene filters if specified
-                if gene_name and attr_dict.get('gene_name') != gene_name:
-                    continue
-                if gene_id and attr_dict.get('gene_id') != gene_id:
-                    continue
-                
-                # Determine TSS based on strand
-                tss = feat_start if strand == '+' else feat_end
-                
-                transcripts.append({
-                    'chrom': seqname,
-                    'tss': tss,
-                    'strand': strand,
-                    'gene_name': attr_dict.get('gene_name', ''),
-                    'gene_id': attr_dict.get('gene_id', ''),
-                    'transcript_id': attr_dict.get('transcript_id', ''),
-                    'transcript_type': attr_dict.get('transcript_type', ''),
-                    'transcript_start': feat_start,
-                    'transcript_end': feat_end
-                })
-        
-        return pd.DataFrame(transcripts)
+        df = self._get_transcripts_df(gtf_path)
+        if len(df) == 0:
+            return df
+
+        mask = pd.Series(True, index=df.index)
+        if chrom:
+            mask &= df['chrom'] == chrom
+        if gene_name:
+            mask &= df['gene_name'] == gene_name
+        if gene_id:
+            mask &= df['gene_id'] == gene_id
+
+        filtered = df[mask].copy()
+        if len(filtered) == 0:
+            return pd.DataFrame()
+
+        # Compute TSS based on strand
+        filtered['tss'] = filtered.apply(
+            lambda r: r['start'] if r['strand'] == '+' else r['end'],
+            axis=1,
+        )
+        filtered['transcript_start'] = filtered['start']
+        filtered['transcript_end'] = filtered['end']
+
+        return filtered[['chrom', 'tss', 'strand', 'gene_name', 'gene_id',
+                          'transcript_id', 'transcript_type',
+                          'transcript_start', 'transcript_end']].reset_index(drop=True)
 
 
 # Convenience functions
@@ -577,3 +574,100 @@ def get_gene_exons(gene_name: str, annotation: str = 'gencode_v48_basic',
             })
 
     return pd.DataFrame(merged_rows)
+
+
+# ---------------------------------------------------------------------------
+# ENCODE SCREEN cCRE utilities
+# ---------------------------------------------------------------------------
+
+_CCRE_URL = "https://downloads.wenglab.org/Registry-V4/GRCh38-cCREs.bed"
+_CCRE_FILENAME = "GRCh38-cCREs.bed"
+
+_ccre_cache: pd.DataFrame | None = None
+
+
+def get_screen_ccres(cache_dir: str | None = None) -> pd.DataFrame:
+    """Load ENCODE SCREEN cCREs (candidate cis-Regulatory Elements).
+
+    Downloads the Registry V4 BED file on first call and caches it.
+    Returns a DataFrame with columns: chrom, start, end, ccre_id, element_id, category.
+
+    Categories: PLS (promoter-like), pELS (proximal enhancer-like),
+    dELS (distal enhancer-like), CA-CTCF, CA-H3K4me3, CA-TF, CA, TF.
+    """
+    global _ccre_cache
+    if _ccre_cache is not None:
+        return _ccre_cache
+
+    if cache_dir is None:
+        cache_dir = str(CHORUS_ANNOTATIONS_DIR)
+    bed_path = Path(cache_dir) / _CCRE_FILENAME
+
+    if not bed_path.exists():
+        logger.info("Downloading SCREEN cCREs from %s ...", _CCRE_URL)
+        Path(cache_dir).mkdir(parents=True, exist_ok=True)
+        import urllib.request
+        urllib.request.urlretrieve(_CCRE_URL, str(bed_path))
+        logger.info("Downloaded %s", bed_path)
+
+    logger.info("Loading %s ...", bed_path)
+    df = pd.read_csv(
+        bed_path, sep="\t", header=None,
+        names=["chrom", "start", "end", "ccre_id", "element_id", "category"],
+        dtype={"chrom": str, "start": int, "end": int},
+    )
+    # Filter to main chromosomes
+    valid_chroms = {f"chr{i}" for i in range(1, 23)} | {"chrX"}
+    df = df[df["chrom"].isin(valid_chroms)].copy()
+    _ccre_cache = df
+    logger.info("Loaded %d cCREs across %d categories", len(df), df["category"].nunique())
+    return df
+
+
+def sample_ccre_positions(
+    n_per_category: dict[str, int] | None = None,
+    seed: int = 42,
+) -> list[tuple[str, int]]:
+    """Sample genomic positions from SCREEN cCREs with stratification.
+
+    Args:
+        n_per_category: Dict mapping category -> number of positions.
+            Default: balanced across PLS, dELS, pELS, CA-CTCF, CA-H3K4me3, CA-TF, CA, TF.
+        seed: Random seed.
+
+    Returns:
+        List of (chrom, center_position) tuples.
+    """
+    import random
+
+    if n_per_category is None:
+        n_per_category = {
+            "PLS": 5000,
+            "dELS": 5000,
+            "pELS": 3000,
+            "CA-CTCF": 2000,
+            "CA-H3K4me3": 2000,
+            "CA-TF": 1500,
+            "CA": 1500,
+            "TF": 1000,
+        }
+
+    df = get_screen_ccres()
+    rng = random.Random(seed)
+    positions = []
+
+    for category, n in n_per_category.items():
+        cat_df = df[df["category"] == category]
+        if len(cat_df) == 0:
+            logger.warning("No cCREs for category '%s'", category)
+            continue
+        indices = rng.sample(range(len(cat_df)), min(n, len(cat_df)))
+        for idx in indices:
+            row = cat_df.iloc[idx]
+            center = (row["start"] + row["end"]) // 2
+            positions.append((row["chrom"], center))
+
+    rng.shuffle(positions)
+    logger.info("Sampled %d positions from %d cCRE categories",
+                len(positions), len(n_per_category))
+    return positions

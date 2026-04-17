@@ -1,0 +1,106 @@
+{
+  "app_name": "validation__SORT1_rs12740374_with_CEBP",
+  "path": "examples/applications/validation/SORT1_rs12740374_with_CEBP",
+  "prompt": "Validate AlphaGenome paper finding: rs12740374 (chr1:109274968 G>T) should show CEBPA/CEBPB binding gain in HepG2. Using forced HepG2 tracks.",
+  "md_header": {
+    "tool": "analyze_variant_multilayer",
+    "oracle": "alphagenome",
+    "normalizer": "per-track background CDFs",
+    "tracks_requested": "6 HepG2 tracks (DNASE, CEBPA, CEBPB, H3K27ac, CAGE+/-)",
+    "gene": "SORT1",
+    "generated": "2026-04-13 13:06 UTC"
+  },
+  "top_keys": [
+    "variant",
+    "oracle",
+    "gene_name",
+    "nearby_genes",
+    "alleles",
+    "analysis_request"
+  ],
+  "tool": "analyze_variant_multilayer",
+  "oracle": "alphagenome",
+  "variant": {
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "T"
+    ]
+  },
+  "n_tracks_scored": 62,
+  "assay_ids": [
+    "CAGE/hCAGE EFO:0001187/+",
+    "CAGE/hCAGE EFO:0001187/-",
+    "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+    "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+    "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",
+    "DNASE/EFO:0001187 DNase-seq/."
+  ],
+  "layers_scored": [
+    "chromatin_accessibility",
+    "histone_marks",
+    "tf_binding",
+    "tss_activity"
+  ],
+  "track_selection_check": {
+    "cell_types_claimed_in_prompt": [
+      "HepG2"
+    ],
+    "cell_types_in_tracks": {
+      "HepG2": 62
+    },
+    "mismatches": []
+  },
+  "md_vs_json_consistency": {
+    "summary_text": "Chromatin accessibility (DNASE/ATAC): strong opening (+0.45); Transcription factor binding (ChIP-TF): strong binding gain (+0.37); TSS activity (CAGE/PRO-CAP): moderate increase (+0.25); Histone modifications (ChIP-Histone): moderate mark gain (+0.18).",
+    "summary_direction": "positive",
+    "pos_word_hits": 4,
+    "neg_word_hits": 0,
+    "per_layer_dominant_sign": {
+      "chromatin_accessibility": "+",
+      "tf_binding": "+",
+      "histone_marks": "+",
+      "tss_activity": "+"
+    },
+    "per_layer_dominant_magnitude": {
+      "chromatin_accessibility": "+0.447",
+      "tf_binding": "+0.369",
+      "histone_marks": "+0.178",
+      "tss_activity": "+0.252"
+    }
+  },
+  "tsv_vs_json_consistency": {
+    "tsv_rows": 62,
+    "json_tracks": 62,
+    "tsv_columns": [
+      "allele",
+      "layer",
+      "assay_id",
+      "region_label",
+      "assay_type",
+      "cell_type",
+      "ref_value",
+      "alt_value",
+      "raw_score",
+      "quantile_score",
+      "ref_signal_percentile",
+      "note"
+    ]
+  },
+  "html_files": [
+    "examples/applications/validation/SORT1_rs12740374_with_CEBP/chr1_109274968_G_T_CELSR2_alphagenome_report.html",
+    "examples/applications/validation/SORT1_rs12740374_with_CEBP/chr1_109274968_G_T_SORT1_enformer_RAW_autoscale.html",
+    "examples/applications/validation/SORT1_rs12740374_with_CEBP/rs12740374_SORT1_CEBP_validation_report.html"
+  ],
+  "screenshots": [
+    "audits/2026-04-16_screenshots/validation__SORT1_rs12740374_with_CEBP__chr1_109274968_G_T_CELSR2_alphagenome_report.png",
+    "audits/2026-04-16_screenshots/validation__SORT1_rs12740374_with_CEBP__chr1_109274968_G_T_SORT1_enformer_RAW_autoscale.png",
+    "audits/2026-04-16_screenshots/validation__SORT1_rs12740374_with_CEBP__rs12740374_SORT1_CEBP_validation_report.png"
+  ],
+  "literature_claim": {
+    "paper": "Musunuru 2010 Nature (validation)",
+    "expected_direction": "positive for DNASE/CEBPA/CEBPB/H3K27ac/SORT1 TSS"
+  },
+  "flags": []
+}

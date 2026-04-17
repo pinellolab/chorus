@@ -1,0 +1,106 @@
+{
+  "app_name": "sequence_engineering__integration_simulation",
+  "path": "examples/applications/sequence_engineering/integration_simulation",
+  "prompt": "Insert a 378 bp CMV promoter construct at chr19:55115000 (PPP1R12C locus / AAVS1 safe harbour) and predict local disruption in K562 using DNASE, H3K27ac, and CAGE tracks.",
+  "md_header": {
+    "tool": "simulate_integration",
+    "oracle": "alphagenome",
+    "tracks_requested": "3 K562 tracks",
+    "gene": "PPP1R12C",
+    "generated": "2026-04-13 03:07 UTC"
+  },
+  "top_keys": [
+    "variant",
+    "oracle",
+    "gene_name",
+    "nearby_genes",
+    "alleles",
+    "analysis_request",
+    "modification_description",
+    "modification_region"
+  ],
+  "tool": "simulate_integration",
+  "oracle": "alphagenome",
+  "variant": {
+    "chrom": "chr19",
+    "position": 55115000,
+    "ref_allele": "wt",
+    "alt_alleles": [
+      "insertion"
+    ]
+  },
+  "modification_region": [
+    55115000,
+    55115378
+  ],
+  "n_tracks_scored": 55,
+  "assay_ids": [
+    "CAGE/hCAGE EFO:0002067/+",
+    "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.",
+    "DNASE/EFO:0002067 DNase-seq/."
+  ],
+  "layers_scored": [
+    "chromatin_accessibility",
+    "histone_marks",
+    "tss_activity"
+  ],
+  "track_selection_check": {
+    "cell_types_claimed_in_prompt": [
+      "K562"
+    ],
+    "cell_types_in_tracks": {
+      "K562": 55
+    },
+    "mismatches": []
+  },
+  "md_vs_json_consistency": {
+    "summary_text": "TSS activity (CAGE/PRO-CAP): very strong decrease (-8.96); Chromatin accessibility (DNASE/ATAC): very strong opening (+4.23); Histone modifications (ChIP-Histone): very strong mark gain (+1.20).",
+    "summary_direction": "positive",
+    "pos_word_hits": 2,
+    "neg_word_hits": 1,
+    "per_layer_dominant_sign": {
+      "chromatin_accessibility": "+",
+      "histone_marks": "+",
+      "tss_activity": "-"
+    },
+    "per_layer_dominant_magnitude": {
+      "chromatin_accessibility": "+4.225",
+      "histone_marks": "+1.197",
+      "tss_activity": "-8.959"
+    }
+  },
+  "tsv_vs_json_consistency": {
+    "tsv_rows": 3,
+    "json_tracks": 55,
+    "tsv_columns": [
+      "allele",
+      "layer",
+      "assay_id",
+      "assay_type",
+      "cell_type",
+      "description",
+      "ref_value",
+      "alt_value",
+      "raw_score",
+      "quantile_score",
+      "ref_signal_percentile",
+      "note"
+    ]
+  },
+  "html_files": [
+    "examples/applications/sequence_engineering/integration_simulation/integration_CMV_PPP1R12C_report.html"
+  ],
+  "screenshots": [
+    "audits/2026-04-16_screenshots/sequence_engineering__integration_simulation__integration_CMV_PPP1R12C_report.png"
+  ],
+  "literature_claim": {
+    "note": "no published literature claim for this app"
+  },
+  "flags": [
+    {
+      "category": "summary_sign_mismatch",
+      "severity": "LOW",
+      "detail": "Summary reads 'positive' but these layers have negative dominant effect: ['tss_activity']"
+    }
+  ]
+}

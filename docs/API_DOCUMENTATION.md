@@ -1,5 +1,10 @@
 # Chorus API Documentation
 
+> **This is the authoritative reference** for all public APIs (oracle
+> methods, analysis layer, utilities, normalization, and MCP tools).
+> For a one-line-per-method cheat sheet, see
+> [`METHOD_REFERENCE.md`](METHOD_REFERENCE.md).
+
 ## Table of Contents
 1. [Overview](#overview)
 2. [Core Classes](#core-classes)
@@ -8,6 +13,8 @@
 5. [Track Management](#track-management)
 6. [Environment Management](#environment-management)
 7. [Examples](#examples)
+8. [Quantile Normalization](#quantile-normalization)
+9. [Application layer (`chorus.analysis`)](#application-layer-chorusanalysis) — high-level variant analysis, discovery, batch scoring, fine-mapping, sequence engineering
 
 ## Overview
 
@@ -500,6 +507,216 @@ oracle.save_predictions_as_bedgraph(
 )
 ```
 
+## Per-Track Normalization
+
+Chorus uses **per-track CDFs** to normalize variant effects, activity
+percentiles, and IGV signal visualization. Each oracle has a single
+`{oracle}_pertrack.npz` file containing three CDF matrices:
+
+| CDF | Shape | Used for |
+|-----|-------|----------|
+| `effect_cdfs` | `(n_tracks, 10000)` | Variant effect %ile (table column) |
+| `summary_cdfs` | `(n_tracks, 10000)` | Activity %ile (table column) |
+| `perbin_cdfs` | `(n_tracks, 10000)` | IGV per-bin visualization |
+
+### get_pertrack_normalizer()
+
+Factory function that returns a `PerTrackNormalizer` for a given oracle.
+
+```python
+from chorus.analysis import get_pertrack_normalizer
+
+norm = get_pertrack_normalizer('enformer')
+# Loads ~/.chorus/backgrounds/enformer_pertrack.npz
+```
+
+**Parameters:**
+- `oracle_name` (str): Name of the oracle (`'enformer'`, `'borzoi'`,
+  `'alphagenome'`, `'chrombpnet'`, `'sei'`, `'legnet'`)
+- `cache_dir` (str, optional): Defaults to `~/.chorus/backgrounds/`
+
+**Returns:**
+- `PerTrackNormalizer` instance, or `None` if no NPZ file exists
+
+### PerTrackNormalizer
+
+Key methods (all parameterized by `track_id` — e.g. an ENCODE identifier
+like `ENCFF833POA`):
+
+- `effect_percentile(oracle, track_id, raw_score, signed=False)` →
+  variant effect percentile [0, 1] (or [-1, 1] for signed layers)
+- `activity_percentile(oracle, track_id, raw_signal)` → genome-wide
+  activity percentile [0, 1]
+- `perbin_percentile_batch(oracle, track_id, raw_values)` → per-bin
+  percentiles [0, 1] for visualization
+- `perbin_floor_rescale_batch(oracle, track_id, raw_values, floor_pctile,
+  peak_pctile, max_value)` → linear rescale into [0, max_value] using
+  CDF-derived noise floor and peak threshold (default for IGV)
+
+### IGV visualization modes
+
+The IGV browser embedded in HTML reports has two modes:
+
+**1. Layer-aware floor rescale (default)** — for each track:
+```
+display = (raw - cdf[floor_pctile]) / (cdf[peak_pctile] - cdf[floor_pctile])
+```
+Clipped to `[0, 3.0]`. Sharp signals (CAGE, TF, DNASE) use `floor=p95`,
+broad histones use `floor=p90`. All tracks on same comparable scale.
+
+**2. Raw autoscale** — pass `igv_raw=True` to use original values with
+per-track autoscale:
+```python
+from chorus.analysis import build_variant_report
+
+report = build_variant_report(
+    variant_result, oracle_name='enformer',
+    normalizer=norm, igv_raw=True,  # use raw autoscale in IGV
+)
+```
+
+Both modes show the same peak positions; the difference is whether tracks
+share a common scale (rescale) or each has its own (raw autoscale).
+
+### Building per-track CDFs
+
+Use the standalone scripts in `scripts/build_backgrounds_<oracle>.py`.
+See `scripts/README.md` for the full pipeline.
+
+```bash
+mamba run -n chorus-enformer python scripts/build_backgrounds_enformer.py --part variants  --gpu 0
+mamba run -n chorus-enformer python scripts/build_backgrounds_enformer.py --part baselines --gpu 1
+mamba run -n chorus              python scripts/build_backgrounds_enformer.py --part merge
+```
+
+The scripts use ~30K positions (random + cCREs + TSSs + gene bodies) and
+collect 32 random bins per position per track. RNA-seq tracks (Borzoi,
+AlphaGenome) use exon-precise sampling.
+
+### Automatic download
+
+Per-track backgrounds are hosted on HuggingFace at
+[lucapinello/chorus-backgrounds](https://huggingface.co/datasets/lucapinello/chorus-backgrounds)
+and downloaded automatically the first time `get_pertrack_normalizer()`
+is called (or when an oracle is loaded via MCP). No HuggingFace account
+needed — the dataset is public.
+
+```python
+# Explicit download (usually not needed — auto-downloaded on first use)
+from chorus.analysis import download_pertrack_backgrounds
+download_pertrack_backgrounds("enformer")  # → ~/.chorus/backgrounds/enformer_pertrack.npz
+```
+
+### Auto-discovery via MCP
+
+When an oracle is loaded via the MCP server (`load_oracle`), the
+corresponding `{oracle}_pertrack.npz` is auto-loaded by
+`OracleStateManager._auto_load_normalizer()`. Tools like
+`analyze_variant_multilayer` and `discover_variant` then use it
+automatically.
+
+If the per-track NPZ is missing, the manager attempts to download it
+from HuggingFace, then falls back to legacy per-layer `.npy` files
+via `QuantileNormalizer`.
+
+### Legacy: QuantileNormalizer
+
+The older per-layer `QuantileNormalizer` (one CDF per regulatory layer
+per oracle, stored as `{oracle}_{layer}.npy`) is still supported for
+backwards compatibility. Both normalizer types implement compatible
+interfaces and the variant analysis code paths handle either via
+`isinstance(normalizer, PerTrackNormalizer)` checks.
+
+The in-library `chorus.analysis.build_backgrounds.build_variant_backgrounds()`
+function builds legacy per-layer backgrounds for quick test scenarios.
+For production use, prefer the standalone per-track scripts.
+
+### Python API Example
+
+```python
+from chorus.analysis import get_normalizer, build_variant_report
+
+# Load normalizer
+normalizer = get_normalizer('alphagenome')
+
+# Pass to build_variant_report
+report = build_variant_report(
+    variant_result,
+    oracle_name='alphagenome',
+    normalizer=normalizer,
+)
+```
+
+## Application layer (`chorus.analysis`)
+
+The `chorus.analysis` module is the high-level surface most users actually
+want. Each function below takes a loaded oracle and returns a structured
+report object with `to_markdown()`, `to_dict()`, `to_dataframe()` and
+(where applicable) `to_html()` / `to_tsv()`.
+
+Every report accepts an optional `analysis_request: AnalysisRequest` that
+preserves the user's original natural-language question and renders it at
+the top of every output — so a teammate opening an HTML report a month
+later can tell what was asked.
+
+### `build_variant_report(variant_result, oracle_name, gene_name=None, normalizer=None, igv_raw=False, analysis_request=None) -> VariantReport`
+
+Score a variant across all modality-specific layers (chromatin, TF binding,
+histone, TSS, gene expression, splicing) from a `predict_variant_effect()`
+result. Returns a `VariantReport` whose `to_markdown()` renders per-layer
+tables capped at the top 10 tracks per layer (full ordering still in the
+JSON / DataFrame).
+
+### `discover_variant_effects(oracle, oracle_name, variant_position, alleles, top_n_per_layer=10, top_n_cell_types=8, gene_name=None, normalizer=None, output_path=None) -> dict`
+
+Score **every** track the oracle knows about (thousands for AlphaGenome),
+rank by effect magnitude, and build a `VariantReport` for the selected top
+tracks per layer/cell-type. This is the recommended entry point when you
+don't want to hand-pick `assay_ids`. Returns `{"report": VariantReport,
+"total_tracks_scored": int, "selected_tracks": int, ...}`.
+
+### `discover_and_report(oracle, variant_position, alleles, top_n=5, min_effect=0.15, ...) -> dict`
+
+Two-stage cell-type discovery. First screens all DNASE/ATAC tracks to rank
+cell types by chromatin effect, then for each of the top `top_n` cell types
+runs a full multi-layer analysis. Returns `{"hits": [...],
+"reports": {cell_type: VariantReport}}`.
+
+### `score_variant_batch(oracle, variants, assay_ids, gene_name=None, normalizer=None, analysis_request=None) -> BatchResult`
+
+Rank a list of variants by effect magnitude. Each entry in `variants` is a
+dict with keys `chrom`, `pos`, `ref`, `alt`, and optional `id`. Pass
+`assay_ids=None` (or `[]`) to score all oracle tracks. Returns a
+`BatchResult` with `to_markdown()`, `to_tsv()`, `to_html()`, `to_dict()`
+and `to_dataframe()`.
+
+### `prioritize_causal_variants(oracle, lead_variant, ld_variants, assay_ids, gene_name=None, oracle_name=None, weights=None, normalizer=None, analysis_request=None) -> CausalResult`
+
+GWAS fine-mapping: score each LD proxy across all regulatory layers and
+rank by a composite causal score combining (1) max effect, (2) number of
+layers affected, (3) directional convergence across layers, (4) baseline
+activity at the variant site. Weights are configurable via `CausalWeights`.
+
+### `analyze_region_swap(oracle, region, replacement_sequence, assay_ids, gene_name=None, normalizer=None, oracle_name=None) -> VariantReport`
+
+Replace a genomic region with a custom DNA sequence and score the resulting
+regulatory changes across all layers. The reference-vs-replacement output
+has the same shape as a variant report so all the same renderers apply.
+
+### `simulate_integration(oracle, position, construct_sequence, assay_ids, gene_name=None, normalizer=None, oracle_name=None) -> VariantReport`
+
+Score the disruption caused by inserting a DNA construct at a genomic
+position — used for AAV/transgene integration site analysis.
+
+### `AnalysisRequest`
+
+Dataclass carried on every report. Fields: `user_prompt`, `tool_name`,
+`oracle_name`, `normalizer_name`, `tracks_requested`, `cell_types`,
+`notes`, `generated_at`. Built automatically by the MCP wrappers when
+Claude calls any analysis tool; you can also construct one directly and
+pass it into `build_variant_report(..., analysis_request=...)` when using
+the Python API. See `chorus/analysis/analysis_request.py`.
+
 ## Notes on Oracle-Specific Behavior
 
 ### Enformer
@@ -508,10 +725,30 @@ oracle.save_predictions_as_bedgraph(
 - Uses ENCODE and CAGE track identifiers
 - Supports gene expression analysis via CAGE at TSS
 
-### Future Oracles
-- **Borzoi**: Similar to Enformer, enhanced performance
-- **ChromBPNet**: Base-resolution, different track naming
-- **Sei**: 21,907 profiles, custom track names
+### Borzoi
+- 524,288 bp input / 6,144 output bins at 32 bp resolution
+- Strong distal-gene expression prediction; best choice when the target gene TSS is far from the variant
+- Uses ENCODE track identifiers
+
+### ChromBPNet / BPNet
+- 2,114 bp input at **single-base resolution**
+- Separate model per assay/cell-type/TF combination — load with
+  `load_oracle("chrombpnet", assay="ATAC", cell_type="K562")` or
+  `load_oracle("chrombpnet", assay="CHIP", cell_type="K562", TF="GATA1")`
+- Ideal for motif-resolution TF-binding disruption
+
+### Sei
+- 4,096 bp input; 40 sequence-class outputs (chromatin state classification)
+- Use for high-level regulatory element classification, not per-track scoring
+
+### LegNet
+- 200 bp input, MPRA-style promoter activity predictions
+- Scalar output per cell type; no per-bin tracks
+
+### AlphaGenome
+- **1 Mb input / 1 bp resolution / 5,731 tracks** — the most comprehensive oracle
+- Requires HuggingFace gated-model access (see main README)
+- Recommended default for multi-layer variant analysis
 
 ## Error Handling
 
