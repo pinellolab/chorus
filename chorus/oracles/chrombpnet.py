@@ -221,32 +221,47 @@ class ChromBPNetOracle(OracleBase):
             finally:
                 fcntl.flock(lock_fh, fcntl.LOCK_UN)
 
-        for fold in range(5):
-            # Now select model coming from fold 0 (ChromBPNet was trained with CV)
-            models_dir = os.path.join(
-                extract_folder,
-                f"fold_{fold}"
-            )
-            tar_mappings = {
-                f"model.bias_scaled.fold_{fold}.*.tar": 'bias_scaled',
-                f"model.chrombpnet.fold_{fold}.*.tar": 'chrombpnet',
-                f"model.chrombpnet_nobias.fold_{fold}.*.tar": 'chrombpnet_nobias'
-            }
-            for t_name, t_type in tar_mappings.items():
-                t_pattern = os.path.join(models_dir, t_name)
-                import glob
-                t_path =glob.glob(t_pattern)[0] # one file for pattern
-                t_out = os.path.join(models_dir, t_type)
+        # Nested tar extraction (one tar per model_type per fold) — must be
+        # inside the same lock as the outer extraction so two concurrent
+        # callers don't race on the inner directories. Re-acquire the lock
+        # for the nested step and skip any t_out that is already populated.
+        with open(lock_path, "w") as lock_fh:
+            fcntl.flock(lock_fh, fcntl.LOCK_EX)
+            try:
+                for fold in range(5):
+                    models_dir = os.path.join(extract_folder, f"fold_{fold}")
+                    tar_mappings = {
+                        f"model.bias_scaled.fold_{fold}.*.tar": 'bias_scaled',
+                        f"model.chrombpnet.fold_{fold}.*.tar": 'chrombpnet',
+                        f"model.chrombpnet_nobias.fold_{fold}.*.tar": 'chrombpnet_nobias'
+                    }
+                    for t_name, t_type in tar_mappings.items():
+                        t_pattern = os.path.join(models_dir, t_name)
+                        import glob
+                        matches = glob.glob(t_pattern)
+                        if not matches:
+                            continue
+                        t_path = matches[0]
+                        t_out = os.path.join(models_dir, t_type)
 
-                try:
-                    with tarfile.open(t_path, "r:") as tar:
-                        tar.extractall(path=t_out)
-                except:
-                    # If the "tar file" is actually a directory, rename it to chrombpnet
-                    if os.path.isdir(t_path):
-                        os.rename(t_path, os.path.join(os.path.dirname(t_path), t_type))
-                    else:
-                        raise
+                        # Skip if already extracted (by concurrent caller
+                        # or by a previous run). Populated = directory that
+                        # exists and is non-empty.
+                        if os.path.isdir(t_out) and os.listdir(t_out):
+                            continue
+
+                        try:
+                            with tarfile.open(t_path, "r:") as tar:
+                                tar.extractall(path=t_out)
+                        except Exception:
+                            # "tar file" is actually a pre-extracted
+                            # directory — rename it in place.
+                            if os.path.isdir(t_path) and not os.path.exists(t_out):
+                                os.rename(t_path, t_out)
+                            else:
+                                raise
+            finally:
+                fcntl.flock(lock_fh, fcntl.LOCK_UN)
                 
 
     def load_pretrained_model(
