@@ -1,20 +1,20 @@
 allele	layer	assay_id	assay_type	cell_type	description	ref_value	alt_value	raw_score	quantile_score	ref_signal_percentile	note	focus_cell_type
-alt_1	chromatin_accessibility	DNASE/EFO:0005726 DNase-seq/.	DNASE	LNCaP clone FGC		61.71198654174805	233.72198486328125	1.904139849941714	1.0	0.8633		LNCaP clone FGC
-alt_1	histone_marks	CHIP_HISTONE/EFO:0005726 Histone ChIP-seq H3K4me3/.	CHIP	LNCaP clone FGC		1878.75	3726.0	0.9874740176656142	1.0	0.8824		LNCaP clone FGC
-alt_1	tf_binding	CHIP_TF/EFO:0005726 TF ChIP-seq CTCF/.	CHIP	LNCaP clone FGC		406.0	477.5	0.2334901302197785	1.0	0.8587		LNCaP clone FGC
-alt_1	tss_activity	CAGE/hCAGE CL:0002306/+	CAGE	epithelial cell of proximal tubule	variant site	41.845367431640625	62.98046875	0.5784923380339155	1.0	1.0		epithelial cell of proximal tubule
-alt_1	tss_activity	CAGE/hCAGE CL:0002306/-	CAGE	epithelial cell of proximal tubule	variant site	9.468170166015625	16.249740600585938	0.7205653854771252	1.0	1.0		epithelial cell of proximal tubule
-alt_1	chromatin_accessibility	DNASE/CL:0002306 DNase-seq/.	DNASE	epithelial cell of proximal tubule		78.9460220336914	245.65098571777344	1.6253728981756115	1.0	0.881		epithelial cell of proximal tubule
-alt_1	gene_expression	RNA_SEQ/CL:0002306 total RNA-seq/+	RNA	epithelial cell of proximal tubule	SORT1 (exons)	0.057856996854146324	0.059559734094710576	0.028519498687589934	1.0	0.2561142017424163		epithelial cell of proximal tubule
-alt_1	gene_expression	RNA_SEQ/CL:0002306 total RNA-seq/-	RNA	epithelial cell of proximal tubule	SORT1 (exons)	285.14539882114957	287.2021237327939	0.007186985167448837	1.0	1.0		epithelial cell of proximal tubule
-alt_1	histone_marks	CHIP_HISTONE/CL:0002306 Histone ChIP-seq H3K4me3/.	CHIP	epithelial cell of proximal tubule		4505.5	6673.0	0.5665442958270723	1.0	0.8831		epithelial cell of proximal tubule
-alt_1	tf_binding	CHIP_TF/CL:0002306 TF ChIP-seq CTCF/.	CHIP	epithelial cell of proximal tubule		456.5	514.0	0.17080068889917582	1.0	0.8925		epithelial cell of proximal tubule
-alt_1	splicing	SPLICE_SITE_USAGE/usage_CL:0002306 total RNA-seq/+	SPLICE_SITES	epithelial cell of proximal tubule		0.007767856121063232	0.006935060024261475	-0.0011927027630022858	1.0	0.8766		epithelial cell of proximal tubule
-alt_1	splicing	SPLICE_SITE_USAGE/usage_CL:0002306 total RNA-seq/-	SPLICE_SITES	epithelial cell of proximal tubule		0.0011988282203674316	0.0011803507804870605	-2.662563730591846e-05		0.6999		epithelial cell of proximal tubule
-alt_1	tss_activity	CAGE/hCAGE CL:0002584/+	CAGE	renal cortical epithelial cell	variant site	40.81144714355469	59.88970947265625	0.5423004517017918	1.0	1.0		renal cortical epithelial cell
-alt_1	tss_activity	CAGE/hCAGE CL:0002584/-	CAGE	renal cortical epithelial cell	variant site	8.518058776855469	14.232376098632812	0.6784017366946545	1.0	1.0		renal cortical epithelial cell
-alt_1	chromatin_accessibility	DNASE/CL:0002584 DNase-seq/.	DNASE	renal cortical epithelial cell		217.67559814453125	616.5305786132812	1.4977183371703613	1.0	0.9362		renal cortical epithelial cell
-alt_1	gene_expression	RNA_SEQ/CL:0002584 total RNA-seq/+	RNA	renal cortical epithelial cell	SORT1 (exons)	0.29166658719380695	0.30205404190790086	0.03487711231787789	1.0	0.6172982051012911		renal cortical epithelial cell
-alt_1	gene_expression	RNA_SEQ/CL:0002584 total RNA-seq/-	RNA	renal cortical epithelial cell	SORT1 (exons)	466.2130185081845	470.1560349237351	0.008421959878810144	1.0	1.0		renal cortical epithelial cell
-alt_1	splicing	SPLICE_SITE_USAGE/usage_CL:0002584 total RNA-seq/+	SPLICE_SITES	renal cortical epithelial cell		0.0062795281410217285	0.0056955814361572266	-0.0008374428042341469		0.8588		renal cortical epithelial cell
-alt_1	splicing	SPLICE_SITE_USAGE/usage_CL:0002584 total RNA-seq/-	SPLICE_SITES	renal cortical epithelial cell		0.0010473132133483887	0.001056075096130371	1.2627444628784663e-05		0.6307		renal cortical epithelial cell
+alt_1	chromatin_accessibility	DNASE/EFO:0005726 DNase-seq/.	DNASE	LNCaP clone FGC		59.06143569946289	224.09661865234375	1.9060335187507802	1.0	0.8607		LNCaP clone FGC
+alt_1	histone_marks	CHIP_HISTONE/EFO:0005726 Histone ChIP-seq H3K4me3/.	CHIP	LNCaP clone FGC		1885.5	3779.0	1.0026741342983254	1.0	0.8824		LNCaP clone FGC
+alt_1	tf_binding	CHIP_TF/EFO:0005726 TF ChIP-seq CTCF/.	CHIP	LNCaP clone FGC		399.5	469.5	0.23239248031982662	1.0	0.8561		LNCaP clone FGC
+alt_1	tss_activity	CAGE/hCAGE CL:0002306/+	CAGE	epithelial cell of proximal tubule	variant site	43.69255065917969	65.67138671875	0.5770333510123801	1.0	1.0		epithelial cell of proximal tubule
+alt_1	tss_activity	CAGE/hCAGE CL:0002306/-	CAGE	epithelial cell of proximal tubule	variant site	10.107124328613281	17.278411865234375	0.7186553795700389	1.0	1.0		epithelial cell of proximal tubule
+alt_1	chromatin_accessibility	DNASE/CL:0002306 DNase-seq/.	DNASE	epithelial cell of proximal tubule		80.36067199707031	251.53372192382812	1.6340725497858855	1.0	0.8818		epithelial cell of proximal tubule
+alt_1	gene_expression	RNA_SEQ/CL:0002306 total RNA-seq/+	RNA	epithelial cell of proximal tubule	SORT1 (exons)	0.06293438942659468	0.06476748699233645	0.028268205247971405	1.0	0.2626220216227564		epithelial cell of proximal tubule
+alt_1	gene_expression	RNA_SEQ/CL:0002306 total RNA-seq/-	RNA	epithelial cell of proximal tubule	SORT1 (exons)	292.4557262602307	294.04662068684894	0.005425018029874101	1.0	1.0		epithelial cell of proximal tubule
+alt_1	histone_marks	CHIP_HISTONE/CL:0002306 Histone ChIP-seq H3K4me3/.	CHIP	epithelial cell of proximal tubule		4687.0	7012.0	0.581059158250778	1.0	0.8846		epithelial cell of proximal tubule
+alt_1	tf_binding	CHIP_TF/CL:0002306 TF ChIP-seq CTCF/.	CHIP	epithelial cell of proximal tubule		449.5	510.0	0.18179618512408274	1.0	0.8899		epithelial cell of proximal tubule
+alt_1	splicing	SPLICE_SITE_USAGE/usage_CL:0002306 total RNA-seq/+	SPLICE_SITES	epithelial cell of proximal tubule		0.007854044437408447	0.006995648145675659	-0.0012292769556805682	1.0	0.8772		epithelial cell of proximal tubule
+alt_1	splicing	SPLICE_SITE_USAGE/usage_CL:0002306 total RNA-seq/-	SPLICE_SITES	epithelial cell of proximal tubule		0.0011637117713689804	0.0011455165222287178	-2.621992181048252e-05		0.6928		epithelial cell of proximal tubule
+alt_1	tss_activity	CAGE/hCAGE CL:0002584/+	CAGE	renal cortical epithelial cell	variant site	42.76509094238281	62.743377685546875	0.5424948994868479	1.0	1.0		renal cortical epithelial cell
+alt_1	tss_activity	CAGE/hCAGE CL:0002584/-	CAGE	renal cortical epithelial cell	variant site	9.102386474609375	15.141288757324219	0.6760596319259881	1.0	1.0		renal cortical epithelial cell
+alt_1	chromatin_accessibility	DNASE/CL:0002584 DNase-seq/.	DNASE	renal cortical epithelial cell		224.02110290527344	629.1871337890625	1.4857199934228096	1.0	0.9376		renal cortical epithelial cell
+alt_1	gene_expression	RNA_SEQ/CL:0002584 total RNA-seq/+	RNA	renal cortical epithelial cell	SORT1 (exons)	0.33197769664582755	0.3435433478582473	0.03414440016599535	1.0	0.6730345334313005		renal cortical epithelial cell
+alt_1	gene_expression	RNA_SEQ/CL:0002584 total RNA-seq/-	RNA	renal cortical epithelial cell	SORT1 (exons)	482.8240443638393	486.17857724144346	0.006923695106244724	1.0	1.0		renal cortical epithelial cell
+alt_1	splicing	SPLICE_SITE_USAGE/usage_CL:0002584 total RNA-seq/+	SPLICE_SITES	renal cortical epithelial cell		0.006350591778755188	0.005748562514781952	-0.0008633219269232172		0.8597		renal cortical epithelial cell
+alt_1	splicing	SPLICE_SITE_USAGE/usage_CL:0002584 total RNA-seq/-	SPLICE_SITES	renal cortical epithelial cell		0.001015346497297287	0.0010238164104521275	1.220705561793086e-05		0.6212		renal cortical epithelial cell
