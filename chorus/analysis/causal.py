@@ -291,7 +291,8 @@ class CausalResult:
                     sign = "+" if ts.raw_score >= 0 else ""
                     cell = f"{sign}{ts.raw_score:.3f}"
                     if ts.quantile_score is not None:
-                        cell += f" ({ts.quantile_score:.0%})"
+                        from chorus.analysis.variant_report import _fmt_percentile
+                        cell += f" ({_fmt_percentile(ts.quantile_score)})"
                     row += f" {cell} |"
                 else:
                     row += " — |"
