@@ -1,0 +1,61 @@
+name: tests
+
+# Fast CI — runs the 303-test non-integration suite on every PR and on
+# pushes to main-line branches. Deliberately does NOT run:
+#   - tests/test_smoke_predict.py (needs ~10 GB of oracle models — won't
+#     fit on the 14 GB GitHub runner disk)
+#   - tests/test_integration.py (marked `integration` — hits HF, ENCODE,
+#     and spawns chorus-mcp; 5–10 min per test)
+# Those are runnable manually by maintainers with:
+#   pytest tests/test_smoke_predict.py -v   # full 6-oracle smoke
+#   pytest -m integration -v                # CDF/ChromBPNet/MCP E2E
+
+on:
+  push:
+    branches: [main, chorus-applications]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fast-suite:
+    name: fast suite (Linux, Python 3.10)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Miniforge + mamba
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-variant: Miniforge3
+          miniforge-version: latest
+          activate-environment: chorus
+          environment-file: environment.yml
+          use-mamba: true
+          auto-update-conda: false
+
+      - name: Install chorus (editable) + dev extras
+        run: |
+          pip install -e ".[dev]" || pip install -e .
+          pip install pytest pytest-cov
+
+      - name: Show versions
+        run: |
+          python -c "import chorus; print('chorus', chorus.__version__)"
+          python -c "import sys; print('python', sys.version)"
+          pytest --version
+
+      - name: Run fast suite (non-integration, non-smoke)
+        run: |
+          pytest tests/ \
+            --ignore=tests/test_smoke_predict.py \
+            -m "not integration" \
+            -q \
+            --durations=10

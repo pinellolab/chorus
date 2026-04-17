@@ -1,0 +1,302 @@
+{
+  "sentinel": "rs12740374",
+  "oracle": "alphagenome",
+  "gene_name": "SORT1",
+  "population": "",
+  "cell_types": [
+    "HepG2"
+  ],
+  "n_variants": 11,
+  "weights": {
+    "max_effect": 0.35,
+    "n_layers": 0.25,
+    "convergence": 0.2,
+    "ref_activity": 0.2
+  },
+  "top_candidate": {
+    "variant_id": "rs12740374",
+    "composite": 0.9639126313034743,
+    "max_effect": 0.4488494264784638,
+    "n_layers_affected": 4,
+    "convergence": 1.0,
+    "top_layer": "chromatin_accessibility"
+  },
+  "rankings": [
+    {
+      "variant_id": "rs12740374",
+      "chrom": "chr1",
+      "position": 109274968,
+      "ref": "G",
+      "alt": "T",
+      "r2": 1.0,
+      "is_sentinel": true,
+      "gene_name": "SORT1",
+      "cell_type": "",
+      "composite": 0.9639,
+      "max_effect": 0.4488,
+      "n_layers_affected": 4,
+      "convergence": 1.0,
+      "ref_activity": 7113.8781,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/EFO:0001187 DNase-seq/.",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.4488,
+        "tf_binding": 0.3766,
+        "histone_marks": 0.1801,
+        "tss_activity": 0.2531
+      }
+    },
+    {
+      "variant_id": "rs4970836",
+      "chrom": "chr1",
+      "position": 109279175,
+      "ref": "G",
+      "alt": "A",
+      "r2": 0.907,
+      "is_sentinel": false,
+      "gene_name": "SORT1",
+      "cell_type": "",
+      "composite": 0.5828,
+      "max_effect": -0.4018,
+      "n_layers_affected": 1,
+      "convergence": 1.0,
+      "ref_activity": 1664.4785,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE EFO:0001187/-",
+      "per_layer_scores": {
+        "chromatin_accessibility": -0.0392,
+        "tf_binding": -0.027,
+        "histone_marks": -0.0147,
+        "tss_activity": -0.4018
+      }
+    },
+    {
+      "variant_id": "rs1624712",
+      "chrom": "chr1",
+      "position": 109275908,
+      "ref": "C",
+      "alt": "T",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "SORT1",
+      "cell_type": "",
+      "composite": 0.4903,
+      "max_effect": 0.1226,
+      "n_layers_affected": 1,
+      "convergence": 1.0,
+      "ref_activity": 6315.1204,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/EFO:0001187 DNase-seq/.",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.1226,
+        "tf_binding": 0.0483,
+        "histone_marks": 0.0262,
+        "tss_activity": 0.0353
+      }
+    },
+    {
+      "variant_id": "rs660240",
+      "chrom": "chr1",
+      "position": 109275216,
+      "ref": "T",
+      "alt": "C",
+      "r2": 0.9509,
+      "is_sentinel": false,
+      "gene_name": "SORT1",
+      "cell_type": "",
+      "composite": 0.2492,
+      "max_effect": 0.0761,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 8377.7026,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE EFO:0001187/-",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.0708,
+        "tf_binding": 0.0279,
+        "histone_marks": 0.0305,
+        "tss_activity": 0.0761
+      }
+    },
+    {
+      "variant_id": "rs142678968",
+      "chrom": "chr1",
+      "position": 109275536,
+      "ref": "C",
+      "alt": "T",
+      "r2": 0.9509,
+      "is_sentinel": false,
+      "gene_name": "SORT1",
+      "cell_type": "",
+      "composite": 0.1961,
+      "max_effect": -0.0417,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 7490.431,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE EFO:0001187/+",
+      "per_layer_scores": {
+        "chromatin_accessibility": -0.0202,
+        "tf_binding": -0.0127,
+        "histone_marks": -0.0014,
+        "tss_activity": -0.0417
+      }
+    },
+    {
+      "variant_id": "rs1626484",
+      "chrom": "chr1",
+      "position": 109275684,
+      "ref": "G",
+      "alt": "T",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "SORT1",
+      "cell_type": "",
+      "composite": 0.1945,
+      "max_effect": 0.0666,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 6731.7292,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE EFO:0001187/+",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.0003,
+        "tf_binding": 0.0027,
+        "histone_marks": -0.0028,
+        "tss_activity": 0.0666
+      }
+    },
+    {
+      "variant_id": "rs7528419",
+      "chrom": "chr1",
+      "position": 109274570,
+      "ref": "A",
+      "alt": "G",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "SORT1",
+      "cell_type": "",
+      "composite": 0.1741,
+      "max_effect": 0.0196,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 7344.6182,
+      "top_layer": "histone_marks",
+      "top_track": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.0078,
+        "tf_binding": 0.0083,
+        "histone_marks": 0.0196,
+        "tss_activity": -0.0084
+      }
+    },
+    {
+      "variant_id": "rs602633",
+      "chrom": "chr1",
+      "position": 109278889,
+      "ref": "T",
+      "alt": "G",
+      "r2": 0.8582,
+      "is_sentinel": false,
+      "gene_name": "SORT1",
+      "cell_type": "",
+      "composite": 0.0353,
+      "max_effect": 0.037,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1992.9382,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/EFO:0001187 DNase-seq/.",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.037,
+        "tf_binding": 0.0322,
+        "histone_marks": 0.0029,
+        "tss_activity": -0.0156
+      }
+    },
+    {
+      "variant_id": "rs56960352",
+      "chrom": "chr1",
+      "position": 109278685,
+      "ref": "G",
+      "alt": "T",
+      "r2": 0.907,
+      "is_sentinel": false,
+      "gene_name": "SORT1",
+      "cell_type": "",
+      "composite": 0.0203,
+      "max_effect": -0.0151,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 2084.6308,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/EFO:0001187 DNase-seq/.",
+      "per_layer_scores": {
+        "chromatin_accessibility": -0.0151,
+        "tf_binding": -0.0051,
+        "histone_marks": -0.0028,
+        "tss_activity": -0.0091
+      }
+    },
+    {
+      "variant_id": "rs599839",
+      "chrom": "chr1",
+      "position": 109279544,
+      "ref": "G",
+      "alt": "A",
+      "r2": 0.907,
+      "is_sentinel": false,
+      "gene_name": "SORT1",
+      "cell_type": "",
+      "composite": 0.0072,
+      "max_effect": 0.0241,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1373.4539,
+      "top_layer": "tf_binding",
+      "top_track": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.0031,
+        "tf_binding": 0.0241,
+        "histone_marks": 0.0034,
+        "tss_activity": 0.0112
+      }
+    },
+    {
+      "variant_id": "rs1277930",
+      "chrom": "chr1",
+      "position": 109279521,
+      "ref": "G",
+      "alt": "A",
+      "r2": 0.907,
+      "is_sentinel": false,
+      "gene_name": "SORT1",
+      "cell_type": "",
+      "composite": 0.006,
+      "max_effect": -0.0217,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1399.3679,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE EFO:0001187/-",
+      "per_layer_scores": {
+        "chromatin_accessibility": -0.0054,
+        "tf_binding": -0.0157,
+        "histone_marks": -0.0019,
+        "tss_activity": -0.0217
+      }
+    }
+  ],
+  "analysis_request": {
+    "user_prompt": "Fine-map the SORT1 LDL cholesterol GWAS locus. Sentinel is rs12740374 with 11 LD variants (r\u00b2\u22650.85). Score each variant across HepG2 DNASE, CEBPA/CEBPB ChIP, H3K27ac, and CAGE. Rank by composite causal evidence. Gene is SORT1.",
+    "tool_name": "fine_map_causal_variant",
+    "oracle_name": "alphagenome",
+    "normalizer_name": "per-track background CDFs",
+    "tracks_requested": "6 HepG2 tracks",
+    "cell_types": [
+      "HepG2"
+    ],
+    "notes": [],
+    "generated_at": "2026-04-17 06:51 UTC"
+  }
+}

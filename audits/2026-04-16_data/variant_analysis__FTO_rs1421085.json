@@ -1,0 +1,103 @@
+{
+  "app_name": "variant_analysis__FTO_rs1421085",
+  "path": "examples/applications/variant_analysis/FTO_rs1421085",
+  "prompt": "Analyze rs1421085 (chr16:53767042 T>C) in HepG2 cells. Gene is FTO. Using HepG2 as the nearest available metabolic cell type.",
+  "md_header": {
+    "tool": "analyze_variant_multilayer",
+    "oracle": "alphagenome",
+    "normalizer": "per-track background CDFs",
+    "tracks_requested": "6 HepG2/K562 tracks",
+    "gene": "FTO",
+    "generated": "2026-04-12 23:50 UTC"
+  },
+  "top_keys": [
+    "variant",
+    "oracle",
+    "gene_name",
+    "nearby_genes",
+    "alleles",
+    "analysis_request"
+  ],
+  "tool": "analyze_variant_multilayer",
+  "oracle": "alphagenome",
+  "variant": {
+    "chrom": "chr16",
+    "position": 53767042,
+    "ref_allele": "T",
+    "alt_alleles": [
+      "C"
+    ]
+  },
+  "n_tracks_scored": 16,
+  "assay_ids": [
+    "CAGE/hCAGE EFO:0001187/+",
+    "CAGE/hCAGE EFO:0001187/-",
+    "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+    "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+    "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",
+    "DNASE/EFO:0001187 DNase-seq/."
+  ],
+  "layers_scored": [
+    "chromatin_accessibility",
+    "histone_marks",
+    "tf_binding",
+    "tss_activity"
+  ],
+  "track_selection_check": {
+    "cell_types_claimed_in_prompt": [
+      "HepG2"
+    ],
+    "cell_types_in_tracks": {
+      "HepG2": 16
+    },
+    "mismatches": []
+  },
+  "md_vs_json_consistency": {
+    "summary_text": "No strong regulatory effects detected across any layer.",
+    "summary_direction": "mixed/neutral",
+    "pos_word_hits": 0,
+    "neg_word_hits": 0,
+    "per_layer_dominant_sign": {
+      "chromatin_accessibility": "-",
+      "tf_binding": "-",
+      "histone_marks": "-",
+      "tss_activity": "-"
+    },
+    "per_layer_dominant_magnitude": {
+      "chromatin_accessibility": "-0.037",
+      "tf_binding": "-0.033",
+      "histone_marks": "-0.045",
+      "tss_activity": "-0.037"
+    }
+  },
+  "tsv_vs_json_consistency": {
+    "tsv_rows": 16,
+    "json_tracks": 16,
+    "tsv_columns": [
+      "allele",
+      "layer",
+      "assay_id",
+      "region_label",
+      "assay_type",
+      "cell_type",
+      "ref_value",
+      "alt_value",
+      "raw_score",
+      "quantile_score",
+      "ref_signal_percentile",
+      "note"
+    ]
+  },
+  "html_files": [
+    "examples/applications/variant_analysis/FTO_rs1421085/rs1421085_FTO_alphagenome_report.html"
+  ],
+  "screenshots": [
+    "audits/2026-04-16_screenshots/variant_analysis__FTO_rs1421085__rs1421085_FTO_alphagenome_report.png"
+  ],
+  "literature_claim": {
+    "paper": "Claussnitzer 2015 NEJM",
+    "expected_direction": "C-allele \u2192 disrupts ARID5B binding, IRX3/5 up in adipocyte progenitors",
+    "note": "HepG2 tracks are the wrong tissue; finding is tissue-specific to adipocyte lineage. Expect weak/no-signal in HepG2 \u2014 this is OK."
+  },
+  "flags": []
+}

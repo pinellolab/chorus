@@ -35,6 +35,15 @@ dependencies:
     - tensorflow==2.8.0 #>=2.8.0,<2.15.0
     - tensorflow-probability==0.15.0 #>=0.15.0
     - tensorflow-estimator==2.8.0
+    # CUDA support for GPU (Linux only — macOS adaptation removes these)
+    - nvidia-cublas-cu11>=11.11
+    - nvidia-cuda-cupti-cu11>=11.8
+    - nvidia-cuda-runtime-cu11>=11.8
+    - nvidia-cudnn-cu11>=8.1,<9.0  # TF 2.8 needs cuDNN 8.x, not 9.x
+    - nvidia-cufft-cu11>=10.9
+    - nvidia-curand-cu11>=10.3
+    - nvidia-cusolver-cu11>=11.4
+    - nvidia-cusparse-cu11>=11.7
     
     # Genomics utilities
     - modisco-lite==2.0.7 #>=2.0.0

@@ -320,8 +320,13 @@ class OracleBase(ABC):
         
         intervals = {}
         real_pos = region_interval.ref2query(var_pos, ref_global=True)
-        if region_interval[real_pos] != ref_allele:
-            logger.warning('Provided reference allele is not the same as the genome reference')
+        # Case-insensitive compare: pyfaidx returns lowercase for softmasked
+        # (repetitive) regions, users always pass uppercase.
+        if region_interval[real_pos].upper() != ref_allele.upper():
+            logger.warning(
+                'Provided reference allele %r does not match the genome at this position (%r). Chorus will use the provided allele.',
+                ref_allele, region_interval[real_pos],
+            )
             intervals['reference'] = region_interval.replace(seq=ref_allele, start=real_pos, end=real_pos+1)
         else:
             intervals['reference'] = region_interval

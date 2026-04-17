@@ -115,6 +115,7 @@ tmp/
 
 # Example outputs
 examples/*.png
+examples/applications/**/*_screenshot.png
 examples/*.bedgraph
 examples/*.csv
 examples/*_executed.ipynb
@@ -123,3 +124,18 @@ examples/variant_analysis_results/
 
 # MCP server output
 chorus_mcp_output/
+# Local run logs (regenerate scripts, background jobs, etc.)
+logs/
+
+# Claude Code harness state (per-developer, not for the repo)
+.claude/
+
+# Audit prompt files containing real API tokens (never commit)
+AUDIT_PROMPT_WITH_TOKENS*
+*_WITH_TOKENS.md
+
+# Audit screenshots (large PNGs, not needed in repo)
+audits/*_screenshots/
+
+# Internal development scripts (machine-specific, not user-facing)
+scripts/internal/
