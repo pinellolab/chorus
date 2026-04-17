@@ -6,7 +6,15 @@ from chorus.oracles.legnet_source.model_usage import predict_bigseq
 with open("__ARGS_FILE_NAME__") as inp:  # to be formatted by calling script 
     args = json.load(inp)
 
-device = torch.device(args['device'])
+_dev = args['device']
+if _dev is None or _dev == 'auto':
+    if torch.cuda.is_available():
+        _dev = 'cuda:0'
+    elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
+        _dev = 'mps'
+    else:
+        _dev = 'cpu'
+device = torch.device(_dev)
 
 model = load_model(config_path=args['config_path'], 
                    weights_path=args['model_weights'])

@@ -1,0 +1,2 @@
+allele	layer	assay_id	assay_type	cell_type	description	ref_value	alt_value	raw_score	quantile_score	ref_signal_percentile	note
+alt_1	chromatin_accessibility	ATAC:HepG2	ATAC	HepG2	ATAC:HepG2	686.5375729824882	635.6635888748569	-0.11090729888458001	0.96721823290665	0.8198	
