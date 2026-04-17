@@ -2186,6 +2186,29 @@ class TestIGVRawFlag:
         sig = inspect.signature(discover_variant_effects)
         assert "igv_raw" in sig.parameters
 
+    def test_discover_variant_effects_accepts_analysis_request_and_filename(self):
+        """discover_variant_effects accepts analysis_request + output_filename
+        so callers can write the final HTML in one shot (no post-hoc rewrite
+        that leaves orphan chr*.html behind).
+        """
+        import inspect
+        from chorus.analysis.discovery import discover_variant_effects
+
+        sig = inspect.signature(discover_variant_effects)
+        assert "analysis_request" in sig.parameters
+        assert "output_filename" in sig.parameters
+
+    def test_discover_and_report_accepts_user_prompt(self):
+        """discover_and_report accepts user_prompt so per-cell-type sub-reports
+        get AnalysisRequest stamped before the first HTML write.
+        """
+        import inspect
+        from chorus.analysis.discovery import discover_and_report
+
+        sig = inspect.signature(discover_and_report)
+        assert "user_prompt" in sig.parameters
+        assert "tool_name" in sig.parameters
+
     def test_layer_floor_thresholds_exist(self):
         """Layer-aware floor thresholds are defined for all known layers."""
         from chorus.analysis._igv_report import _LAYER_FLOOR_PCTILE
