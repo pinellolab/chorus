@@ -7,6 +7,22 @@ models including Enformer, Borzoi, ChromBPNet, and Sei.
 
 __version__ = "0.1.0"
 
+# ---------------------------------------------------------------------------
+# PATH guard for subprocess tools (bgzip, tabix, samtools)
+# ---------------------------------------------------------------------------
+# When chorus is imported from a Python interpreter that wasn't launched
+# through ``mamba activate chorus`` (e.g. ``python -m jupyter nbconvert``
+# called by an outer script), the subprocess-level PATH doesn't include
+# the conda-env ``bin/`` directory. coolbox then calls ``bgzip``/``tabix``
+# and sees them as not-installed, spamming ERROR lines before falling back
+# to its in-memory reader. These tools are installed by ``environment.yml``;
+# we just need the Python interpreter's own bin dir on PATH.
+import os as _os
+import sys as _sys
+_env_bin = _os.path.dirname(_sys.executable)
+if _env_bin and _env_bin not in _os.environ.get("PATH", "").split(_os.pathsep):
+    _os.environ["PATH"] = _env_bin + _os.pathsep + _os.environ.get("PATH", "")
+
 # Import core classes
 from .core import (
     OracleBase,

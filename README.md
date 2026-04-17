@@ -854,6 +854,35 @@ chorus health
 
 Add the export to your shell rc file if you want it persistent.
 
+#### Enformer fails with `saved_model.pb` not found after a partial download
+
+TensorFlow Hub caches downloaded models at
+`/var/folders/.../T/tfhub_modules/` (macOS) or `/tmp/tfhub_modules/`
+(Linux). **This cache is outside `~/.chorus/` and survives chorus
+teardowns.** If an earlier Enformer download was interrupted, the
+cached directory ends up missing `saved_model.pb` and Enformer fails
+to load with:
+
+```
+Trying to load a model of incompatible/unknown type. ... contains
+neither 'saved_model.pb' nor 'saved_model.pbtxt'.
+```
+
+Clear the stale cache and retry:
+
+```bash
+# macOS
+rm -rf /var/folders/*/*/T/tfhub_modules
+
+# Linux
+rm -rf /tmp/tfhub_modules
+```
+
+Chorus auto-detects the corrupted-cache case and clears it on the
+next `load_pretrained_model()` call, so this is only an issue if the
+first attempt after a fresh install fails — the second attempt will
+recover automatically.
+
 ### Memory Issues
 Some oracles require a significant memory (~8-16 GB) for predictions. Solutions:
 - Force CPU usage: `device='cpu'`
