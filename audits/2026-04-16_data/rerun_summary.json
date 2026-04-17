@@ -1,0 +1,545 @@
+{
+  "variant_analysis__SORT1_rs12740374": {
+    "ok": true,
+    "elapsed": 538.3789920806885,
+    "diff": {
+      "n_common_tracks": 4,
+      "only_in_committed": 58,
+      "only_in_fresh": 0,
+      "n_diffs_gt_0.01": 3,
+      "example_diffs": [
+        {
+          "track": [
+            "chromatin_accessibility",
+            "DNASE/EFO:0001187 DNase-seq/.",
+            ""
+          ],
+          "field": "raw_score",
+          "committed": 0.4501432062563436,
+          "fresh": 0.4326631427879574,
+          "abs_diff": 0.017480063468386153
+        },
+        {
+          "track": [
+            "tf_binding",
+            "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",
+            ""
+          ],
+          "field": "raw_score",
+          "committed": 0.27191255718024676,
+          "fresh": 0.28453890893324657,
+          "abs_diff": 0.01262635175299981
+        },
+        {
+          "track": [
+            "histone_marks",
+            "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+            ""
+          ],
+          "field": "raw_score",
+          "committed": 0.18395614926608317,
+          "fresh": 0.16867119680200715,
+          "abs_diff": 0.015284952464076018
+        }
+      ]
+    },
+    "fresh_json_sample_first_2_layers": {
+      "histone_marks": [
+        {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "layer": "histone_marks",
+          "ref_value": 14964.0,
+          "alt_value": 16820.0,
+          "raw_score": 0.16867119680200715,
+          "description": "CHIP:H3K27ac:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.9993
+        }
+      ],
+      "tf_binding": [
+        {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "layer": "tf_binding",
+          "ref_value": 2229.0,
+          "alt_value": 2886.0,
+          "raw_score": 0.37252739742831475,
+          "description": "CHIP:CEBPA:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.9893
+        },
+        {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "layer": "tf_binding",
+          "ref_value": 1242.0,
+          "alt_value": 1513.0,
+          "raw_score": 0.28453890893324657,
+          "description": "CHIP:CEBPB:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.9723
+        }
+      ],
+      "chromatin_accessibility": [
+        {
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "layer": "chromatin_accessibility",
+          "ref_value": 557.4197387695312,
+          "alt_value": 752.7118530273438,
+          "raw_score": 0.4326631427879574,
+          "description": "DNASE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.9657
+        }
+      ]
+    }
+  },
+  "variant_analysis__TERT_promoter": {
+    "ok": true,
+    "elapsed": 575.4158799648285,
+    "diff": {
+      "n_common_tracks": 34,
+      "only_in_committed": 0,
+      "only_in_fresh": 0,
+      "n_diffs_gt_0.01": 15,
+      "example_diffs": [
+        {
+          "track": [
+            "tss_activity",
+            "CAGE/hCAGE EFO:0002067/+",
+            "TERT TSS"
+          ],
+          "field": "raw_score",
+          "committed": -0.40479604010547704,
+          "fresh": -0.4194215098537808,
+          "abs_diff": 0.014625469748303754
+        },
+        {
+          "track": [
+            "tss_activity",
+            "CAGE/hCAGE EFO:0002067/+",
+            "ZDHHC11 TSS"
+          ],
+          "field": "quantile_score",
+          "committed": 0.22262964903090623,
+          "fresh": 0.17915138816134102,
+          "abs_diff": 0.043478260869565216
+        },
+        {
+          "track": [
+            "tss_activity",
+            "CAGE/hCAGE EFO:0002067/+",
+            "BRD9 TSS"
+          ],
+          "field": "raw_score",
+          "committed": -0.004289027611218354,
+          "fresh": 0.0069170482070222625,
+          "abs_diff": 0.011206075818240617
+        },
+        {
+          "track": [
+            "tss_activity",
+            "CAGE/hCAGE EFO:0002067/+",
+            "SLC12A7 TSS"
+          ],
+          "field": "quantile_score",
+          "committed": 1.0,
+          "fresh": 0.29072812991094815,
+          "abs_diff": 0.7092718700890519
+        },
+        {
+          "track": [
+            "tss_activity",
+            "CAGE/hCAGE EFO:0002067/-",
+            "ZDHHC11 TSS"
+          ],
+          "field": "quantile_score",
+          "committed": 0.6736511262441068,
+          "fresh": 1.0,
+          "abs_diff": 0.32634887375589317
+        }
+      ]
+    },
+    "fresh_json_sample_first_2_layers": {
+      "tss_activity": [
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 42.268760681152344,
+          "alt_value": 31.009517669677734,
+          "raw_score": -0.43482486115325475,
+          "description": "CAGE:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 42.197540283203125,
+          "alt_value": 31.299854278564453,
+          "raw_score": -0.4194215098537808,
+          "description": "CAGE:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "TERT TSS"
+        }
+      ],
+      "histone_marks": [
+        {
+          "assay_id": "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "K562",
+          "layer": "histone_marks",
+          "ref_value": 2717.5,
+          "alt_value": 2162.0,
+          "raw_score": -0.32977716283612296,
+          "description": "CHIP:H3K27ac:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.9539
+        }
+      ],
+      "tf_binding": [
+        {
+          "assay_id": "CHIP_TF/EFO:0002067 TF ChIP-seq GATA1/.",
+          "assay_type": "CHIP",
+          "cell_type": "K562",
+          "layer": "tf_binding",
+          "ref_value": 414.0,
+          "alt_value": 411.5,
+          "raw_score": -0.00871721710110892,
+          "description": "CHIP:GATA1:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.8656
+        },
+        {
+          "assay_id": "CHIP_TF/EFO:0002067 TF ChIP-seq TAL1/.",
+          "assay_type": "CHIP",
+          "cell_type": "K562",
+          "layer": "tf_binding",
+          "ref_value": 145.125,
+          "alt_value": 138.0,
+          "raw_score": -0.07211814180814893,
+          "description": "CHIP:TAL1:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.1097
+        }
+      ],
+      "chromatin_accessibility": [
+        {
+          "assay_id": "DNASE/EFO:0002067 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "K562",
+          "layer": "chromatin_accessibility",
+          "ref_value": 342.3796081542969,
+          "alt_value": 297.7349853515625,
+          "raw_score": -0.2009381624369555,
+          "description": "DNASE:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.9155
+        }
+      ]
+    }
+  },
+  "variant_analysis__FTO_rs1421085": {
+    "ok": true,
+    "elapsed": 512.1963398456573,
+    "diff": {
+      "n_common_tracks": 16,
+      "only_in_committed": 0,
+      "only_in_fresh": 0,
+      "n_diffs_gt_0.01": 4,
+      "example_diffs": [
+        {
+          "track": [
+            "tss_activity",
+            "CAGE/hCAGE EFO:0001187/+",
+            "RBL2 TSS"
+          ],
+          "field": "raw_score",
+          "committed": 0.0029746397696436408,
+          "fresh": -0.009037277619624386,
+          "abs_diff": 0.012011917389268028
+        },
+        {
+          "track": [
+            "chromatin_accessibility",
+            "DNASE/EFO:0001187 DNase-seq/.",
+            ""
+          ],
+          "field": "raw_score",
+          "committed": -0.03675337517923245,
+          "fresh": -0.025791175377162346,
+          "abs_diff": 0.010962199802070107
+        },
+        {
+          "track": [
+            "tf_binding",
+            "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",
+            ""
+          ],
+          "field": "quantile_score",
+          "committed": 1.0,
+          "fresh": 0.21372446306967,
+          "abs_diff": 0.78627553693033
+        },
+        {
+          "track": [
+            "tss_activity",
+            "CAGE/hCAGE EFO:0001187/-",
+            "IRX3 TSS"
+          ],
+          "field": "raw_score",
+          "committed": 0.008481559701393937,
+          "fresh": -0.00439790809890733,
+          "abs_diff": 0.012879467800301268
+        }
+      ]
+    },
+    "fresh_json_sample_first_2_layers": {
+      "tss_activity": [
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 4.400747299194336,
+          "alt_value": 4.295600891113281,
+          "raw_score": -0.028364650294859784,
+          "description": "CAGE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "layer": "tss_activity",
+          "ref_value": 4846.9912109375,
+          "alt_value": 4842.9951171875,
+          "raw_score": -0.0011896725330722779,
+          "description": "CAGE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "FTO TSS"
+        }
+      ],
+      "histone_marks": [
+        {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "layer": "histone_marks",
+          "ref_value": 9868.5,
+          "alt_value": 9560.0,
+          "raw_score": -0.04581547813833982,
+          "description": "CHIP:H3K27ac:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.9948
+        }
+      ],
+      "tf_binding": [
+        {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "layer": "tf_binding",
+          "ref_value": 1048.0,
+          "alt_value": 1029.0,
+          "raw_score": -0.026370340506686886,
+          "description": "CHIP:CEBPA:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.9322
+        },
+        {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "layer": "tf_binding",
+          "ref_value": 494.5,
+          "alt_value": 494.0,
+          "raw_score": -0.0014565322195161307,
+          "description": "CHIP:CEBPB:HepG2",
+          "quantile_score": 0.21372446306967,
+          "ref_signal_percentile": 0.8271
+        }
+      ],
+      "chromatin_accessibility": [
+        {
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "layer": "chromatin_accessibility",
+          "ref_value": 121.23233032226562,
+          "alt_value": 119.06658935546875,
+          "raw_score": -0.025791175377162346,
+          "description": "DNASE:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.9063
+        }
+      ]
+    }
+  },
+  "variant_analysis__BCL11A_rs1427407": {
+    "ok": true,
+    "elapsed": 556.80033826828,
+    "diff": {
+      "n_common_tracks": 12,
+      "only_in_committed": 0,
+      "only_in_fresh": 0,
+      "n_diffs_gt_0.01": 5,
+      "example_diffs": [
+        {
+          "track": [
+            "tss_activity",
+            "CAGE/hCAGE EFO:0002067/-",
+            "BCL11A TSS"
+          ],
+          "field": "raw_score",
+          "committed": -0.012129629461864442,
+          "fresh": 0.0042114283855834165,
+          "abs_diff": 0.016341057847447858
+        },
+        {
+          "track": [
+            "tss_activity",
+            "CAGE/hCAGE EFO:0002067/-",
+            "PAPOLG TSS"
+          ],
+          "field": "quantile_score",
+          "committed": 0.48821372446306965,
+          "fresh": 1.0,
+          "abs_diff": 0.5117862755369303
+        },
+        {
+          "track": [
+            "tss_activity",
+            "CAGE/hCAGE EFO:0002067/-",
+            "REL TSS"
+          ],
+          "field": "raw_score",
+          "committed": -0.0020001160960827903,
+          "fresh": 0.009018728240248745,
+          "abs_diff": 0.011018844336331535
+        },
+        {
+          "track": [
+            "tss_activity",
+            "CAGE/hCAGE EFO:0002067/+",
+            "variant site"
+          ],
+          "field": "ref_signal_percentile",
+          "committed": 0.5971279785387408,
+          "fresh": 0.6189048445636737,
+          "abs_diff": 0.021776866024932895
+        },
+        {
+          "track": [
+            "tss_activity",
+            "CAGE/hCAGE EFO:0002067/+",
+            "REL TSS"
+          ],
+          "field": "quantile_score",
+          "committed": 1.0,
+          "fresh": 0.4803562074384494,
+          "abs_diff": 0.5196437925615506
+        }
+      ]
+    },
+    "fresh_json_sample_first_2_layers": {
+      "tss_activity": [
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 0.13900220394134521,
+          "alt_value": 0.13239097595214844,
+          "raw_score": -0.008398381093726062,
+          "description": "CAGE:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.6189048445636737,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CAGE/hCAGE EFO:0002067/+",
+          "assay_type": "CAGE",
+          "cell_type": "K562",
+          "layer": "tss_activity",
+          "ref_value": 2.2195615768432617,
+          "alt_value": 2.213517189025879,
+          "raw_score": -0.002711053668955019,
+          "description": "CAGE:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 1.0,
+          "region_label": "BCL11A TSS"
+        }
+      ],
+      "histone_marks": [
+        {
+          "assay_id": "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "K562",
+          "layer": "histone_marks",
+          "ref_value": 1255.0,
+          "alt_value": 1255.5,
+          "raw_score": 0.0005742069890285463,
+          "description": "CHIP:H3K27ac:K562",
+          "quantile_score": 0.5997904662126768,
+          "ref_signal_percentile": 0.9092
+        }
+      ],
+      "tf_binding": [
+        {
+          "assay_id": "CHIP_TF/EFO:0002067 TF ChIP-seq GATA1/.",
+          "assay_type": "CHIP",
+          "cell_type": "K562",
+          "layer": "tf_binding",
+          "ref_value": 449.5,
+          "alt_value": 436.5,
+          "raw_score": -0.042244089093847435,
+          "description": "CHIP:GATA1:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.8825
+        },
+        {
+          "assay_id": "CHIP_TF/EFO:0002067 TF ChIP-seq TAL1/.",
+          "assay_type": "CHIP",
+          "cell_type": "K562",
+          "layer": "tf_binding",
+          "ref_value": 481.0,
+          "alt_value": 445.0,
+          "raw_score": -0.11198943630965681,
+          "description": "CHIP:TAL1:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.9608
+        }
+      ],
+      "chromatin_accessibility": [
+        {
+          "assay_id": "DNASE/EFO:0002067 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "K562",
+          "layer": "chromatin_accessibility",
+          "ref_value": 9.704418182373047,
+          "alt_value": 8.860233306884766,
+          "raw_score": -0.11851269470054449,
+          "description": "DNASE:K562",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.5206
+        }
+      ]
+    }
+  }
+}

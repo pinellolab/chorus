@@ -1,6 +1,7 @@
 """Runner for executing code in oracle-specific environments."""
 
 import os
+import shutil
 import sys
 import json
 import pickle
@@ -11,6 +12,29 @@ from typing import Any, Dict, Optional, Callable
 import shlex
 
 logger = logging.getLogger(__name__)
+
+
+def _find_mamba() -> str:
+    """Locate the mamba executable, falling back to conda."""
+    exe = shutil.which("mamba")
+    if exe:
+        return exe
+    # Common install locations
+    for candidate in [
+        "/data/pinello/SHARED_SOFTWARE/miniforge3/bin/mamba",
+        os.path.expanduser("~/miniforge3/bin/mamba"),
+        os.path.expanduser("~/mambaforge/bin/mamba"),
+    ]:
+        if os.path.isfile(candidate):
+            return candidate
+    # Fall back to conda
+    exe = shutil.which("conda")
+    if exe:
+        return exe
+    raise FileNotFoundError(
+        "Neither mamba nor conda found on PATH. "
+        "Set PATH to include your miniforge3/bin directory."
+    )
 
 
 ORACLE_CLASS_MAP = {
@@ -25,15 +49,72 @@ ORACLE_CLASS_MAP = {
 
 class EnvironmentRunner:
     """Executes code in oracle-specific conda environments."""
-    
+
     def __init__(self, environment_manager):
         """
         Initialize the runner.
-        
+
         Args:
             environment_manager: Instance of EnvironmentManager
         """
         self.env_manager = environment_manager
+
+    @staticmethod
+    def _detect_python_version(env_prefix: str) -> str:
+        """Detect the Python major.minor version in a conda env."""
+        lib_dir = os.path.join(env_prefix, "lib")
+        if os.path.isdir(lib_dir):
+            # Sort descending by length so "python3.10" is preferred over
+            # "python3.1" (both may exist as directories).
+            candidates = sorted(
+                (name for name in os.listdir(lib_dir)
+                 if name.startswith("python3.") and os.path.isdir(os.path.join(lib_dir, name))),
+                key=len, reverse=True,
+            )
+            if candidates:
+                return candidates[0].replace("python", "")  # e.g. "3.10"
+        return "3"  # fallback
+
+    def _prepare_env(self, oracle: str) -> dict:
+        """Build an env dict with LD_PRELOAD and LD_LIBRARY_PATH for an oracle.
+
+        Handles two common Linux issues:
+        1. libstdc++ version mismatch (LD_PRELOAD the env's copy).
+        2. TensorFlow <2.15 not auto-discovering nvidia-* pip packages
+           (add their lib dirs to LD_LIBRARY_PATH).
+        """
+        env = os.environ.copy()
+        env_info = self.env_manager.get_environment_info(oracle)
+        if not env_info:
+            return env
+        env_prefix = env_info["path"]
+
+        # 1. LD_PRELOAD for libstdc++
+        env_libstdcpp = os.path.join(env_prefix, "lib", "libstdc++.so.6")
+        if os.path.exists(env_libstdcpp):
+            env["LD_PRELOAD"] = env_libstdcpp
+
+        # 2. LD_LIBRARY_PATH for nvidia pip packages (TF <2.15 CUDA discovery)
+        pyver = self._detect_python_version(env_prefix)
+        nvidia_base = os.path.join(
+            env_prefix, "lib", f"python{pyver}", "site-packages", "nvidia",
+        )
+        if os.path.isdir(nvidia_base):
+            nvidia_lib_dirs = [
+                os.path.join(nvidia_base, pkg, "lib")
+                for pkg in os.listdir(nvidia_base)
+                if os.path.isdir(os.path.join(nvidia_base, pkg, "lib"))
+            ]
+            if nvidia_lib_dirs:
+                existing = env.get("LD_LIBRARY_PATH", "")
+                env["LD_LIBRARY_PATH"] = ":".join(nvidia_lib_dirs) + (
+                    ":" + existing if existing else ""
+                )
+
+        # 3. Remove MPLBACKEND to avoid matplotlib conflicts
+        env.pop("MPLBACKEND", None)
+
+        return env
     
     def run_code_in_environment(
         self,
@@ -105,20 +186,10 @@ except Exception as e:
         try:
             # Run the script file instead of passing code as argument
             env_name = self.env_manager.get_environment_name(oracle)
-            running_command = shlex.split(f"mamba run -n {env_name} python {code_path}")
+            mamba_exe = getattr(self.env_manager, 'conda_exe', None) or _find_mamba()
+            running_command = shlex.split(f"{mamba_exe} run -n {env_name} python {code_path}")
 
-            env = os.environ.copy()
-            
-            # Force the loader to use the env's libstdc++
-
-            env_prefix = self.env_manager.get_environment_info(oracle)['path']
-            env_libstdcpp = f"{env_prefix}/lib/libstdc++.so.6"
-            if os.path.exists(env_libstdcpp):
-                env["LD_PRELOAD"] = env_libstdcpp
-          
-            # mamba run -n handles PATH activation; no manual PATH rewriting needed
-            if 'MPLBACKEND' in env:
-                env.pop('MPLBACKEND') # remove matplotlib backend to avoid conflict with matplotlib inline backend
+            env = self._prepare_env(oracle)
                 
             result = subprocess.run(
                 running_command,
@@ -253,14 +324,7 @@ except Exception as e:
         if not python_exe:
             raise RuntimeError(f"Could not find Python executable for {oracle}")
         
-        # Set up environment with LD_PRELOAD for the env's libstdc++
-        env = os.environ.copy()
-        env_info = self.env_manager.get_environment_info(oracle)
-        if env_info:
-            env_prefix = env_info['path']
-            env_libstdcpp = f"{env_prefix}/lib/libstdc++.so.6"
-            if os.path.exists(env_libstdcpp):
-                env["LD_PRELOAD"] = env_libstdcpp
+        env = self._prepare_env(oracle)
 
         # Run script
         return subprocess.run(

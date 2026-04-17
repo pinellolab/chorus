@@ -1,0 +1,88 @@
+<!DOCTYPE html><html lang='en'><head>
+<meta charset='utf-8'>
+<title>Batch Variant Scoring — 5 variants</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:1400px;margin:24px auto;padding:0 16px;color:#24292e;}
+h1{font-size:1.4em;margin-top:0;}
+table{border-collapse:collapse;width:100%;margin-top:12px;font-size:0.85em;}
+th,td{border:1px solid #d0d7de;padding:5px 8px;text-align:center;}
+th{background:#f6f8fa;font-size:0.85em;}
+td:first-child,td:nth-child(2){text-align:left;}
+tr:nth-child(even){background:#fafbfc;}
+.gain{background:#dcfce7;color:#166534;}
+.loss{background:#fee2e2;color:#991b1b;}
+.neutral{color:#6b7280;}
+.pctile{font-size:0.8em;color:#6b7280;}
+</style></head><body>
+<h1>Batch Variant Scoring Results</h1>
+<section class="analysis-request" style="background:#f6f8fa;border-left:4px solid #0366d6;padding:12px 16px;margin:0 0 16px 0;border-radius:4px;font-size:0.92em;">
+<h3 style="margin:0 0 8px 0;font-size:1.05em;">Analysis Request</h3>
+<blockquote style="margin:0 0 8px 0;padding:6px 10px;background:#fff;border-left:3px solid #d1d5da;color:#24292e;">Score 5 SORT1-locus GWAS variants in HepG2 liver cells using DNASE, CEBPA/CEBPB ChIP, H3K27ac, and CAGE tracks. Rank by regulatory effect. Gene is SORT1.</blockquote>
+<ul style="margin:0;padding-left:20px;list-style:disc;">
+<li><strong>Tool:</strong> score_variant_batch</li>
+<li><strong>Oracle:</strong> alphagenome</li>
+<li><strong>Normalizer:</strong> per-track background CDFs</li>
+<li><strong>Tracks requested:</strong> 6 HepG2 tracks</li>
+<li><strong>Generated:</strong> 2026-04-16 18:08 UTC</li>
+</ul>
+</section>
+<p><b>5 variants scored</b></p>
+<table><thead><tr>
+<th rowspan='2'>Variant</th><th rowspan='2'>ID</th>
+<th colspan='4'>DNASE:HepG2</th>
+<th colspan='4'>CHIP:CEBPA:HepG2</th>
+<th colspan='4'>CHIP:CEBPB:HepG2</th>
+<th colspan='4'>CHIP:H3K27ac:HepG2</th>
+<th colspan='4'>CAGE:HepG2 (+)</th>
+<th colspan='4'>CAGE:HepG2 (-)</th>
+</tr><tr>
+<th>Ref</th><th>Alt</th><th>log2FC</th><th>Effect %ile</th>
+<th>Ref</th><th>Alt</th><th>log2FC</th><th>Effect %ile</th>
+<th>Ref</th><th>Alt</th><th>log2FC</th><th>Effect %ile</th>
+<th>Ref</th><th>Alt</th><th>log2FC</th><th>Effect %ile</th>
+<th>Ref</th><th>Alt</th><th>log2FC</th><th>Effect %ile</th>
+<th>Ref</th><th>Alt</th><th>log2FC</th><th>Effect %ile</th>
+</tr></thead><tbody>
+<tr><td>chr1:109274968 G>T</td><td>rs12740374</td>
+<td>512</td><td>700</td><td class='gain'>+0.449</td><td>≥99th</td>
+<td>2.1e+03</td><td>2.72e+03</td><td class='gain'>+0.379</td><td>≥99th</td>
+<td>1.21e+03</td><td>1.47e+03</td><td class='gain'>+0.272</td><td>≥99th</td>
+<td>1.37e+04</td><td>1.55e+04</td><td class='gain'>+0.180</td><td>≥99th</td>
+<td>39</td><td>38.8</td><td class='neutral'>-0.008</td><td>≥99th</td>
+<td>3.85e+03</td><td>3.84e+03</td><td class='neutral'>-0.003</td><td>≥99th</td>
+</tr>
+<tr><td>chr1:109279175 G>A</td><td>rs4970836</td>
+<td>8.22</td><td>7.96</td><td class='neutral'>-0.042</td><td>≥99th</td>
+<td>201</td><td>197</td><td class='neutral'>-0.032</td><td>≥99th</td>
+<td>202</td><td>198</td><td class='neutral'>-0.027</td><td>≥99th</td>
+<td>3.32e+03</td><td>3.28e+03</td><td class='neutral'>-0.015</td><td>≥99th</td>
+<td>43.1</td><td>43.2</td><td class='neutral'>+0.003</td><td>≥99th</td>
+<td>4.19e+03</td><td>4.19e+03</td><td class='neutral'>-0.001</td><td>—</td>
+</tr>
+<tr><td>chr1:109275216 T>C</td><td>rs660240</td>
+<td>398</td><td>418</td><td class='neutral'>+0.069</td><td>≥99th</td>
+<td>1.28e+03</td><td>1.3e+03</td><td class='neutral'>+0.028</td><td>≥99th</td>
+<td>768</td><td>780</td><td class='neutral'>+0.022</td><td>≥99th</td>
+<td>1.63e+04</td><td>1.67e+04</td><td class='neutral'>+0.029</td><td>≥99th</td>
+<td>45</td><td>45.1</td><td class='neutral'>+0.003</td><td>≥99th</td>
+<td>4.31e+03</td><td>4.3e+03</td><td class='neutral'>-0.002</td><td>≥99th</td>
+</tr>
+<tr><td>chr1:109275684 G>T</td><td>rs1626484</td>
+<td>69.4</td><td>69.6</td><td class='neutral'>+0.003</td><td>0.77</td>
+<td>541</td><td>542</td><td class='neutral'>+0.003</td><td>0.71</td>
+<td>512</td><td>514</td><td class='neutral'>+0.007</td><td>≥99th</td>
+<td>1.34e+04</td><td>1.34e+04</td><td class='neutral'>-0.003</td><td>≥99th</td>
+<td>37.3</td><td>37.4</td><td class='neutral'>+0.002</td><td>≥99th</td>
+<td>3.94e+03</td><td>3.95e+03</td><td class='neutral'>+0.006</td><td>≥99th</td>
+</tr>
+<tr><td>chr1:109274570 A>G</td><td>rs7528419</td>
+<td>118</td><td>119</td><td class='neutral'>+0.018</td><td>≥99th</td>
+<td>957</td><td>964</td><td class='neutral'>+0.011</td><td>≥99th</td>
+<td>776</td><td>780</td><td class='neutral'>+0.007</td><td>≥99th</td>
+<td>1.46e+04</td><td>1.48e+04</td><td class='neutral'>+0.020</td><td>≥99th</td>
+<td>40.6</td><td>40.5</td><td class='neutral'>-0.004</td><td>≥99th</td>
+<td>4.3e+03</td><td>4.29e+03</td><td class='neutral'>-0.002</td><td>≥99th</td>
+</tr>
+</tbody></table>
+<p style='font-size:0.85em;color:#6b7280;margin-top:8px;'>Columns per track: <b>Ref</b> (reference allele prediction), <b>Alt</b> (alternate allele prediction), <b>log2FC</b> (log2 fold-change alt/ref), <b>Effect %ile</b> (ranked against ~10K random SNPs). Green = gain, red = loss.</p>
+</body></html>
