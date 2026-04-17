@@ -115,15 +115,21 @@ class EnvironmentManager:
         return None
     
     def list_available_oracles(self) -> List[str]:
-        """List all oracles with environment definitions."""
+        """List all oracles with environment definitions.
+
+        The ``chorus-base.yml`` file is excluded: it is an internal
+        template consumed by other install paths, not a user-installable
+        oracle. The user-facing base env is the ``chorus`` env created
+        from the root ``environment.yml``.
+        """
         oracle_envs = []
         env_files = self.base_path.glob("*.yml")
-        
+
         for env_file in env_files:
-            if env_file.stem.startswith("chorus-"):
+            if env_file.stem.startswith("chorus-") and env_file.stem != "chorus-base":
                 oracle_name = env_file.stem.replace("chorus-", "")
                 oracle_envs.append(oracle_name)
-        
+
         return sorted(oracle_envs)
     
     def get_environment_name(self, oracle: str) -> str:
@@ -168,7 +174,7 @@ class EnvironmentManager:
         from chorus import PACKAGE_DIR
         env_name = self.get_environment_name(oracle)
 
-        running_command = shlex.split(f"mamba run -n {env_name} python -m pip install -e . --no-deps --no-build-isolation")
+        running_command = shlex.split(f"{self.conda_exe} run -n {env_name} python -m pip install -e . --no-deps --no-build-isolation")
         result = subprocess.run(
                 running_command,
                 capture_output=True,

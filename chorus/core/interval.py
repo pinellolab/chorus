@@ -133,7 +133,7 @@ class Sequence:
                           sequence= self.sequence[left:-right])
     
     def slice(self, start: int, end: int) -> 'Sequence':
-        return dt_replace(sequence=self.sequence[start:end])
+        return dt_replace(self, sequence=self.sequence[start:end])
     
     def __getitem__(self, item) -> 'str | Sequence':
         if isinstance(item, int):

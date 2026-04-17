@@ -16,7 +16,7 @@ with open("__ARGS_FILE_NAME__") as inp:
 # (missing default_memory_space etc.), so force CPU on macOS unless the user
 # explicitly requests Metal.
 device_str = args.get("device")
-if _platform.system() == "Darwin" and (device_str is None or device_str.startswith("cpu")):
+if _platform.system() == "Darwin" and not (device_str is not None and device_str.startswith("metal")):
     os.environ["JAX_PLATFORMS"] = "cpu"
 
 import jax

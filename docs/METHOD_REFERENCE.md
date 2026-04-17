@@ -1,5 +1,12 @@
 # Chorus Method Reference
 
+> This is a **quick-reference cheat sheet** for the oracle-level methods
+> (`predict`, `predict_variant_effect`, etc.) with one-line summaries and
+> minimal snippets. For full signatures, keyword arguments, and the
+> higher-level application layer (`build_variant_report`,
+> `score_variant_batch`, `prioritize_causal_variants`, `AnalysisRequest`),
+> see [`API_DOCUMENTATION.md`](API_DOCUMENTATION.md).
+
 ## Quick Reference Table
 
 | Method | Input | Output | Use Case |
