@@ -20,7 +20,18 @@ logger = logging.getLogger(__name__)
 def setup_environments(args):
     """Set up oracle environments."""
     manager = EnvironmentManager()
-    
+
+    if args.oracle == "base":
+        logger.error(
+            "'base' is not an oracle — the base 'chorus' environment is "
+            "installed directly from the root environment.yml, not via "
+            "`chorus setup`. Run:\n\n"
+            "    mamba env create -f environment.yml\n"
+            "    mamba activate chorus\n"
+            "    pip install -e ."
+        )
+        return 1
+
     if args.oracle:
         # Set up specific oracle
         oracles = [args.oracle]

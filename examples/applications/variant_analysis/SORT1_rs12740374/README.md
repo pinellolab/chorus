@@ -28,13 +28,19 @@ CAGE, and RNA using AlphaGenome.
 
 The AlphaGenome analysis reproduces the published biology:
 
-| Track | Effect (log2FC) | Percentile | Interpretation |
-|-------|----------------|-----------|----------------|
-| DNASE:HepG2 | +0.43 | 99th | Strong chromatin opening |
-| CEBPA ChIP | +0.37 | 98th | Strong TF binding gain |
-| CEBPB ChIP | +0.22 | 95th | Moderate TF binding gain |
-| H3K27ac | +0.18 | 90th | Moderate enhancer activation |
-| CAGE+ | +0.15 | 88th | Moderate transcription increase |
+| Track | Effect (log2FC) | Effect %ile | Interpretation |
+|-------|----------------|------------|----------------|
+| DNASE:HepG2 | +0.449 | ≥99th | Strong chromatin opening |
+| CHIP:CEBPA:HepG2 | +0.376 | ≥99th | Strong TF binding gain |
+| CHIP:CEBPB:HepG2 | +0.274 | ≥99th | Moderate TF binding gain |
+| CHIP:H3K27ac:HepG2 | +0.178 | ≥99th | Moderate enhancer activation |
+| CAGE:HepG2 (variant site) | +0.253 | ≥99th | Moderate transcription increase |
+
+> **Why all `≥99th`?** Each effect percentile is computed against
+> ~10,000 random SNPs; Chorus collapses the top bucket to `≥99th`
+> rather than rendering a spurious `99.3rd` / `99.7th` / `99.9th`
+> gradient in a CDF tail that doesn't have enough samples to
+> meaningfully distinguish them.
 
 ## Output files
 
