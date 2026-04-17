@@ -115,6 +115,11 @@ def regen_discovery(oracle, norm):
         logger.info("  removed stale %s", os.path.basename(old))
 
     os.makedirs(out_dir, exist_ok=True)
+    user_prompt = (
+        "Screen all cell types for variant rs12740374 (chr1:109274968 G>T) "
+        "using AlphaGenome. Find which cell types show the strongest "
+        "chromatin and regulatory effects. Gene is SORT1."
+    )
     result = discover_and_report(
         oracle,
         variant_position="chr1:109274968",
@@ -124,38 +129,15 @@ def regen_discovery(oracle, norm):
         min_effect=0.15,
         output_path=out_dir,
         normalizer=norm,
+        user_prompt=user_prompt,
     )
 
     # Write discovery_summary.json (list of top hits)
     with open(f"{out_dir}/discovery_summary.json", "w") as fh:
         json.dump(result.get("hits", []), fh, indent=2, default=str)
 
-    # Attach user prompt to each sub-report and re-write HTML
-    from chorus.analysis.analysis_request import AnalysisRequest
     hits = result.get("hits", [])
     reports = result.get("reports", {})
-    for ct_name, report in reports.items():
-        report.analysis_request = AnalysisRequest(
-            user_prompt=(
-                "Screen all cell types for variant rs12740374 (chr1:109274968 G>T) "
-                "using AlphaGenome. Find which cell types show the strongest "
-                "chromatin and regulatory effects. Gene is SORT1."
-            ),
-            tool_name="discover_variant_cell_types",
-            oracle_name="alphagenome",
-            cell_types=[ct_name],
-            tracks_requested=f"top tracks for {ct_name}",
-        )
-        # Re-write HTML now that analysis_request is attached.
-        # Find the existing HTML for this cell type and overwrite it directly.
-        import glob as _glob
-        ct_safe = ct_name.replace(" ", "_").replace("/", "_")
-        existing = [f for f in _glob.glob(f"{out_dir}/*.html")
-                     if ct_safe in os.path.basename(f)]
-        if existing:
-            report.to_html(output_path=existing[0])
-        else:
-            report.to_html(output_path=out_dir)
 
     # Build a combined markdown that lists top cell types and best tracks
     md_lines = [
@@ -386,26 +368,12 @@ def regen_integration(oracle, norm):
 def regen_tert_chr5(oracle, norm):
     """validation/TERT_chr5_1295046 — re-run with TF/mark fix."""
     from chorus.analysis.discovery import discover_variant_effects
-    import glob
+    from chorus.analysis.analysis_request import AnalysisRequest
 
     out_dir = f"{BASE}/validation/TERT_chr5_1295046"
     logger.info("=== RE-RUN: TERT chr5:1295046 (CHIP label fix) ===")
 
-    result = discover_variant_effects(
-        oracle, oracle_name="alphagenome",
-        variant_position="chr5:1295046",
-        alleles=["T", "G"],
-        gene_name="TERT",
-        normalizer=norm,
-        output_path=out_dir,
-        top_n_per_layer=3, top_n_cell_types=5,
-    )
-    report = result.get("report")
-    if report is None:
-        logger.warning("  no report returned")
-        return
-    from chorus.analysis.analysis_request import AnalysisRequest
-    report.analysis_request = AnalysisRequest(
+    ar = AnalysisRequest(
         user_prompt=(
             "Validate the TERT chr5:1295046 T>G variant from the AlphaGenome "
             "paper. Score across all tracks in discovery mode. Gene is TERT."
@@ -414,15 +382,30 @@ def regen_tert_chr5(oracle, norm):
         oracle_name="alphagenome",
         tracks_requested="all tracks (discovery mode)",
     )
+
+    html_name = "chr5_1295046_T_G_TERT_alphagenome_report.html"
+    result = discover_variant_effects(
+        oracle, oracle_name="alphagenome",
+        variant_position="chr5:1295046",
+        alleles=["T", "G"],
+        gene_name="TERT",
+        normalizer=norm,
+        output_path=out_dir,
+        output_filename=html_name,
+        top_n_per_layer=3, top_n_cell_types=5,
+        analysis_request=ar,
+    )
+    report = result.get("report")
+    if report is None:
+        logger.warning("  no report returned")
+        return
     with open(f"{out_dir}/example_output.md", "w") as fh:
         fh.write(report.to_markdown())
     with open(f"{out_dir}/example_output.json", "w") as fh:
         json.dump(report.to_dict(), fh, indent=2, default=str)
     _write_tsv(_variant_report_tsv_rows(report), f"{out_dir}/example_output.tsv")
 
-    # Re-write HTML with analysis_request attached
-    target = f"{out_dir}/chr5_1295046_T_G_TERT_alphagenome_report.html"
-    report.to_html(output_path=target)
+    target = f"{out_dir}/{html_name}"
     logger.info("  ✓ %s (%.0f KB)", os.path.basename(target), os.path.getsize(target)/1024)
 
 

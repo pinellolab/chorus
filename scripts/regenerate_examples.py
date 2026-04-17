@@ -235,10 +235,20 @@ def regenerate_enformer_discovery(oracle, norm, example, igv_raw=False):
     """Regenerate an Enformer discovery example."""
     from chorus.analysis.discovery import discover_variant_effects
     from chorus.analysis.analysis_request import AnalysisRequest
-    import glob
 
     out_dir = example["dir"]
     logger.info("Regenerating: %s → %s (igv_raw=%s)", example["name"], out_dir, igv_raw)
+
+    ar = AnalysisRequest(
+        user_prompt=example.get(
+            "user_prompt",
+            f"Analyze {example['position']} {example['ref']}>{example['alt']} "
+            f"using Enformer discovery mode. Gene: {example['gene']}.",
+        ),
+        tool_name="discover_variant",
+        oracle_name="enformer",
+        tracks_requested="all Enformer tracks (discovery mode)",
+    )
 
     result = discover_variant_effects(
         oracle, oracle_name="enformer",
@@ -247,23 +257,16 @@ def regenerate_enformer_discovery(oracle, norm, example, igv_raw=False):
         gene_name=example["gene"],
         normalizer=norm,
         output_path=out_dir,
+        output_filename=example["html_name"],
         top_n_per_layer=12, top_n_cell_types=15,
         igv_raw=igv_raw,
+        analysis_request=ar,
     )
 
     report = result.get("report")
     if report is None:
         logger.warning("  No report generated")
         return False
-
-    report.analysis_request = AnalysisRequest(
-        user_prompt=example.get("user_prompt",
-            f"Analyze {example['position']} {example['ref']}>{example['alt']} "
-            f"using Enformer discovery mode. Gene: {example['gene']}."),
-        tool_name="discover_variant",
-        oracle_name="enformer",
-        tracks_requested="all Enformer tracks (discovery mode)",
-    )
 
     # Only write MD/JSON if this is the PRIMARY example for this directory
     # (Enformer validation shares a dir with AlphaGenome validation — only
@@ -278,12 +281,7 @@ def regenerate_enformer_discovery(oracle, norm, example, igv_raw=False):
         with open(f'{out_dir}/example_output.json', 'w') as f:
             json.dump(d, f, indent=2, default=str)
 
-    # Re-write HTML with analysis_request attached (discover_variant_effects
-    # wrote it before the patch)
-    target = f'{out_dir}/{example["html_name"]}'
-    report.to_html(output_path=target)
     logger.info("  ✓ HTML: %s", example["html_name"])
-
     logger.info("  ✓ Done")
     return True
 

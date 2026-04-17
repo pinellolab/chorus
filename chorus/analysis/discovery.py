@@ -17,7 +17,10 @@ import logging
 import math
 from collections import defaultdict
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from .analysis_request import AnalysisRequest
 
 import numpy as np
 
@@ -199,6 +202,8 @@ def discover_and_report(
     normalizer=None,
     igv_raw: bool = False,
     oracle_name: Optional[str] = None,
+    user_prompt: Optional[str] = None,
+    tool_name: str = "discover_variant_cell_types",
 ):
     """Discovery mode: find top cell types, then build full reports.
 
@@ -210,14 +215,25 @@ def discover_and_report(
         top_n: Number of top cell types to analyze in detail.
         min_effect: Minimum |log2FC| to consider a cell type.
         output_path: Directory to write HTML reports to.
+        user_prompt: If provided, stamped onto each per-cell-type
+            report's AnalysisRequest so the HTML renders the prompt
+            the first time it's written (avoids a post-hoc rewrite).
+        tool_name: AnalysisRequest.tool_name for each sub-report.
 
     Returns:
         Dict with discovery results and per-cell-type reports.
     """
     from .variant_report import build_variant_report
+    from .analysis_request import AnalysisRequest
 
     chrom, pos_str = variant_position.split(":")
     pos = int(pos_str)
+
+    resolved_oracle_name = (
+        oracle_name
+        or getattr(oracle, "name", None)
+        or oracle.__class__.__name__.lower().replace("oracle", "")
+    )
 
     # Step 1: Discover top cell types
     logger.info("Step 1: Screening all cell types for variant effect...")
@@ -247,12 +263,23 @@ def discover_and_report(
                 assay_ids=track_ids,
             )
 
+            analysis_request = None
+            if user_prompt is not None:
+                analysis_request = AnalysisRequest(
+                    user_prompt=user_prompt,
+                    tool_name=tool_name,
+                    oracle_name=resolved_oracle_name,
+                    cell_types=[hit.cell_type],
+                    tracks_requested=f"top {len(track_ids)} tracks for {hit.cell_type}",
+                )
+
             report = build_variant_report(
                 variant_result,
-                oracle_name=oracle_name or getattr(oracle, "name", None) or oracle.__class__.__name__.lower().replace("oracle", ""),
+                oracle_name=resolved_oracle_name,
                 gene_name=gene_name,
                 normalizer=normalizer,
                 igv_raw=igv_raw,
+                analysis_request=analysis_request,
             )
 
             reports[hit.cell_type] = report
@@ -469,7 +496,9 @@ def discover_variant_effects(
     gene_name: str | None = None,
     normalizer=None,
     output_path: str | None = None,
+    output_filename: str | None = None,
     igv_raw: bool = False,
+    analysis_request: "AnalysisRequest | None" = None,
 ) -> dict:
     """Discover which cell types and regulatory layers are most affected.
 
@@ -491,6 +520,12 @@ def discover_variant_effects(
         gene_name: Optional gene for expression scoring.
         normalizer: Optional QuantileNormalizer for percentiles.
         output_path: Directory to write HTML report.
+        output_filename: If provided, the HTML is written at
+            ``output_path/output_filename``. Otherwise the report's
+            default filename is used (``chr*_*_report.html``).
+        analysis_request: Optional AnalysisRequest stamped onto the
+            report so the HTML is rendered with the user prompt on
+            first write (avoids a post-hoc ``to_html`` rewrite).
 
     Returns:
         Dict with cell_type_ranking, layer_rankings, selected tracks,
@@ -617,11 +652,17 @@ def discover_variant_effects(
                 gene_name=gene_name,
                 normalizer=normalizer,
                 igv_raw=igv_raw,
+                analysis_request=analysis_request,
             )
 
             if output_path:
-                report.to_html(output_path=output_path)
-                logger.info("Report saved to %s", output_path)
+                import os
+                if output_filename is not None:
+                    html_path = os.path.join(output_path, output_filename)
+                else:
+                    html_path = output_path
+                report.to_html(output_path=html_path)
+                logger.info("Report saved to %s", html_path)
 
     return {
         "cell_type_ranking": cell_type_ranking,
