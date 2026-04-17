@@ -35,7 +35,7 @@ what a user types in natural language and what Claude returns.
 
 1. Calls `load_oracle("alphagenome")` — loads model weights (~30 s on GPU).
 2. Calls `discover_variant(oracle_name="alphagenome", position="chr1:109274968",
-   ref_allele="G", alt_allele="T", gene_name="SORT1", user_prompt="Load AlphaGenome...")`
+   ref_allele="G", alt_alleles=["T"], gene_name="SORT1", user_prompt="Load AlphaGenome...")`
    — scores all 5,731 tracks, ranks by effect, builds a multi-layer report.
 3. Returns a markdown summary (inline) + saves an HTML report with an
    embedded IGV genome browser to the working directory.

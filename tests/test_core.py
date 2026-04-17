@@ -381,5 +381,22 @@ class TestPlatformAdaptation:
                 assert "jax[cpu]" not in pip_deps
 
 
+class TestEnvironmentManagerListing:
+    """The manager's oracle listing must not surface the internal base yaml."""
+
+    def test_base_excluded_from_available_oracles(self):
+        from chorus.core.environment.manager import EnvironmentManager
+
+        manager = EnvironmentManager()
+        oracles = manager.list_available_oracles()
+        assert "base" not in oracles, (
+            "'base' should not appear in available oracles — chorus-base.yml "
+            "is an internal template, not a user-installable oracle."
+        )
+        # The real oracles should still be there
+        assert "enformer" in oracles
+        assert "alphagenome" in oracles
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
