@@ -31,6 +31,7 @@ class OracleStateManager:
             return
         self._oracles: dict = {}          # name → loaded oracle instance
         self._load_times: dict = {}       # name → seconds it took to load
+        self._normalizers: dict = {}      # name → QuantileNormalizer or None
         self._reference_fasta: str | None = None
         self._output_dir: str = os.environ.get("CHORUS_MCP_OUTPUT_DIR", str(Path.cwd() / "chorus_mcp_output"))
         self._initialised = True
@@ -94,12 +95,65 @@ class OracleStateManager:
         self._oracles[name] = oracle
         self._load_times[name] = round(elapsed, 1)
 
-        return {
+        # Auto-load background distributions for quantile normalization
+        self._auto_load_normalizer(name)
+
+        resolved_device = getattr(oracle, "device", None)
+        if resolved_device is None:
+            resolved_device = self._detect_device(oracle)
+
+        result = {
             "name": name,
             "status": "loaded",
-            "device": getattr(oracle, "device", None),
+            "device": resolved_device,
             "load_time_seconds": self._load_times[name],
         }
+        normalizer = self._normalizers.get(name)
+        if normalizer is not None:
+            from chorus.analysis.normalization import PerTrackNormalizer
+            if isinstance(normalizer, PerTrackNormalizer):
+                summary = normalizer.summary(name)
+                result["backgrounds"] = {
+                    "status": "loaded",
+                    "type": "per_track",
+                    "n_tracks": summary.get("n_tracks", 0),
+                    "cdfs": list(summary.get("cdfs", {}).keys()),
+                }
+            else:
+                summary = normalizer.summary()
+                result["backgrounds"] = {
+                    "status": "loaded",
+                    "type": "per_layer",
+                    "n_layers": len(summary),
+                    "layers": {k: v["n_scores"] for k, v in summary.items()},
+                }
+        else:
+            result["backgrounds"] = {"status": "none"}
+        return result
+
+    @staticmethod
+    def _detect_device(oracle) -> str:
+        """Best-effort detection of the compute device when auto-detect was used.
+
+        Oracles run in isolated envs so we can't import their frameworks here.
+        Instead, check OS-level GPU availability.
+        """
+        import shutil
+        import subprocess
+        import sys
+        try:
+            if shutil.which("nvidia-smi"):
+                result = subprocess.run(
+                    ["nvidia-smi", "--query-gpu=count", "--format=csv,noheader"],
+                    capture_output=True, text=True, timeout=5,
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    return "gpu (auto-detected via nvidia-smi)"
+        except Exception:
+            pass
+        if sys.platform == "darwin":
+            return "mps (auto-detected, macOS)"
+        return "cpu (no GPU detected)"
 
     def get_oracle(self, name: str):
         """Return a loaded oracle or raise if not loaded."""
@@ -110,6 +164,50 @@ class OracleStateManager:
             )
         return self._oracles[name]
 
+    def _auto_load_normalizer(self, name: str) -> None:
+        """Auto-discover and cache normalizers for the named oracle.
+
+        Tries per-track normalizer first (preferred), then falls back to
+        legacy per-layer normalizer.
+        """
+        from chorus.analysis.normalization import get_pertrack_normalizer, get_normalizer
+
+        # Try per-track normalizer first
+        try:
+            pt_norm = get_pertrack_normalizer(name)
+            if pt_norm is not None:
+                self._normalizers[name] = pt_norm
+                summary = pt_norm.summary(name)
+                logger.info(
+                    "Loaded per-track normalizer for '%s': %d tracks, CDFs: %s",
+                    name, summary.get("n_tracks", 0),
+                    list(summary.get("cdfs", {}).keys()),
+                )
+                return
+        except Exception as exc:
+            logger.warning("Failed to load per-track normalizer for '%s': %s", name, exc)
+
+        # Fall back to legacy per-layer normalizer
+        try:
+            normalizer = get_normalizer(name)
+            self._normalizers[name] = normalizer
+            if normalizer is not None:
+                logger.info(
+                    "Loaded legacy normalizer for '%s' with %d backgrounds",
+                    name, len(normalizer.summary()),
+                )
+        except Exception as exc:
+            logger.warning("Failed to load normalizer for '%s': %s", name, exc)
+            self._normalizers[name] = None
+
+    def get_normalizer(self, name: str):
+        """Return the cached normalizer for an oracle, or None.
+
+        May return a :class:`PerTrackNormalizer` or a legacy
+        :class:`QuantileNormalizer` depending on what's available.
+        """
+        return self._normalizers.get(name.lower())
+
     def unload_oracle(self, name: str) -> bool:
         """Remove an oracle from the cache and free memory."""
         name = name.lower()
@@ -117,18 +215,29 @@ class OracleStateManager:
             return False
         del self._oracles[name]
         self._load_times.pop(name, None)
+        self._normalizers.pop(name, None)
         return True
 
     def list_loaded(self) -> list[dict]:
         """Return info on every loaded oracle."""
-        return [
-            {
+        result = []
+        for name, oracle in self._oracles.items():
+            info: dict = {
                 "name": name,
                 "device": getattr(oracle, "device", None),
                 "load_time_seconds": self._load_times.get(name),
             }
-            for name, oracle in self._oracles.items()
-        ]
+            normalizer = self._normalizers.get(name)
+            if normalizer is not None:
+                from chorus.analysis.normalization import PerTrackNormalizer
+                if isinstance(normalizer, PerTrackNormalizer):
+                    info["backgrounds_loaded"] = normalizer.n_tracks(name)
+                else:
+                    info["backgrounds_loaded"] = len(normalizer.summary())
+            else:
+                info["backgrounds_loaded"] = 0
+            result.append(info)
+        return result
 
     # ------------------------------------------------------------------
     # Helpers
