@@ -6,7 +6,7 @@
 - **Oracle**: chrombpnet
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: ATAC:HepG2
-- **Generated**: 2026-04-17 07:18 UTC
+- **Generated**: 2026-04-17 20:34 UTC
 
 ## Multi-Layer Variant Effect Report
 
