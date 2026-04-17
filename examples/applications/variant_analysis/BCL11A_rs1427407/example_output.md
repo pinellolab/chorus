@@ -6,7 +6,7 @@
 - **Oracle**: alphagenome
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: 6 K562 tracks
-- **Generated**: 2026-04-17 06:36 UTC
+- **Generated**: 2026-04-17 19:50 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -21,7 +21,7 @@
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| DNASE:K562 | 9.57 | 8.77 | -0.114 | ≥99th | 0.514 | Moderate closing |
+| DNASE:K562 | 9.57 | 8.78 | -0.112 | ≥99th | 0.514 | Moderate closing |
 
 #### Transcription factor binding (ChIP-TF)
 
@@ -34,20 +34,20 @@
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:H3K27ac:K562 | 1.26e+03 | 1.26e+03 | +0.001 | 0.61 | 0.910 | Minimal effect |
+| CHIP:H3K27ac:K562 | 1.26e+03 | 1.26e+03 | +0.002 | 0.78 | 0.910 | Minimal effect |
 
 #### TSS activity (CAGE/PRO-CAP)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
 | CAGE:K562 — variant site | 1.85 | 1.7 | -0.078 | ≥99th | 1.000 | Minimal effect |
-| CAGE:K562 — BCL11A TSS | 425 | 421 | -0.014 | ≥99th | 1.000 | Minimal effect |
-| CAGE:K562 — variant site | 0.133 | 0.127 | -0.008 | ≥99th | 0.597 | Minimal effect |
-| CAGE:K562 — PAPOLG TSS | 19 | 19 | +0.003 | ≥99th | 1.000 | Minimal effect |
-| CAGE:K562 — REL TSS | 1.87e+03 | 1.87e+03 | -0.002 | ≥99th | 1.000 | Minimal effect |
-| CAGE:K562 — REL TSS | 68.9 | 68.9 | -0.001 | ≥99th | 1.000 | Minimal effect |
-| CAGE:K562 — PAPOLG TSS | 2.59e+03 | 2.59e+03 | +0.001 | ≥99th | 1.000 | Minimal effect |
-| CAGE:K562 — BCL11A TSS | 2.16 | 2.16 | -0.001 | — | 1.000 | Minimal effect |
+| CAGE:K562 — BCL11A TSS | 419 | 422 | +0.012 | ≥99th | 1.000 | Minimal effect |
+| CAGE:K562 — variant site | 0.133 | 0.126 | -0.008 | ≥99th | 0.597 | Minimal effect |
+| CAGE:K562 — REL TSS | 68.6 | 68.9 | +0.006 | ≥99th | 1.000 | Minimal effect |
+| CAGE:K562 — REL TSS | 1.87e+03 | 1.88e+03 | +0.002 | ≥99th | 1.000 | Minimal effect |
+| CAGE:K562 — PAPOLG TSS | 2.59e+03 | 2.59e+03 | -0.002 | ≥99th | 1.000 | Minimal effect |
+| CAGE:K562 — BCL11A TSS | 2.16 | 2.16 | -0.001 | ≥99th | 1.000 | Minimal effect |
+| CAGE:K562 — PAPOLG TSS | 19 | 19 | +0.000 | — | 1.000 | Minimal effect |
 
 ---
 **Score guide:**

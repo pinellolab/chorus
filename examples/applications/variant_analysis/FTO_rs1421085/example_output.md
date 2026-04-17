@@ -6,7 +6,7 @@
 - **Oracle**: alphagenome
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: 6 HepG2 tracks
-- **Generated**: 2026-04-17 06:41 UTC
+- **Generated**: 2026-04-17 19:56 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -21,35 +21,35 @@
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| DNASE:HepG2 | 113 | 110 | -0.030 | ≥99th | 0.903 | Minimal effect |
+| DNASE:HepG2 | 112 | 110 | -0.021 | ≥99th | 0.903 | Minimal effect |
 
 #### Transcription factor binding (ChIP-TF)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
 | CHIP:CEBPA:HepG2 | 999 | 984 | -0.022 | ≥99th | 0.926 | Minimal effect |
-| CHIP:CEBPB:HepG2 | 488 | 488 | +0.001 | 0.21 | 0.823 | Minimal effect |
+| CHIP:CEBPB:HepG2 | 489 | 488 | -0.001 | 0.21 | 0.824 | Minimal effect |
 
 #### Histone modifications (ChIP-Histone)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:H3K27ac:HepG2 | 9.2e+03 | 8.94e+03 | -0.042 | ≥99th | 0.993 | Minimal effect |
+| CHIP:H3K27ac:HepG2 | 9.2e+03 | 8.95e+03 | -0.039 | ≥99th | 0.993 | Minimal effect |
 
 #### TSS activity (CAGE/PRO-CAP)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CAGE:HepG2 — variant site | 4 | 3.89 | -0.033 | ≥99th | 1.000 | Minimal effect |
-| CAGE:HepG2 — variant site | 0.846 | 0.82 | -0.021 | ≥99th | 1.000 | Minimal effect |
+| CAGE:HepG2 — variant site | 3.99 | 3.89 | -0.028 | ≥99th | 1.000 | Minimal effect |
+| CAGE:HepG2 — variant site | 0.843 | 0.821 | -0.018 | ≥99th | 1.000 | Minimal effect |
 | CAGE:HepG2 — IRX3 TSS | 1.27e+03 | 1.27e+03 | -0.007 | ≥99th | 1.000 | Minimal effect |
-| CAGE:HepG2 — RPGRIP1L TSS | 1.36e+03 | 1.36e+03 | -0.002 | ≥99th | 1.000 | Minimal effect |
-| CAGE:HepG2 — FTO TSS | 1.36e+03 | 1.36e+03 | -0.002 | ≥99th | 1.000 | Minimal effect |
-| CAGE:HepG2 — RBL2 TSS | 2.76e+03 | 2.75e+03 | -0.002 | ≥99th | 1.000 | Minimal effect |
-| CAGE:HepG2 — IRX3 TSS | 78.8 | 78.7 | -0.001 | ≥99th | 1.000 | Minimal effect |
-| CAGE:HepG2 — FTO TSS | 4.73e+03 | 4.72e+03 | -0.001 | ≥99th | 1.000 | Minimal effect |
-| CAGE:HepG2 — AKTIP TSS | 1.21e+03 | 1.21e+03 | -0.001 | — | 1.000 | Minimal effect |
+| CAGE:HepG2 — AKTIP TSS | 1.21e+03 | 1.22e+03 | +0.005 | ≥99th | 1.000 | Minimal effect |
+| CAGE:HepG2 — IRX3 TSS | 78.7 | 78.6 | -0.001 | ≥99th | 1.000 | Minimal effect |
+| CAGE:HepG2 — RBL2 TSS | 2.75e+03 | 2.75e+03 | -0.001 | ≥99th | 1.000 | Minimal effect |
+| CAGE:HepG2 — FTO TSS | 4.73e+03 | 4.72e+03 | -0.001 | — | 1.000 | Minimal effect |
 | CAGE:HepG2 — RPGRIP1L TSS | 4.63e+03 | 4.63e+03 | -0.001 | — | 1.000 | Minimal effect |
+| CAGE:HepG2 — FTO TSS | 1.35e+03 | 1.35e+03 | +0.001 | — | 1.000 | Minimal effect |
+| CAGE:HepG2 — RPGRIP1L TSS | 1.36e+03 | 1.36e+03 | +0.001 | — | 1.000 | Minimal effect |
 | _…showing top 10 of 12 — see `example_output.json` for the full set_ | | | | | | |
 
 ---

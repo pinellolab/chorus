@@ -15,8 +15,8 @@
   },
   "top_candidate": {
     "variant_id": "rs12740374",
-    "composite": 0.9639126313034743,
-    "max_effect": 0.4488494264784638,
+    "composite": 0.9642945617503551,
+    "max_effect": 0.44791998200251143,
     "n_layers_affected": 4,
     "convergence": 1.0,
     "top_layer": "chromatin_accessibility"
@@ -32,18 +32,18 @@
       "is_sentinel": true,
       "gene_name": "SORT1",
       "cell_type": "",
-      "composite": 0.9639,
-      "max_effect": 0.4488,
+      "composite": 0.9643,
+      "max_effect": 0.4479,
       "n_layers_affected": 4,
       "convergence": 1.0,
-      "ref_activity": 7113.8781,
+      "ref_activity": 7113.8762,
       "top_layer": "chromatin_accessibility",
       "top_track": "DNASE/EFO:0001187 DNase-seq/.",
       "per_layer_scores": {
-        "chromatin_accessibility": 0.4488,
-        "tf_binding": 0.3766,
-        "histone_marks": 0.1801,
-        "tss_activity": 0.2531
+        "chromatin_accessibility": 0.4479,
+        "tf_binding": 0.3773,
+        "histone_marks": 0.1768,
+        "tss_activity": 0.2524
       }
     },
     {
@@ -56,18 +56,18 @@
       "is_sentinel": false,
       "gene_name": "SORT1",
       "cell_type": "",
-      "composite": 0.5828,
-      "max_effect": -0.4018,
+      "composite": 0.5859,
+      "max_effect": -0.4047,
       "n_layers_affected": 1,
       "convergence": 1.0,
-      "ref_activity": 1664.4785,
+      "ref_activity": 1662.4862,
       "top_layer": "tss_activity",
       "top_track": "CAGE/hCAGE EFO:0001187/-",
       "per_layer_scores": {
-        "chromatin_accessibility": -0.0392,
-        "tf_binding": -0.027,
-        "histone_marks": -0.0147,
-        "tss_activity": -0.4018
+        "chromatin_accessibility": -0.0415,
+        "tf_binding": -0.0297,
+        "histone_marks": -0.0138,
+        "tss_activity": -0.4047
       }
     },
     {
@@ -80,18 +80,18 @@
       "is_sentinel": false,
       "gene_name": "SORT1",
       "cell_type": "",
-      "composite": 0.4903,
-      "max_effect": 0.1226,
+      "composite": 0.4923,
+      "max_effect": 0.1243,
       "n_layers_affected": 1,
       "convergence": 1.0,
-      "ref_activity": 6315.1204,
+      "ref_activity": 6303.0714,
       "top_layer": "chromatin_accessibility",
       "top_track": "DNASE/EFO:0001187 DNase-seq/.",
       "per_layer_scores": {
-        "chromatin_accessibility": 0.1226,
+        "chromatin_accessibility": 0.1243,
         "tf_binding": 0.0483,
-        "histone_marks": 0.0262,
-        "tss_activity": 0.0353
+        "histone_marks": 0.0265,
+        "tss_activity": 0.0333
       }
     },
     {
@@ -104,18 +104,18 @@
       "is_sentinel": false,
       "gene_name": "SORT1",
       "cell_type": "",
-      "composite": 0.2492,
-      "max_effect": 0.0761,
+      "composite": 0.2539,
+      "max_effect": 0.0813,
       "n_layers_affected": 0,
       "convergence": 0.0,
-      "ref_activity": 8377.7026,
+      "ref_activity": 8361.5805,
       "top_layer": "tss_activity",
       "top_track": "CAGE/hCAGE EFO:0001187/-",
       "per_layer_scores": {
-        "chromatin_accessibility": 0.0708,
-        "tf_binding": 0.0279,
-        "histone_marks": 0.0305,
-        "tss_activity": 0.0761
+        "chromatin_accessibility": 0.0725,
+        "tf_binding": 0.0224,
+        "histone_marks": 0.0292,
+        "tss_activity": 0.0813
       }
     },
     {
@@ -128,18 +128,18 @@
       "is_sentinel": false,
       "gene_name": "SORT1",
       "cell_type": "",
-      "composite": 0.1961,
-      "max_effect": -0.0417,
+      "composite": 0.2006,
+      "max_effect": -0.0463,
       "n_layers_affected": 0,
       "convergence": 0.0,
-      "ref_activity": 7490.431,
+      "ref_activity": 7486.443,
       "top_layer": "tss_activity",
       "top_track": "CAGE/hCAGE EFO:0001187/+",
       "per_layer_scores": {
-        "chromatin_accessibility": -0.0202,
-        "tf_binding": -0.0127,
-        "histone_marks": -0.0014,
-        "tss_activity": -0.0417
+        "chromatin_accessibility": -0.0237,
+        "tf_binding": -0.0113,
+        "histone_marks": -0.0037,
+        "tss_activity": -0.0463
       }
     },
     {
@@ -152,18 +152,18 @@
       "is_sentinel": false,
       "gene_name": "SORT1",
       "cell_type": "",
-      "composite": 0.1945,
-      "max_effect": 0.0666,
+      "composite": 0.1916,
+      "max_effect": 0.0621,
       "n_layers_affected": 0,
       "convergence": 0.0,
-      "ref_activity": 6731.7292,
+      "ref_activity": 6724.6647,
       "top_layer": "tss_activity",
       "top_track": "CAGE/hCAGE EFO:0001187/+",
       "per_layer_scores": {
-        "chromatin_accessibility": 0.0003,
-        "tf_binding": 0.0027,
-        "histone_marks": -0.0028,
-        "tss_activity": 0.0666
+        "chromatin_accessibility": 0.0049,
+        "tf_binding": 0.0084,
+        "histone_marks": -0.0009,
+        "tss_activity": 0.0621
       }
     },
     {
@@ -176,18 +176,18 @@
       "is_sentinel": false,
       "gene_name": "SORT1",
       "cell_type": "",
-      "composite": 0.1741,
-      "max_effect": 0.0196,
+      "composite": 0.1756,
+      "max_effect": 0.0204,
       "n_layers_affected": 0,
       "convergence": 0.0,
-      "ref_activity": 7344.6182,
+      "ref_activity": 7343.561,
       "top_layer": "histone_marks",
       "top_track": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
       "per_layer_scores": {
-        "chromatin_accessibility": 0.0078,
-        "tf_binding": 0.0083,
-        "histone_marks": 0.0196,
-        "tss_activity": -0.0084
+        "chromatin_accessibility": 0.0165,
+        "tf_binding": 0.0135,
+        "histone_marks": 0.0204,
+        "tss_activity": -0.0129
       }
     },
     {
@@ -200,18 +200,18 @@
       "is_sentinel": false,
       "gene_name": "SORT1",
       "cell_type": "",
-      "composite": 0.0353,
-      "max_effect": 0.037,
+      "composite": 0.0367,
+      "max_effect": 0.0379,
       "n_layers_affected": 0,
       "convergence": 0.0,
-      "ref_activity": 1992.9382,
+      "ref_activity": 1991.9363,
       "top_layer": "chromatin_accessibility",
       "top_track": "DNASE/EFO:0001187 DNase-seq/.",
       "per_layer_scores": {
-        "chromatin_accessibility": 0.037,
-        "tf_binding": 0.0322,
-        "histone_marks": 0.0029,
-        "tss_activity": -0.0156
+        "chromatin_accessibility": 0.0379,
+        "tf_binding": 0.0328,
+        "histone_marks": 0.0032,
+        "tss_activity": -0.0141
       }
     },
     {
@@ -225,41 +225,17 @@
       "gene_name": "SORT1",
       "cell_type": "",
       "composite": 0.0203,
-      "max_effect": -0.0151,
+      "max_effect": -0.0145,
       "n_layers_affected": 0,
       "convergence": 0.0,
-      "ref_activity": 2084.6308,
+      "ref_activity": 2082.3768,
       "top_layer": "chromatin_accessibility",
       "top_track": "DNASE/EFO:0001187 DNase-seq/.",
       "per_layer_scores": {
-        "chromatin_accessibility": -0.0151,
-        "tf_binding": -0.0051,
-        "histone_marks": -0.0028,
-        "tss_activity": -0.0091
-      }
-    },
-    {
-      "variant_id": "rs599839",
-      "chrom": "chr1",
-      "position": 109279544,
-      "ref": "G",
-      "alt": "A",
-      "r2": 0.907,
-      "is_sentinel": false,
-      "gene_name": "SORT1",
-      "cell_type": "",
-      "composite": 0.0072,
-      "max_effect": 0.0241,
-      "n_layers_affected": 0,
-      "convergence": 0.0,
-      "ref_activity": 1373.4539,
-      "top_layer": "tf_binding",
-      "top_track": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
-      "per_layer_scores": {
-        "chromatin_accessibility": 0.0031,
-        "tf_binding": 0.0241,
-        "histone_marks": 0.0034,
-        "tss_activity": 0.0112
+        "chromatin_accessibility": -0.0145,
+        "tf_binding": -0.0084,
+        "histone_marks": -0.0048,
+        "tss_activity": -0.0089
       }
     },
     {
@@ -273,17 +249,41 @@
       "gene_name": "SORT1",
       "cell_type": "",
       "composite": 0.006,
-      "max_effect": -0.0217,
+      "max_effect": -0.021,
       "n_layers_affected": 0,
       "convergence": 0.0,
-      "ref_activity": 1399.3679,
+      "ref_activity": 1396.7436,
       "top_layer": "tss_activity",
       "top_track": "CAGE/hCAGE EFO:0001187/-",
       "per_layer_scores": {
-        "chromatin_accessibility": -0.0054,
-        "tf_binding": -0.0157,
-        "histone_marks": -0.0019,
-        "tss_activity": -0.0217
+        "chromatin_accessibility": -0.0041,
+        "tf_binding": -0.0156,
+        "histone_marks": -0.0001,
+        "tss_activity": -0.021
+      }
+    },
+    {
+      "variant_id": "rs599839",
+      "chrom": "chr1",
+      "position": 109279544,
+      "ref": "G",
+      "alt": "A",
+      "r2": 0.907,
+      "is_sentinel": false,
+      "gene_name": "SORT1",
+      "cell_type": "",
+      "composite": 0.0055,
+      "max_effect": 0.0212,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1372.7048,
+      "top_layer": "tf_binding",
+      "top_track": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+      "per_layer_scores": {
+        "chromatin_accessibility": 0.0024,
+        "tf_binding": 0.0212,
+        "histone_marks": 0.0005,
+        "tss_activity": 0.016
       }
     }
   ],
@@ -297,6 +297,6 @@
       "HepG2"
     ],
     "notes": [],
-    "generated_at": "2026-04-17 06:51 UTC"
+    "generated_at": "2026-04-17 20:08 UTC"
   }
 }

@@ -7,9 +7,9 @@
 
 | Rank | Cell type | Best effect | Best track | N tracks |
 |------|-----------|-------------|------------|----------|
-| 1 | LNCaP clone FGC | +1.906 | DNASE/EFO:0005726 DNase-seq/. | 3 |
-| 2 | epithelial cell of proximal tubule | +1.634 | DNASE/CL:0002306 DNase-seq/. | 9 |
-| 3 | renal cortical epithelial cell | +1.486 | DNASE/CL:0002584 DNase-seq/. | 7 |
+| 1 | LNCaP clone FGC | +1.908 | DNASE/EFO:0005726 DNase-seq/. | 3 |
+| 2 | epithelial cell of proximal tubule | +1.627 | DNASE/CL:0002306 DNase-seq/. | 9 |
+| 3 | renal cortical epithelial cell | +1.485 | DNASE/CL:0002584 DNase-seq/. | 7 |
 
 ### LNCaP clone FGC
 
@@ -22,7 +22,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: top 3 tracks for LNCaP clone FGC
 - **Cell types**: LNCaP clone FGC
-- **Generated**: 2026-04-17 06:49 UTC
+- **Generated**: 2026-04-17 20:06 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -31,13 +31,13 @@
 **Gene**: SORT1
 **Other nearby genes**: PSRC1, CELSR2, MYBPHL, SARS1
 
-**Summary**: Chromatin accessibility (DNASE/ATAC): very strong opening (+1.91); Histone modifications (ChIP-Histone): very strong mark gain (+1.00); Transcription factor binding (ChIP-TF): moderate binding gain (+0.23).
+**Summary**: Chromatin accessibility (DNASE/ATAC): very strong opening (+1.91); Histone modifications (ChIP-Histone): very strong mark gain (+1.01); Transcription factor binding (ChIP-TF): moderate binding gain (+0.23).
 
 #### Chromatin accessibility (DNASE/ATAC)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| DNASE:LNCaP clone FGC | 59.1 | 224 | +1.906 | ≥99th | 0.861 | Very strong opening |
+| DNASE:LNCaP clone FGC | 58.9 | 224 | +1.908 | ≥99th | 0.861 | Very strong opening |
 
 #### Transcription factor binding (ChIP-TF)
 
@@ -49,7 +49,7 @@
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:H3K4me3:LNCaP clone FGC | 1.89e+03 | 3.78e+03 | +1.003 | ≥99th | 0.882 | Very strong mark gain |
+| CHIP:H3K4me3:LNCaP clone FGC | 1.87e+03 | 3.77e+03 | +1.008 | ≥99th | 0.882 | Very strong mark gain |
 
 ---
 **Score guide:**
@@ -68,7 +68,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: top 9 tracks for epithelial cell of proximal tubule
 - **Cell types**: epithelial cell of proximal tubule
-- **Generated**: 2026-04-17 06:50 UTC
+- **Generated**: 2026-04-17 20:07 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -83,58 +83,58 @@
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| DNASE:epithelial cell of proximal tubule | 80.4 | 252 | +1.634 | ≥99th | 0.882 | Very strong opening |
+| DNASE:epithelial cell of proximal tubule | 80.6 | 251 | +1.627 | ≥99th | 0.882 | Very strong opening |
 
 #### Transcription factor binding (ChIP-TF)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:CTCF:epithelial cell of proximal tubule | 450 | 510 | +0.182 | ≥99th | 0.890 | Moderate binding gain |
+| CHIP:CTCF:epithelial cell of proximal tubule | 450 | 510 | +0.179 | ≥99th | 0.890 | Moderate binding gain |
 
 #### Histone modifications (ChIP-Histone)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:H3K4me3:epithelial cell of proximal tubule | 4.69e+03 | 7.01e+03 | +0.581 | ≥99th | 0.885 | Strong mark gain |
+| CHIP:H3K4me3:epithelial cell of proximal tubule | 4.69e+03 | 7e+03 | +0.578 | ≥99th | 0.885 | Strong mark gain |
 
 #### TSS activity (CAGE/PRO-CAP)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CAGE:epithelial cell of proximal tubule — variant site | 10.1 | 17.3 | +0.719 | ≥99th | 1.000 | Very strong increase |
-| CAGE:epithelial cell of proximal tubule — variant site | 43.7 | 65.7 | +0.577 | ≥99th | 1.000 | Strong increase |
-| CAGE:epithelial cell of proximal tubule — PSRC1 TSS | 32.8 | 33.8 | +0.038 | ≥99th | 1.000 | Minimal effect |
-| CAGE:epithelial cell of proximal tubule — PSRC1 TSS | 2.09e+03 | 2.13e+03 | +0.031 | ≥99th | 1.000 | Minimal effect |
-| CAGE:epithelial cell of proximal tubule — CELSR2 TSS | 4.14 | 4.25 | +0.031 | ≥99th | 1.000 | Minimal effect |
+| CAGE:epithelial cell of proximal tubule — variant site | 10.1 | 17.3 | +0.722 | ≥99th | 1.000 | Very strong increase |
+| CAGE:epithelial cell of proximal tubule — variant site | 43.6 | 65.9 | +0.584 | ≥99th | 1.000 | Strong increase |
+| CAGE:epithelial cell of proximal tubule — PSRC1 TSS | 32.7 | 33.7 | +0.042 | ≥99th | 1.000 | Minimal effect |
+| CAGE:epithelial cell of proximal tubule — CELSR2 TSS | 4.14 | 4.25 | +0.032 | ≥99th | 1.000 | Minimal effect |
+| CAGE:epithelial cell of proximal tubule — CELSR2 TSS | 1.01e+03 | 1.03e+03 | +0.030 | ≥99th | 1.000 | Minimal effect |
+| CAGE:epithelial cell of proximal tubule — PSRC1 TSS | 2.09e+03 | 2.12e+03 | +0.026 | ≥99th | 1.000 | Minimal effect |
 | CAGE:epithelial cell of proximal tubule — MYBPHL TSS | 10.2 | 10.4 | +0.021 | ≥99th | 1.000 | Minimal effect |
-| CAGE:epithelial cell of proximal tubule — CELSR2 TSS | 1.02e+03 | 1.03e+03 | +0.017 | ≥99th | 1.000 | Minimal effect |
-| CAGE:epithelial cell of proximal tubule — EPS8L3 TSS | 109 | 108 | -0.014 | ≥99th | 1.000 | Minimal effect |
-| CAGE:epithelial cell of proximal tubule — SORT1 TSS | 6.96 | 7.03 | +0.013 | ≥99th | 1.000 | Minimal effect |
-| CAGE:epithelial cell of proximal tubule — GPR61 TSS | 5.53 | 5.47 | -0.013 | ≥99th | 1.000 | Minimal effect |
+| CAGE:epithelial cell of proximal tubule — SORT1 TSS | 6.96 | 7.04 | +0.013 | ≥99th | 1.000 | Minimal effect |
+| CAGE:epithelial cell of proximal tubule — GNAI3 TSS | 231 | 229 | -0.011 | ≥99th | 1.000 | Minimal effect |
+| CAGE:epithelial cell of proximal tubule — CFAP276 TSS | 25.6 | 25.5 | -0.008 | ≥99th | 1.000 | Minimal effect |
 | _…showing top 10 of 58 — see `example_output.json` for the full set_ | | | | | | |
 
 #### Gene expression (RNA-seq)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| RNA:epithelial cell of proximal tubule — CELSR2 (exons) | 0.0237 | 0.0275 | +0.144 | ≥99th | 0.192 | Moderate increase |
-| RNA:epithelial cell of proximal tubule — MYBPHL (exons) | 0.00376 | 0.00423 | +0.094 | ≥99th | 0.140 | Moderate increase |
-| RNA:epithelial cell of proximal tubule — PSRC1 (exons) | 0.109 | 0.119 | +0.094 | ≥99th | 0.325 | Moderate increase |
+| RNA:epithelial cell of proximal tubule — CELSR2 (exons) | 0.0236 | 0.0275 | +0.144 | ≥99th | 0.192 | Moderate increase |
+| RNA:epithelial cell of proximal tubule — MYBPHL (exons) | 0.00377 | 0.00425 | +0.096 | ≥99th | 0.140 | Moderate increase |
+| RNA:epithelial cell of proximal tubule — PSRC1 (exons) | 0.108 | 0.119 | +0.095 | ≥99th | 0.325 | Moderate increase |
 | RNA:epithelial cell of proximal tubule — CELSR2 (exons) | 180 | 188 | +0.043 | ≥99th | 1.000 | Minimal effect |
-| RNA:epithelial cell of proximal tubule — SORT1 (exons) | 0.0629 | 0.0648 | +0.028 | ≥99th | 0.263 | Minimal effect |
-| RNA:epithelial cell of proximal tubule — MYBPHL (exons) | 0.0676 | 0.0688 | +0.018 | ≥99th | 0.261 | Minimal effect |
-| RNA:epithelial cell of proximal tubule — PSRC1 (exons) | 393 | 399 | +0.014 | ≥99th | 1.000 | Minimal effect |
-| RNA:epithelial cell of proximal tubule — SORT1 (exons) | 292 | 294 | +0.005 | ≥99th | 1.000 | Minimal effect |
-| RNA:epithelial cell of proximal tubule — AMPD2 (exons) | 0.0618 | 0.0615 | -0.005 | ≤1st | 0.250 | Minimal effect |
-| RNA:epithelial cell of proximal tubule — TMEM167B (exons) | 0.58 | 0.583 | +0.005 | ≥99th | 0.820 | Minimal effect |
+| RNA:epithelial cell of proximal tubule — SORT1 (exons) | 0.063 | 0.0651 | +0.033 | ≥99th | 0.263 | Minimal effect |
+| RNA:epithelial cell of proximal tubule — PSRC1 (exons) | 393 | 400 | +0.017 | ≥99th | 1.000 | Minimal effect |
+| RNA:epithelial cell of proximal tubule — MYBPHL (exons) | 0.0681 | 0.0692 | +0.016 | ≥99th | 0.262 | Minimal effect |
+| RNA:epithelial cell of proximal tubule — GSTM3 (exons) | 0.152 | 0.15 | -0.009 | ≤1st | 0.387 | Minimal effect |
+| RNA:epithelial cell of proximal tubule — SORT1 (exons) | 292 | 294 | +0.006 | ≥99th | 1.000 | Minimal effect |
+| RNA:epithelial cell of proximal tubule — TMEM167B (exons) | 0.582 | 0.579 | -0.005 | ≤1st | 0.821 | Minimal effect |
 | _…showing top 10 of 58 — see `example_output.json` for the full set_ | | | | | | |
 
 #### Splicing (splice sites)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| SPLICE_SITES:epithelial cell of proximal tubule | 0.00785 | 0.007 | -0.001 | ≥99th | 0.877 | Minimal effect |
-| SPLICE_SITES:epithelial cell of proximal tubule | 0.00116 | 0.00115 | -0.000 | — | 0.693 | Minimal effect |
+| SPLICE_SITES:epithelial cell of proximal tubule | 0.00788 | 0.007 | -0.001 | ≥99th | 0.877 | Minimal effect |
+| SPLICE_SITES:epithelial cell of proximal tubule | 0.00117 | 0.00114 | -0.000 | — | 0.694 | Minimal effect |
 
 ---
 **Score guide:**
@@ -153,7 +153,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: top 7 tracks for renal cortical epithelial cell
 - **Cell types**: renal cortical epithelial cell
-- **Generated**: 2026-04-17 06:50 UTC
+- **Generated**: 2026-04-17 20:07 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -168,46 +168,46 @@
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| DNASE:renal cortical epithelial cell | 224 | 629 | +1.486 | ≥99th | 0.938 | Very strong opening |
+| DNASE:renal cortical epithelial cell | 224 | 629 | +1.485 | ≥99th | 0.938 | Very strong opening |
 
 #### TSS activity (CAGE/PRO-CAP)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CAGE:renal cortical epithelial cell — variant site | 9.1 | 15.1 | +0.676 | ≥99th | 1.000 | Strong increase |
-| CAGE:renal cortical epithelial cell — variant site | 42.8 | 62.7 | +0.542 | ≥99th | 1.000 | Strong increase |
-| CAGE:renal cortical epithelial cell — PSRC1 TSS | 27.1 | 27.8 | +0.034 | ≥99th | 1.000 | Minimal effect |
-| CAGE:renal cortical epithelial cell — PSRC1 TSS | 1.85e+03 | 1.89e+03 | +0.032 | ≥99th | 1.000 | Minimal effect |
-| CAGE:renal cortical epithelial cell — CELSR2 TSS | 4.08 | 4.17 | +0.025 | ≥99th | 1.000 | Minimal effect |
-| CAGE:renal cortical epithelial cell — MYBPHL TSS | 11.2 | 11.3 | +0.017 | ≥99th | 1.000 | Minimal effect |
-| CAGE:renal cortical epithelial cell — EPS8L3 TSS | 90.2 | 89.3 | -0.014 | ≥99th | 1.000 | Minimal effect |
-| CAGE:renal cortical epithelial cell — CELSR2 TSS | 1.08e+03 | 1.09e+03 | +0.013 | ≥99th | 1.000 | Minimal effect |
-| CAGE:renal cortical epithelial cell — GNAI3 TSS | 211 | 213 | +0.013 | ≥99th | 1.000 | Minimal effect |
-| CAGE:renal cortical epithelial cell — SORT1 TSS | 6.74 | 6.8 | +0.011 | ≥99th | 1.000 | Minimal effect |
+| CAGE:renal cortical epithelial cell — variant site | 9.11 | 15.2 | +0.678 | ≥99th | 1.000 | Strong increase |
+| CAGE:renal cortical epithelial cell — variant site | 42.7 | 63 | +0.549 | ≥99th | 1.000 | Strong increase |
+| CAGE:renal cortical epithelial cell — PSRC1 TSS | 27 | 27.7 | +0.040 | ≥99th | 1.000 | Minimal effect |
+| CAGE:renal cortical epithelial cell — CELSR2 TSS | 4.08 | 4.18 | +0.027 | ≥99th | 1.000 | Minimal effect |
+| CAGE:renal cortical epithelial cell — PSRC1 TSS | 1.85e+03 | 1.89e+03 | +0.025 | ≥99th | 1.000 | Minimal effect |
+| CAGE:renal cortical epithelial cell — CELSR2 TSS | 1.08e+03 | 1.1e+03 | +0.023 | ≥99th | 1.000 | Minimal effect |
+| CAGE:renal cortical epithelial cell — MYBPHL TSS | 11.2 | 11.4 | +0.015 | ≥99th | 1.000 | Minimal effect |
+| CAGE:renal cortical epithelial cell — SORT1 TSS | 6.74 | 6.81 | +0.012 | ≥99th | 1.000 | Minimal effect |
+| CAGE:renal cortical epithelial cell — GNAI3 TSS | 214 | 212 | -0.011 | ≥99th | 1.000 | Minimal effect |
+| CAGE:renal cortical epithelial cell — AKNAD1 TSS | 2.37 | 2.35 | -0.009 | ≥99th | 1.000 | Minimal effect |
 | _…showing top 10 of 58 — see `example_output.json` for the full set_ | | | | | | |
 
 #### Gene expression (RNA-seq)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| RNA:renal cortical epithelial cell — CELSR2 (exons) | 0.0661 | 0.0788 | +0.174 | ≥99th | 0.257 | Moderate increase |
+| RNA:renal cortical epithelial cell — CELSR2 (exons) | 0.0659 | 0.0786 | +0.173 | ≥99th | 0.257 | Moderate increase |
 | RNA:renal cortical epithelial cell — PSRC1 (exons) | 0.133 | 0.153 | +0.137 | ≥99th | 0.366 | Moderate increase |
-| RNA:renal cortical epithelial cell — MYBPHL (exons) | 0.0237 | 0.0267 | +0.115 | ≥99th | 0.189 | Moderate increase |
-| RNA:renal cortical epithelial cell — PSRC1 (exons) | 62.2 | 66 | +0.059 | ≥99th | 1.000 | Moderate increase |
-| RNA:renal cortical epithelial cell — CELSR2 (exons) | 194 | 204 | +0.053 | ≥99th | 1.000 | Moderate increase |
-| RNA:renal cortical epithelial cell — SORT1 (exons) | 0.332 | 0.344 | +0.034 | ≥99th | 0.673 | Minimal effect |
-| RNA:renal cortical epithelial cell — MYBPHL (exons) | 0.137 | 0.141 | +0.031 | ≥99th | 0.388 | Minimal effect |
-| RNA:renal cortical epithelial cell — SARS1 (exons) | 0.474 | 0.478 | +0.007 | ≥99th | 0.804 | Minimal effect |
+| RNA:renal cortical epithelial cell — MYBPHL (exons) | 0.0237 | 0.0269 | +0.119 | ≥99th | 0.189 | Moderate increase |
+| RNA:renal cortical epithelial cell — PSRC1 (exons) | 62.1 | 66.1 | +0.061 | ≥99th | 1.000 | Moderate increase |
+| RNA:renal cortical epithelial cell — CELSR2 (exons) | 193 | 204 | +0.053 | ≥99th | 1.000 | Moderate increase |
+| RNA:renal cortical epithelial cell — SORT1 (exons) | 0.332 | 0.345 | +0.037 | ≥99th | 0.674 | Minimal effect |
+| RNA:renal cortical epithelial cell — MYBPHL (exons) | 0.138 | 0.142 | +0.030 | ≥99th | 0.391 | Minimal effect |
+| RNA:renal cortical epithelial cell — GSTM3 (exons) | 0.488 | 0.483 | -0.009 | ≤1st | 0.821 | Minimal effect |
 | RNA:renal cortical epithelial cell — SORT1 (exons) | 483 | 486 | +0.007 | ≥99th | 1.000 | Minimal effect |
-| RNA:renal cortical epithelial cell — TMEM167B (exons) | 1.15 | 1.16 | +0.005 | ≥99th | 1.000 | Minimal effect |
+| RNA:renal cortical epithelial cell — PSMA5 (exons) | 0.225 | 0.226 | +0.005 | ≥99th | 0.515 | Minimal effect |
 | _…showing top 10 of 58 — see `example_output.json` for the full set_ | | | | | | |
 
 #### Splicing (splice sites)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| SPLICE_SITES:renal cortical epithelial cell | 0.00635 | 0.00575 | -0.001 | — | 0.860 | Minimal effect |
-| SPLICE_SITES:renal cortical epithelial cell | 0.00102 | 0.00102 | +0.000 | — | 0.621 | Minimal effect |
+| SPLICE_SITES:renal cortical epithelial cell | 0.00637 | 0.00575 | -0.001 | — | 0.860 | Minimal effect |
+| SPLICE_SITES:renal cortical epithelial cell | 0.00102 | 0.00102 | +0.000 | — | 0.623 | Minimal effect |
 
 ---
 **Score guide:**
