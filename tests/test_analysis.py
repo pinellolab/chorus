@@ -2421,9 +2421,11 @@ class TestSafeToolDecorator:
 class TestFmtPercentile:
     """Tests for _fmt_percentile display helper."""
 
-    def test_none_returns_dash(self):
+    def test_none_returns_near_zero(self):
         from chorus.analysis.variant_report import _fmt_percentile
-        assert _fmt_percentile(None) == "—"
+        # None means the raw effect was below NOISE_FLOOR_RAW_SCORE; we
+        # render "near-zero" (not "—") so users don't read it as missing data.
+        assert _fmt_percentile(None) == "near-zero"
 
     def test_saturated_high(self):
         from chorus.analysis.variant_report import _fmt_percentile

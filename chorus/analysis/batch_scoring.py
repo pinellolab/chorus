@@ -210,11 +210,8 @@ class BatchResult:
                     alt_str = f"{ts.alt_value:.3g}" if ts.alt_value is not None else "—"
                     sign = "+" if ts.raw_score >= 0 else ""
                     fc_str = f"{sign}{ts.raw_score:.3f}"
-                    if ts.quantile_score is not None:
-                        pct_str = "≥99th" if ts.quantile_score >= 0.99 else (
-                            "≤1st" if ts.quantile_score <= 0.01 else f"{ts.quantile_score:.2f}")
-                    else:
-                        pct_str = "—"
+                    from chorus.analysis.variant_report import _fmt_percentile
+                    pct_str = _fmt_percentile(ts.quantile_score)
                     row += f" {ref_str} | {alt_str} | {fc_str} | {pct_str} |"
                 else:
                     row += " — | — | — | — |"
@@ -330,11 +327,8 @@ class BatchResult:
                     alt_str = f"{ts.alt_value:.3g}" if ts.alt_value is not None else "—"
                     sign = "+" if ts.raw_score >= 0 else ""
                     cls = "gain" if ts.raw_score > 0.1 else ("loss" if ts.raw_score < -0.1 else "neutral")
-                    if ts.quantile_score is not None:
-                        pct_str = "≥99th" if ts.quantile_score >= 0.99 else (
-                            "≤1st" if ts.quantile_score <= 0.01 else f"{ts.quantile_score:.2f}")
-                    else:
-                        pct_str = "—"
+                    from chorus.analysis.variant_report import _fmt_percentile
+                    pct_str = _fmt_percentile(ts.quantile_score)
                     parts.append(f"<td>{ref_str}</td><td>{alt_str}</td>"
                                  f"<td class='{cls}'>{sign}{ts.raw_score:.3f}</td>"
                                  f"<td>{pct_str}</td>")
