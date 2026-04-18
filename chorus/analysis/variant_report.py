@@ -436,9 +436,17 @@ def _sort_layer_scores(layer_scores: list["TrackScore"]) -> list["TrackScore"]:
 
 
 def _fmt_percentile(q: float | None) -> str:
-    """Format a quantile score for display, avoiding misleading precision."""
+    """Format a quantile score for display, avoiding misleading precision.
+
+    ``None`` means the percentile was suppressed because ``|raw_score|``
+    fell below ``NOISE_FLOOR_RAW_SCORE`` (~1e-3) — i.e. the variant effect
+    is near-zero and the CDF can't meaningfully rank it against a
+    background that's also mostly near-zero. We render ``near-zero``
+    (rather than a cryptic em-dash) so users don't interpret it as
+    missing data.
+    """
     if q is None:
-        return "—"
+        return "near-zero"
     if q >= 0.99:
         return "≥99th"
     if q <= 0.01:
