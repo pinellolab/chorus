@@ -96,6 +96,11 @@ class CausalResult:
     cell_types: list[str] = field(default_factory=list)
     nearby_genes: list[str] = field(default_factory=list)
     analysis_request: AnalysisRequest | None = None
+    # When True, the IGV browser shows raw predicted signal with autoscale
+    # instead of the layer-aware floor-rescale (1.0 = genome-wide p99).
+    # Default False so tracks are cross-comparable by default, matching the
+    # rest of Chorus; flip to True only when raw dynamics matter.
+    _igv_raw: bool = field(default=False, repr=False)
 
     def top_candidate(self) -> CausalVariantScore:
         """Return the highest-ranked variant."""
@@ -973,7 +978,12 @@ def _build_causal_igv(result: CausalResult) -> str:
 
         if ref_pred and alt_pred:
             from .scorers import classify_track_layer
-            from ._igv_report import _downsample_to_features, _LAYER_COLORS, _REF_COLOR
+            from ._igv_report import (
+                _DISPLAY_MAX,
+                _REF_COLOR,
+                _downsample_to_features,
+                apply_floor_rescale,
+            )
 
             assay_ids = list(ref_pred.keys())
             first_track = ref_pred[assay_ids[0]]
@@ -983,20 +993,47 @@ def _build_causal_igv(result: CausalResult) -> str:
             bin_size = max(1, window_bp // 3000)
             alt_rgb = _TOP_VARIANT_COLORS[vi]["r"] if vi < len(_TOP_VARIANT_COLORS) else "70,130,180"
 
+            # Route signal tracks through the shared floor-rescale helper
+            # so the causal IGV looks like every other Chorus report:
+            # 1.0 = genome-wide p99 peak. Users opt out via
+            # CausalResult._igv_raw (set by the caller) or by building
+            # variant reports with ``igv_raw=True``.
+            normalizer = getattr(top_s._variant_report, "_normalizer", None)
+            oracle_name = getattr(top_s._variant_report, "oracle_name", None)
+            igv_raw = (
+                getattr(result, "_igv_raw", False)
+                or getattr(top_s._variant_report, "_igv_raw", False)
+            )
+            if igv_raw:
+                normalizer = None
+
             for aid in assay_ids:
                 ref_t = ref_pred[aid]
                 alt_t = alt_pred[aid]
                 t_start = ref_t.prediction_interval.reference.start
                 t_res = ref_t.resolution
 
+                layer = classify_track_layer(ref_t)
+                floor_ok, ref_vals, alt_vals = apply_floor_rescale(
+                    normalizer, oracle_name, aid, layer,
+                    ref_t.values, alt_t.values,
+                )
+
                 ref_feats = _downsample_to_features(
-                    ref_t.values, chrom, t_start, t_res, bin_size,
+                    ref_vals, chrom, t_start, t_res, bin_size,
+                    skip_zeros=not floor_ok,
                 )
                 alt_feats = _downsample_to_features(
-                    alt_t.values, chrom, t_start, t_res, bin_size,
+                    alt_vals, chrom, t_start, t_res, bin_size,
+                    skip_zeros=not floor_ok,
                 )
 
                 group_id = f"{aid}_{top_s.variant_id}".replace(":", "_").replace(" ", "_")
+                if floor_ok:
+                    scale_cfg = {"min": 0, "max": _DISPLAY_MAX, "autoscale": False}
+                else:
+                    scale_cfg = {"autoscale": True, "autoscaleGroup": group_id}
+
                 rank_label = _TOP_VARIANT_COLORS[vi]["label"] if vi < len(_TOP_VARIANT_COLORS) else f"#{vi+1}"
                 tracks.append({
                     "name": f"{aid} ({rank_label} {top_s.variant_id})",
@@ -1007,16 +1044,14 @@ def _build_causal_igv(result: CausalResult) -> str:
                             "type": "wig",
                             "name": f"{aid} ref",
                             "color": f"rgb({_REF_COLOR})",
-                            "autoscale": True,
-                            "autoscaleGroup": group_id,
+                            **scale_cfg,
                             "features": ref_feats,
                         },
                         {
                             "type": "wig",
                             "name": f"{aid} alt",
                             "color": f"rgb({alt_rgb})",
-                            "autoscale": True,
-                            "autoscaleGroup": group_id,
+                            **scale_cfg,
                             "features": alt_feats,
                         },
                     ],

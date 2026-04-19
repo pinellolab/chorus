@@ -2873,6 +2873,33 @@ class TestMultiOracleReport:
         assert moracle.reports["chrombpnet"].allele_scores["T"][0].raw_score \
             == pytest.approx(0.51)
 
+    def test_apply_floor_rescale_passthrough(self):
+        """``apply_floor_rescale`` should passthrough cleanly when it can't rescale.
+
+        A None normalizer or a wrong-type normalizer must return
+        ``(False, ref_unchanged, alt_unchanged)`` so the causal + variant
+        renderers can fall back to raw autoscale without extra guards.
+        """
+        import numpy as np
+        from chorus.analysis._igv_report import apply_floor_rescale
+
+        ref = np.array([1.0, 2.0, 3.0])
+        alt = np.array([1.2, 2.1, 2.8])
+
+        # None normalizer — passthrough
+        ok, r, a = apply_floor_rescale(None, None, "x", "chromatin_accessibility",
+                                       ref, alt)
+        assert ok is False
+        assert r is ref and a is alt  # unchanged references
+
+        # Non-PerTrackNormalizer type — passthrough
+        class _NotPT:
+            pass
+        ok, r, a = apply_floor_rescale(_NotPT(), "oracle", "assay",
+                                       "tf_binding", ref, alt)
+        assert ok is False
+        assert r is ref and a is alt
+
     def test_markdown_summary_contains_consensus_table(self):
         from chorus.analysis import MultiOracleReport
         from chorus.analysis.variant_report import TrackScore

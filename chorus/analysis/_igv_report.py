@@ -130,6 +130,54 @@ _DEFAULT_FLOOR_PCTILE = 0.95
 _DISPLAY_MAX = 3.0
 
 
+def apply_floor_rescale(
+    normalizer,
+    oracle_name: str | None,
+    assay_id: str,
+    layer: str,
+    ref_vals,
+    alt_vals,
+):
+    """Floor-subtract + rescale a ref/alt value pair using the normalizer.
+
+    Returns ``(floor_ok, ref_scaled, alt_scaled)``.  When ``floor_ok`` is
+    ``True`` the returned arrays are mapped to ``[0, _DISPLAY_MAX]`` with
+    layer-aware thresholds (p95 / p99 for sharp signals, p90 / p99 for
+    broad histone marks) — 1.0 on the y-axis then corresponds to the
+    genome-wide p99 peak in that assay, making tracks comparable across
+    assays *and* across reports. When False, callers should fall back to
+    raw autoscale.
+
+    This helper is shared by the standard variant-report IGV
+    (:func:`build_igv_html`) and the causal-report IGV
+    (:func:`chorus.analysis.causal._build_causal_igv`) so both reports
+    render the same "scaled-by-default" IGV tracks.
+    """
+    if normalizer is None or oracle_name is None:
+        return False, ref_vals, alt_vals
+    from .normalization import PerTrackNormalizer
+    if not isinstance(normalizer, PerTrackNormalizer):
+        return False, ref_vals, alt_vals
+    floor_p = _LAYER_FLOOR_PCTILE.get(layer, _DEFAULT_FLOOR_PCTILE)
+    ref_fl = normalizer.perbin_floor_rescale_batch(
+        oracle_name, assay_id, ref_vals,
+        floor_pctile=floor_p,
+        peak_pctile=_PEAK_PCTILE,
+        max_value=_DISPLAY_MAX,
+    )
+    if ref_fl is None:
+        return False, ref_vals, alt_vals
+    alt_fl = normalizer.perbin_floor_rescale_batch(
+        oracle_name, assay_id, alt_vals,
+        floor_pctile=floor_p,
+        peak_pctile=_PEAK_PCTILE,
+        max_value=_DISPLAY_MAX,
+    )
+    if alt_fl is None:
+        return False, ref_vals, alt_vals
+    return True, ref_fl, alt_fl
+
+
 def build_igv_html(
     ref_pred,
     alt_pred,
@@ -231,25 +279,9 @@ def build_igv_html(
         # Apply layer-aware floor-subtract + rescale when available
         floor_ok = False
         if use_floor:
-            from .normalization import PerTrackNormalizer
-            if isinstance(normalizer, PerTrackNormalizer):
-                floor_p = _LAYER_FLOOR_PCTILE.get(layer, _DEFAULT_FLOOR_PCTILE)
-                ref_fl = normalizer.perbin_floor_rescale_batch(
-                    oracle_name, assay_id, ref_vals,
-                    floor_pctile=floor_p,
-                    peak_pctile=_PEAK_PCTILE,
-                    max_value=_DISPLAY_MAX,
-                )
-                if ref_fl is not None:
-                    alt_fl = normalizer.perbin_floor_rescale_batch(
-                        oracle_name, assay_id, alt_vals,
-                        floor_pctile=floor_p,
-                        peak_pctile=_PEAK_PCTILE,
-                        max_value=_DISPLAY_MAX,
-                    )
-                    ref_vals = ref_fl
-                    alt_vals = alt_fl
-                    floor_ok = True
+            floor_ok, ref_vals, alt_vals = apply_floor_rescale(
+                normalizer, oracle_name, assay_id, layer, ref_vals, alt_vals,
+            )
 
         ref_features = _downsample_to_features(
             ref_vals, variant_chrom, t_start, t_res, bin_size,
