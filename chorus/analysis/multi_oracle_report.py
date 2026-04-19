@@ -238,10 +238,16 @@ class MultiOracleReport:
                     "quantile_score": best.quantile_score,
                 }
                 directions.append(1 if best.raw_score > 0 else -1)
+            # "Consensus" requires at least two voting oracles; a single
+            # voter is recorded as ``single_gain`` / ``single_loss`` so the
+            # rendered label doesn't read "all ↑" when only one oracle
+            # actually scored the layer.
             if directions:
                 pos = sum(1 for d in directions if d > 0)
                 neg = len(directions) - pos
-                if pos == len(directions):
+                if len(directions) == 1:
+                    entry["agreement"] = "single_gain" if pos == 1 else "single_loss"
+                elif pos == len(directions):
                     entry["agreement"] = "consensus_gain"
                 elif neg == len(directions):
                     entry["agreement"] = "consensus_loss"
@@ -308,6 +314,8 @@ class MultiOracleReport:
             agree = {
                 "consensus_gain": "all ↑",
                 "consensus_loss": "all ↓",
+                "single_gain": "only ↑ (n=1)",
+                "single_loss": "only ↓ (n=1)",
                 "disagree": "disagree",
                 "no_data": "—",
             }[row["agreement"]]
@@ -328,6 +336,10 @@ _EXTRA_CSS = """
                                font-weight: 600; }
 .consensus-table .agree-mixed { background: #fff3cd; color: #856404;
                                 font-weight: 600; }
+/* single-voter — neutral grey so users see that only one oracle
+   reported a direction (no real consensus possible). */
+.consensus-table .agree-single { background: #f3f4f6; color: #4b5563;
+                                 font-weight: 500; }
 .consensus-table .agree-none { color: #adb5bd; }
 .consensus-table td.effect-cell { font-family: ui-monospace, SFMono-Regular,
                                   Menlo, monospace; font-size: 0.85rem; }
@@ -447,6 +459,8 @@ def _build_multioracle_html(report: "MultiOracleReport") -> str:
         agree_label, agree_cls = {
             "consensus_gain": ("✅ all ↑", "agree-gain"),
             "consensus_loss": ("✅ all ↓", "agree-loss"),
+            "single_gain": ("↑ only (n=1)", "agree-single"),
+            "single_loss": ("↓ only (n=1)", "agree-single"),
             "disagree": ("⚠ disagree", "agree-mixed"),
             "no_data": ("—", "agree-none"),
         }[agree]

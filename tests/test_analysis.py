@@ -2893,3 +2893,45 @@ class TestMultiOracleReport:
         assert "Cross-oracle consensus" in md
         assert "oracle_a" in md and "oracle_b" in md
         assert "all ↑" in md
+
+    def test_single_voter_layer_uses_n1_label_not_all(self):
+        """When only one oracle reports a direction for a layer (common
+        when oracles specialise — ChromBPNet for chromatin only, LegNet
+        for MPRA only), the agreement label must distinguish this from
+        a real multi-oracle consensus. Previously a single ``+0.3`` vote
+        rendered as "all ↑" which falsely implied agreement across
+        multiple oracles."""
+        from chorus.analysis import MultiOracleReport
+        from chorus.analysis.variant_report import TrackScore
+
+        # Two oracles, but only one scores the MPRA layer and only one
+        # scores the chromatin layer — no overlap.
+        chromatin_only = self._mk_report("chrombpnet", [
+            TrackScore(assay_id="ATAC:HepG2", assay_type="ATAC",
+                       cell_type="HepG2", layer="chromatin_accessibility",
+                       ref_value=4.0, alt_value=5.7, raw_score=0.51),
+        ])
+        mpra_only = self._mk_report("legnet", [
+            TrackScore(assay_id="LentiMPRA:HepG2", assay_type="LentiMPRA",
+                       cell_type="HepG2", layer="promoter_activity",
+                       ref_value=2.0, alt_value=1.6, raw_score=-0.32),
+        ])
+        moracle = MultiOracleReport.from_reports(
+            [chromatin_only, mpra_only], variant_id="rs-test",
+        )
+        rows = {r["layer"]: r for r in moracle._consensus_rows()}
+        assert rows["chromatin_accessibility"]["agreement"] == "single_gain"
+        assert rows["promoter_activity"]["agreement"] == "single_loss"
+
+        md = moracle.to_markdown()
+        # Label must say "n=1", must NOT say "all ↑" / "all ↓" (would
+        # imply multi-oracle agreement the data doesn't support).
+        assert "only ↑ (n=1)" in md
+        assert "only ↓ (n=1)" in md
+        assert "all ↑" not in md
+        assert "all ↓" not in md
+
+        html = moracle.to_html()
+        assert "↑ only (n=1)" in html
+        assert "↓ only (n=1)" in html
+        assert "agree-single" in html
