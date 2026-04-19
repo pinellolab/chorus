@@ -10,9 +10,9 @@
   },
   "gene_name": "SORT1",
   "oracles": [
-    "alphagenome",
     "chrombpnet",
-    "legnet"
+    "legnet",
+    "alphagenome"
   ],
   "per_oracle_report_paths": {
     "legnet": "rs12740374_SORT1_legnet_report.html"
@@ -21,87 +21,87 @@
     {
       "layer": "chromatin_accessibility",
       "oracles": {
-        "alphagenome": {
-          "raw_score": 0.4525551981440325,
-          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
-          "cell_type": "HepG2",
-          "quantile_score": 1.0
-        },
         "chrombpnet": {
           "raw_score": -0.11089156202257182,
           "assay_id": "ATAC:HepG2",
           "cell_type": "HepG2",
           "quantile_score": 0.96721823290665
         },
-        "legnet": null
+        "legnet": null,
+        "alphagenome": {
+          "raw_score": 0.4525551981440325,
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "cell_type": "HepG2",
+          "quantile_score": 1.0
+        }
       },
       "agreement": "disagree"
     },
     {
-      "layer": "tf_binding",
-      "oracles": {
-        "alphagenome": {
-          "raw_score": 0.3806839182959419,
-          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
-          "cell_type": "HepG2",
-          "quantile_score": 1.0
-        },
-        "chrombpnet": null,
-        "legnet": null
-      },
-      "agreement": "consensus_gain"
-    },
-    {
-      "layer": "histone_marks",
-      "oracles": {
-        "alphagenome": {
-          "raw_score": 0.17998971913566533,
-          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
-          "cell_type": "HepG2",
-          "quantile_score": 1.0
-        },
-        "chrombpnet": null,
-        "legnet": null
-      },
-      "agreement": "consensus_gain"
-    },
-    {
-      "layer": "tss_activity",
-      "oracles": {
-        "alphagenome": {
-          "raw_score": 0.2541795926080432,
-          "assay_id": "CAGE/hCAGE EFO:0001187/-",
-          "cell_type": "HepG2",
-          "quantile_score": 1.0
-        },
-        "chrombpnet": null,
-        "legnet": null
-      },
-      "agreement": "consensus_gain"
-    },
-    {
       "layer": "promoter_activity",
       "oracles": {
-        "alphagenome": null,
         "chrombpnet": null,
         "legnet": {
           "raw_score": -0.0278623104095459,
           "assay_id": "LentiMPRA:HepG2",
           "cell_type": "HepG2",
           "quantile_score": null
+        },
+        "alphagenome": null
+      },
+      "agreement": "single_loss"
+    },
+    {
+      "layer": "tf_binding",
+      "oracles": {
+        "chrombpnet": null,
+        "legnet": null,
+        "alphagenome": {
+          "raw_score": 0.3806839182959419,
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+          "cell_type": "HepG2",
+          "quantile_score": 1.0
         }
       },
-      "agreement": "consensus_loss"
+      "agreement": "single_gain"
+    },
+    {
+      "layer": "histone_marks",
+      "oracles": {
+        "chrombpnet": null,
+        "legnet": null,
+        "alphagenome": {
+          "raw_score": 0.17998971913566533,
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "cell_type": "HepG2",
+          "quantile_score": 1.0
+        }
+      },
+      "agreement": "single_gain"
+    },
+    {
+      "layer": "tss_activity",
+      "oracles": {
+        "chrombpnet": null,
+        "legnet": null,
+        "alphagenome": {
+          "raw_score": 0.2541795926080432,
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "cell_type": "HepG2",
+          "quantile_score": 1.0
+        }
+      },
+      "agreement": "single_gain"
     }
   ],
   "analysis_request": {
-    "user_prompt": "Analyze rs12740374 (chr1:109274968 G>T) in HepG2 liver cells using DNASE, CEBPA/CEBPB ChIP, H3K27ac, and CAGE tracks. Gene is SORT1.",
-    "tool_name": "analyze_variant_multilayer",
-    "oracle_name": "alphagenome",
-    "normalizer_name": "per-track background CDFs",
-    "tracks_requested": "6 HepG2 tracks",
+    "user_prompt": "Validate rs12740374 (the classic SORT1 LDL-cholesterol causal variant) by scoring it with three independent deep-learning oracles: ChromBPNet for chromatin accessibility, LegNet for MPRA promoter activity, and AlphaGenome as a generalist model covering ChIP, histones and CAGE. A new user should be able to see at a glance whether the three oracles agree on direction, and which assay/cell type drove each call.",
+    "tool_name": "MultiOracleReport",
+    "oracle_name": "chrombpnet, legnet, alphagenome",
+    "normalizer_name": "per-oracle chorus per-track v1",
+    "tracks_requested": "assay_ids as listed in each per-oracle request",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-04-17 19:45 UTC"
+    "generated_at": "2026-04-19 18:35 UTC"
   }
 }

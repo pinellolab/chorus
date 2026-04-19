@@ -54,6 +54,10 @@ tr:hover td { background: #e9ecef; }
                                font-weight: 600; }
 .consensus-table .agree-mixed { background: #fff3cd; color: #856404;
                                 font-weight: 600; }
+/* single-voter — neutral grey so users see that only one oracle
+   reported a direction (no real consensus possible). */
+.consensus-table .agree-single { background: #f3f4f6; color: #4b5563;
+                                 font-weight: 500; }
 .consensus-table .agree-none { color: #adb5bd; }
 .consensus-table td.effect-cell { font-family: ui-monospace, SFMono-Regular,
                                   Menlo, monospace; font-size: 0.85rem; }
@@ -76,70 +80,60 @@ details.oracle-block table th { background: #6c757d; }
 <h1 class='moracle-header'>Multi-oracle validation — rs12740374 — chr1:109,274,968</h1>
 <section class="analysis-request" style="background:#f6f8fa;border-left:4px solid #0366d6;padding:12px 16px;margin:0 0 16px 0;border-radius:4px;font-size:0.92em;">
 <h3 style="margin:0 0 8px 0;font-size:1.05em;">Analysis Request</h3>
-<blockquote style="margin:0 0 8px 0;padding:6px 10px;background:#fff;border-left:3px solid #d1d5da;color:#24292e;">Analyze rs12740374 (chr1:109274968 G&gt;T) in HepG2 liver cells using DNASE, CEBPA/CEBPB ChIP, H3K27ac, and CAGE tracks. Gene is SORT1.</blockquote>
+<blockquote style="margin:0 0 8px 0;padding:6px 10px;background:#fff;border-left:3px solid #d1d5da;color:#24292e;">Validate rs12740374 (the classic SORT1 LDL-cholesterol causal variant) by scoring it with three independent deep-learning oracles: ChromBPNet for chromatin accessibility, LegNet for MPRA promoter activity, and AlphaGenome as a generalist model covering ChIP, histones and CAGE. A new user should be able to see at a glance whether the three oracles agree on direction, and which assay/cell type drove each call.</blockquote>
 <ul style="margin:0;padding-left:20px;list-style:disc;">
-<li><strong>Tool:</strong> analyze_variant_multilayer</li>
-<li><strong>Oracle:</strong> alphagenome</li>
-<li><strong>Normalizer:</strong> per-track background CDFs</li>
-<li><strong>Tracks requested:</strong> 6 HepG2 tracks</li>
-<li><strong>Generated:</strong> 2026-04-17 19:45 UTC</li>
+<li><strong>Tool:</strong> MultiOracleReport</li>
+<li><strong>Oracle:</strong> chrombpnet, legnet, alphagenome</li>
+<li><strong>Normalizer:</strong> per-oracle chorus per-track v1</li>
+<li><strong>Tracks requested:</strong> assay_ids as listed in each per-oracle request</li>
+<li><strong>Generated:</strong> 2026-04-19 18:35 UTC</li>
 </ul>
 </section>
 <p class='meta'><b>Variant:</b> chr1:109,274,968 G&gt;T</p>
 <p class='meta'><b>Gene:</b> SORT1</p>
-<p class='meta'><b>Oracles compared:</b> alphagenome, chrombpnet, legnet</p>
-<section class="how-to-read"><p style='margin:0'><b>How to read this report.</b> A single variant has been scored independently by <b>3</b> different deep-learning oracles. The consensus matrix below shows each oracle's strongest call per regulatory layer, and flags whether the oracles agree on direction — use it to separate signal from single-model artefacts.</p><dl><dt>Effect %ile</dt><dd>How unusual is this variant's effect? Ranked against ~10,000 random SNPs scored genome-wide. <code>95%</code> means the effect is larger than 95% of random variants. Range [0,1] for unsigned layers (chromatin, TF, histone, TSS, splicing); [−1,1] for signed layers (gene expression, MPRA).</dd><dt>Activity %ile</dt><dd>How active is this region genome-wide? Reference signal ranked against ~26,000 ENCODE SCREEN cCREs and random regions. <code>0.95</code> = predicted signal exceeds 95% of genome-wide positions — a highly active regulatory element.</dd><dt>Per-layer effect</dt><dd>Unit depends on the layer:<ul><li><b>Chromatin accessibility (DNASE/ATAC)</b> <span class='formula-chip'>log2FC</span> — <code>log2((alt+1)/(ref+1))</code>. +0.3 ≈ alt signal 1.23× ref; +1.0 ≈ 2× ref; negative values = loss of signal.</li><li><b>Transcription factor binding (ChIP-TF)</b> <span class='formula-chip'>log2FC</span> — <code>log2((alt+1)/(ref+1))</code>. +0.3 ≈ alt signal 1.23× ref; +1.0 ≈ 2× ref; negative values = loss of signal.</li><li><b>Histone modifications (ChIP-Histone)</b> <span class='formula-chip'>log2FC</span> — <code>log2((alt+1)/(ref+1))</code>. +0.3 ≈ alt signal 1.23× ref; +1.0 ≈ 2× ref; negative values = loss of signal.</li><li><b>TSS activity (CAGE/PRO-CAP)</b> <span class='formula-chip'>log2FC</span> — <code>log2((alt+1)/(ref+1))</code>. +0.3 ≈ alt signal 1.23× ref; +1.0 ≈ 2× ref; negative values = loss of signal.</li><li><b>Promoter activity (MPRA)</b> <span class='formula-chip'>Δ (alt−ref)</span> — <code>alt − ref</code>. Raw difference in predicted value (not a ratio). Useful when ref is near zero.</li></ul></dd></dl></section>
+<p class='meta'><b>Oracles compared:</b> chrombpnet, legnet, alphagenome</p>
+<section class="how-to-read"><p style='margin:0'><b>How to read this report.</b> A single variant has been scored independently by <b>3</b> different deep-learning oracles. The consensus matrix below shows each oracle's strongest call per regulatory layer, and flags whether the oracles agree on direction — use it to separate signal from single-model artefacts.</p><dl><dt>Effect %ile</dt><dd>How unusual is this variant's effect? Ranked against ~10,000 random SNPs scored genome-wide. <code>95%</code> means the effect is larger than 95% of random variants. Range [0,1] for unsigned layers (chromatin, TF, histone, TSS, splicing); [−1,1] for signed layers (gene expression, MPRA).</dd><dt>Activity %ile</dt><dd>How active is this region genome-wide? Reference signal ranked against ~26,000 ENCODE SCREEN cCREs and random regions. <code>0.95</code> = predicted signal exceeds 95% of genome-wide positions — a highly active regulatory element.</dd><dt>Per-layer effect</dt><dd>Unit depends on the layer:<ul><li><b>Chromatin accessibility (DNASE/ATAC)</b> <span class='formula-chip'>log2FC</span> — <code>log2((alt+1)/(ref+1))</code>. +0.3 ≈ alt signal 1.23× ref; +1.0 ≈ 2× ref; negative values = loss of signal.</li><li><b>Promoter activity (MPRA)</b> <span class='formula-chip'>Δ (alt−ref)</span> — <code>alt − ref</code>. Raw difference in predicted value (not a ratio). Useful when ref is near zero.</li><li><b>Transcription factor binding (ChIP-TF)</b> <span class='formula-chip'>log2FC</span> — <code>log2((alt+1)/(ref+1))</code>. +0.3 ≈ alt signal 1.23× ref; +1.0 ≈ 2× ref; negative values = loss of signal.</li><li><b>Histone modifications (ChIP-Histone)</b> <span class='formula-chip'>log2FC</span> — <code>log2((alt+1)/(ref+1))</code>. +0.3 ≈ alt signal 1.23× ref; +1.0 ≈ 2× ref; negative values = loss of signal.</li><li><b>TSS activity (CAGE/PRO-CAP)</b> <span class='formula-chip'>log2FC</span> — <code>log2((alt+1)/(ref+1))</code>. +0.3 ≈ alt signal 1.23× ref; +1.0 ≈ 2× ref; negative values = loss of signal.</li></ul></dd></dl></section>
 <h2>Cross-oracle consensus</h2>
 <p class='meta'>Each cell is the <b>single strongest track</b> that oracle reported for that layer. '—' means the oracle did not score any track in that layer.</p>
 <table class='consensus-table'><thead><tr>
 <th>Layer</th>
-<th>alphagenome</th>
 <th>chrombpnet</th>
 <th>legnet</th>
+<th>alphagenome</th>
 <th>Agreement</th></tr></thead><tbody>
 <tr><td>Chromatin accessibility (DNASE/ATAC) <span class="formula-chip">log2FC</span></td>
-<td class='effect-cell effect-pos'>+0.453 · %ile +100.0%<span class='track'>DNASE/EFO:0001187 DNase-seq/. · HepG2</span></td>
 <td class='effect-cell effect-neg'>-0.111 · %ile +96.7%<span class='track'>ATAC:HepG2 · HepG2</span></td>
 <td class='agree-none'>—</td>
+<td class='effect-cell effect-pos'>+0.453 · %ile +100.0%<span class='track'>DNASE/EFO:0001187 DNase-seq/. · HepG2</span></td>
 <td class='agree-mixed'>⚠ disagree</td>
-</tr>
-<tr><td>Transcription factor binding (ChIP-TF) <span class="formula-chip">log2FC</span></td>
-<td class='effect-cell effect-pos'>+0.381 · %ile +100.0%<span class='track'>CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/. · HepG2</span></td>
-<td class='agree-none'>—</td>
-<td class='agree-none'>—</td>
-<td class='agree-gain'>✅ all ↑</td>
-</tr>
-<tr><td>Histone modifications (ChIP-Histone) <span class="formula-chip">log2FC</span></td>
-<td class='effect-cell effect-pos'>+0.180 · %ile +100.0%<span class='track'>CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/. · HepG2</span></td>
-<td class='agree-none'>—</td>
-<td class='agree-none'>—</td>
-<td class='agree-gain'>✅ all ↑</td>
-</tr>
-<tr><td>TSS activity (CAGE/PRO-CAP) <span class="formula-chip">log2FC</span></td>
-<td class='effect-cell effect-pos'>+0.254 · %ile +100.0%<span class='track'>CAGE/hCAGE EFO:0001187/- · HepG2</span></td>
-<td class='agree-none'>—</td>
-<td class='agree-none'>—</td>
-<td class='agree-gain'>✅ all ↑</td>
 </tr>
 <tr><td>Promoter activity (MPRA) <span class="formula-chip">Δ (alt−ref)</span></td>
 <td class='agree-none'>—</td>
-<td class='agree-none'>—</td>
 <td class='effect-cell effect-neg'>-0.028<span class='track'>LentiMPRA:HepG2 · HepG2</span></td>
-<td class='agree-loss'>✅ all ↓</td>
+<td class='agree-none'>—</td>
+<td class='agree-single'>↓ only (n=1)</td>
+</tr>
+<tr><td>Transcription factor binding (ChIP-TF) <span class="formula-chip">log2FC</span></td>
+<td class='agree-none'>—</td>
+<td class='agree-none'>—</td>
+<td class='effect-cell effect-pos'>+0.381 · %ile +100.0%<span class='track'>CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/. · HepG2</span></td>
+<td class='agree-single'>↑ only (n=1)</td>
+</tr>
+<tr><td>Histone modifications (ChIP-Histone) <span class="formula-chip">log2FC</span></td>
+<td class='agree-none'>—</td>
+<td class='agree-none'>—</td>
+<td class='effect-cell effect-pos'>+0.180 · %ile +100.0%<span class='track'>CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/. · HepG2</span></td>
+<td class='agree-single'>↑ only (n=1)</td>
+</tr>
+<tr><td>TSS activity (CAGE/PRO-CAP) <span class="formula-chip">log2FC</span></td>
+<td class='agree-none'>—</td>
+<td class='agree-none'>—</td>
+<td class='effect-cell effect-pos'>+0.254 · %ile +100.0%<span class='track'>CAGE/hCAGE EFO:0001187/- · HepG2</span></td>
+<td class='agree-single'>↑ only (n=1)</td>
 </tr>
 </tbody></table>
 <h2>Per-oracle evidence</h2>
 <p class='meta'>Each block expands to the strongest track per layer for that oracle. For the full signal overlays and every track scored, open the standalone per-oracle report.</p>
-<details class='oracle-block'>
-<summary><b>alphagenome</b> · 62 tracks · strongest: Chromatin accessibility (DNASE/ATAC) +0.453</summary>
-<div class='oracle-body'>
-<table><thead><tr><th>Layer</th><th>Top assay</th><th>Cell type</th><th>Ref</th><th>Alt</th><th>Effect</th><th>%ile</th></tr></thead><tbody>
-<tr><td>Chromatin accessibility (DNASE/ATAC) <span class="formula-chip">log2FC</span></td><td><code>DNASE/EFO:0001187 DNase-seq/.</code></td><td>HepG2</td><td>511</td><td>699</td><td class='effect-cell effect-pos'>+0.453</td><td>≥99th</td></tr>
-<tr><td>Transcription factor binding (ChIP-TF) <span class="formula-chip">log2FC</span></td><td><code>CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.</code></td><td>HepG2</td><td>2.09e+03</td><td>2.72e+03</td><td class='effect-cell effect-pos'>+0.381</td><td>≥99th</td></tr>
-<tr><td>TSS activity (CAGE/PRO-CAP) <span class="formula-chip">log2FC</span></td><td><code>CAGE/hCAGE EFO:0001187/-</code></td><td>HepG2</td><td>21.9</td><td>26.3</td><td class='effect-cell effect-pos'>+0.254</td><td>≥99th</td></tr>
-<tr><td>Histone modifications (ChIP-Histone) <span class="formula-chip">log2FC</span></td><td><code>CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.</code></td><td>HepG2</td><td>1.37e+04</td><td>1.55e+04</td><td class='effect-cell effect-pos'>+0.180</td><td>≥99th</td></tr>
-</tbody></table>
-</div></details>
 <details class='oracle-block'>
 <summary><b>chrombpnet</b> · 1 tracks · strongest: Chromatin accessibility (DNASE/ATAC) -0.111</summary>
 <div class='oracle-body'>
@@ -154,6 +148,16 @@ details.oracle-block table th { background: #6c757d; }
 <tr><td>Promoter activity (MPRA) <span class="formula-chip">Δ (alt−ref)</span></td><td><code>LentiMPRA:HepG2</code></td><td>HepG2</td><td>0.301</td><td>0.273</td><td class='effect-cell effect-neg'>-0.028</td><td>—</td></tr>
 </tbody></table>
 <p><a href='rs12740374_SORT1_legnet_report.html'>Open legnet standalone report →</a></p>
+</div></details>
+<details class='oracle-block'>
+<summary><b>alphagenome</b> · 62 tracks · strongest: Chromatin accessibility (DNASE/ATAC) +0.453</summary>
+<div class='oracle-body'>
+<table><thead><tr><th>Layer</th><th>Top assay</th><th>Cell type</th><th>Ref</th><th>Alt</th><th>Effect</th><th>%ile</th></tr></thead><tbody>
+<tr><td>Chromatin accessibility (DNASE/ATAC) <span class="formula-chip">log2FC</span></td><td><code>DNASE/EFO:0001187 DNase-seq/.</code></td><td>HepG2</td><td>511</td><td>699</td><td class='effect-cell effect-pos'>+0.453</td><td>≥99th</td></tr>
+<tr><td>Transcription factor binding (ChIP-TF) <span class="formula-chip">log2FC</span></td><td><code>CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.</code></td><td>HepG2</td><td>2.09e+03</td><td>2.72e+03</td><td class='effect-cell effect-pos'>+0.381</td><td>≥99th</td></tr>
+<tr><td>TSS activity (CAGE/PRO-CAP) <span class="formula-chip">log2FC</span></td><td><code>CAGE/hCAGE EFO:0001187/-</code></td><td>HepG2</td><td>21.9</td><td>26.3</td><td class='effect-cell effect-pos'>+0.254</td><td>≥99th</td></tr>
+<tr><td>Histone modifications (ChIP-Histone) <span class="formula-chip">log2FC</span></td><td><code>CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.</code></td><td>HepG2</td><td>1.37e+04</td><td>1.55e+04</td><td class='effect-cell effect-pos'>+0.180</td><td>≥99th</td></tr>
+</tbody></table>
 </div></details>
 <div class='footer'>Generated by Chorus <code>MultiOracleReport</code></div>
 </body></html>
