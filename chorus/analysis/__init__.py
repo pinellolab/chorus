@@ -42,6 +42,7 @@ from .causal import (
     CausalResult,
     prioritize_causal_variants,
 )
+from .multi_oracle_report import MultiOracleReport
 from .build_backgrounds import (
     build_variant_backgrounds,
     build_baseline_backgrounds,
@@ -78,6 +79,7 @@ __all__ = [
     "CausalWeights",
     "CausalResult",
     "prioritize_causal_variants",
+    "MultiOracleReport",
     "build_variant_backgrounds",
     "build_baseline_backgrounds",
     "get_common_snps",

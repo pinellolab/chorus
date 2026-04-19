@@ -15,8 +15,8 @@
   },
   "top_candidate": {
     "variant_id": "rs12740374",
-    "composite": 0.9642945617503551,
-    "max_effect": 0.44791998200251143,
+    "composite": 0.9640060982090684,
+    "max_effect": 0.44823032151612835,
     "n_layers_affected": 4,
     "convergence": 1.0,
     "top_layer": "chromatin_accessibility"
@@ -31,19 +31,61 @@
       "r2": 1.0,
       "is_sentinel": true,
       "gene_name": "SORT1",
-      "cell_type": "",
-      "composite": 0.9643,
-      "max_effect": 0.4479,
+      "cell_type": "HepG2",
+      "composite": 0.964,
+      "max_effect": 0.4482,
       "n_layers_affected": 4,
       "convergence": 1.0,
-      "ref_activity": 7113.8762,
+      "ref_activity": 7105.9539,
       "top_layer": "chromatin_accessibility",
       "top_track": "DNASE/EFO:0001187 DNase-seq/.",
       "per_layer_scores": {
-        "chromatin_accessibility": 0.4479,
-        "tf_binding": 0.3773,
-        "histone_marks": 0.1768,
-        "tss_activity": 0.2524
+        "chromatin_accessibility": 0.4482,
+        "tf_binding": 0.3759,
+        "histone_marks": 0.1811,
+        "tss_activity": 0.2467
+      },
+      "per_layer_top_track": {
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "ref_value": 511.9077453613281,
+          "alt_value": 698.793701171875,
+          "raw_score": 0.4482,
+          "quantile_score": 1.0,
+          "description": "DNASE:HepG2"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 2099.0,
+          "alt_value": 2724.0,
+          "raw_score": 0.3759,
+          "quantile_score": 1.0,
+          "description": "CHIP:CEBPA:HepG2"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 13700.0,
+          "alt_value": 15532.0,
+          "raw_score": 0.1811,
+          "quantile_score": 1.0,
+          "description": "CHIP:H3K27ac:HepG2"
+        },
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "ref_value": 22.00933837890625,
+          "alt_value": 26.29987335205078,
+          "raw_score": 0.2467,
+          "quantile_score": 1.0,
+          "description": "CAGE:HepG2"
+        }
       }
     },
     {
@@ -55,19 +97,61 @@
       "r2": 0.907,
       "is_sentinel": false,
       "gene_name": "SORT1",
-      "cell_type": "",
-      "composite": 0.5859,
-      "max_effect": -0.4047,
+      "cell_type": "HepG2",
+      "composite": 0.5984,
+      "max_effect": -0.4205,
       "n_layers_affected": 1,
       "convergence": 1.0,
-      "ref_activity": 1662.4862,
+      "ref_activity": 1662.4804,
       "top_layer": "tss_activity",
       "top_track": "CAGE/hCAGE EFO:0001187/-",
       "per_layer_scores": {
-        "chromatin_accessibility": -0.0415,
-        "tf_binding": -0.0297,
-        "histone_marks": -0.0138,
-        "tss_activity": -0.4047
+        "chromatin_accessibility": -0.0404,
+        "tf_binding": -0.0324,
+        "histone_marks": -0.0133,
+        "tss_activity": -0.4205
+      },
+      "per_layer_top_track": {
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "ref_value": 8.210799217224121,
+          "alt_value": 7.956614971160889,
+          "raw_score": -0.0404,
+          "quantile_score": 1.0,
+          "description": "DNASE:HepG2"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 201.75,
+          "alt_value": 197.25,
+          "raw_score": -0.0324,
+          "quantile_score": 1.0,
+          "description": "CHIP:CEBPA:HepG2"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 3316.75,
+          "alt_value": 3286.25,
+          "raw_score": -0.0133,
+          "quantile_score": 1.0,
+          "description": "CHIP:H3K27ac:HepG2"
+        },
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "ref_value": 2.57784104347229,
+          "alt_value": 1.6731926202774048,
+          "raw_score": -0.4205,
+          "quantile_score": 1.0,
+          "description": "CAGE:HepG2"
+        }
       }
     },
     {
@@ -79,19 +163,61 @@
       "r2": 1.0,
       "is_sentinel": false,
       "gene_name": "SORT1",
-      "cell_type": "",
-      "composite": 0.4923,
-      "max_effect": 0.1243,
+      "cell_type": "HepG2",
+      "composite": 0.4915,
+      "max_effect": 0.1224,
       "n_layers_affected": 1,
       "convergence": 1.0,
-      "ref_activity": 6303.0714,
+      "ref_activity": 6311.1127,
       "top_layer": "chromatin_accessibility",
       "top_track": "DNASE/EFO:0001187 DNase-seq/.",
       "per_layer_scores": {
-        "chromatin_accessibility": 0.1243,
-        "tf_binding": 0.0483,
-        "histone_marks": 0.0265,
-        "tss_activity": 0.0333
+        "chromatin_accessibility": 0.1224,
+        "tf_binding": 0.0508,
+        "histone_marks": 0.0253,
+        "tss_activity": 0.0337
+      },
+      "per_layer_top_track": {
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "ref_value": 78.22549438476562,
+          "alt_value": 85.2425537109375,
+          "raw_score": 0.1224,
+          "quantile_score": 1.0,
+          "description": "DNASE:HepG2"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 571.0,
+          "alt_value": 591.5,
+          "raw_score": 0.0508,
+          "quantile_score": 1.0,
+          "description": "CHIP:CEBPA:HepG2"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 12544.0,
+          "alt_value": 12766.0,
+          "raw_score": 0.0253,
+          "quantile_score": 1.0,
+          "description": "CHIP:H3K27ac:HepG2"
+        },
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "ref_value": 1.5650396347045898,
+          "alt_value": 1.625680923461914,
+          "raw_score": 0.0337,
+          "quantile_score": 1.0,
+          "description": "CAGE:HepG2"
+        }
       }
     },
     {
@@ -103,19 +229,61 @@
       "r2": 0.9509,
       "is_sentinel": false,
       "gene_name": "SORT1",
-      "cell_type": "",
-      "composite": 0.2539,
-      "max_effect": 0.0813,
+      "cell_type": "HepG2",
+      "composite": 0.2499,
+      "max_effect": 0.0755,
       "n_layers_affected": 0,
       "convergence": 0.0,
-      "ref_activity": 8361.5805,
+      "ref_activity": 8363.9385,
       "top_layer": "tss_activity",
       "top_track": "CAGE/hCAGE EFO:0001187/-",
       "per_layer_scores": {
-        "chromatin_accessibility": 0.0725,
-        "tf_binding": 0.0224,
-        "histone_marks": 0.0292,
-        "tss_activity": 0.0813
+        "chromatin_accessibility": 0.0681,
+        "tf_binding": 0.028,
+        "histone_marks": 0.0309,
+        "tss_activity": 0.0755
+      },
+      "per_layer_top_track": {
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "ref_value": 397.87701416015625,
+          "alt_value": 417.1690673828125,
+          "raw_score": 0.0681,
+          "quantile_score": 1.0,
+          "description": "DNASE:HepG2"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 1276.0,
+          "alt_value": 1301.0,
+          "raw_score": 0.028,
+          "quantile_score": 1.0,
+          "description": "CHIP:CEBPA:HepG2"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 16330.0,
+          "alt_value": 16684.0,
+          "raw_score": 0.0309,
+          "quantile_score": 1.0,
+          "description": "CHIP:H3K27ac:HepG2"
+        },
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "ref_value": 11.052494049072266,
+          "alt_value": 11.70003890991211,
+          "raw_score": 0.0755,
+          "quantile_score": 1.0,
+          "description": "CAGE:HepG2"
+        }
       }
     },
     {
@@ -127,19 +295,61 @@
       "r2": 0.9509,
       "is_sentinel": false,
       "gene_name": "SORT1",
-      "cell_type": "",
-      "composite": 0.2006,
-      "max_effect": -0.0463,
+      "cell_type": "HepG2",
+      "composite": 0.1942,
+      "max_effect": -0.0371,
       "n_layers_affected": 0,
       "convergence": 0.0,
-      "ref_activity": 7486.443,
+      "ref_activity": 7495.5976,
       "top_layer": "tss_activity",
       "top_track": "CAGE/hCAGE EFO:0001187/+",
       "per_layer_scores": {
-        "chromatin_accessibility": -0.0237,
-        "tf_binding": -0.0113,
-        "histone_marks": -0.0037,
-        "tss_activity": -0.0463
+        "chromatin_accessibility": -0.0259,
+        "tf_binding": -0.0142,
+        "histone_marks": -0.0035,
+        "tss_activity": -0.0371
+      },
+      "per_layer_top_track": {
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "ref_value": 109.19511413574219,
+          "alt_value": 107.23654174804688,
+          "raw_score": -0.0259,
+          "quantile_score": 1.0,
+          "description": "DNASE:HepG2"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 510.5,
+          "alt_value": 505.5,
+          "raw_score": -0.0142,
+          "quantile_score": 1.0,
+          "description": "CHIP:CEBPB:HepG2"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 14882.0,
+          "alt_value": 14846.0,
+          "raw_score": -0.0035,
+          "quantile_score": 1.0,
+          "description": "CHIP:H3K27ac:HepG2"
+        },
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "ref_value": 13.218817710876465,
+          "alt_value": 12.857760429382324,
+          "raw_score": -0.0371,
+          "quantile_score": 1.0,
+          "description": "CAGE:HepG2"
+        }
       }
     },
     {
@@ -151,19 +361,61 @@
       "r2": 1.0,
       "is_sentinel": false,
       "gene_name": "SORT1",
-      "cell_type": "",
-      "composite": 0.1916,
-      "max_effect": 0.0621,
+      "cell_type": "HepG2",
+      "composite": 0.1938,
+      "max_effect": 0.064,
       "n_layers_affected": 0,
       "convergence": 0.0,
-      "ref_activity": 6724.6647,
+      "ref_activity": 6727.6733,
       "top_layer": "tss_activity",
       "top_track": "CAGE/hCAGE EFO:0001187/+",
       "per_layer_scores": {
-        "chromatin_accessibility": 0.0049,
-        "tf_binding": 0.0084,
-        "histone_marks": -0.0009,
-        "tss_activity": 0.0621
+        "chromatin_accessibility": 0.0071,
+        "tf_binding": 0.0053,
+        "histone_marks": 0.0017,
+        "tss_activity": 0.064
+      },
+      "per_layer_top_track": {
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "ref_value": 69.34666442871094,
+          "alt_value": 69.69235229492188,
+          "raw_score": 0.0071,
+          "quantile_score": 1.0,
+          "description": "DNASE:HepG2"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 539.0,
+          "alt_value": 541.0,
+          "raw_score": 0.0053,
+          "quantile_score": 1.0,
+          "description": "CHIP:CEBPA:HepG2"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 13386.0,
+          "alt_value": 13402.0,
+          "raw_score": 0.0017,
+          "quantile_score": 0.473,
+          "description": "CHIP:H3K27ac:HepG2"
+        },
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "ref_value": 4.88380241394043,
+          "alt_value": 5.150683403015137,
+          "raw_score": 0.064,
+          "quantile_score": 1.0,
+          "description": "CAGE:HepG2"
+        }
       }
     },
     {
@@ -175,19 +427,61 @@
       "r2": 1.0,
       "is_sentinel": false,
       "gene_name": "SORT1",
-      "cell_type": "",
-      "composite": 0.1756,
-      "max_effect": 0.0204,
+      "cell_type": "HepG2",
+      "composite": 0.1759,
+      "max_effect": 0.0199,
       "n_layers_affected": 0,
       "convergence": 0.0,
-      "ref_activity": 7343.561,
+      "ref_activity": 7342.4407,
       "top_layer": "histone_marks",
       "top_track": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
       "per_layer_scores": {
-        "chromatin_accessibility": 0.0165,
-        "tf_binding": 0.0135,
-        "histone_marks": 0.0204,
-        "tss_activity": -0.0129
+        "chromatin_accessibility": 0.0139,
+        "tf_binding": 0.013,
+        "histone_marks": 0.0199,
+        "tss_activity": 0.0105
+      },
+      "per_layer_top_track": {
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "ref_value": 117.88131713867188,
+          "alt_value": 119.03146362304688,
+          "raw_score": 0.0139,
+          "quantile_score": 1.0,
+          "description": "DNASE:HepG2"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 773.5,
+          "alt_value": 780.5,
+          "raw_score": 0.013,
+          "quantile_score": 1.0,
+          "description": "CHIP:CEBPB:HepG2"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 14567.0,
+          "alt_value": 14769.0,
+          "raw_score": 0.0199,
+          "quantile_score": 1.0,
+          "description": "CHIP:H3K27ac:HepG2"
+        },
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "ref_value": 873.407470703125,
+          "alt_value": 879.80322265625,
+          "raw_score": 0.0105,
+          "quantile_score": 1.0,
+          "description": "CAGE:HepG2"
+        }
       }
     },
     {
@@ -199,19 +493,61 @@
       "r2": 0.8582,
       "is_sentinel": false,
       "gene_name": "SORT1",
-      "cell_type": "",
-      "composite": 0.0367,
-      "max_effect": 0.0379,
+      "cell_type": "HepG2",
+      "composite": 0.0378,
+      "max_effect": 0.0386,
       "n_layers_affected": 0,
       "convergence": 0.0,
-      "ref_activity": 1991.9363,
+      "ref_activity": 1990.929,
       "top_layer": "chromatin_accessibility",
       "top_track": "DNASE/EFO:0001187 DNase-seq/.",
       "per_layer_scores": {
-        "chromatin_accessibility": 0.0379,
-        "tf_binding": 0.0328,
-        "histone_marks": 0.0032,
-        "tss_activity": -0.0141
+        "chromatin_accessibility": 0.0386,
+        "tf_binding": 0.034,
+        "histone_marks": 0.0036,
+        "tss_activity": 0.013
+      },
+      "per_layer_top_track": {
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "ref_value": 20.108043670654297,
+          "alt_value": 20.68023109436035,
+          "raw_score": 0.0386,
+          "quantile_score": 1.0,
+          "description": "DNASE:HepG2"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 313.5,
+          "alt_value": 321.0,
+          "raw_score": 0.034,
+          "quantile_score": 1.0,
+          "description": "CHIP:CEBPA:HepG2"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 3961.75,
+          "alt_value": 3971.75,
+          "raw_score": 0.0036,
+          "quantile_score": 1.0,
+          "description": "CHIP:H3K27ac:HepG2"
+        },
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE EFO:0001187/+",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "ref_value": 14.738239288330078,
+          "alt_value": 14.880837440490723,
+          "raw_score": 0.013,
+          "quantile_score": 1.0,
+          "description": "CAGE:HepG2"
+        }
       }
     },
     {
@@ -223,43 +559,61 @@
       "r2": 0.907,
       "is_sentinel": false,
       "gene_name": "SORT1",
-      "cell_type": "",
+      "cell_type": "HepG2",
       "composite": 0.0203,
-      "max_effect": -0.0145,
+      "max_effect": -0.0135,
       "n_layers_affected": 0,
       "convergence": 0.0,
-      "ref_activity": 2082.3768,
+      "ref_activity": 2085.0033,
       "top_layer": "chromatin_accessibility",
       "top_track": "DNASE/EFO:0001187 DNase-seq/.",
       "per_layer_scores": {
-        "chromatin_accessibility": -0.0145,
-        "tf_binding": -0.0084,
-        "histone_marks": -0.0048,
-        "tss_activity": -0.0089
-      }
-    },
-    {
-      "variant_id": "rs1277930",
-      "chrom": "chr1",
-      "position": 109279521,
-      "ref": "G",
-      "alt": "A",
-      "r2": 0.907,
-      "is_sentinel": false,
-      "gene_name": "SORT1",
-      "cell_type": "",
-      "composite": 0.006,
-      "max_effect": -0.021,
-      "n_layers_affected": 0,
-      "convergence": 0.0,
-      "ref_activity": 1396.7436,
-      "top_layer": "tss_activity",
-      "top_track": "CAGE/hCAGE EFO:0001187/-",
-      "per_layer_scores": {
-        "chromatin_accessibility": -0.0041,
-        "tf_binding": -0.0156,
-        "histone_marks": -0.0001,
-        "tss_activity": -0.021
+        "chromatin_accessibility": -0.0135,
+        "tf_binding": -0.0051,
+        "histone_marks": -0.0031,
+        "tss_activity": -0.0125
+      },
+      "per_layer_top_track": {
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "ref_value": 28.506568908691406,
+          "alt_value": 28.23155975341797,
+          "raw_score": -0.0135,
+          "quantile_score": 1.0,
+          "description": "DNASE:HepG2"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 427.0,
+          "alt_value": 425.5,
+          "raw_score": -0.0051,
+          "quantile_score": 0.9193,
+          "description": "CHIP:CEBPB:HepG2"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 4141.5,
+          "alt_value": 4132.75,
+          "raw_score": -0.0031,
+          "quantile_score": 1.0,
+          "description": "CHIP:H3K27ac:HepG2"
+        },
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "ref_value": 13.500125885009766,
+          "alt_value": 13.375129699707031,
+          "raw_score": -0.0125,
+          "quantile_score": 1.0,
+          "description": "CAGE:HepG2"
+        }
       }
     },
     {
@@ -271,19 +625,127 @@
       "r2": 0.907,
       "is_sentinel": false,
       "gene_name": "SORT1",
-      "cell_type": "",
-      "composite": 0.0055,
-      "max_effect": 0.0212,
+      "cell_type": "HepG2",
+      "composite": 0.0085,
+      "max_effect": 0.0241,
       "n_layers_affected": 0,
       "convergence": 0.0,
-      "ref_activity": 1372.7048,
+      "ref_activity": 1373.9509,
       "top_layer": "tf_binding",
       "top_track": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
       "per_layer_scores": {
-        "chromatin_accessibility": 0.0024,
-        "tf_binding": 0.0212,
-        "histone_marks": 0.0005,
-        "tss_activity": 0.016
+        "chromatin_accessibility": 0.0036,
+        "tf_binding": 0.0241,
+        "histone_marks": 0.0021,
+        "tss_activity": 0.0125
+      },
+      "per_layer_top_track": {
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "ref_value": 15.15183162689209,
+          "alt_value": 15.192371368408203,
+          "raw_score": 0.0036,
+          "quantile_score": 0.9073,
+          "description": "DNASE:HepG2"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 251.25,
+          "alt_value": 255.5,
+          "raw_score": 0.0241,
+          "quantile_score": 1.0,
+          "description": "CHIP:CEBPA:HepG2"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 2732.75,
+          "alt_value": 2736.75,
+          "raw_score": 0.0021,
+          "quantile_score": 0.7653,
+          "description": "CHIP:H3K27ac:HepG2"
+        },
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "ref_value": 2373.22607421875,
+          "alt_value": 2393.822998046875,
+          "raw_score": 0.0125,
+          "quantile_score": 1.0,
+          "description": "CAGE:HepG2"
+        }
+      }
+    },
+    {
+      "variant_id": "rs1277930",
+      "chrom": "chr1",
+      "position": 109279521,
+      "ref": "G",
+      "alt": "A",
+      "r2": 0.907,
+      "is_sentinel": false,
+      "gene_name": "SORT1",
+      "cell_type": "HepG2",
+      "composite": 0.0048,
+      "max_effect": -0.0187,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1398.3705,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE EFO:0001187/-",
+      "per_layer_scores": {
+        "chromatin_accessibility": -0.0057,
+        "tf_binding": -0.0182,
+        "histone_marks": -0.0016,
+        "tss_activity": -0.0187
+      },
+      "per_layer_top_track": {
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "ref_value": 13.991071701049805,
+          "alt_value": 13.932461738586426,
+          "raw_score": -0.0057,
+          "quantile_score": 1.0,
+          "description": "DNASE:HepG2"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 278.5,
+          "alt_value": 275.0,
+          "raw_score": -0.0182,
+          "quantile_score": 1.0,
+          "description": "CHIP:CEBPB:HepG2"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "HepG2",
+          "ref_value": 2782.75,
+          "alt_value": 2779.75,
+          "raw_score": -0.0016,
+          "quantile_score": 0.4599,
+          "description": "CHIP:H3K27ac:HepG2"
+        },
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE EFO:0001187/-",
+          "assay_type": "CAGE",
+          "cell_type": "HepG2",
+          "ref_value": 2327.771728515625,
+          "alt_value": 2297.85302734375,
+          "raw_score": -0.0187,
+          "quantile_score": 1.0,
+          "description": "CAGE:HepG2"
+        }
       }
     }
   ],
@@ -297,6 +759,6 @@
       "HepG2"
     ],
     "notes": [],
-    "generated_at": "2026-04-17 20:08 UTC"
+    "generated_at": "2026-04-18 22:19 UTC"
   }
 }

@@ -1,0 +1,56 @@
+{
+  "variant": {
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "T"
+    ]
+  },
+  "oracle": "legnet",
+  "gene_name": "SORT1",
+  "nearby_genes": [
+    "SORT1",
+    "CELSR2"
+  ],
+  "alleles": {
+    "alt_1": {
+      "scores_by_layer": {
+        "promoter_activity": [
+          {
+            "assay_id": "LentiMPRA:HepG2",
+            "assay_type": "LentiMPRA",
+            "cell_type": "HepG2",
+            "layer": "promoter_activity",
+            "ref_value": 0.3013607859611511,
+            "alt_value": 0.2734984755516052,
+            "raw_score": -0.0278623104095459,
+            "description": "LentiMPRA:HepG2"
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "LentiMPRA:HepG2",
+          "assay_type": "LentiMPRA",
+          "cell_type": "HepG2",
+          "layer": "promoter_activity",
+          "ref_value": 0.3013607859611511,
+          "alt_value": 0.2734984755516052,
+          "raw_score": -0.0278623104095459,
+          "description": "LentiMPRA:HepG2"
+        }
+      ]
+    }
+  },
+  "analysis_request": {
+    "user_prompt": "Validate rs12740374 (the classic SORT1 LDL-cholesterol causal variant) by scoring it with three independent deep-learning oracles: ChromBPNet for chromatin accessibility, LegNet for MPRA promoter activity, and AlphaGenome as a generalist model covering ChIP, histones and CAGE. A new user should be able to see at a glance whether the three oracles agree on direction, and which assay/cell type drove each call.",
+    "tool_name": "analyze_variant_multilayer",
+    "oracle_name": "legnet",
+    "normalizer_name": "(none)",
+    "tracks_requested": "all oracle tracks",
+    "cell_types": [],
+    "notes": [],
+    "generated_at": "2026-04-18 22:08 UTC"
+  }
+}

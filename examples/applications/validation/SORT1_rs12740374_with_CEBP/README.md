@@ -29,3 +29,4 @@ that this is indeed the causal regulatory variant.
 
 - [SORT1 variant analysis](../../variant_analysis/SORT1_rs12740374/) — focused 6-track analysis
 - [SORT1 causal prioritization](../../causal_prioritization/SORT1_locus/) — fine-mapping with 11 LD variants
+- [SORT1 multi-oracle validation](../SORT1_rs12740374_multioracle/) — cross-validate the same variant with ChromBPNet + LegNet + AlphaGenome

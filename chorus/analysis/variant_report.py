@@ -116,6 +116,75 @@ class VariantReport:
     # Serialisation
     # ------------------------------------------------------------------
 
+    @classmethod
+    def from_dict(cls, data: dict) -> "VariantReport":
+        """Rehydrate a :class:`VariantReport` from its ``to_dict`` form.
+
+        Used by the multi-oracle consolidator, which reads JSON files written
+        by separate per-oracle runs (each in its own conda env) and stitches
+        them together into a single cross-oracle validation report.
+
+        Notes
+        -----
+        * Prediction arrays (``_predictions``) are **not** round-tripped
+          because ``to_dict`` never emitted them — signal-overlay plots are
+          therefore unavailable on rehydrated reports. Tables are intact.
+        * ``AnalysisRequest`` is rehydrated via its own ``from_dict``.
+        """
+        variant = data.get("variant", {})
+        allele_scores: dict[str, list[TrackScore]] = {}
+        for allele, payload in (data.get("alleles") or {}).items():
+            tracks = []
+            # Prefer the flat 'all_scores' list; fall back to by-layer.
+            raw = payload.get("all_scores")
+            if raw is None:
+                raw = []
+                for layer_tracks in (payload.get("scores_by_layer") or {}).values():
+                    raw.extend(layer_tracks)
+            for td in raw:
+                tracks.append(TrackScore(
+                    assay_id=td["assay_id"],
+                    assay_type=td["assay_type"],
+                    cell_type=td.get("cell_type", ""),
+                    layer=td["layer"],
+                    ref_value=td.get("ref_value"),
+                    alt_value=td.get("alt_value"),
+                    raw_score=td.get("raw_score"),
+                    quantile_score=td.get("quantile_score"),
+                    ref_signal_percentile=td.get("ref_signal_percentile"),
+                    description=td.get("description"),
+                    note=td.get("note"),
+                    region_label=td.get("region_label"),
+                ))
+            allele_scores[allele] = tracks
+
+        ar = None
+        ar_dict = data.get("analysis_request")
+        if ar_dict is not None:
+            try:
+                ar = AnalysisRequest.from_dict(ar_dict)
+            except Exception:  # pragma: no cover — soft landing
+                ar = None
+
+        mod_region = data.get("modification_region")
+        if mod_region is not None:
+            mod_region = tuple(mod_region)
+
+        return cls(
+            chrom=variant.get("chrom", ""),
+            position=int(variant.get("position", 0)),
+            ref_allele=variant.get("ref_allele", ""),
+            alt_alleles=list(variant.get("alt_alleles", [])),
+            oracle_name=data.get("oracle", ""),
+            gene_name=data.get("gene_name"),
+            allele_scores=allele_scores,
+            nearby_genes=list(data.get("nearby_genes") or []),
+            report_title=data.get("report_title", "Multi-Layer Variant Effect Report"),
+            modification_region=mod_region,
+            modification_description=data.get("modification_description"),
+            analysis_request=ar,
+        )
+
     def to_dict(self) -> dict:
         """Convert to a JSON-serialisable dict."""
         result: dict = {
@@ -387,33 +456,71 @@ class VariantReport:
 # ---------------------------------------------------------------------------
 
 def _build_summary(allele_scores: dict[str, list["TrackScore"]]) -> str:
-    """Build a plain-English summary of the top effects across all layers."""
-    # Collect best effect per layer across all alleles
-    best_per_layer: dict[str, tuple[float, str, str]] = {}  # layer → (score, track, interp)
-    for allele, scores in allele_scores.items():
+    """Build a plain-English summary of the top effects across all layers.
+
+    For each layer, the single track with the largest |effect| is identified
+    and its ``assay_id`` / ``cell_type`` are quoted alongside the number.
+    Previously the summary hid this provenance, forcing a reader to scan
+    the per-layer tables to find out which track drove each headline figure.
+    """
+    # Collect the *winning track* per layer across all alleles, not just
+    # its score.  We also keep cell_type + a short label (description if it
+    # exists, else assay_id) so the summary can cite which assay produced
+    # the effect.
+    best_per_layer: dict[str, dict] = {}
+    for _, scores in allele_scores.items():
         for ts in scores:
             if ts.raw_score is None:
                 continue
             layer = ts.layer
             abs_score = abs(ts.raw_score)
-            if layer not in best_per_layer or abs_score > abs(best_per_layer[layer][0]):
-                interp = _interpret_score(ts.raw_score, ts.quantile_score, layer)
-                best_per_layer[layer] = (ts.raw_score, ts.assay_id, interp)
+            existing = best_per_layer.get(layer)
+            if existing is None or abs_score > abs(existing["score"]):
+                # Prefer a short friendly description; many AlphaGenome
+                # assay_ids carry ontology URIs that would swamp the summary.
+                short = ts.description or ts.assay_id or ""
+                # Cap length so summaries never wrap to 400+ chars.
+                if len(short) > 60:
+                    short = short[:57] + "…"
+                best_per_layer[layer] = {
+                    "score": ts.raw_score,
+                    "track_label": short,
+                    "cell_type": ts.cell_type or "",
+                    "interp": _interpret_score(ts.raw_score, ts.quantile_score, layer),
+                }
 
     if not best_per_layer:
         return "No scorable effects detected."
 
     # Sort layers by |effect| descending
-    ranked = sorted(best_per_layer.items(), key=lambda x: abs(x[1][0]), reverse=True)
+    ranked = sorted(best_per_layer.items(),
+                    key=lambda kv: abs(kv[1]["score"]), reverse=True)
 
-    # Build summary
-    strong_effects = []
-    for layer, (score, track, interp) in ranked:
-        if abs(score) >= 0.1:
-            cfg = LAYER_CONFIGS.get(layer)
-            layer_name = cfg.description if cfg else layer
-            sign = "+" if score >= 0 else ""
-            strong_effects.append(f"{layer_name}: {interp.lower()} ({sign}{score:.2f})")
+    strong_effects: list[str] = []
+    for layer, info in ranked:
+        score = info["score"]
+        if abs(score) < 0.1:
+            continue
+        cfg = LAYER_CONFIGS.get(layer)
+        layer_name = cfg.description if cfg else layer
+        sign = "+" if score >= 0 else ""
+        # Provenance suffix: keep short but unambiguous.  Prefer the short
+        # track label (description over assay_id) and append cell_type only
+        # when it isn't already embedded in the label.
+        provenance_bits: list[str] = []
+        label = info["track_label"]
+        if label:
+            provenance_bits.append(label)
+        ct = info["cell_type"]
+        if ct and (not label or ct not in label):
+            provenance_bits.append(ct)
+        provenance = (
+            f", {' · '.join(provenance_bits)}" if provenance_bits else ""
+        )
+        strong_effects.append(
+            f"{layer_name}: {info['interp'].lower()} "
+            f"({sign}{score:.2f}{provenance})"
+        )
 
     if not strong_effects:
         return "No strong regulatory effects detected across any layer."
@@ -1008,7 +1115,14 @@ def build_variant_report(
 # HTML report generator
 # ---------------------------------------------------------------------------
 
-_CSS = """\
+from ._report_glossary import (
+    HOW_TO_READ_CSS,
+    formula_chip,
+    render_how_to_read,
+)
+
+
+_CSS = HOW_TO_READ_CSS + """\
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
        Helvetica, Arial, sans-serif; background: #f8f9fa; color: #212529;
        padding: 2rem; max-width: 1200px; margin: 0 auto; }
@@ -1264,6 +1378,27 @@ def _build_html_report(report: "VariantReport") -> str:
                  f'background:#f0f7ff;border-left:3px solid #3b82f6;border-radius:4px">'
                  f'<b>Summary:</b> {html_mod.escape(summary)}</p>')
 
+    # "How to read this report" — emits a glossary box covering the layer
+    # formulas actually present, plus the two percentile columns when they
+    # are about to appear below.  Having this at the top of the page means
+    # new users meet the units *before* they encounter the first number.
+    layers_present = []
+    any_quantile = False
+    any_baseline = False
+    for scores in report.allele_scores.values():
+        for ts in scores:
+            if ts.layer not in layers_present:
+                layers_present.append(ts.layer)
+            if ts.quantile_score is not None:
+                any_quantile = True
+            if ts.ref_signal_percentile is not None:
+                any_baseline = True
+    parts.append(render_how_to_read(
+        layers_present=layers_present,
+        include_percentile=any_quantile,
+        include_activity=any_baseline,
+    ))
+
     # Per-allele sections
     has_quantile = False
     has_baseline = False
@@ -1292,10 +1427,14 @@ def _build_html_report(report: "VariantReport") -> str:
             cfg = LAYER_CONFIGS.get(layer_name)
             display = cfg.description if cfg else layer_name
 
-            parts.append(f"<h2>{html_mod.escape(display)}</h2>")
+            # Layer heading carries the effect-formula chip so readers know
+            # what Ref/Alt/Effect numbers below mean *before* they read them.
+            chip = formula_chip(cfg.formula) if cfg else ""
+            parts.append(f"<h2>{html_mod.escape(display)} {chip}</h2>")
             parts.append("<table><thead><tr>")
-            parts.append("<th>Track</th><th>Cell Type</th>"
-                         "<th>Ref</th><th>Alt</th><th>Effect</th>")
+            effect_header = f"Effect {chip}" if chip else "Effect"
+            parts.append(f"<th>Track</th><th>Cell Type</th>"
+                         f"<th>Ref</th><th>Alt</th><th>{effect_header}</th>")
             if has_quantile:
                 parts.append('<th title="Variant effect percentile vs random SNPs">Effect %ile</th>')
             if has_baseline:
@@ -1349,28 +1488,9 @@ def _build_html_report(report: "VariantReport") -> str:
         # --- Track signal figure (matplotlib) ---
         _render_track_figure(parts, report, allele)
 
-    # Explanation of normalization columns
-    if has_quantile or has_baseline:
-        parts.append('<div style="margin-top:2rem;padding:1rem;background:#f1f3f5;'
-                     'border-radius:6px;font-size:.82rem;color:#495057">')
-        parts.append('<b>Score interpretation guide</b><br>')
-        if has_quantile:
-            parts.append(
-                '<b>Effect %ile</b>: How unusual is this variant\'s effect? '
-                'Compared to ~10,000 random SNPs scored genome-wide. '
-                'A value of 0.95 means the effect is larger than 95% of random variants. '
-                'Range [0,1] for unsigned layers (chromatin, TF, histone, TSS, splicing); '
-                '[-1,1] for signed layers (gene expression, MPRA).<br>'
-            )
-        if has_baseline:
-            parts.append(
-                '<b>Activity %ile</b>: How active is this region genome-wide? '
-                'Reference signal ranked against ~26,000 positions sampled from '
-                'ENCODE SCREEN cCREs (promoters, enhancers, CTCF sites) and random regions. '
-                'A value of 0.95 means the predicted signal here is higher than 95% of '
-                'genome-wide positions — indicating a highly active regulatory element.'
-            )
-        parts.append('</div>')
+    # The per-column definitions that used to live here (Effect %ile and
+    # Activity %ile) now appear in the top-of-page "How to read this report"
+    # block, so a new reader encounters the definitions *before* the numbers.
 
     parts.append(f'<div class="footer">Generated by Chorus '
                  f'<code>analyze_variant_multilayer</code></div>')

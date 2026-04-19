@@ -237,11 +237,16 @@ class BatchResult:
                 display_mode: str = "by_assay") -> str:
         import html as _html
 
+        from chorus.analysis._report_glossary import (
+            HOW_TO_READ_CSS, render_how_to_read,
+        )
+
         parts: list[str] = [
             "<!DOCTYPE html><html lang='en'><head>",
             "<meta charset='utf-8'>",
             f"<title>Batch Variant Scoring — {len(self.scores)} variants</title>",
             "<style>",
+            HOW_TO_READ_CSS,
             "body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;"
             "max-width:1400px;margin:24px auto;padding:0 16px;color:#24292e;}",
             "h1{font-size:1.4em;margin-top:0;}",
@@ -260,6 +265,21 @@ class BatchResult:
         if self.analysis_request is not None:
             parts.append(self.analysis_request.to_html_fragment())
         parts.append(f"<p><b>{len(self.scores)} variants scored</b></p>")
+
+        # Collect layers & percentile presence so the glossary is tailored to
+        # what this particular batch actually shows.
+        layers_present: list[str] = []
+        any_quantile = False
+        for s in self.scores:
+            for ts in s.track_scores.values():
+                if getattr(ts, "layer", None) and ts.layer not in layers_present:
+                    layers_present.append(ts.layer)
+                if getattr(ts, "quantile_score", None) is not None:
+                    any_quantile = True
+        parts.append(render_how_to_read(
+            layers_present=layers_present,
+            include_percentile=any_quantile,
+        ))
 
         if self._has_track_scores() and display_mode != "summary":
             self._html_per_track(parts)
@@ -296,14 +316,19 @@ class BatchResult:
 
     def _html_per_track(self, parts: list[str]) -> None:
         import html as _html
+        from chorus.analysis._report_glossary import formula_chip
+        from chorus.analysis.scorers import LAYER_CONFIGS
+
         col_order: list[str] = []
         col_labels: dict[str, str] = {}
+        col_layers: dict[str, str] = {}
         seen: set[str] = set()
         for s in self.scores:
             for tid, ts in s.track_scores.items():
                 if tid not in seen:
                     col_order.append(tid)
                     col_labels[tid] = _track_display_name(ts)
+                    col_layers[tid] = getattr(ts, "layer", "") or ""
                     seen.add(tid)
 
         parts.append("<table><thead><tr>")
@@ -311,8 +336,15 @@ class BatchResult:
         for tid in col_order:
             parts.append(f"<th colspan='4'>{_html.escape(col_labels[tid])}</th>")
         parts.append("</tr><tr>")
-        for _ in col_order:
-            parts.append("<th>Ref</th><th>Alt</th><th>log2FC</th><th>Effect %ile</th>")
+        # Each track's "Effect" header carries a formula chip matching that
+        # track's layer so mixed-layer batches don't mislead the reader.
+        for tid in col_order:
+            layer = col_layers.get(tid, "")
+            cfg = LAYER_CONFIGS.get(layer)
+            chip = formula_chip(cfg.formula) if cfg else ""
+            effect_header = f"Effect {chip}" if chip else "Effect"
+            parts.append(f"<th>Ref</th><th>Alt</th><th>{effect_header}</th>"
+                         f"<th>Effect %ile</th>")
         parts.append("</tr></thead><tbody>")
 
         for s in self.scores:
@@ -339,8 +371,9 @@ class BatchResult:
         parts.append("<p style='font-size:0.85em;color:#6b7280;margin-top:8px;'>"
                      "Columns per track: <b>Ref</b> (reference allele prediction), "
                      "<b>Alt</b> (alternate allele prediction), "
-                     "<b>log2FC</b> (log2 fold-change alt/ref), "
-                     "<b>Effect %ile</b> (ranked against ~10K random SNPs). "
+                     "<b>Effect</b> (signed effect — formula shown in the chip next "
+                     "to each track's header; see the glossary at the top of the "
+                     "page), <b>Effect %ile</b> (ranked against ~10K random SNPs). "
                      "Green = gain, red = loss.</p>")
 
     # ── JSON ────────────────────────────────────────────────────────────

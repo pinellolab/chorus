@@ -2,6 +2,24 @@
 <meta charset='utf-8'>
 <title>Batch Variant Scoring — 5 variants</title>
 <style>
+
+.how-to-read { margin: 1rem 0; padding: 0.7rem 1rem; background: #fffbea;
+               border-left: 3px solid #f0ad4e; border-radius: 4px;
+               font-size: 0.9rem; color: #343a40; }
+.how-to-read b { color: #212529; }
+.how-to-read dl { margin: 0.4rem 0 0; display: grid;
+                  grid-template-columns: max-content 1fr; gap: 0.25rem 0.8rem; }
+.how-to-read dt { font-weight: 600; color: #343a40; }
+.how-to-read dd { margin: 0; color: #495057; }
+.how-to-read ul { margin: 0.2rem 0 0.2rem 1.1rem; padding: 0; }
+.how-to-read code { background: #f1f3f5; padding: 0 0.25rem; border-radius: 3px;
+                    font-size: 0.85em; font-family: ui-monospace, SFMono-Regular,
+                    Menlo, monospace; }
+.formula-chip { display: inline-block; background: #e9ecef; color: #495057;
+                padding: 0 0.35rem; border-radius: 3px; font-size: 0.75rem;
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                margin-left: 0.2rem; vertical-align: middle; }
+
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:1400px;margin:24px auto;padding:0 16px;color:#24292e;}
 h1{font-size:1.4em;margin-top:0;}
 table{border-collapse:collapse;width:100%;margin-top:12px;font-size:0.85em;}
@@ -23,10 +41,11 @@ tr:nth-child(even){background:#fafbfc;}
 <li><strong>Oracle:</strong> alphagenome</li>
 <li><strong>Normalizer:</strong> per-track background CDFs</li>
 <li><strong>Tracks requested:</strong> 6 HepG2 tracks</li>
-<li><strong>Generated:</strong> 2026-04-17 20:08 UTC</li>
+<li><strong>Generated:</strong> 2026-04-18 22:19 UTC</li>
 </ul>
 </section>
 <p><b>5 variants scored</b></p>
+<section class="how-to-read"><p style='margin:0'><b>How to read this report.</b> Every numeric effect below is produced by a deep-learning model. The scale depends on the regulatory layer — see the formulas below so you can interpret <code>+0.3</code> correctly.</p><dl><dt>Effect %ile</dt><dd>How unusual is this variant's effect? Ranked against ~10,000 random SNPs scored genome-wide. <code>95%</code> means the effect is larger than 95% of random variants. Range [0,1] for unsigned layers (chromatin, TF, histone, TSS, splicing); [−1,1] for signed layers (gene expression, MPRA).</dd><dt>Per-layer effect</dt><dd>Unit depends on the layer:<ul><li><b>Chromatin accessibility (DNASE/ATAC)</b> <span class='formula-chip'>log2FC</span> — <code>log2((alt+1)/(ref+1))</code>. +0.3 ≈ alt signal 1.23× ref; +1.0 ≈ 2× ref; negative values = loss of signal.</li><li><b>Transcription factor binding (ChIP-TF)</b> <span class='formula-chip'>log2FC</span> — <code>log2((alt+1)/(ref+1))</code>. +0.3 ≈ alt signal 1.23× ref; +1.0 ≈ 2× ref; negative values = loss of signal.</li><li><b>Histone modifications (ChIP-Histone)</b> <span class='formula-chip'>log2FC</span> — <code>log2((alt+1)/(ref+1))</code>. +0.3 ≈ alt signal 1.23× ref; +1.0 ≈ 2× ref; negative values = loss of signal.</li><li><b>TSS activity (CAGE/PRO-CAP)</b> <span class='formula-chip'>log2FC</span> — <code>log2((alt+1)/(ref+1))</code>. +0.3 ≈ alt signal 1.23× ref; +1.0 ≈ 2× ref; negative values = loss of signal.</li></ul></dd></dl></section>
 <table><thead><tr>
 <th rowspan='2'>Variant</th><th rowspan='2'>ID</th>
 <th colspan='4'>DNASE:HepG2</th>
@@ -36,53 +55,53 @@ tr:nth-child(even){background:#fafbfc;}
 <th colspan='4'>CAGE:HepG2 (+)</th>
 <th colspan='4'>CAGE:HepG2 (-)</th>
 </tr><tr>
-<th>Ref</th><th>Alt</th><th>log2FC</th><th>Effect %ile</th>
-<th>Ref</th><th>Alt</th><th>log2FC</th><th>Effect %ile</th>
-<th>Ref</th><th>Alt</th><th>log2FC</th><th>Effect %ile</th>
-<th>Ref</th><th>Alt</th><th>log2FC</th><th>Effect %ile</th>
-<th>Ref</th><th>Alt</th><th>log2FC</th><th>Effect %ile</th>
-<th>Ref</th><th>Alt</th><th>log2FC</th><th>Effect %ile</th>
+<th>Ref</th><th>Alt</th><th>Effect <span class="formula-chip">log2FC</span></th><th>Effect %ile</th>
+<th>Ref</th><th>Alt</th><th>Effect <span class="formula-chip">log2FC</span></th><th>Effect %ile</th>
+<th>Ref</th><th>Alt</th><th>Effect <span class="formula-chip">log2FC</span></th><th>Effect %ile</th>
+<th>Ref</th><th>Alt</th><th>Effect <span class="formula-chip">log2FC</span></th><th>Effect %ile</th>
+<th>Ref</th><th>Alt</th><th>Effect <span class="formula-chip">log2FC</span></th><th>Effect %ile</th>
+<th>Ref</th><th>Alt</th><th>Effect <span class="formula-chip">log2FC</span></th><th>Effect %ile</th>
 </tr></thead><tbody>
 <tr><td>chr1:109274968 G>T</td><td>rs12740374</td>
-<td>512</td><td>698</td><td class='gain'>+0.448</td><td>≥99th</td>
-<td>2.1e+03</td><td>2.73e+03</td><td class='gain'>+0.377</td><td>≥99th</td>
-<td>1.22e+03</td><td>1.47e+03</td><td class='gain'>+0.272</td><td>≥99th</td>
-<td>1.37e+04</td><td>1.55e+04</td><td class='gain'>+0.177</td><td>≥99th</td>
-<td>38.9</td><td>38.7</td><td class='neutral'>-0.010</td><td>≥99th</td>
-<td>3.84e+03</td><td>3.85e+03</td><td class='neutral'>+0.004</td><td>≥99th</td>
+<td>512</td><td>699</td><td class='gain'>+0.448</td><td>≥99th</td>
+<td>2.1e+03</td><td>2.72e+03</td><td class='gain'>+0.371</td><td>≥99th</td>
+<td>1.22e+03</td><td>1.46e+03</td><td class='gain'>+0.268</td><td>≥99th</td>
+<td>1.37e+04</td><td>1.55e+04</td><td class='gain'>+0.180</td><td>≥99th</td>
+<td>39</td><td>38.8</td><td class='neutral'>-0.004</td><td>≥99th</td>
+<td>3.85e+03</td><td>3.84e+03</td><td class='neutral'>-0.004</td><td>≥99th</td>
 </tr>
 <tr><td>chr1:109279175 G>A</td><td>rs4970836</td>
 <td>8.22</td><td>7.96</td><td class='neutral'>-0.041</td><td>≥99th</td>
-<td>201</td><td>197</td><td class='neutral'>-0.030</td><td>≥99th</td>
+<td>201</td><td>197</td><td class='neutral'>-0.031</td><td>≥99th</td>
 <td>202</td><td>198</td><td class='neutral'>-0.027</td><td>≥99th</td>
-<td>3.32e+03</td><td>3.29e+03</td><td class='neutral'>-0.014</td><td>≥99th</td>
-<td>43.1</td><td>43.1</td><td class='neutral'>-0.000</td><td>—</td>
-<td>4.19e+03</td><td>4.19e+03</td><td class='neutral'>-0.000</td><td>—</td>
+<td>3.32e+03</td><td>3.28e+03</td><td class='neutral'>-0.015</td><td>≥99th</td>
+<td>43.2</td><td>43.3</td><td class='neutral'>+0.004</td><td>≥99th</td>
+<td>4.19e+03</td><td>4.18e+03</td><td class='neutral'>-0.001</td><td>≥99th</td>
 </tr>
 <tr><td>chr1:109275216 T>C</td><td>rs660240</td>
-<td>397</td><td>418</td><td class='neutral'>+0.073</td><td>≥99th</td>
-<td>1.28e+03</td><td>1.3e+03</td><td class='neutral'>+0.022</td><td>≥99th</td>
-<td>770</td><td>780</td><td class='neutral'>+0.019</td><td>≥99th</td>
-<td>1.63e+04</td><td>1.67e+04</td><td class='neutral'>+0.029</td><td>≥99th</td>
-<td>45.2</td><td>44.9</td><td class='neutral'>-0.008</td><td>≥99th</td>
-<td>4.3e+03</td><td>4.3e+03</td><td class='neutral'>+0.000</td><td>—</td>
+<td>398</td><td>418</td><td class='neutral'>+0.071</td><td>≥99th</td>
+<td>1.28e+03</td><td>1.3e+03</td><td class='neutral'>+0.021</td><td>≥99th</td>
+<td>770</td><td>779</td><td class='neutral'>+0.017</td><td>≥99th</td>
+<td>1.63e+04</td><td>1.67e+04</td><td class='neutral'>+0.032</td><td>≥99th</td>
+<td>45</td><td>45.1</td><td class='neutral'>+0.003</td><td>≥99th</td>
+<td>4.31e+03</td><td>4.31e+03</td><td class='neutral'>-0.000</td><td>near-zero</td>
 </tr>
 <tr><td>chr1:109275684 G>T</td><td>rs1626484</td>
-<td>69.3</td><td>69.6</td><td class='neutral'>+0.005</td><td>≥99th</td>
-<td>540</td><td>542</td><td class='neutral'>+0.005</td><td>≥99th</td>
-<td>511</td><td>514</td><td class='neutral'>+0.008</td><td>≥99th</td>
-<td>1.34e+04</td><td>1.34e+04</td><td class='neutral'>-0.001</td><td>—</td>
-<td>37.2</td><td>37.2</td><td class='neutral'>-0.001</td><td>—</td>
-<td>3.97e+03</td><td>3.94e+03</td><td class='neutral'>-0.009</td><td>≥99th</td>
+<td>69.4</td><td>69.6</td><td class='neutral'>+0.003</td><td>0.67</td>
+<td>539</td><td>541</td><td class='neutral'>+0.005</td><td>≥99th</td>
+<td>512</td><td>512</td><td class='neutral'>+0.001</td><td>0.21</td>
+<td>1.34e+04</td><td>1.34e+04</td><td class='neutral'>-0.000</td><td>near-zero</td>
+<td>37.3</td><td>37.3</td><td class='neutral'>+0.000</td><td>near-zero</td>
+<td>3.94e+03</td><td>3.95e+03</td><td class='neutral'>+0.001</td><td>≥99th</td>
 </tr>
 <tr><td>chr1:109274570 A>G</td><td>rs7528419</td>
-<td>118</td><td>119</td><td class='neutral'>+0.017</td><td>≥99th</td>
-<td>954</td><td>964</td><td class='neutral'>+0.014</td><td>≥99th</td>
-<td>775</td><td>780</td><td class='neutral'>+0.010</td><td>≥99th</td>
-<td>1.46e+04</td><td>1.48e+04</td><td class='neutral'>+0.020</td><td>≥99th</td>
-<td>40.6</td><td>40.6</td><td class='neutral'>-0.001</td><td>≥99th</td>
+<td>118</td><td>119</td><td class='neutral'>+0.008</td><td>≥99th</td>
+<td>958</td><td>960</td><td class='neutral'>+0.002</td><td>0.62</td>
+<td>776</td><td>778</td><td class='neutral'>+0.002</td><td>0.31</td>
+<td>1.46e+04</td><td>1.48e+04</td><td class='neutral'>+0.018</td><td>≥99th</td>
+<td>40.7</td><td>40.7</td><td class='neutral'>-0.003</td><td>≥99th</td>
 <td>4.3e+03</td><td>4.29e+03</td><td class='neutral'>-0.002</td><td>≥99th</td>
 </tr>
 </tbody></table>
-<p style='font-size:0.85em;color:#6b7280;margin-top:8px;'>Columns per track: <b>Ref</b> (reference allele prediction), <b>Alt</b> (alternate allele prediction), <b>log2FC</b> (log2 fold-change alt/ref), <b>Effect %ile</b> (ranked against ~10K random SNPs). Green = gain, red = loss.</p>
+<p style='font-size:0.85em;color:#6b7280;margin-top:8px;'>Columns per track: <b>Ref</b> (reference allele prediction), <b>Alt</b> (alternate allele prediction), <b>Effect</b> (signed effect — formula shown in the chip next to each track's header; see the glossary at the top of the page), <b>Effect %ile</b> (ranked against ~10K random SNPs). Green = gain, red = loss.</p>
 </body></html>

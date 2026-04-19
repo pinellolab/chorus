@@ -1555,6 +1555,68 @@ class TestEnrichedCausalFields:
         assert "SORT1" in html
         assert "K562" in html
 
+    def test_causal_html_unified_expandable_design(self):
+        """Rankings + Details are merged into one expandable table with a glossary.
+
+        Ensures:
+          - a "How to read this report" glossary is present
+          - each variant row is wrapped in a <tbody class="variant-block">
+            with a summary row and a drill-down row
+          - the drill-down surfaces the per-layer top track's assay, cell type,
+            ref/alt values (i.e. the provenance of each per-layer number)
+          - formula labels (log2FC / lnFC / Δ) are shown so units are explicit
+          - the old separate Rankings / Details section headings are gone
+        """
+        from chorus.analysis.causal import CausalVariantScore, CausalResult, CausalWeights
+
+        scores = [
+            CausalVariantScore(
+                variant_id="rs1", chrom="chr1", position=1000500, ref="A", alt="G",
+                r2=1.0, is_sentinel=True,
+                max_effect=0.5, n_layers_affected=1, convergence_score=1.0,
+                ref_activity=300.0, composite=0.85,
+                top_layer="chromatin_accessibility", top_track="DNASE:K562",
+                per_layer_scores={"chromatin_accessibility": 0.5},
+                per_layer_top_track={
+                    "chromatin_accessibility": {
+                        "assay_id": "DNASE:K562", "assay_type": "DNASE",
+                        "cell_type": "K562", "ref_value": 4.1, "alt_value": 5.8,
+                        "raw_score": 0.5, "quantile_score": 0.97,
+                        "description": "ENCODE DNase K562",
+                    },
+                },
+                gene_name="SORT1", cell_type="K562",
+            ),
+        ]
+        result = CausalResult(
+            sentinel_id="rs1", population="CEU", n_variants=1,
+            scores=scores, weights=CausalWeights(),
+            oracle_name="test", gene_name="SORT1",
+        )
+        html = result.to_html()
+
+        # Glossary + unified table present
+        assert "How to read this report" in html
+        assert "Ranked Variants" in html
+        assert 'class="variant-block"' in html
+        assert 'tr class="summary"' in html
+        assert 'tr class="drill-row"' in html
+
+        # Old section structure removed
+        assert "<h2>Variant Rankings" not in html
+        assert "<h2>Variant Details" not in html
+
+        # Per-layer winning-track provenance surfaced
+        assert "Strongest track" in html
+        assert "DNASE:K562" in html  # assay_id rendered
+        assert "Per-layer breakdown" in html
+        assert "Top assay" in html
+        # Ref/alt predicted values appear
+        assert "4.1" in html and "5.8" in html
+
+        # Formula labels (units) are explicit
+        assert "log2FC" in html
+
     def test_causal_prioritize_populates_gene_cell_type(self):
         from chorus.analysis.causal import prioritize_causal_variants
         from chorus.utils.ld import LDVariant
@@ -2526,3 +2588,308 @@ class TestDescribeTracksRequested:
         ref.tracks = {"a": t1, "b": t2}
         variant_result = {"predictions": {"reference": ref}}
         assert _describe_tracks_requested(["a", "b"], variant_result) == "2 tracks"
+
+
+# ── Shared report glossary + formula chip helpers ──────────────────────
+
+class TestReportGlossary:
+    """Unit tests for the shared report-glossary helper.
+
+    The glossary helper is imported by every report renderer (variant_report,
+    causal, batch_scoring, multi_oracle_report) so these tests pin its
+    behaviour tightly enough to protect downstream renderers from regressions.
+    """
+
+    def test_formula_label_known_and_unknown(self):
+        from chorus.analysis._report_glossary import formula_label
+        assert formula_label("log2fc") == "log2FC"
+        assert formula_label("logfc") == "lnFC"
+        assert formula_label("diff") == "Δ (alt−ref)"
+        assert formula_label(None) == "—"
+        # Pass-through for unknown labels so regressions are obvious in the UI.
+        assert formula_label("noop") == "noop"
+
+    def test_formula_chip_is_html(self):
+        from chorus.analysis._report_glossary import formula_chip
+        chip = formula_chip("log2fc")
+        assert chip.startswith('<span class="formula-chip">')
+        assert "log2FC" in chip
+        assert chip.endswith("</span>")
+
+    def test_render_how_to_read_minimal(self):
+        from chorus.analysis._report_glossary import render_how_to_read
+        html = render_how_to_read()
+        assert '<section class="how-to-read">' in html
+        assert "How to read this report" in html
+
+    def test_render_how_to_read_per_layer_formulas(self):
+        from chorus.analysis._report_glossary import render_how_to_read
+        # Present layers with mixed formula families (log2fc + diff + logfc).
+        html = render_how_to_read(
+            layers_present=[
+                "chromatin_accessibility", "promoter_activity", "gene_expression",
+            ],
+        )
+        # All three formula labels must appear.
+        assert "log2FC" in html
+        assert "lnFC" in html
+        assert "Δ" in html
+        # Each layer's description appears.
+        assert "Chromatin accessibility" in html
+        assert "Promoter activity" in html
+        assert "Gene expression" in html
+
+    def test_render_how_to_read_composite_flags(self):
+        from chorus.analysis._report_glossary import render_how_to_read
+        from chorus.analysis.causal import CausalWeights
+        html = render_how_to_read(
+            layers_present=["chromatin_accessibility"],
+            include_composite=True,
+            weights=CausalWeights(layer_effect_threshold=0.25),
+            include_percentile=True,
+            include_activity=True,
+        )
+        assert "Composite" in html
+        assert "Convergence" in html
+        assert "0.25" in html  # threshold echoed
+        assert "Effect %ile" in html
+        assert "Activity %ile" in html
+
+    def test_render_how_to_read_deduplicates_layers(self):
+        """Callers can pass duplicated layers; helper must not repeat rows."""
+        from chorus.analysis._report_glossary import render_how_to_read
+        html = render_how_to_read(layers_present=[
+            "chromatin_accessibility", "chromatin_accessibility",
+        ])
+        assert html.count("Chromatin accessibility") == 1
+
+
+# ── Formula chips surfaced in the variant_report HTML ───────────────────
+
+class TestVariantReportFormulaChips:
+    """A new user must see the effect formula in every per-layer table."""
+
+    def test_effect_column_and_heading_carry_formula_chip(self):
+        """Each per-layer table heading should surface its layer's formula.
+
+        The test builds a multi-layer VariantReport (log2fc for chromatin,
+        diff for MPRA, logfc for RNA) and asserts each formula chip is
+        present in the rendered HTML, near its respective layer heading.
+        """
+        from chorus.analysis.variant_report import (
+            TrackScore, VariantReport,
+        )
+        report = VariantReport(
+            chrom="chr1", position=109274968,
+            ref_allele="G", alt_alleles=["T"],
+            oracle_name="alphagenome", gene_name="SORT1",
+            allele_scores={"T": [
+                TrackScore(assay_id="DNASE:HepG2", assay_type="DNASE",
+                           cell_type="HepG2", layer="chromatin_accessibility",
+                           ref_value=4.1, alt_value=5.7, raw_score=0.468),
+                TrackScore(assay_id="LentiMPRA:HepG2", assay_type="LentiMPRA",
+                           cell_type="HepG2", layer="promoter_activity",
+                           ref_value=2.1, alt_value=2.9, raw_score=0.82),
+                TrackScore(assay_id="RNA:HepG2", assay_type="RNA",
+                           cell_type="HepG2", layer="gene_expression",
+                           ref_value=3.0, alt_value=4.5, raw_score=0.405),
+            ]},
+        )
+        html = report.to_html()
+        # Each formula chip should appear at least once in the document.
+        assert "log2FC" in html
+        assert 'class="formula-chip">Δ' in html or "Δ (alt−ref)" in html
+        assert "lnFC" in html
+        # Glossary is at the TOP of the page — before any numeric row.
+        glossary_idx = html.index("How to read this report")
+        first_score_idx = html.index("0.468")
+        assert glossary_idx < first_score_idx, \
+            "Glossary must appear before numeric content for new users."
+
+    def test_summary_cites_winning_track_provenance(self):
+        """The one-line Summary must cite the specific assay + cell type."""
+        from chorus.analysis.variant_report import (
+            TrackScore, VariantReport,
+        )
+        report = VariantReport(
+            chrom="chr1", position=1000500,
+            ref_allele="A", alt_alleles=["G"],
+            oracle_name="alphagenome", gene_name="TEST",
+            allele_scores={"G": [
+                # Two tracks in the same layer — only the strongest should
+                # make it into the summary string.
+                TrackScore(assay_id="DNASE:HepG2", assay_type="DNASE",
+                           cell_type="HepG2", layer="chromatin_accessibility",
+                           ref_value=4.1, alt_value=5.7, raw_score=0.468),
+                TrackScore(assay_id="DNASE:K562", assay_type="DNASE",
+                           cell_type="K562", layer="chromatin_accessibility",
+                           ref_value=2.0, alt_value=2.3, raw_score=0.15),
+            ]},
+        )
+        html = report.to_html()
+        # Summary must include the winning track's assay_id AND cell_type.
+        summary_start = html.index("<b>Summary:</b>")
+        summary_end = html.index("</p>", summary_start)
+        summary = html[summary_start:summary_end]
+        assert "DNASE:HepG2" in summary
+        assert "HepG2" in summary
+        # Losing track should NOT make it into the summary.
+        assert "K562" not in summary
+
+
+# ── Multi-oracle validation report ──────────────────────────────────────
+
+class TestMultiOracleReport:
+    """End-to-end coverage of the multi-oracle consensus renderer."""
+
+    def _mk_report(self, oracle, tracks):
+        from chorus.analysis.variant_report import VariantReport
+        return VariantReport(
+            chrom="chr1", position=109274968,
+            ref_allele="G", alt_alleles=["T"],
+            oracle_name=oracle, gene_name="SORT1",
+            allele_scores={"T": tracks},
+        )
+
+    def test_from_reports_variant_mismatch_raises(self):
+        from chorus.analysis import MultiOracleReport, VariantReport
+        a = VariantReport(chrom="chr1", position=1, ref_allele="A",
+                          alt_alleles=["G"], oracle_name="o1", gene_name="X")
+        b = VariantReport(chrom="chr2", position=1, ref_allele="A",
+                          alt_alleles=["G"], oracle_name="o2", gene_name="X")
+        with pytest.raises(ValueError, match="Variant mismatch"):
+            MultiOracleReport.from_reports([a, b])
+
+    def test_consensus_matrix_direction_and_provenance(self):
+        """When two oracles disagree on direction, the matrix flags it."""
+        from chorus.analysis import MultiOracleReport
+        from chorus.analysis.variant_report import TrackScore
+
+        gain = self._mk_report("oracle_a", [
+            TrackScore(assay_id="DNASE:HepG2", assay_type="DNASE",
+                       cell_type="HepG2", layer="chromatin_accessibility",
+                       ref_value=2.0, alt_value=3.0, raw_score=0.58),
+        ])
+        loss = self._mk_report("oracle_b", [
+            TrackScore(assay_id="DNASE:K562", assay_type="DNASE",
+                       cell_type="K562", layer="chromatin_accessibility",
+                       ref_value=2.0, alt_value=1.6, raw_score=-0.32),
+        ])
+        moracle = MultiOracleReport.from_reports(
+            [gain, loss], variant_id="rs-test",
+        )
+        rows = moracle._consensus_rows()
+        assert len(rows) == 1
+        row = rows[0]
+        assert row["agreement"] == "disagree"
+        # Each oracle's winning track identity is preserved.
+        assert row["oracles"]["oracle_a"]["assay_id"] == "DNASE:HepG2"
+        assert row["oracles"]["oracle_b"]["cell_type"] == "K562"
+
+    def test_html_surfaces_glossary_and_agreement(self):
+        from chorus.analysis import MultiOracleReport
+        from chorus.analysis.variant_report import TrackScore
+
+        cb = self._mk_report("chrombpnet", [
+            TrackScore(assay_id="ATAC:HepG2", assay_type="ATAC",
+                       cell_type="HepG2", layer="chromatin_accessibility",
+                       ref_value=4.0, alt_value=5.7, raw_score=0.51),
+        ])
+        ag = self._mk_report("alphagenome", [
+            TrackScore(assay_id="DNASE:HepG2", assay_type="DNASE",
+                       cell_type="HepG2", layer="chromatin_accessibility",
+                       ref_value=3.0, alt_value=4.2, raw_score=0.49),
+            TrackScore(assay_id="CAGE:HepG2", assay_type="CAGE",
+                       cell_type="HepG2", layer="tss_activity",
+                       ref_value=2.0, alt_value=2.8, raw_score=0.48),
+        ])
+        moracle = MultiOracleReport.from_reports(
+            [cb, ag], variant_id="rs12740374",
+        )
+        html = moracle.to_html()
+        # Key structural markers for a new-user reader.
+        assert "Multi-oracle validation" in html
+        assert "How to read this report" in html
+        assert "Cross-oracle consensus" in html
+        # Consensus-gain flag when both oracles push the same direction.
+        assert "all ↑" in html
+        # Per-oracle drill-down sections are collapsible.
+        assert "oracle-block" in html
+        # Glossary must still come before any numeric effect.
+        glossary_idx = html.index("How to read this report")
+        first_number_idx = html.index("0.51")
+        assert glossary_idx < first_number_idx
+
+    def test_json_roundtrip_via_from_dict(self):
+        """VariantReport.from_dict round-trips allele_scores correctly."""
+        from chorus.analysis import VariantReport
+        from chorus.analysis.variant_report import TrackScore
+        original = VariantReport(
+            chrom="chr1", position=109274968,
+            ref_allele="G", alt_alleles=["T"],
+            oracle_name="legnet", gene_name="SORT1",
+            allele_scores={"T": [
+                TrackScore(assay_id="LentiMPRA:HepG2", assay_type="LentiMPRA",
+                           cell_type="HepG2", layer="promoter_activity",
+                           ref_value=2.1, alt_value=2.9, raw_score=0.82,
+                           quantile_score=0.95, description="LegNet HepG2"),
+            ]},
+        )
+        rehydrated = VariantReport.from_dict(original.to_dict())
+        assert rehydrated.chrom == "chr1"
+        assert rehydrated.position == 109274968
+        assert rehydrated.oracle_name == "legnet"
+        assert list(rehydrated.allele_scores.keys()) == ["T"]
+        ts = rehydrated.allele_scores["T"][0]
+        assert ts.assay_id == "LentiMPRA:HepG2"
+        assert ts.raw_score == pytest.approx(0.82)
+        assert ts.quantile_score == pytest.approx(0.95)
+
+    def test_from_json_files_round_trip(self, tmp_path):
+        """Writing JSONs to disk and rehydrating via from_json_files."""
+        import json
+        from chorus.analysis import MultiOracleReport
+        from chorus.analysis.variant_report import TrackScore
+
+        cb = self._mk_report("chrombpnet", [
+            TrackScore(assay_id="ATAC:HepG2", assay_type="ATAC",
+                       cell_type="HepG2", layer="chromatin_accessibility",
+                       ref_value=4.0, alt_value=5.7, raw_score=0.51),
+        ])
+        ln = self._mk_report("legnet", [
+            TrackScore(assay_id="LentiMPRA:HepG2", assay_type="LentiMPRA",
+                       cell_type="HepG2", layer="promoter_activity",
+                       ref_value=2.0, alt_value=2.9, raw_score=0.85),
+        ])
+        cb_path = tmp_path / "cb.json"
+        ln_path = tmp_path / "ln.json"
+        cb_path.write_text(json.dumps(cb.to_dict(), default=str))
+        ln_path.write_text(json.dumps(ln.to_dict(), default=str))
+
+        moracle = MultiOracleReport.from_json_files(
+            [cb_path, ln_path], variant_id="rs-test",
+        )
+        assert list(moracle.reports.keys()) == ["chrombpnet", "legnet"]
+        assert moracle.reports["chrombpnet"].allele_scores["T"][0].raw_score \
+            == pytest.approx(0.51)
+
+    def test_markdown_summary_contains_consensus_table(self):
+        from chorus.analysis import MultiOracleReport
+        from chorus.analysis.variant_report import TrackScore
+
+        a = self._mk_report("oracle_a", [
+            TrackScore(assay_id="DNASE:HepG2", assay_type="DNASE",
+                       cell_type="HepG2", layer="chromatin_accessibility",
+                       ref_value=2.0, alt_value=3.0, raw_score=0.58),
+        ])
+        b = self._mk_report("oracle_b", [
+            TrackScore(assay_id="DNASE:HepG2", assay_type="DNASE",
+                       cell_type="HepG2", layer="chromatin_accessibility",
+                       ref_value=2.0, alt_value=2.8, raw_score=0.48),
+        ])
+        moracle = MultiOracleReport.from_reports([a, b], variant_id="rs1")
+        md = moracle.to_markdown()
+        assert "# Multi-oracle validation" in md
+        assert "Cross-oracle consensus" in md
+        assert "oracle_a" in md and "oracle_b" in md
+        assert "all ↑" in md

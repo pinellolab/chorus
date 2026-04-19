@@ -19,6 +19,7 @@
 | Fine-map a GWAS locus to find the causal variant | `fine_map_causal_variant` | [causal_prioritization/](causal_prioritization/) |
 | Swap a promoter/enhancer and predict effects | `analyze_region_swap` | [sequence_engineering/](sequence_engineering/) |
 | Predict disruption from a construct insertion | `simulate_integration` | [sequence_engineering/](sequence_engineering/) |
+| Cross-validate a variant with multiple oracles | `MultiOracleReport` | [validation/SORT1_rs12740374_multioracle/](validation/SORT1_rs12740374_multioracle/) |
 
 ## Quick start by role
 
@@ -56,15 +57,18 @@ the available layers.
 ## Understanding the scores
 
 All tools produce **effect scores** measuring how much a variant or
-modification changes a regulatory signal:
+modification changes a regulatory signal. Every rendered HTML report ships
+with a **"How to read this report"** box at the top that defines the score
+formula for every layer present in that report — so you don't need to
+memorise the table below before opening an example.
 
 | Score type | Layers | How to read it |
 |-----------|--------|---------------|
-| **log2FC** | Chromatin, TF binding, Histone, TSS | +1.0 = alt is 2x ref; -1.0 = alt is 0.5x ref |
-| **logFC** | Gene expression (RNA) | +0.7 = alt is ~2x ref expression |
-| **diff** | Promoter activity (MPRA) | Simple difference in activity units |
+| **log2FC** (`log2((alt+ε)/(ref+ε))`) | Chromatin, TF binding, Histone, TSS, Splicing | +1.0 ≈ alt signal is 2× ref; −1.0 ≈ alt is 0.5× ref |
+| **lnFC** (`ln((alt+ε)/(ref+ε))`) | Gene expression (RNA) | Natural log fold change — RNA-seq convention |
+| **Δ (alt − ref)** | Promoter activity (MPRA), Sei regulatory classes | Raw difference in activity (not a ratio) |
 
-**Quick guide to magnitudes (log2FC):**
+**Quick guide to log2FC magnitudes** (other layers scale similarly):
 - < 0.1: Minimal — unlikely to be functional
 - 0.1–0.3: Moderate — worth investigating
 - 0.3–0.7: Strong — likely functional
@@ -78,6 +82,11 @@ the effect is larger than 95% of random variants.
 variant site against ~30,000 genome-wide positions including ENCODE cCREs.
 A value of 0.95 means the site is already in the top 5% of regulatory
 activity — a strong regulatory element.
+
+**Provenance in summaries.** Every headline number in a report carries the
+**specific track + cell type** that produced it (e.g. `+0.45, DNASE:HepG2 ·
+HepG2`). Per-layer table headers also show the formula used (e.g.
+`Effect log2FC`) so the unit is never ambiguous.
 
 ## Categories
 
@@ -104,7 +113,12 @@ modifications on local regulatory activity.
 
 ### [validation/](validation/)
 Replication of key examples from the AlphaGenome Nature paper (Avsec et al.
-2026) to verify that Chorus produces consistent findings.
+2026) to verify that Chorus produces consistent findings. Also contains a
+[multi-oracle cross-validation example](validation/SORT1_rs12740374_multioracle/)
+that scores the classic SORT1 variant with **three independent oracles**
+(ChromBPNet for chromatin, LegNet for MPRA, AlphaGenome as generalist) and
+surfaces a consensus matrix flagging where they agree — and where they
+don't — on direction.
 
 ## Output Formats
 

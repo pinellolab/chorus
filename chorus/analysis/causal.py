@@ -64,6 +64,10 @@ class CausalVariantScore:
     # Per-layer breakdown
     per_layer_scores: dict = field(default_factory=dict)
     per_layer_directions: dict = field(default_factory=dict)
+    # For each layer, full provenance of the single winning track (max |raw_score|).
+    # Shape: {layer: {"assay_id", "assay_type", "cell_type", "ref_value",
+    #                 "alt_value", "raw_score", "quantile_score", "description"}}
+    per_layer_top_track: dict = field(default_factory=dict)
     top_layer: str = ""
     top_track: str = ""
 
@@ -170,6 +174,24 @@ class CausalResult:
                     "top_track": s.top_track,
                     "per_layer_scores": {
                         k: round(v, 4) for k, v in s.per_layer_scores.items()
+                    },
+                    # Full provenance of the winning track per layer so
+                    # downstream consumers can see which assay / cell type
+                    # drove each per-layer number.
+                    "per_layer_top_track": {
+                        k: {
+                            "assay_id": v.get("assay_id"),
+                            "assay_type": v.get("assay_type"),
+                            "cell_type": v.get("cell_type"),
+                            "ref_value": v.get("ref_value"),
+                            "alt_value": v.get("alt_value"),
+                            "raw_score": (round(v["raw_score"], 4)
+                                          if v.get("raw_score") is not None else None),
+                            "quantile_score": (round(v["quantile_score"], 4)
+                                               if v.get("quantile_score") is not None else None),
+                            "description": v.get("description") or "",
+                        }
+                        for k, v in s.per_layer_top_track.items()
                     },
                 }
                 for s in self.scores
@@ -480,8 +502,10 @@ def _extract_component_scores(
     # Per-layer max scores
     per_layer: dict[str, float] = {}
     per_layer_dir: dict[str, int] = {}
+    per_layer_top: dict[str, dict] = {}
     top_layer = ""
     top_track = ""
+    top_cell_type = ""
     max_effect = 0.0
     ref_activity_vals: list[float] = []
 
@@ -492,16 +516,27 @@ def _extract_component_scores(
         layer = ts.layer
         abs_score = abs(ts.raw_score)
 
-        # Track max per layer
+        # Track max per layer — also capture the winning track's full provenance
         if layer not in per_layer or abs_score > abs(per_layer[layer]):
             per_layer[layer] = ts.raw_score
             per_layer_dir[layer] = 1 if ts.raw_score > 0 else (-1 if ts.raw_score < 0 else 0)
+            per_layer_top[layer] = {
+                "assay_id": ts.assay_id,
+                "assay_type": ts.assay_type,
+                "cell_type": ts.cell_type or "",
+                "ref_value": ts.ref_value,
+                "alt_value": ts.alt_value,
+                "raw_score": ts.raw_score,
+                "quantile_score": ts.quantile_score,
+                "description": ts.description or "",
+            }
 
         # Overall max
         if abs_score > abs(max_effect):
             max_effect = ts.raw_score
             top_layer = layer
             top_track = ts.assay_id
+            top_cell_type = ts.cell_type or ""
 
         # Ref activity for chromatin/histone
         if layer in weights.activity_layers and ts.ref_value is not None:
@@ -549,10 +584,11 @@ def _extract_component_scores(
         composite=0.0,  # computed later
         per_layer_scores=per_layer,
         per_layer_directions=per_layer_dir,
+        per_layer_top_track=per_layer_top,
         top_layer=top_layer,
         top_track=top_track,
         gene_name=gene,
-        cell_type="",
+        cell_type=top_cell_type,
         track_scores=per_track,
         _variant_report=report,
     )
@@ -732,13 +768,22 @@ def _draw_simple_gene_track(ax, scores, gene_name=None):
 # HTML report
 # ---------------------------------------------------------------------------
 
-_CAUSAL_CSS = """
+from ._report_glossary import (
+    HOW_TO_READ_CSS,
+    formula_label as _formula_label,
+    render_how_to_read,
+)
+
+
+_CAUSAL_CSS = HOW_TO_READ_CSS + """
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
        max-width: 1200px; margin: 0 auto; padding: 1rem; background: #f8f9fa; }
 h1 { font-size: 1.5rem; margin-bottom: 0.3rem; }
 h2 { font-size: 1.15rem; border-bottom: 1px solid #dee2e6; padding-bottom: 0.3rem;
      margin-top: 1.5rem; }
+h3 { font-size: 1rem; margin: 0.8rem 0 0.3rem; color: #343a40; }
 .meta { font-size: 0.92rem; margin: 0.15rem 0; color: #495057; }
+.muted { color: #6c757d; font-size: 0.85rem; font-weight: normal; }
 .summary-box { margin: 0.8rem 0; padding: 0.7rem 1rem; background: #f0f7ff;
                border-left: 3px solid #3b82f6; border-radius: 4px; font-size: 0.95rem; }
 table { width: 100%; border-collapse: collapse; font-size: 0.88rem; margin-bottom: 1rem; }
@@ -746,7 +791,25 @@ thead { background: #343a40; color: white; }
 th, td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid #dee2e6; }
 th { cursor: pointer; user-select: none; }
 th:hover { background: #495057; }
-tbody tr:hover { background: #e9ecef; }
+tbody.variant-block { background: white; }
+tbody.variant-block:hover > tr.summary { background: #e9ecef; }
+tr.summary { cursor: pointer; }
+tr.summary td.expander { width: 1.4rem; text-align: center; color: #6c757d;
+                         transition: transform 0.15s; }
+tbody.variant-block.open tr.summary td.expander { color: #3b82f6;
+                                                  transform: rotate(90deg); }
+tr.drill-row { display: none; }
+tbody.variant-block.open tr.drill-row { display: table-row; }
+tr.drill-row > td { background: #fbfcfd; padding: 0.8rem 1rem; border-top: 0;
+                    box-shadow: inset 0 2px 0 #e9ecef; }
+.drill-content p { margin: 0.2rem 0; font-size: 0.88rem; color: #495057; }
+.drill-content table { margin-top: 0.6rem; font-size: 0.85rem; }
+.drill-content table th { background: #6c757d; cursor: default; }
+.drill-content table th:hover { background: #6c757d; }
+.drill-content .top-track-line { font-size: 0.9rem; color: #1f2d3d;
+                                 background: #f0f7ff; padding: 0.35rem 0.6rem;
+                                 border-left: 3px solid #3b82f6; border-radius: 3px;
+                                 margin-top: 0.5rem; }
 .badge-sentinel { background: #ffc107; color: #333; padding: 0.15rem 0.4rem;
                   border-radius: 3px; font-size: 0.8rem; font-weight: 600; }
 .badge-top { background: #28a745; color: white; padding: 0.15rem 0.4rem;
@@ -755,14 +818,6 @@ tbody tr:hover { background: #e9ecef; }
 .r2-high { color: #D43F3A; }
 .r2-med { color: #F0AD4E; }
 .r2-low { color: #357EBD; }
-details { margin: 0.5rem 0; border: 1px solid #dee2e6; border-radius: 4px; }
-details summary { padding: 0.5rem 0.8rem; background: #f8f9fa; cursor: pointer;
-                  font-size: 0.92rem; }
-details summary:hover { background: #e9ecef; }
-details[open] summary { border-bottom: 1px solid #dee2e6; }
-.detail-card { padding: 0.6rem 0.8rem; }
-.detail-card table { font-size: 0.85rem; }
-.detail-card th { background: #6c757d; }
 .locus-plot { text-align: center; margin: 1rem 0; }
 .locus-plot img { max-width: 100%; border: 1px solid #dee2e6; border-radius: 4px; }
 .footer { margin-top: 2rem; padding-top: 0.5rem; border-top: 1px solid #dee2e6;
@@ -770,22 +825,36 @@ details[open] summary { border-bottom: 1px solid #dee2e6; }
 """
 
 _SORT_JS = """
-document.querySelectorAll('.sortable th').forEach(th => {
-  th.addEventListener('click', function() {
+// Sort rankings table.  Each variant is wrapped in its own <tbody class="variant-block">
+// so its summary row and drill-down row move together.
+document.querySelectorAll('.sortable thead th').forEach((th, idx) => {
+  th.addEventListener('click', function(e) {
+    e.stopPropagation();
     const table = this.closest('table');
-    const idx = Array.from(this.parentNode.children).indexOf(this);
-    const rows = Array.from(table.querySelectorAll('tbody tr'));
+    const headerCells = Array.from(this.parentNode.children);
+    const colIdx = headerCells.indexOf(this);
+    // Guard: never try to sort on the expander column.
+    if (this.classList.contains('no-sort')) return;
+    const blocks = Array.from(table.querySelectorAll('tbody.variant-block'));
     const asc = this.dataset.sort !== 'asc';
-    rows.sort((a, b) => {
-      let va = a.children[idx]?.textContent?.trim() || '';
-      let vb = b.children[idx]?.textContent?.trim() || '';
-      let na = parseFloat(va), nb = parseFloat(vb);
+    blocks.sort((a, b) => {
+      const ra = a.querySelector('tr.summary'), rb = b.querySelector('tr.summary');
+      const va = ra?.children[colIdx]?.textContent?.trim() || '';
+      const vb = rb?.children[colIdx]?.textContent?.trim() || '';
+      const na = parseFloat(va), nb = parseFloat(vb);
       if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
       return asc ? va.localeCompare(vb) : vb.localeCompare(va);
     });
     this.dataset.sort = asc ? 'asc' : 'desc';
-    const tbody = table.querySelector('tbody');
-    rows.forEach(r => tbody.appendChild(r));
+    blocks.forEach(b => table.appendChild(b));
+  });
+});
+
+// Click a summary row to toggle its drill-down row.
+document.querySelectorAll('.sortable tbody.variant-block tr.summary').forEach(row => {
+  row.addEventListener('click', function() {
+    const block = this.closest('tbody.variant-block');
+    block.classList.toggle('open');
   });
 });
 """
@@ -1087,114 +1156,173 @@ def _build_causal_html(result: CausalResult) -> str:
                 seen_layers.add(layer)
                 all_layers.append(layer)
 
-    # Ranked table
-    p.append('<h2>Variant Rankings</h2>')
+    # "How to read this report" glossary — sourced from the shared helper so
+    # every report in the suite uses the same wording and CSS.
+    p.append(render_how_to_read(
+        layers_present=all_layers,
+        include_composite=True,
+        weights=result.weights,
+        lead_sentence=(
+            "<b>How to read this report.</b> "
+            "Variants from the LD block are ranked by a <i>composite causal "
+            "score</i> (0–1, higher = more causal evidence). Click any row "
+            "to see exactly which assay / cell type drove each per-layer "
+            "number, along with the reference and alternate predicted values."
+        ),
+    ))
+
+    # Ranked table — single expandable view (rankings + drill-down merged).
+    p.append('<h2>Ranked Variants '
+             '<span class="muted">(click a row to expand evidence)</span></h2>')
     p.append('<table class="sortable"><thead><tr>')
+    # Expander column — not sortable.
+    p.append('<th class="no-sort"></th>')
     p.append('<th>Rank</th><th>Variant</th><th>r²</th>')
-    p.append('<th>Gene</th><th>Cell Type</th>')
+    p.append('<th>Gene</th><th>Top cell type</th>')
     p.append('<th>Max Effect</th><th>Layers</th><th>Convergence</th>')
     for layer in all_layers:
         cfg = LAYER_CONFIGS.get(layer)
         col_name = cfg.description if cfg else layer
-        p.append(f'<th>{html_mod.escape(col_name)}</th>')
+        formula = _formula_label(cfg.formula) if cfg else ""
+        header = html_mod.escape(col_name)
+        if formula:
+            header += f' <span class="formula-chip">{formula}</span>'
+        p.append(f'<th>{header}</th>')
     p.append('<th>Composite ▾</th>')
-    p.append('</tr></thead><tbody>')
+    p.append('</tr></thead>')
+
+    # Column count — needed for the drill-row colspan.
+    n_cols = 10 + len(all_layers)  # expander, rank, variant, r², gene, ct,
+                                   # max, layers, conv, <layers...>, composite
 
     for i, s in enumerate(result.scores, 1):
-        p.append("<tr>")
-        p.append(f"<td>{i}</td>")
+        # Each variant lives in its own <tbody> so sorting + expansion keep
+        # the summary row and drill row together.
+        p.append('<tbody class="variant-block">')
 
-        # Variant cell with badges
+        # ── Summary row ────────────────────────────────────────────
+        p.append('<tr class="summary">')
+        p.append('<td class="expander">▸</td>')
+        p.append(f'<td>{i}</td>')
+
         badges = ""
         if s.is_sentinel:
             badges += ' <span class="badge-sentinel">sentinel</span>'
         if i == 1:
             badges += ' <span class="badge-top">top</span>'
-        p.append(f"<td>{html_mod.escape(s.variant_id)}{badges}</td>")
+        p.append(f'<td>{html_mod.escape(s.variant_id)}{badges}</td>')
 
-        # r² colored
         r2_cls = "r2-high" if s.r2 >= 0.8 else ("r2-med" if s.r2 >= 0.5 else "r2-low")
         p.append(f'<td class="r2-cell {r2_cls}">{s.r2:.2f}</td>')
 
-        # Gene and Cell Type
         gene = html_mod.escape(s.gene_name) if s.gene_name else "—"
         ct = html_mod.escape(s.cell_type) if s.cell_type else "—"
-        p.append(f"<td>{gene}</td>")
-        p.append(f"<td>{ct}</td>")
+        p.append(f'<td>{gene}</td>')
+        p.append(f'<td>{ct}</td>')
 
         sign = "+" if s.max_effect >= 0 else ""
-        p.append(f"<td>{sign}{s.max_effect:.3f}</td>")
-        p.append(f"<td>{s.n_layers_affected}</td>")
-        p.append(f"<td>{s.convergence_score:.2f}</td>")
+        p.append(f'<td>{sign}{s.max_effect:.3f}</td>')
+        p.append(f'<td>{s.n_layers_affected}</td>')
+        p.append(f'<td>{s.convergence_score:.2f}</td>')
 
-        # Per-layer score columns with color coding
         for layer in all_layers:
             score = s.per_layer_scores.get(layer)
             if score is None:
                 p.append('<td style="color:#adb5bd">—</td>')
             else:
                 if abs(score) < 0.05:
-                    color = "#6c757d"  # grey for minimal
+                    color = "#6c757d"
                 elif score > 0:
-                    color = "#28a745"  # green for positive
+                    color = "#28a745"
                 else:
-                    color = "#dc3545"  # red for negative
+                    color = "#dc3545"
                 layer_sign = "+" if score >= 0 else ""
                 p.append(f'<td style="color:{color};font-weight:600">'
                          f'{layer_sign}{score:.3f}</td>')
 
-        p.append(f"<td><b>{s.composite:.3f}</b></td>")
-        p.append("</tr>")
+        p.append(f'<td><b>{s.composite:.3f}</b></td>')
+        p.append('</tr>')
 
-    p.append("</tbody></table>")
+        # ── Drill-down row ─────────────────────────────────────────
+        p.append(f'<tr class="drill-row"><td colspan="{n_cols}">')
+        p.append('<div class="drill-content">')
+        p.append(f'<p><b>Position:</b> {s.chrom}:{s.position:,} '
+                 f'{html_mod.escape(s.ref)}&gt;{html_mod.escape(s.alt)} '
+                 f'&nbsp;|&nbsp; <b>r²:</b> {s.r2:.2f} '
+                 f'&nbsp;|&nbsp; <b>Variants in LD block:</b> {result.n_variants}</p>')
 
-    # Per-variant detail cards
-    p.append('<h2>Variant Details</h2>')
+        # Strongest track line (the single assay driving Max Effect)
+        top_info = s.per_layer_top_track.get(s.top_layer) if s.top_layer else None
+        if top_info and top_info.get("assay_id"):
+            cfg_top = LAYER_CONFIGS.get(s.top_layer)
+            layer_label = cfg_top.description if cfg_top else s.top_layer
+            formula = _formula_label(cfg_top.formula) if cfg_top else ""
+            ct_str = top_info.get("cell_type") or "—"
+            desc = top_info.get("description") or ""
+            asm = top_info.get("assay_id") or ""
+            p.append('<p class="top-track-line">'
+                     f'<b>Strongest track:</b> {html_mod.escape(layer_label)} '
+                     f'&middot; <code>{html_mod.escape(asm)}</code> '
+                     f'&middot; cell type: <b>{html_mod.escape(ct_str)}</b>'
+                     + (f' &middot; {html_mod.escape(desc)}' if desc else '')
+                     + (f' &middot; <span class="formula-chip">{formula}</span>' if formula else '')
+                     + '</p>')
 
-    for i, s in enumerate(result.scores, 1):
-        open_attr = " open" if i == 1 else ""
-        badges = ""
-        if s.is_sentinel:
-            badges += " ★ sentinel"
-        if i == 1:
-            badges += " — Top candidate"
-
-        p.append(f'<details{open_attr}>')
-        p.append(f'<summary><b>{html_mod.escape(s.variant_id)}</b> — '
-                 f'composite: {s.composite:.3f}{badges}</summary>')
-        p.append('<div class="detail-card">')
-
-        # Extract cell type from this variant's report
-        var_cell_types = set()
-        if s._variant_report:
-            for allele_scores in s._variant_report.allele_scores.values():
-                for ts in allele_scores:
-                    if ts.cell_type:
-                        var_cell_types.add(ts.cell_type)
-        ct_str = f' | <b>Cell type:</b> {html_mod.escape(", ".join(sorted(var_cell_types)))}' if var_cell_types else ""
-
-        p.append(f'<p><b>Position:</b> {s.chrom}:{s.position:,} {s.ref}>{s.alt} '
-                 f'| <b>r²:</b> {s.r2:.2f} '
-                 f'| <b>Top layer:</b> {s.top_layer}{ct_str}</p>')
-
-        # Per-layer table
+        # Per-layer breakdown with winning-track provenance per layer
         if s.per_layer_scores:
-            p.append('<table><thead><tr><th>Layer</th><th>Effect</th>'
-                     '<th>Direction</th></tr></thead><tbody>')
-            sorted_layers = sorted(s.per_layer_scores.items(),
-                                   key=lambda x: abs(x[1]), reverse=True)
+            p.append('<h3>Per-layer breakdown</h3>')
+            p.append('<table><thead><tr>'
+                     '<th>Layer</th><th>Formula</th>'
+                     '<th>Top assay</th><th>Cell type</th>'
+                     '<th>Ref</th><th>Alt</th>'
+                     '<th>Effect</th><th>Direction</th>'
+                     '<th>Percentile</th>'
+                     '</tr></thead><tbody>')
+            sorted_layers = sorted(
+                s.per_layer_scores.items(),
+                key=lambda x: abs(x[1]), reverse=True,
+            )
             for layer, score in sorted_layers:
                 cfg = LAYER_CONFIGS.get(layer)
                 name = cfg.description if cfg else layer
-                sign = "+" if score >= 0 else ""
+                formula = _formula_label(cfg.formula) if cfg else "—"
+                sign_s = "+" if score >= 0 else ""
                 direction = "▲" if score > 0 else ("▼" if score < 0 else "—")
-                color = "#28a745" if score > 0 else ("#dc3545" if score < 0 else "#6c757d")
-                p.append(f'<tr><td>{html_mod.escape(name)}</td>'
-                         f'<td>{sign}{score:.3f}</td>'
-                         f'<td style="color:{color};font-weight:bold">{direction}</td></tr>')
+                color = ("#28a745" if score > 0
+                         else ("#dc3545" if score < 0 else "#6c757d"))
+                info = s.per_layer_top_track.get(layer, {}) or {}
+                assay = info.get("assay_id") or "—"
+                ct_val = info.get("cell_type") or "—"
+                ref_v = info.get("ref_value")
+                alt_v = info.get("alt_value")
+                ref_str = f"{ref_v:.3g}" if ref_v is not None else "—"
+                alt_str = f"{alt_v:.3g}" if alt_v is not None else "—"
+                q = info.get("quantile_score")
+                q_str = f"{q * 100:+.1f}%" if q is not None else "—"
+                p.append(f'<tr>'
+                         f'<td>{html_mod.escape(name)}</td>'
+                         f'<td><span class="formula-chip">{formula}</span></td>'
+                         f'<td><code>{html_mod.escape(str(assay))}</code></td>'
+                         f'<td>{html_mod.escape(str(ct_val))}</td>'
+                         f'<td>{ref_str}</td>'
+                         f'<td>{alt_str}</td>'
+                         f'<td style="color:{color};font-weight:600">'
+                         f'{sign_s}{score:.3f}</td>'
+                         f'<td style="color:{color};font-weight:bold">{direction}</td>'
+                         f'<td>{q_str}</td>'
+                         f'</tr>')
             p.append('</tbody></table>')
+            p.append('<p class="muted" style="margin-top:0.4rem">'
+                     'Each row reports the <b>single track with the largest '
+                     '|effect|</b> in that layer. Ref/Alt are the model\'s raw '
+                     'predicted signal for that track. Percentile is the variant '
+                     'effect vs. a background of common variants (when available).'
+                     '</p>')
 
-        p.append('</div></details>')
+        p.append('</div></td></tr>')
+        p.append('</tbody>')
+
+    p.append('</table>')
 
     p.append(f'<div class="footer">Generated by Chorus '
              f'<code>fine_map_causal_variant</code></div>')
