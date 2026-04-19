@@ -80,26 +80,27 @@ def _rehydrate_variant_report(json_path: Path) -> int:
     # When an explicit filename was used before (non-default), keep the
     # previous HTML file name if we can unambiguously identify it. This
     # preserves link stability across README references.
-    existing_htmls = sorted(p for p in json_path.parent.glob("*_report.html")
-                            if "multioracle" not in p.name.lower()
-                            and "enformer" not in p.name.lower()
-                            and "_RAW_autoscale" not in p.name)
+    existing_htmls = sorted(
+        p for p in json_path.parent.glob("*_report.html")
+        if "multioracle" not in p.name.lower()
+    )
     if len(existing_htmls) == 1:
         out_path = existing_htmls[0]
     elif len(existing_htmls) > 1:
-        # Prefer one that mentions the oracle name in the filename, so we
-        # don't accidentally overwrite a sibling report from a different
-        # oracle (e.g. the Enformer/AlphaGenome co-habitation in
-        # validation/SORT1_rs12740374_with_CEBP/).
+        # Multiple candidates means the dir holds sibling reports from
+        # different oracles or runs.  Pick the one that belongs to THIS
+        # JSON by oracle-name match; prefer documented "validation_report"
+        # names when present.
         oracle = report.oracle_name.lower()
-        oracle_matches = [p for p in existing_htmls if oracle in p.name.lower()]
-        # And/or "validation_report" for documented canonical filenames.
         validation_matches = [p for p in existing_htmls
                               if "validation_report" in p.name.lower()]
-        if validation_matches:
+        oracle_matches = [p for p in existing_htmls if oracle in p.name.lower()]
+        if validation_matches and oracle in validation_matches[0].name.lower():
             out_path = validation_matches[0]
         elif len(oracle_matches) == 1:
             out_path = oracle_matches[0]
+        elif validation_matches:
+            out_path = validation_matches[0]
 
     report.to_html(output_path=out_path)
     logger.info("  rerendered %s", out_path.relative_to(REPO_ROOT))
@@ -159,7 +160,22 @@ def _refresh_multioracle(dir_path: Path) -> int:
     from chorus.analysis import MultiOracleReport
     from chorus.analysis.analysis_request import AnalysisRequest
 
-    per_oracle_jsons = sorted(dir_path.glob("*_variant_report.json"))
+    # Preserve the canonical oracle ordering used by
+    # scripts/regenerate_multioracle.py (specialists → generalist) so the
+    # consensus-matrix columns don't shuffle between runs.
+    _ORACLE_ORDER = ["chrombpnet", "legnet", "alphagenome", "enformer",
+                     "borzoi", "sei"]
+    all_jsons = {
+        p.stem.replace("_variant_report", ""): p
+        for p in dir_path.glob("*_variant_report.json")
+    }
+    per_oracle_jsons = [
+        all_jsons[name] for name in _ORACLE_ORDER if name in all_jsons
+    ]
+    per_oracle_jsons += [
+        p for name, p in sorted(all_jsons.items())
+        if name not in _ORACLE_ORDER
+    ]
     if not per_oracle_jsons:
         return 0
 
@@ -170,16 +186,31 @@ def _refresh_multioracle(dir_path: Path) -> int:
         if html_candidate.exists():
             per_oracle_paths[oracle] = html_candidate.name
 
-    # Reuse existing analysis_request if any per-oracle JSON has one.
-    ar = None
+    # Synthesise a multi-oracle AnalysisRequest that describes the *combined*
+    # comparison, not the first per-oracle run — matches what
+    # scripts/regenerate_multioracle.py writes so the rendered prompt block
+    # at the top of the page is consistent whether the report is produced
+    # from a full regen or a pure-JSON rerender.
     with per_oracle_jsons[0].open() as fh:
         first = json.load(fh)
-        ar_dict = first.get("analysis_request")
-        if ar_dict:
-            try:
-                ar = AnalysisRequest.from_dict(ar_dict)
-            except Exception:
-                ar = None
+    oracle_names = [
+        p.stem.replace("_variant_report", "") for p in per_oracle_jsons
+    ]
+    ar = AnalysisRequest(
+        user_prompt=(
+            "Validate rs12740374 (the classic SORT1 LDL-cholesterol causal "
+            "variant) by scoring it with three independent deep-learning "
+            "oracles: ChromBPNet for chromatin accessibility, LegNet for MPRA "
+            "promoter activity, and AlphaGenome as a generalist model "
+            "covering ChIP, histones and CAGE. A new user should be able to "
+            "see at a glance whether the three oracles agree on direction, "
+            "and which assay/cell type drove each call."
+        ),
+        tool_name="MultiOracleReport",
+        oracle_name=", ".join(oracle_names),
+        normalizer_name="per-oracle chorus per-track v1",
+        tracks_requested="assay_ids as listed in each per-oracle request",
+    )
 
     moracle = MultiOracleReport.from_json_files(
         per_oracle_jsons,
