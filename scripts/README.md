@@ -34,7 +34,7 @@ Use `--part all` to run everything sequentially on a single GPU.
 | Script | Oracle | Tracks | Env | Runtime (single GPU) |
 |--------|--------|--------|-----|---------------------|
 | `build_backgrounds_enformer.py` | Enformer | 5,313 | `chorus-enformer` | ~4h variants + ~7h baselines |
-| `build_backgrounds_borzoi.py` | Borzoi | 7,612 | `chorus-borzoi` | ~4h + ~9h |
+| `build_backgrounds_borzoi.py` | Borzoi | 7,611 | `chorus-borzoi` | ~4h + ~9h |
 | `build_backgrounds_alphagenome.py` | AlphaGenome | ~5,168 | `chorus-alphagenome` | ~10h + ~12h |
 | `build_backgrounds_chrombpnet.py` | ChromBPNet | 24 (per-model) | `chorus-chrombpnet` | ~25 min total |
 | `build_backgrounds_sei.py` | Sei | 40 classes | `chorus-sei` | ~6h + ~8h |
@@ -91,7 +91,7 @@ each SNP:
 ```
 ~/.chorus/backgrounds/
   enformer_pertrack.npz       # 5,313 tracks, ~550 MB
-  borzoi_pertrack.npz         # 7,612 tracks
+  borzoi_pertrack.npz         # 7,611 tracks
   alphagenome_pertrack.npz    # ~5,168 tracks
   chrombpnet_pertrack.npz     # 24 models, 2.4 MB
   sei_pertrack.npz            # 40 classes
