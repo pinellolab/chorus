@@ -251,6 +251,40 @@ class TestPredictionMethods:
 
         shutil.rmtree(tmp)
 
+    def test_bad_chromosome_gives_actionable_error(self):
+        """A chromosome not in the reference FASTA must fail with a
+        message that names the bad chrom and the FASTA path — not a
+        low-level pysam.KeyError or a downstream one-hot-encoder
+        KeyError('H').
+
+        Regression for v20 §14.4 finding:
+            oracle.predict(('chrZZ', 100, 300), [...]) used to crash
+            deep in LegNet's transforms with KeyError: 'H'.
+
+        MockOracle._predict shortcircuits the input to random data so
+        we exercise the chokepoint (GenomeRef.slop → pysam) directly
+        plus the predict_variant_effect path which does go through
+        real region_interval[...] indexing.
+        """
+        from chorus.core.interval import GenomeRef, IntervalException
+        from chorus.core.exceptions import InvalidRegionError
+
+        # Path A: GenomeRef.slop — the actual crash site before the fix
+        gr = GenomeRef(chrom="chrZZ", start=100, end=300,
+                       fasta=str(self.fasta_path))
+        with pytest.raises(IntervalException, match="Chromosome 'chrZZ' not found"):
+            gr.slop(extension_needed=1000, how="both")
+
+        # Path B: predict_variant_effect(string) — goes through
+        # extract_sequence → raises InvalidRegionError
+        with pytest.raises(InvalidRegionError, match="[Cc]hromosome.*chrZZ.*not found"):
+            self.oracle.predict_variant_effect(
+                genomic_region="chrZZ:100-300",
+                variant_position="chrZZ:150",
+                alleles=["A", "C"],
+                assay_ids=["DNase:K562"],
+            )
+
     def test_error_handling_model_not_loaded(self):
         """Test error when model not loaded."""
         unloaded_oracle = MockOracle(reference_fasta=str(self.fasta_path))
