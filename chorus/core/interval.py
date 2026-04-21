@@ -49,8 +49,22 @@ class GenomeRef:
 
     def slop(self, extension_needed: int, how: str = 'both') ->  'GenomeRef':
         with pysam.FastaFile(self.fasta) as fasta:
-            # Get chromosome length
-            chrom_length = fasta.get_reference_length(self.chrom)
+            # Get chromosome length. pysam raises KeyError(chrom) if the
+            # reference doesn't contain this contig — catch and re-raise
+            # as InvalidRegionError so users get an actionable message
+            # (naming the bad chromosome and the fasta path) instead of
+            # a low-level pysam traceback. Without this, calling
+            # oracle.predict(('chrZZ', ...)) crashes deep inside the
+            # oracle's one-hot encoder with KeyError: 'H' (or similar),
+            # which tells the user nothing about what went wrong.
+            try:
+                chrom_length = fasta.get_reference_length(self.chrom)
+            except KeyError:
+                raise IntervalException(
+                    f"Chromosome {self.chrom!r} not found in {self.fasta}. "
+                    f"Check that the chromosome name matches the reference "
+                    f"(hg38 uses 'chr1'..'chr22', 'chrX', 'chrY', 'chrM')."
+                )
         if how == 'left':
             extend_left = extension_needed
         elif how == 'right':

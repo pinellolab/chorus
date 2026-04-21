@@ -1,7 +1,7 @@
 """Build per-track background distributions for Borzoi.
 
 Produces ``borzoi_pertrack.npz`` with three CDF matrices (effect, summary,
-perbin) per track for all 7,612 Borzoi tracks: CAGE, RNA, DNASE, ATAC,
+perbin) per track for all 7,611 Borzoi tracks: CAGE, RNA, DNASE, ATAC,
 CHIP-TF, CHIP-Histone.
 
 RNA-seq tracks use **exon-precise sampling**: only bins overlapping
