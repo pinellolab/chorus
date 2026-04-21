@@ -332,10 +332,18 @@ class MultiOracleReport:
                     # over raw assay_id so the matrix matches per-variant
                     # reports.
                     track_label = entry.get("description") or entry["assay_id"]
-                    cells.append(
-                        f"{sign}{entry['raw_score']:.3f} · "
-                        f"{track_label} · {entry['cell_type'] or '—'}"
-                    )
+                    ct = entry["cell_type"] or ""
+                    # Don't append cell type if it's already embedded in
+                    # the track label (enriched labels like
+                    # "CHIP:CEBPA:HepG2" already carry it). Avoids
+                    # "CHIP:CEBPA:HepG2 · HepG2" double-naming.
+                    if ct and ct in track_label:
+                        cells.append(f"{sign}{entry['raw_score']:.3f} · {track_label}")
+                    else:
+                        cells.append(
+                            f"{sign}{entry['raw_score']:.3f} · "
+                            f"{track_label} · {ct or '—'}"
+                        )
             agree = {
                 "consensus_gain": "all ↑",
                 "consensus_loss": "all ↓",
