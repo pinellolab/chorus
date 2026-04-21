@@ -158,7 +158,7 @@ class LegNetOracle(OracleBase):
             # Resolve 'auto' sentinel: cuda > mps > cpu.
             if self.device == 'auto':
                 if torch.cuda.is_available():
-                    self.device = 'cuda:0'
+                    self.device = 'cuda'
                 elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
                     self.device = 'mps'
                 else:

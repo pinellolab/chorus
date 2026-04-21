@@ -113,7 +113,7 @@ class BorzoiOracle(OracleBase):
             
             if self.device is None:
                 if torch.cuda.is_available():
-                    device = 'cuda:0'
+                    device = 'cuda'
                 elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
                     # Apple Silicon: use Metal Performance Shaders backend.
                     device = 'mps'
@@ -254,7 +254,7 @@ class BorzoiOracle(OracleBase):
 
         if self.device is None:
             if torch.cuda.is_available():
-                device = 'cuda:0'
+                device = 'cuda'
             elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
                 device = 'mps'
             else:

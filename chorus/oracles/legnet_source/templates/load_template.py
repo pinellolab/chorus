@@ -8,7 +8,7 @@ with open("__ARGS_FILE_NAME__") as inp:  # to be formatted by calling script
 _dev = args['device']
 if _dev is None or _dev == 'auto':
     if torch.cuda.is_available():
-        _dev = 'cuda:0'
+        _dev = 'cuda'
     elif getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
         _dev = 'mps'
     else:
