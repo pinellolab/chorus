@@ -37,7 +37,7 @@ Key features:
 | **Track** | A single experimental measurement predicted by an oracle (e.g. DNase-seq in K562 cells) |
 | **assay_id** | The unique identifier for a track, used in API calls (e.g. `"ENCFF413AHU"` or `"DNASE/EFO:0001187 DNase-seq/."`) |
 | **Effect percentile** | How extreme a variant's effect is compared to ~10,000 random SNPs (≥99th = stronger than 99% of random variants) |
-| **log2FC** | Log2 fold-change between alternate and reference allele predictions — the raw effect size |
+| **log2FC** | Log2 fold-change between alternate and reference allele predictions — the raw effect size (most layers). Gene-expression uses **lnFC** (natural log) and MPRA uses **Δ (alt−ref)**; every report states the formula used per layer. |
 
 ## 👉 Start here: Worked application examples
 
