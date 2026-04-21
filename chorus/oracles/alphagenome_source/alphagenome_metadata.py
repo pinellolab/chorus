@@ -1,7 +1,7 @@
 """
 AlphaGenome track metadata.
 
-AlphaGenome predicts 5,930+ human functional genomic tracks across multiple
+AlphaGenome predicts 5,731 human functional genomic tracks across multiple
 modalities.  Track information is obtained programmatically from the
 alphagenome_research metadata module.
 

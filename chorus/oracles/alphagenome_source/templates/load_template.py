@@ -48,7 +48,9 @@ except huggingface_hub.errors.LocalTokenNotFoundError:
     else:
         raise RuntimeError(
             "AlphaGenome requires HuggingFace authentication. "
-            "Set the HF_TOKEN environment variable or run 'huggingface-cli login'."
+            "Set the HF_TOKEN environment variable or run 'huggingface-cli login'. "
+            "You must also accept the model license at "
+            "https://huggingface.co/google/alphagenome-all-folds"
         )
 
 from alphagenome_research.model.dna_model import create_from_huggingface

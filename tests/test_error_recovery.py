@@ -166,8 +166,8 @@ class TestAuthFailurePaths:
 
         msg = str(excinfo.value)
         assert "HF_TOKEN" in msg, "error must name the env var the user should set"
-        assert "huggingface.co/google/alphagenome" in msg, (
-            "error must link to the license page so the user knows where to click"
+        assert "huggingface.co/google/alphagenome-all-folds" in msg, (
+            "error must link to the correct gated repo so the user knows where to click"
         )
         assert "huggingface-cli login" in msg, "alternative auth path should be mentioned"
 

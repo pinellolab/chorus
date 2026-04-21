@@ -130,7 +130,7 @@ class AlphaGenomeOracle(OracleBase):
                         "AlphaGenome requires HuggingFace authentication. "
                         "Set the HF_TOKEN environment variable or run 'huggingface-cli login'. "
                         "You must also accept the model license at "
-                        "https://huggingface.co/google/alphagenome"
+                        "https://huggingface.co/google/alphagenome-all-folds"
                     )
 
             if force_cpu:
