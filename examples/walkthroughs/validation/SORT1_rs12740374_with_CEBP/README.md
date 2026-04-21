@@ -18,7 +18,7 @@ expression changes.
 
 The AlphaGenome prediction reproduces the published mechanism:
 - CEBPA binding gain: +0.37 (strong)
-- CEBPB binding gain: +0.22 (moderate)
+- CEBPB binding gain: +0.27 (moderate)
 - DNASE opening: +0.43 (strong)
 - H3K27ac activation: +0.18 (moderate)
 
