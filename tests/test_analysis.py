@@ -2962,3 +2962,40 @@ class TestMultiOracleReport:
         assert "↑ only (n=1)" in html
         assert "↓ only (n=1)" in html
         assert "agree-single" in html
+
+    def test_uses_enriched_description_not_raw_assay_id(self):
+        """Consensus matrix must render the enriched display name
+        ("CHIP:CEBPA:HepG2") rather than the raw AlphaGenome assay_id
+        ("CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA…") so the labels match
+        the variant-report tables users see elsewhere.
+        """
+        from chorus.analysis import MultiOracleReport
+        from chorus.analysis.variant_report import TrackScore
+
+        raw_assay_id = (
+            "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified "
+            "(insertion) using CRISPR targeting H. sapiens CEBPA/."
+        )
+        rep = self._mk_report("alphagenome", [
+            TrackScore(
+                assay_id=raw_assay_id, assay_type="CHIP",
+                cell_type="HepG2", layer="tf_binding",
+                ref_value=2100.0, alt_value=2890.0, raw_score=0.381,
+                quantile_score=1.0, description="CHIP:CEBPA:HepG2",
+            ),
+        ])
+        moracle = MultiOracleReport.from_reports([rep], variant_id="rs12740374")
+
+        md = moracle.to_markdown()
+        # Enriched display present, raw id absent from rendered table.
+        assert "CHIP:CEBPA:HepG2" in md
+        assert "TF ChIP-seq CEBPA genetically modified" not in md
+
+        html = moracle.to_html()
+        assert "CHIP:CEBPA:HepG2" in html
+        assert "TF ChIP-seq CEBPA genetically modified" not in html
+        # Also: percentile format must match the rest of chorus ("≥99th"
+        # via _fmt_percentile), not the old "+100.0%" format.
+        assert "≥99th" in html
+        assert "%ile +100.0%" not in html
+        assert "%ile -100.0%" not in html
