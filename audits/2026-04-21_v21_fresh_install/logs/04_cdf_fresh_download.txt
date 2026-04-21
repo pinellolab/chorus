@@ -1,0 +1,10 @@
+§4 CDFs — FRESH DOWNLOAD from HuggingFace (empty cache)
+oracle       |   secs | n_tracks | CDFs                  | mono | p50<=p95<=p99 | signed%
+--------------------------------------------------------------------------------------------------
+enformer     |  14.2s |     5313 | effect, summary, perbin | OK   | OK            |      0%
+borzoi       |  16.7s |     7611 | effect, summary, perbin | OK   | OK            |     20%
+chrombpnet   |   0.5s |       24 | effect, summary, perbin | OK   | OK            |      0%
+sei          |   0.5s |       40 | effect, summary       | OK   | OK            |    100%
+legnet       |   0.5s |        3 | effect, summary       | OK   | OK            |    100%
+alphagenome  |  11.4s |     5168 | effect, summary, perbin | OK   | OK            |     13%
+Total elapsed: 43.8s

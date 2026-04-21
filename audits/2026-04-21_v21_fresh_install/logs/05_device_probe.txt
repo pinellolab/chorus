@@ -1,0 +1,24 @@
+=== §3 device probe ===
+2026-04-21 17:16:40,980 - chorus.core.platform - INFO - Detected platform: Darwin arm64 (key=macos_arm64, cuda=False)
+base: macos_arm64 has_cuda= False
+
+== chorus-enformer ==
+tf devs: ['/physical_device:CPU:0', '/physical_device:GPU:0']
+
+== chorus-borzoi ==
+torch cuda: False mps: True
+
+== chorus-chrombpnet ==
+tf devs: ['/physical_device:CPU:0', '/physical_device:GPU:0']
+
+== chorus-sei ==
+torch cuda: False mps: True
+
+== chorus-legnet ==
+torch cuda: False mps: True
+
+== chorus-alphagenome ==
+tf devs: ['/physical_device:CPU:0']
+jax devs: ['METAL:0']
+
+

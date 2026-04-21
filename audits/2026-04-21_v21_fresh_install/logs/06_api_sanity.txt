@@ -1,0 +1,14 @@
+oracle       | seq_length vs spec
+---------------------------------------------
+enformer     |  393216 (393216) ✓
+borzoi       |  524288 (524288) ✓
+chrombpnet   |    2114 (2114) ✓
+sei          |    4096 (4096) ✓
+legnet       |     200 (200) ✓
+alphagenome  | 1048576 (1048576) ✓
+
+-- invalid name --
+ValueError: Unknown oracle: bogus. Available: ['enformer', 'borzoi', 'chrombpnet', 'sei', 'legnet', 'alphagenome']
+
+-- §14.4 chrZZ validation --
+OSError: file `/tmp/nonexistent.fa` not found

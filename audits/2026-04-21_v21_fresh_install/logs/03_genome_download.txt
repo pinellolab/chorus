@@ -1,0 +1,16 @@
+2026-04-21 17:16:14,341 - chorus.cli.main - INFO - Downloading hg38...
+2026-04-21 17:16:14,341 - chorus.utils.genome - INFO - Downloading hg38 from https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz...
+2026-04-21 17:16:14,341 - chorus.utils.genome - INFO - This may take several minutes depending on your connection speed...
+2026-04-21 17:17:16,249 - chorus.utils.http - INFO -   hg38 genome: 0.10/0.98 GB (10.7%)
+2026-04-21 17:18:15,709 - chorus.utils.http - INFO -   hg38 genome: 0.21/0.98 GB (21.3%)
+2026-04-21 17:19:14,882 - chorus.utils.http - INFO -   hg38 genome: 0.31/0.98 GB (32.0%)
+2026-04-21 17:20:14,148 - chorus.utils.http - INFO -   hg38 genome: 0.42/0.98 GB (42.6%)
+2026-04-21 17:21:13,352 - chorus.utils.http - INFO -   hg38 genome: 0.52/0.98 GB (53.3%)
+2026-04-21 17:22:12,542 - chorus.utils.http - INFO -   hg38 genome: 0.63/0.98 GB (64.0%)
+2026-04-21 17:23:11,837 - chorus.utils.http - INFO -   hg38 genome: 0.73/0.98 GB (74.6%)
+2026-04-21 17:24:11,208 - chorus.utils.http - INFO -   hg38 genome: 0.84/0.98 GB (85.3%)
+2026-04-21 17:25:10,463 - chorus.utils.http - INFO -   hg38 genome: 0.94/0.98 GB (95.9%)
+2026-04-21 17:25:33,062 - chorus.utils.genome - INFO - Decompressing hg38...
+2026-04-21 17:25:40,589 - chorus.utils.genome - INFO - Creating FASTA index for hg38...
+2026-04-21 17:25:46,933 - chorus.utils.genome - INFO - Successfully downloaded hg38 to /Users/lp698/chorus_test/chorus/genomes/hg38.fa
+2026-04-21 17:25:46,933 - chorus.cli.main - INFO - Successfully downloaded hg38

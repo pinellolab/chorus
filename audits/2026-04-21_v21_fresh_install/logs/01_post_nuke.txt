@@ -1,0 +1,3 @@
+=== Post-nuke state ===
+  0B	/Users/lp698/.chorus/
+4.0K	genomes/

@@ -1,0 +1,18 @@
+=== §1 CLI availability ===
+/Users/lp698/.local/share/mamba/envs/chorus/bin/chorus
+usage: chorus [-h] {setup,list,validate,remove,health,genome} ...
+
+Chorus: Modular framework for genomic foundation models
+
+positional arguments:
+  {setup,list,validate,remove,health,genome}
+                        Available commands
+    setup               Set up oracle environments
+    list                List available environments
+    validate            Validate environments
+    remove              Remove an environment
+    health              Check environment health
+    genome              Manage reference genomes
+
+options:
+  -h, --help            show this help message and exit
