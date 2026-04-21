@@ -139,3 +139,7 @@ audits/*_screenshots/
 
 # Internal development scripts (machine-specific, not user-facing)
 scripts/internal/
+
+# Per-oracle pickle snapshots for multi-oracle consolidator (regenerate on demand)
+examples/applications/validation/SORT1_rs12740374_multioracle/*.pkl
+examples/walkthroughs/validation/SORT1_rs12740374_multioracle/*.pkl

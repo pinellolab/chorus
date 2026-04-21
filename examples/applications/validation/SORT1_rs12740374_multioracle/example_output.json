@@ -24,15 +24,15 @@
       "layer": "chromatin_accessibility",
       "oracles": {
         "chrombpnet": {
-          "raw_score": -0.11089156202257182,
+          "raw_score": -0.11082619718107763,
           "assay_id": "ATAC:HepG2",
           "cell_type": "HepG2",
-          "quantile_score": 0.96721823290665,
+          "quantile_score": 0.9671141638047663,
           "description": "ATAC:HepG2"
         },
         "legnet": null,
         "alphagenome": {
-          "raw_score": 0.4525551981440325,
+          "raw_score": 0.4459428914066975,
           "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
           "cell_type": "HepG2",
           "quantile_score": 1.0,
@@ -62,7 +62,7 @@
         "chrombpnet": null,
         "legnet": null,
         "alphagenome": {
-          "raw_score": 0.3806839182959419,
+          "raw_score": 0.37729623260109457,
           "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
           "cell_type": "HepG2",
           "quantile_score": 1.0,
@@ -77,7 +77,7 @@
         "chrombpnet": null,
         "legnet": null,
         "alphagenome": {
-          "raw_score": 0.17998971913566533,
+          "raw_score": 0.17994031613505107,
           "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
           "cell_type": "HepG2",
           "quantile_score": 1.0,
@@ -92,7 +92,7 @@
         "chrombpnet": null,
         "legnet": null,
         "alphagenome": {
-          "raw_score": 0.2541795926080432,
+          "raw_score": 0.2483943062911432,
           "assay_id": "CAGE/hCAGE EFO:0001187/-",
           "cell_type": "HepG2",
           "quantile_score": 1.0,
@@ -110,6 +110,6 @@
     "tracks_requested": "assay_ids as listed in each per-oracle request",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-04-21 02:16 UTC"
+    "generated_at": "2026-04-21 04:22 UTC"
   }
 }

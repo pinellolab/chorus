@@ -182,17 +182,28 @@ def run_legnet():
 # hundreds of near-zero tracks.
 ALPHAGENOME_TRACKS = [
     "DNASE/EFO:0001187 DNase-seq/.",
-    "CHIP/hCAGE EFO:0001187 CEBPA/.",
-    "CHIP/hCAGE EFO:0001187 CEBPB/.",
-    "CHIP/hCAGE EFO:0001187 H3K27ac/.",
+    # CEBPA/CEBPB ChIP-seq tracks in HepG2 are only available in
+    # AlphaGenome as ENCODE's genetically-modified (CRISPR insertion)
+    # variants — use those identifiers verbatim.
+    "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+    "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
     "CAGE/hCAGE EFO:0001187/-",
     "CAGE/hCAGE EFO:0001187/+",
 ]
 
 
 def run_alphagenome():
-    from chorus.oracles.alphagenome import AlphaGenome
-    oracle = AlphaGenome()
+    from chorus.oracles.alphagenome import AlphaGenomeOracle
+    # We're already inside the ``chorus-alphagenome`` env (see mamba run
+    # invocation above this function's call site), so load the model
+    # directly rather than spawning yet another subprocess — the
+    # ``use_environment=True`` path was hanging without producing any
+    # subprocess output.
+    oracle = AlphaGenomeOracle(
+        use_environment=False,
+        reference_fasta=GENOME_REF,
+    )
+    oracle.load_pretrained_model()
     report = _build_variant_report(
         oracle, oracle_name="alphagenome", assay_ids=ALPHAGENOME_TRACKS,
     )

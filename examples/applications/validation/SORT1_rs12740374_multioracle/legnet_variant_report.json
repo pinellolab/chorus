@@ -13,6 +13,7 @@
     "SORT1",
     "CELSR2"
   ],
+  "report_title": "Multi-Layer Variant Effect Report",
   "alleles": {
     "alt_1": {
       "scores_by_layer": {
@@ -48,9 +49,9 @@
     "tool_name": "analyze_variant_multilayer",
     "oracle_name": "legnet",
     "normalizer_name": "(none)",
-    "tracks_requested": "all oracle tracks",
+    "tracks_requested": "1 tracks",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-04-18 22:08 UTC"
+    "generated_at": "2026-04-21 03:29 UTC"
   }
 }

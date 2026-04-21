@@ -13,6 +13,7 @@
     "SORT1",
     "CELSR2"
   ],
+  "report_title": "Multi-Layer Variant Effect Report",
   "alleles": {
     "alt_1": {
       "scores_by_layer": {
@@ -22,12 +23,12 @@
             "assay_type": "ATAC",
             "cell_type": "HepG2",
             "layer": "chromatin_accessibility",
-            "ref_value": 686.530073389993,
-            "alt_value": 635.6635888748569,
-            "raw_score": -0.11089156202257182,
+            "ref_value": 687.4045420279726,
+            "alt_value": 636.5022434452549,
+            "raw_score": -0.11082619718107763,
             "description": "ATAC:HepG2",
-            "quantile_score": 0.96721823290665,
-            "ref_signal_percentile": 0.8198
+            "quantile_score": 0.9671141638047663,
+            "ref_signal_percentile": 0.82
           }
         ]
       },
@@ -37,24 +38,24 @@
           "assay_type": "ATAC",
           "cell_type": "HepG2",
           "layer": "chromatin_accessibility",
-          "ref_value": 686.530073389993,
-          "alt_value": 635.6635888748569,
-          "raw_score": -0.11089156202257182,
+          "ref_value": 687.4045420279726,
+          "alt_value": 636.5022434452549,
+          "raw_score": -0.11082619718107763,
           "description": "ATAC:HepG2",
-          "quantile_score": 0.96721823290665,
-          "ref_signal_percentile": 0.8198
+          "quantile_score": 0.9671141638047663,
+          "ref_signal_percentile": 0.82
         }
       ]
     }
   },
   "analysis_request": {
-    "user_prompt": "Score chr1:109274968 G>T using ChromBPNet ATAC model in HepG2. Gene: SORT1.",
+    "user_prompt": "Validate rs12740374 (the classic SORT1 LDL-cholesterol causal variant) by scoring it with three independent deep-learning oracles: ChromBPNet for chromatin accessibility, LegNet for MPRA promoter activity, and AlphaGenome as a generalist model covering ChIP, histones and CAGE. A new user should be able to see at a glance whether the three oracles agree on direction, and which assay/cell type drove each call.",
     "tool_name": "analyze_variant_multilayer",
     "oracle_name": "chrombpnet",
-    "normalizer_name": "per-track background CDFs",
-    "tracks_requested": "ATAC:HepG2",
+    "normalizer_name": "chorus per-track v1",
+    "tracks_requested": "1 tracks",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-04-17 20:34 UTC"
+    "generated_at": "2026-04-21 03:29 UTC"
   }
 }
