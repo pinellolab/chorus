@@ -120,9 +120,9 @@ Screen of rs12740374 across all available cell types.
 
 | Rank | Cell Type | Effect (log2FC) | Tracks |
 |------|-----------|----------------|--------|
-| 1 | LNCaP clone FGC | +1.905 | 25 |
-| 2 | Epithelial cell of proximal tubule | +1.623 | 22 |
-| 3 | Renal cortical epithelial cell | +1.480 | 22 |
+| 1 | LNCaP clone FGC | +1.914 | 3 |
+| 2 | Epithelial cell of proximal tubule | +1.625 | 9 |
+| 3 | Renal cortical epithelial cell | +1.483 | 7 |
 
 Outputs include:
 - `cell_type_ranking.json` — ranked list of 100+ cell types with effect scores

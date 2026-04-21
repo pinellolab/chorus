@@ -78,7 +78,7 @@ Each layer uses a different scoring formula:
 | Layer | Formula | Example | Meaning |
 |-------|---------|---------|---------|
 | Chromatin, TF, Histone, TSS | log2FC | +0.5 | Alt signal is 2^0.5 = 1.41x the ref signal |
-| Gene expression (RNA) | logFC (natural log) | +0.7 | Alt expression is e^0.7 = 2.0x the ref |
+| Gene expression (RNA) | lnFC (natural log) | +0.7 | Alt expression is e^0.7 ≈ 2.0× the ref |
 | Promoter activity (MPRA) | difference | +2.0 | Alt is 2.0 units higher than ref |
 
 **Rule of thumb for log2FC scores:**

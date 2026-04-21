@@ -37,13 +37,20 @@ _PER_MODEL_ORACLES = {"chrombpnet", "legnet"}
 
 @dataclass
 class CellTypeHit:
-    """A cell type with a strong variant effect."""
+    """A cell type with a strong variant effect.
+
+    ``best_track`` carries the human-readable display name of the scout
+    track (e.g. ``DNASE:HepG2``) so tables / markdown / logs read cleanly.
+    The raw AlphaGenome catalog identifier is preserved on
+    ``best_track_assay_id`` for traceability and programmatic lookups.
+    """
     cell_type: str
     best_track: str
     best_layer: str
     effect: float          # log2FC or diff
     abs_effect: float      # |effect|
     track_ids: list[str] = field(default_factory=list)  # all tracks for this cell type
+    best_track_assay_id: str = ""  # raw catalog id for traceability
 
 
 def discover_cell_types(
@@ -165,9 +172,18 @@ def discover_cell_types(
         # Get ALL tracks for this cell type
         all_ct_tracks = ct_df["identifier"].tolist() if len(ct_df) > 0 else [aid]
 
+        # Derive a clean display name for the track ("DNASE:HepG2") so the
+        # rendered markdown/table shows human-readable labels rather than
+        # the raw AlphaGenome catalog identifier
+        # ("DNASE/EFO:0001187 DNase-seq/.").  Keep the raw id around for
+        # traceability via ``best_track_assay_id``.
+        from .variant_report import _track_description
+        display = _track_description(ref_track) or aid
+
         hits.append(CellTypeHit(
             cell_type=ct_name,
-            best_track=aid,
+            best_track=display,
+            best_track_assay_id=aid,
             best_layer=layer,
             effect=effect,
             abs_effect=abs(effect),

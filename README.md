@@ -1053,8 +1053,9 @@ from chromosome edges. For each SNP:
      marks, TSS) — variant effect = `log2((sum_alt + ε) / (sum_ref + ε))`
      in a layer-appropriate window (501 bp for DNase/ChIP-TF/CAGE,
      2001 bp for histone marks, full transcript for RNA).
-   - **logFC** for gene expression — `log2(mean_alt / mean_ref)` averaged
-     over GENCODE protein-coding exons of the target gene.
+   - **lnFC** for gene expression — `ln((mean_alt + ε) / (mean_ref + ε))`
+     (natural log) averaged over GENCODE protein-coding exons of the
+     target gene.
    - **diff** for promoter MPRA — simple `alt - ref` activity difference.
 3. Add `|effect|` (unsigned) or raw `effect` (signed) to that track's
    reservoir.

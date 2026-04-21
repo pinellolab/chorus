@@ -1,23 +1,23 @@
 [
   {
     "cell_type": "LNCaP clone FGC",
-    "effect": 1.9139314088511936,
-    "abs_effect": 1.9139314088511936,
-    "best_track": "DNASE/EFO:0005726 DNase-seq/.",
+    "effect": 1.9108118190521526,
+    "abs_effect": 1.9108118190521526,
+    "best_track": "DNASE:LNCaP clone FGC",
     "n_tracks": 3
   },
   {
     "cell_type": "epithelial cell of proximal tubule",
-    "effect": 1.6248825687996038,
-    "abs_effect": 1.6248825687996038,
-    "best_track": "DNASE/CL:0002306 DNase-seq/.",
+    "effect": 1.6273882172265037,
+    "abs_effect": 1.6273882172265037,
+    "best_track": "DNASE:epithelial cell of proximal tubule",
     "n_tracks": 9
   },
   {
     "cell_type": "renal cortical epithelial cell",
-    "effect": 1.4829556255310892,
-    "abs_effect": 1.4829556255310892,
-    "best_track": "DNASE/CL:0002584 DNase-seq/.",
+    "effect": 1.483837528699255,
+    "abs_effect": 1.483837528699255,
+    "best_track": "DNASE:renal cortical epithelial cell",
     "n_tracks": 7
   }
 ]

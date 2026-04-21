@@ -20,7 +20,7 @@ specification.
 | TF binding (ChIP-TF) | 501bp | sum | log2FC | [0, 1] |
 | Histone marks (ChIP-Histone) | 2001bp | sum | log2FC | [0, 1] |
 | TSS activity (CAGE) | 501bp | sum | log2FC | [0, 1] |
-| Gene expression (RNA) | gene exons | mean | logFC | [-1, 1] |
+| Gene expression (RNA) | gene exons | mean | lnFC | [-1, 1] |
 | Promoter activity (MPRA) | full output | mean | diff | [-1, 1] |
 | Splicing | 501bp | sum | log2FC | [0, 1] |
 
