@@ -1,0 +1,1 @@
+/var/folders/gx/xj1t8pkx1gvdn92fgw2g7vpm0000gn/T/mambafzp7780tnsh: line 5: exec: pip-audit: not found

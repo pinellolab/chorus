@@ -1,0 +1,35 @@
+--- §3 device probe ---
+2026-04-21 11:10:29,236 - chorus.core.platform - INFO - Detected platform: Darwin arm64 (key=macos_arm64, cuda=False)
+base platform: macos_arm64 has_cuda= False
+
+== chorus-enformer ==
+tf devs: ['/physical_device:CPU:0', '/physical_device:GPU:0']
+
+== chorus-borzoi ==
+torch cuda: False mps: True
+
+== chorus-chrombpnet ==
+tf devs: ['/physical_device:CPU:0', '/physical_device:GPU:0']
+
+== chorus-sei ==
+torch cuda: False mps: True
+
+== chorus-legnet ==
+torch cuda: False mps: True
+
+== chorus-alphagenome ==
+Platform 'METAL' is experimental and not all JAX functionality may be correctly supported!
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+W0000 00:00:1776784238.684765 347709487 mps_client.cc:510] WARNING: JAX Apple GPU support is experimental and not all JAX functionality is correctly supported!
+Metal device set to: Apple M3 Ultra
+I0000 00:00:1776784238.695133 347709487 service.cc:145] XLA service 0x600002296600 initialized for platform METAL (this does not guarantee that XLA will be used). Devices:
+I0000 00:00:1776784238.695144 347709487 service.cc:153]   StreamExecutor device (0): Metal, <undefined>
+I0000 00:00:1776784238.696112 347709487 mps_client.cc:406] Using Simple allocator.
+I0000 00:00:1776784238.696124 347709487 mps_client.cc:384] XLA backend will use up to 77308936192 bytes on device 0 for SimpleAllocator.
+tf devs: ['/physical_device:CPU:0']
+jax devs: ['METAL:0']
+I0000 00:00:1776784238.748079 347709487 mps_client.h:209] MetalClient destroyed.
+
+systemMemory: 96.00 GB
+maxCacheSize: 36.00 GB
+

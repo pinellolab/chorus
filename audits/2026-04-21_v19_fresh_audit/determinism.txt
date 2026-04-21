@@ -1,0 +1,3 @@
+2026-04-21 11:13:10,913 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+MockOracle determinism (same-seed): PASS
+note: real-oracle determinism check belongs on a release host (takes 10+ min)

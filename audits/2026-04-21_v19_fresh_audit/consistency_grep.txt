@@ -1,0 +1,19 @@
+=== §10 canonical-number drift (markdown/py only) ===
+./scripts/build_backgrounds_borzoi.py:4:perbin) per track for all 7,612 Borzoi tracks: CAGE, RNA, DNASE, ATAC,
+./chorus/oracles/alphagenome.py:22:    AlphaGenome (Google DeepMind, Nature 2026) predicts 5,930 human functional
+
+=== §10 LegNet 230 bp drift ===
+
+=== §10 old applications/ path in live docs ===
+
+=== §15 CDN refs in shipped HTML (should be bundled only) ===
+https://github.com/igvteam/igv.js
+https://igv.org/genomes/genomes.js
+https://vanilla-picker.js
+
+=== §16 leaked HF/AWS tokens ===
+
+=== §18 license files at repo root ===
+MIT License
+
+Copyright (c) 2024 Pinello Lab

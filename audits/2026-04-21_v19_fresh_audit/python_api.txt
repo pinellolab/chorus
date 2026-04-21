@@ -1,0 +1,15 @@
+§5 Python API sanity:
+oracle       | seq_length (expected) | match
+-------------------------------------------------------
+enformer     |     393216 (393216) | ✓
+borzoi       |     524288 (524288) | ✓
+chrombpnet   |       2114 (2114) | ✓
+sei          |       4096 (4096) | ✓
+legnet       |        200 (200) | ✓
+alphagenome  |    1048576 (1048576) | ✓
+
+--- invalid oracle name error ---
+  ValueError: Unknown oracle: bogus. Available: ['enformer', 'borzoi', 'chrombpnet', 'sei', 'legnet', 'alphagenome']
+
+--- predict pre-load error ---
+  ModelNotLoadedError: Model not loaded. Call load_pretrained_model first.
