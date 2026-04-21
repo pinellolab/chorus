@@ -32,6 +32,7 @@ dependencies:
 
   # Visualization tools
   - pygenometracks>=3.8
+  - pillow>=12.2.0  # CVE-2026-25990 (PSD OOB) + CVE-2026-40192 (FITS decompression bomb)
 
   # For testing
   - pytest>=6.0

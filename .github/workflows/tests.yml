@@ -59,3 +59,12 @@ jobs:
             -m "not integration" \
             -q \
             --durations=10
+
+      - name: pip-audit (supply-chain — non-blocking advisory)
+        continue-on-error: true
+        run: |
+          pip install pip-audit
+          # -l skips local editable chorus itself (not on PyPI). We run
+          # this advisory-only so CI goes green, then inspect the summary
+          # in the job log to decide whether to bump pins.
+          pip-audit -l --format columns --desc || true
