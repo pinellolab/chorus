@@ -253,6 +253,9 @@ class TestIGVFallbackViaHuggingFace:
     def test_hf_fallback_when_cdn_fails(self, tmp_path, monkeypatch):
         from chorus.analysis import _igv_report
 
+        # Simulate a stripped install where the bundled resource is missing,
+        # so the CDN → HF fallback chain is actually exercised.
+        monkeypatch.setattr(_igv_report, "_IGV_BUNDLED", tmp_path / "not_bundled.js")
         monkeypatch.setattr(_igv_report, "_IGV_LOCAL", tmp_path / "igv.min.js")
 
         # CDN path raises SSL error (stdlib urllib on MITM'd network)
@@ -286,6 +289,9 @@ class TestIGVFallbackViaHuggingFace:
     def test_returns_none_when_both_fail(self, tmp_path, monkeypatch):
         from chorus.analysis import _igv_report
 
+        # Stripped install + both network paths dead — caller must get
+        # ``None`` so HTML renders a CDN <script> tag at least.
+        monkeypatch.setattr(_igv_report, "_IGV_BUNDLED", tmp_path / "not_bundled.js")
         monkeypatch.setattr(_igv_report, "_IGV_LOCAL", tmp_path / "igv.min.js")
         monkeypatch.setattr(
             "chorus.utils.http.download_with_resume",
@@ -314,6 +320,51 @@ class TestChorusImportPatchesPath:
             f"{env_bin} must be on PATH after importing chorus so coolbox "
             f"can find bgzip/tabix"
         )
+
+
+class TestIGVBundledResource:
+    """``_ensure_igv_local`` must return the bundled package resource
+    at ``chorus/analysis/static/igv.min.js`` without any network access.
+    Offline installs, SSL-MITM proxies, and air-gapped hosts all rely
+    on this so every committed HTML report inlines a working IGV."""
+
+    def test_bundled_igv_js_is_present_in_package(self):
+        """The shipped wheel must include igv.min.js — it's what makes
+        every HTML report self-contained."""
+        from chorus.analysis._igv_report import _IGV_BUNDLED
+        assert _IGV_BUNDLED.exists(), (
+            f"Bundled IGV script missing at {_IGV_BUNDLED}. "
+            f"setup.py package_data must include analysis/static/*.js."
+        )
+        # Sanity: file should look like minified JavaScript (leading !function)
+        head = _IGV_BUNDLED.read_text(encoding="utf-8", errors="ignore")[:40]
+        assert head.startswith("!function") or "igv" in head.lower(), (
+            f"Bundled file doesn't look like igv.min.js: {head!r}"
+        )
+        # Rough size sanity — igv.min.js is ~1.3 MB
+        assert _IGV_BUNDLED.stat().st_size > 500_000
+
+    def test_ensure_igv_local_returns_bundled_without_network(self, monkeypatch, tmp_path):
+        """With no legacy cache, no CDN reachability, and no HF client,
+        ``_ensure_igv_local`` must still return the bundled resource."""
+        from chorus.analysis import _igv_report
+
+        # Point the legacy cache at an empty tmpdir so the test doesn't
+        # see the developer's existing ~/.chorus/lib/igv.min.js.
+        monkeypatch.setattr(_igv_report, "_IGV_LOCAL", tmp_path / "igv.min.js")
+
+        # Make every network fallback path explode if invoked — proves
+        # the bundled resource is used and no download is attempted.
+        def must_not_be_called(*a, **kw):
+            raise AssertionError("Network fallback must not be called when bundled resource is present")
+        monkeypatch.setattr(
+            "chorus.utils.http.download_with_resume", must_not_be_called,
+        )
+        import huggingface_hub as _hfh
+        monkeypatch.setattr(_hfh, "hf_hub_download", must_not_be_called)
+
+        result = _igv_report._ensure_igv_local()
+        assert result == _igv_report._IGV_BUNDLED
 
 
 class TestStaleGTFIndexCleanup:

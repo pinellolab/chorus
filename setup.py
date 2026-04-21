@@ -52,6 +52,7 @@ setup(
             "oracles/sei_source/*.txt",
             "oracles/alphagenome_source/*.json",
             "analysis/data/*.bed",
+            "analysis/static/*.js",  # bundled IGV.js for inline HTML reports
         ],
     },
     data_files=[
