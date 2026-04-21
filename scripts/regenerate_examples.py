@@ -125,24 +125,12 @@ ENFORMER_EXAMPLES = [
         "gene": "SORT1",
         "html_name": "rs12740374_SORT1_enformer_report.html",
     },
-    {
-        "name": "SORT1 Enformer validation (rescale)",
-        "dir": f"{BASE}/validation/SORT1_rs12740374_with_CEBP",
-        "type": "discovery",
-        "position": "chr1:109274968",
-        "ref": "G", "alt": "T",
-        "gene": "SORT1",
-        "html_name": "chr1_109274968_G_T_SORT1_enformer_report.html",
-    },
-    {
-        "name": "SORT1 Enformer validation (raw autoscale)",
-        "dir": f"{BASE}/validation/SORT1_rs12740374_with_CEBP",
-        "type": "discovery_raw",
-        "position": "chr1:109274968",
-        "ref": "G", "alt": "T",
-        "gene": "SORT1",
-        "html_name": "chr1_109274968_G_T_SORT1_enformer_RAW_autoscale.html",
-    },
+    # NOTE: two "SORT1 Enformer validation (rescale/raw)" entries that
+    # previously wrote to validation/SORT1_rs12740374_with_CEBP/chr1_* were
+    # removed in commit f15d926 (redundant with the primary AlphaGenome-
+    # based validation HTML at rs12740374_SORT1_CEBP_validation_report.html).
+    # Do not re-introduce them — the Enformer discovery in the SORT1_enformer
+    # directory above already covers the Enformer view of this variant.
 ]
 
 CHROMBPNET_EXAMPLES = [
