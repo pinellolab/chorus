@@ -6,7 +6,7 @@
 - **Oracle**: enformer
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: all Enformer tracks (discovery mode)
-- **Generated**: 2026-04-21 04:45 UTC
+- **Generated**: 2026-04-21 13:09 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -15,70 +15,70 @@
 **Gene**: SORT1
 **Other nearby genes**: PSRC1, CELSR2, MYBPHL, SARS1
 
-**Summary**: Chromatin accessibility (DNASE/ATAC): very strong opening (+1.24, DNASE:LNCaP clone FGC); Transcription factor binding (ChIP-TF): very strong binding gain (+1.13, CHIP:HNF4A:liver male adult (32 years)); Histone modifications (ChIP-Histone): very strong mark gain (+0.73, CHIP:H3K27ac:22Rv1 treated with 10 nM 17B-hydroxy-5a-andr… · 22Rv1 treated with 10 nM 17B-hydroxy-5a-androstan-3-one for 4 hours); TSS activity (CAGE/PRO-CAP): strong increase (+0.51, CAGE:breast carcinoma cell line:MDA-MB-453).
+**Summary**: Transcription factor binding (ChIP-TF): very strong binding gain (+4.36, CHIP:CEBPb:ChIP-seq, CEBPb_HighDensity_DMI / hMSC / Human…); Chromatin accessibility (DNASE/ATAC): very strong opening (+2.70, DNASE:CD14-positive monocyte male adult (21 year)); Histone modifications (ChIP-Histone): very strong mark gain (+2.57, CHIP:H3K4me3:CD14-positive monocyte female); TSS activity (CAGE/PRO-CAP): very strong increase (+1.54, CAGE:liver, adult, pool1).
 
 #### Chromatin accessibility (DNASE/ATAC)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| DNASE:LNCaP clone FGC | 0.66 | 2.91 | +1.236 | ≥99th | 0.863 | Very strong opening |
-| DNASE:HeLa-S3 G1b phase | 3.75 | 9.54 | +1.149 | ≥99th | 0.940 | Very strong opening |
-| DNASE:epithelial cell of proximal tubule | 1.78 | 4.98 | +1.108 | ≥99th | 0.916 | Very strong opening |
-| DNASE:MCF 10A treated with 1 uM tamoxifen for 24 hours | 3.21 | 7.8 | +1.064 | ≥99th | 0.909 | Very strong opening |
-| DNASE:placenta female embryo (105 days) | 4.19 | 9.8 | +1.058 | ≥99th | 0.916 | Very strong opening |
-| DNASE:epithelial cell of prostate | 2.65 | 6.57 | +1.053 | ≥99th | 0.933 | Very strong opening |
-| DNASE:MCF-7 | 8.93 | 19.5 | +1.047 | ≥99th | 0.963 | Very strong opening |
-| DNASE:T47D | 6.94 | 15.2 | +1.029 | ≥99th | 0.934 | Very strong opening |
-| DNASE:epithelial cell of esophagus | 3.53 | 8.17 | +1.016 | ≥99th | 0.921 | Very strong opening |
-| DNASE:MCF-7 treated with 100 nM estradiol for 1 hour | 8.73 | 18.2 | +0.980 | ≥99th | 0.953 | Very strong opening |
+| DNASE:CD14-positive monocyte male adult (21 year) | 1.03 | 12.2 | +2.703 | ≥99th | 0.866 | Very strong opening |
+| DNASE:skeletal muscle cell | 0.583 | 7.82 | +2.478 | ≥99th | 0.829 | Very strong opening |
+| DNASE:fibroblast of pulmonary artery | 0.691 | 8.39 | +2.473 | ≥99th | 0.841 | Very strong opening |
+| DNASE:fibroblast of lung | 1 | 9.65 | +2.413 | ≥99th | 0.866 | Very strong opening |
+| DNASE:fibroblast of mammary gland female | 0.324 | 6.04 | +2.410 | ≥99th | 0.803 | Very strong opening |
+| DNASE:CD14-positive monocyte female | 1.34 | 10.9 | +2.351 | ≥99th | 0.881 | Very strong opening |
+| DNASE:HL-60 | 1.88 | 13.5 | +2.335 | ≥99th | 0.872 | Very strong opening |
+| DNASE:CD14-positive monocyte male adult (37 years) | 0.748 | 7.81 | +2.333 | ≥99th | 0.864 | Very strong opening |
+| DNASE:amniotic epithelial cell | 2.57 | 16.8 | +2.319 | ≥99th | 0.902 | Very strong opening |
+| DNASE:NB4 | 1.65 | 11.3 | +2.217 | ≥99th | 0.873 | Very strong opening |
 | _…showing top 10 of 12 — see `example_output.json` for the full set_ | | | | | | |
 
 #### Transcription factor binding (ChIP-TF)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:HNF4A:liver male adult (32 years) | 13.4 | 30.5 | +1.125 | ≥99th | 0.938 | Very strong binding gain |
-| CHIP:RXRA:liver male adult (32 years) | 15.2 | 33.8 | +1.100 | ≥99th | 0.940 | Very strong binding gain |
-| CHIP:HNF4A:liver female child (4 years) | 13.9 | 30.3 | +1.071 | ≥99th | 0.925 | Very strong binding gain |
-| CHIP:FOS:MCF-7 | 21.9 | 43.6 | +0.961 | ≥99th | 0.989 | Very strong binding gain |
-| CHIP:SP1:liver male adult (32 years) | 19.1 | 37.6 | +0.941 | ≥99th | 0.911 | Very strong binding gain |
-| CHIP:STAT3:MCF 10A originated from MCF 10A treated with 1 uM afimoxifene for 36 hours | 28.7 | 54.5 | +0.902 | ≥99th | 0.955 | Very strong binding gain |
-| CHIP:YY1:liver male adult (32 years) | 8.42 | 16.5 | +0.895 | ≥99th | 0.861 | Very strong binding gain |
-| CHIP:STAT3:MCF 10A genetically modified using stable transfection treated with 1 uM afimoxifene for 12 hours | 28 | 51.7 | +0.859 | ≥99th | 0.970 | Very strong binding gain |
-| CHIP:GATA3:MCF-7 | 37.8 | 67.6 | +0.825 | ≥99th | 0.998 | Very strong binding gain |
-| CHIP:RXRA:liver female child (4 years) | 15.1 | 27.4 | +0.816 | ≥99th | 0.929 | Very strong binding gain |
+| CHIP:CEBPb:ChIP-seq, CEBPb_HighDensity_DMI / hMSC / Human Mesenchymal Stem Cells | 2.81 | 77.3 | +4.363 | ≥99th | 0.794 | Very strong binding gain |
+| CHIP:CEBPb:ChIP-seq, CEBPb_LowDensity_DMI / hMSC / Human Mesenchymal Stem Cells | 4.64 | 105 | +4.231 | ≥99th | 0.826 | Very strong binding gain |
+| CHIP:CEBPB:IMR-90 | 11.5 | 153 | +3.622 | ≥99th | 0.919 | Very strong binding gain |
+| CHIP:CEBPb:ChIP-seq, CEBPb_HighDensity_noDMI / hMSC / Human Mesenchymal Stem Cells | 8.87 | 114 | +3.547 | ≥99th | 0.849 | Very strong binding gain |
+| CHIP:CEBPB:K562 | 16.4 | 185 | +3.417 | ≥99th | 0.952 | Very strong binding gain |
+| CHIP:eGFP-CEBPB:K562 genetically modified using stable transfection | 10.6 | 109 | +3.245 | ≥99th | 0.948 | Very strong binding gain |
+| CHIP:CEBPb:ChIP-seq, InVitroCistromics_CEBPb_10uL / hMSC / Human Mesenchymal Stem Cells | 0.463 | 10.3 | +2.945 | ≥99th | 0.200 | Very strong binding gain |
+| CHIP:CEBPB:HepG2 | 21.3 | 166 | +2.907 | ≥99th | 0.974 | Very strong binding gain |
+| CHIP:CEBPb:ChIP-seq, InVitroCistromics_CEBPb_1.0uL / hMSC / Human Mesenchymal Stem Cells | 0.698 | 11.5 | +2.878 | ≥99th | 0.258 | Very strong binding gain |
+| CHIP:eGFP-CEBPG:K562 genetically modified using stable transfection | 9.36 | 71.3 | +2.803 | ≥99th | 0.944 | Very strong binding gain |
 | _…showing top 10 of 12 — see `example_output.json` for the full set_ | | | | | | |
 
 #### Histone modifications (ChIP-Histone)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:H3K27ac:22Rv1 treated with 10 nM 17B-hydroxy-5a-androstan-3-one for 4 hours | 79.9 | 134 | +0.734 | ≥99th | 0.873 | Very strong mark gain |
-| CHIP:H3K4me1:common myeloid progenitor, CD34-positive male adult (42 years) | 102 | 61.1 | -0.728 | ≥99th | 0.818 | Very strong mark loss |
-| CHIP:H3K27ac:22Rv1 | 79.2 | 130 | +0.712 | ≥99th | 0.875 | Very strong mark gain |
-| CHIP:H3K4me1:common myeloid progenitor, CD34-positive female adult (33 years) | 97 | 61 | -0.660 | ≥99th | 0.831 | Strong mark loss |
-| CHIP:H3K27ac:liver male adult (31 year) | 58.3 | 91.1 | +0.635 | ≥99th | 0.825 | Strong mark gain |
-| CHIP:H3K27ac:psoas muscle female adult (30 years) | 26.4 | 41.6 | +0.635 | ≥99th | 0.813 | Strong mark gain |
-| CHIP:H3K27ac:gastrocnemius medialis female adult (53 years) | 92.6 | 142 | +0.614 | ≥99th | 0.853 | Strong mark gain |
-| CHIP:H3K4me3:liver male adult (78 years) | 30.6 | 47.1 | +0.607 | ≥99th | 0.761 | Strong mark gain |
-| CHIP:H3K4me1:common myeloid progenitor, CD34-positive female adult (27 years) | 97.8 | 64.2 | -0.599 | ≥99th | 0.805 | Strong mark loss |
-| CHIP:H3K27ac:gastrocnemius medialis male adult (37 years) | 106 | 161 | +0.599 | ≥99th | 0.852 | Strong mark gain |
+| CHIP:H3K4me3:CD14-positive monocyte female | 1.86 | 16 | +2.573 | ≥99th | 0.084 | Very strong mark gain |
+| CHIP:H3K4me1:neutrophil male | 26.5 | 160 | +2.549 | ≥99th | 0.732 | Very strong mark gain |
+| CHIP:H3K4me3:CD14-positive monocyte female | 25.1 | 103 | +1.996 | ≥99th | 0.785 | Very strong mark gain |
+| CHIP:H3K4me1:CD14-positive monocyte male adult (21 year) | 95.9 | 321 | +1.731 | ≥99th | 0.853 | Very strong mark gain |
+| CHIP:H3K27ac:CD14-positive monocyte female | 32.4 | 104 | +1.656 | ≥99th | 0.748 | Very strong mark gain |
+| CHIP:H3K27ac:neutrophil | 22.5 | 72.2 | +1.638 | ≥99th | 0.709 | Very strong mark gain |
+| CHIP:H3K4me1:neutrophil | 29.4 | 90.8 | +1.592 | ≥99th | 0.711 | Very strong mark gain |
+| CHIP:H3K4me1:CD14-positive monocyte female | 128 | 385 | +1.578 | ≥99th | 0.863 | Very strong mark gain |
+| CHIP:H3K4me1:mononuclear cell male | 52.7 | 154 | +1.532 | ≥99th | 0.776 | Very strong mark gain |
+| CHIP:H3K27ac:fibroblast of lung female child (11 year) and male adult (45 years) | 34.2 | 98.6 | +1.502 | ≥99th | 0.805 | Very strong mark gain |
 | _…showing top 10 of 12 — see `example_output.json` for the full set_ | | | | | | |
 
 #### TSS activity (CAGE/PRO-CAP)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CAGE:breast carcinoma cell line:MDA-MB-453 — variant site | 4.01 | 6.12 | +0.505 | ≥99th | 0.906 | Strong increase |
-| CAGE:placenta, adult, pool1 — variant site | 1.73 | 2.73 | +0.448 | ≥99th | 0.876 | Strong increase |
-| CAGE:breast carcinoma cell line:MCF7 — variant site | 6.46 | 9.03 | +0.428 | ≥99th | 0.926 | Strong increase |
-| CAGE:kidney, adult, pool1 — variant site | 3.16 | 4.59 | +0.426 | ≥99th | 0.883 | Strong increase |
-| CAGE:liver, adult, pool1 — variant site | 0.283 | 0.693 | +0.400 | ≥99th | 0.816 | Strong increase |
-| CAGE:Skeletal muscle cells differentiated into Myotubes - multinucleated, — variant site | 2.05 | 1.37 | -0.367 | ≥99th | 0.879 | Strong decrease |
-| CAGE:Astrocyte - cerebellum, — variant site | 3.35 | 2.43 | -0.343 | ≥99th | 0.895 | Strong decrease |
-| CAGE:endometrioid adenocarcinoma cell line:JHUEM-1 — variant site | 3.26 | 4.33 | +0.323 | ≥99th | 0.908 | Strong increase |
-| CAGE:colon carcinoma cell line:CACO-2 — variant site | 2.49 | 3.36 | +0.322 | ≥99th | 0.904 | Strong increase |
-| CAGE:kidney, fetal, pool1 — variant site | 4.28 | 5.59 | +0.321 | ≥99th | 0.883 | Strong increase |
+| CAGE:liver, adult, pool1 — variant site | 0.902 | 4.52 | +1.538 | ≥99th | 0.871 | Very strong increase |
+| CAGE:CD14+ monocytes - mock treated, — variant site | 0.618 | 3.36 | +1.431 | ≥99th | 0.796 | Very strong increase |
+| CAGE:Hepatocyte, — variant site | 1.43 | 5.05 | +1.315 | ≥99th | 0.873 | Very strong increase |
+| CAGE:CD14+ monocytes - treated with Cryptococcus, — variant site | 0.555 | 2.67 | +1.238 | ≥99th | 0.767 | Very strong increase |
+| CAGE:CD14+ monocytes - treated with Trehalose dimycolate (TDM), — variant site | 0.195 | 1.74 | +1.199 | ≥99th | 0.492 | Very strong increase |
+| CAGE:CD14+ monocyte derived endothelial progenitor cells, — variant site | 1.23 | 3.84 | +1.119 | ≥99th | 0.877 | Very strong increase |
+| CAGE:CD14+ monocytes - treated with IFN + N-hexane, — PSRC1 TSS | 12.2 | 26.7 | +1.071 | ≥99th | 0.928 | Very strong increase |
+| CAGE:CD14+ monocytes - treated with BCG, — variant site | 0.22 | 1.5 | +1.034 | ≥99th | 0.524 | Very strong increase |
+| CAGE:CD14+CD16- Monocytes, — variant site | 0.509 | 2.01 | +0.995 | ≥99th | 0.383 | Very strong increase |
+| CAGE:CD14+ monocytes - treated with B-glucan, — variant site | 0.465 | 1.85 | +0.960 | ≥99th | 0.760 | Very strong increase |
 | _…showing top 10 of 48 — see `example_output.json` for the full set_ | | | | | | |
 
 ---

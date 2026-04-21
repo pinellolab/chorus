@@ -6,7 +6,7 @@
 - **Oracle**: chrombpnet
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: ATAC:HepG2
-- **Generated**: 2026-04-21 04:43 UTC
+- **Generated**: 2026-04-21 13:08 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -15,13 +15,13 @@
 **Gene**: SORT1
 **Other nearby genes**: CELSR2
 
-**Summary**: Chromatin accessibility (DNASE/ATAC): moderate closing (-0.11, ATAC:HepG2).
+**Summary**: Chromatin accessibility (DNASE/ATAC): strong opening (+0.53, ATAC:HepG2).
 
 #### Chromatin accessibility (DNASE/ATAC)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| ATAC:HepG2 | 687 | 636 | -0.111 | 0.97 | 0.820 | Moderate closing |
+| ATAC:HepG2 | 636 | 917 | +0.529 | ≥99th | 0.809 | Strong opening |
 
 ---
 **Score guide:**

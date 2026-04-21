@@ -6,7 +6,7 @@
 - **Oracle**: alphagenome
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: 6 HepG2 tracks
-- **Generated**: 2026-04-21 05:00 UTC
+- **Generated**: 2026-04-21 13:27 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -15,41 +15,41 @@
 **Gene**: SORT1
 **Other nearby genes**: PSRC1, CELSR2, MYBPHL, SARS1
 
-**Summary**: Chromatin accessibility (DNASE/ATAC): strong opening (+0.45, DNASE:HepG2); Transcription factor binding (ChIP-TF): strong binding gain (+0.38, CHIP:CEBPA:HepG2); TSS activity (CAGE/PRO-CAP): moderate increase (+0.25, CAGE:HepG2); Histone modifications (ChIP-Histone): moderate mark gain (+0.18, CHIP:H3K27ac:HepG2).
+**Summary**: Transcription factor binding (ChIP-TF): very strong binding gain (+3.02, CHIP:CEBPB:HepG2); TSS activity (CAGE/PRO-CAP): very strong increase (+1.56, CAGE:HepG2); Chromatin accessibility (DNASE/ATAC): very strong opening (+1.40, DNASE:HepG2); Histone modifications (ChIP-Histone): very strong mark gain (+1.33, CHIP:H3K27ac:HepG2).
 
 #### Chromatin accessibility (DNASE/ATAC)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| DNASE:HepG2 | 512 | 699 | +0.449 | ≥99th | 0.962 | Strong opening |
+| DNASE:HepG2 | 595 | 1.57e+03 | +1.400 | ≥99th | 0.968 | Very strong opening |
 
 #### Transcription factor binding (ChIP-TF)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:CEBPA:HepG2 | 2.1e+03 | 2.73e+03 | +0.378 | ≥99th | 0.988 | Strong binding gain |
-| CHIP:CEBPB:HepG2 | 1.22e+03 | 1.47e+03 | +0.270 | ≥99th | 0.971 | Moderate binding gain |
+| CHIP:CEBPB:HepG2 | 1.4e+03 | 1.13e+04 | +3.020 | ≥99th | 0.978 | Very strong binding gain |
+| CHIP:CEBPA:HepG2 | 2.54e+03 | 1.72e+04 | +2.760 | ≥99th | 0.991 | Very strong binding gain |
 
 #### Histone modifications (ChIP-Histone)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:H3K27ac:HepG2 | 1.37e+04 | 1.55e+04 | +0.180 | ≥99th | 0.999 | Moderate mark gain |
+| CHIP:H3K27ac:HepG2 | 1.43e+04 | 3.6e+04 | +1.335 | ≥99th | 0.999 | Very strong mark gain |
 
 #### TSS activity (CAGE/PRO-CAP)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CAGE:HepG2 — variant site | 22 | 26.4 | +0.254 | ≥99th | 1.000 | Moderate increase |
-| CAGE:HepG2 — PSRC1 TSS | 45.6 | 46.5 | +0.028 | ≥99th | 1.000 | Minimal effect |
-| CAGE:HepG2 — MYBPHL TSS | 1.95 | 1.99 | +0.021 | ≥99th | 1.000 | Minimal effect |
-| CAGE:HepG2 — variant site | 76.3 | 77.4 | +0.020 | ≥99th | 1.000 | Minimal effect |
-| CAGE:HepG2 — GSTM1 TSS | 236 | 239 | +0.017 | ≥99th | 1.000 | Minimal effect |
-| CAGE:HepG2 — SYPL2 TSS | 296 | 299 | +0.014 | ≥99th | 1.000 | Minimal effect |
-| CAGE:HepG2 — EPS8L3 TSS | 38.8 | 39.1 | +0.010 | ≥99th | 1.000 | Minimal effect |
-| CAGE:HepG2 — PSRC1 TSS | 2.4e+03 | 2.42e+03 | +0.009 | ≥99th | 1.000 | Minimal effect |
-| CAGE:HepG2 — SORT1 TSS | 6.99 | 7.04 | +0.009 | ≥99th | 1.000 | Minimal effect |
-| CAGE:HepG2 — CFAP276 TSS | 12.9 | 13 | +0.008 | ≥99th | 1.000 | Minimal effect |
+| CAGE:HepG2 — variant site | 22.9 | 69.3 | +1.558 | ≥99th | 1.000 | Very strong increase |
+| CAGE:HepG2 — variant site | 70.7 | 168 | +1.236 | ≥99th | 1.000 | Very strong increase |
+| CAGE:HepG2 — PSRC1 TSS | 2.26e+03 | 2.68e+03 | +0.245 | ≥99th | 1.000 | Moderate increase |
+| CAGE:HepG2 — CELSR2 TSS | 2.49 | 3.02 | +0.204 | ≥99th | 1.000 | Moderate increase |
+| CAGE:HepG2 — CELSR2 TSS | 627 | 722 | +0.203 | ≥99th | 1.000 | Moderate increase |
+| CAGE:HepG2 — MYBPHL TSS | 256 | 292 | +0.187 | ≥99th | 1.000 | Moderate increase |
+| CAGE:HepG2 — PSRC1 TSS | 52.1 | 59.1 | +0.180 | ≥99th | 1.000 | Moderate increase |
+| CAGE:HepG2 — MYBPHL TSS | 2.41 | 2.78 | +0.147 | ≥99th | 1.000 | Moderate increase |
+| CAGE:HepG2 — SORT1 TSS | 7.98 | 8.7 | +0.111 | ≥99th | 1.000 | Moderate increase |
+| CAGE:HepG2 — SORT1 TSS | 3.62e+03 | 3.75e+03 | +0.051 | ≥99th | 1.000 | Minimal effect |
 | _…showing top 10 of 58 — see `example_output.json` for the full set_ | | | | | | |
 
 ---

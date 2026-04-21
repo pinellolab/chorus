@@ -1,20 +1,14 @@
 allele	layer	assay_id	assay_type	cell_type	description	ref_value	alt_value	raw_score	quantile_score	ref_signal_percentile	note	focus_cell_type
-alt_1	chromatin_accessibility	DNASE/EFO:0005726 DNase-seq/.	DNASE	LNCaP clone FGC		58.90867614746094	224.26898193359375	1.9108118190521526	1.0	0.8605		LNCaP clone FGC
-alt_1	histone_marks	CHIP_HISTONE/EFO:0005726 Histone ChIP-seq H3K4me3/.	CHIP	LNCaP clone FGC		1871.75	3768.0	1.009023473014988	1.0	0.8823		LNCaP clone FGC
-alt_1	tf_binding	CHIP_TF/EFO:0005726 TF ChIP-seq CTCF/.	CHIP	LNCaP clone FGC		399.0	470.5	0.23725777090037184	1.0	0.8559		LNCaP clone FGC
-alt_1	tss_activity	CAGE/hCAGE CL:0002306/+	CAGE	epithelial cell of proximal tubule	variant site	43.58404541015625	65.84271240234375	0.5842427495779815	1.0	1.0		epithelial cell of proximal tubule
-alt_1	tss_activity	CAGE/hCAGE CL:0002306/-	CAGE	epithelial cell of proximal tubule	variant site	10.077316284179688	17.311187744140625	0.7251169735969064	1.0	1.0		epithelial cell of proximal tubule
-alt_1	chromatin_accessibility	DNASE/CL:0002306 DNase-seq/.	DNASE	epithelial cell of proximal tubule		80.53250885009766	250.89727783203125	1.6273882172265037	1.0	0.8819		epithelial cell of proximal tubule
-alt_1	gene_expression	RNA_SEQ/CL:0002306 total RNA-seq/+	RNA	epithelial cell of proximal tubule	SORT1 (exons)	0.06280204157034557	0.06485897941248757	0.031730591136046093	1.0	0.2625170567859767		epithelial cell of proximal tubule
-alt_1	gene_expression	RNA_SEQ/CL:0002306 total RNA-seq/-	RNA	epithelial cell of proximal tubule	SORT1 (exons)	292.0673043387277	293.9668448311942	0.006482696152982465	1.0	1.0		epithelial cell of proximal tubule
-alt_1	histone_marks	CHIP_HISTONE/CL:0002306 Histone ChIP-seq H3K4me3/.	CHIP	epithelial cell of proximal tubule		4682.5	6993.0	0.5785307308762194	1.0	0.8846		epithelial cell of proximal tubule
-alt_1	tf_binding	CHIP_TF/CL:0002306 TF ChIP-seq CTCF/.	CHIP	epithelial cell of proximal tubule		450.0	510.0	0.18019585768224042	1.0	0.8905		epithelial cell of proximal tubule
-alt_1	splicing	SPLICE_SITE_USAGE/usage_CL:0002306 total RNA-seq/+	SPLICE_SITES	epithelial cell of proximal tubule		0.007864445447921753	0.006989195942878723	-0.001253409353366501	1.0	0.8772		epithelial cell of proximal tubule
-alt_1	splicing	SPLICE_SITE_USAGE/usage_CL:0002306 total RNA-seq/-	SPLICE_SITES	epithelial cell of proximal tubule		0.001165882684290409	0.001140776090323925	-3.617943180904621e-05		0.693		epithelial cell of proximal tubule
-alt_1	tss_activity	CAGE/hCAGE CL:0002584/+	CAGE	renal cortical epithelial cell	variant site	42.67735290527344	62.888092041015625	0.5486616320935737	1.0	1.0		renal cortical epithelial cell
-alt_1	tss_activity	CAGE/hCAGE CL:0002584/-	CAGE	renal cortical epithelial cell	variant site	9.082817077636719	15.172134399414062	0.6816113230101067	1.0	1.0		renal cortical epithelial cell
-alt_1	chromatin_accessibility	DNASE/CL:0002584 DNase-seq/.	DNASE	renal cortical epithelial cell		223.90200805664062	628.0322875976562	1.483837528699255	1.0	0.9376		renal cortical epithelial cell
-alt_1	gene_expression	RNA_SEQ/CL:0002584 total RNA-seq/+	RNA	renal cortical epithelial cell	SORT1 (exons)	0.33203592754545663	0.3440359774089995	0.035398319251683845	1.0	0.6731394982680802		renal cortical epithelial cell
-alt_1	gene_expression	RNA_SEQ/CL:0002584 total RNA-seq/-	RNA	renal cortical epithelial cell	SORT1 (exons)	482.5772007533482	486.2059733072917	0.007491422499177935	1.0	1.0		renal cortical epithelial cell
-alt_1	splicing	SPLICE_SITE_USAGE/usage_CL:0002584 total RNA-seq/+	SPLICE_SITES	renal cortical epithelial cell		0.006362162530422211	0.005747705698013306	-0.0008811386162463097		0.8598		renal cortical epithelial cell
-alt_1	splicing	SPLICE_SITE_USAGE/usage_CL:0002584 total RNA-seq/-	SPLICE_SITES	renal cortical epithelial cell		0.001017712987959385	0.001017947681248188	3.382465662647092e-07		0.6219		renal cortical epithelial cell
+alt_1	tss_activity	CAGE/hCAGE CL:0002555/+	CAGE	fibroblast of mammary gland	variant site	6.870079040527344	9.539203643798828	0.4213158289962389	1.0	1.0		fibroblast of mammary gland
+alt_1	tss_activity	CAGE/hCAGE CL:0002555/-	CAGE	fibroblast of mammary gland	variant site	1.4127006530761719	2.293283462524414	0.44887776465534157	1.0	1.0		fibroblast of mammary gland
+alt_1	chromatin_accessibility	DNASE/CL:0002555 DNase-seq/.	DNASE	fibroblast of mammary gland		23.63454818725586	241.0758819580078	3.2967044335670703	1.0	0.7996		fibroblast of mammary gland
+alt_1	histone_marks	CHIP_HISTONE/CL:0002555 Histone ChIP-seq H3K4me3/.	CHIP	fibroblast of mammary gland		1319.25	2274.75	0.7855309392710813	1.0	0.8661		fibroblast of mammary gland
+alt_1	tf_binding	CHIP_TF/CL:0002555 TF ChIP-seq CTCF/.	CHIP	fibroblast of mammary gland		281.25	387.5	0.4609410176347092	1.0	0.8145		fibroblast of mammary gland
+alt_1	tss_activity	CAGE/hCAGE CL:0002536/+	CAGE	amniotic epithelial cell	variant site	78.17984008789062	51.587921142578125	-0.5904016870449605	1.0	1.0		amniotic epithelial cell
+alt_1	tss_activity	CAGE/hCAGE CL:0002536/-	CAGE	amniotic epithelial cell	variant site	19.992431640625	16.425682067871094	-0.26865416318234625	1.0	1.0		amniotic epithelial cell
+alt_1	chromatin_accessibility	DNASE/CL:0002536 DNase-seq/.	DNASE	amniotic epithelial cell		47.63734436035156	377.3457336425781	2.9595688132036746	1.0	0.8356		amniotic epithelial cell
+alt_1	tss_activity	CAGE/hCAGE CL:0002557/+	CAGE	fibroblast of pulmonary artery	variant site	4.688800811767578	5.812343597412109	0.26002663549647503	1.0	1.0		fibroblast of pulmonary artery
+alt_1	tss_activity	CAGE/hCAGE CL:0002557/-	CAGE	fibroblast of pulmonary artery	variant site	1.6628704071044922	2.237415313720703	0.28186023522897985	1.0	1.0		fibroblast of pulmonary artery
+alt_1	chromatin_accessibility	DNASE/CL:0002557 DNase-seq/.	DNASE	fibroblast of pulmonary artery		20.576858520507812	160.5648193359375	2.904556349855798	1.0	0.7759		fibroblast of pulmonary artery
+alt_1	histone_marks	CHIP_HISTONE/CL:0002557 Histone ChIP-seq H3K4me3/.	CHIP	fibroblast of pulmonary artery		1025.75	1756.75	0.775644947164445	1.0	0.8598		fibroblast of pulmonary artery
+alt_1	tf_binding	CHIP_TF/CL:0002557 TF ChIP-seq CTCF/.	CHIP	fibroblast of pulmonary artery		285.5	356.5	0.31940810290884697	1.0	0.8156		fibroblast of pulmonary artery

@@ -23,12 +23,12 @@
             "assay_type": "ATAC",
             "cell_type": "HepG2",
             "layer": "chromatin_accessibility",
-            "ref_value": 687.4045420279726,
-            "alt_value": 636.5022434452549,
-            "raw_score": -0.11082619718107763,
+            "ref_value": 635.6930961374892,
+            "alt_value": 917.4119157849345,
+            "raw_score": 0.528543239432768,
             "description": "ATAC:HepG2",
-            "quantile_score": 0.9671141638047663,
-            "ref_signal_percentile": 0.82
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 0.8088
           }
         ]
       },
@@ -38,12 +38,12 @@
           "assay_type": "ATAC",
           "cell_type": "HepG2",
           "layer": "chromatin_accessibility",
-          "ref_value": 687.4045420279726,
-          "alt_value": 636.5022434452549,
-          "raw_score": -0.11082619718107763,
+          "ref_value": 635.6930961374892,
+          "alt_value": 917.4119157849345,
+          "raw_score": 0.528543239432768,
           "description": "ATAC:HepG2",
-          "quantile_score": 0.9671141638047663,
-          "ref_signal_percentile": 0.82
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.8088
         }
       ]
     }
@@ -56,6 +56,6 @@
     "tracks_requested": "1 tracks",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-04-21 03:29 UTC"
+    "generated_at": "2026-04-21 13:10 UTC"
   }
 }

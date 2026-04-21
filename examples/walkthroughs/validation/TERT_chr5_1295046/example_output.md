@@ -6,7 +6,7 @@
 - **Oracle**: alphagenome
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: all tracks (discovery mode)
-- **Generated**: 2026-04-21 05:02 UTC
+- **Generated**: 2026-04-21 13:31 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -15,71 +15,71 @@
 **Gene**: TERT
 **Other nearby genes**: CLPTM1L, SLC6A18, SLC6A19, SLC6A3
 
-**Summary**: Transcription factor binding (ChIP-TF): strong binding gain (+0.46, CHIP:E2F1:K562); TSS activity (CAGE/PRO-CAP): strong increase (+0.35, CAGE:GM12878); Histone modifications (ChIP-Histone): strong mark gain (+0.30, CHIP:H3K27ac:GM12878); Chromatin accessibility (DNASE/ATAC): moderate opening (+0.22, DNASE:GM12865).
+**Summary**: TSS activity (CAGE/PRO-CAP): very strong increase (+2.62, PRO_CAP:MCF 10A); Transcription factor binding (ChIP-TF): very strong binding gain (+2.12, CHIP:GABPB1:K562); Histone modifications (ChIP-Histone): very strong mark gain (+2.02, CHIP:H3K4me3:AG09319); Chromatin accessibility (DNASE/ATAC): very strong opening (+1.24, DNASE:EH); Gene expression (RNA-seq): very strong increase (+1.17, RNA:HCT116).
 
 #### Chromatin accessibility (DNASE/ATAC)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| DNASE:GM12865 | 345 | 401 | +0.217 | ≥99th | 0.918 | Moderate opening |
-| DNASE:MM.1S | 325 | 374 | +0.202 | ≥99th | 0.923 | Moderate opening |
-| ATAC:GM19025 | 166 | 188 | +0.182 | ≥99th | 0.902 | Moderate opening |
+| DNASE:EH | 24.9 | 60 | +1.237 | ≥99th | 0.811 | Very strong opening |
+| DNASE:immature natural killer cell | 105 | 249 | +1.234 | ≥99th | 0.886 | Very strong opening |
+| DNASE:HCEC 1CT | 24.3 | 58.2 | +1.226 | ≥99th | 0.787 | Very strong opening |
 
 #### Transcription factor binding (ChIP-TF)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:E2F1:K562 | 115 | 159 | +0.459 | ≥99th | 0.065 | Strong binding gain |
-| CHIP:LIN54:HepG2 | 464 | 568 | +0.292 | ≥99th | 0.869 | Moderate binding gain |
-| CHIP:E2F1:MCF-7 | 757 | 922 | +0.284 | ≥99th | 0.884 | Moderate binding gain |
+| CHIP:GABPB1:K562 | 366 | 1.6e+03 | +2.124 | ≥99th | 0.857 | Very strong binding gain |
+| CHIP:ELF1:K562 | 66.7 | 239 | +1.825 | ≥99th | 0.040 | Very strong binding gain |
+| CHIP:ELF4:K562 | 56.8 | 202 | +1.817 | ≥99th | 0.041 | Very strong binding gain |
 
 #### Histone modifications (ChIP-Histone)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:H3K27ac:GM12878 | 3.26e+03 | 4.03e+03 | +0.304 | ≥99th | 0.929 | Strong mark gain |
-| CHIP:H3K27ac:OCI-LY3 | 778 | 954 | +0.294 | ≥99th | 0.891 | Moderate mark gain |
-| CHIP:H3K27ac:MM.1S | 2.45e+03 | 2.99e+03 | +0.286 | ≥99th | 0.955 | Moderate mark gain |
+| CHIP:H3K4me3:AG09319 | 1.65e+03 | 6.7e+03 | +2.025 | ≥99th | 0.864 | Very strong mark gain |
+| CHIP:H3K4me3:cardiac muscle cell | 3.72e+03 | 1.37e+04 | +1.881 | ≥99th | 0.876 | Very strong mark gain |
+| CHIP:H3K4me3:fibroblast of pulmonary artery | 832 | 2.92e+03 | +1.808 | ≥99th | 0.855 | Very strong mark gain |
 
 #### TSS activity (CAGE/PRO-CAP)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CAGE:GM12878 — variant site | 81.6 | 104 | +0.346 | ≥99th | 1.000 | Strong increase |
-| CAGE:GM12878 — TERT TSS | 81.6 | 104 | +0.346 | ≥99th | 1.000 | Strong increase |
-| CAGE:GM12878 — variant site | 896 | 1.1e+03 | +0.295 | ≥99th | 1.000 | Moderate increase |
-| CAGE:GM12878 — TERT TSS | 897 | 1.1e+03 | +0.295 | ≥99th | 1.000 | Moderate increase |
-| CAGE:K562 — variant site | 33.1 | 40.7 | +0.289 | ≥99th | 1.000 | Moderate increase |
-| CAGE:K562 — TERT TSS | 33.1 | 40.6 | +0.289 | ≥99th | 1.000 | Moderate increase |
-| CAGE:GM12878 — SLC6A19 TSS | 58.1 | 59.2 | +0.028 | ≥99th | 1.000 | Minimal effect |
-| CAGE:GM12878 — SLC12A7 TSS | 728 | 718 | -0.020 | ≥99th | 1.000 | Minimal effect |
-| CAGE:GM12878 — SLC12A7 TSS | 10.9 | 10.9 | -0.009 | ≥99th | 1.000 | Minimal effect |
-| CAGE:K562 — SLC6A19 TSS | 373 | 375 | +0.007 | ≥99th | 1.000 | Minimal effect |
+| PRO_CAP:MCF 10A — variant site | 47.8 | 298 | +2.616 | ≥99th | 1.000 | Very strong increase |
+| PRO_CAP:MCF 10A — TERT TSS | 47.9 | 299 | +2.614 | ≥99th | 1.000 | Very strong increase |
+| CAGE:mesenchymal stem cell of Wharton's jelly — variant site | 26.9 | 118 | +2.094 | ≥99th | 1.000 | Very strong increase |
+| CAGE:mesenchymal stem cell of Wharton's jelly — TERT TSS | 27 | 119 | +2.093 | ≥99th | 1.000 | Very strong increase |
+| CAGE:natural killer cell — TERT TSS | 20.3 | 88.2 | +2.066 | ≥99th | 1.000 | Very strong increase |
+| CAGE:natural killer cell — variant site | 20.3 | 88.1 | +2.065 | ≥99th | 1.000 | Very strong increase |
+| PRO_CAP:MCF 10A — SLC6A18 TSS | 0.12 | 0.139 | +0.024 | ≥99th | 0.890 | Minimal effect |
+| CAGE:natural killer cell — SLC6A3 TSS | 5.11 | 5.04 | -0.017 | ≥99th | 1.000 | Minimal effect |
+| CAGE:mesenchymal stem cell of Wharton's jelly — SLC12A7 TSS | 573 | 568 | -0.013 | ≥99th | 1.000 | Minimal effect |
+| CAGE:natural killer cell — NKD2 TSS | 4.27 | 4.23 | -0.012 | ≥99th | 1.000 | Minimal effect |
 | _…showing top 10 of 45 — see `example_output.json` for the full set_ | | | | | | |
 
 #### Gene expression (RNA-seq)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| RNA:OCI-LY7 — SLC6A18 (exons) | 0.0405 | 0.0429 | +0.058 | ≥99th | 0.301 | Moderate increase |
-| RNA:NCI-H460 — SLC6A18 (exons) | 0.00259 | 0.00272 | +0.033 | ≥99th | 0.113 | Minimal effect |
-| RNA:OCI-LY7 — TERT (exons) | 1.99 | 2.06 | +0.033 | ≥99th | 1.000 | Minimal effect |
-| RNA:OCI-LY7 — SLC6A18 (exons) | 0.0124 | 0.0128 | +0.030 | ≥99th | 0.230 | Minimal effect |
-| RNA:NCI-H460 — TERT (exons) | 414 | 426 | +0.029 | ≥99th | 1.000 | Minimal effect |
-| RNA:OCI-LY7 — TERT (exons) | 593 | 600 | +0.012 | ≥99th | 1.000 | Minimal effect |
-| RNA:OCI-LY7 — SLC6A19 (exons) | 0.126 | 0.127 | +0.011 | ≥99th | 0.461 | Minimal effect |
-| RNA:OCI-LY7 — SLC6A19 (exons) | 0.00201 | 0.00204 | +0.010 | ≥99th | 0.162 | Minimal effect |
-| RNA:OCI-LY7 — CLPTM1L (exons) | 0.659 | 0.663 | +0.006 | ≥99th | 0.983 | Minimal effect |
-| RNA:NCI-H460 — ZDHHC11B (exons) | 3.02 | 3 | -0.006 | ≤1st | 1.000 | Minimal effect |
+| RNA:HCT116 — SLC6A18 (exons) | 0.00935 | 0.0323 | +1.170 | ≥99th | 0.181 | Very strong increase |
+| RNA:NCI-H460 — SLC6A18 (exons) | 0.00189 | 0.00603 | +0.888 | ≥99th | 0.104 | Very strong increase |
+| RNA:HT1080 — SLC6A18 (exons) | 0.00298 | 0.00854 | +0.873 | ≥99th | 0.135 | Very strong increase |
+| RNA:HT1080 — TERT (exons) | 133 | 256 | +0.654 | ≥99th | 1.000 | Strong increase |
+| RNA:HCT116 — TERT (exons) | 189 | 316 | +0.515 | ≥99th | 1.000 | Strong increase |
+| RNA:NCI-H460 — TERT (exons) | 434 | 682 | +0.452 | ≥99th | 1.000 | Strong increase |
+| RNA:HCT116 — SLC6A19 (exons) | 0.00108 | 0.00149 | +0.181 | ≥99th | 0.117 | Moderate increase |
+| RNA:NCI-H460 — SLC6A19 (exons) | 0.000837 | 0.00106 | +0.113 | ≥99th | 0.086 | Moderate increase |
+| RNA:HT1080 — SLC6A19 (exons) | 0.00129 | 0.00154 | +0.107 | ≥99th | 0.104 | Moderate increase |
+| RNA:HT1080 — SLC6A3 (exons) | 0.183 | 0.185 | +0.008 | ≥99th | 0.454 | Minimal effect |
 | _…showing top 10 of 42 — see `example_output.json` for the full set_ | | | | | | |
 
 #### Splicing (splice sites)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| SPLICE_SITES | 0.0356 | 0.0379 | +0.003 | ≥99th | 0.800 | Minimal effect |
-| SPLICE_SITES:H1 | 0.0171 | 0.0191 | +0.003 | ≥99th | 0.888 | Minimal effect |
-| SPLICE_SITES:mesendoderm | 0.0158 | 0.0177 | +0.003 | ≥99th | 0.889 | Minimal effect |
+| SPLICE_SITES | 0.0399 | 0.0664 | +0.036 | ≥99th | 0.809 | Minimal effect |
+| SPLICE_SITES:HFFc6 | 0.00997 | 0.0189 | +0.013 | ≥99th | 0.850 | Minimal effect |
+| SPLICE_SITES:HT1080 | 0.00914 | 0.0169 | +0.011 | ≥99th | 0.882 | Minimal effect |
 
 ---
 **Score guide:**

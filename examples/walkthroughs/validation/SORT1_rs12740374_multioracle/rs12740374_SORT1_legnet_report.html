@@ -57,14 +57,14 @@ tr:hover td { background: #e9ecef; }
 <li><strong>Oracle:</strong> legnet</li>
 <li><strong>Normalizer:</strong> (none)</li>
 <li><strong>Tracks requested:</strong> 1 tracks</li>
-<li><strong>Generated:</strong> 2026-04-21 03:29 UTC</li>
+<li><strong>Generated:</strong> 2026-04-21 13:10 UTC</li>
 </ul>
 </section>
 <p class="meta"><b>Variant:</b> chr1:109274968 G&gt;T</p>
 <p class="meta"><b>Oracle:</b> legnet</p>
 <p class="meta"><b>Gene:</b> SORT1</p>
 <p class="meta"><b>Other nearby genes:</b> CELSR2</p>
-<p class="meta" style="margin-top:0.5rem;padding:0.6rem 0.8rem;background:#f0f7ff;border-left:3px solid #3b82f6;border-radius:4px"><b>Summary:</b> No strong regulatory effects detected across any layer.</p>
+<p class="meta" style="margin-top:0.5rem;padding:0.6rem 0.8rem;background:#f0f7ff;border-left:3px solid #3b82f6;border-radius:4px"><b>Summary:</b> Promoter activity (MPRA): moderate activation (+0.30, LentiMPRA:HepG2).</p>
 <section class="how-to-read"><p style='margin:0'><b>How to read this report.</b> Every numeric effect below is produced by a deep-learning model. The scale depends on the regulatory layer — see the formulas below so you can interpret <code>+0.3</code> correctly.</p><dl><dt>Per-layer effect</dt><dd>Unit depends on the layer:<ul><li><b>Promoter activity (MPRA)</b> <span class='formula-chip'>Δ (alt−ref)</span> — <code>alt − ref</code>. Raw difference in predicted value (not a ratio). Useful when ref is near zero.</li></ul></dd></dl></section>
 <h2>Promoter activity (MPRA) <span class="formula-chip">Δ (alt−ref)</span></h2>
 <table><thead><tr>
@@ -73,10 +73,10 @@ tr:hover td { background: #e9ecef; }
 <tr>
 <td>LentiMPRA:HepG2</td>
 <td>HepG2</td>
-<td>0.301</td>
-<td>0.273</td>
-<td class="bar-cell"><span class="bar bar-neg" style="width:100%"></span>-0.028</td>
-<td><span class="badge badge-minimal">Minimal effect</span></td>
+<td>0.372</td>
+<td>0.669</td>
+<td class="bar-cell"><span class="bar bar-pos" style="width:100%"></span>+0.297</td>
+<td><span class="badge badge-moderate">Moderate activation</span></td>
 </tr>
 </tbody></table>
 <h2>Interactive Genome Browser</h2>
@@ -156,7 +156,7 @@ function(e){var t,i,n,r,s,o,a,c,l,h,d,u,f,p,g,m,w,b,F,v="sizzle"+1*new Date,y=e.
     try {
         const browser = await igv.createBrowser(
             document.getElementById("igv-div"),
-            {"genome":"hg38","locus":"chr1:109274869-109275069","showRuler":true,"showNavigation":true,"showCenterGuide":true,"roi":[{"name":"Modification","color":"rgba(255, 0, 0, 0.12)","features":[{"chr":"chr1","start":109274967,"end":109274969}]}],"tracks":[{"name":"Modification: G>T","type":"annotation","displayMode":"EXPANDED","height":25,"color":"red","features":[{"chr":"chr1","start":109274967,"end":109274969,"name":"chr1:109,274,968 G>T"}]},{"name":"LentiMPRA:HepG2","type":"merged","height":80,"tracks":[{"type":"wig","name":"LentiMPRA:HepG2 ref","color":"rgb(180,180,180)","autoscale":true,"autoscaleGroup":"LentiMPRA_HepG2","features":[{"chr":"chr1","start":109274869,"end":109274919,"value":0.3014}]},{"type":"wig","name":"LentiMPRA:HepG2 alt","color":"rgb(230,120,0)","autoscale":true,"autoscaleGroup":"LentiMPRA_HepG2","features":[{"chr":"chr1","start":109274869,"end":109274919,"value":0.2735}]}]}]}
+            {"genome":"hg38","locus":"chr1:109274868-109275068","showRuler":true,"showNavigation":true,"showCenterGuide":true,"roi":[{"name":"Modification","color":"rgba(255, 0, 0, 0.12)","features":[{"chr":"chr1","start":109274967,"end":109274969}]}],"tracks":[{"name":"Modification: G>T","type":"annotation","displayMode":"EXPANDED","height":25,"color":"red","features":[{"chr":"chr1","start":109274967,"end":109274969,"name":"chr1:109,274,968 G>T"}]},{"name":"LentiMPRA:HepG2","type":"merged","height":80,"tracks":[{"type":"wig","name":"LentiMPRA:HepG2 ref","color":"rgb(180,180,180)","autoscale":true,"autoscaleGroup":"LentiMPRA_HepG2","features":[{"chr":"chr1","start":109274868,"end":109274918,"value":0.3724}]},{"type":"wig","name":"LentiMPRA:HepG2 alt","color":"rgb(230,120,0)","autoscale":true,"autoscaleGroup":"LentiMPRA_HepG2","features":[{"chr":"chr1","start":109274868,"end":109274918,"value":0.6693}]}]}]}
         );
         console.log("IGV browser created successfully");
     } catch(e) {
