@@ -3,7 +3,7 @@
 ## **Chorus**
 <img src="logo.png" alt="Chorus" width="250">
 
-*A unified interface for genomic sequence oracles — deep learning models that predict genomic regulatory activity from DNA sequences.*
+*Predict how a genetic variant changes gene regulation — chromatin accessibility, transcription factor binding, histone marks, gene expression — across thousands of cell types. One API over six state-of-the-art deep-learning models; ask in natural language via Claude or call it from Python.*
 
 </div>
 
@@ -39,10 +39,18 @@ Key features:
 | **Effect percentile** | How extreme a variant's effect is compared to ~10,000 random SNPs (≥99th = stronger than 99% of random variants) |
 | **log2FC** | Log2 fold-change between alternate and reference allele predictions — the raw effect size (most layers). Gene-expression uses **lnFC** (natural log) and MPRA uses **Δ (alt−ref)**; every report states the formula used per layer. |
 
-## 👉 Start here: Worked application examples
+## 👉 Quick navigation — pick your path
 
-The fastest way to see what Chorus can do is to browse the
-[`examples/walkthroughs/`](examples/walkthroughs/) folder. Every subfolder is a
+| You are... | Start here |
+|---|---|
+| **A biologist who wants to ask questions in plain English** | [`docs/MCP_WALKTHROUGH.md`](docs/MCP_WALKTHROUGH.md) — one-line `chorus mcp install`, then type questions to Claude Code |
+| **Someone who wants to see what outputs look like first** | [`examples/walkthroughs/`](examples/walkthroughs/) — pre-run concrete examples with HTML, JSON, TSV + embedded IGV browser |
+| **A Python developer building a pipeline** | [`examples/notebooks/`](examples/notebooks/) — three end-to-end Jupyter walkthroughs (15 / 45 / 60 min) |
+| **Just want to verify the install** | Skip to [Installation](#installation) → [Minimal Working Example](#minimal-working-example) |
+
+## 👉 Worked application examples
+
+Every subfolder under [`examples/walkthroughs/`](examples/walkthroughs/) is a
 concrete, ready-to-reproduce use case with full outputs in **Markdown, JSON,
 TSV, and HTML** (with an embedded IGV browser):
 
@@ -54,6 +62,7 @@ TSV, and HTML** (with an embedded IGV browser):
 | Score a batch of variants from a VCF | [batch_scoring/](examples/walkthroughs/batch_scoring/) |
 | Predict the effect of an engineered sequence edit | [sequence_engineering/region_swap](examples/walkthroughs/sequence_engineering/region_swap/) |
 | Replicate a published regulatory variant finding | [validation/SORT1_rs12740374_with_CEBP](examples/walkthroughs/validation/SORT1_rs12740374_with_CEBP/) |
+| Cross-validate a variant across multiple oracles | [validation/SORT1_rs12740374_multioracle](examples/walkthroughs/validation/SORT1_rs12740374_multioracle/) |
 
 These examples were generated through Claude Code using Chorus's MCP server —
 the same way you'll use it. Every report preserves the original prompt at the
