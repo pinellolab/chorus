@@ -30,6 +30,7 @@ from .analysis_request import AnalysisRequest
 from ._report_glossary import (
     HOW_TO_READ_CSS,
     formula_chip,
+    formula_label,
     render_how_to_read,
 )
 from .scorers import LAYER_CONFIGS
@@ -305,7 +306,13 @@ class MultiOracleReport:
         for row in self._consensus_rows():
             layer = row["layer"]
             cfg = LAYER_CONFIGS.get(layer)
-            layer_label = f"{cfg.description} ({cfg.formula})" if cfg else layer
+            # Use the canonical display label (log2FC / lnFC / Δ) rather
+            # than the raw lowercase LayerConfig key so the markdown
+            # matches the HTML formula chips exactly.
+            layer_label = (
+                f"{cfg.description} ({formula_label(cfg.formula)})" if cfg
+                else layer
+            )
             cells = [layer_label]
             for name in self.reports.keys():
                 entry = row["oracles"].get(name)

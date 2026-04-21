@@ -138,7 +138,7 @@ effects consistent with being in linkage disequilibrium but not causal.
 
 ## Understanding the scores
 
-**Max Effect** is the largest |log2FC| (or |logFC|, |diff|) across all tracks
+**Max Effect** is the largest |log2FC| (or |lnFC|, |Δ|) across all tracks
 and layers for each variant. It represents the single strongest regulatory
 effect that variant produces.
 
