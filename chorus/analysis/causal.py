@@ -16,7 +16,10 @@ import numpy as np
 
 from .analysis_request import AnalysisRequest
 from .normalization import QuantileNormalizer
-from .variant_report import TrackScore, VariantReport, build_variant_report, _describe_normalizer
+from .variant_report import (
+    TrackScore, VariantReport, build_variant_report,
+    _describe_normalizer, _fmt_percentile,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -1007,11 +1010,21 @@ def _build_causal_igv(result: CausalResult) -> str:
             if igv_raw:
                 normalizer = None
 
+            # Build a mapping assay_id → enriched display name so IGV
+            # track labels match the table rows ("CHIP:CEBPA:HepG2"
+            # instead of "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA…").
+            track_display: dict[str, str] = {}
+            for allele_scores in top_s._variant_report.allele_scores.values():
+                for ts_disp in allele_scores:
+                    if ts_disp.description and ts_disp.assay_id:
+                        track_display[ts_disp.assay_id] = ts_disp.description
+
             for aid in assay_ids:
                 ref_t = ref_pred[aid]
                 alt_t = alt_pred[aid]
                 t_start = ref_t.prediction_interval.reference.start
                 t_res = ref_t.resolution
+                display = track_display.get(aid, aid)
 
                 layer = classify_track_layer(ref_t)
                 floor_ok, ref_vals, alt_vals = apply_floor_rescale(
@@ -1036,20 +1049,20 @@ def _build_causal_igv(result: CausalResult) -> str:
 
                 rank_label = _TOP_VARIANT_COLORS[vi]["label"] if vi < len(_TOP_VARIANT_COLORS) else f"#{vi+1}"
                 tracks.append({
-                    "name": f"{aid} ({rank_label} {top_s.variant_id})",
+                    "name": f"{display} ({rank_label} {top_s.variant_id})",
                     "type": "merged",
                     "height": 60,
                     "tracks": [
                         {
                             "type": "wig",
-                            "name": f"{aid} ref",
+                            "name": f"{display} ref",
                             "color": f"rgb({_REF_COLOR})",
                             **scale_cfg,
                             "features": ref_feats,
                         },
                         {
                             "type": "wig",
-                            "name": f"{aid} alt",
+                            "name": f"{display} alt",
                             "color": f"rgb({alt_rgb})",
                             **scale_cfg,
                             "features": alt_feats,
@@ -1295,11 +1308,18 @@ def _build_causal_html(result: CausalResult) -> str:
             ct_str = top_info.get("cell_type") or "—"
             desc = top_info.get("description") or ""
             asm = top_info.get("assay_id") or ""
+            # Show enriched description (e.g. "CHIP:CEBPA:HepG2") as the
+            # primary track label; keep the raw assay_id in a secondary
+            # <code> tag for traceability. Matches the variant-report
+            # convention and avoids showing the raw AlphaGenome catalog
+            # ID as the user-facing track name.
+            primary_label = desc if desc else asm
             p.append('<p class="top-track-line">'
                      f'<b>Strongest track:</b> {html_mod.escape(layer_label)} '
-                     f'&middot; <code>{html_mod.escape(asm)}</code> '
+                     f'&middot; <b>{html_mod.escape(primary_label)}</b> '
                      f'&middot; cell type: <b>{html_mod.escape(ct_str)}</b>'
-                     + (f' &middot; {html_mod.escape(desc)}' if desc else '')
+                     + (f' &middot; <code>{html_mod.escape(asm)}</code>'
+                        if desc and asm and asm != desc else '')
                      + (f' &middot; <span class="formula-chip">{formula}</span>' if formula else '')
                      + '</p>')
 
@@ -1327,17 +1347,23 @@ def _build_causal_html(result: CausalResult) -> str:
                          else ("#dc3545" if score < 0 else "#6c757d"))
                 info = s.per_layer_top_track.get(layer, {}) or {}
                 assay = info.get("assay_id") or "—"
+                desc = info.get("description") or ""
+                # Prefer enriched description ("CHIP:CEBPA:HepG2") over
+                # raw assay_id so the table matches the variant-report
+                # convention. Fall back to the raw id when description
+                # is absent (older snapshots).
+                assay_display = desc if desc else assay
                 ct_val = info.get("cell_type") or "—"
                 ref_v = info.get("ref_value")
                 alt_v = info.get("alt_value")
                 ref_str = f"{ref_v:.3g}" if ref_v is not None else "—"
                 alt_str = f"{alt_v:.3g}" if alt_v is not None else "—"
                 q = info.get("quantile_score")
-                q_str = f"{q * 100:+.1f}%" if q is not None else "—"
+                q_str = _fmt_percentile(q) if q is not None else "—"
                 p.append(f'<tr>'
                          f'<td>{html_mod.escape(name)}</td>'
                          f'<td><span class="formula-chip">{formula}</span></td>'
-                         f'<td><code>{html_mod.escape(str(assay))}</code></td>'
+                         f'<td>{html_mod.escape(str(assay_display))}</td>'
                          f'<td>{html_mod.escape(str(ct_val))}</td>'
                          f'<td>{ref_str}</td>'
                          f'<td>{alt_str}</td>'

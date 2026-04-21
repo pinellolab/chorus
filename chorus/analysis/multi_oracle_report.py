@@ -236,6 +236,12 @@ class MultiOracleReport:
                     "assay_id": best.assay_id,
                     "cell_type": best.cell_type,
                     "quantile_score": best.quantile_score,
+                    # Prefer the enriched display name (e.g.
+                    # ``CHIP:CEBPA:HepG2``) over the raw AlphaGenome
+                    # assay_id (``CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA
+                    # genetically modified…``) so the consensus matrix
+                    # matches what the per-variant reports show.
+                    "description": best.description or best.assay_id,
                 }
                 directions.append(1 if best.raw_score > 0 else -1)
             # "Consensus" requires at least two voting oracles; a single
@@ -307,9 +313,13 @@ class MultiOracleReport:
                     cells.append("—")
                 else:
                     sign = "+" if entry["raw_score"] >= 0 else ""
+                    # Prefer enriched description (e.g. CHIP:CEBPA:HepG2)
+                    # over raw assay_id so the matrix matches per-variant
+                    # reports.
+                    track_label = entry.get("description") or entry["assay_id"]
                     cells.append(
                         f"{sign}{entry['raw_score']:.3f} · "
-                        f"{entry['assay_id']} · {entry['cell_type'] or '—'}"
+                        f"{track_label} · {entry['cell_type'] or '—'}"
                     )
             agree = {
                 "consensus_gain": "all ↑",
@@ -445,11 +455,15 @@ def _build_multioracle_html(report: "MultiOracleReport") -> str:
             score = entry["raw_score"]
             sign_char = "+" if score >= 0 else ""
             cls = "effect-pos" if score >= 0 else "effect-neg"
+            # Use the same percentile display helper as every other
+            # chorus report so "≥99th" / "≤1st" / "near-zero" are used
+            # uniformly (not "+100.0%").
             q = entry.get("quantile_score")
-            q_str = (f" · %ile {q*100:+.1f}%"
-                     if isinstance(q, (int, float)) else "")
-            track_line = f"{entry['assay_id']}"
-            if entry.get("cell_type"):
+            q_str = f" · {_fmt_percentile(q)}" if q is not None else ""
+            # Prefer enriched label (CHIP:CEBPA:HepG2) over raw assay_id
+            # so the consensus matrix matches per-variant reports.
+            track_line = entry.get("description") or entry["assay_id"]
+            if entry.get("cell_type") and entry["cell_type"] not in track_line:
                 track_line += f" · {entry['cell_type']}"
             p.append(
                 f"<td class='effect-cell {cls}'>{sign_char}{score:.3f}{q_str}"
@@ -524,9 +538,14 @@ def _build_multioracle_html(report: "MultiOracleReport") -> str:
                 alt_s = f"{ts.alt_value:.3g}" if ts.alt_value is not None else "—"
                 q = ts.quantile_score
                 q_str = _fmt_percentile(q) if q is not None else "—"
+                # Prefer enriched description (e.g. "CHIP:CEBPA:HepG2")
+                # over the raw AlphaGenome assay_id so the per-oracle
+                # drill-down table matches what the variant-report pages
+                # show.
+                track_display = ts.description or ts.assay_id
                 p.append(
                     f"<tr><td>{esc(layer_label)} {chip}</td>"
-                    f"<td><code>{esc(ts.assay_id)}</code></td>"
+                    f"<td>{esc(track_display)}</td>"
                     f"<td>{esc(ts.cell_type or '—')}</td>"
                     f"<td>{ref_s}</td><td>{alt_s}</td>"
                     f"<td class='effect-cell {cls}'>"

@@ -25,14 +25,16 @@
           "raw_score": -0.11089156202257182,
           "assay_id": "ATAC:HepG2",
           "cell_type": "HepG2",
-          "quantile_score": 0.96721823290665
+          "quantile_score": 0.96721823290665,
+          "description": "ATAC:HepG2"
         },
         "legnet": null,
         "alphagenome": {
           "raw_score": 0.4525551981440325,
           "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
           "cell_type": "HepG2",
-          "quantile_score": 1.0
+          "quantile_score": 1.0,
+          "description": "DNASE:HepG2"
         }
       },
       "agreement": "disagree"
@@ -45,7 +47,8 @@
           "raw_score": -0.0278623104095459,
           "assay_id": "LentiMPRA:HepG2",
           "cell_type": "HepG2",
-          "quantile_score": null
+          "quantile_score": null,
+          "description": "LentiMPRA:HepG2"
         },
         "alphagenome": null
       },
@@ -60,7 +63,8 @@
           "raw_score": 0.3806839182959419,
           "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
           "cell_type": "HepG2",
-          "quantile_score": 1.0
+          "quantile_score": 1.0,
+          "description": "CHIP:CEBPA:HepG2"
         }
       },
       "agreement": "single_gain"
@@ -74,7 +78,8 @@
           "raw_score": 0.17998971913566533,
           "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
           "cell_type": "HepG2",
-          "quantile_score": 1.0
+          "quantile_score": 1.0,
+          "description": "CHIP:H3K27ac:HepG2"
         }
       },
       "agreement": "single_gain"
@@ -88,7 +93,8 @@
           "raw_score": 0.2541795926080432,
           "assay_id": "CAGE/hCAGE EFO:0001187/-",
           "cell_type": "HepG2",
-          "quantile_score": 1.0
+          "quantile_score": 1.0,
+          "description": "CAGE:HepG2"
         }
       },
       "agreement": "single_gain"
@@ -102,6 +108,6 @@
     "tracks_requested": "assay_ids as listed in each per-oracle request",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-04-19 19:06 UTC"
+    "generated_at": "2026-04-21 01:44 UTC"
   }
 }
