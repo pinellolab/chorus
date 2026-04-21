@@ -79,6 +79,26 @@ the full list with per-persona ("Geneticist", "Bioinformatician", "Clinician",
 - Works on **Linux x86_64** and **macOS (Intel/Apple Silicon)**
 - GPU support: NVIDIA CUDA (Linux) is auto-detected. Apple Metal is experimental and not fully supported by all oracles (see AlphaGenome section).
 
+### Hardware matrix per oracle
+
+Pick at most a couple of oracles to start with — you can always add more
+with `chorus setup --oracle <name>` later. AlphaGenome is the most
+capable but also the heaviest; Enformer is the best CPU-friendly
+starter.
+
+| Oracle | Minimum RAM | GPU needed? | Typical cold-predict | Best for |
+|---|---|---|---|---|
+| **Enformer** | 8 GB | optional | ~10 s (GPU) / ~1 min (CPU) | lightweight multi-track, CPU-friendly starter |
+| **Borzoi** | 12 GB | recommended | ~30 s (GPU) | distal gene-expression effects, longer context |
+| **ChromBPNet** | 4 GB | optional | ~1 s (CPU ok) | base-pair chromatin / motif disruption |
+| **LegNet** | 4 GB | optional | <1 s | MPRA / promoter activity |
+| **Sei** | 4 GB | optional | ~2 s | regulatory sequence-class profiling |
+| **AlphaGenome** | 16 GB | strongly recommended | ~30 s (GPU) / 2–5 min (CPU) | comprehensive multi-layer (5,731 tracks, 1 Mb window) |
+
+All oracles auto-detect CUDA via `torch.cuda.is_available()` /
+`jax.device_get`; respect `CUDA_VISIBLE_DEVICES` to pin to a specific
+GPU. Pass `device='cuda'` / `'cpu'` / `'mps'` explicitly if needed.
+
 ## Installation
 
 ### Fresh Install
