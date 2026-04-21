@@ -86,7 +86,7 @@ details.oracle-block table th { background: #6c757d; }
 <li><strong>Oracle:</strong> chrombpnet, legnet, alphagenome</li>
 <li><strong>Normalizer:</strong> per-oracle chorus per-track v1</li>
 <li><strong>Tracks requested:</strong> assay_ids as listed in each per-oracle request</li>
-<li><strong>Generated:</strong> 2026-04-19 19:06 UTC</li>
+<li><strong>Generated:</strong> 2026-04-21 01:44 UTC</li>
 </ul>
 </section>
 <p class='meta'><b>Variant:</b> chr1:109,274,968 G&gt;T</p>
@@ -102,33 +102,33 @@ details.oracle-block table th { background: #6c757d; }
 <th>alphagenome</th>
 <th>Agreement</th></tr></thead><tbody>
 <tr><td>Chromatin accessibility (DNASE/ATAC) <span class="formula-chip">log2FC</span></td>
-<td class='effect-cell effect-neg'>-0.111 · %ile +96.7%<span class='track'>ATAC:HepG2 · HepG2</span></td>
+<td class='effect-cell effect-neg'>-0.111 · 0.97<span class='track'>ATAC:HepG2</span></td>
 <td class='agree-none'>—</td>
-<td class='effect-cell effect-pos'>+0.453 · %ile +100.0%<span class='track'>DNASE/EFO:0001187 DNase-seq/. · HepG2</span></td>
+<td class='effect-cell effect-pos'>+0.453 · ≥99th<span class='track'>DNASE:HepG2</span></td>
 <td class='agree-mixed'>⚠ disagree</td>
 </tr>
 <tr><td>Promoter activity (MPRA) <span class="formula-chip">Δ (alt−ref)</span></td>
 <td class='agree-none'>—</td>
-<td class='effect-cell effect-neg'>-0.028<span class='track'>LentiMPRA:HepG2 · HepG2</span></td>
+<td class='effect-cell effect-neg'>-0.028<span class='track'>LentiMPRA:HepG2</span></td>
 <td class='agree-none'>—</td>
 <td class='agree-single'>↓ only (n=1)</td>
 </tr>
 <tr><td>Transcription factor binding (ChIP-TF) <span class="formula-chip">log2FC</span></td>
 <td class='agree-none'>—</td>
 <td class='agree-none'>—</td>
-<td class='effect-cell effect-pos'>+0.381 · %ile +100.0%<span class='track'>CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/. · HepG2</span></td>
+<td class='effect-cell effect-pos'>+0.381 · ≥99th<span class='track'>CHIP:CEBPA:HepG2</span></td>
 <td class='agree-single'>↑ only (n=1)</td>
 </tr>
 <tr><td>Histone modifications (ChIP-Histone) <span class="formula-chip">log2FC</span></td>
 <td class='agree-none'>—</td>
 <td class='agree-none'>—</td>
-<td class='effect-cell effect-pos'>+0.180 · %ile +100.0%<span class='track'>CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/. · HepG2</span></td>
+<td class='effect-cell effect-pos'>+0.180 · ≥99th<span class='track'>CHIP:H3K27ac:HepG2</span></td>
 <td class='agree-single'>↑ only (n=1)</td>
 </tr>
 <tr><td>TSS activity (CAGE/PRO-CAP) <span class="formula-chip">log2FC</span></td>
 <td class='agree-none'>—</td>
 <td class='agree-none'>—</td>
-<td class='effect-cell effect-pos'>+0.254 · %ile +100.0%<span class='track'>CAGE/hCAGE EFO:0001187/- · HepG2</span></td>
+<td class='effect-cell effect-pos'>+0.254 · ≥99th<span class='track'>CAGE:HepG2</span></td>
 <td class='agree-single'>↑ only (n=1)</td>
 </tr>
 </tbody></table>
@@ -138,14 +138,14 @@ details.oracle-block table th { background: #6c757d; }
 <summary><b>chrombpnet</b> · 1 tracks · strongest: Chromatin accessibility (DNASE/ATAC) -0.111</summary>
 <div class='oracle-body'>
 <table><thead><tr><th>Layer</th><th>Top assay</th><th>Cell type</th><th>Ref</th><th>Alt</th><th>Effect</th><th>%ile</th></tr></thead><tbody>
-<tr><td>Chromatin accessibility (DNASE/ATAC) <span class="formula-chip">log2FC</span></td><td><code>ATAC:HepG2</code></td><td>HepG2</td><td>687</td><td>636</td><td class='effect-cell effect-neg'>-0.111</td><td>0.97</td></tr>
+<tr><td>Chromatin accessibility (DNASE/ATAC) <span class="formula-chip">log2FC</span></td><td>ATAC:HepG2</td><td>HepG2</td><td>687</td><td>636</td><td class='effect-cell effect-neg'>-0.111</td><td>0.97</td></tr>
 </tbody></table>
 </div></details>
 <details class='oracle-block'>
 <summary><b>legnet</b> · 1 tracks · strongest: Promoter activity (MPRA) -0.028</summary>
 <div class='oracle-body'>
 <table><thead><tr><th>Layer</th><th>Top assay</th><th>Cell type</th><th>Ref</th><th>Alt</th><th>Effect</th><th>%ile</th></tr></thead><tbody>
-<tr><td>Promoter activity (MPRA) <span class="formula-chip">Δ (alt−ref)</span></td><td><code>LentiMPRA:HepG2</code></td><td>HepG2</td><td>0.301</td><td>0.273</td><td class='effect-cell effect-neg'>-0.028</td><td>—</td></tr>
+<tr><td>Promoter activity (MPRA) <span class="formula-chip">Δ (alt−ref)</span></td><td>LentiMPRA:HepG2</td><td>HepG2</td><td>0.301</td><td>0.273</td><td class='effect-cell effect-neg'>-0.028</td><td>—</td></tr>
 </tbody></table>
 <p><a href='rs12740374_SORT1_legnet_report.html'>Open legnet standalone report →</a></p>
 </div></details>
@@ -153,10 +153,10 @@ details.oracle-block table th { background: #6c757d; }
 <summary><b>alphagenome</b> · 62 tracks · strongest: Chromatin accessibility (DNASE/ATAC) +0.453</summary>
 <div class='oracle-body'>
 <table><thead><tr><th>Layer</th><th>Top assay</th><th>Cell type</th><th>Ref</th><th>Alt</th><th>Effect</th><th>%ile</th></tr></thead><tbody>
-<tr><td>Chromatin accessibility (DNASE/ATAC) <span class="formula-chip">log2FC</span></td><td><code>DNASE/EFO:0001187 DNase-seq/.</code></td><td>HepG2</td><td>511</td><td>699</td><td class='effect-cell effect-pos'>+0.453</td><td>≥99th</td></tr>
-<tr><td>Transcription factor binding (ChIP-TF) <span class="formula-chip">log2FC</span></td><td><code>CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.</code></td><td>HepG2</td><td>2.09e+03</td><td>2.72e+03</td><td class='effect-cell effect-pos'>+0.381</td><td>≥99th</td></tr>
-<tr><td>TSS activity (CAGE/PRO-CAP) <span class="formula-chip">log2FC</span></td><td><code>CAGE/hCAGE EFO:0001187/-</code></td><td>HepG2</td><td>21.9</td><td>26.3</td><td class='effect-cell effect-pos'>+0.254</td><td>≥99th</td></tr>
-<tr><td>Histone modifications (ChIP-Histone) <span class="formula-chip">log2FC</span></td><td><code>CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.</code></td><td>HepG2</td><td>1.37e+04</td><td>1.55e+04</td><td class='effect-cell effect-pos'>+0.180</td><td>≥99th</td></tr>
+<tr><td>Chromatin accessibility (DNASE/ATAC) <span class="formula-chip">log2FC</span></td><td>DNASE:HepG2</td><td>HepG2</td><td>511</td><td>699</td><td class='effect-cell effect-pos'>+0.453</td><td>≥99th</td></tr>
+<tr><td>Transcription factor binding (ChIP-TF) <span class="formula-chip">log2FC</span></td><td>CHIP:CEBPA:HepG2</td><td>HepG2</td><td>2.09e+03</td><td>2.72e+03</td><td class='effect-cell effect-pos'>+0.381</td><td>≥99th</td></tr>
+<tr><td>TSS activity (CAGE/PRO-CAP) <span class="formula-chip">log2FC</span></td><td>CAGE:HepG2</td><td>HepG2</td><td>21.9</td><td>26.3</td><td class='effect-cell effect-pos'>+0.254</td><td>≥99th</td></tr>
+<tr><td>Histone modifications (ChIP-Histone) <span class="formula-chip">log2FC</span></td><td>CHIP:H3K27ac:HepG2</td><td>HepG2</td><td>1.37e+04</td><td>1.55e+04</td><td class='effect-cell effect-pos'>+0.180</td><td>≥99th</td></tr>
 </tbody></table>
 </div></details>
 <div class='footer'>Generated by Chorus <code>MultiOracleReport</code></div>
