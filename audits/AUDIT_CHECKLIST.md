@@ -203,6 +203,57 @@ mamba run -n chorus python -m pytest tests/ --ignore=tests/test_smoke_predict.py
 - [ ] `scripts/regenerate_multioracle.py --consolidate` is idempotent and picks up fresh per-oracle JSONs. **P1**
 - [ ] Reference-genome + annotation files can be reproduced by re-running the documented `chorus genome download` / `download_gencode` calls. **P2**
 
+## 13. Scientific determinism
+
+Same input → same output, run twice. One-shot check per oracle:
+
+```python
+import numpy as np
+r1 = oracle.predict(('chr1', 1_000_000, 1_100_000), ['<track>'])
+r2 = oracle.predict(('chr1', 1_000_000, 1_100_000), ['<track>'])
+assert np.allclose(r1['<track>'].values, r2['<track>'].values, atol=1e-6)
+```
+
+- [ ] Same-machine back-to-back: identical predictions for all 6 oracles. **P1**
+- [ ] Across machines: drift stays within the ±0.006 CPU non-determinism band documented in the walkthrough examples. **P2**
+
+## 14. Genomics edge cases
+
+Each is a common user scenario, not a theoretical corner:
+
+- [ ] **Variant near a chromosome end** (< half window from telomere). Oracle should pad / clamp gracefully, not crash. **P1**
+- [ ] **Soft-masked (lowercase) FASTA bases** — `extract_sequence` already returns them lowercase; the ref-allele check at `core/base.py:325` uses `.upper()`. Confirm still true after any refactor. **P1**
+- [ ] **Multi-allelic site** (`alleles=['A','C','G','T']`) — report renders 3 alt columns, not a single alt. **P1**
+- [ ] **Non-SNV** (simple insertion / deletion): if not supported, `predict_variant_effect` should error **before** running the model, not after — and the message should say indels are unsupported. **P1**
+- [ ] **Non-canonical chromosomes** (chrM, chrY): either predict or fail cleanly with a message that names the chromosome. **P2**
+
+## 15. Offline / air-gapped behaviour
+
+Many scientific compute environments cut outbound internet after setup. Once install + CDFs + genome are cached:
+
+- [ ] `oracle.predict(...)` works with `HF_TOKEN` unset and no network, for the non-gated oracles. **P1**
+- [ ] `oracle.analyze_gene_expression('GATA1')` works against the locally-cached GTF. **P1**
+- [ ] Report HTML renders in a browser with no outbound network — `grep -rn 'cdn\|googleapis\|cdnjs\|unpkg\|jsdelivr' examples/walkthroughs/**/*.html` should return only bundled-resource references. We already vendor IGV via `chorus/analysis/static/igv.min.js`. **P1**
+
+## 16. Logging hygiene
+
+`HF_TOKEN` and other secrets should never land in logs, notebook outputs, or HTML reports.
+
+- [ ] `grep -rn 'hf_[a-zA-Z0-9]\{20,\}' examples/ audits/ docs/ chorus/` returns nothing — no real tokens committed. **P0**
+- [ ] Committed notebook outputs and test fixtures don't contain `HF_TOKEN=hf_…` or AWS-style keys. Known benign: per-machine absolute paths (e.g. `/srv/local/<user>/…`) in shipped notebook outputs — documented as cosmetic in v16. **P1**
+
+## 17. Dependency supply chain
+
+- [ ] `environment.yml` pins every dep to a range or exact version — no bare dep names. **P1**
+- [ ] `pip-audit` on the base env flags no known CVEs above *medium*. **P1**
+- [ ] Per-oracle envs use the same `chorus` editable install so they track the parent codebase (`EnvironmentManager.install_chorus_primitive`). **P1**
+
+## 18. License / attribution
+
+- [ ] `LICENSE` file at repo root matches the license Chorus claims. **P0**
+- [ ] Each oracle's model weights + third-party code is attributed somewhere reachable from the README (Enformer → DeepMind, ChromBPNet → Kundaje lab, AlphaGenome → Google DeepMind, etc.) — a single `docs/THIRD_PARTY.md` is fine. **P1**
+- [ ] Bundled vendor JS (`chorus/analysis/static/igv.min.js`) carries its upstream license header. **P1**
+
 ---
 
 ## Appendix — artefacts to produce per audit
