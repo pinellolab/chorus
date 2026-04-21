@@ -199,6 +199,58 @@ class TestPredictionMethods:
         assert "alt_3" in results["predictions"]
         assert len(results["effect_sizes"]) == 3
 
+    def test_variant_position_is_1_based(self, caplog):
+        """Ref-allele check must treat `variant_position='chrN:P'` as 1-based.
+
+        Builds a chr1 genome where position 100,000 (1-based) is 'G' and the
+        two neighbouring positions are 'A'. The oracle must read 'G' at
+        chr1:100000 and not fire the "does not match the genome" warning.
+        Regression for the off-by-one that returned the base at 1-based
+        P+1 (so rs12740374 returned 'T' instead of 'G').
+        """
+        import logging
+        # Build a custom genome: 'A' everywhere except a 'G' anchor
+        tmp = Path(tempfile.mkdtemp())
+        fa = tmp / "anchor.fa"
+        # 1-based position 100000 = 0-based 99999.
+        # Pad with A, put G at 99999, A elsewhere, over 200 kb total.
+        seq = ['A'] * 200_000
+        seq[99_999] = 'G'  # 1-based pos 100000
+        with open(fa, "w") as fh:
+            fh.write(">chr1\n" + "".join(seq) + "\n")
+        import pysam
+        pysam.faidx(str(fa))
+
+        oracle = MockOracle(reference_fasta=str(fa))
+
+        # Provide ref='G' matching the genome — warning must NOT fire.
+        with caplog.at_level(logging.WARNING, logger="chorus.core.base"):
+            oracle.predict_variant_effect(
+                genomic_region="chr1:50000-150000",
+                variant_position="chr1:100000",
+                alleles=["G", "A"],
+                assay_ids=["DNase:K562"],
+            )
+        matching = [r for r in caplog.records if "does not match the genome" in r.getMessage()]
+        assert not matching, (
+            f"Warning fired unexpectedly — ref-allele check is off-by-one again. "
+            f"Messages: {[r.getMessage() for r in matching]}"
+        )
+
+        # And with the WRONG ref — warning MUST fire (proves the check still works).
+        caplog.clear()
+        with caplog.at_level(logging.WARNING, logger="chorus.core.base"):
+            oracle.predict_variant_effect(
+                genomic_region="chr1:50000-150000",
+                variant_position="chr1:100000",
+                alleles=["T", "A"],  # genome has G, user says T → mismatch
+                assay_ids=["DNase:K562"],
+            )
+        matching = [r for r in caplog.records if "does not match the genome" in r.getMessage()]
+        assert matching, "Warning should fire when user's ref really doesn't match genome"
+
+        shutil.rmtree(tmp)
+
     def test_error_handling_model_not_loaded(self):
         """Test error when model not loaded."""
         unloaded_oracle = MockOracle(reference_fasta=str(self.fasta_path))

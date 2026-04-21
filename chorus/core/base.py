@@ -295,19 +295,31 @@ class OracleBase(ABC):
                     "initialize oracle with reference_fasta."
                 )
         
-        # Parse inputs
+        # Parse inputs.
+        #
+        # Convention: string-form `genomic_region` ("chr1:S-E") and
+        # `variant_position` ("chr1:P") are 1-based inclusive, matching
+        # dbSNP/UCSC/IGV/`extract_sequence`. GenomeRef is 0-based
+        # half-open (see chorus/core/interval.py:26), so we convert when
+        # building the interval and when looking up the variant base.
+        # Without this conversion the ref-allele check reads the base one
+        # position to the right of what the user intended (rs12740374 at
+        # chr1:109274968 returned 'T' instead of 'G').
         region_chrom, region_start, region_end = self._parse_region(genomic_region)
         var_chrom, var_pos = self._parse_position(variant_position)
-        
+
         if region_chrom != var_chrom:
             raise InvalidRegionError("Variant and region must be on the same chromosome")
-        
-        if not (region_start <= var_pos < region_end):
+
+        if not (region_start <= var_pos <= region_end):
             raise InvalidRegionError("Variant position must be within the specified region")
-        
-        region_interval = Interval.make(GenomeRef(chrom=region_chrom, 
-                                                  start=region_start, 
-                                                  end=region_end, 
+
+        region_start_0based = region_start - 1  # 1-based inclusive → 0-based
+        var_pos_0based = var_pos - 1            # 1-based → 0-based
+
+        region_interval = Interval.make(GenomeRef(chrom=region_chrom,
+                                                  start=region_start_0based,
+                                                  end=region_end,
                                                   fasta=genome))
 
         # Parse alleles
@@ -317,9 +329,9 @@ class OracleBase(ABC):
         else:
             ref_allele = alleles[0]
             alt_alleles = alleles[1:]
-        
+
         intervals = {}
-        real_pos = region_interval.ref2query(var_pos, ref_global=True)
+        real_pos = region_interval.ref2query(var_pos_0based, ref_global=True)
         # Case-insensitive compare: pyfaidx returns lowercase for softmasked
         # (repetitive) regions, users always pass uppercase.
         if region_interval[real_pos].upper() != ref_allele.upper():
