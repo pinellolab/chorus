@@ -101,6 +101,14 @@ def test_chrombpnet_fresh_single_model_download(tmp_path):
     if not Path(reference_fasta).exists():
         pytest.skip("hg38.fa missing — run `chorus genome download hg38` first")
 
+    from chorus.core.environment.manager import EnvironmentManager
+    if not EnvironmentManager().environment_exists("chrombpnet"):
+        pytest.skip(
+            "chorus-chrombpnet env missing — run `chorus setup --oracle chrombpnet` first. "
+            "Without it, the subprocess oracle runner falls back to direct load which needs "
+            "TensorFlow in the base env (not installed by default)."
+        )
+
     oracle = chorus.create_oracle(
         "chrombpnet", use_environment=True, reference_fasta=reference_fasta,
     )
