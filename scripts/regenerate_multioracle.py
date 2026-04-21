@@ -93,11 +93,22 @@ def _build_variant_report(oracle, oracle_name: str, assay_ids=None):
     # region here keeps the API contract satisfied without wasting compute.
     position_str = f"{VARIANT['chrom']}:{VARIANT['position']}"
     region_str = f"{VARIANT['chrom']}:{VARIANT['position']}-{VARIANT['position'] + 1}"
+    # Oracles use different attribute names for their single-track id:
+    # LegNetOracle exposes ``assay_id`` (e.g. "LentiMPRA:HepG2"); ChromBPNet
+    # stores ``assay`` + ``cell_type`` separately. Build the per-oracle
+    # default so either shape works.
+    if assay_ids is None:
+        if hasattr(oracle, "assay_id") and oracle.assay_id:
+            assay_ids = [oracle.assay_id]
+        elif hasattr(oracle, "assay") and hasattr(oracle, "cell_type"):
+            assay_ids = [f"{oracle.assay}:{oracle.cell_type}"]
+        else:
+            raise RuntimeError(f"Oracle {oracle_name} has no resolvable assay_id")
     result = oracle.predict_variant_effect(
         genomic_region=region_str,
         variant_position=position_str,
         alleles=[VARIANT["ref"], VARIANT["alt"]],
-        assay_ids=assay_ids if assay_ids else [oracle.assay_id],
+        assay_ids=assay_ids,
         genome=GENOME_REF,
     )
     ar = AnalysisRequest(
@@ -117,16 +128,36 @@ def _build_variant_report(oracle, oracle_name: str, assay_ids=None):
 
 
 def _save_oracle_artefacts(report, oracle_name: str):
+    """Persist the per-oracle run to disk in three forms:
+
+    * ``<oracle>_variant_report.json`` — stable, inspectable, no predictions.
+    * ``<oracle>_variant_report.pkl``  — full VariantReport including
+      the prediction arrays needed to render IGV signal tracks.  Used by
+      :func:`consolidate` so the unified multi-oracle IGV has real data.
+    * ``rs..._report.html``             — standalone per-oracle report.
+    """
+    import pickle
     os.makedirs(OUT_DIR, exist_ok=True)
     json_path = os.path.join(OUT_DIR, f"{oracle_name}_variant_report.json")
     with open(json_path, "w") as fh:
         json.dump(report.to_dict(), fh, indent=2, default=str)
+    pkl_path = os.path.join(OUT_DIR, f"{oracle_name}_variant_report.pkl")
+    # Pickle keeps ``_predictions`` (numpy arrays) and ``_normalizer`` in
+    # place so the consolidator can render IGV without re-running any
+    # oracle.  Normalizer is small; predictions dominate the file size.
+    try:
+        with open(pkl_path, "wb") as fh:
+            pickle.dump(report, fh, protocol=pickle.HIGHEST_PROTOCOL)
+    except Exception as exc:
+        logger.warning("  Could not pickle %s report (%s): IGV may be empty.",
+                       oracle_name, exc)
     html_path = os.path.join(
         OUT_DIR, f"{VARIANT['id']}_{VARIANT['gene']}_{oracle_name}_report.html"
     )
     report.to_html(output_path=html_path)
-    logger.info("  ✓ wrote %s and %s",
-                os.path.basename(json_path), os.path.basename(html_path))
+    logger.info("  ✓ wrote %s, %s, and %s",
+                os.path.basename(json_path), os.path.basename(pkl_path),
+                os.path.basename(html_path))
     return json_path, html_path
 
 
@@ -173,41 +204,61 @@ def run_alphagenome():
 # ---------------------------------------------------------------------------
 
 def consolidate():
-    """Assemble the multi-oracle HTML from per-oracle JSONs in OUT_DIR."""
+    """Assemble the multi-oracle HTML from per-oracle artefacts in OUT_DIR.
+
+    Prefers the ``<oracle>_variant_report.pkl`` when present — pickles
+    include the prediction arrays the unified IGV needs.  Falls back to
+    JSON-only for an oracle whose pickle is missing, which yields an
+    IGV panel with the modification marker but no signal tracks for
+    that oracle.
+    """
+    import pickle
     from chorus.analysis import MultiOracleReport
     from chorus.analysis.analysis_request import AnalysisRequest
 
     per_oracle = {}
-    paths = []
+    reports = []
+    ordered_oracles = []
     for oracle_name in ("chrombpnet", "legnet", "alphagenome"):
+        pkl = os.path.join(OUT_DIR, f"{oracle_name}_variant_report.pkl")
         jp = os.path.join(OUT_DIR, f"{oracle_name}_variant_report.json")
-        if os.path.isfile(jp):
-            paths.append(jp)
-            # Prefer a relative link for portability.
-            html_fname = (
-                f"{VARIANT['id']}_{VARIANT['gene']}_{oracle_name}_report.html"
-            )
-            if os.path.isfile(os.path.join(OUT_DIR, html_fname)):
-                per_oracle[oracle_name] = html_fname
+        if os.path.isfile(pkl):
+            with open(pkl, "rb") as fh:
+                reports.append(pickle.load(fh))
+            ordered_oracles.append(oracle_name)
+            logger.info("  loaded %s from pickle (with predictions)", oracle_name)
+        elif os.path.isfile(jp):
+            from chorus.analysis.variant_report import VariantReport
+            with open(jp) as fh:
+                data = json.load(fh)
+            reports.append(VariantReport.from_dict(data))
+            ordered_oracles.append(oracle_name)
+            logger.info("  loaded %s from JSON only (no IGV predictions)",
+                        oracle_name)
         else:
-            logger.warning("Missing per-oracle JSON for %s — skipped.", oracle_name)
+            logger.warning("Missing per-oracle data for %s — skipped.", oracle_name)
+            continue
+        html_fname = (
+            f"{VARIANT['id']}_{VARIANT['gene']}_{oracle_name}_report.html"
+        )
+        if os.path.isfile(os.path.join(OUT_DIR, html_fname)):
+            per_oracle[oracle_name] = html_fname
 
-    if not paths:
+    if not reports:
         raise SystemExit(
-            "No per-oracle JSONs found. Run --oracle chrombpnet/legnet/"
+            "No per-oracle artefacts found. Run --oracle chrombpnet/legnet/"
             "alphagenome first."
         )
 
     ar = AnalysisRequest(
         user_prompt=USER_PROMPT,
         tool_name="MultiOracleReport",
-        oracle_name=", ".join(os.path.splitext(os.path.basename(p))[0]
-                              .replace("_variant_report", "") for p in paths),
+        oracle_name=", ".join(ordered_oracles),
         normalizer_name="per-oracle chorus per-track v1",
         tracks_requested="assay_ids as listed in each per-oracle request",
     )
-    moracle = MultiOracleReport.from_json_files(
-        paths,
+    moracle = MultiOracleReport.from_reports(
+        reports,
         variant_id=VARIANT["id"],
         analysis_request=ar,
         per_oracle_report_paths=per_oracle,

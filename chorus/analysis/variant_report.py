@@ -197,6 +197,7 @@ class VariantReport:
             "oracle": self.oracle_name,
             "gene_name": self.gene_name,
             "nearby_genes": self.nearby_genes,
+            "report_title": self.report_title,
             "alleles": {},
         }
         if self.analysis_request is not None:
@@ -1101,12 +1102,30 @@ def build_variant_report(
     if nearby_genes:
         report.nearby_genes = nearby_genes
 
-    # Stash raw predictions for HTML track plots
-    # The discovery pipeline filters to ~20 selected tracks before calling
-    # build_variant_report, so this threshold must accommodate that.
-    n_tracks = len(ref_pred.tracks)
-    if n_tracks <= 50:
-        report._predictions = predictions
+    # Stash raw predictions for HTML track plots. The IGV browser renders
+    # one panel per track, so an unfiltered 5000-track OraclePrediction
+    # bundle would blow up the browser. Filter down to the tracks that
+    # actually got scored (appear in allele_scores) before attaching.
+    # This makes IGV available for region_swap / integration flows, which
+    # request a handful of assay_ids but hand in the full oracle bundle.
+    scored_assay_ids: set[str] = set()
+    for scores in allele_scores.values():
+        for ts in scores:
+            if ts.assay_id:
+                scored_assay_ids.add(ts.assay_id)
+    if scored_assay_ids and len(scored_assay_ids) <= 50:
+        from ..core.result import OraclePrediction
+        filtered: dict[str, OraclePrediction] = {}
+        for key, pred in predictions.items():
+            if pred is None or not hasattr(pred, "tracks"):
+                filtered[key] = pred
+                continue
+            sub = OraclePrediction()
+            for aid in scored_assay_ids:
+                if aid in pred.tracks:
+                    sub.tracks[aid] = pred.tracks[aid]
+            filtered[key] = sub
+        report._predictions = filtered
 
     return report
 

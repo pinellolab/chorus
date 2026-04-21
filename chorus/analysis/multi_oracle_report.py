@@ -269,6 +269,197 @@ class MultiOracleReport:
     # Rendering
     # ------------------------------------------------------------------
 
+    def build_unified_igv_html(self) -> str:
+        """Return a single IGV.js browser that stacks every oracle's tracks.
+
+        Each oracle's ``_predictions`` contribute their own ref/alt wig
+        panels to one IGV instance. The initial locus is the **widest**
+        oracle's prediction window (e.g. AlphaGenome's 1 Mb), so a
+        generalist oracle's distal signal is visible alongside a
+        specialist oracle's local peaks. Oracles with narrower windows
+        (LegNet ~200 bp, ChromBPNet ~1 kb) simply render as blank outside
+        their own coverage — this is the *intended* behaviour: it lets
+        the reader see which oracles can even reach a given genomic
+        position, not just what they predict when they can.
+
+        Requires each per-oracle :class:`VariantReport` in ``self.reports``
+        to have ``_predictions`` populated (i.e. generated in-memory, not
+        rehydrated from JSON). Returns empty string when no predictions
+        are available so the caller can degrade gracefully.
+        """
+        from ._igv_report import (
+            _DISPLAY_MAX, _LAYER_COLORS, _REF_COLOR, _ensure_igv_local,
+            _downsample_to_features, apply_floor_rescale,
+        )
+        from .scorers import classify_track_layer
+        from .variant_report import _track_description
+        import html as _esc
+        import json as _json
+
+        # Collect ref/alt predictions per oracle.  Skip oracles with no
+        # stashed predictions rather than erroring.
+        per_oracle = []
+        for name, rep in self.reports.items():
+            preds = getattr(rep, "_predictions", None)
+            if not preds:
+                continue
+            ref_pred = preds.get("reference")
+            alt_key = next((k for k in preds if k != "reference"), None)
+            alt_pred = preds.get(alt_key) if alt_key else None
+            if ref_pred is None or alt_pred is None or not list(ref_pred.keys()):
+                continue
+            per_oracle.append((name, rep, ref_pred, alt_pred))
+        if not per_oracle:
+            return ""
+
+        # Determine the widest window across all oracles — that's the
+        # IGV initial locus so generalist distal signal stays visible.
+        pred_chrom = self.chrom
+        min_start = None
+        max_end = None
+        for _, _, ref_pred, _ in per_oracle:
+            for aid in ref_pred.keys():
+                t = ref_pred[aid]
+                s = t.prediction_interval.reference.start
+                e = t.prediction_interval.reference.end
+                if min_start is None or s < min_start:
+                    min_start = s
+                if max_end is None or e > max_end:
+                    max_end = e
+
+        # Tracks list: modification marker first, then per-oracle signal
+        # panels, each labelled with the oracle name.
+        tracks = []
+        marker_start = self.position - 1
+        marker_end = self.position + max(len(self.ref_allele), 1)
+        marker_label = (
+            f"{self.chrom}:{self.position:,} "
+            f"{self.ref_allele}>{','.join(self.alt_alleles)}"
+        )
+        tracks.append({
+            "name": f"Variant: {self.ref_allele}>{','.join(self.alt_alleles)}",
+            "type": "annotation",
+            "displayMode": "EXPANDED",
+            "height": 25,
+            "color": "red",
+            "features": [{
+                "chr": self.chrom,
+                "start": marker_start,
+                "end": marker_end,
+                "name": marker_label,
+            }],
+        })
+
+        for oracle_name, rep, ref_pred, alt_pred in per_oracle:
+            normalizer = getattr(rep, "_normalizer", None)
+            oracle_for_norm = rep.oracle_name
+            for aid in ref_pred.keys():
+                ref_t = ref_pred[aid]
+                alt_t = alt_pred[aid]
+                layer = classify_track_layer(ref_t)
+                rgb = _LAYER_COLORS.get(layer, "70,130,180")
+                t_start = ref_t.prediction_interval.reference.start
+                t_res = ref_t.resolution
+                # Bin size is per-oracle; widest window used for defaults.
+                window_bp = (
+                    ref_t.prediction_interval.reference.end - t_start
+                )
+                bin_size = max(1, window_bp // 3000)
+
+                ref_vals = ref_t.values
+                alt_vals = alt_t.values
+                floor_ok, ref_vals, alt_vals = apply_floor_rescale(
+                    normalizer, oracle_for_norm, aid, layer,
+                    ref_vals, alt_vals,
+                )
+                ref_features = _downsample_to_features(
+                    ref_vals, pred_chrom, t_start, t_res, bin_size,
+                    skip_zeros=not floor_ok,
+                )
+                alt_features = _downsample_to_features(
+                    alt_vals, pred_chrom, t_start, t_res, bin_size,
+                    skip_zeros=not floor_ok,
+                )
+                if floor_ok:
+                    scale_cfg = {"min": 0, "max": _DISPLAY_MAX,
+                                 "autoscale": False}
+                else:
+                    group = f"{oracle_name}_{aid}".replace(":", "_").replace(" ", "_")
+                    scale_cfg = {"autoscale": True, "autoscaleGroup": group}
+
+                short = _track_description(ref_t) or aid
+                # Prefix track label with oracle name so stacked panels
+                # are identifiable at a glance.
+                panel_label = f"{oracle_name} · {short}"
+                tracks.append({
+                    "name": panel_label,
+                    "type": "merged",
+                    "height": 70,
+                    "tracks": [
+                        {
+                            "type": "wig",
+                            "name": f"{panel_label} ref",
+                            "color": f"rgb({_REF_COLOR})",
+                            **scale_cfg,
+                            "features": ref_features,
+                        },
+                        {
+                            "type": "wig",
+                            "name": f"{panel_label} alt",
+                            "color": f"rgb({rgb})",
+                            **scale_cfg,
+                            "features": alt_features,
+                        },
+                    ],
+                })
+
+        roi = [{
+            "name": "Variant",
+            "color": "rgba(255, 0, 0, 0.12)",
+            "features": [{
+                "chr": self.chrom,
+                "start": marker_start,
+                "end": marker_end,
+            }],
+        }]
+
+        options = {
+            "genome": "hg38",
+            "locus": f"{self.chrom}:{min_start}-{max_end}",
+            "showRuler": True,
+            "showNavigation": True,
+            "showCenterGuide": True,
+            "roi": roi,
+            "tracks": tracks,
+        }
+        options_json = _json.dumps(options, separators=(",", ":"))
+
+        local_igv = _ensure_igv_local()
+        if local_igv is not None:
+            script_tag = f"<script>{local_igv.read_text()}</script>"
+        else:
+            script_tag = ('<script src="https://cdn.jsdelivr.net/npm/'
+                          'igv@3.1.1/dist/igv.min.js"></script>')
+
+        return f"""
+<div id="igv-multioracle" style="margin: 1rem 0; min-height: 400px;"></div>
+{script_tag}
+<script>
+(async function() {{
+    try {{
+        const browser = await igv.createBrowser(
+            document.getElementById("igv-multioracle"),
+            {options_json}
+        );
+    }} catch(e) {{
+        console.error("IGV error:", e);
+        document.getElementById("igv-multioracle").innerHTML =
+            '<p style="color:red;padding:1rem">Error loading IGV browser: ' + e.message + '</p>';
+    }}
+}})();
+</script>
+"""
+
     def to_html(self, output_path: str | Path | None = None) -> str:
         html = _build_multioracle_html(self)
         if output_path is not None:
@@ -504,6 +695,31 @@ def _build_multioracle_html(report: "MultiOracleReport") -> str:
         p.append(f"<td class='{agree_cls}'>{agree_label}</td>")
         p.append("</tr>")
     p.append("</tbody></table>")
+
+    # Cross-oracle IGV browser -----------------------------------------
+    # One IGV instance with every oracle's ref/alt signal tracks stacked.
+    # The widest oracle's window (typically AlphaGenome's 1 Mb) is the
+    # default locus; narrower oracles (ChromBPNet ~1 kb, LegNet ~200 bp)
+    # just render blank outside their own coverage. That's intentional:
+    # it shows which oracles can even "reach" distal positions versus
+    # which are strictly local specialists.
+    try:
+        igv_html = report.build_unified_igv_html()
+    except Exception as exc:  # pragma: no cover
+        logger.warning("Unified IGV render failed: %s", exc)
+        igv_html = ""
+    if igv_html:
+        p.append("<h2>Cross-oracle genome browser</h2>")
+        p.append(
+            "<p class='meta'>All oracles' ref (grey) / alt (coloured) "
+            "signal tracks on a single IGV. Default locus is the widest "
+            "oracle's prediction window — narrower-window oracles show "
+            "blank outside their coverage (expected: LegNet is ~200 bp "
+            "and ChromBPNet ~1 kb while AlphaGenome reaches ±500 kb). "
+            "Signals are floor-rescaled to [0, 3.0] where 1.0 is the "
+            "genome-wide p99 peak for that assay.</p>"
+        )
+        p.append(igv_html)
 
     # Per-oracle drill-down --------------------------------------------
     p.append("<h2>Per-oracle evidence</h2>")
