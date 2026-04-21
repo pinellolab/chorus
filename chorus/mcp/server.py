@@ -68,13 +68,13 @@ ORACLE_SPECS = {
     "legnet": {
         "description": "LegNet — MPRA activity prediction",
         "framework": "PyTorch",
-        "input_size_bp": 230,
+        "input_size_bp": 200,
         "output_bins": 1,
         "resolution_bp": None,
         "assay_types": ["LentiMPRA"],
     },
     "alphagenome": {
-        "description": "AlphaGenome (DeepMind) — 1-bp resolution across 5930 tracks",
+        "description": "AlphaGenome (DeepMind) — 1-bp resolution across 5,731 tracks",
         "framework": "JAX",
         "input_size_bp": 1_048_576,
         "output_bins": 1_048_576,
@@ -1479,9 +1479,9 @@ def getting_started() -> str:
         "1. **Discover oracles**: Call `list_oracles()` to see all 6 available oracles "
         "and which ones have their environments installed.\n\n"
         "2. **Choose an oracle**:\n"
-        "   - **AlphaGenome** (recommended): 1Mb window, 5930 tracks, 1bp resolution. Best for variant analysis.\n"
-        "   - **Enformer**: 114kb output, 5313 ENCODE tracks. Great general-purpose oracle.\n"
-        "   - **Borzoi**: 196kb output at 32bp resolution. Good for distal gene expression.\n"
+        "   - **AlphaGenome** (recommended): 1Mb window, 5,731 tracks, 1bp resolution. Best for variant analysis.\n"
+        "   - **Enformer**: 114kb output, 5,313 ENCODE tracks. Great general-purpose oracle.\n"
+        "   - **Borzoi**: 196kb output at 32bp resolution, 7,611 tracks. Good for distal gene expression.\n"
         "   - **ChromBPNet**: 1bp resolution, 1kb window. Best for motif-level TF binding analysis.\n"
         "   - **Sei**: Regulatory element classification (not per-track signal).\n"
         "   - **LegNet**: MPRA activity prediction for short sequences.\n\n"
