@@ -87,13 +87,16 @@ Each layer uses a different scoring formula:
 - |effect| 0.3–0.7 → Strong (23–62% change)
 - |effect| > 0.7 → Very strong (> 62% change)
 
-### Quantile scores (when available)
+### Effect %ile (also shown as "quantile score" in the JSON)
 
-When quantile normalization is applied, scores are compared against a
-background distribution of effects seen across many variants:
-- **Quantile 0.86** means this effect is larger than 86% of background variants
+Each track's variant effect is **ranked against a background of ~10k random
+SNPs scored on the same oracle**. This is a percentile, not RNA-seq-style
+quantile normalization.
+
+- **Effect %ile 0.86** means this variant's effect is larger than 86% of
+  random variants on this track
 - Range is [0, 1] for unsigned layers (chromatin, TF, histone, TSS, splicing)
-- Range is [-1, 1] for signed layers (gene expression, MPRA)
+- Range is [−1, 1] for signed layers (gene expression, MPRA)
 
 ### Reference signal percentile (Ref %ile)
 

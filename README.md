@@ -23,7 +23,7 @@ Key features:
 - 📊 Built-in visualization tools for genomic tracks
 - 🔬 Variant effect prediction
 - 🎯 In silico mutagenesis and sequence optimization
-- 📈 Per-track quantile normalization with pre-computed genome-wide backgrounds (auto-downloaded from HuggingFace)
+- 📈 Effect-percentile scoring against pre-computed genome-wide backgrounds (auto-downloaded from HuggingFace) — not RNA-seq-style quantile normalization; each variant's effect is ranked against ~10k random SNPs
 - 🚀 Enhanced sequence editing logic
 - 🔧 Isolated conda environments for each oracle to avoid dependency conflicts
 - 🧪 Sub-region scoring, gene expression analysis (CAGE + RNA-seq), and variant-to-gene effect prediction
@@ -127,7 +127,7 @@ Then re-run the Fresh Install steps above.
 
 Chorus uses isolated conda environments for each oracle to avoid dependency conflicts between TensorFlow, PyTorch, and JAX models.
 
-**Which oracle to start with?** For variant analysis, **AlphaGenome** is the most comprehensive (1 Mb window, 1 bp resolution, 5,731 tracks) but requires ~16 GB RAM and benefits from a GPU. **Enformer** is a good lightweight alternative that runs comfortably on CPU with ~8 GB RAM.
+**Which oracle to start with?** For variant analysis, **AlphaGenome** is the most comprehensive (1 Mb input window, 1 bp prediction resolution, 5,731 tracks) but requires ~16 GB RAM and benefits from a GPU. **Enformer** is a good lightweight alternative that runs comfortably on CPU with ~8 GB RAM (see the table in [examples/applications/README.md](examples/applications/README.md#which-oracle-should-i-use) for a full side-by-side comparison).
 
 ```bash
 # Set up all oracle environments
@@ -236,9 +236,9 @@ oracle = chorus.create_oracle('enformer', use_environment=True,
 oracle.load_pretrained_model()
 
 # 2. Predict DNase accessibility at the beta-globin locus.
-#    'ENCFF413AHU' is the ENCODE track ID for DNase-seq in K562 cells;
-#    use `list_tracks(oracle_name)` MCP tool or see the "Discovering Tracks" section
-#    below to find track IDs for other assays and cell types.
+#    'ENCFF413AHU' is the ENCODE track ID for DNase-seq in K562 cells.
+#    See "Discovering Tracks" below to find track IDs for other assays /
+#    cell types, or use the `list_tracks` MCP tool from Claude Code.
 predictions = oracle.predict(('chr11', 5247000, 5248000), ['ENCFF413AHU'])
 
 # 3. Check the result
@@ -391,7 +391,7 @@ Three notebooks are provided, from introductory to advanced:
 |----------|---------|----------------|
 | `examples/single_oracle_quickstart.ipynb` | Enformer | Deep single-oracle tutorial: predictions, region replacement, insertion, variant effects, gene expression, coolbox visualization |
 | `examples/comprehensive_oracle_showcase.ipynb` | All 6 | All oracles side by side, cross-oracle comparison, variant analysis with gene expression, sub-region scoring |
-| `examples/advanced_multi_oracle_analysis.ipynb` | Enformer + ChromBPNet/BPNet + LegNet | CHIP-seq TF binding, strand-specific tracks, Interval API, quantile normalization, cell-type switching |
+| `examples/advanced_multi_oracle_analysis.ipynb` | Enformer + ChromBPNet/BPNet + LegNet | CHIP-seq TF binding, strand-specific tracks, Interval API, effect-percentile normalization, cell-type switching |
 
 ## Key Features
 

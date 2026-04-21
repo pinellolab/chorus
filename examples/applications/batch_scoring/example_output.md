@@ -12,6 +12,13 @@
 
 **5 variants scored**
 
+> **Readability note.** The per-track wide table below is comprehensive
+> (ref, alt, effect, %ile for every track × variant) but hard to scan in
+> a browser once you cross ~4 tracks. For interactive exploration prefer
+> the [HTML report](batch_sort1_locus_scoring.html), the
+> [TSV](example_output.tsv), or the structured
+> [JSON](example_output.json) — all three carry the same data.
+
 | Variant | ID | DNASE:HepG2 Ref | DNASE:HepG2 Alt | DNASE:HepG2 log2FC | DNASE:HepG2 Effect %ile | CHIP:CEBPA:HepG2 Ref | CHIP:CEBPA:HepG2 Alt | CHIP:CEBPA:HepG2 log2FC | CHIP:CEBPA:HepG2 Effect %ile | CHIP:CEBPB:HepG2 Ref | CHIP:CEBPB:HepG2 Alt | CHIP:CEBPB:HepG2 log2FC | CHIP:CEBPB:HepG2 Effect %ile | CHIP:H3K27ac:HepG2 Ref | CHIP:H3K27ac:HepG2 Alt | CHIP:H3K27ac:HepG2 log2FC | CHIP:H3K27ac:HepG2 Effect %ile | CAGE:HepG2 (+) Ref | CAGE:HepG2 (+) Alt | CAGE:HepG2 (+) log2FC | CAGE:HepG2 (+) Effect %ile | CAGE:HepG2 (-) Ref | CAGE:HepG2 (-) Alt | CAGE:HepG2 (-) log2FC | CAGE:HepG2 (-) Effect %ile |
 |---------|-----|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | chr1:109274968 G>T | rs12740374 | 512 | 699 | +0.448 | ≥99th | 2.1e+03 | 2.72e+03 | +0.371 | ≥99th | 1.22e+03 | 1.46e+03 | +0.268 | ≥99th | 1.37e+04 | 1.55e+04 | +0.180 | ≥99th | 39 | 38.8 | -0.004 | ≥99th | 3.85e+03 | 3.84e+03 | -0.004 | ≥99th |
