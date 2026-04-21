@@ -312,9 +312,16 @@ class LegNetOracle(OracleBase):
         return preds
 
     def fine_tune(self, tracks: List[OraclePredictionTrack], track_names: List[str], **kwargs) -> None:
-        """Fine-tune LegNet on new tracks."""
-        # TODO: for now we decided not to implement this functionality
-        raise NotImplementedError("LegNet fine-tuning not yet implemented")
+        """Fine-tuning is not supported for LegNet.
+
+        LegNet's single-output MPRA head is trained on a specific cell
+        type (HepG2) and assay. Fine-tuning on arbitrary tracks would
+        require retraining from scratch — outside Chorus's scope.
+        """
+        raise NotImplementedError(
+            "LegNet fine-tuning is not supported. Train a new LegNet "
+            "model externally if you need a different cell type / assay."
+        )
     
     def _get_context_size(self) -> int:
         """Return the required context size for the model."""

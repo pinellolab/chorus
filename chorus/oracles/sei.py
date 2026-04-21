@@ -492,9 +492,17 @@ class SeiOracle(OracleBase):
         return selected_preds, selected_classes 
 
     def fine_tune(self, tracks: List[Track], track_names: List[str], **kwargs) -> None:
-        """Fine-tune Sei on new tracks."""
-        # TODO: for now we decided not to implement this functionality
-        raise NotImplementedError("Sei fine-tuning not yet implemented")
+        """Fine-tuning is not supported for Sei.
+
+        Sei's 21,907-class classification head is tied to its training
+        vocabulary; fine-tuning on user-supplied tracks would require
+        re-engineering the head. Use AlphaGenome or Borzoi for
+        workflows that need on-the-fly track adaptation.
+        """
+        raise NotImplementedError(
+            "Sei fine-tuning is not supported. Use AlphaGenome or "
+            "Borzoi for workflows that need on-the-fly track adaptation."
+        )
     
     def _get_context_size(self) -> int:
         """Return the required context size for the model."""
