@@ -1,0 +1,87 @@
+<!DOCTYPE html><html lang='en'><head>
+<meta charset='utf-8'>
+<title>Multi-Layer Variant Effect Report — SORT1 — chr1:109274968</title>
+<style>
+.how-to-read { margin: 1rem 0; padding: 0.7rem 1rem; background: #fffbea;
+               border-left: 3px solid #f0ad4e; border-radius: 4px;
+               font-size: 0.9rem; color: #343a40; }
+.how-to-read b { color: #212529; }
+.how-to-read dl { margin: 0.4rem 0 0; display: grid;
+                  grid-template-columns: max-content 1fr; gap: 0.25rem 0.8rem; }
+.how-to-read dt { font-weight: 600; color: #343a40; }
+.how-to-read dd { margin: 0; color: #495057; }
+.how-to-read ul { margin: 0.2rem 0 0.2rem 1.1rem; padding: 0; }
+.how-to-read code { background: #f1f3f5; padding: 0 0.25rem; border-radius: 3px;
+                    font-size: 0.85em; font-family: ui-monospace, SFMono-Regular,
+                    Menlo, monospace; }
+.formula-chip { display: inline-block; background: #e9ecef; color: #495057;
+                padding: 0 0.35rem; border-radius: 3px; font-size: 0.75rem;
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                margin-left: 0.2rem; vertical-align: middle; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+       Helvetica, Arial, sans-serif; background: #f8f9fa; color: #212529;
+       padding: 2rem; max-width: 1200px; margin: 0 auto; }
+h1 { font-size: 1.5rem; margin-bottom: .3rem; }
+h2 { font-size: 1.15rem; margin: 1.8rem 0 .6rem; color: #495057;
+     border-bottom: 2px solid #dee2e6; padding-bottom: .3rem; }
+.meta { color: #6c757d; font-size: .92rem; margin-bottom: .2rem; }
+.meta b { color: #343a40; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 1rem;
+        font-size: .88rem; }
+th { background: #343a40; color: #fff; text-align: left; padding: .45rem .6rem;
+     font-weight: 600; }
+td { padding: .4rem .6rem; border-bottom: 1px solid #dee2e6; }
+tr:hover td { background: #e9ecef; }
+.bar-cell { position: relative; }
+.bar { position: absolute; top: 2px; bottom: 2px; left: 0; opacity: .18;
+       border-radius: 3px; }
+.bar-pos { background: #28a745; }
+.bar-neg { background: #dc3545; }
+.badge { display: inline-block; padding: .15rem .45rem; border-radius: .25rem;
+         font-size: .78rem; font-weight: 600; }
+.badge-minimal  { background: #e9ecef; color: #6c757d; }
+.badge-moderate { background: #fff3cd; color: #856404; }
+.badge-strong   { background: #f8d7da; color: #721c24; }
+.badge-vstrong  { background: #dc3545; color: #fff; }
+.note { color: #6c757d; font-style: italic; }
+.footer { margin-top: 2rem; font-size: .78rem; color: #adb5bd;
+          border-top: 1px solid #dee2e6; padding-top: .8rem; }
+</style>
+</head><body>
+<h1>Multi-Layer Variant Effect Report</h1>
+<section class="analysis-request" style="background:#f6f8fa;border-left:4px solid #0366d6;padding:12px 16px;margin:0 0 16px 0;border-radius:4px;font-size:0.92em;">
+<h3 style="margin:0 0 8px 0;font-size:1.05em;">Analysis Request</h3>
+<blockquote style="margin:0 0 8px 0;padding:6px 10px;background:#fff;border-left:3px solid #d1d5da;color:#24292e;">Score chr1:109274968 G&gt;T using ChromBPNet ATAC model in HepG2. Gene: SORT1.</blockquote>
+<ul style="margin:0;padding-left:20px;list-style:disc;">
+<li><strong>Tool:</strong> analyze_variant_multilayer</li>
+<li><strong>Oracle:</strong> chrombpnet</li>
+<li><strong>Normalizer:</strong> per-track background CDFs</li>
+<li><strong>Tracks requested:</strong> ATAC:HepG2</li>
+<li><strong>Generated:</strong> 2026-04-17 20:34 UTC</li>
+</ul>
+</section>
+<p class="meta"><b>Variant:</b> chr1:109274968 G&gt;T</p>
+<p class="meta"><b>Oracle:</b> chrombpnet</p>
+<p class="meta"><b>Gene:</b> SORT1</p>
+<p class="meta"><b>Other nearby genes:</b> CELSR2</p>
+<p class="meta" style="margin-top:0.5rem;padding:0.6rem 0.8rem;background:#f0f7ff;border-left:3px solid #3b82f6;border-radius:4px"><b>Summary:</b> Chromatin accessibility (DNASE/ATAC): moderate closing (-0.11, ATAC:HepG2).</p>
+<section class="how-to-read"><p style='margin:0'><b>How to read this report.</b> Every numeric effect below is produced by a deep-learning model. The scale depends on the regulatory layer — see the formulas below so you can interpret <code>+0.3</code> correctly.</p><dl><dt>Effect %ile</dt><dd>How unusual is this variant's effect? Ranked against ~10,000 random SNPs scored genome-wide. <code>95%</code> means the effect is larger than 95% of random variants. Range [0,1] for unsigned layers (chromatin, TF, histone, TSS, splicing); [−1,1] for signed layers (gene expression, MPRA).</dd><dt>Activity %ile</dt><dd>How active is this region genome-wide? Reference signal ranked against ~26,000 ENCODE SCREEN cCREs and random regions. <code>0.95</code> = predicted signal exceeds 95% of genome-wide positions — a highly active regulatory element.</dd><dt>Per-layer effect</dt><dd>Unit depends on the layer:<ul><li><b>Chromatin accessibility (DNASE/ATAC)</b> <span class='formula-chip'>log2FC</span> — <code>log2((alt+1)/(ref+1))</code>. +0.3 ≈ alt signal 1.23× ref; +1.0 ≈ 2× ref; negative values = loss of signal.</li></ul></dd></dl></section>
+<h2>Chromatin accessibility (DNASE/ATAC) <span class="formula-chip">log2FC</span></h2>
+<table><thead><tr>
+<th>Track</th><th>Cell Type</th><th>Ref</th><th>Alt</th><th>Effect <span class="formula-chip">log2FC</span></th>
+<th title="Variant effect percentile vs random SNPs">Effect %ile</th>
+<th title="Reference signal activity percentile genome-wide">Activity %ile</th>
+<th>Interpretation</th></tr></thead><tbody>
+<tr>
+<td>ATAC:HepG2</td>
+<td>HepG2</td>
+<td>687</td>
+<td>636</td>
+<td class="bar-cell"><span class="bar bar-neg" style="width:100%"></span>-0.111</td>
+<td>0.97</td>
+<td>0.820</td>
+<td><span class="badge badge-moderate">Moderate closing</span></td>
+</tr>
+</tbody></table>
+<div class="footer">Generated by Chorus <code>analyze_variant_multilayer</code></div>
+</body></html>
