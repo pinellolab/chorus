@@ -420,6 +420,51 @@ class AnnotationManager:
                           'transcript_start', 'transcript_end']].reset_index(drop=True)
 
 
+# ---------------------------------------------------------------------------
+# Coolbox gene-track helper — workaround for a coolbox/oxbow interop bug
+# ---------------------------------------------------------------------------
+
+def make_gene_track(gtf_path: Union[str, Path], **kwargs):
+    """Return a coolbox ``GTF`` track configured for reliable rendering.
+
+    coolbox 0.4.x auto-selects the oxbow-backed tab reader for bgzipped
+    GTF files. That reader declares nine columns (including ``attributes``)
+    but only yields the first eight, so ``GTF.fetch_intervals`` then blows
+    up with ``KeyError: 'attributes'`` while trying to extract
+    ``gene_name`` for the plot. Notebook cells plotting gene annotations
+    produced the traceback verbatim in their output.
+
+    Fix: construct the ``GTF`` track as usual, then swap its reader for
+    :class:`TabFileReaderInMemory`, which parses all nine GTF columns
+    correctly via pandas. The in-memory reader loads the GTF on
+    construction (~80 MB for gencode basic); acceptable for notebook use
+    and one-shot rendering — queries are plain pandas filters afterwards.
+
+    Parameters
+    ----------
+    gtf_path:
+        Path to a sorted + bgzipped + tabix-indexed GENCODE GTF (as
+        produced by :func:`download_gencode`).
+    **kwargs:
+        Forwarded to ``coolbox.api.GTF`` (``row_filter``, ``color``,
+        ``height``, ``name_attr`` — see coolbox docs).
+
+    Returns
+    -------
+    ``coolbox.api.GTF`` instance usable as ``frame + make_gene_track(path)``.
+    """
+    from coolbox.api import GTF
+    from coolbox.utilities.reader.tab import (
+        TabFileReaderInMemory, FMT2COLUMNS,
+    )
+
+    track = GTF(str(gtf_path), **kwargs)
+    track.reader = TabFileReaderInMemory(
+        str(gtf_path), columns=FMT2COLUMNS["gtf"],
+    )
+    return track
+
+
 # Convenience functions
 _manager = None
 

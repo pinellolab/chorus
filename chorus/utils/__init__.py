@@ -41,7 +41,8 @@ from .annotations import (
     download_gencode,
     get_genes_in_region,
     get_gene_tss,
-    get_gene_exons
+    get_gene_exons,
+    make_gene_track,
 )
 
 __all__ = [
@@ -82,5 +83,6 @@ __all__ = [
     'download_gencode',
     'get_genes_in_region',
     'get_gene_tss',
-    'get_gene_exons'
+    'get_gene_exons',
+    'make_gene_track',
 ]

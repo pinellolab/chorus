@@ -68,6 +68,15 @@ though this would not match the paper's melanocyte context.
 Tracks used: DNASE, H3K27ac, H3K4me1, CAGE+/-, RNA+/- (all melanocyte
 ontology CL:2000045 / CL:0002566).
 
+### [SORT1_rs12740374_multioracle/](SORT1_rs12740374_multioracle/)
+**Multi-oracle cross-validation** of the same SORT1 variant with three
+independent models: **ChromBPNet** (chromatin accessibility specialist),
+**LegNet** (MPRA / promoter activity specialist), and **AlphaGenome**
+(generalist). The consolidated report renders a cross-oracle consensus
+matrix flagging where the models agree on direction (✅ all ↑) and where
+they disagree (⚠ disagree) per regulatory layer — complementary to the
+single-oracle validation above.
+
 ## How to reproduce
 
 ```
