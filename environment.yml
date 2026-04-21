@@ -14,9 +14,9 @@ dependencies:
   - scipy>=1.7.0
 
   # Jupyter for notebooks
-  - jupyter
-  - notebook
-  - ipykernel
+  - jupyter>=1.0
+  - notebook>=6.4
+  - ipykernel>=6.0
 
   # Core utilities
   - tqdm>=4.62.0
@@ -26,8 +26,8 @@ dependencies:
   - pysam>=0.19.0
   - pyfaidx>=0.7.0
   - biopython>=1.79
-  - samtools  # For genome indexing
-  - htslib    # Provides bgzip/tabix (coolbox visualization needs bgzip)
+  - samtools>=1.15  # For genome indexing
+  - htslib>=1.15    # Provides bgzip/tabix (coolbox visualization needs bgzip)
   # gtfsort: Linux-only (bioconda), install separately on Linux: mamba install -c bioconda gtfsort
 
   # Visualization tools

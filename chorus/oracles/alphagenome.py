@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class AlphaGenomeOracle(OracleBase):
     """AlphaGenome oracle with automatic environment management.
 
-    AlphaGenome (Google DeepMind, Nature 2026) predicts 5,930 human functional
+    AlphaGenome (Google DeepMind, Nature 2026) predicts 5,731 human functional
     genomic tracks at single base-pair resolution from up to 1 MB of DNA
     sequence using a JAX-based model.
 

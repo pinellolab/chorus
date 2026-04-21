@@ -979,6 +979,7 @@ After the Quick Start, these documents go deeper:
 | [`docs/METHOD_REFERENCE.md`](docs/METHOD_REFERENCE.md) | Method-level reference for advanced users |
 | [`docs/VISUALIZATION_GUIDE.md`](docs/VISUALIZATION_GUIDE.md) | pyGenomeTracks + IGV visualization patterns |
 | [`docs/IMPLEMENTATION_GUIDE.md`](docs/IMPLEMENTATION_GUIDE.md) | Notes for extending Chorus with new oracles |
+| [`docs/THIRD_PARTY.md`](docs/THIRD_PARTY.md) | Upstream oracles, papers, and licenses Chorus builds on |
 | [`examples/walkthroughs/`](examples/walkthroughs/) | Worked examples for every MCP tool (variant analysis, batch, causal, discovery, sequence engineering) |
 
 ## Contributing
