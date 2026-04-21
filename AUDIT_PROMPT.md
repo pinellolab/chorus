@@ -294,12 +294,12 @@ The repo ships 13 worked examples. For each, verify:
 - The HTML's IGV browser loads (verify with selenium below)
 
 ```bash
-for d in examples/applications/variant_analysis/*/ \
-         examples/applications/validation/*/ \
-         examples/applications/discovery/*/ \
-         examples/applications/causal_prioritization/*/ \
-         examples/applications/batch_scoring/ \
-         examples/applications/sequence_engineering/*/ ; do
+for d in examples/walkthroughs/variant_analysis/*/ \
+         examples/walkthroughs/validation/*/ \
+         examples/walkthroughs/discovery/*/ \
+         examples/walkthroughs/causal_prioritization/*/ \
+         examples/walkthroughs/batch_scoring/ \
+         examples/walkthroughs/sequence_engineering/*/ ; do
   [ -d "$d" ] || continue
   md="$d/example_output.md"
   has_md=$( [ -f "$md" ] && echo 1 || echo 0 )
@@ -323,7 +323,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 
 results = []
-for hp in sorted(glob.glob("examples/applications/**/*.html", recursive=True)):
+for hp in sorted(glob.glob("examples/walkthroughs/**/*.html", recursive=True)):
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -344,9 +344,9 @@ for hp in sorted(glob.glob("examples/applications/**/*.html", recursive=True)):
 
 # Save screenshots of three key examples for visual review
 for label, hp in [
-    ("sort1", "examples/applications/variant_analysis/SORT1_rs12740374/rs12740374_SORT1_alphagenome_report.html"),
-    ("batch", "examples/applications/batch_scoring/batch_sort1_locus_scoring.html"),
-    ("region_swap", "examples/applications/sequence_engineering/region_swap/region_swap_SORT1_K562_report.html"),
+    ("sort1", "examples/walkthroughs/variant_analysis/SORT1_rs12740374/rs12740374_SORT1_alphagenome_report.html"),
+    ("batch", "examples/walkthroughs/batch_scoring/batch_sort1_locus_scoring.html"),
+    ("region_swap", "examples/walkthroughs/sequence_engineering/region_swap/region_swap_SORT1_K562_report.html"),
 ]:
     options = Options()
     options.add_argument("--headless")
@@ -387,7 +387,7 @@ Verify a `*_interim_variants.npz` file shows up in `~/.chorus/backgrounds/`.
 Open the README in a browser-like view (or read it sequentially). For
 each link, follow it and verify:
 
-- `examples/applications/` — the README there is helpful and the tool
+- `examples/walkthroughs/` — the README there is helpful and the tool
   table accurately picks the right example for each user role
 - `docs/MCP_WALKTHROUGH.md` — every prompt example is reproducible
 - `docs/variant_analysis_framework.md` — the 5-layer scoring rules match

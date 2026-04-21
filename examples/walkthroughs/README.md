@@ -1,13 +1,18 @@
-# Chorus Application Examples
+# Chorus Walkthroughs — pre-run, MCP-driven worked examples
 
 > **These are demonstrations, not rigid templates.** Chorus is designed to
 > be driven through Claude in natural language — ask in your own words
 > about your own variants, cell types, or constructs, and Claude will pick
-> the right tool and arguments. The concrete examples below exist so you
-> can see what the outputs look like (markdown, JSON, TSV, HTML) before
+> the right tool and arguments. The concrete walkthroughs below exist so
+> you can see what the outputs look like (markdown, JSON, TSV, HTML) before
 > trying your own questions. Every generated report carries the original
 > prompt at the top so you (or a collaborator) can tell a month later
 > exactly what was asked.
+>
+> **Looking for the Python tutorial?** See [`../notebooks/`](../notebooks/)
+> for three end-to-end Jupyter notebooks that exercise the chorus library
+> directly (wild-type prediction, variant effects, region swap,
+> multi-oracle comparison).
 
 ## Which tool do I use?
 

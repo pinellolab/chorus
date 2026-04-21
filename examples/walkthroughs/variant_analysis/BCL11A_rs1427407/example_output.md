@@ -6,7 +6,7 @@
 - **Oracle**: alphagenome
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: 6 K562 tracks
-- **Generated**: 2026-04-17 19:50 UTC
+- **Generated**: 2026-04-21 04:52 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -15,39 +15,39 @@
 **Gene**: BCL11A
 **Other nearby genes**: PAPOLG, REL, PUS10
 
-**Summary**: Transcription factor binding (ChIP-TF): moderate binding loss (-0.12); Chromatin accessibility (DNASE/ATAC): moderate closing (-0.11).
+**Summary**: Transcription factor binding (ChIP-TF): moderate binding loss (-0.12, CHIP:TAL1:K562); Chromatin accessibility (DNASE/ATAC): moderate closing (-0.11, DNASE:K562).
 
 #### Chromatin accessibility (DNASE/ATAC)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| DNASE:K562 | 9.57 | 8.78 | -0.112 | ≥99th | 0.514 | Moderate closing |
+| DNASE:K562 | 9.56 | 8.78 | -0.111 | ≥99th | 0.514 | Moderate closing |
 
 #### Transcription factor binding (ChIP-TF)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
 | CHIP:TAL1:K562 | 478 | 440 | -0.118 | ≥99th | 0.960 | Moderate binding loss |
-| CHIP:GATA1:K562 | 447 | 434 | -0.042 | ≥99th | 0.882 | Minimal effect |
+| CHIP:GATA1:K562 | 447 | 434 | -0.041 | ≥99th | 0.882 | Minimal effect |
 
 #### Histone modifications (ChIP-Histone)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:H3K27ac:K562 | 1.26e+03 | 1.26e+03 | +0.002 | 0.78 | 0.910 | Minimal effect |
+| CHIP:H3K27ac:K562 | 1.26e+03 | 1.26e+03 | +0.001 | near-zero | 0.910 | Minimal effect |
 
 #### TSS activity (CAGE/PRO-CAP)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CAGE:K562 — variant site | 1.85 | 1.7 | -0.078 | ≥99th | 1.000 | Minimal effect |
-| CAGE:K562 — BCL11A TSS | 419 | 422 | +0.012 | ≥99th | 1.000 | Minimal effect |
-| CAGE:K562 — variant site | 0.133 | 0.126 | -0.008 | ≥99th | 0.597 | Minimal effect |
-| CAGE:K562 — REL TSS | 68.6 | 68.9 | +0.006 | ≥99th | 1.000 | Minimal effect |
-| CAGE:K562 — REL TSS | 1.87e+03 | 1.88e+03 | +0.002 | ≥99th | 1.000 | Minimal effect |
-| CAGE:K562 — PAPOLG TSS | 2.59e+03 | 2.59e+03 | -0.002 | ≥99th | 1.000 | Minimal effect |
-| CAGE:K562 — BCL11A TSS | 2.16 | 2.16 | -0.001 | ≥99th | 1.000 | Minimal effect |
-| CAGE:K562 — PAPOLG TSS | 19 | 19 | +0.000 | — | 1.000 | Minimal effect |
+| CAGE:K562 — variant site | 1.85 | 1.7 | -0.077 | ≥99th | 1.000 | Minimal effect |
+| CAGE:K562 — variant site | 0.133 | 0.127 | -0.008 | ≥99th | 0.597 | Minimal effect |
+| CAGE:K562 — REL TSS | 69 | 68.7 | -0.007 | ≥99th | 1.000 | Minimal effect |
+| CAGE:K562 — PAPOLG TSS | 2.58e+03 | 2.59e+03 | +0.003 | ≥99th | 1.000 | Minimal effect |
+| CAGE:K562 — BCL11A TSS | 2.16 | 2.16 | +0.003 | ≥99th | 1.000 | Minimal effect |
+| CAGE:K562 — REL TSS | 1.87e+03 | 1.87e+03 | -0.001 | ≥99th | 1.000 | Minimal effect |
+| CAGE:K562 — PAPOLG TSS | 19 | 19 | +0.000 | near-zero | 1.000 | Minimal effect |
+| CAGE:K562 — BCL11A TSS | 422 | 422 | -0.000 | near-zero | 1.000 | Minimal effect |
 
 ---
 **Score guide:**

@@ -21,7 +21,7 @@ produces a single ``rs12740374_SORT1_multioracle_report.html`` along with
 a consolidated ``example_output.md``/``.json``.
 
 The per-oracle JSON files are written to
-``examples/applications/validation/SORT1_rs12740374_multioracle/`` and can
+``examples/walkthroughs/validation/SORT1_rs12740374_multioracle/`` and can
 be re-consolidated at any time — e.g. after refreshing a single oracle.
 """
 from __future__ import annotations
@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 OUT_DIR = os.path.join(
     REPO_ROOT,
-    "examples/applications/validation/SORT1_rs12740374_multioracle",
+    "examples/walkthroughs/validation/SORT1_rs12740374_multioracle",
 )
 
 # Reference genome (shared by every oracle here).

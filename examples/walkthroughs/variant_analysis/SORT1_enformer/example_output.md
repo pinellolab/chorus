@@ -6,7 +6,7 @@
 - **Oracle**: enformer
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: all Enformer tracks (discovery mode)
-- **Generated**: 2026-04-17 20:22 UTC
+- **Generated**: 2026-04-21 04:45 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -15,7 +15,7 @@
 **Gene**: SORT1
 **Other nearby genes**: PSRC1, CELSR2, MYBPHL, SARS1
 
-**Summary**: Chromatin accessibility (DNASE/ATAC): very strong opening (+1.24); Transcription factor binding (ChIP-TF): very strong binding gain (+1.13); Histone modifications (ChIP-Histone): very strong mark gain (+0.73); TSS activity (CAGE/PRO-CAP): strong increase (+0.51).
+**Summary**: Chromatin accessibility (DNASE/ATAC): very strong opening (+1.24, DNASE:LNCaP clone FGC); Transcription factor binding (ChIP-TF): very strong binding gain (+1.13, CHIP:HNF4A:liver male adult (32 years)); Histone modifications (ChIP-Histone): very strong mark gain (+0.73, CHIP:H3K27ac:22Rv1 treated with 10 nM 17B-hydroxy-5a-andr… · 22Rv1 treated with 10 nM 17B-hydroxy-5a-androstan-3-one for 4 hours); TSS activity (CAGE/PRO-CAP): strong increase (+0.51, CAGE:breast carcinoma cell line:MDA-MB-453).
 
 #### Chromatin accessibility (DNASE/ATAC)
 

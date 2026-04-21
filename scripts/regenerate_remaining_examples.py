@@ -39,7 +39,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-BASE = os.path.join(REPO_ROOT, "examples/applications")
+BASE = os.path.join(REPO_ROOT, "examples/walkthroughs")
 
 # ══════════════════════════════════════════════════════════════════════
 # Output helpers

@@ -115,7 +115,7 @@ tmp/
 
 # Example outputs
 examples/*.png
-examples/applications/**/*_screenshot.png
+examples/walkthroughs/**/*_screenshot.png
 examples/*.bedgraph
 examples/*.csv
 examples/*_executed.ipynb
@@ -141,5 +141,4 @@ audits/*_screenshots/
 scripts/internal/
 
 # Per-oracle pickle snapshots for multi-oracle consolidator (regenerate on demand)
-examples/applications/validation/SORT1_rs12740374_multioracle/*.pkl
 examples/walkthroughs/validation/SORT1_rs12740374_multioracle/*.pkl

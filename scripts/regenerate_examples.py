@@ -34,7 +34,7 @@ args = parser.parse_args()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-BASE = os.path.join(REPO_ROOT, 'examples/applications')
+BASE = os.path.join(REPO_ROOT, 'examples/walkthroughs')
 
 # ══════════════════════════════════════════════════════════════════
 # Example definitions

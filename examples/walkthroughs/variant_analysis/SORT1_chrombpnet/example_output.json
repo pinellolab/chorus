@@ -13,6 +13,7 @@
     "SORT1",
     "CELSR2"
   ],
+  "report_title": "Multi-Layer Variant Effect Report",
   "alleles": {
     "alt_1": {
       "scores_by_layer": {
@@ -22,11 +23,11 @@
             "assay_type": "ATAC",
             "cell_type": "HepG2",
             "layer": "chromatin_accessibility",
-            "ref_value": 686.530073389993,
-            "alt_value": 635.6635888748569,
-            "raw_score": -0.11089156202257182,
+            "ref_value": 686.5182066474808,
+            "alt_value": 635.6930961374892,
+            "raw_score": -0.11079979832793291,
             "description": "ATAC:HepG2",
-            "quantile_score": 0.96721823290665,
+            "quantile_score": 0.9671141638047663,
             "ref_signal_percentile": 0.8198
           }
         ]
@@ -37,11 +38,11 @@
           "assay_type": "ATAC",
           "cell_type": "HepG2",
           "layer": "chromatin_accessibility",
-          "ref_value": 686.530073389993,
-          "alt_value": 635.6635888748569,
-          "raw_score": -0.11089156202257182,
+          "ref_value": 686.5182066474808,
+          "alt_value": 635.6930961374892,
+          "raw_score": -0.11079979832793291,
           "description": "ATAC:HepG2",
-          "quantile_score": 0.96721823290665,
+          "quantile_score": 0.9671141638047663,
           "ref_signal_percentile": 0.8198
         }
       ]
@@ -55,6 +56,6 @@
     "tracks_requested": "ATAC:HepG2",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-04-17 20:34 UTC"
+    "generated_at": "2026-04-21 04:43 UTC"
   }
 }

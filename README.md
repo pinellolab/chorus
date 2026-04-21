@@ -42,23 +42,23 @@ Key features:
 ## 👉 Start here: Worked application examples
 
 The fastest way to see what Chorus can do is to browse the
-[`examples/applications/`](examples/applications/) folder. Every subfolder is a
+[`examples/walkthroughs/`](examples/walkthroughs/) folder. Every subfolder is a
 concrete, ready-to-reproduce use case with full outputs in **Markdown, JSON,
 TSV, and HTML** (with an embedded IGV browser):
 
 | I want to... | Example |
 |---|---|
-| Analyze a GWAS / clinical variant in a specific cell type | [variant_analysis/SORT1_rs12740374](examples/applications/variant_analysis/SORT1_rs12740374/) |
-| I have a variant but don't know the relevant tissue | [discovery/SORT1_cell_type_screen](examples/applications/discovery/SORT1_cell_type_screen/) |
-| Fine-map a GWAS locus to the causal SNP | [causal_prioritization/SORT1_locus](examples/applications/causal_prioritization/SORT1_locus/) |
-| Score a batch of variants from a VCF | [batch_scoring/](examples/applications/batch_scoring/) |
-| Predict the effect of an engineered sequence edit | [sequence_engineering/region_swap](examples/applications/sequence_engineering/region_swap/) |
-| Replicate a published regulatory variant finding | [validation/SORT1_rs12740374_with_CEBP](examples/applications/validation/SORT1_rs12740374_with_CEBP/) |
+| Analyze a GWAS / clinical variant in a specific cell type | [variant_analysis/SORT1_rs12740374](examples/walkthroughs/variant_analysis/SORT1_rs12740374/) |
+| I have a variant but don't know the relevant tissue | [discovery/SORT1_cell_type_screen](examples/walkthroughs/discovery/SORT1_cell_type_screen/) |
+| Fine-map a GWAS locus to the causal SNP | [causal_prioritization/SORT1_locus](examples/walkthroughs/causal_prioritization/SORT1_locus/) |
+| Score a batch of variants from a VCF | [batch_scoring/](examples/walkthroughs/batch_scoring/) |
+| Predict the effect of an engineered sequence edit | [sequence_engineering/region_swap](examples/walkthroughs/sequence_engineering/region_swap/) |
+| Replicate a published regulatory variant finding | [validation/SORT1_rs12740374_with_CEBP](examples/walkthroughs/validation/SORT1_rs12740374_with_CEBP/) |
 
 These examples were generated through Claude Code using Chorus's MCP server —
 the same way you'll use it. Every report preserves the original prompt at the
 top, so you can see exactly what was asked and reproduce it.
-See [`examples/applications/README.md`](examples/applications/README.md) for
+See [`examples/walkthroughs/README.md`](examples/walkthroughs/README.md) for
 the full list with per-persona ("Geneticist", "Bioinformatician", "Clinician",
 "Computational biologist") starting points.
 
@@ -89,8 +89,9 @@ mamba activate chorus
 pip install -e .
 
 # 3. Register the chorus env as a Jupyter kernel so the example notebooks
-#    in examples/*.ipynb pick up the right Python (the kernel they ship with
-#    is plain `python3`, which on a fresh machine doesn't have chorus installed)
+#    in examples/notebooks/*.ipynb pick up the right Python (the kernel
+#    they ship with is plain `python3`, which on a fresh machine doesn't
+#    have chorus installed)
 python -m ipykernel install --user --name chorus --display-name "Python 3 (chorus)"
 
 # 4. Set up at least one oracle environment (see below)
@@ -127,7 +128,7 @@ Then re-run the Fresh Install steps above.
 
 Chorus uses isolated conda environments for each oracle to avoid dependency conflicts between TensorFlow, PyTorch, and JAX models.
 
-**Which oracle to start with?** For variant analysis, **AlphaGenome** is the most comprehensive (1 Mb input window, 1 bp prediction resolution, 5,731 tracks) but requires ~16 GB RAM and benefits from a GPU. **Enformer** is a good lightweight alternative that runs comfortably on CPU with ~8 GB RAM (see the table in [examples/applications/README.md](examples/applications/README.md#which-oracle-should-i-use) for a full side-by-side comparison).
+**Which oracle to start with?** For variant analysis, **AlphaGenome** is the most comprehensive (1 Mb input window, 1 bp prediction resolution, 5,731 tracks) but requires ~16 GB RAM and benefits from a GPU. **Enformer** is a good lightweight alternative that runs comfortably on CPU with ~8 GB RAM (see the table in [examples/walkthroughs/README.md](examples/walkthroughs/README.md#which-oracle-should-i-use) for a full side-by-side comparison).
 
 ```bash
 # Set up all oracle environments
@@ -216,7 +217,7 @@ for oracle in ["alphagenome", "enformer", "borzoi", "chrombpnet", "sei", "legnet
 
 ## Quick Start
 
-> **Prefer a notebook?** Open [`examples/single_oracle_quickstart.ipynb`](examples/single_oracle_quickstart.ipynb)
+> **Prefer a notebook?** Open [`examples/notebooks/single_oracle_quickstart.ipynb`](examples/notebooks/single_oracle_quickstart.ipynb)
 > for a full walkthrough using Enformer + the GATA1 locus. The code below is the
 > minimum viable snippet.
 >
@@ -389,9 +390,9 @@ Three notebooks are provided, from introductory to advanced:
 
 | Notebook | Oracles | What it covers |
 |----------|---------|----------------|
-| `examples/single_oracle_quickstart.ipynb` | Enformer | Deep single-oracle tutorial: predictions, region replacement, insertion, variant effects, gene expression, coolbox visualization |
-| `examples/comprehensive_oracle_showcase.ipynb` | All 6 | All oracles side by side, cross-oracle comparison, variant analysis with gene expression, sub-region scoring |
-| `examples/advanced_multi_oracle_analysis.ipynb` | Enformer + ChromBPNet/BPNet + LegNet | CHIP-seq TF binding, strand-specific tracks, Interval API, effect-percentile normalization, cell-type switching |
+| `examples/notebooks/single_oracle_quickstart.ipynb` | Enformer | Deep single-oracle tutorial: predictions, region replacement, insertion, variant effects, gene expression, coolbox visualization |
+| `examples/notebooks/comprehensive_oracle_showcase.ipynb` | All 6 | All oracles side by side, cross-oracle comparison, variant analysis with gene expression, sub-region scoring |
+| `examples/notebooks/advanced_multi_oracle_analysis.ipynb` | Enformer + ChromBPNet/BPNet + LegNet | CHIP-seq TF binding, strand-specific tracks, Interval API, effect-percentile normalization, cell-type switching |
 
 ## Key Features
 
@@ -766,7 +767,7 @@ mamba run -n chorus chorus-mcp
     - `analyze_region_swap`, `simulate_integration` — score sequence engineering edits (promoter swaps, construct insertions)
 
 Every analysis tool accepts an optional `user_prompt` parameter and writes it into the top of the report so an HTML/MD opened later still shows the original question. See
-[`examples/applications/`](examples/applications/) for worked outputs of each tool, or read the
+[`examples/walkthroughs/`](examples/walkthroughs/) for worked outputs of each tool, or read the
 [MCP Walkthrough](docs/MCP_WALKTHROUGH.md) for a step-by-step guide showing what you type in Claude
 and what comes back.
 
@@ -910,7 +911,7 @@ export LDLINK_TOKEN="your_token_here"
 
 Without a token, you can still use fine-mapping by providing LD variants
 manually via the `ld_variants` parameter (see
-[causal_prioritization/](examples/applications/causal_prioritization/)).
+[causal_prioritization/](examples/walkthroughs/causal_prioritization/)).
 
 ### CUDA/GPU Support
 The isolated environments include GPU support. On Linux with NVIDIA GPUs, Chorus auto-detects CUDA and installs GPU-enabled packages during `chorus setup`.
@@ -949,7 +950,7 @@ After the Quick Start, these documents go deeper:
 | [`docs/METHOD_REFERENCE.md`](docs/METHOD_REFERENCE.md) | Method-level reference for advanced users |
 | [`docs/VISUALIZATION_GUIDE.md`](docs/VISUALIZATION_GUIDE.md) | pyGenomeTracks + IGV visualization patterns |
 | [`docs/IMPLEMENTATION_GUIDE.md`](docs/IMPLEMENTATION_GUIDE.md) | Notes for extending Chorus with new oracles |
-| [`examples/applications/`](examples/applications/) | Worked examples for every MCP tool (variant analysis, batch, causal, discovery, sequence engineering) |
+| [`examples/walkthroughs/`](examples/walkthroughs/) | Worked examples for every MCP tool (variant analysis, batch, causal, discovery, sequence engineering) |
 
 ## Contributing
 
