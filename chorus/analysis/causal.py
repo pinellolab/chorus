@@ -1187,6 +1187,14 @@ def _build_causal_html(result: CausalResult) -> str:
                 'Signal tracks show ref (grey) vs alt (colored) for the top candidate. '
                 'Red stripe marks the sentinel. Zoom and pan to explore.</p>'
             )
+            p.append(
+                '<p style="font-size:.85rem;color:#6b7280;margin-top:-.5rem">'
+                "Signal rescaled using each track's genome-wide noise "
+                "floor (p95) and peak threshold (p99): "
+                '<b>0</b> = noise floor, <b>1.0</b> = top 1% of bins '
+                'genome-wide. Peak shape preserved; tracks comparable '
+                'across cell types.</p>'
+            )
             p.append(igv_html)
     except Exception as exc:
         logger.debug("Could not render IGV browser: %s", exc)

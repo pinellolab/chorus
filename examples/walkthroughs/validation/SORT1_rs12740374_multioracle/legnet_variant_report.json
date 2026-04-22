@@ -48,10 +48,10 @@
     "user_prompt": "Validate rs12740374 (the classic SORT1 LDL-cholesterol causal variant) by scoring it with three independent deep-learning oracles: ChromBPNet for chromatin accessibility, LegNet for MPRA promoter activity, and AlphaGenome as a generalist model covering ChIP, histones and CAGE. A new user should be able to see at a glance whether the three oracles agree on direction, and which assay/cell type drove each call.",
     "tool_name": "analyze_variant_multilayer",
     "oracle_name": "legnet",
-    "normalizer_name": "(none)",
+    "normalizer_name": "chorus per-track v1",
     "tracks_requested": "1 tracks",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-04-21 13:10 UTC"
+    "generated_at": "2026-04-22 17:20 UTC"
   }
 }
