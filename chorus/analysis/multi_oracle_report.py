@@ -715,9 +715,17 @@ def _build_multioracle_html(report: "MultiOracleReport") -> str:
             "signal tracks on a single IGV. Default locus is the widest "
             "oracle's prediction window — narrower-window oracles show "
             "blank outside their coverage (expected: LegNet is ~200 bp "
-            "and ChromBPNet ~1 kb while AlphaGenome reaches ±500 kb). "
-            "Signals are floor-rescaled to [0, 3.0] where 1.0 is the "
-            "genome-wide p99 peak for that assay.</p>"
+            "and ChromBPNet ~1 kb while AlphaGenome reaches ±500 kb).</p>"
+        )
+        # Same scale-explanation block the single-oracle + causal reports
+        # ship, so the meaning of the [0, 3.0] y-axis is spelled out
+        # consistently across every IGV view chorus emits.
+        p.append(
+            "<p class='meta' style='margin-top:-.5rem'>Signal rescaled "
+            "using each track's genome-wide noise floor (p95) and peak "
+            "threshold (p99): <b>0</b> = noise floor, <b>1.0</b> = top "
+            "1% of bins genome-wide. Peak shape preserved; tracks "
+            "comparable across cell types.</p>"
         )
         p.append(igv_html)
 
