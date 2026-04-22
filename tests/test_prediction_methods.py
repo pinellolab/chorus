@@ -285,6 +285,131 @@ class TestPredictionMethods:
                 assay_ids=["DNase:K562"],
             )
 
+    def test_indel_rejected_before_model_run(self):
+        """predict_variant_effect substitutes a single base at the
+        variant site; passing an indel (``alt='GT'`` or ``ref='GT'``)
+        would be treated as a 1-base swap and score nonsense. Validate
+        up-front — don't burn model time on invalid input.
+
+        Regression for v20 §14.2 finding (LegNet silently accepted
+        ``alleles=['G','GT']``).
+        """
+        from chorus.core.exceptions import InvalidRegionError
+
+        # insertion: alt longer than 1
+        with pytest.raises(InvalidRegionError, match="single-nucleotide variant"):
+            self.oracle.predict_variant_effect(
+                genomic_region="chr1:100000-200000",
+                variant_position="chr1:150000",
+                alleles=["G", "GT"],
+                assay_ids=["DNase:K562"],
+            )
+
+        # deletion: ref longer than 1
+        with pytest.raises(InvalidRegionError, match="single-nucleotide variant"):
+            self.oracle.predict_variant_effect(
+                genomic_region="chr1:100000-200000",
+                variant_position="chr1:150000",
+                alleles=["GT", "G"],
+                assay_ids=["DNase:K562"],
+            )
+
+        # empty string allele
+        with pytest.raises(InvalidRegionError, match="single-nucleotide variant"):
+            self.oracle.predict_variant_effect(
+                genomic_region="chr1:100000-200000",
+                variant_position="chr1:150000",
+                alleles=["G", ""],
+                assay_ids=["DNase:K562"],
+            )
+
+        # Invalid base character
+        with pytest.raises(InvalidRegionError, match="single-nucleotide variant"):
+            self.oracle.predict_variant_effect(
+                genomic_region="chr1:100000-200000",
+                variant_position="chr1:150000",
+                alleles=["G", "X"],
+                assay_ids=["DNase:K562"],
+            )
+
+    def test_multiallelic_site_produces_all_alt_columns(self):
+        """alleles=['A','C','G','T'] → 3 alt entries (A as ref, 3 alts).
+        Confirms the per-allele loop in predict_variant_effect emits
+        alt_1, alt_2, alt_3 in the predictions dict.
+
+        Regression for v20 §14.6 — deferred multi-allelic test.
+        """
+        results = self.oracle.predict_variant_effect(
+            genomic_region="chr1:100000-200000",
+            variant_position="chr1:150000",
+            alleles=["A", "C", "G", "T"],
+            assay_ids=["DNase:K562"],
+        )
+
+        assert "predictions" in results
+        assert set(results["predictions"].keys()) == {"reference", "alt_1", "alt_2", "alt_3"}
+        assert set(results["effect_sizes"].keys()) == {"alt_1", "alt_2", "alt_3"}
+        # Each alt's effect dict keys must match the input assay_ids
+        for alt_name in ["alt_1", "alt_2", "alt_3"]:
+            assert set(results["effect_sizes"][alt_name].keys()) == {"DNase:K562"}
+
+    def test_near_telomere_extend_clamps_to_chrom_boundary(self):
+        """A variant < half-window from a chromosome start/end must not
+        crash — GenomeRef.slop() should clamp the extension to the
+        chromosome boundary rather than returning a negative start or
+        past-end position.
+
+        Regression for v14.5 — deferred edge case.
+        """
+        from chorus.core.interval import GenomeRef
+
+        fa = str(self.fasta_path)  # chr1 = 500 000 'A' in the test fixture
+        # Near left edge: 50 bp into chr1, ask for a 100 000 bp extension
+        gr = GenomeRef(chrom="chr1", start=50, end=100, fasta=fa)
+        extended = gr.slop(extension_needed=100_000, how="both")
+        # Clamped to 0 on the left (can't go negative)
+        assert extended.start == 0
+        # The right side took up the slack
+        assert extended.end > 100
+
+        # Near right edge: 50 bp before chr1 end, same ask
+        gr = GenomeRef(chrom="chr1", start=499_900, end=499_950, fasta=fa)
+        extended = gr.slop(extension_needed=100_000, how="both")
+        # Clamped to chrom length (500 000) on the right
+        assert extended.end == 500_000
+        # Left side took up the slack
+        assert extended.start < 499_900
+
+        # Extension larger than the chromosome itself — both ends clamp
+        gr = GenomeRef(chrom="chr1", start=200_000, end=200_100, fasta=fa)
+        extended = gr.slop(extension_needed=10_000_000, how="both")
+        assert extended.start == 0
+        assert extended.end == 500_000
+
+    def test_chorus_device_env_var_forces_cpu(self, monkeypatch):
+        """CHORUS_DEVICE=cpu must make OracleBase pick CPU even when a
+        GPU-capable platform is detected. Proves env-var override wins
+        over auto-detection.
+
+        Regression for v20 §3 — deferred CHORUS_DEVICE check.
+        """
+        monkeypatch.setenv("CHORUS_DEVICE", "cpu")
+        # Fresh instance picks up the env var in __init__
+        oracle = MockOracle(reference_fasta=str(self.fasta_path))
+        assert oracle.device == "cpu", (
+            f"Expected device='cpu' with CHORUS_DEVICE=cpu set, got {oracle.device!r}"
+        )
+
+        # And CHORUS_DEVICE=cuda:1 should set exactly that
+        monkeypatch.setenv("CHORUS_DEVICE", "cuda:1")
+        oracle = MockOracle(reference_fasta=str(self.fasta_path))
+        assert oracle.device == "cuda:1"
+
+        # No env var → default (None, auto-detect)
+        monkeypatch.delenv("CHORUS_DEVICE", raising=False)
+        oracle = MockOracle(reference_fasta=str(self.fasta_path))
+        assert oracle.device is None
+
     def test_error_handling_model_not_loaded(self):
         """Test error when model not loaded."""
         unloaded_oracle = MockOracle(reference_fasta=str(self.fasta_path))

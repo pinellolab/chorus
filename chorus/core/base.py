@@ -330,6 +330,24 @@ class OracleBase(ABC):
             ref_allele = alleles[0]
             alt_alleles = alleles[1:]
 
+        # SNV-only validation. `predict_variant_effect` substitutes a
+        # single base at `real_pos` (see lines ~342 / ~347 below), so an
+        # indel (ref='G' / alt='GT' or ref='GT' / alt='G') would silently
+        # be treated as a 1-base swap — giving a semantically nonsense
+        # score. Reject up-front with a clear message naming the bad
+        # allele, so the user doesn't waste an oracle run on invalid
+        # input (v20 §14.2 finding).
+        all_alleles = [ref_allele, *alt_alleles]
+        for a in all_alleles:
+            if not isinstance(a, str) or len(a) != 1 or a.upper() not in "ACGTN":
+                raise InvalidRegionError(
+                    f"Allele {a!r} is not a single-nucleotide variant. "
+                    f"predict_variant_effect currently supports SNVs only "
+                    f"(ref/alt each one of A, C, G, T, N). For indels or "
+                    f"multi-base substitutions, use predict_region_replacement "
+                    f"with explicit genomic_region + seq."
+                )
+
         intervals = {}
         real_pos = region_interval.ref2query(var_pos_0based, ref_global=True)
         # Case-insensitive compare: pyfaidx returns lowercase for softmasked
