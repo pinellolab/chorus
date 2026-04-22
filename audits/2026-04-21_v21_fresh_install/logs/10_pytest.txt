@@ -1,0 +1,34 @@
+........................................................................ [ 21%]
+........................................................................ [ 42%]
+........................................................................ [ 64%]
+......s................................................................. [ 85%]
+................................................                         [100%]
+=============================== warnings summary ===============================
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+  /Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+    parse = parser.parseString(pattern)
+
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+  /Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+    parser.resetCache()
+
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_mathtext.py:45
+  /Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+    ParserElement.enablePackrat()
+
+tests/test_utils.py::TestNormalizationUtils::test_quantile_normalize
+  /Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages/numpy/_core/numeric.py:442: RuntimeWarning: invalid value encountered in cast
+    multiarray.copyto(res, fill_value, casting='unsafe')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+335 passed, 1 skipped, 14 warnings in 508.44s (0:08:28)

@@ -1,0 +1,23 @@
+=== Pre-nuke state (Tue Apr 21 17:15:48 EDT 2026) ===
+1.5G	/Users/lp698/.chorus/backgrounds/
+3.0G	genomes/
+
+/Users/lp698/.chorus/backgrounds/:
+total 3189032
+drwxr-xr-x@ 9 lp698  staff        288 Apr 21 09:22 .
+drwxr-xr-x@ 3 lp698  staff         96 Apr 21 09:22 ..
+drwxr-xr-x@ 3 lp698  staff         96 Apr 20 16:43 .cache
+-rw-r--r--@ 1 lp698  staff  275523684 Apr 20 16:55 alphagenome_pertrack.npz
+-rw-r--r--@ 1 lp698  staff  803275951 Apr 20 17:53 borzoi_pertrack.npz
+-rw-r--r--@ 1 lp698  staff    2541952 Apr 20 16:55 chrombpnet_pertrack.npz
+-rw-r--r--@ 1 lp698  staff  548316718 Apr 20 16:55 enformer_pertrack.npz
+-rw-r--r--@ 1 lp698  staff     212800 Apr 21 09:22 legnet_pertrack.npz
+-rw-r--r--@ 1 lp698  staff    2903709 Apr 21 09:22 sei_pertrack.npz
+
+genomes/:
+total 6393568
+drwxr-xr-x@  5 lp698  staff         160 Apr 15 00:31 .
+drwxr-xr-x@ 29 lp698  staff         928 Apr 21 15:09 ..
+-rw-r--r--@  1 lp698  staff         170 Apr 14 23:18 .gitkeep
+-rw-r--r--@  1 lp698  staff  3273481150 Apr 15 00:15 hg38.fa
+-rw-r--r--@  1 lp698  staff       19381 Apr 15 00:31 hg38.fa.fai

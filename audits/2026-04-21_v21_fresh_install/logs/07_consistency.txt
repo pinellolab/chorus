@@ -1,0 +1,9 @@
+=== §10 canonical-number drift in live code ===
+
+=== §10 old examples/applications/ path in live docs ===
+
+=== §15 runtime CDN fetches in shipped HTML ===
+(if empty: reports are offline-safe)
+
+=== §16 leaked HF tokens / AWS keys ===
+(if empty: no secrets committed)
