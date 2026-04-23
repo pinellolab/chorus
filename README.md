@@ -59,14 +59,16 @@ wt = oracle.predict(
 )
 print(f"WT mean signal: {wt['ENCFF413AHU'].values.mean():.3f}")
 
-# Variant effect: scan A/G/C/T at chr11:5247500
+# Variant effect: scan every SNV at chr11:5247500 (genome has 'C' here)
 effects = oracle.predict_variant_effect(
     'chr11:5247000-5248000',
     'chr11:5247500',
-    ['A', 'G', 'C', 'T'],
+    ['C', 'A', 'G', 'T'],   # ref first (= genome base), then 3 alts
     ['ENCFF413AHU'],
 )
-print(f"Variant result: {len(effects)} predictions returned")
+n_alts = len(effects['predictions']) - 1  # minus the reference
+print(f"Variant result: scored {n_alts} alt alleles "
+      f"({list(effects['predictions'].keys())})")
 ```
 
 ### 4. Use with Claude Code

@@ -1,0 +1,13 @@
+=== Step 3: prediction snippet from README ===
+2026-04-23 17:28:14,907 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-23 17:28:14,954 - chorus.core.environment.manager - INFO - Found mamba via MAMBA_EXE: /Users/lp698/miniforge3/bin/mamba
+2026-04-23 17:28:14,954 - chorus.core.platform - INFO - Detected platform: Darwin arm64 (key=macos_arm64, cuda=False)
+2026-04-23 17:28:20,507 - chorus.core.base - INFO - Using conda environment: chorus-enformer
+2026-04-23 17:28:20,507 - chorus.oracles.enformer - INFO - Loading Enformer model from https://tfhub.dev/deepmind/enformer/1...
+2026-04-23 17:28:25,245 - chorus.oracles.enformer - INFO - Enformer model loaded successfully in environment!
+2026-04-23 17:28:32,627 - chorus.oracles.enformer_source.enformer_metadata - INFO - Loaded 5313 track metadata entries
+2026-04-23 17:28:32,628 - chorus.core.base - WARNING - Provided reference allele 'A' does not match the genome at this position ('C'). Chorus will use the provided allele.
+WT mean signal: 0.468
+Variant result: 3 predictions returned
+
+✓ README Step 3 prediction snippet works end-to-end

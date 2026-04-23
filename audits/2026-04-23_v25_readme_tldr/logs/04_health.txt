@@ -1,0 +1,21 @@
+2026-04-23 17:29:25,251 - chorus.core.environment.manager - INFO - Found mamba via MAMBA_EXE: /Users/lp698/miniforge3/bin/mamba
+2026-04-23 17:29:25,251 - chorus.core.platform - INFO - Detected platform: Darwin arm64 (key=macos_arm64, cuda=False)
+2026-04-23 17:29:25,399 - chorus.cli.main - INFO - 
+Checking alphagenome...
+2026-04-23 17:29:28,445 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/whoami-v2 "HTTP/1.1 200 OK"
+2026-04-23 17:29:40,582 - chorus.cli.main - INFO - ✓ alphagenome: Healthy
+2026-04-23 17:29:40,582 - chorus.cli.main - INFO - 
+Checking borzoi...
+2026-04-23 17:29:59,031 - chorus.cli.main - INFO - ✓ borzoi: Healthy
+2026-04-23 17:29:59,031 - chorus.cli.main - INFO - 
+Checking chrombpnet...
+2026-04-23 17:30:05,758 - chorus.cli.main - INFO - ✓ chrombpnet: Healthy
+2026-04-23 17:30:05,758 - chorus.cli.main - INFO - 
+Checking enformer...
+2026-04-23 17:30:12,327 - chorus.cli.main - INFO - ✓ enformer: Healthy
+2026-04-23 17:30:12,327 - chorus.cli.main - INFO - 
+Checking legnet...
+2026-04-23 17:30:18,408 - chorus.cli.main - INFO - ✓ legnet: Healthy
+2026-04-23 17:30:18,408 - chorus.cli.main - INFO - 
+Checking sei...
+2026-04-23 17:30:26,245 - chorus.cli.main - INFO - ✓ sei: Healthy

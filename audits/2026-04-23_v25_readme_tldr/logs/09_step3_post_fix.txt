@@ -1,0 +1,9 @@
+2026-04-23 17:48:55,460 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-23 17:48:55,478 - chorus.core.environment.manager - INFO - Found mamba via MAMBA_EXE: /Users/lp698/miniforge3/bin/mamba
+2026-04-23 17:48:55,478 - chorus.core.platform - INFO - Detected platform: Darwin arm64 (key=macos_arm64, cuda=False)
+2026-04-23 17:49:00,884 - chorus.core.base - INFO - Using conda environment: chorus-enformer
+2026-04-23 17:49:00,884 - chorus.oracles.enformer - INFO - Loading Enformer model from https://tfhub.dev/deepmind/enformer/1...
+2026-04-23 17:49:05,783 - chorus.oracles.enformer - INFO - Enformer model loaded successfully in environment!
+2026-04-23 17:49:13,074 - chorus.oracles.enformer_source.enformer_metadata - INFO - Loaded 5313 track metadata entries
+WT mean signal: 0.468
+Variant result: scored 3 alt alleles (['reference', 'alt_1', 'alt_2', 'alt_3'])

@@ -1,0 +1,2 @@
+[NbConvertApp] Converting notebook examples/notebooks/single_oracle_quickstart.ipynb to notebook
+[NbConvertApp] Writing 670049 bytes to /tmp/v25_quickstart.ipynb

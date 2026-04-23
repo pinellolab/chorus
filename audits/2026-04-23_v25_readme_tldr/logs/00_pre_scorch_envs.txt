@@ -1,0 +1,10 @@
+  chorus                      /Users/lp698/.local/share/mamba/envs/chorus            
+  chorus-alphagenome          /Users/lp698/.local/share/mamba/envs/chorus-alphagenome
+  chorus-borzoi               /Users/lp698/.local/share/mamba/envs/chorus-borzoi     
+  chorus-chrombpnet           /Users/lp698/.local/share/mamba/envs/chorus-chrombpnet 
+  chorus-enformer             /Users/lp698/.local/share/mamba/envs/chorus-enformer   
+  chorus-legnet               /Users/lp698/.local/share/mamba/envs/chorus-legnet     
+  chorus-sei                  /Users/lp698/.local/share/mamba/envs/chorus-sei        
+1.5G	/Users/lp698/.chorus
+3.0G	genomes/
+ 12G	downloads/
