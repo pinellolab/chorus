@@ -1,0 +1,7 @@
+=== chorus setup --oracle alphagenome (no HF_TOKEN) — expected halt ===
+2026-04-23 09:09:37,557 - chorus.core.environment.manager - INFO - Found mamba via MAMBA_EXE: /Users/lp698/miniforge3/bin/mamba
+2026-04-23 09:09:37,557 - chorus.core.platform - INFO - Detected platform: Darwin arm64 (key=macos_arm64, cuda=False)
+2026-04-23 09:09:37,678 - chorus.cli._tokens - ERROR - No HuggingFace token available and stdin is not a TTY. Pass --hf-token, set HF_TOKEN, or run 'huggingface-cli login' first.
+2026-04-23 09:09:37,678 - chorus.cli.main - ERROR - AlphaGenome requires a HuggingFace token. Set HF_TOKEN, run 'huggingface-cli login', or pass --hf-token.
+
+EXIT CODE: 0

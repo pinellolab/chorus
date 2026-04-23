@@ -1,0 +1,6 @@
+2026-04-23 09:56:05,369 - chorus.cli.main - INFO - ✓ alphagenome: Healthy
+2026-04-23 09:56:13,008 - chorus.cli.main - INFO - ✓ borzoi: Healthy
+2026-04-23 09:56:18,987 - chorus.cli.main - INFO - ✓ chrombpnet: Healthy
+2026-04-23 09:56:25,593 - chorus.cli.main - INFO - ✓ enformer: Healthy
+2026-04-23 09:56:29,767 - chorus.cli.main - INFO - ✓ legnet: Healthy
+2026-04-23 09:56:37,558 - chorus.cli.main - INFO - ✓ sei: Healthy

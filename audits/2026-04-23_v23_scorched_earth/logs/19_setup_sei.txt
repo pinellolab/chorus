@@ -1,0 +1,570 @@
+2026-04-23 09:09:35,066 - chorus.core.environment.manager - INFO - Found mamba via MAMBA_EXE: /Users/lp698/miniforge3/bin/mamba
+2026-04-23 09:09:35,066 - chorus.core.platform - INFO - Detected platform: Darwin arm64 (key=macos_arm64, cuda=False)
+2026-04-23 09:09:35,066 - chorus.cli.main - INFO - Setting up environment for sei...
+2026-04-23 09:09:35,097 - chorus.core.environment.manager - INFO - Platform adaptation (macos_arm64) for sei:
+2026-04-23 09:09:35,097 - chorus.core.environment.manager - INFO -   - CUDA toolkit removed (not available on macOS); PyTorch will use CPU/MPS backend
+2026-04-23 09:09:35,097 - chorus.core.environment.manager - INFO -   - Removed pytorch channel (available on conda-forge for ARM Mac)
+2026-04-23 09:09:35,097 - chorus.core.environment.manager - INFO -   - Relaxed PyTorch <2.0 upper bound (compatible with Sei on ARM Mac)
+2026-04-23 09:09:35,098 - chorus.core.environment.manager - INFO - Using adapted environment file: /var/folders/gx/xj1t8pkx1gvdn92fgw2g7vpm0000gn/T/chorus-sei-xgs4j7x_.yml
+2026-04-23 09:09:35,098 - chorus.core.environment.manager - INFO - Creating environment chorus-sei from /Users/lp698/chorus_test/chorus/environments/chorus-sei.yml
+https://prefix.dev/conda-forge/noarch                       Using cache
+https://prefix.dev/conda-forge/osx-arm64                    Using cache
+https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/noarch          Using cache
+https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/osx-arm64          Using cache
+https://prefix.dev/bioconda/noarch                          Using cache
+https://prefix.dev/bioconda/osx-arm64                       Using cache
+
+error    libmamba Could not set lock (Resource temporarily unavailable)
+warning  libmamba Cannot lock '/Users/lp698/.local/share/mamba/pkgs'
+    Waiting for other mamba process to finish
+
+Transaction
+
+  Prefix: /Users/lp698/.local/share/mamba/envs/chorus-sei
+
+  Updating specs:
+
+   - python=3.10
+   - numpy>=1.21.0
+   - pandas>=1.3.0
+   - scipy>=1.7.0
+   - numba
+   - pysam>=0.19.0
+   - biopython>=1.79
+   - pyfaidx>=0.7.0
+   - tqdm>=4.62.0
+   - h5py>=3.6.0
+   - pip
+   - matplotlib>=3.5.0
+   - seaborn>=0.11.0
+   - jupyter
+   - notebook
+   - ipykernel
+   - pytorch>=1.13.0
+   - torchvision>=0.14.0
+
+
+  Package                               Version  Build                         Channel                      Size
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Install:
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+  + _openmp_mutex                           4.5  7_kmp_llvm                    prefix.dev/conda-forge     Cached
+  + anyio                                4.13.0  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + appnope                               0.1.4  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + argon2-cffi                          25.1.0  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + argon2-cffi-bindings                 25.1.0  py310hfe3a0ae_2               prefix.dev/conda-forge     Cached
+  + arrow                                 1.4.0  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + asttokens                             3.0.1  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + async-lru                             2.3.0  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + attrs                                26.1.0  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + aws-c-auth                           0.10.1  hcb83491_2                    prefix.dev/conda-forge     Cached
+  + aws-c-cal                            0.9.13  h6ee9776_1                    prefix.dev/conda-forge     Cached
+  + aws-c-common                         0.12.6  hc919400_0                    prefix.dev/conda-forge     Cached
+  + aws-c-compression                     0.3.2  h3e7f9b5_0                    prefix.dev/conda-forge     Cached
+  + aws-c-http                          0.10.12  h95cdebe_1                    prefix.dev/conda-forge     Cached
+  + aws-c-io                             0.26.3  h4137820_0                    prefix.dev/conda-forge     Cached
+  + aws-c-s3                             0.11.5  ha5d16b2_5                    prefix.dev/conda-forge     Cached
+  + aws-c-sdkutils                        0.2.4  h16f91aa_4                    prefix.dev/conda-forge     Cached
+  + aws-checksums                        0.2.10  h3e7f9b5_0                    prefix.dev/conda-forge     Cached
+  + babel                                2.18.0  pyhcf101f3_1                  prefix.dev/conda-forge     Cached
+  + backports.zstd                        1.3.0  py310h2d60bed_0               prefix.dev/conda-forge     Cached
+  + beautifulsoup4                       4.14.3  pyha770c72_0                  prefix.dev/conda-forge     Cached
+  + biopython                              1.87  py310h72544b6_0               prefix.dev/conda-forge     Cached
+  + bleach                                6.3.0  pyhcf101f3_1                  prefix.dev/conda-forge     Cached
+  + bleach-with-css                       6.3.0  hbca2aae_1                    prefix.dev/conda-forge     Cached
+  + brotli                                1.2.0  h7d5ae5b_1                    prefix.dev/conda-forge     Cached
+  + brotli-bin                            1.2.0  hc919400_1                    prefix.dev/conda-forge     Cached
+  + brotli-python                         1.2.0  py310h6123dab_1               prefix.dev/conda-forge     Cached
+  + bzip2                                 1.0.8  hd037594_9                    prefix.dev/conda-forge     Cached
+  + c-ares                               1.34.6  hc919400_0                    prefix.dev/conda-forge     Cached
+  + ca-certificates                   2026.4.22  hbd8a1cb_0                    prefix.dev/conda-forge     Cached
+  + cached-property                       1.5.2  hd8ed1ab_1                    prefix.dev/conda-forge     Cached
+  + cached_property                       1.5.2  pyha770c72_1                  prefix.dev/conda-forge     Cached
+  + certifi                           2026.4.22  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + cffi                                  2.0.0  py310hf5b66c1_1               prefix.dev/conda-forge     Cached
+  + charset-normalizer                    3.4.7  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + comm                                  0.2.3  pyhe01879c_0                  prefix.dev/conda-forge     Cached
+  + contourpy                             1.3.2  py310h7f4e7e6_0               prefix.dev/conda-forge     Cached
+  + cpython                             3.10.20  py310hd8ed1ab_0               prefix.dev/conda-forge     Cached
+  + cycler                               0.12.1  pyhcf101f3_2                  prefix.dev/conda-forge     Cached
+  + debugpy                              1.8.20  py310h19b6747_0               prefix.dev/conda-forge     Cached
+  + decorator                             5.2.1  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + defusedxml                            0.7.1  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + exceptiongroup                        1.3.1  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + executing                             2.2.1  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + filelock                             3.29.0  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + fmt                                  12.1.0  h403dcb5_0                    prefix.dev/conda-forge     Cached
+  + fonttools                            4.62.1  py310hb46c203_0               prefix.dev/conda-forge     Cached
+  + fqdn                                  1.5.1  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + freetype                             2.14.3  hce30654_0                    prefix.dev/conda-forge     Cached
+  + fsspec                             2026.3.0  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + giflib                                5.2.2  h93a5062_0                    prefix.dev/conda-forge     Cached
+  + gmp                                   6.3.0  h7bae524_2                    prefix.dev/conda-forge     Cached
+  + gmpy2                                 2.3.0  py310h6ac7f53_1               prefix.dev/conda-forge     Cached
+  + h11                                  0.16.0  pyhcf101f3_1                  prefix.dev/conda-forge     Cached
+  + h2                                    4.3.0  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + h5py                                 3.16.0  nompi_py310hcf53ec8_102       prefix.dev/conda-forge     Cached
+  + hdf5                                  2.1.0  nompi_hc95e3eb_104            prefix.dev/conda-forge     Cached
+  + hpack                                 4.1.0  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + httpcore                              1.0.9  pyh29332c3_0                  prefix.dev/conda-forge     Cached
+  + httpx                                0.28.1  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + hyperframe                            6.1.0  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + idna                                   3.11  pyhf9edf01_1                  prefix.dev/conda-forge     Cached
+  + importlib-metadata                    8.8.0  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + importlib_resources                   7.1.0  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + ipykernel                             7.2.0  pyh5552912_1                  prefix.dev/conda-forge     Cached
+  + ipython                              8.37.0  pyh8f84b5b_0                  prefix.dev/conda-forge     Cached
+  + ipywidgets                            8.1.8  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + isoduration                         20.11.0  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + jedi                                 0.19.2  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + jinja2                                3.1.6  pyhcf101f3_1                  prefix.dev/conda-forge     Cached
+  + json5                                0.14.0  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + jsonpointer                           3.1.1  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + jsonschema                           4.26.0  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + jsonschema-specifications          2025.9.1  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + jsonschema-with-format-nongpl        4.26.0  hcf101f3_0                    prefix.dev/conda-forge     Cached
+  + jupyter                               1.1.1  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + jupyter-lsp                           2.3.1  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + jupyter_client                        8.8.0  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + jupyter_console                       6.6.3  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + jupyter_core                          5.9.1  pyhc90fa1f_0                  prefix.dev/conda-forge     Cached
+  + jupyter_events                       0.12.1  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + jupyter_server                       2.17.0  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + jupyter_server_terminals              0.5.4  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + jupyterlab                            4.5.6  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + jupyterlab_pygments                   0.3.0  pyhd8ed1ab_2                  prefix.dev/conda-forge     Cached
+  + jupyterlab_server                    2.28.0  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + jupyterlab_widgets                   3.0.16  pyhcf101f3_1                  prefix.dev/conda-forge     Cached
+  + kiwisolver                            1.5.0  py310h34990b0_0               prefix.dev/conda-forge     Cached
+  + krb5                                 1.22.2  h385eeb1_0                    prefix.dev/conda-forge     Cached
+  + lark                                  1.3.1  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + lcms2                                  2.18  hdfa7624_0                    prefix.dev/conda-forge     Cached
+  + lerc                                  4.1.0  h1eee2c3_0                    prefix.dev/conda-forge     Cached
+  + libabseil                        20260107.1  cxx17_h2062a1b_0              prefix.dev/conda-forge     Cached
+  + libaec                                1.1.5  h8664d51_0                    prefix.dev/conda-forge     Cached
+  + libblas                              3.11.0  6_h51639a9_openblas           prefix.dev/conda-forge     Cached
+  + libbrotlicommon                       1.2.0  hc919400_1                    prefix.dev/conda-forge     Cached
+  + libbrotlidec                          1.2.0  hc919400_1                    prefix.dev/conda-forge     Cached
+  + libbrotlienc                          1.2.0  hc919400_1                    prefix.dev/conda-forge     Cached
+  + libcblas                             3.11.0  6_hb0561ab_openblas           prefix.dev/conda-forge     Cached
+  + libcurl                              8.19.0  hd5a2499_0                    prefix.dev/conda-forge     Cached
+  + libcxx                               22.1.4  h55c6f16_0                    prefix.dev/conda-forge     Cached
+  + libdeflate                             1.25  hc11a715_0                    prefix.dev/conda-forge     Cached
+  + libedit                        3.1.20250104  pl5321hafb1f1b_0              prefix.dev/conda-forge     Cached
+  + libev                                  4.33  h93a5062_2                    prefix.dev/conda-forge     Cached
+  + libexpat                              2.7.5  hf6b4638_0                    prefix.dev/conda-forge     Cached
+  + libffi                                3.5.2  hcf2aa1b_0                    prefix.dev/conda-forge     Cached
+  + libfreetype                          2.14.3  hce30654_0                    prefix.dev/conda-forge     Cached
+  + libfreetype6                         2.14.3  hdfa99f5_0                    prefix.dev/conda-forge     Cached
+  + libgcc                               15.2.0  hcbb3090_18                   prefix.dev/conda-forge     Cached
+  + libgfortran                          15.2.0  h07b0088_18                   prefix.dev/conda-forge     Cached
+  + libgfortran5                         15.2.0  hdae7583_18                   prefix.dev/conda-forge     Cached
+  + libjpeg-turbo                       3.1.4.1  h84a0fba_0                    prefix.dev/conda-forge     Cached
+  + liblapack                            3.11.0  6_hd9741b5_openblas           prefix.dev/conda-forge     Cached
+  + liblzma                               5.8.3  h8088a28_0                    prefix.dev/conda-forge     Cached
+  + libnghttp2                           1.68.1  h8f3e76b_0                    prefix.dev/conda-forge     Cached
+  + libopenblas                          0.3.32  openmp_he657e61_0             prefix.dev/conda-forge     Cached
+  + libpng                               1.6.58  h132b30e_0                    prefix.dev/conda-forge     Cached
+  + libprotobuf                          6.33.5  h4a5acfd_0                    prefix.dev/conda-forge     Cached
+  + libsodium                            1.0.21  h1a92334_3                    prefix.dev/conda-forge     Cached
+  + libsqlite                            3.53.0  h1b79a29_0                    prefix.dev/conda-forge     Cached
+  + libssh2                              1.11.1  h1590b86_0                    prefix.dev/conda-forge     Cached
+  + libtiff                               4.7.1  h4030677_1                    prefix.dev/conda-forge     Cached
+  + libtorch                             2.10.0  cpu_generic_hf7cc835_3        prefix.dev/conda-forge     Cached
+  + libuv                                1.51.0  h6caf38d_1                    prefix.dev/conda-forge     Cached
+  + libwebp-base                          1.6.0  h07db88b_0                    prefix.dev/conda-forge     Cached
+  + libxcb                               1.17.0  hdb1d25a_0                    prefix.dev/conda-forge     Cached
+  + libzlib                               1.3.2  h8088a28_2                    prefix.dev/conda-forge     Cached
+2026-04-23 09:10:35,551 - chorus.core.environment.manager - INFO - Successfully created environment chorus-sei
+2026-04-23 09:10:35,551 - chorus.cli.main - INFO - ✓ env for sei
+2026-04-23 09:10:35,551 - chorus.cli._setup_prefetch - INFO - Pre-downloading sei weights ...
+2026-04-23 09:46:12,393 - chorus.analysis.normalization - INFO - Downloading sei_pertrack.npz from HuggingFace ...
+2026-04-23 09:46:12,475 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/datasets/lucapinello/chorus-backgrounds/resolve/main/sei_pertrack.npz "HTTP/1.1 302 Found"
+2026-04-23 09:46:12,518 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/datasets/lucapinello/chorus-backgrounds/xet-read-token/7113b9d7667db9d79ee6827eeed60d5cd240d633 "HTTP/1.1 200 OK"
+2026-04-23 09:46:13,143 - chorus.analysis.normalization - INFO - Downloaded sei_pertrack.npz
+2026-04-23 09:46:13,209 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/datasets/lucapinello/chorus-backgrounds/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-23 09:46:13,209 - chorus.analysis.normalization - INFO - Downloaded 1 background files for 'sei'
+2026-04-23 09:46:13,209 - chorus.cli._setup_prefetch - INFO - ✓ pulled 1 background file(s) for sei
+2026-04-23 09:46:13,209 - chorus.cli._setup_prefetch - INFO - Reference genome hg38 already present
+2026-04-23 09:46:13,209 - chorus.cli.main - ERROR - ✗ prefetch failed for sei:
+2026-04-23 09:46:13,209 - chorus.cli.main - ERROR -   - weights: SameFileError: PosixPath('/Users/lp698/chorus_test/chorus/chorus/oracles/sei_source/seqclass_info.txt') and PosixPath('/Users/lp698/chorus_test/chorus/chorus/oracles/sei_source/seqclass_info.txt') are the same file
+2026-04-23 09:46:13,209 - chorus.cli.main - INFO - 
+Setup complete: 0/1 oracles ready.
+  + llvm-openmp                          22.1.4  hc7d1edf_0                    prefix.dev/conda-forge     Cached
+  + llvmlite                             0.47.0  py310h4137262_1               prefix.dev/conda-forge     Cached
+  + markupsafe                            3.0.3  py310hb46c203_1               prefix.dev/conda-forge     Cached
+  + matplotlib                           3.10.8  py310hb6292c7_0               prefix.dev/conda-forge     Cached
+  + matplotlib-base                      3.10.8  py310h0181960_0               prefix.dev/conda-forge     Cached
+  + matplotlib-inline                     0.2.1  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + mistune                               3.2.0  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + mpc                                   1.4.0  h169892a_0                    prefix.dev/conda-forge     Cached
+  + mpfr                                  4.2.2  h6bc93b0_0                    prefix.dev/conda-forge     Cached
+  + mpmath                                1.3.0  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + munkres                               1.1.4  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + nbclient                             0.10.4  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + nbconvert-core                       7.17.1  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + nbformat                             5.10.4  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + ncurses                                 6.5  h5e97a16_3                    prefix.dev/conda-forge     Cached
+  + nest-asyncio                          1.6.0  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + networkx                              3.4.2  pyh267e887_2                  prefix.dev/conda-forge     Cached
+  + nomkl                                   1.0  h5ca1d4c_0                    prefix.dev/conda-forge     Cached
+  + notebook                              7.5.5  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + notebook-shim                         0.2.4  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + numba                                0.65.0  py310h71bca05_1               prefix.dev/conda-forge     Cached
+  + numpy                                 2.2.6  py310h4d83441_0               prefix.dev/conda-forge     Cached
+  + openjpeg                              2.5.4  hd9e9057_0                    prefix.dev/conda-forge     Cached
+  + openssl                               3.6.2  hd24854e_0                    prefix.dev/conda-forge     Cached
+  + optree                               0.19.0  py310h1c35771_0               prefix.dev/conda-forge     Cached
+  + overrides                             7.7.0  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + packaging                              26.1  pyhc364b38_0                  prefix.dev/conda-forge     Cached
+  + pandas                                2.3.3  py310h25f4b65_1               prefix.dev/conda-forge     Cached
+  + pandocfilters                         1.5.0  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + parso                                 0.8.6  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + patsy                                 1.0.2  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + pexpect                               4.9.0  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + pickleshare                           0.7.5  pyhd8ed1ab_1004               prefix.dev/conda-forge     Cached
+  + pillow                               12.2.0  py310hc037f36_0               prefix.dev/conda-forge     Cached
+  + pip                                  26.0.1  pyh8b19718_0                  prefix.dev/conda-forge     Cached
+  + platformdirs                          4.9.6  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + prometheus_client                    0.25.0  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + prompt-toolkit                       3.0.52  pyha770c72_0                  prefix.dev/conda-forge     Cached
+  + prompt_toolkit                       3.0.52  hd8ed1ab_0                    prefix.dev/conda-forge     Cached
+  + psutil                                7.2.2  py310haea493c_0               prefix.dev/conda-forge     Cached
+  + pthread-stubs                           0.4  hd74edd7_1002                 prefix.dev/conda-forge     Cached
+  + ptyprocess                            0.7.0  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + pure_eval                             0.2.3  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + pybind11                              3.0.1  pyh7a1b43c_0                  prefix.dev/conda-forge     Cached
+  + pybind11-abi                             11  hc364b38_1                    prefix.dev/conda-forge     Cached
+  + pybind11-global                       3.0.1  pyhc7ab6ef_0                  prefix.dev/conda-forge     Cached
+  + pycparser                              2.22  pyh29332c3_1                  prefix.dev/conda-forge     Cached
+  + pyfaidx                             0.9.0.4  pyhdfd78af_0                  prefix.dev/bioconda        Cached
+  + pygments                             2.20.0  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + pyobjc-core                            12.1  py310h9d23ab5_0               prefix.dev/conda-forge     Cached
+  + pyobjc-framework-cocoa                 12.1  py310h8579ff5_0               prefix.dev/conda-forge     Cached
+  + pyparsing                             3.3.2  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + pysam                                0.23.3  py310hf7cbfa5_3               prefix.dev/bioconda        Cached
+  + pysocks                               1.7.1  pyha55dd90_7                  prefix.dev/conda-forge     Cached
+  + python                              3.10.20  h1b19095_0_cpython            prefix.dev/conda-forge     Cached
+  + python-dateutil                 2.9.0.post0  pyhe01879c_2                  prefix.dev/conda-forge     Cached
+  + python-fastjsonschema                2.21.2  pyhe01879c_0                  prefix.dev/conda-forge     Cached
+  + python-json-logger                    2.0.7  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + python-tzdata                        2026.1  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + python_abi                             3.10  8_cp310                       prefix.dev/conda-forge     Cached
+  + pytorch                              2.10.0  cpu_generic_py310_h40998ca_3  prefix.dev/conda-forge     Cached
+  + pytz                           2026.1.post1  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + pyvcf3                                1.0.4  py310ha49c9ca_0               prefix.dev/bioconda        Cached
+  + pyyaml                                6.0.3  py310hb46c203_1               prefix.dev/conda-forge     Cached
+  + pyzmq                                27.1.0  py310hf0664f0_2               prefix.dev/conda-forge     Cached
+  + qhull                                2020.2  h420ef59_5                    prefix.dev/conda-forge     Cached
+  + readline                                8.3  h46df422_0                    prefix.dev/conda-forge     Cached
+  + referencing                          0.37.0  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + requests                             2.33.1  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + rfc3339-validator                     0.1.4  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + rfc3986-validator                     0.1.1  pyh9f0ad1d_0                  prefix.dev/conda-forge     Cached
+  + rfc3987-syntax                        1.1.0  pyhe01879c_1                  prefix.dev/conda-forge     Cached
+  + rpds-py                              0.30.0  py310hf3301a5_0               prefix.dev/conda-forge     Cached
+  + scipy                                1.15.2  py310h32ab4ed_0               prefix.dev/conda-forge     Cached
+  + seaborn                              0.13.2  hd8ed1ab_3                    prefix.dev/conda-forge     Cached
+  + seaborn-base                         0.13.2  pyhd8ed1ab_3                  prefix.dev/conda-forge     Cached
+  + send2trash                            2.1.0  pyh5552912_1                  prefix.dev/conda-forge     Cached
+  + setuptools                           82.0.1  pyh332efcf_0                  prefix.dev/conda-forge     Cached
+  + six                                  1.17.0  pyhe01879c_1                  prefix.dev/conda-forge     Cached
+  + sleef                                 3.9.0  hb028509_0                    prefix.dev/conda-forge     Cached
+  + sniffio                               1.3.1  pyhd8ed1ab_2                  prefix.dev/conda-forge     Cached
+  + soupsieve                             2.8.3  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + stack_data                            0.6.3  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + statsmodels                          0.14.6  py310hfdc7867_0               prefix.dev/conda-forge     Cached
+  + sympy                                1.14.0  pyh2585a3b_106                prefix.dev/conda-forge     Cached
+  + terminado                            0.18.1  pyhc90fa1f_1                  prefix.dev/conda-forge     Cached
+  + tinycss2                              1.4.0  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + tk                                   8.6.13  h010d191_3                    prefix.dev/conda-forge     Cached
+  + tomli                                 2.4.1  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + torchvision                          0.26.0  cpu_py310_h06dfd13_0          prefix.dev/conda-forge     Cached
+  + tornado                               6.5.5  py310h72544b6_0               prefix.dev/conda-forge     Cached
+  + tqdm                                 4.67.3  pyh8f84b5b_0                  prefix.dev/conda-forge     Cached
+  + traitlets                            5.14.3  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + typing-extensions                    4.15.0  h396c80c_0                    prefix.dev/conda-forge     Cached
+  + typing_extensions                    4.15.0  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + typing_utils                          0.1.0  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + tzdata                                2025c  hc9c84f9_1                    prefix.dev/conda-forge     Cached
+  + unicodedata2                         17.0.1  py310h72544b6_0               prefix.dev/conda-forge     Cached
+  + uri-template                          1.3.0  pyhd8ed1ab_1                  prefix.dev/conda-forge     Cached
+  + urllib3                               2.6.3  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + wcwidth                               0.6.0  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + webcolors                           25.10.0  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + webencodings                          0.5.1  pyhd8ed1ab_3                  prefix.dev/conda-forge     Cached
+  + websocket-client                      1.9.0  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + wheel                                0.47.0  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + widgetsnbextension                   4.0.15  pyhd8ed1ab_0                  prefix.dev/conda-forge     Cached
+  + xorg-libxau                          1.0.12  hc919400_1                    prefix.dev/conda-forge     Cached
+  + xorg-libxdmcp                         1.1.5  hc919400_1                    prefix.dev/conda-forge     Cached
+  + yaml                                  0.2.5  h925e9cb_3                    prefix.dev/conda-forge     Cached
+  + zeromq                                4.3.5  h4818236_10                   prefix.dev/conda-forge     Cached
+  + zipp                                 3.23.1  pyhcf101f3_0                  prefix.dev/conda-forge     Cached
+  + zlib-ng                               2.3.3  hed4e4f5_1                    prefix.dev/conda-forge     Cached
+  + zstd                                  1.5.7  hbf9d68e_6                    prefix.dev/conda-forge     Cached
+
+  Summary:
+
+  Install: 240 packages
+
+  Total download: 0 B
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+Transaction starting
+Linking libdeflate-1.25-hc11a715_0
+Linking liblzma-5.8.3-h8088a28_0
+Linking libzlib-1.3.2-h8088a28_2
+Linking giflib-5.2.2-h93a5062_0
+Linking libwebp-base-1.6.0-h07db88b_0
+Linking bzip2-1.0.8-hd037594_9
+Linking libcxx-22.1.4-h55c6f16_0
+Linking libjpeg-turbo-3.1.4.1-h84a0fba_0
+Linking llvm-openmp-22.1.4-hc7d1edf_0
+Linking ncurses-6.5-h5e97a16_3
+Linking libuv-1.51.0-h6caf38d_1
+Linking libexpat-2.7.5-hf6b4638_0
+Linking pthread-stubs-0.4-hd74edd7_1002
+Linking xorg-libxau-1.0.12-hc919400_1
+Linking xorg-libxdmcp-1.1.5-hc919400_1
+Linking c-ares-1.34.6-hc919400_0
+Linking aws-c-common-0.12.6-hc919400_0
+Linking libbrotlicommon-1.2.0-hc919400_1
+Linking yaml-0.2.5-h925e9cb_3
+Linking libev-4.33-h93a5062_2
+Linking libsodium-1.0.21-h1a92334_3
+Linking libffi-3.5.2-hcf2aa1b_0
+Linking tk-8.6.13-h010d191_3
+Linking libsqlite-3.53.0-h1b79a29_0
+Linking zstd-1.5.7-hbf9d68e_6
+Linking libpng-1.6.58-h132b30e_0
+Linking gmp-6.3.0-h7bae524_2
+Linking libaec-1.1.5-h8664d51_0
+Linking lerc-4.1.0-h1eee2c3_0
+Linking qhull-2020.2-h420ef59_5
+Linking zlib-ng-2.3.3-hed4e4f5_1
+Linking libabseil-20260107.1-cxx17_h2062a1b_0
+Linking fmt-12.1.0-h403dcb5_0
+Linking _openmp_mutex-4.5-7_kmp_llvm
+Linking sleef-3.9.0-hb028509_0
+Linking readline-8.3-h46df422_0
+Linking libedit-3.1.20250104-pl5321hafb1f1b_0
+Linking libxcb-1.17.0-hdb1d25a_0
+Linking aws-checksums-0.2.10-h3e7f9b5_0
+Linking aws-c-compression-0.3.2-h3e7f9b5_0
+Linking aws-c-cal-0.9.13-h6ee9776_1
+Linking aws-c-sdkutils-0.2.4-h16f91aa_4
+Linking libbrotlienc-1.2.0-hc919400_1
+Linking libbrotlidec-1.2.0-hc919400_1
+Linking libfreetype6-2.14.3-hdfa99f5_0
+Linking mpfr-4.2.2-h6bc93b0_0
+Linking libtiff-4.7.1-h4030677_1
+Linking libprotobuf-6.33.5-h4a5acfd_0
+Linking libgcc-15.2.0-hcbb3090_18
+Linking aws-c-io-0.26.3-h4137820_0
+Linking brotli-bin-1.2.0-hc919400_1
+Linking libfreetype-2.14.3-hce30654_0
+Linking mpc-1.4.0-h169892a_0
+Linking openjpeg-2.5.4-hd9e9057_0
+Linking lcms2-2.18-hdfa7624_0
+Linking libgfortran5-15.2.0-hdae7583_18
+Linking aws-c-http-0.10.12-h95cdebe_1
+Linking brotli-1.2.0-h7d5ae5b_1
+Linking freetype-2.14.3-hce30654_0
+Linking libgfortran-15.2.0-h07b0088_18
+Linking aws-c-auth-0.10.1-hcb83491_2
+Linking libopenblas-0.3.32-openmp_he657e61_0
+Linking aws-c-s3-0.11.5-ha5d16b2_5
+Linking libblas-3.11.0-6_h51639a9_openblas
+Linking libcblas-3.11.0-6_hb0561ab_openblas
+Linking liblapack-3.11.0-6_hd9741b5_openblas
+Linking nomkl-1.0-h5ca1d4c_0
+Linking python_abi-3.10-8_cp310
+Linking pybind11-abi-11-hc364b38_1
+Linking tzdata-2025c-hc9c84f9_1
+Linking ca-certificates-2026.4.22-hbd8a1cb_0
+Linking libtorch-2.10.0-cpu_generic_hf7cc835_3
+Linking openssl-3.6.2-hd24854e_0
+Linking libssh2-1.11.1-h1590b86_0
+Linking libnghttp2-1.68.1-h8f3e76b_0
+Linking python-3.10.20-h1b19095_0_cpython
+Linking krb5-1.22.2-h385eeb1_0
+Linking zeromq-4.3.5-h4818236_10
+Linking libcurl-8.19.0-hd5a2499_0
+Linking hdf5-2.1.0-nompi_hc95e3eb_104
+Linking setuptools-82.0.1-pyh332efcf_0
+Linking packaging-26.1-pyhc364b38_0
+Linking wheel-0.47.0-pyhd8ed1ab_0
+Linking pip-26.0.1-pyh8b19718_0
+Linking pybind11-global-3.0.1-pyhc7ab6ef_0
+Linking pysocks-1.7.1-pyha55dd90_7
+Linking pycparser-2.22-pyh29332c3_1
+Linking soupsieve-2.8.3-pyhd8ed1ab_0
+Linking webencodings-0.5.1-pyhd8ed1ab_3
+Linking parso-0.8.6-pyhcf101f3_0
+Linking pandocfilters-1.5.0-pyhd8ed1ab_0
+Linking defusedxml-0.7.1-pyhd8ed1ab_0
+Linking python-fastjsonschema-2.21.2-pyhe01879c_0
+Linking typing_utils-0.1.0-pyhd8ed1ab_1
+Linking wcwidth-0.6.0-pyhd8ed1ab_0
+Linking charset-normalizer-3.4.7-pyhd8ed1ab_0
+Linking lark-1.3.1-pyhd8ed1ab_0
+Linking pure_eval-0.2.3-pyhd8ed1ab_1
+Linking executing-2.2.1-pyhd8ed1ab_0
+Linking asttokens-3.0.1-pyhd8ed1ab_0
+Linking ptyprocess-0.7.0-pyhd8ed1ab_1
+Linking sniffio-1.3.1-pyhd8ed1ab_2
+Linking hyperframe-6.1.0-pyhd8ed1ab_0
+Linking hpack-4.1.0-pyhd8ed1ab_0
+Linking certifi-2026.4.22-pyhd8ed1ab_0
+Linking zipp-3.23.1-pyhcf101f3_0
+Linking nest-asyncio-1.6.0-pyhd8ed1ab_1
+Linking appnope-0.1.4-pyhd8ed1ab_1
+Linking pygments-2.20.0-pyhd8ed1ab_0
+Linking pickleshare-0.7.5-pyhd8ed1ab_1004
+Linking decorator-5.2.1-pyhd8ed1ab_0
+Linking widgetsnbextension-4.0.15-pyhd8ed1ab_0
+Linking jupyterlab_widgets-3.0.16-pyhcf101f3_1
+Linking comm-0.2.3-pyhe01879c_0
+Linking attrs-26.1.0-pyhcf101f3_0
+Linking webcolors-25.10.0-pyhd8ed1ab_0
+Linking uri-template-1.3.0-pyhd8ed1ab_1
+Linking jsonpointer-3.1.1-pyhcf101f3_0
+Linking idna-3.11-pyhf9edf01_1
+Linking platformdirs-4.9.6-pyhcf101f3_0
+Linking python-json-logger-2.0.7-pyhd8ed1ab_0
+Linking websocket-client-1.9.0-pyhd8ed1ab_0
+Linking prometheus_client-0.25.0-pyhd8ed1ab_0
+Linking rfc3986-validator-0.1.1-pyh9f0ad1d_0
+Linking traitlets-5.14.3-pyhd8ed1ab_1
+Linking tomli-2.4.1-pyhcf101f3_0
+Linking json5-0.14.0-pyhd8ed1ab_0
+Linking babel-2.18.0-pyhcf101f3_1
+Linking cpython-3.10.20-py310hd8ed1ab_0
+Linking cached_property-1.5.2-pyha770c72_1
+Linking munkres-1.1.4-pyhd8ed1ab_1
+Linking pyparsing-3.3.2-pyhcf101f3_0
+Linking cycler-0.12.1-pyhcf101f3_2
+Linking pytz-2026.1.post1-pyhcf101f3_0
+Linking python-tzdata-2026.1-pyhd8ed1ab_0
+Linking typing_extensions-4.15.0-pyhcf101f3_0
+Linking networkx-3.4.2-pyh267e887_2
+Linking mpmath-1.3.0-pyhd8ed1ab_1
+Linking fsspec-2026.3.0-pyhd8ed1ab_0
+Linking filelock-3.29.0-pyhd8ed1ab_0
+Linking six-1.17.0-pyhe01879c_1
+Linking tqdm-4.67.3-pyh8f84b5b_0
+Linking pybind11-3.0.1-pyh7a1b43c_0
+Linking tinycss2-1.4.0-pyhd8ed1ab_0
+Linking bleach-6.3.0-pyhcf101f3_1
+Linking jedi-0.19.2-pyhd8ed1ab_1
+Linking overrides-7.7.0-pyhd8ed1ab_1
+Linking prompt-toolkit-3.0.52-pyha770c72_0
+Linking rfc3987-syntax-1.1.0-pyhe01879c_1
+Linking stack_data-0.6.3-pyhd8ed1ab_1
+Linking pexpect-4.9.0-pyhd8ed1ab_1
+Linking h2-4.3.0-pyhcf101f3_0
+Linking importlib_resources-7.1.0-pyhd8ed1ab_0
+Linking importlib-metadata-8.8.0-pyhcf101f3_0
+Linking jupyterlab_pygments-0.3.0-pyhd8ed1ab_2
+Linking matplotlib-inline-0.2.1-pyhd8ed1ab_0
+Linking jupyter_core-5.9.1-pyhc90fa1f_0
+Linking cached-property-1.5.2-hd8ed1ab_1
+Linking mistune-3.2.0-pyhcf101f3_0
+Linking h11-0.16.0-pyhcf101f3_1
+Linking exceptiongroup-1.3.1-pyhd8ed1ab_0
+Linking async-lru-2.3.0-pyhcf101f3_0
+Linking typing-extensions-4.15.0-h396c80c_0
+Linking rfc3339-validator-0.1.4-pyhd8ed1ab_1
+Linking python-dateutil-2.9.0.post0-pyhe01879c_2
+Linking bleach-with-css-6.3.0-hbca2aae_1
+Linking prompt_toolkit-3.0.52-hd8ed1ab_0
+Linking fqdn-1.5.1-pyhd8ed1ab_1
+Linking ipython-8.37.0-pyh8f84b5b_0
+Linking anyio-4.13.0-pyhcf101f3_0
+Linking beautifulsoup4-4.14.3-pyha770c72_0
+Linking arrow-1.4.0-pyhcf101f3_0
+Linking ipywidgets-8.1.8-pyhd8ed1ab_0
+Linking httpcore-1.0.9-pyh29332c3_0
+Linking isoduration-20.11.0-pyhd8ed1ab_1
+Linking httpx-0.28.1-pyhd8ed1ab_0
+Linking backports.zstd-1.3.0-py310h2d60bed_0
+Linking brotli-python-1.2.0-py310h6123dab_1
+Linking pyobjc-core-12.1-py310h9d23ab5_0
+Linking psutil-7.2.2-py310haea493c_0
+Linking debugpy-1.8.20-py310h19b6747_0
+Linking markupsafe-3.0.3-py310hb46c203_1
+Linking rpds-py-0.30.0-py310hf3301a5_0
+Linking pyyaml-6.0.3-py310hb46c203_1
+Linking pyzmq-27.1.0-py310hf0664f0_2
+Linking gmpy2-2.3.0-py310h6ac7f53_1
+Linking unicodedata2-17.0.1-py310h72544b6_0
+Linking tornado-6.5.5-py310h72544b6_0
+Linking kiwisolver-1.5.0-py310h34990b0_0
+Linking llvmlite-0.47.0-py310h4137262_1
+Linking pillow-12.2.0-py310hc037f36_0
+Linking numpy-2.2.6-py310h4d83441_0
+Linking cffi-2.0.0-py310hf5b66c1_1
+Linking optree-0.19.0-py310h1c35771_0
+Linking pyobjc-framework-cocoa-12.1-py310h8579ff5_0
+Linking fonttools-4.62.1-py310hb46c203_0
+Linking contourpy-1.3.2-py310h7f4e7e6_0
+Linking scipy-1.15.2-py310h32ab4ed_0
+Linking pandas-2.3.3-py310h25f4b65_1
+Linking numba-0.65.0-py310h71bca05_1
+Linking h5py-3.16.0-nompi_py310hcf53ec8_102
+Linking biopython-1.87-py310h72544b6_0
+Linking argon2-cffi-bindings-25.1.0-py310hfe3a0ae_2
+Linking matplotlib-base-3.10.8-py310h0181960_0
+Linking matplotlib-3.10.8-py310hb6292c7_0
+Linking pyvcf3-1.0.4-py310ha49c9ca_0
+Linking pysam-0.23.3-py310hf7cbfa5_3
+Linking urllib3-2.6.3-pyhd8ed1ab_0
+Linking jinja2-3.1.6-pyhcf101f3_1
+Linking referencing-0.37.0-pyhcf101f3_0
+Linking sympy-1.14.0-pyh2585a3b_106
+Linking terminado-0.18.1-pyhc90fa1f_1
+Linking jupyter_client-8.8.0-pyhcf101f3_0
+Linking patsy-1.0.2-pyhcf101f3_0
+Linking send2trash-2.1.0-pyh5552912_1
+Linking argon2-cffi-25.1.0-pyhd8ed1ab_0
+Linking seaborn-base-0.13.2-pyhd8ed1ab_3
+Linking requests-2.33.1-pyhcf101f3_0
+Linking jsonschema-specifications-2025.9.1-pyhcf101f3_0
+Linking jupyter_server_terminals-0.5.4-pyhcf101f3_0
+Linking ipykernel-7.2.0-pyh5552912_1
+Linking jsonschema-4.26.0-pyhcf101f3_0
+Linking jupyter_console-6.6.3-pyhd8ed1ab_1
+Linking nbformat-5.10.4-pyhd8ed1ab_1
+Linking jsonschema-with-format-nongpl-4.26.0-hcf101f3_0
+Linking nbclient-0.10.4-pyhd8ed1ab_0
+Linking jupyter_events-0.12.1-pyhcf101f3_0
+Linking nbconvert-core-7.17.1-pyhcf101f3_0
+Linking jupyter_server-2.17.0-pyhcf101f3_0
+Linking jupyter-lsp-2.3.1-pyhcf101f3_0
+Linking notebook-shim-0.2.4-pyhd8ed1ab_1
+Linking jupyterlab_server-2.28.0-pyhcf101f3_0
+Linking jupyterlab-4.5.6-pyhd8ed1ab_0
+Linking notebook-7.5.5-pyhcf101f3_0
+Linking jupyter-1.1.1-pyhd8ed1ab_1
+Linking pyfaidx-0.9.0.4-pyhdfd78af_0
+Linking pytorch-2.10.0-cpu_generic_py310_h40998ca_3
+Linking statsmodels-0.14.6-py310hfdc7867_0
+Linking torchvision-0.26.0-cpu_py310_h06dfd13_0
+Linking seaborn-0.13.2-hd8ed1ab_3
+
+Transaction finished
+
+
+To activate this environment, use:
+
+    mamba activate chorus-sei
+
+Or to execute a single command in this environment, use:
+
+    mamba run -n chorus-sei mycommand
+

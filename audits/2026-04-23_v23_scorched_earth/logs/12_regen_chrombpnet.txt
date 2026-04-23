@@ -1,0 +1,40 @@
+2026-04-23 08:15:10,795 - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-23 08:15:10,796 - WARNING - Environment management not available. Oracle will run in current environment.
+2026-04-23 08:15:10,796 - INFO - Dowloading ChromBPNet into /Users/lp698/chorus_test/chorus/downloads/chrombpnet/ATAC_HepG2...
+2026-04-23 08:15:10,796 - INFO - Downloading https://www.encodeproject.org/files/ENCFF137WCM/@@download/ENCFF137WCM.tar.gz...
+2026-04-23 08:16:14,929 - INFO -   ChromBPNet ATAC:HepG2: 0.10/0.72 GB (14.5%)
+2026-04-23 08:17:16,698 - INFO -   ChromBPNet ATAC:HepG2: 0.21/0.72 GB (29.1%)
+2026-04-23 08:18:18,389 - INFO -   ChromBPNet ATAC:HepG2: 0.31/0.72 GB (43.6%)
+2026-04-23 08:19:20,096 - INFO -   ChromBPNet ATAC:HepG2: 0.42/0.72 GB (58.1%)
+2026-04-23 08:20:21,814 - INFO -   ChromBPNet ATAC:HepG2: 0.52/0.72 GB (72.7%)
+2026-04-23 08:21:23,595 - INFO -   ChromBPNet ATAC:HepG2: 0.63/0.72 GB (87.2%)
+2026-04-23 08:22:17,937 - INFO - Download completed!
+2026-04-23 08:22:21,386 - INFO - Loading ChromBPNet model...
+2026-04-23 08:22:23,156 - INFO - Auto-detected 1 GPU(s)
+2026-04-23 08:22:23.167345: I metal_plugin/src/device/metal_device.cc:1154] Metal device set to: Apple M3 Ultra
+2026-04-23 08:22:23.167371: I metal_plugin/src/device/metal_device.cc:296] systemMemory: 96.00 GB
+2026-04-23 08:22:23.167376: I metal_plugin/src/device/metal_device.cc:313] maxCacheSize: 36.00 GB
+2026-04-23 08:22:23.167409: I tensorflow/core/common_runtime/pluggable_device/pluggable_device_factory.cc:306] Could not identify NUMA node of platform GPU ID 0, defaulting to 0. Your kernel may not have been built with NUMA support.
+2026-04-23 08:22:23.167423: I tensorflow/core/common_runtime/pluggable_device/pluggable_device_factory.cc:272] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 0 MB memory) -> physical PluggableDevice (device: 0, name: METAL, pci bus id: <undefined>)
+2026-04-23 08:22:23,814 - INFO - Fingerprint not found. Saved model loading will continue.
+2026-04-23 08:22:23,815 - INFO - path_and_singleprint metric could not be logged. Saved model loading will continue.
+2026-04-23 08:22:23,930 - INFO - ChromBPNet model loaded successfully!
+2026-04-23 08:22:23,946 - INFO - Loaded per-track CDFs for 'chrombpnet': 24 tracks, CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
+2026-04-23 08:22:23,946 - INFO - Predicting variant effect with chrombpnet ...
+2026-04-23 08:22:24.039616: I tensorflow/core/grappler/optimizers/custom_graph_optimizer_registry.cc:117] Plugin optimizer for device_type GPU is enabled.
+2026-04-23 08:22:24,279 - INFO - Building variant report ...
+2026-04-23 08:22:24,280 - INFO - Annotation file already exists: /Users/lp698/chorus_test/chorus/annotations/gencode.v48.basic.annotation.gtf
+2026-04-23 08:22:24,280 - INFO - Loading GTF features (gene) from gencode.v48.basic.annotation.gtf (one-time)...
+2026-04-23 08:22:25,867 - INFO - Cached 78686 gene features from GTF
+2026-04-23 08:22:25,875 - INFO - Genes in prediction window: SORT1, CELSR2
+2026-04-23 08:22:25,875 - INFO - Annotation file already exists: /Users/lp698/chorus_test/chorus/annotations/gencode.v48.basic.annotation.gtf
+2026-04-23 08:22:25,875 - INFO - Loading GTF features (exon) from gencode.v48.basic.annotation.gtf (one-time)...
+2026-04-23 08:22:33,270 - INFO - Cached 1007879 exon features from GTF
+2026-04-23 08:22:33,521 - INFO - Annotation file already exists: /Users/lp698/chorus_test/chorus/annotations/gencode.v48.basic.annotation.gtf
+2026-04-23 08:22:33,521 - INFO - Loading GTF features (transcript) from gencode.v48.basic.annotation.gtf (one-time)...
+2026-04-23 08:22:35,790 - INFO - Cached 158367 transcript features from GTF
+2026-04-23 08:22:35,837 - INFO - Annotation file already exists: /Users/lp698/chorus_test/chorus/annotations/gencode.v48.basic.annotation.gtf
+2026-04-23 08:22:35,838 - INFO - Annotation file already exists: /Users/lp698/chorus_test/chorus/annotations/gencode.v48.basic.annotation.gtf
+2026-04-23 08:22:35,865 - INFO - HTML report written to /Users/lp698/chorus_test/chorus/examples/walkthroughs/validation/SORT1_rs12740374_multioracle/rs12740374_SORT1_chrombpnet_report.html
+2026-04-23 08:22:35,865 - INFO -   ✓ wrote chrombpnet_variant_report.json, chrombpnet_variant_report.pkl, and rs12740374_SORT1_chrombpnet_report.html
+Loading directly

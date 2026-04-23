@@ -1,0 +1,41 @@
+2026-04-23 08:05:55,571 - httpx - INFO - HTTP Request: GET https://pypi.org/pypi/fastmcp/json "HTTP/1.1 200 OK"
+
+
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│                                                                              │
+│                         ▄▀▀ ▄▀█ █▀▀ ▀█▀ █▀▄▀█ █▀▀ █▀█                        │
+│                         █▀  █▀█ ▄▄█  █  █ ▀ █ █▄▄ █▀▀                        │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                FastMCP 3.2.4                                 │
+│                            https://gofastmcp.com                             │
+│                                                                              │
+│                  🖥  Server:      Chorus Genomics, 3.2.4                      │
+│                  🚀 Deploy free: https://horizon.prefect.io                  │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+[04/23/26 08:05:55] INFO     Starting MCP server 'Chorus        transport.py:209
+                             Genomics' with transport 'stdio'                   
+2026-04-23 08:05:55,608 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-23 08:05:55,610 - chorus.mcp.state - INFO - Auto-detected hg38 at /Users/lp698/chorus_test/chorus/genomes/hg38.fa
+2026-04-23 08:05:55,657 - chorus.core.environment.manager - INFO - Found mamba: 2.4.0
+2026-04-23 08:05:55,657 - chorus.core.platform - INFO - Detected platform: Darwin arm64 (key=macos_arm64, cuda=False)
+2026-04-23 08:05:55,840 - mcp.server.lowlevel.server - INFO - Processing request of type ListToolsRequest
+2026-04-23 08:05:55,844 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+2026-04-23 08:05:55,932 - chorus.oracles.enformer_source.enformer_metadata - INFO - Loaded 5313 track metadata entries
+2026-04-23 08:05:55,939 - mcp.server.lowlevel.server - INFO - Processing request of type CallToolRequest
+Spawning chorus-mcp ...
+list_oracles [first 500 chars]:
+{"oracles":[{"name":"enformer","description":"Enformer (DeepMind) — predict chromatin & gene expression from DNA sequence","framework":"TensorFlow","input_size_bp":393216,"output_bins":896,"resolution_bp":128,"assay_types":["DNASE","ATAC","CAGE","CHIP","RNA"],"environment_installed":true,"loaded":false},{"name":"borzoi","description":"Borzoi — high-resolution gene expression & chromatin prediction","framework":"PyTorch","input_size_bp":524288,"output_bins":6144,"resolution_bp":32,"assay_types":[
+
+list_tracks(enformer) [first 300 chars]:
+{"oracle":"enformer","assay_types":["ATAC","CAGE","CHIP","DNASE"],"cell_types":["3xFLAG-AHR","3xFLAG-ARID4B","3xFLAG-ATF1","3xFLAG-ATF4","3xFLAG-BCL6","3xFLAG-CEBPA","3xFLAG-CEBPG","3xFLAG-CREB1","3xFLAG-DMAP1","3xFLAG-DNMT3B","3xFLAG-DRAP1","3xFLAG-ELF3","3xFLAG-ERF","3xFLAG-ETV5","3xFLAG-FOXA3","3
+
+oracle_status [first 300 chars]:
+{"loaded_oracles":[]}
+
+✓ MCP E2E works
