@@ -1,0 +1,13 @@
+=== MCP walkthrough docs — do they align with current tool list? ===
+  `analyze_variant_multilayer` on the top cell types for a focused report.
+
+=== tools referenced in walkthrough READMEs ===
+analyze_region_swap
+analyze_variant_multilayer
+discover_variant_cell_types
+fine_map_causal_variant
+list_tracks
+load_oracle
+predict
+score_variant_batch
+simulate_integration

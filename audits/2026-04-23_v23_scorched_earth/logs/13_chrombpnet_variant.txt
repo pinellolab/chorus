@@ -1,0 +1,25 @@
+2026-04-23 08:23:07,237 - chorus.core.base - INFO - CHORUS_NO_TIMEOUT is set - all timeouts disabled
+2026-04-23 08:23:07,237 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-23 08:23:07,238 - chorus.oracles.chrombpnet - INFO - Dowloading ChromBPNet into /Users/lp698/chorus_test/chorus/downloads/chrombpnet/DNASE_HepG2...
+2026-04-23 08:23:07,238 - chorus.oracles.chrombpnet - INFO - Downloading https://www.encodeproject.org/files/ENCFF615AKY/@@download/ENCFF615AKY.tar.gz...
+2026-04-23 08:24:17,424 - chorus.utils.http - INFO -   ChromBPNet DNASE:HepG2: 0.10/0.72 GB (14.5%)
+2026-04-23 08:25:25,665 - chorus.utils.http - INFO -   ChromBPNet DNASE:HepG2: 0.21/0.72 GB (29.0%)
+2026-04-23 08:26:34,103 - chorus.utils.http - INFO -   ChromBPNet DNASE:HepG2: 0.31/0.72 GB (43.5%)
+2026-04-23 08:27:42,325 - chorus.utils.http - INFO -   ChromBPNet DNASE:HepG2: 0.42/0.72 GB (58.0%)
+2026-04-23 08:28:50,504 - chorus.utils.http - INFO -   ChromBPNet DNASE:HepG2: 0.52/0.72 GB (72.5%)
+2026-04-23 08:29:58,653 - chorus.utils.http - INFO -   ChromBPNet DNASE:HepG2: 0.63/0.72 GB (87.0%)
+2026-04-23 08:30:59,619 - chorus.oracles.chrombpnet - INFO - Download completed!
+2026-04-23 08:31:03,125 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-23 08:31:04,812 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-23 08:31:04.823728: I metal_plugin/src/device/metal_device.cc:1154] Metal device set to: Apple M3 Ultra
+2026-04-23 08:31:04.823757: I metal_plugin/src/device/metal_device.cc:296] systemMemory: 96.00 GB
+2026-04-23 08:31:04.823762: I metal_plugin/src/device/metal_device.cc:313] maxCacheSize: 36.00 GB
+2026-04-23 08:31:04.823792: I tensorflow/core/common_runtime/pluggable_device/pluggable_device_factory.cc:306] Could not identify NUMA node of platform GPU ID 0, defaulting to 0. Your kernel may not have been built with NUMA support.
+2026-04-23 08:31:04.823807: I tensorflow/core/common_runtime/pluggable_device/pluggable_device_factory.cc:272] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 0 MB memory) -> physical PluggableDevice (device: 0, name: METAL, pci bus id: <undefined>)
+2026-04-23 08:31:05,464 - absl - INFO - Fingerprint not found. Saved model loading will continue.
+2026-04-23 08:31:05,465 - absl - INFO - path_and_singleprint metric could not be logged. Saved model loading will continue.
+2026-04-23 08:31:05,584 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-23 08:31:05.665981: I tensorflow/core/grappler/optimizers/custom_graph_optimizer_registry.cc:117] Plugin optimizer for device_type GPU is enabled.
+Loading directly
+  alt_1/DNASE:HepG2: mean_delta=0.2374, max_abs_delta=15.0409
+chrombpnet SORT1 rs12740374 G>T — predict_variant_effect succeeded

@@ -130,3 +130,96 @@ fresh-built `chorus` env: **338 passed, 2 skipped** in 45.67 s. The
 2 skipped are integration tests correctly guarding on missing
 `.chorus_setup_v1` markers for non-enformer oracles — only enformer
 has a marker in this scorched-earth run.
+
+---
+
+## Addendum — "did you run all the notebooks?" (post-scorched)
+
+Pushback from user: v23 only installed enformer + ran pytest. Did not
+run notebooks or MCP walkthroughs. Re-opened the audit to cover both.
+
+### Installed extra oracles
+
+- `chorus setup --oracle chrombpnet` → ✓ 9 min 2 s (env 35 s + weights
+  8 min 26 s ATAC:K562 fold 0 from ENCODE + backgrounds 1 s + hg38
+  already present). marker written. `chorus health → ✓ Healthy`.
+- `chorus setup --oracle legnet` → ✓ a few min (weights 3 s — tiny).
+  marker written.
+
+Still not installed (deferred — 80 GB / 2–4 h + HF token):
+`chorus-borzoi`, `chorus-sei`, `chorus-alphagenome`.
+
+### Notebooks
+
+| Notebook | Cells | Errors | Warnings | Notes |
+|---|---|---|---|---|
+| `single_oracle_quickstart.ipynb` | 49 | 0 | 0 | ✓ clean (enformer only) |
+| `advanced_multi_oracle_analysis.ipynb` (before fix) | 127 (57 code) | 0 | **1** | ref-allele mismatch at chr2 CTCF motif site |
+| `advanced_multi_oracle_analysis.ipynb` (after fix) | 127 (57 code) | 0 | 0 | ✓ clean |
+| `comprehensive_oracle_showcase.ipynb` | ~58 code | **1** (cell 9) | — | aborts on Borzoi (`ModuleNotFoundError: borzoi_pytorch`) — expected, borzoi env not installed |
+
+### Real P2 fix landed in this PR
+
+`examples/notebooks/advanced_multi_oracle_analysis.ipynb` cell 67 had
+`first_G_position_in_int = 108`. That offset was calibrated to the
+pre-v19 off-by-one in `predict_variant_effect` — the hardcoded 108
+landed on the right G only because the ref-check was reading the base
+one position to the right. **Post-PR #32 fix**, the code correctly
+reads the base at the user-given position, which is 'A' at
+interval-offset 108 (the A in `CCAGAGGGC`). The warning
+
+    Provided reference allele 'G' does not match the genome at this
+    position ('A'). Chorus will use the provided allele.
+
+was **not a false positive** — it meant Chorus was silently substituting
+G at the wrong base, so every reported "CTCF motif disruption" prediction
+was actually a prediction of "natural A → G/C/T at the position before
+the G". Shipped notebook output was scientifically misleading.
+
+**Fix:** `108 → 109` (in 1-based convention post-PR #32), so `variant_pos`
+lands on 1-based chr2:246676 = the first G of `CCAGAGGGC`. Verified
+via `extract_sequence('chr2:246676-246676')` → 'G'. Re-ran the full
+notebook: **0 errors, 0 warnings**.
+
+### MCP server end-to-end
+
+Spawn `chorus-mcp` as stdio subprocess via `fastmcp.Client` +
+`StdioTransport`. Called 3 tools successfully:
+
+- `list_oracles()` → all 6 oracles with correct specs
+  (enformer: environment_installed=true, others=false)
+- `list_tracks('enformer')` → 4 assay types + 1267 cell types
+- `oracle_status()` → `{"loaded_oracles":[]}`
+
+### Walkthrough numbers — ChromBPNet spot-check
+
+Ran `scripts/regenerate_multioracle.py --oracle chrombpnet` against the
+fresh chrombpnet env. Effect-size drift vs committed: 2e-6
+(`0.528543239 → 0.528545369`) — within CPU non-determinism. Reverted
+the regen (pure noise).
+
+Also ran a standalone variant prediction: rs12740374 G>T on
+`DNASE:HepG2` → mean_delta=0.2374, max_abs_delta=15.0409. Consistent
+with the "chromatin accessibility opening" called out in the walkthrough
+README.
+
+### Docs / MCP walkthrough consistency
+
+Every tool name referenced in `examples/walkthroughs/**/README.md`
+(9 unique: `analyze_region_swap`, `analyze_variant_multilayer`,
+`discover_variant_cell_types`, `fine_map_causal_variant`, `list_tracks`,
+`load_oracle`, `predict`, `score_variant_batch`, `simulate_integration`)
+is present in the 22-tool MCP registry. No orphan / renamed / stale
+tool refs.
+
+### Not exercised (deferred)
+
+- `borzoi`, `sei`, `alphagenome` setup/predict/walkthroughs — need
+  `chorus setup --oracle all` (2–4 h) + HF_TOKEN for AG
+- `comprehensive_oracle_showcase.ipynb` — needs all 6 oracles; aborted
+  on Borzoi cell, as expected
+- Walkthroughs whose primary oracle is AlphaGenome (the majority):
+  variant_analysis/{SORT1_rs12740374, BCL11A_rs1427407, FTO_rs1421085},
+  validation/SORT1_rs12740374_with_CEBP + TERT, discovery/SORT1,
+  causal_prioritization/SORT1_locus, sequence_engineering/integration,
+  batch_scoring. Previously verified in v21 / v22.
