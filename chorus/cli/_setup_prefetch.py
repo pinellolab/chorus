@@ -29,13 +29,20 @@ from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
-# Default (assay, cell_type[, kwargs]) for load_pretrained_model when we
-# want to pre-pull "the canonical config" at setup time. Oracles absent
-# from this dict are driven with an argument-less load_pretrained_model()
-# call (e.g. enformer, borzoi, sei, alphagenome which take no required
-# config).
-_DEFAULT_LOAD_KWARGS: Dict[str, Dict[str, object]] = {
+# Default kwargs for prefetching a canonical model config. These are
+# split into constructor kwargs vs load_pretrained_model kwargs per
+# oracle because they disagree on which layer takes which arg:
+#   - LegNet: assay/cell_type live on __init__; load_pretrained_model
+#     takes no required args.
+#   - ChromBPNet: assay/cell_type/fold are load_pretrained_model args.
+#   - Everything else (enformer, borzoi, sei, alphagenome): no required
+#     config for prefetch — bare load_pretrained_model().
+# Passing ChromBPNet-style kwargs to LegNet.load_pretrained_model breaks
+# `chorus setup --oracle legnet` with a TypeError (v22 audit finding).
+_DEFAULT_CTOR_KWARGS: Dict[str, Dict[str, object]] = {
     "legnet": {"assay": "LentiMPRA", "cell_type": "HepG2"},
+}
+_DEFAULT_LOAD_KWARGS: Dict[str, Dict[str, object]] = {
     "chrombpnet": {"assay": "DNASE", "cell_type": "K562", "fold": 0},
 }
 
@@ -48,8 +55,10 @@ def _weight_prefetch_script(oracle: str) -> str:
     (ENCODE tarballs, Zenodo tarballs, TF Hub, HF Hub) into their
     respective caches.
     """
-    kwargs = _DEFAULT_LOAD_KWARGS.get(oracle.lower(), {})
-    kwargs_repr = ", ".join(f"{k}={v!r}" for k, v in kwargs.items())
+    ctor_kwargs = _DEFAULT_CTOR_KWARGS.get(oracle.lower(), {})
+    load_kwargs = _DEFAULT_LOAD_KWARGS.get(oracle.lower(), {})
+    ctor_repr = "".join(f", {k}={v!r}" for k, v in ctor_kwargs.items())
+    load_repr = ", ".join(f"{k}={v!r}" for k, v in load_kwargs.items())
     # ``use_environment=False`` makes the oracle load directly in the
     # current subprocess (we are already inside the oracle's conda env
     # via ``run_script_in_environment``); chorus.__init__.create_oracle
@@ -59,8 +68,8 @@ def _weight_prefetch_script(oracle: str) -> str:
 import json, sys
 import chorus
 try:
-    oracle = chorus.create_oracle({oracle!r}, use_environment=False)
-    oracle.load_pretrained_model({kwargs_repr})
+    oracle = chorus.create_oracle({oracle!r}, use_environment=False{ctor_repr})
+    oracle.load_pretrained_model({load_repr})
     print(json.dumps({{'success': True}}))
 except Exception as exc:
     import traceback
