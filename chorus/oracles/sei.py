@@ -73,8 +73,12 @@ class SeiOracle(OracleBase):
         self.download_dir = SEI_MODELS_DIR
         self._model_info = None
 
-        if not self.get_model_weights_path().exists() or not self.get_projector_weights().exists() or not self.get_adjustor_params().exists() or not self.get_target_names().exists() or not self.get_classes_names().exists():
-            self._download_sei_model()
+        # NB: the 3.3 GB Zenodo tarball is no longer pulled at construction
+        # time. Loading the weights (via load_pretrained_model) now triggers
+        # the download if necessary; this keeps SeiOracle() itself cheap
+        # and consistent with the other 5 oracles. `chorus setup sei`
+        # pre-downloads the archive so users don't hit the delay
+        # on their first predict call.
 
     def get_model_dir_path(self) -> Path:
         if self.model_dir is None:
@@ -92,10 +96,18 @@ class SeiOracle(OracleBase):
         return self.download_dir / 'model'/"histone_inds.npy"
     
     def get_target_names(self) -> Path:
-        return self.download_dir / 'model'/ "target.names"
-    
+        cached = self.download_dir / 'model' / "target.names"
+        # Fall back to the copy packaged with the source so
+        # list_assay_types() works without the 3.3 GB Zenodo archive.
+        if cached.exists():
+            return cached
+        return self.get_model_dir_path() / "target.names"
+
     def get_classes_names(self) -> Path:
-        return self.download_dir / 'model'/ "seqclass_info.txt"
+        cached = self.download_dir / 'model' / "seqclass_info.txt"
+        if cached.exists():
+            return cached
+        return self.get_model_dir_path() / "seqclass_info.txt"
 
     def get_templates_dir(self) -> Path:
         d = self.get_model_dir_path()
@@ -117,6 +129,18 @@ class SeiOracle(OracleBase):
         """Load Sei model weights."""
         if weights is not None:
             self.model_dir = weights
+
+        # Lazy download here (not in __init__) to keep SeiOracle()
+        # construction cheap for tests/metadata calls and aligned with
+        # the other 5 oracles' behavior.
+        if (
+            not self.get_model_weights_path().exists()
+            or not self.get_projector_weights().exists()
+            or not self.get_adjustor_params().exists()
+            or not self.get_target_names().exists()
+            or not self.get_classes_names().exists()
+        ):
+            self._download_sei_model()
 
         if self.use_environment:
             self._load_in_environment()

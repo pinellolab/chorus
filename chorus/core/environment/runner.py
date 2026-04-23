@@ -487,13 +487,15 @@ with open('{output_path}', 'wb') as f:
             'python_executable': None,
             'can_import': False,
             'dependencies_ok': False,
+            'weights_status': 'unknown',
+            'missing_artifacts': [],
             'errors': []
         }
-        
+
         if not health['environment_exists']:
             health['errors'].append("Environment does not exist")
             return health
-        
+
         # Check Python executable
         python_exe = self.env_manager.get_python_executable(oracle)
         if python_exe:
@@ -501,7 +503,18 @@ with open('{output_path}', 'wb') as f:
         else:
             health['errors'].append("Python executable not found")
             return health
-        
+
+        # Cheap on-disk / auth probe BEFORE the heavy subprocess import.
+        # Lets 'chorus health' report "Not installed" distinct from
+        # "Unhealthy" without spawning a 120s subprocess that may be
+        # blocked on a multi-GB Zenodo download.
+        from ..weights_probe import probe_weights as _probe_weights  # deferred import to avoid circulars
+        installed, reasons = _probe_weights(oracle)
+        health['weights_status'] = 'present' if installed else 'missing'
+        health['missing_artifacts'] = list(reasons)
+        if not installed:
+            return health
+
         # Try to import oracle
         try:
             metadata = self.import_oracle_in_environment(oracle, timeout=timeout)  # Increased for slower systems

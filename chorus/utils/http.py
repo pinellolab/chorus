@@ -29,6 +29,8 @@ import urllib.request
 from pathlib import Path
 from typing import Optional
 
+from tqdm import tqdm
+
 logger = logging.getLogger(__name__)
 
 
@@ -100,20 +102,40 @@ def download_with_resume(
             mode = "ab" if already > 0 else "wb"
             downloaded = already
             last_log = downloaded
-            with open(partial_p, mode) as out:
-                while True:
-                    chunk = resp.read(chunk_bytes)
-                    if not chunk:
-                        break
-                    out.write(chunk)
-                    downloaded += len(chunk)
-                    if total and downloaded - last_log >= log_every_bytes:
-                        pct = 100.0 * downloaded / total
-                        logger.info(
-                            "  %s: %.2f/%.2f GB (%.1f%%)",
-                            tag, downloaded / 1e9, total / 1e9, pct,
-                        )
-                        last_log = downloaded
+            pbar = tqdm(
+                total=total,
+                initial=already,
+                unit="B",
+                unit_scale=True,
+                unit_divisor=1024,
+                desc=tag,
+                disable=None,  # auto-disable when stderr isn't a TTY
+            )
+            try:
+                with open(partial_p, mode) as out:
+                    while True:
+                        chunk = resp.read(chunk_bytes)
+                        if not chunk:
+                            break
+                        out.write(chunk)
+                        downloaded += len(chunk)
+                        pbar.update(len(chunk))
+                        # When tqdm is disabled (non-TTY, e.g. CI logs),
+                        # emit a periodic log line so the download is
+                        # still visibly alive.
+                        if (
+                            pbar.disable
+                            and total
+                            and downloaded - last_log >= log_every_bytes
+                        ):
+                            pct = 100.0 * downloaded / total
+                            logger.info(
+                                "  %s: %.2f/%.2f GB (%.1f%%)",
+                                tag, downloaded / 1e9, total / 1e9, pct,
+                            )
+                            last_log = downloaded
+            finally:
+                pbar.close()
 
             partial_p.rename(dest_p)
         finally:

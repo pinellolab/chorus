@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def setup_environments(args):
-    """Set up oracle environments."""
+    """Set up oracle environments + pre-download weights, backgrounds, genome."""
     manager = EnvironmentManager()
 
     if args.oracle == "base":
@@ -32,27 +32,82 @@ def setup_environments(args):
         )
         return 1
 
-    if args.oracle:
-        # Set up specific oracle
-        oracles = [args.oracle]
-    else:
-        # Set up all oracles
-        oracles = manager.list_available_oracles()
-        if not oracles:
-            logger.error("No oracle environment definitions found.")
+    # Route both "chorus setup --oracle all" AND "chorus setup" (no --oracle)
+    # through the same setup-all flow so the LDlink prompt and HF-token
+    # gate apply uniformly.
+    if args.oracle == "all" or args.oracle is None:
+        from ._setup_all import setup_all_oracles
+        return setup_all_oracles(args)
+
+    oracles = [args.oracle]
+
+    # AlphaGenome is gated; resolve the HF token up front so we don't
+    # build a multi-GB env only to fail on auth.
+    if "alphagenome" in [o.lower() for o in oracles] and not args.no_weights:
+        from ._tokens import resolve_hf_token
+        if not resolve_hf_token(cli_token=getattr(args, "hf_token", None), interactive=True):
+            logger.error(
+                "AlphaGenome requires a HuggingFace token. Set HF_TOKEN, run "
+                "'huggingface-cli login', or pass --hf-token."
+            )
             return 1
-    
+
+    from ..core.environment import EnvironmentRunner
+    from ..core.weights_probe import write_setup_marker
+    from ._setup_prefetch import prefetch_for_oracle
+    runner = EnvironmentRunner(manager)
+
     success_count = 0
     for oracle in oracles:
         logger.info(f"Setting up environment for {oracle}...")
-        
-        if manager.create_environment(oracle, force=args.force):
-            logger.info(f"✓ Successfully set up {oracle}")
+
+        if args.force:
+            # Drop any stale marker up front so a mid-run failure doesn't
+            # leave `chorus health` reporting Healthy for a half-rebuilt
+            # env. The marker is re-created at the end only on success.
+            from ..core.weights_probe import setup_marker_path
+            stale = setup_marker_path(oracle)
+            if stale.exists():
+                stale.unlink()
+
+        if not manager.create_environment(oracle, force=args.force):
+            logger.error(f"✗ Failed to build env for {oracle}")
+            continue
+        logger.info(f"✓ env for {oracle}")
+
+        if args.no_weights and args.no_backgrounds and args.no_genome:
+            logger.info(
+                f"Skipping all data prefetch for {oracle} (--no-weights, "
+                "--no-backgrounds, --no-genome). Setup marker NOT written."
+            )
             success_count += 1
+            continue
+
+        ok, errors = prefetch_for_oracle(
+            oracle,
+            runner,
+            skip_weights=args.no_weights,
+            skip_backgrounds=args.no_backgrounds,
+            skip_genome=args.no_genome,
+        )
+        if not ok:
+            logger.error(f"✗ prefetch failed for {oracle}:")
+            for err in errors:
+                logger.error(f"  - {err}")
+            continue
+
+        if args.no_weights:
+            # Don't claim a setup is complete when the user explicitly
+            # opted out of the download that makes `chorus health` pass.
+            logger.info(
+                f"✓ {oracle} env ready (weights skipped — setup marker NOT written)"
+            )
         else:
-            logger.error(f"✗ Failed to set up {oracle}")
-    
-    logger.info(f"\nSetup complete: {success_count}/{len(oracles)} environments created.")
+            write_setup_marker(oracle)
+            logger.info(f"✓ {oracle} ready")
+        success_count += 1
+
+    logger.info(f"\nSetup complete: {success_count}/{len(oracles)} oracles ready.")
     return 0 if success_count == len(oracles) else 1
 
 
@@ -160,27 +215,34 @@ def check_health(args):
         logger.info("No installed environments to check.")
         return 0
     
-    all_healthy = True
-    
+    all_ok = True
+
     for oracle in oracles:
         logger.info(f"\nChecking {oracle}...")
         health = runner.check_environment_health(oracle, timeout=args.timeout)
-        
-        if health['errors']:
+
+        if health.get('weights_status') == 'missing':
+            logger.warning(
+                f"⚠ {oracle}: Not installed — run `chorus setup {oracle}`"
+            )
+            for reason in health.get('missing_artifacts', []):
+                logger.warning(f"  - {reason}")
+            all_ok = False
+        elif health['errors']:
             logger.error(f"✗ {oracle}: Unhealthy")
             for error in health['errors']:
                 logger.error(f"  - {error}")
-            all_healthy = False
+            all_ok = False
         else:
             logger.info(f"✓ {oracle}: Healthy")
-            
+
             if args.verbose and health.get('metadata'):
                 metadata = health['metadata']
                 logger.info(f"  Class: {metadata.get('class_name')}")
                 logger.info(f"  Assay types: {len(metadata.get('assay_types', []))}")
                 logger.info(f"  Cell types: {len(metadata.get('cell_types', []))}")
-    
-    return 0 if all_healthy else 1
+
+    return 0 if all_ok else 1
 
 
 def list_genomes(args):
@@ -305,15 +367,47 @@ def main(argv: Optional[List[str]] = None):
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
     
     # Setup command
-    setup_parser = subparsers.add_parser('setup', help='Set up oracle environments')
-    setup_parser.add_argument(
-        '--oracle', 
-        help='Specific oracle to set up (default: all)'
+    setup_parser = subparsers.add_parser(
+        'setup',
+        help='Set up oracle environments + pre-download weights, backgrounds, hg38',
+        description=(
+            "Build the oracle's conda environment AND pre-download its "
+            "default weights, background CDFs, and the hg38 reference so "
+            "the oracle is ready to predict after setup finishes.\n\n"
+            "Tokens:\n"
+            "  HF_TOKEN / --hf-token  required for alphagenome (gated HF model)\n"
+            "  LDLINK_TOKEN           optional, only for fine_map_causal_variant"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     setup_parser.add_argument(
-        '--force', 
+        '--oracle',
+        help='Specific oracle to set up, or "all" to set up every oracle (default: all if omitted)'
+    )
+    setup_parser.add_argument(
+        '--force',
         action='store_true',
         help='Force recreation of existing environments'
+    )
+    setup_parser.add_argument(
+        '--no-weights',
+        action='store_true',
+        help="Skip weight pre-download (env only — setup marker NOT written)"
+    )
+    setup_parser.add_argument(
+        '--no-backgrounds',
+        action='store_true',
+        help='Skip pre-download of background CDFs from HuggingFace'
+    )
+    setup_parser.add_argument(
+        '--no-genome',
+        action='store_true',
+        help='Skip pre-download of the hg38 reference'
+    )
+    setup_parser.add_argument(
+        '--hf-token',
+        default=None,
+        help='HuggingFace token (required for alphagenome if not already logged in)'
     )
     setup_parser.set_defaults(func=setup_environments)
     

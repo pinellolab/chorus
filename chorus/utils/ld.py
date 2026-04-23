@@ -5,9 +5,38 @@ user-provided variant lists into a standard format.
 """
 
 import logging
+import os
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional
 
 logger = logging.getLogger(__name__)
+
+_LDLINK_CONFIG_PATH = Path.home() / ".chorus" / "config.toml"
+
+
+def _resolve_ldlink_token(explicit: Optional[str]) -> Optional[str]:
+    """Resolve an LDlink token via: arg -> env -> ~/.chorus/config.toml."""
+    if explicit:
+        return explicit
+    env = os.environ.get("LDLINK_TOKEN")
+    if env:
+        return env
+    if not _LDLINK_CONFIG_PATH.exists():
+        return None
+    try:
+        import tomllib  # py311+
+    except ImportError:
+        try:
+            import tomli as tomllib  # type: ignore
+        except Exception:
+            return None
+    try:
+        data = tomllib.loads(_LDLINK_CONFIG_PATH.read_text())
+    except Exception:
+        return None
+    tokens = data.get("tokens", {}) if isinstance(data, dict) else {}
+    return tokens.get("ldlink") if isinstance(tokens, dict) else None
 
 
 class LDLinkError(Exception):
@@ -52,11 +81,13 @@ def fetch_ld_variants(
     Raises:
         LDLinkError: If the API is unavailable or token is missing.
     """
+    token = _resolve_ldlink_token(token)
     if token is None:
         raise LDLinkError(
             "LDlink API token required. Register free at "
-            "https://ldlink.nih.gov/?tab=apiaccess and pass the token "
-            "via ldlink_token parameter."
+            "https://ldlink.nih.gov/?tab=apiaccess, then either: "
+            "(a) pass ldlink_token=..., (b) set LDLINK_TOKEN, or "
+            "(c) run 'chorus setup all' to be prompted once."
         )
 
     import requests
