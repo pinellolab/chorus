@@ -1,0 +1,25 @@
+=== REAL chorus setup --oracle enformer (full prefetch, no flags) ===
+2026-04-23 07:17:39,828 - chorus.core.environment.manager - INFO - Found mamba via MAMBA_EXE: /Users/lp698/miniforge3/bin/mamba
+2026-04-23 07:17:39,828 - chorus.core.platform - INFO - Detected platform: Darwin arm64 (key=macos_arm64, cuda=False)
+2026-04-23 07:17:39,828 - chorus.cli.main - INFO - Setting up environment for enformer...
+2026-04-23 07:17:39,858 - chorus.core.environment.manager - INFO - Environment chorus-enformer already exists
+2026-04-23 07:17:39,858 - chorus.cli.main - INFO - ✓ env for enformer
+2026-04-23 07:17:39,858 - chorus.cli._setup_prefetch - INFO - Pre-downloading enformer weights ...
+2026-04-23 07:17:45,476 - chorus.cli._setup_prefetch - INFO - ✓ enformer weights ready
+2026-04-23 07:17:45,635 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/datasets/lucapinello/chorus-backgrounds/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-23 07:17:45,635 - chorus.cli._setup_prefetch - INFO - Backgrounds for enformer already cached (or unavailable)
+2026-04-23 07:17:45,636 - chorus.cli._setup_prefetch - INFO - Reference genome hg38 already present
+2026-04-23 07:17:45,636 - chorus.cli.main - INFO - ✓ enformer ready
+2026-04-23 07:17:45,636 - chorus.cli.main - INFO - 
+Setup complete: 1/1 oracles ready.
+
+EXIT: 0
+
+=== Setup marker written? ===
+-rw-r--r--@ 1 lp698  staff  0 Apr 23 07:17 downloads/enformer/.chorus_setup_v1
+
+=== chorus health after real setup ===
+Checking enformer...
+2026-04-23 07:17:56,011 - chorus.cli.main - INFO - ✓ enformer: Healthy
+2026-04-23 07:17:56,011 - chorus.cli.main - INFO - 
+Checking legnet...

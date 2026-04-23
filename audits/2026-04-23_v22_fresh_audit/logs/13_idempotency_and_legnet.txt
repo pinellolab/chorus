@@ -1,0 +1,54 @@
+=== Idempotency: 2nd run of chorus setup --oracle enformer ===
+2026-04-23 07:18:14,062 - chorus.core.environment.manager - INFO - Found mamba via MAMBA_EXE: /Users/lp698/miniforge3/bin/mamba
+2026-04-23 07:18:14,062 - chorus.core.platform - INFO - Detected platform: Darwin arm64 (key=macos_arm64, cuda=False)
+2026-04-23 07:18:14,062 - chorus.cli.main - INFO - Setting up environment for enformer...
+2026-04-23 07:18:14,090 - chorus.core.environment.manager - INFO - Environment chorus-enformer already exists
+2026-04-23 07:18:14,091 - chorus.cli.main - INFO - ✓ env for enformer
+2026-04-23 07:18:14,091 - chorus.cli._setup_prefetch - INFO - Pre-downloading enformer weights ...
+2026-04-23 07:18:19,582 - chorus.cli._setup_prefetch - INFO - ✓ enformer weights ready
+2026-04-23 07:18:19,739 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/datasets/lucapinello/chorus-backgrounds/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-23 07:18:19,740 - chorus.cli._setup_prefetch - INFO - Backgrounds for enformer already cached (or unavailable)
+2026-04-23 07:18:19,740 - chorus.cli._setup_prefetch - INFO - Reference genome hg38 already present
+2026-04-23 07:18:19,740 - chorus.cli.main - INFO - ✓ enformer ready
+2026-04-23 07:18:19,740 - chorus.cli.main - INFO - 
+Setup complete: 1/1 oracles ready.
+
+=== Second oracle end-to-end: chorus setup --oracle legnet ===
+2026-04-23 07:18:21,364 - chorus.core.environment.manager - INFO - Found mamba via MAMBA_EXE: /Users/lp698/miniforge3/bin/mamba
+2026-04-23 07:18:21,364 - chorus.core.platform - INFO - Detected platform: Darwin arm64 (key=macos_arm64, cuda=False)
+2026-04-23 07:18:21,365 - chorus.cli.main - INFO - Setting up environment for legnet...
+2026-04-23 07:18:21,396 - chorus.core.environment.manager - INFO - Environment chorus-legnet already exists
+2026-04-23 07:18:21,396 - chorus.cli.main - INFO - ✓ env for legnet
+2026-04-23 07:18:21,396 - chorus.cli._setup_prefetch - INFO - Pre-downloading legnet weights ...
+2026-04-23 07:18:24,906 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/datasets/lucapinello/chorus-backgrounds/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-23 07:18:24,907 - chorus.cli._setup_prefetch - INFO - Backgrounds for legnet already cached (or unavailable)
+2026-04-23 07:18:24,907 - chorus.cli._setup_prefetch - INFO - Reference genome hg38 already present
+2026-04-23 07:18:24,907 - chorus.cli.main - ERROR - ✗ prefetch failed for legnet:
+2026-04-23 07:18:24,907 - chorus.cli.main - ERROR -   - weights: TypeError: LegNetOracle.load_pretrained_model() got an unexpected keyword argument 'assay'
+2026-04-23 07:18:24,907 - chorus.cli.main - INFO - 
+Setup complete: 0/1 oracles ready.
+
+=== Marker present after legnet setup ===
+ls: downloads/legnet/.chorus_setup_v1: No such file or directory
+
+=== chorus health — enformer + legnet both Healthy ===
+2026-04-23 07:18:27,525 - chorus.cli.main - WARNING -   - HuggingFace auth failed (LocalTokenNotFoundError: Token is required to call the /whoami-v2 endpoint, but no token found. You must provide a token or be logged in to Hugging Face with `hf auth login` or `huggingface_hub.login`. See https://huggingface.co/settings/tokens.). Set HF_TOKEN or run 'huggingface-cli login'.
+2026-04-23 07:18:27,525 - chorus.cli.main - INFO - 
+Checking borzoi...
+2026-04-23 07:18:28,228 - chorus.cli.main - WARNING - ⚠ borzoi: Not installed — run `chorus setup borzoi`
+2026-04-23 07:18:28,228 - chorus.cli.main - WARNING -   - setup marker missing: /Users/lp698/chorus_test/chorus/downloads/borzoi/.chorus_setup_v1
+2026-04-23 07:18:28,228 - chorus.cli.main - INFO - 
+Checking chrombpnet...
+2026-04-23 07:18:28,801 - chorus.cli.main - WARNING - ⚠ chrombpnet: Not installed — run `chorus setup chrombpnet`
+2026-04-23 07:18:28,801 - chorus.cli.main - WARNING -   - setup marker missing: /Users/lp698/chorus_test/chorus/downloads/chrombpnet/.chorus_setup_v1
+2026-04-23 07:18:28,801 - chorus.cli.main - INFO - 
+Checking enformer...
+2026-04-23 07:18:35,325 - chorus.cli.main - INFO - ✓ enformer: Healthy
+2026-04-23 07:18:35,325 - chorus.cli.main - INFO - 
+Checking legnet...
+2026-04-23 07:18:35,865 - chorus.cli.main - WARNING - ⚠ legnet: Not installed — run `chorus setup legnet`
+2026-04-23 07:18:35,866 - chorus.cli.main - WARNING -   - setup marker missing: /Users/lp698/chorus_test/chorus/downloads/legnet/.chorus_setup_v1
+2026-04-23 07:18:35,866 - chorus.cli.main - INFO - 
+Checking sei...
+2026-04-23 07:18:36,730 - chorus.cli.main - WARNING - ⚠ sei: Not installed — run `chorus setup sei`
+2026-04-23 07:18:36,730 - chorus.cli.main - WARNING -   - setup marker missing: /Users/lp698/chorus_test/chorus/downloads/sei/.chorus_setup_v1

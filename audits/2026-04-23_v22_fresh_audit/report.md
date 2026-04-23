@@ -130,3 +130,62 @@ setup markers.
   `05_setup_partial.txt`, `06_readme_tokens.txt`
 - `logs/07_genome_download.txt`, `08_cdf_fresh.txt`
 - `logs/09_selenium.txt`, `10_pytest.txt`, `11_consistency.txt`
+
+---
+
+## Addendum — real end-to-end setup run (post-critique)
+
+Initial v22 audit deferred the §1 P0 items ("actually run `chorus setup`"),
+only exercising the data-cache purge + partial `--no-weights` path.
+After pushback ("did you actually install it?"), ran the real flow.
+
+### `chorus setup --oracle enformer` end-to-end (no flags)
+
+```
+env: already exists → skip                        (0.03 s)
+✓ enformer weights ready (TFHub prefetch)          (5.6 s)
+Backgrounds for enformer already cached            (instant)
+Reference genome hg38 already present              (instant)
+marker written: downloads/enformer/.chorus_setup_v1
+chorus health → ✓ enformer: Healthy
+Total: 5.8 s
+```
+
+### Idempotency — 2nd run of `chorus setup --oracle enformer`
+
+Same path, same marker already present → 5.5 s no-op. TFHub re-verifies
+but finds cache. ✓
+
+### `chorus setup --oracle legnet` end-to-end — **FOUND P1 REGRESSION**
+
+```
+✗ prefetch failed for legnet:
+  - weights: TypeError: LegNetOracle.load_pretrained_model() got an
+    unexpected keyword argument 'assay'
+```
+
+**Root cause:** `chorus/cli/_setup_prefetch.py:37-40` stored
+`{'assay': 'LentiMPRA', 'cell_type': 'HepG2'}` under `_DEFAULT_LOAD_KWARGS`
+for LegNet, but LegNet takes `assay`/`cell_type` on `__init__`, not on
+`load_pretrained_model`. ChromBPNet is the opposite — takes them at load
+time. The prefetch config conflated the two.
+
+**Impact:** every `chorus setup --oracle legnet` invocation fails before
+writing the `.chorus_setup_v1` marker → LegNet is permanently "Not
+installed" per `chorus health`, even after setup succeeded at the env
+level.
+
+**Fix:** split the kwarg config into `_DEFAULT_CTOR_KWARGS` (for LegNet)
+vs `_DEFAULT_LOAD_KWARGS` (for ChromBPNet), render both into the
+prefetch script.
+
+### Post-fix verification
+
+```
+chorus setup --oracle legnet → ✓ legnet ready (3.1 s)
+                             → marker written
+chorus health                → ✓ legnet: Healthy
+```
+
+End-to-end contract now holds for both oracles tested without escape
+hatches.

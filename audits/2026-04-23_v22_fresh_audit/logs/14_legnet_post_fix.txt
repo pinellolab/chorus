@@ -1,0 +1,22 @@
+=== POST-FIX: chorus setup --oracle legnet ===
+2026-04-23 07:19:51,825 - chorus.core.environment.manager - INFO - Found mamba via MAMBA_EXE: /Users/lp698/miniforge3/bin/mamba
+2026-04-23 07:19:51,825 - chorus.core.platform - INFO - Detected platform: Darwin arm64 (key=macos_arm64, cuda=False)
+2026-04-23 07:19:51,826 - chorus.cli.main - INFO - Setting up environment for legnet...
+2026-04-23 07:19:51,856 - chorus.core.environment.manager - INFO - Environment chorus-legnet already exists
+2026-04-23 07:19:51,856 - chorus.cli.main - INFO - ✓ env for legnet
+2026-04-23 07:19:51,856 - chorus.cli._setup_prefetch - INFO - Pre-downloading legnet weights ...
+2026-04-23 07:19:54,778 - chorus.cli._setup_prefetch - INFO - ✓ legnet weights ready
+2026-04-23 07:19:54,961 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/datasets/lucapinello/chorus-backgrounds/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+2026-04-23 07:19:54,962 - chorus.cli._setup_prefetch - INFO - Backgrounds for legnet already cached (or unavailable)
+2026-04-23 07:19:54,962 - chorus.cli._setup_prefetch - INFO - Reference genome hg38 already present
+2026-04-23 07:19:54,962 - chorus.cli.main - INFO - ✓ legnet ready
+2026-04-23 07:19:54,962 - chorus.cli.main - INFO - 
+Setup complete: 1/1 oracles ready.
+
+=== Setup marker written? ===
+-rw-r--r--@ 1 lp698  staff  0 Apr 23 07:19 downloads/legnet/.chorus_setup_v1
+
+=== chorus health — legnet should now be Healthy ===
+Checking legnet...
+2026-04-23 07:20:09,884 - chorus.cli.main - INFO - ✓ legnet: Healthy
+2026-04-23 07:20:09,885 - chorus.cli.main - INFO - 
