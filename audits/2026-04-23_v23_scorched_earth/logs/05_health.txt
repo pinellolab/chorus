@@ -1,0 +1,5 @@
+2026-04-23 07:59:29,866 - chorus.core.environment.manager - INFO - Found mamba via MAMBA_EXE: /Users/lp698/miniforge3/bin/mamba
+2026-04-23 07:59:29,866 - chorus.core.platform - INFO - Detected platform: Darwin arm64 (key=macos_arm64, cuda=False)
+2026-04-23 07:59:30,036 - chorus.cli.main - INFO - 
+Checking enformer...
+2026-04-23 07:59:36,596 - chorus.cli.main - INFO - ✓ enformer: Healthy

@@ -1,0 +1,8 @@
+=== Post-scorch state (Thu Apr 23 07:44:56 EDT 2026) ===
+  (no chorus envs)
+
+~/.chorus:    gone
+genomes/:     
+downloads/:   
+
+Disk reclaimed: ~47 GB

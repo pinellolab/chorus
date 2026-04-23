@@ -1,0 +1,12 @@
+=== Step 5: real Enformer prediction on GATA1 TSS ===
+2026-04-23 07:59:56,171 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-23 07:59:56,184 - chorus.core.environment.manager - INFO - Found mamba via MAMBA_EXE: /Users/lp698/miniforge3/bin/mamba
+2026-04-23 07:59:56,184 - chorus.core.platform - INFO - Detected platform: Darwin arm64 (key=macos_arm64, cuda=False)
+2026-04-23 08:00:01,498 - chorus.core.base - INFO - Using conda environment: chorus-enformer
+2026-04-23 08:00:01,498 - chorus.oracles.enformer - INFO - Loading Enformer model from https://tfhub.dev/deepmind/enformer/1...
+2026-04-23 08:00:06,194 - chorus.oracles.enformer - INFO - Enformer model loaded successfully in environment!
+2026-04-23 08:00:13,599 - chorus.oracles.enformer_source.enformer_metadata - INFO - Loaded 5313 track metadata entries
+  ENCFF413AHU: shape=(896,), mean=0.4842, max=22.4620
+  CNhs11250: shape=(896,), mean=0.5957, max=120.8120
+
+✓ end-to-end prediction works
