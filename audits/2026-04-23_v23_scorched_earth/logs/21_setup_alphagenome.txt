@@ -1,0 +1,2 @@
+/var/folders/gx/xj1t8pkx1gvdn92fgw2g7vpm0000gn/T/mambaf8mlahu4jj4: line 5: exec: --: invalid option
+exec: usage: exec [-cl] [-a name] file [redirection ...]

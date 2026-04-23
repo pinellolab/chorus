@@ -142,6 +142,15 @@ class SeiOracle(OracleBase):
         ):
             self._download_sei_model()
 
+        # Separately materialise the cached seqclass_info.txt even when
+        # the Zenodo tarball was already extracted on a prior run —
+        # `get_classes_names()` has a packaged-source fallback so the
+        # guard above can be satisfied by the source copy alone, leaving
+        # downloads/sei/model/seqclass_info.txt missing and `chorus
+        # health` reporting sei as Not installed (v23 scorched-earth
+        # audit finding).
+        self._materialize_cached_seqclass_info()
+
         if self.use_environment:
             self._load_in_environment()
         else:
@@ -592,8 +601,31 @@ class SeiOracle(OracleBase):
                 tar.extractall(path=download_path)
         logger.info("Sei model downloaded and extracted successfully!")
 
+        # Delegate to the always-run helper so the copy happens whether
+        # we got here via a fresh Zenodo download, an existing tarball
+        # re-extract, or (on re-runs) the load_pretrained_model fast
+        # path that doesn't call this function at all.
+        self._materialize_cached_seqclass_info()
+
+    def _materialize_cached_seqclass_info(self) -> None:
+        """Ensure ``downloads/sei/model/seqclass_info.txt`` exists by
+        copying the packaged copy when the cache file is missing.
+
+        `chorus health` probes this exact path (see
+        ``chorus/core/weights_probe.py::_probe_sei``) so if the cache
+        isn't materialised, Sei reports "Not installed" even after a
+        successful setup. Regression for v23 scorched-earth audit.
+        """
+        import shutil
         info_file_path = self.get_model_dir_path() / "seqclass_info.txt"
-        shutil.copy(info_file_path, self.get_classes_names())
+        cached_info = self.download_dir / "model" / "seqclass_info.txt"
+        if cached_info.exists():
+            return
+        if not info_file_path.exists():
+            return  # nothing to copy; guard rail
+        cached_info.parent.mkdir(parents=True, exist_ok=True)
+        if info_file_path.resolve() != cached_info.resolve():
+            shutil.copy(info_file_path, cached_info)
 
     @staticmethod
     def _download_with_resume(url: str, dest: str, chunk_bytes: int = 4 * 1024 * 1024) -> None:
