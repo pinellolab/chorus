@@ -353,25 +353,29 @@ class LegNetOracle(OracleBase):
     def get_zenodo_link(self) -> str:
         return "https://zenodo.org/records/17863550/files/chorus_small_legnet.zip"
     
-    def _download_legnet_model(self): 
+    def _download_legnet_model(self):
         import zipfile
-        import urllib.request
         import shutil
-       
+        from ..utils.http import download_with_resume
+
         # Create download link
         download_link = self.get_zenodo_link()
         download_path = self.download_dir
 
-        logger.info(f"Dowloading LegNet into {download_path}...")
+        logger.info(f"Downloading LegNet into {download_path}...")
 
         download_file_path = os.path.join(
-            download_path, 
+            download_path,
             os.path.basename(download_link)
         )
 
         if not Path(download_file_path).exists():
-            urllib.request.urlretrieve(download_link, filename=download_file_path)    
-            logger.info("Dowload completed!")
+            download_with_resume(
+                download_link,
+                download_file_path,
+                label=f"legnet:{os.path.basename(download_link)}",
+            )
+            logger.info("Download completed!")
         
         # Now extract the file in the same download folder
         extract_folder = download_path

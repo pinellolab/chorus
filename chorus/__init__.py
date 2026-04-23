@@ -190,6 +190,11 @@ def create_oracle(oracle_name: str, use_environment: bool = False, **kwargs):
                 "2. Install oracle dependencies in the current environment"
             )
         oracle_class = get_oracle(oracle_name)
+        # Propagate use_environment=False explicitly. Oracle __init__
+        # defaults to use_environment=True, so without this the returned
+        # instance would re-spawn a subprocess back into the same env
+        # when load_pretrained_model() is called.
+        kwargs.setdefault("use_environment", False)
         return oracle_class(**kwargs)
 
 __all__ = [

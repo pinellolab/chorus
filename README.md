@@ -123,15 +123,23 @@ pip install -e .
 #    have chorus installed)
 python -m ipykernel install --user --name chorus --display-name "Python 3 (chorus)"
 
-# 4. Set up at least one oracle environment (see below)
+# 4. Set up at least one oracle environment (see below).
+#    `chorus setup` now pre-downloads weights + backgrounds + hg38 by
+#    default, so the oracle is ready to predict when the command exits.
 chorus setup --oracle enformer   # lightweight CPU-friendly starter
 
-# 5. Download the reference genome your analyses will need
-chorus genome download hg38
+# Or pre-install every oracle at once (HF token prompted up front):
+#   chorus setup --oracle all
 
 # Verify installation
 python -c "import chorus; print(f'chorus {chorus.__version__}')"
 ```
+
+> **Tokens.** AlphaGenome is a gated HuggingFace model — `chorus setup`
+> will prompt for `HF_TOKEN` the first time you pull it (or pass
+> `--hf-token`). `LDLINK_TOKEN` is optional and only used by
+> `fine_map_causal_variant`; `chorus setup` will offer a non-blocking
+> prompt. See the [Tokens](#tokens) section below.
 
 > **Two env files, one source of truth.** The root `environment.yml` is
 > what you install. The per-oracle files in `environments/` are consumed
@@ -179,7 +187,26 @@ You can check the correctness of installation using the following command:
 chorus health --timeout 300
 ```
 
-**Note:** The first health check (or first prediction) for each oracle may take several minutes as model weights are downloaded automatically. Subsequent runs will be much faster.
+**Note:** As of the consolidated-setup change, `chorus setup` pre-downloads
+each oracle's default weights + background CDFs + the `hg38` reference at
+install time, so subsequent `chorus health` / prediction calls are fast.
+If you opted out via `--no-weights`, the first prediction will still do a
+lazy download.
+
+### Tokens
+
+Two tokens are relevant. `chorus setup` surfaces both so they aren't a
+mid-prediction surprise:
+
+| Token | When you need it | How `chorus setup` handles it |
+|---|---|---|
+| `HF_TOKEN` (HuggingFace) | Required for **AlphaGenome** — the `google/alphagenome-all-folds` model is gated. | Resolved via `--hf-token` → `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN` env → existing `huggingface-cli login` → interactive prompt. `chorus setup --oracle all` **halts** the whole flow if no working token can be resolved, so the other 5 oracles aren't built for nothing. |
+| `LDLINK_TOKEN` | Optional — only used by `fine_map_causal_variant` (auto-fetch LD proxies from the NIH LDlink REST API). | Non-blocking prompt during `chorus setup --oracle all`. If provided, stored in `~/.chorus/config.toml`; `chorus.utils.ld` also reads `LDLINK_TOKEN` from env. |
+
+Register an HF read token at <https://huggingface.co/settings/tokens>,
+then accept the model license at
+<https://huggingface.co/google/alphagenome-all-folds>. Register a free
+LDlink token at <https://ldlink.nih.gov/?tab=apiaccess>.
 
 ### Managing Reference Genomes
 
@@ -233,10 +260,11 @@ and cached at `~/.chorus/backgrounds/`.
 
 > **The backgrounds dataset is public — no HuggingFace token required.**
 > `HF_TOKEN` is only needed for the gated AlphaGenome model itself (see
-> the AlphaGenome section below). Causal prioritization with auto-LD-fetch
-> needs a separate free LDlink token (see Troubleshooting).
+> [Tokens](#tokens) above). Causal prioritization with auto-LD-fetch
+> needs a separate free LDlink token.
 
-To pre-download all backgrounds (optional, avoids the first-use wait):
+`chorus setup --oracle <name>` pulls the relevant backgrounds for you
+automatically (skip with `--no-backgrounds`). To pre-download by hand:
 
 ```python
 from chorus.analysis.normalization import download_pertrack_backgrounds
