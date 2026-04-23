@@ -143,11 +143,11 @@ class EnvironmentManager:
     def environment_exists(self, oracle: str) -> bool:
         """Check if an environment exists for the given oracle."""
         env_name = self.get_environment_name(oracle)
-        
+
         # Check cache first
         if env_name in self._env_cache:
             return self._env_cache[env_name]
-        
+
         # Check with conda
         try:
             result = subprocess.run(
@@ -156,18 +156,47 @@ class EnvironmentManager:
                 text=True,
                 check=True
             )
-            
+
             env_data = json.loads(result.stdout)
             env_names = [os.path.basename(env) for env in env_data.get('envs', [])]
             exists = env_name in env_names
-            
+
             # Update cache
             self._env_cache[env_name] = exists
             return exists
-            
+
         except (subprocess.CalledProcessError, json.JSONDecodeError) as e:
             logger.error(f"Error checking environment existence: {e}")
             return False
+
+    def environment_is_healthy(self, oracle: str) -> bool:
+        """Quick probe: can the oracle env import chorus?
+
+        A failed pip install during the initial env build can leave the
+        env half-built — conda sees it, but chorus + its deps are
+        missing (``ModuleNotFoundError: No module named 'requests'`` is
+        the typical signature). A subsequent ``chorus setup --oracle
+        <name>`` would then skip the env rebuild and fail later at
+        weight-prefetch time with a confusing traceback.
+
+        This probe runs ``python -c "import chorus"`` inside the env
+        and reports success. Called from ``create_environment`` to
+        auto-force a rebuild on broken envs.
+        """
+        env_name = self.get_environment_name(oracle)
+        try:
+            result = subprocess.run(
+                [self.conda_exe, 'run', '-n', env_name,
+                 'python', '-c', 'import chorus'],
+                capture_output=True, text=True, timeout=60,
+            )
+            return result.returncode == 0
+        except (subprocess.SubprocessError, OSError) as exc:
+            logger.warning(
+                "Could not probe %s env health (%s); assuming healthy",
+                env_name, exc,
+            )
+            return True
         
     def install_chorus_primitive(self, oracle: str) -> bool:
         import shlex
@@ -209,8 +238,21 @@ class EnvironmentManager:
 
         # Check if environment already exists
         if self.environment_exists(oracle) and not force:
-            logger.info(f"Environment {env_name} already exists")
-            return True
+            # Heal half-built envs automatically: if `python -c "import
+            # chorus"` fails inside the env (classic signature of a
+            # pip install that bombed midway during a prior build),
+            # treat this as --force so the user can just rerun
+            # `chorus setup --oracle all` and recover without learning
+            # about --force.
+            if self.environment_is_healthy(oracle):
+                logger.info(f"Environment {env_name} already exists")
+                return True
+            logger.warning(
+                f"Environment {env_name} exists but is broken (likely "
+                "a prior pip install failed midway). Auto-rebuilding — "
+                "no --force needed."
+            )
+            force = True
 
         # Remove existing environment if force is True
         if force and self.environment_exists(oracle):

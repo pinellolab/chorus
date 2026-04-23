@@ -24,6 +24,29 @@ logger = logging.getLogger(__name__)
 _LDLINK_CONFIG_PATH = Path.home() / ".chorus" / "config.toml"
 
 
+def _print_hf_setup_instructions(reason: str) -> None:
+    """Print numbered steps to get a working HuggingFace token.
+
+    Emitted on every HF-auth failure (rejected token, missing token
+    non-TTY, etc.) so a user who hits this in CI / a script / a log
+    sees the full path without needing to find the README.
+    """
+    print()
+    print("─" * 72)
+    print(f"  AlphaGenome requires a HuggingFace access token ({reason}).")
+    print("─" * 72)
+    print("  1. Create a read token:")
+    print("       https://huggingface.co/settings/tokens")
+    print("  2. Accept the model license (one-time):")
+    print("       https://huggingface.co/google/alphagenome-all-folds")
+    print("  3. Give the token to chorus — ANY of:")
+    print("       a. chorus setup --oracle alphagenome --hf-token hf_xxx")
+    print("       b. export HF_TOKEN=hf_xxx && chorus setup --oracle alphagenome")
+    print("       c. mamba run -n chorus huggingface-cli login")
+    print("─" * 72)
+    print()
+
+
 def _try_whoami() -> Optional[str]:
     """Return the HF username if an existing credential works, else None."""
     try:
@@ -76,6 +99,7 @@ def resolve_hf_token(
             logger.info("✓ HuggingFace auth ok (user: %s, via --hf-token)", user)
             return True
         logger.error("HuggingFace rejected the token passed via --hf-token")
+        _print_hf_setup_instructions("token was rejected")
         return False
 
     env_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
@@ -86,6 +110,7 @@ def resolve_hf_token(
             logger.info("✓ HuggingFace auth ok (user: %s, via env)", user)
             return True
         logger.error("HuggingFace rejected the token from HF_TOKEN / HUGGING_FACE_HUB_TOKEN")
+        _print_hf_setup_instructions("env-var token was rejected")
         return False
 
     user = _try_whoami()
@@ -94,19 +119,14 @@ def resolve_hf_token(
         return True
 
     if not interactive or not sys.stdin.isatty():
-        logger.error(
-            "No HuggingFace token available and stdin is not a TTY. "
-            "Pass --hf-token, set HF_TOKEN, or run 'huggingface-cli login' first."
-        )
+        logger.error("No HuggingFace token available and stdin is not a TTY.")
+        _print_hf_setup_instructions("no token configured")
         return False
 
-    print()
-    print("AlphaGenome requires a HuggingFace access token.")
-    print("  1. Visit https://huggingface.co/settings/tokens and create a read token.")
-    print("  2. Accept the model license at https://huggingface.co/google/alphagenome-all-folds.")
+    _print_hf_setup_instructions("no token configured")
     try:
         from getpass import getpass
-        token = getpass("Paste HuggingFace token (hidden): ").strip()
+        token = getpass("  Paste HuggingFace token here (hidden): ").strip()
     except (EOFError, KeyboardInterrupt):
         print()
         return False
@@ -120,6 +140,7 @@ def resolve_hf_token(
         logger.info("✓ HuggingFace auth ok (user: %s, saved via huggingface-cli)", user)
         return True
     logger.error("HuggingFace rejected the provided token — check it and retry")
+    _print_hf_setup_instructions("token was rejected")
     return False
 
 
