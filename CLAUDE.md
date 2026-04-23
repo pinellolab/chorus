@@ -53,7 +53,8 @@ multiple oracles; quickstart is CPU-safe).
 
 ## Branch flow
 
-Ship branch is `chorus-applications`. Other agents open audit
-branches as `audit/YYYY-MM-DD-v<N>-<slug>` and fix branches as
-`fix/YYYY-MM-DD-<slug>`. Review then merge into `chorus-applications`;
-don't rebase published audit branches.
+Ship branch is `main` — that's what users see. Other agents may open
+audit branches as `audit/YYYY-MM-DD-v<N>-<slug>` and fix branches as
+`fix/YYYY-MM-DD-<slug>`; review then merge into `main`, and don't
+rebase published audit branches. (Earlier guidance named
+`chorus-applications` as the ship branch — that was incorrect.)
