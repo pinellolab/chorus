@@ -47,7 +47,14 @@ human_predictions = predictions['human'][0].numpy()
 meta = get_metadata()
 track_indices = meta.id2index(args['assay_ids'])
 if any(map(lambda x: x is None, track_indices)):
-    raise Exception(f"Some assay IDs not found in metadata: {args['assay_ids']}")
+    missing = [a for a, i in zip(args['assay_ids'], track_indices) if i is None]
+    # Use ValueError (not bare Exception) so the env-runner surfaces a
+    # recognisable error type through its subprocess wrapper. v26 P1.
+    raise ValueError(
+        f"Enformer track identifier(s) not found in metadata: {missing}. "
+        f"Use oracle.get_track_info() to list valid identifiers, or "
+        f"oracle.get_track_info(pattern) to search (e.g. 'DNASE:K562')."
+    )
 # Extract predictions for selected tracks
 selected_predictions = human_predictions[:, track_indices]
 result = selected_predictions.tolist()

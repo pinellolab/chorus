@@ -12,7 +12,7 @@ from ..core.base import OracleBase
 from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..core.track import Track
 from ..core.interval import Interval, GenomeRef, Sequence 
-from ..core.exceptions import ModelNotLoadedError
+from ..core.exceptions import ModelNotLoadedError, InvalidAssayError
 
 logger = logging.getLogger(__name__)
 
@@ -343,8 +343,16 @@ class EnformerOracle(OracleBase):
                 if idx is not None:
                     indices.append(idx)
                 else:
-                    logger.warning(f"Identifier '{assay_id}' not found in metadata")
-                    indices.append(0)
+                    # Raise rather than silently use track 0 — a fallback
+                    # that returned predictions for an arbitrary other
+                    # track corrupted user output without any recovery
+                    # path (v26 P0 finding).
+                    raise InvalidAssayError(
+                        f"Enformer track identifier '{assay_id}' not found "
+                        f"in metadata. Use oracle.get_track_info() to list "
+                        f"valid identifiers, or oracle.get_track_info(pattern) "
+                        f"to search (e.g. 'DNASE:K562')."
+                    )
             else:
                 # Search by description
                 matches = metadata.get_tracks_by_description(assay_id)
@@ -355,8 +363,11 @@ class EnformerOracle(OracleBase):
                         logger.info(f"Using first match: {matches[0][1]} (index {matches[0][0]})")
                     indices.append(matches[0][0])
                 else:
-                    logger.warning(f"No tracks found for '{assay_id}'")
-                    indices.append(0)
+                    raise InvalidAssayError(
+                        f"No Enformer tracks matched description '{assay_id}'. "
+                        f"Use oracle.get_track_info() to discover valid tracks "
+                        f"or oracle.get_track_info(pattern) to search."
+                    )
         
         return indices
     

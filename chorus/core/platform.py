@@ -63,7 +63,10 @@ def detect_platform() -> PlatformInfo:
         except (FileNotFoundError, subprocess.TimeoutExpired):
             info.has_cuda = False
 
-    logger.info(
+    # Debug-level so it doesn't lead every CLI invocation (v26 P1 #4).
+    # The detected platform is a diagnostic, not something a first-time
+    # user needs on every `chorus --help` / `chorus list`.
+    logger.debug(
         f"Detected platform: {info.system} {info.machine} "
         f"(key={info.key}, cuda={info.has_cuda})"
     )

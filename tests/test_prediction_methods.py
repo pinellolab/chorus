@@ -410,6 +410,54 @@ class TestPredictionMethods:
         oracle = MockOracle(reference_fasta=str(self.fasta_path))
         assert oracle.device is None
 
+    def test_unknown_track_id_gives_actionable_error(self):
+        """Invalid assay_id must raise InvalidAssayError with a pointer
+        to list_tracks / get_track_info — not silently substitute track 0
+        (previous behaviour corrupted predictions) or surface a cryptic
+        TypeError('NoneType' is not subscriptable).
+
+        Regression for v26 P0 finding. MockOracle doesn't have a real
+        track catalogue so we exercise the enformer code path directly
+        via a stubbed metadata object.
+        """
+        import sys
+        import types
+        import importlib
+        from chorus.core.exceptions import InvalidAssayError
+
+        # Lazy import so the test file still parses when enformer's deps
+        # aren't installed (e.g. fast suite on a clean macOS box).
+        try:
+            from chorus.oracles import enformer as enformer_mod
+        except ImportError:
+            pytest.skip("enformer module not importable")
+
+        # Fake metadata that misses the lookup.
+        fake_meta = types.SimpleNamespace(
+            get_track_by_identifier=lambda x: None,
+            get_tracks_by_description=lambda x: [],
+        )
+        # Minimal EnformerOracle stub so we can drive _get_assay_indices
+        class Stub:
+            pass
+        stub = Stub()
+        # _get_assay_indices imports get_metadata lazily — patch the
+        # source module.
+        from chorus.oracles.enformer_source import enformer_metadata as meta_mod
+        orig_get_metadata = meta_mod.get_metadata
+        meta_mod.get_metadata = lambda: fake_meta
+        try:
+            with pytest.raises(InvalidAssayError, match="get_track_info"):
+                enformer_mod.EnformerOracle._get_assay_indices(
+                    stub, ["ENCFF999BADID"]
+                )
+            with pytest.raises(InvalidAssayError, match="get_track_info"):
+                enformer_mod.EnformerOracle._get_assay_indices(
+                    stub, ["totally made up track name"]
+                )
+        finally:
+            meta_mod.get_metadata = orig_get_metadata
+
     def test_error_handling_model_not_loaded(self):
         """Test error when model not loaded."""
         unloaded_oracle = MockOracle(reference_fasta=str(self.fasta_path))

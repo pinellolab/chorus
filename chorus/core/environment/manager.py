@@ -51,18 +51,18 @@ class EnvironmentManager:
         # Check MAMBA_EXE environment variable
         mamba_exe = os.environ.get('MAMBA_EXE')
         if mamba_exe and os.path.exists(mamba_exe):
-            logger.info(f"Found mamba via MAMBA_EXE: {mamba_exe}")
+            logger.debug(f"Found mamba via MAMBA_EXE: {mamba_exe}")
             return mamba_exe
 
         # First check CONDA_EXE environment variable (set by conda when activated)
         conda_exe = os.environ.get('CONDA_EXE')
         if conda_exe and os.path.exists(conda_exe):
-            logger.info(f"Found conda via CONDA_EXE: {conda_exe}")
+            logger.debug(f"Found conda via CONDA_EXE: {conda_exe}")
             # Check if mamba exists in the same directory
             conda_dir = os.path.dirname(conda_exe)
             mamba_exe = os.path.join(conda_dir, 'mamba')
             if os.path.exists(mamba_exe):
-                logger.info(f"Found mamba at: {mamba_exe}")
+                logger.debug(f"Found mamba at: {mamba_exe}")
                 return mamba_exe
             return conda_exe
         
@@ -233,7 +233,13 @@ class EnvironmentManager:
         env_file = self.get_environment_file(oracle)
 
         if not env_file.exists():
-            logger.error(f"Environment file not found: {env_file}")
+            # Name the valid oracles on typos so users don't have to grep
+            # the README or guess. v26 P1 #1.
+            available = sorted(self.list_available_oracles())
+            logger.error(
+                f"No environment file for oracle {oracle!r}. Expected "
+                f"{env_file}. Valid oracle names: {available}"
+            )
             return False
 
         # Check if environment already exists
