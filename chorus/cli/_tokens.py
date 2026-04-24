@@ -98,7 +98,10 @@ def resolve_hf_token(
         if user:
             logger.info("✓ HuggingFace auth ok (user: %s, via --hf-token)", user)
             return True
-        logger.error("HuggingFace rejected the token passed via --hf-token")
+        logger.error(
+            "HuggingFace rejected the token passed via --hf-token. "
+            "Verify it at https://huggingface.co/settings/tokens and retry."
+        )
         _print_hf_setup_instructions("token was rejected")
         return False
 
@@ -109,7 +112,10 @@ def resolve_hf_token(
         if user:
             logger.info("✓ HuggingFace auth ok (user: %s, via env)", user)
             return True
-        logger.error("HuggingFace rejected the token from HF_TOKEN / HUGGING_FACE_HUB_TOKEN")
+        logger.error(
+            "HuggingFace rejected the token from HF_TOKEN / HUGGING_FACE_HUB_TOKEN. "
+            "Verify it at https://huggingface.co/settings/tokens and retry."
+        )
         _print_hf_setup_instructions("env-var token was rejected")
         return False
 
@@ -139,7 +145,10 @@ def resolve_hf_token(
     if user:
         logger.info("✓ HuggingFace auth ok (user: %s, saved via huggingface-cli)", user)
         return True
-    logger.error("HuggingFace rejected the provided token — check it and retry")
+    logger.error(
+        "HuggingFace rejected the provided token. "
+        "Verify it at https://huggingface.co/settings/tokens and retry."
+    )
     _print_hf_setup_instructions("token was rejected")
     return False
 

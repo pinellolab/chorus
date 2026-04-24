@@ -92,17 +92,17 @@ def prefetch_weights(oracle: str, runner, timeout: Optional[int] = None) -> Tupl
     result = runner.run_script_in_environment(oracle, script, timeout=timeout)
 
     if result.returncode != 0:
-        return (False, f"subprocess exited {result.returncode}: {result.stderr[-500:]}")
+        return (False, f"Subprocess exited {result.returncode}: {result.stderr[-500:]}.")
 
     try:
         payload = json.loads(result.stdout.splitlines()[-1])
     except (json.JSONDecodeError, IndexError):
-        return (False, f"unparseable output: {result.stdout[-500:]}")
+        return (False, f"Unparseable output: {result.stdout[-500:]}.")
 
     if payload.get("success"):
         logger.info("✓ %s weights ready", oracle)
         return (True, None)
-    return (False, payload.get("error", "unknown load failure"))
+    return (False, f"{payload.get('error', 'unknown load failure')}.")
 
 
 def prefetch_backgrounds(oracle: str) -> Tuple[bool, Optional[str]]:
@@ -110,12 +110,12 @@ def prefetch_backgrounds(oracle: str) -> Tuple[bool, Optional[str]]:
     try:
         from ..analysis.normalization import download_backgrounds
     except Exception as exc:
-        return (False, f"import failed: {exc}")
+        return (False, f"Import failed: {exc}.")
 
     try:
         n = download_backgrounds(oracle)
     except Exception as exc:
-        return (False, f"download failed: {exc}")
+        return (False, f"Download failed: {exc}.")
 
     if n == 0:
         logger.info("Backgrounds for %s already cached (or unavailable)", oracle)
@@ -129,7 +129,7 @@ def prefetch_genome(genome_id: str = "hg38") -> Tuple[bool, Optional[str]]:
     try:
         from ..utils.genome import GenomeManager
     except Exception as exc:
-        return (False, f"import failed: {exc}")
+        return (False, f"Import failed: {exc}.")
 
     mgr = GenomeManager()
     if mgr.is_genome_downloaded(genome_id):
@@ -140,10 +140,10 @@ def prefetch_genome(genome_id: str = "hg38") -> Tuple[bool, Optional[str]]:
     try:
         ok = mgr.download_genome(genome_id)
     except Exception as exc:
-        return (False, f"download failed: {exc}")
+        return (False, f"Download failed: {exc}.")
 
     if not ok:
-        return (False, f"{genome_id} download returned False")
+        return (False, f"{genome_id} download returned False. Retry with `chorus genome download {genome_id}`.")
     logger.info("✓ %s ready", genome_id)
     return (True, None)
 

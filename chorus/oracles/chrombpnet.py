@@ -4,7 +4,7 @@ from ..core.base import OracleBase
 from ..core.track import Track
 from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..core.interval import Interval, GenomeRef, Sequence
-from ..core.exceptions import ModelNotLoadedError
+from ..core.exceptions import ModelNotLoadedError, InvalidAssayError
 from ..core.globals import CHORUS_DOWNLOADS_DIR
 from .chrombpnet_source.chrombpnet_globals import CHROMBPNET_MODELS_DICT
 
@@ -277,25 +277,38 @@ class ChromBPNetOracle(OracleBase):
         """Load ChromBPNet model weights."""
 
         if assay is None or cell_type is None:
-            raise ValueError("You must provide both assay and cell-type if weights are None.")
-        
+            raise InvalidAssayError(
+                "You must provide both `assay` and `cell_type` when `weights` is None."
+            )
+
         if not is_custom:
             if assay not in CHROMBPNET_MODELS_DICT:
-                raise ValueError(f"ChromBPNet supports only the following assays: {list(CHROMBPNET_MODELS_DICT.keys())}")
-            
-            if assay != "CHIP":            
-                # Check if the combination is valid
+                raise InvalidAssayError(
+                    f"ChromBPNet supports only the following assays: "
+                    f"{list(CHROMBPNET_MODELS_DICT.keys())}."
+                )
+
+            if assay != "CHIP":
                 if cell_type not in CHROMBPNET_MODELS_DICT[assay]:
-                    raise ValueError(f"ChromBPNet {assay} predictions can only be done on the following cell types: {list(CHROMBPNET_MODELS_DICT[assay].keys())}")
+                    raise InvalidAssayError(
+                        f"ChromBPNet {assay} predictions can only be done on the following "
+                        f"cell types: {list(CHROMBPNET_MODELS_DICT[assay].keys())}."
+                    )
 
                 if fold not in range(5):
-                    raise ValueError(f"ChromBPNet fold must be an integer between 0 and 4, got {fold}")
+                    raise InvalidAssayError(
+                        f"ChromBPNet fold must be an integer between 0 and 4, got {fold}."
+                    )
             else:
                 if TF is None:
-                    raise ValueError(f"You must provide TF for which you want ChIP-seq model.")
+                    raise InvalidAssayError(
+                        "You must provide `TF` when requesting a ChIP-seq ChromBPNet model."
+                    )
         else:
             if weights is None:
-                raise ValueError("You must provide weights if custom flag is set.")
+                raise InvalidAssayError(
+                    "You must provide `weights` when `is_custom=True`."
+                )
             
         # Store assay and celltype
         self.assay = assay
@@ -363,7 +376,10 @@ class ChromBPNetOracle(OracleBase):
                 self._model_info = model_info
                 logger.info("ChromBPNet model loaded successfully in environment!")
             else:
-                raise ModelNotLoadedError("Failed to load ChromBPNet model in environment")
+                raise ModelNotLoadedError(
+                    "Failed to load ChromBPNet model in the chorus-chrombpnet environment. "
+                    "Run `chorus health --oracle chrombpnet` to diagnose."
+                )
     
     def _load_direct(self, weights: str):
         """Load model directly in current environment"""
@@ -416,7 +432,7 @@ class ChromBPNetOracle(OracleBase):
             logger.info("ChromBPNet model loaded successfully!")
 
         except Exception as e:
-            raise ModelNotLoadedError(f"Failed to load ChromBPNet model: {str(e)}")
+            raise ModelNotLoadedError(f"Failed to load ChromBPNet model: {e}.")
     
     def list_assay_types(self) -> List[str]:
         """Return ChromBPNet's assay types."""
