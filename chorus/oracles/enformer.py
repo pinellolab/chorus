@@ -12,7 +12,7 @@ from ..core.base import OracleBase
 from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..core.track import Track
 from ..core.interval import Interval, GenomeRef, Sequence 
-from ..core.exceptions import ModelNotLoadedError
+from ..core.exceptions import ModelNotLoadedError, InvalidAssayError
 
 logger = logging.getLogger(__name__)
 
@@ -329,13 +329,49 @@ class EnformerOracle(OracleBase):
         
         return one_hot
     
-    def _get_assay_indices(self, assay_ids: List[str]) -> List[int]:
-        """Map assay IDs to track indices using proper metadata."""
+    def _validate_assay_ids(self, assay_ids: List[str] | None = None):
+        """Raise InvalidAssayError up-front for any unknown Enformer track.
+
+        Without this, predict() would reach
+        ``metadata.get_track_by_identifier(bad_id)`` → None →
+        ``metadata.get_track_info(None)`` → None →
+        ``info['description']`` → ``TypeError: 'NoneType' object is not
+        subscriptable`` — a classic P0 UX bug where the traceback
+        hides the real issue.
+        """
+        if not assay_ids:
+            return
         from .enformer_source.enformer_metadata import get_metadata
-        
+        metadata = get_metadata()
+        bad: List[str] = []
+        for assay_id in assay_ids:
+            if assay_id.startswith('ENCFF'):
+                if metadata.get_track_by_identifier(assay_id) is None:
+                    bad.append(assay_id)
+            else:
+                if not metadata.get_tracks_by_description(assay_id):
+                    bad.append(assay_id)
+        if bad:
+            raise InvalidAssayError(
+                f"Enformer does not recognise these track IDs: {bad}. "
+                "Discover valid IDs with: "
+                "`from chorus.oracles.enformer_source.enformer_metadata import get_metadata; "
+                "get_metadata().search_tracks('K562')` — or the `list_tracks` MCP tool."
+            )
+
+    def _get_assay_indices(self, assay_ids: List[str]) -> List[int]:
+        """Map assay IDs to track indices using proper metadata.
+
+        Unknown IDs are already caught by ``_validate_assay_ids`` — if
+        one slips through (e.g. direct calls from tests), we still
+        fall back to index 0 with a warning rather than crash, but the
+        user-facing ``predict`` path validates first.
+        """
+        from .enformer_source.enformer_metadata import get_metadata
+
         metadata = get_metadata()
         indices = []
-        
+
         for assay_id in assay_ids:
             # Check if it's an ENCODE identifier (starts with ENCFF)
             if assay_id.startswith('ENCFF'):
@@ -357,7 +393,7 @@ class EnformerOracle(OracleBase):
                 else:
                     logger.warning(f"No tracks found for '{assay_id}'")
                     indices.append(0)
-        
+
         return indices
     
     def _load_track_metadata(self):

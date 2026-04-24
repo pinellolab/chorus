@@ -4,7 +4,7 @@ from ..core.base import OracleBase
 from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..core.track import Track
 from ..core.interval import Interval, GenomeRef, Sequence
-from ..core.exceptions import ModelNotLoadedError
+from ..core.exceptions import ModelNotLoadedError, InvalidAssayError
 
 from typing import List, Tuple, Union, Optional, Dict, Any
 import os
@@ -283,10 +283,42 @@ class BorzoiOracle(OracleBase):
         metadata = get_metadata()
         return metadata.list_cell_types()
     
-    def _get_assay_indices(self, assay_ids: List[str]) -> List[int]:
-        """Map assay IDs to track indices using proper metadata."""
+    def _validate_assay_ids(self, assay_ids: List[str] | None = None):
+        """Raise InvalidAssayError up-front for any unknown Borzoi track.
+
+        Same P0 UX pitfall as Enformer: without this guard, predict()
+        would reach ``metadata.get_track_info(None)`` and raise a
+        cryptic ``TypeError: 'NoneType' object is not subscriptable``.
+        """
+        if not assay_ids:
+            return
         from .borzoi_source.borzoi_metadata import get_metadata
-        
+        metadata = get_metadata()
+        bad: List[str] = []
+        for assay_id in assay_ids:
+            if assay_id.startswith('ENCFF'):
+                if metadata.get_track_by_identifier(assay_id) is None:
+                    bad.append(assay_id)
+            else:
+                if not metadata.get_tracks_by_description(assay_id):
+                    bad.append(assay_id)
+        if bad:
+            raise InvalidAssayError(
+                f"Borzoi does not recognise these track IDs: {bad}. "
+                "Discover valid IDs with: "
+                "`from chorus.oracles.borzoi_source.borzoi_metadata import get_metadata; "
+                "get_metadata().search_tracks('K562')` — or the `list_tracks` MCP tool."
+            )
+
+    def _get_assay_indices(self, assay_ids: List[str]) -> List[int]:
+        """Map assay IDs to track indices using proper metadata.
+
+        Unknown IDs are already caught by ``_validate_assay_ids``; the
+        warning-and-fallback branches below are a defensive backstop
+        for direct callers (e.g. tests) who bypass predict().
+        """
+        from .borzoi_source.borzoi_metadata import get_metadata
+
         metadata = get_metadata()
         indices = []
         
