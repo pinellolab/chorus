@@ -410,6 +410,52 @@ class TestPredictionMethods:
         oracle = MockOracle(reference_fasta=str(self.fasta_path))
         assert oracle.device is None
 
+    def test_unknown_track_id_gives_actionable_error(self):
+        """Invalid assay_id must raise InvalidAssayError with a pointer
+        to list_tracks / get_track_info — not silently substitute track 0
+        (previous behaviour corrupted predictions) or surface a cryptic
+        TypeError('NoneType' is not subscriptable).
+
+        Regression for v26 P0 finding (fix in 96fc28d). Exercises the
+        Enformer direct-load code path via a stubbed metadata object.
+        """
+        import types
+        from chorus.core.exceptions import InvalidAssayError
+
+        try:
+            from chorus.oracles import enformer as enformer_mod
+        except ImportError:
+            pytest.skip("enformer module not importable")
+
+        # Fake metadata that misses every lookup.
+        fake_meta = types.SimpleNamespace(
+            get_track_by_identifier=lambda x: None,
+            get_tracks_by_description=lambda x: [],
+        )
+        stub = type("Stub", (), {})()
+
+        from chorus.oracles.enformer_source import enformer_metadata as meta_mod
+        orig = meta_mod.get_metadata
+        meta_mod.get_metadata = lambda: fake_meta
+        try:
+            # _validate_assay_ids is the user-facing gate called by
+            # OracleBase.predict() before _get_assay_indices. Both bad
+            # ENCFF IDs and bad descriptions must raise before reaching
+            # the model.
+            with pytest.raises(InvalidAssayError, match="(list_tracks|search_tracks)"):
+                enformer_mod.EnformerOracle._validate_assay_ids(
+                    stub, ["ENCFF999BADID"]
+                )
+            with pytest.raises(InvalidAssayError, match="(list_tracks|search_tracks)"):
+                enformer_mod.EnformerOracle._validate_assay_ids(
+                    stub, ["totally made up track name"]
+                )
+            # Empty input must not raise.
+            enformer_mod.EnformerOracle._validate_assay_ids(stub, None)
+            enformer_mod.EnformerOracle._validate_assay_ids(stub, [])
+        finally:
+            meta_mod.get_metadata = orig
+
     def test_error_handling_model_not_loaded(self):
         """Test error when model not loaded."""
         unloaded_oracle = MockOracle(reference_fasta=str(self.fasta_path))

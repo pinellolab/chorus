@@ -667,10 +667,15 @@ class Interval:
                 c = CigarInsertion(seq=query[querypos:querypos+ilength(l)])
             elif g == CigarDeletion.cigar_symbol:
                 c = CigarDeletion(length=ilength(l))
-            elif g ==  CigarNotEqual.cigar_symbol: 
+            elif g ==  CigarNotEqual.cigar_symbol:
                 c = CigarNotEqual(seq=query[querypos:querypos+ilength(l)])
             else:
-                raise Exception('')
+                # Was a bare Exception('') — meaningless if a user ever
+                # hit it. Known CIGAR symbols are ``= M I D X``; anything
+                # else is a parser error. v26 P1 #13.
+                raise IntervalException(
+                    f"Unknown CIGAR symbol {g!r} (expected one of '=MIDX')"
+                )
             if c.consumes_query:
                 querypos += len(c)
             cigar_groups.append(c)

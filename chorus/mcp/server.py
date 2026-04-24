@@ -128,8 +128,14 @@ def _safe_tool(fn):
 
     Wraps the function body only; does not interfere with FastMCP's
     registration (apply *inside* ``@mcp.tool()``).
+
+    Set ``CHORUS_MCP_DEBUG=1`` to include ``"traceback": ...`` in the
+    returned dict — useful when debugging a tool call through an MCP
+    client that only prints the JSON reply (v26 P1 #18).
     """
     import functools
+    import os
+    import traceback as _traceback
 
     @functools.wraps(fn)
     def wrapper(*args, **kwargs):
@@ -137,11 +143,14 @@ def _safe_tool(fn):
             return fn(*args, **kwargs)
         except Exception as exc:
             logger.exception("MCP tool %s failed", fn.__name__)
-            return {
+            payload = {
                 "error": str(exc) or type(exc).__name__,
                 "error_type": type(exc).__name__,
                 "tool": fn.__name__,
             }
+            if os.environ.get("CHORUS_MCP_DEBUG", "").lower() in ("1", "true", "yes"):
+                payload["traceback"] = _traceback.format_exc()
+            return payload
 
     return wrapper
 
