@@ -51,18 +51,18 @@ class EnvironmentManager:
         # Check MAMBA_EXE environment variable
         mamba_exe = os.environ.get('MAMBA_EXE')
         if mamba_exe and os.path.exists(mamba_exe):
-            logger.info(f"Found mamba via MAMBA_EXE: {mamba_exe}")
+            logger.debug(f"Found mamba via MAMBA_EXE: {mamba_exe}")
             return mamba_exe
 
         # First check CONDA_EXE environment variable (set by conda when activated)
         conda_exe = os.environ.get('CONDA_EXE')
         if conda_exe and os.path.exists(conda_exe):
-            logger.info(f"Found conda via CONDA_EXE: {conda_exe}")
+            logger.debug(f"Found conda via CONDA_EXE: {conda_exe}")
             # Check if mamba exists in the same directory
             conda_dir = os.path.dirname(conda_exe)
             mamba_exe = os.path.join(conda_dir, 'mamba')
             if os.path.exists(mamba_exe):
-                logger.info(f"Found mamba at: {mamba_exe}")
+                logger.debug(f"Found mamba at: {mamba_exe}")
                 return mamba_exe
             return conda_exe
         
@@ -76,7 +76,7 @@ class EnvironmentManager:
             for cmd in ['mamba', 'conda']:
                 exe_path = os.path.join(base_prefix, 'bin', cmd)
                 if os.path.exists(exe_path):
-                    logger.info(f"Found {cmd} via CONDA_PREFIX at: {exe_path}")
+                    logger.debug(f"Found {cmd} via CONDA_PREFIX at: {exe_path}")
                     return exe_path
         
         # Try common conda/mamba commands (may work via shell functions)
@@ -89,7 +89,7 @@ class EnvironmentManager:
                     check=True
                 )
                 if result.returncode == 0:
-                    logger.info(f"Found {cmd}: {result.stdout.strip()}")
+                    logger.debug(f"Found {cmd}: {result.stdout.strip()}")
                     return cmd
             except (subprocess.CalledProcessError, FileNotFoundError):
                 continue
