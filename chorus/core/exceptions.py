@@ -11,18 +11,31 @@ class ModelNotLoadedError(ChorusError):
     pass
 
 
-class InvalidSequenceError(ChorusError):
-    """Raised when an invalid DNA sequence is provided."""
+class InvalidSequenceError(ChorusError, ValueError):
+    """Raised when an invalid DNA sequence is provided.
+
+    Inherits from ``ValueError`` as well so legacy ``except ValueError``
+    handlers still catch it — v26 P2 #19.
+    """
     pass
 
 
-class InvalidAssayError(ChorusError):
-    """Raised when an invalid assay type is requested."""
+class InvalidAssayError(ChorusError, ValueError):
+    """Raised when an invalid assay type is requested.
+
+    Inherits from ``ValueError`` as well — v26 P2 #19.
+    """
     pass
 
 
-class InvalidRegionError(ChorusError):
-    """Raised when an invalid genomic region is specified."""
+class InvalidRegionError(ChorusError, ValueError):
+    """Raised when an invalid genomic region is specified.
+
+    Inherits from ``ValueError`` as well so the MCP helpers
+    ``_parse_region`` / ``_parse_position`` keep their
+    ``except ValueError`` contract while also being catchable as
+    ``ChorusError`` — v26 P2 #19.
+    """
     pass
 
 

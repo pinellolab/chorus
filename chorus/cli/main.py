@@ -39,6 +39,18 @@ def setup_environments(args):
         from ._setup_all import setup_all_oracles
         return setup_all_oracles(args)
 
+    # Preflight: reject unknown oracle names with the list of valid
+    # ones, instead of the cryptic "Environment file not found" from
+    # create_environment. v26 P1 #1.
+    available = manager.list_available_oracles()
+    if args.oracle not in available:
+        logger.error(
+            f"Unknown oracle: {args.oracle!r}. "
+            f"Valid oracles: {', '.join(sorted(available))} "
+            f"(or 'all' / omit --oracle to set up every oracle)."
+        )
+        return 1
+
     oracles = [args.oracle]
 
     # AlphaGenome is gated; resolve the HF token up front so we don't
@@ -146,11 +158,18 @@ def validate_environments(args):
     manager = EnvironmentManager()
     
     if args.oracle:
+        available = manager.list_available_oracles()
+        if args.oracle not in available:
+            logger.error(
+                f"Unknown oracle: {args.oracle!r}. "
+                f"Valid oracles: {', '.join(sorted(available))}."
+            )
+            return 1
         oracles = [args.oracle]
     else:
-        oracles = [o for o in manager.list_available_oracles() 
+        oracles = [o for o in manager.list_available_oracles()
                   if manager.environment_exists(o)]
-    
+
     if not oracles:
         logger.info("No installed environments to validate.")
         return 0
@@ -206,11 +225,18 @@ def check_health(args):
     runner = EnvironmentRunner(manager)
     
     if args.oracle:
+        available = manager.list_available_oracles()
+        if args.oracle not in available:
+            logger.error(
+                f"Unknown oracle: {args.oracle!r}. "
+                f"Valid oracles: {', '.join(sorted(available))}."
+            )
+            return 1
         oracles = [args.oracle]
     else:
-        oracles = [o for o in manager.list_available_oracles() 
+        oracles = [o for o in manager.list_available_oracles()
                   if manager.environment_exists(o)]
-    
+
     if not oracles:
         logger.info("No installed environments to check.")
         return 0

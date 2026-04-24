@@ -14,6 +14,7 @@ from typing import Optional
 
 from fastmcp import FastMCP
 
+from chorus.core.exceptions import InvalidRegionError
 from chorus.mcp.state import OracleStateManager
 from chorus.mcp.serializers import (
     serialize_prediction,
@@ -91,27 +92,34 @@ _POSITION_RE = re.compile(r'^(chr[\w]+):(\d+)$')
 
 
 def _parse_region(region: str) -> tuple[str, int, int]:
-    """Parse 'chrN:start-end' into (chrom, start, end) with validation."""
+    """Parse 'chrN:start-end' into (chrom, start, end) with validation.
+
+    Raises ``InvalidRegionError`` (a ``ChorusError`` subclass) so callers
+    can handle all Chorus-family errors uniformly. v26 P2 #19.
+    """
     m = _REGION_RE.match(region)
     if not m:
-        raise ValueError(
-            f"Invalid region format: '{region}'. "
+        raise InvalidRegionError(
+            f"Invalid region format: {region!r}. "
             f"Expected 'chrN:start-end' (e.g. 'chr1:1000000-1393216')."
         )
     chrom, start, end = m.group(1), int(m.group(2)), int(m.group(3))
     if start >= end:
-        raise ValueError(
-            f"Invalid region: start ({start}) must be less than end ({end})."
+        raise InvalidRegionError(
+            f"Invalid region {region!r}: start ({start}) must be less than end ({end})."
         )
     return chrom, start, end
 
 
 def _parse_position(position: str) -> tuple[str, int]:
-    """Parse 'chrN:pos' into (chrom, pos) with validation."""
+    """Parse 'chrN:pos' into (chrom, pos) with validation.
+
+    Raises ``InvalidRegionError`` (a ``ChorusError`` subclass). v26 P2 #19.
+    """
     m = _POSITION_RE.match(position)
     if not m:
-        raise ValueError(
-            f"Invalid position format: '{position}'. "
+        raise InvalidRegionError(
+            f"Invalid position format: {position!r}. "
             f"Expected 'chrN:position' (e.g. 'chr1:1050000')."
         )
     return m.group(1), int(m.group(2))
@@ -238,6 +246,20 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
         query: Optional search string to filter tracks (e.g. "K562", "DNASE"). Use the returned 'identifier' field as the assay_id for predictions.
     """
     oracle_name = oracle_name.lower()
+
+    # Validate oracle name up front — v26 P2 #20: previous behaviour
+    # dropped through to the fall-through error dict, which was easy to
+    # miss. Surface the mismatch explicitly with the valid names.
+    if oracle_name not in ORACLE_SPECS:
+        valid = ", ".join(sorted(ORACLE_SPECS.keys()))
+        logger.warning(
+            "list_tracks called with unknown oracle %r (valid: %s)",
+            oracle_name, valid,
+        )
+        return {
+            "error": f"Unknown oracle: {oracle_name!r}. Valid names: {valid}",
+            "oracle": oracle_name,
+        }
 
     # Try Borzoi metadata (richest search)
     if oracle_name == "borzoi":
