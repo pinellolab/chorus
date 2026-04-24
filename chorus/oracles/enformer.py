@@ -169,7 +169,7 @@ class EnformerOracle(OracleBase):
             self.loaded = True
             logger.info("Enformer model loaded successfully!")
         except Exception as e:
-            raise ModelNotLoadedError(f"Failed to load Enformer model: {str(e)}")
+            raise ModelNotLoadedError(f"Failed to load Enformer model: {e}.")
 
     def _load_in_environment(self, weights: str) -> None:
         args = {
@@ -192,7 +192,10 @@ class EnformerOracle(OracleBase):
                 self._model_info = model_info
                 logger.info("Enformer model loaded successfully in environment!")
             else:
-                raise ModelNotLoadedError("Failed to load Enformer model in environment")
+                raise ModelNotLoadedError(
+                    "Failed to load Enformer model in the chorus-enformer environment. "
+                    "Run `chorus health --oracle enformer` to diagnose."
+                )
 
     
     def _predict(self, seq: str | Tuple[str, int, int] | Interval, assay_ids: List[str] | None = None) -> OraclePrediction:

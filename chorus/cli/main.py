@@ -83,7 +83,10 @@ def setup_environments(args):
                 stale.unlink()
 
         if not manager.create_environment(oracle, force=args.force):
-            logger.error(f"✗ Failed to build env for {oracle}")
+            logger.error(
+                f"✗ Failed to build env for {oracle}. "
+                f"Re-run with --force to rebuild, or check the mamba/conda output above."
+            )
             continue
         logger.info(f"✓ env for {oracle}")
 
@@ -103,7 +106,7 @@ def setup_environments(args):
             skip_genome=args.no_genome,
         )
         if not ok:
-            logger.error(f"✗ prefetch failed for {oracle}:")
+            logger.error(f"✗ Prefetch failed for {oracle}. Details:")
             for err in errors:
                 logger.error(f"  - {err}")
             continue
@@ -195,11 +198,17 @@ def remove_environments(args):
     manager = EnvironmentManager()
     
     if not args.oracle:
-        logger.error("Please specify an oracle to remove with --oracle")
+        logger.error(
+            "Please specify an oracle to remove with --oracle <name>. "
+            "Run `chorus list` to see installed oracles."
+        )
         return 1
-    
+
     if not manager.environment_exists(args.oracle):
-        logger.error(f"Environment for {args.oracle} does not exist.")
+        logger.error(
+            f"Environment for {args.oracle!r} does not exist. "
+            f"Run `chorus list` to see installed oracles."
+        )
         return 1
     
     # Confirm removal
@@ -303,8 +312,10 @@ def download_genome(args):
     manager = GenomeManager()
     
     if args.genome not in manager.list_available_genomes():
-        logger.error(f"Unknown genome: {args.genome}")
-        logger.info(f"Available genomes: {', '.join(manager.list_available_genomes().keys())}")
+        logger.error(
+            f"Unknown genome: {args.genome!r}. "
+            f"Available genomes: {', '.join(manager.list_available_genomes().keys())}."
+        )
         return 1
     
     if manager.is_genome_downloaded(args.genome) and not args.force:
@@ -314,10 +325,13 @@ def download_genome(args):
     
     logger.info(f"Downloading {args.genome}...")
     if manager.download_genome(args.genome, force=args.force):
-        logger.info(f"Successfully downloaded {args.genome}")
+        logger.info(f"Successfully downloaded {args.genome}.")
         return 0
     else:
-        logger.error(f"Failed to download {args.genome}")
+        logger.error(
+            f"Failed to download {args.genome}. "
+            f"Check your network connection and retry, optionally with --force."
+        )
         return 1
 
 
@@ -344,10 +358,10 @@ def remove_genome(args):
             return 0
     
     if manager.remove_genome(args.genome):
-        logger.info(f"Successfully removed genome {args.genome}")
+        logger.info(f"Successfully removed genome {args.genome}.")
         return 0
     else:
-        logger.error(f"Failed to remove genome {args.genome}")
+        logger.error(f"Failed to remove genome {args.genome}.")
         return 1
 
 

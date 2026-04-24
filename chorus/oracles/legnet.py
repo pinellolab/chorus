@@ -148,7 +148,10 @@ class LegNetOracle(OracleBase):
                 self._model_info = model_info
                 logger.info("LegNet model loaded successfully in environment!")
             else:
-                raise ModelNotLoadedError("Failed to load LegNet model in environment")
+                raise ModelNotLoadedError(
+                    "Failed to load LegNet model in the chorus-legnet environment. "
+                    "Run `chorus health --oracle legnet` to diagnose."
+                )
     
     def _load_direct(self):
         try:
@@ -173,7 +176,7 @@ class LegNetOracle(OracleBase):
             logger.info("LegNet model loaded successfully!")
 
         except Exception as e:
-            raise ModelNotLoadedError(f"Failed to load LegNet model: {str(e)}")
+            raise ModelNotLoadedError(f"Failed to load LegNet model: {e}.")
     
     def list_assay_types(self) -> List[str]:
         """Return LegNet's assay types."""

@@ -131,7 +131,7 @@ class BorzoiOracle(OracleBase):
             self.loaded = True
             logger.info("Borzoi model loaded successfully!")
         except Exception as e:
-            raise ModelNotLoadedError(f"Failed to load Borzoi model: {str(e)}")
+            raise ModelNotLoadedError(f"Failed to load Borzoi model: {e}.")
 
     def _load_in_environment(self, weights: str) -> None:
         args = {
@@ -154,7 +154,10 @@ class BorzoiOracle(OracleBase):
                 self._model_info = model_info
                 logger.info("Borzoi model loaded successfully in environment!")
             else:
-                raise ModelNotLoadedError("Failed to load Borzoi model in environment")
+                raise ModelNotLoadedError(
+                    "Failed to load Borzoi model in the chorus-borzoi environment. "
+                    "Run `chorus health --oracle borzoi` to diagnose."
+                )
 
     
     def _predict(self, seq: str | Tuple[str, int, int] | Interval, assay_ids: List[str] | None = None) -> OraclePrediction:

@@ -128,9 +128,9 @@ class AlphaGenomeOracle(OracleBase):
                 else:
                     raise ModelNotLoadedError(
                         "AlphaGenome requires HuggingFace authentication. "
-                        "Set the HF_TOKEN environment variable or run 'huggingface-cli login'. "
+                        "Set the HF_TOKEN environment variable or run `huggingface-cli login`. "
                         "You must also accept the model license at "
-                        "https://huggingface.co/google/alphagenome-all-folds"
+                        "https://huggingface.co/google/alphagenome-all-folds."
                     )
 
             if force_cpu:
@@ -157,7 +157,7 @@ class AlphaGenomeOracle(OracleBase):
         except ModelNotLoadedError:
             raise
         except Exception as e:
-            raise ModelNotLoadedError(f"Failed to load AlphaGenome model: {e}")
+            raise ModelNotLoadedError(f"Failed to load AlphaGenome model: {e}.")
 
     def _load_in_environment(self, weights: str) -> None:
         args = {

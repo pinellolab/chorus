@@ -184,7 +184,10 @@ class SeiOracle(OracleBase):
                 self._model_info = model_info
                 logger.info("Sei model loaded successfully in environment!")
             else:
-                raise ModelNotLoadedError("Failed to load Sei model in environment")
+                raise ModelNotLoadedError(
+                    "Failed to load Sei model in the chorus-sei environment. "
+                    "Run `chorus health --oracle sei` to diagnose."
+                )
     
     def _load_direct(self):
         try:
@@ -229,7 +232,7 @@ class SeiOracle(OracleBase):
             self.loaded = True
             logger.info("Sei model loaded successfully!")
         except Exception as e:
-            raise ModelNotLoadedError(f"Failed to load Sei model: {str(e)}")
+            raise ModelNotLoadedError(f"Failed to load Sei model: {e}.")
 
     
     def list_assay_types(self) -> List[str]:
