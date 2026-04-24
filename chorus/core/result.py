@@ -387,7 +387,12 @@ class OraclePredictionTrack:
         '''
         Interpolate track to a new resolution.
         '''
-        assert resolution < self.resolution, "Target resolution must be smaller than the initial one"
+        if resolution >= self.resolution:
+            raise ValueError(
+                f"Target resolution must be smaller than the initial one "
+                f"(got target={resolution}, current={self.resolution}). "
+                f"Use aggregate() to go to a coarser resolution."
+            )
 
         if method is None:
             method = self.preferred_interpolation
@@ -412,7 +417,12 @@ class OraclePredictionTrack:
         Change track resolution. 
         Uses intermediate interpolation when the target resolution is not an exact multiple of the initial one.
         '''
-        assert resolution > self.resolution, "Target resolution must be greater than the initial one"
+        if resolution <= self.resolution:
+            raise ValueError(
+                f"Target resolution must be greater than the initial one "
+                f"(got target={resolution}, current={self.resolution}). "
+                f"Use interpolate() to go to a finer resolution."
+            )
         if aggregation is None:
             aggregation = self.preferred_aggregation
         if interpolation is None:

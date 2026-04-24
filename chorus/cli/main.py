@@ -515,7 +515,15 @@ def main(argv: Optional[List[str]] = None):
     
     # Parse arguments
     args = parser.parse_args(argv)
-    
+
+    # Wire `--verbose` (where present) to the root logger so DEBUG output
+    # from EnvironmentManager / GenomeManager / oracles actually surfaces.
+    # v26 P2 #21 — previously `--verbose` only gated a few extra print
+    # lines in the command handlers but did not change log level.
+    if getattr(args, 'verbose', False):
+        logging.getLogger().setLevel(logging.DEBUG)
+        logger.debug("Verbose mode: root logger set to DEBUG")
+
     if not args.command:
         parser.print_help()
         return 0

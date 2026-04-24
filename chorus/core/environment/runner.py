@@ -114,6 +114,17 @@ class EnvironmentRunner:
         # 3. Remove MPLBACKEND to avoid matplotlib conflicts
         env.pop("MPLBACKEND", None)
 
+        # 4. Silence TF/absl boot spam for TF-backed oracles (v26 P1 #10).
+        # chorus-enformer and chorus-chrombpnet would otherwise emit 3-5
+        # lines of `pluggable_device_factory`, `Fingerprint not found`,
+        # `path_and_singleprint metric could not be logged` etc. on every
+        # subprocess prediction call, which clutters notebook output
+        # and MCP tool logs. TF_CPP_MIN_LOG_LEVEL=3 keeps FATAL only.
+        # User can still override by exporting a different value in
+        # their own shell (this respects their choice via setdefault).
+        if oracle.lower() in ("enformer", "chrombpnet"):
+            env.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
+
         return env
     
     def run_code_in_environment(
@@ -191,14 +202,26 @@ except Exception as e:
 
             env = self._prepare_env(oracle)
                 
-            result = subprocess.run(
-                running_command,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                env=env,
-            )
-            
+            try:
+                result = subprocess.run(
+                    running_command,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout,
+                    env=env,
+                )
+            except subprocess.TimeoutExpired as e:
+                # v26 P2 #22 — point the user at CHORUS_NO_TIMEOUT=1 rather
+                # than surface the bare TimeoutExpired (which truncates
+                # stderr and gives no actionable hint).
+                raise RuntimeError(
+                    f"{oracle} prediction timed out after {timeout}s. "
+                    f"For long-running workloads (full-genome scans, dense "
+                    f"variant lists, CPU inference), set "
+                    f"CHORUS_NO_TIMEOUT=1 to disable timeouts, or raise the "
+                    f"per-call timeout explicitly."
+                ) from e
+
             if result.returncode != 0:
                 raise RuntimeError(f"Execution failed: {result.stderr}")
             
@@ -271,13 +294,22 @@ except Exception as e:
             script = self._create_execution_script(input_path, output_path)
             
             # Run in environment
-            result = subprocess.run(
-                [python_exe, '-c', script],
-                capture_output=True,
-                text=True,
-                timeout=timeout
-            )
-            
+            try:
+                result = subprocess.run(
+                    [python_exe, '-c', script],
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout
+                )
+            except subprocess.TimeoutExpired as e:
+                # v26 P2 #22 — same hint as above for the function-call
+                # variant of the runner.
+                raise RuntimeError(
+                    f"{oracle} execution timed out after {timeout}s. "
+                    f"Set CHORUS_NO_TIMEOUT=1 to disable timeouts, or raise "
+                    f"the per-call timeout explicitly."
+                ) from e
+
             if result.returncode != 0:
                 raise RuntimeError(f"Execution failed: {result.stderr}")
             

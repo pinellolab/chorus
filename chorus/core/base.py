@@ -34,6 +34,12 @@ class OracleBase(ABC):
         self._cell_types = []
         # Environment management
         self.use_environment = use_environment
+        # Remember whether the user asked for env isolation so we can
+        # distinguish a later silent flip to False ("env setup failed")
+        # from a legitimate test/library-internal use_environment=False.
+        # Only the former should raise EnvironmentNotReadyError.
+        self._user_asked_for_env = use_environment
+        self._env_setup_error: Optional[str] = None
         self._env_manager = None
         self._env_runner = None
         
@@ -81,37 +87,78 @@ class OracleBase(ABC):
         pass
     
     def _setup_environment(self):
-        """Set up environment management for the oracle."""
+        """Set up environment management for the oracle.
+
+        On success, ``self.use_environment`` remains True and the
+        ``_env_manager`` / ``_env_runner`` are attached. On any failure
+        (missing env, invalid env, import error, unexpected exception)
+        we flip ``use_environment`` to False **and** record a deferred
+        reason in ``self._env_setup_error``. The next call to a user-
+        facing method (``load_pretrained_model`` / ``predict``) raises
+        :class:`EnvironmentNotReadyError` with that reason — so users
+        who opted into ``use_environment=True`` don't silently fall
+        back to running in the base env and hit a confusing
+        ``ModuleNotFoundError`` for a framework-specific package.
+        Regression for v26 P1 #11.
+        """
+        self._env_setup_error: Optional[str] = None
         try:
             from ..core.environment import EnvironmentManager, EnvironmentRunner
-            
+
             self._env_manager = EnvironmentManager()
             self._env_runner = EnvironmentRunner(self._env_manager)
-            
+
             # Check if environment exists
             if not self._env_manager.environment_exists(self.oracle_name):
-                logger.warning(
+                msg = (
                     f"Environment for {self.oracle_name} does not exist. "
                     f"Run 'chorus setup --oracle {self.oracle_name}' to create it."
                 )
+                logger.warning(msg)
+                self._env_setup_error = msg
                 self.use_environment = False
             else:
                 # Validate environment
                 is_valid, issues = self._env_manager.validate_environment(self.oracle_name)
                 if not is_valid:
-                    logger.warning(
+                    msg = (
                         f"Environment validation failed for {self.oracle_name}: "
-                        f"{'; '.join(issues)}"
+                        f"{'; '.join(issues)}. Run 'chorus health --oracle "
+                        f"{self.oracle_name}' to diagnose, or 'chorus setup "
+                        f"--oracle {self.oracle_name} --force' to rebuild."
                     )
+                    logger.warning(msg)
+                    self._env_setup_error = msg
                     self.use_environment = False
                 else:
                     logger.info(f"Using conda environment: chorus-{self.oracle_name}")
-        except ImportError:
-            logger.warning("Environment management not available. Oracle will run in current environment.")
+        except ImportError as e:
+            msg = f"Environment management not available ({e}). Oracle will run in current environment."
+            logger.warning(msg)
+            self._env_setup_error = msg
             self.use_environment = False
         except Exception as e:
-            logger.warning(f"Failed to set up environment: {e}. Oracle will run in current environment.")
+            msg = f"Failed to set up environment: {e}. Oracle will run in current environment."
+            logger.warning(msg)
+            self._env_setup_error = msg
             self.use_environment = False
+
+    def _check_env_ready(self) -> None:
+        """Raise ``EnvironmentNotReadyError`` if the caller asked for
+        ``use_environment=True`` but setup failed.
+
+        Called by :meth:`predict` and friends so users get a clear
+        error instead of a confusing downstream ``ModuleNotFoundError``
+        when ``_setup_environment`` flipped ``use_environment`` to
+        False silently.
+        """
+        from .exceptions import EnvironmentNotReadyError
+        err = getattr(self, "_env_setup_error", None)
+        # Only raise when the user explicitly asked for environment
+        # isolation. use_environment=False at construction is a
+        # legitimate test/library-internal path.
+        if err and not self.use_environment and self._user_asked_for_env:
+            raise EnvironmentNotReadyError(err)
     
     def run_in_environment(self, func: Any, *args, **kwargs) -> Any:
         """Run a function in the oracle's environment if available."""
@@ -165,9 +212,11 @@ class OracleBase(ABC):
             >>> predictions = oracle.predict(('chrX', 48780505, 48785229), ['ENCFF413AHU'])
         """
         # Validate inputs
+        self._check_env_ready()
+
         self._validate_loaded()
         self._validate_assay_ids(assay_ids)
-        
+
         # Get raw predictions
         predictions = self._predict(input_data, assay_ids)
         return predictions
@@ -200,6 +249,8 @@ class OracleBase(ABC):
             track_objects, and track_files
         """
         # Validate inputs
+        self._check_env_ready()
+
         self._validate_loaded()
         self._validate_assay_ids(assay_ids)
         self._validate_dna_sequence(seq)  # Only validate DNA content, not length
@@ -239,6 +290,8 @@ class OracleBase(ABC):
     ) -> dict[str, OraclePrediction]:
         """Insert sequence at a specific position and predict."""
         # Validate inputs
+        self._check_env_ready()
+
         self._validate_loaded()
         self._validate_assay_ids(assay_ids)
         self._validate_dna_sequence(seq)  # Only validate DNA content, not length
@@ -282,6 +335,8 @@ class OracleBase(ABC):
     ) -> Dict:
         """Predict effects of variants."""
         # Validate inputs
+        self._check_env_ready()
+
         self._validate_loaded()
         self._validate_assay_ids(assay_ids)
         
