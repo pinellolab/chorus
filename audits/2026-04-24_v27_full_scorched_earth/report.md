@@ -177,6 +177,31 @@ LDL-C). Direction and magnitude both match published biology.
 Total: 6/6 pass
 ```
 
+### Shipped HTML walkthroughs (audit-checklist §7)
+
+Rendered all 18 `examples/walkthroughs/**/*.html` reports headless via
+Playwright + bundled Chromium at 1600×4500, captured full-page
+screenshots in `screenshots/` (14 MB total), recorded console output,
+and audited each against the §7 criteria. Render log at
+`render_log.json`.
+
+| Criterion | Result |
+|---|---|
+| **§7 P0** Renders at 1600×4500 without JS errors | **18/18** — 0 console errors, 0 page errors anywhere |
+| **§7 P0** IGV browser block shows real signal tracks (not placeholder) | **17/18** — every per-variant report has `igv.createBrowser(...)` + populated `[id*=igv]` DOM nodes after the 12 s settle. The remaining one (`batch_scoring/batch_sort1_locus_scoring.html`) is a multi-variant aggregate by design — no IGV block expected |
+| **§7 P1** Glossary block present | **18/18** |
+| **§7 P0** Formula badges match layer | **18/18** correct: chromatin/CAGE/TF reports use **log2FC**, the LegNet (MPRA) entry in the multi-oracle validation report uses **Δ**, the TERT report (RNA-seq layer) uses **lnFC** |
+| **§7 P1** Per-layer percentile columns (`%ile`) | **16/18** — `causal_prioritization/SORT1_locus/...` and the LegNet multi-oracle entry are by design rank-based (not percentile-table) views |
+
+Two screenshots embedded in this audit's parent transcript for visual
+confirmation:
+- `rs12740374_SORT1_alphagenome_report.png` — full multi-layer report
+  with sortable tracks table, glossary box, embedded IGV showing real
+  per-cell-type signal tracks at chr1:109,274,968.
+- `rs12740374_SORT1_multioracle_report.png` — cross-oracle consensus
+  table, IGV showing chromatin/CAGE/RNA tracks, per-oracle analysis
+  section.
+
 ### MCP server (audit-checklist §8)
 
 - 22 tools registered
