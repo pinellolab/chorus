@@ -194,14 +194,19 @@ future agents don't get confused.
 
 ### Notebooks
 
-| Notebook | Result | Notes |
-|---|---|---|
-| single_oracle_quickstart.ipynb | ✓ (after P0 fix) | 672 KB, 0 errors after CNhs* fix |
-| advanced_multi_oracle_analysis.ipynb | ✗ ENCODE CDN slow | needs HepG2 ChromBPNet prefetch (P1) |
-| comprehensive_oracle_showcase.ipynb | killed before failure | would hit same wall |
+| Notebook | Result | Errors | Warnings | Output size |
+|---|---|---|---|---|
+| single_oracle_quickstart.ipynb | ✓ | 0 | 0 | 671 KB |
+| advanced_multi_oracle_analysis.ipynb | ✓ (after HepG2 cached) | 0 | 0 | 2146 KB |
+| comprehensive_oracle_showcase.ipynb | ✓ (after HepG2 cached) | 0 | 0 | 762 KB |
 
-HepG2 ChromBPNet tarball download ongoing in background; advanced +
-comprehensive will be retried once cached.
+All three meet audit-checklist §6 P1 ("zero errors and zero WARNING
+lines in any cell output"). Advanced + comprehensive were initially
+blocked on the slow ENCODE CDN serving the HepG2 ChromBPNet tarball
+mid-notebook; once I pre-downloaded that tarball with
+`download_with_resume` (722 MB, ~3 min on a fresh connection), both
+re-executed cleanly. The underlying P1 finding stands: `chorus setup
+chrombpnet` should pre-download HepG2 in addition to K562.
 
 ## Code changes landed during v27
 
