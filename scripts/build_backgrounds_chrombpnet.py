@@ -27,13 +27,20 @@ import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--part", choices=["variants", "baselines", "merge", "both", "all"], default="all")
+parser.add_argument("--part", choices=["variants", "baselines", "merge", "merge-incremental", "both", "all"], default="all")
 parser.add_argument("--gpu", type=int, default=0)
 parser.add_argument("--fold", type=int, default=0)
 parser.add_argument("--n-variants", type=int, default=10000)
 parser.add_argument("--reservoir-size", type=int, default=50000)
 parser.add_argument("--n-cdf-points", type=int, default=10000)
 parser.add_argument("--batch-size", type=int, default=64)
+parser.add_argument(
+    "--only-missing",
+    action="store_true",
+    help="Skip models whose track_id is already present in the existing "
+    "chrombpnet_pertrack.npz. Pair with --part merge-incremental to "
+    "stitch new rows into the existing NPZ.",
+)
 args = parser.parse_args()
 
 log_dir = os.path.join(REPO_ROOT, "logs")
@@ -146,6 +153,20 @@ def load_models_and_setup():
     # point to the same model). Without dedup we'd compute identical
     # CDFs twice.
     models_to_score = [(assay, ct) for assay, ct, _encff in iter_unique_models()]
+
+    # Optional incremental mode: skip models already present in the NPZ.
+    if args.only_missing:
+        existing_npz = os.path.join(cache_dir, "chrombpnet_pertrack.npz")
+        if os.path.exists(existing_npz):
+            existing = set(str(t) for t in np.load(existing_npz, allow_pickle=False)["track_ids"])
+            before = len(models_to_score)
+            models_to_score = [(a, c) for a, c in models_to_score if f"{a}:{c}" not in existing]
+            logger.info(
+                "--only-missing: existing NPZ has %d tracks; %d/%d to build (%d skipped).",
+                len(existing), len(models_to_score), before, before - len(models_to_score),
+            )
+        else:
+            logger.info("--only-missing: no existing NPZ — building all %d.", len(models_to_score))
     logger.info("Will score %d models (fold %d)", len(models_to_score), args.fold)
 
     oracle = ChromBPNetOracle(use_environment=False, reference_fasta=ref_path)
@@ -432,12 +453,84 @@ def merge_to_final():
 # Main
 # ══════════════════════════════════════════════════════════════════
 
+def merge_to_final_incremental():
+    """Stitch newly-built CDF rows onto the existing chrombpnet_pertrack.npz.
+
+    Loads the current NPZ + the two interim files written by an
+    ``--only-missing --part both`` run, concatenates rows preserving
+    track-id order (existing first, then new), and writes the merged
+    NPZ in place.
+    """
+    from chorus.analysis.normalization import PerTrackNormalizer
+
+    effect_path = os.path.join(cache_dir, "chrombpnet_effect_cdfs_interim.npz")
+    baseline_path = os.path.join(cache_dir, "chrombpnet_baseline_cdfs_interim.npz")
+    existing_path = os.path.join(cache_dir, "chrombpnet_pertrack.npz")
+
+    if not os.path.exists(effect_path) or not os.path.exists(baseline_path):
+        logger.error("Missing interim files — run with --only-missing --part both first")
+        return
+    if not os.path.exists(existing_path):
+        logger.error("No existing NPZ found at %s — use --part merge instead", existing_path)
+        return
+
+    existing = np.load(existing_path, allow_pickle=False)
+    effect_data = np.load(effect_path, allow_pickle=False)
+    baseline_data = np.load(baseline_path, allow_pickle=False)
+
+    new_ids = list(effect_data["track_ids"].astype(str))
+    assert new_ids == list(baseline_data["track_ids"].astype(str)), \
+        "interim effect/baseline track_id ordering must agree"
+
+    merged_ids = list(existing["track_ids"].astype(str)) + new_ids
+
+    def stack(name: str):
+        return np.concatenate([existing[name], effect_data[name] if "effect" in name else baseline_data[name]])
+
+    merged_effect = np.concatenate([existing["effect_cdfs"], effect_data["effect_cdfs"]])
+    merged_summary = np.concatenate([existing["summary_cdfs"], baseline_data["summary_cdfs"]])
+    merged_perbin = np.concatenate([existing["perbin_cdfs"], baseline_data["perbin_cdfs"]])
+    merged_signed = np.concatenate([existing["signed_flags"], effect_data["signed_flags"]])
+
+    def maybe_concat(name: str, src):
+        if name in existing and name in src:
+            return np.concatenate([existing[name], src[name]])
+        return None
+
+    merged_effect_counts  = maybe_concat("effect_counts",  effect_data)
+    merged_summary_counts = maybe_concat("summary_counts", baseline_data)
+    merged_perbin_counts  = maybe_concat("perbin_counts",  baseline_data)
+
+    path = PerTrackNormalizer.build_and_save(
+        oracle_name="chrombpnet",
+        track_ids=merged_ids,
+        effect_cdfs=merged_effect,
+        summary_cdfs=merged_summary,
+        perbin_cdfs=merged_perbin,
+        signed_flags=merged_signed,
+        effect_counts=merged_effect_counts,
+        summary_counts=merged_summary_counts,
+        perbin_counts=merged_perbin_counts,
+        cache_dir=cache_dir,
+    )
+    logger.info(
+        "DONE — merged NPZ has %d tracks (%d existing + %d new): %s (%.1f MB)",
+        len(merged_ids), len(existing["track_ids"]), len(new_ids),
+        path, path.stat().st_size / 1e6,
+    )
+
+
 if args.part == "variants":
     build_all_models(do_variants=True, do_baselines=False)
 elif args.part == "baselines":
     build_all_models(do_variants=False, do_baselines=True)
 elif args.part == "merge":
     merge_to_final()
+elif args.part == "merge-incremental":
+    merge_to_final_incremental()
 elif args.part in ("both", "all"):
     build_all_models(do_variants=True, do_baselines=True)
-    merge_to_final()
+    if args.only_missing:
+        merge_to_final_incremental()
+    else:
+        merge_to_final()
