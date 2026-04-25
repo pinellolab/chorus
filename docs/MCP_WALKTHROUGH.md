@@ -11,7 +11,7 @@ what a user types in natural language and what Claude returns.
    chorus setup --oracle alphagenome   # or enformer, etc.
    ```
 
-2. MCP configured (one-time — see [main README](../README.md#mcp-server-ai-assistant-integration)):
+2. MCP configured (one-time — see [main README](../README.md#mcp-server)):
    ```bash
    claude mcp add chorus -- mamba run -n chorus chorus-mcp
    ```
