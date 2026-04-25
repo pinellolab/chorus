@@ -115,6 +115,60 @@ biology.
    written. Each takes 10–15 min on PanFS, mostly bound by metadata
    ops (see Performance).
 
+## P0 #3 (added in second pass) — `chorus-sei.yml` solver explosion
+
+**What happened.** `chorus setup --oracle sei` ran `mamba env create -f
+environments/chorus-sei.yml` and the solver pegged a single CPU at
+99% for **50+ minutes** without writing the env to disk. RAM grew to
+5 GB during the libsolv search. I killed it before it finished.
+
+**Root cause.** [environments/chorus-sei.yml](environments/chorus-sei.yml)
+pins:
+
+```yaml
+- pytorch>=1.13.0,<2.0.0  # SEI may require specific PyTorch version
+- cudatoolkit=11.7        # Adjust based on your CUDA version
+```
+
+Modern conda-forge ships PyTorch 2.x by default and no longer indexes
+`cudatoolkit=11.7`. The combination forces libsolv to enumerate
+exponentially-many incompatible variants across the index. The
+comments in the YAML even say "may require" / "Adjust based on your
+CUDA" — the constraints were defensive guesses, not measured needs.
+
+**User impact.** A new user running the README's `chorus setup` flow
+or even `chorus setup --oracle sei` would see their terminal hang
+silently for an hour, assume it crashed, and Ctrl-C. **This breaks
+the new-user flow for any user who wants Sei.**
+
+**Fix shipped.** Updated [environments/chorus-sei.yml](environments/chorus-sei.yml):
+
+```diff
+- - pytorch>=1.13.0,<2.0.0  # SEI may require specific PyTorch version
+- - torchvision>=0.14.0
+- - cudatoolkit=11.7  # Adjust based on your CUDA version
++ - pytorch>=2.0.0
++ - torchvision>=0.15.0
+```
+
+The `cudatoolkit=11.7` pin is removed entirely so conda-forge can
+resolve a CUDA toolchain that matches the chosen PyTorch. Sei uses
+only standard `nn.Module` / `DataLoader` features that are API-stable
+across torch 2.x, so the upper bound was unnecessary.
+
+**Verification.**
+- Solver: completes in **2:11** (vs 50+ min stuck before).
+- Env create: 27 min total (linking dominated by PanFS small-file cost).
+- Resolves to `pytorch-2.10.0` on `cuda130`.
+- `chorus setup --oracle sei` (env-already-exists path) prefetches
+  the per-track CDF + writes the setup marker in 30 seconds.
+- `chorus health --oracle sei` → **✓ Healthy**.
+
+**Why v22-v26 didn't catch this.** v22-v25 ran on hosts where the
+env solve had been cached from an earlier successful resolve, OR
+where the conda-forge index hadn't moved as far past the constraint
+set. On a truly clean cache the solver explodes.
+
 ## Minor observations (P2)
 
 - `list_oracles` MCP tool returns `'environment_installed': 'unknown'`
@@ -153,9 +207,10 @@ admins to bump those.
 | `chorus setup --oracle enformer` | ✓ 15 min |
 | `chorus setup --oracle borzoi` | ✓ 10 min |
 | `chorus setup --oracle chrombpnet` | ✓ 10 min |
-| `chorus setup --oracle sei` | (in progress at write time) |
-| `chorus setup --oracle legnet` | (queued) |
-| `chorus setup --oracle alphagenome` | (queued, fresh HF token validated) |
+| `chorus setup --oracle sei` | ✓ **after YAML fix** (was 50 min hang on original constraints) |
+| `chorus setup --oracle legnet` | ✓ ~10 min |
+| `chorus setup --oracle alphagenome` | ✓ ~20 min (fresh HF token, JAX + git installs ok) |
+| `chorus health` (all 6) | ✓ 6/6 Healthy |
 | `chorus genome download hg38` | ✓ (auto by `chorus setup`) |
 | Per-track CDF auto-download | ✓ from HF, all oracles |
 | README Step 3 (Python snippet) | ✓ first try |

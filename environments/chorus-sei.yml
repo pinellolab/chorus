@@ -23,9 +23,13 @@ dependencies:
   - h5py>=3.6.0
   
   # PyTorch ecosystem
-  - pytorch>=1.13.0,<2.0.0  # SEI may require specific PyTorch version
-  - torchvision>=0.14.0
-  - cudatoolkit=11.7  # Adjust based on your CUDA version
+  # NB: the previous pin (pytorch>=1.13.0,<2.0.0 + cudatoolkit=11.7) caused a
+  # libsolv explosion against current conda-forge (50+ minute hangs on
+  # fresh installs — see audits/2026-04-25_v27_fresh_install_new_user.md).
+  # Sei uses standard nn.Module / DataLoader features that are API-stable
+  # across torch 2.x; let conda resolve a compatible CUDA toolkit alongside.
+  - pytorch>=2.0.0
+  - torchvision>=0.15.0
   
   # Additional dependencies
   - pip
