@@ -19,7 +19,7 @@ Four steps. Steps 1 + 2 are copy-paste. Step 3 is a runnable snippet. Step 4 hoo
 git clone https://github.com/pinellolab/chorus.git && cd chorus
 mamba env create -f environment.yml
 mamba activate chorus
-pip install -e .
+python -m pip install -e .
 ```
 
 Prerequisite: **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>, plus ~20 GB free disk for models + genomes + envs. Works on Linux x86_64 and macOS (Intel / Apple Silicon).

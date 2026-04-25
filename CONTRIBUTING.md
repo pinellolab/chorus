@@ -20,7 +20,7 @@ Chorus provides a unified interface for genomic sequence oracles. Each oracle ru
 # Fork the repository on GitHub, then:
 git clone https://github.com/YOUR_USERNAME/chorus.git
 cd chorus
-pip install -e .
+python -m pip install -e .
 ```
 
 ### Step 2: Create Your Oracle Implementation
