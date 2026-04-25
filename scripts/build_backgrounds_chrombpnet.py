@@ -482,6 +482,7 @@ def merge_to_final_incremental():
     assert new_ids == list(baseline_data["track_ids"].astype(str)), \
         "interim effect/baseline track_id ordering must agree"
 
+    existing_count = len(existing["track_ids"])  # capture now — `existing`'s file is overwritten by build_and_save
     merged_ids = list(existing["track_ids"].astype(str)) + new_ids
 
     def stack(name: str):
@@ -515,7 +516,7 @@ def merge_to_final_incremental():
     )
     logger.info(
         "DONE — merged NPZ has %d tracks (%d existing + %d new): %s (%.1f MB)",
-        len(merged_ids), len(existing["track_ids"]), len(new_ids),
+        len(merged_ids), existing_count, len(new_ids),
         path, path.stat().st_size / 1e6,
     )
 
