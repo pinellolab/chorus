@@ -348,12 +348,15 @@ class EnformerOracle(OracleBase):
         metadata = get_metadata()
         bad: List[str] = []
         for assay_id in assay_ids:
-            if assay_id.startswith('ENCFF'):
-                if metadata.get_track_by_identifier(assay_id) is None:
-                    bad.append(assay_id)
-            else:
-                if not metadata.get_tracks_by_description(assay_id):
-                    bad.append(assay_id)
+            # Try identifier lookup first (handles both ENCFF* and FANTOM
+            # CNhs* IDs — the ENCFF-only gate used to reject CAGE tracks
+            # like 'CNhs11250' that the quickstart notebook relies on.
+            if metadata.get_track_by_identifier(assay_id) is not None:
+                continue
+            # Fall back to description lookup (e.g. 'DNASE:K562').
+            if metadata.get_tracks_by_description(assay_id):
+                continue
+            bad.append(assay_id)
         if bad:
             raise InvalidAssayError(
                 f"Enformer does not recognise these track IDs: {bad}. "

@@ -1595,14 +1595,20 @@ def main():
         print("  CHORUS_NO_TIMEOUT=1       Disable prediction timeouts")
         print("  CHORUS_MCP_OUTPUT_DIR=DIR  Set output directory for bedgraph files")
         print()
-        print("Tools provided: list_oracles, list_tracks, list_genomes,")
-        print("  get_genes_in_region, get_gene_tss, load_oracle, unload_oracle,")
-        print("  oracle_status, predict, predict_variant_effect,")
-        print("  predict_region_replacement, predict_region_insertion,")
-        print("  score_prediction_region, score_variant_effect_at_region,")
-        print("  predict_variant_effect_on_gene, analyze_variant_multilayer,")
-        print("  discover_variant_cell_types, analyze_region_swap,")
-        print("  simulate_integration, score_variant_batch")
+        # Tool list mirrors what `@mcp.tool()` registers below — kept
+        # alphabetised so audit drift is easy to spot. v27 audit found
+        # this list missing `discover_variant` and `fine_map_causal_variant`.
+        print("Tools provided (22):")
+        print("  Discovery: list_oracles, list_tracks, list_genomes,")
+        print("    get_genes_in_region, get_gene_tss")
+        print("  Lifecycle: load_oracle, unload_oracle, oracle_status")
+        print("  Predict:   predict, predict_variant_effect,")
+        print("    predict_region_replacement, predict_region_insertion,")
+        print("    predict_variant_effect_on_gene, score_prediction_region,")
+        print("    score_variant_effect_at_region, score_variant_batch")
+        print("  Analyze:   analyze_variant_multilayer, analyze_region_swap,")
+        print("    discover_variant, discover_variant_cell_types,")
+        print("    fine_map_causal_variant, simulate_integration")
         print()
         print("Prompts provided: getting_started, analyze_variant")
         return

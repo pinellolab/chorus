@@ -456,6 +456,37 @@ class TestPredictionMethods:
         finally:
             meta_mod.get_metadata = orig
 
+        # v27 P0: FANTOM CAGE identifiers (e.g. 'CNhs11250') don't start
+        # with 'ENCFF' but are valid identifiers via
+        # ``get_track_by_identifier``. The previous validator only
+        # recognised ``ENCFF*`` as identifier candidates and dumped
+        # everything else into description-substring lookup — which then
+        # rejected ``CNhs11250`` because the description for that track
+        # is "CAGE:chronic myelogenous leukemia cell line:K562" and
+        # contains no 'CNhs' substring. The shipped quickstart notebook
+        # uses ``CNhs11250`` and broke for every new user.
+        fake_meta_with_cnhs = types.SimpleNamespace(
+            # Returns the index when called with the CNhs identifier;
+            # None otherwise — mirrors real metadata behaviour.
+            get_track_by_identifier=lambda x: 4828 if x == "CNhs11250" else None,
+            get_tracks_by_description=lambda x: [],
+        )
+        meta_mod.get_metadata = lambda: fake_meta_with_cnhs
+        try:
+            # Must NOT raise — CNhs11250 is a valid identifier even
+            # though it doesn't start with 'ENCFF'.
+            enformer_mod.EnformerOracle._validate_assay_ids(
+                stub, ["CNhs11250"]
+            )
+            # Mixing one valid + one invalid still raises, naming only
+            # the invalid one.
+            with pytest.raises(InvalidAssayError, match="ENCFF000XXX"):
+                enformer_mod.EnformerOracle._validate_assay_ids(
+                    stub, ["CNhs11250", "ENCFF000XXX"]
+                )
+        finally:
+            meta_mod.get_metadata = orig
+
     def test_error_handling_model_not_loaded(self):
         """Test error when model not loaded."""
         unloaded_oracle = MockOracle(reference_fasta=str(self.fasta_path))
