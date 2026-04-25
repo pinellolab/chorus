@@ -136,16 +136,16 @@ def load_models_and_setup():
 
     import tensorflow as tf
     import pysam
-    from chorus.oracles.chrombpnet_source.chrombpnet_globals import CHROMBPNET_MODELS_DICT
+    from chorus.oracles.chrombpnet_source.chrombpnet_globals import iter_unique_models
     from chorus.oracles.chrombpnet import ChromBPNetOracle
 
     ref_path = os.path.join(REPO_ROOT, "genomes/hg38.fa")
     ref = pysam.FastaFile(ref_path)
 
-    models_to_score = []
-    for assay in ('ATAC', 'DNASE'):
-        for cell_type in CHROMBPNET_MODELS_DICT.get(assay, {}):
-            models_to_score.append((assay, cell_type))
+    # Dedupe by ENCFF: registry has aliases ("limb" + "limb_E12.5"
+    # point to the same model). Without dedup we'd compute identical
+    # CDFs twice.
+    models_to_score = [(assay, ct) for assay, ct, _encff in iter_unique_models()]
     logger.info("Will score %d models (fold %d)", len(models_to_score), args.fold)
 
     oracle = ChromBPNetOracle(use_environment=False, reference_fasta=ref_path)
