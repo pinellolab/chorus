@@ -576,11 +576,14 @@ def discover_variant_effects(
         variant_result = None  # will build from best tracks later
 
         if name == "chrombpnet":
-            from ..oracles.chrombpnet_source.chrombpnet_globals import CHROMBPNET_MODELS_DICT
-            models = []
-            for assay in ("ATAC", "DNASE"):
-                for cell_type in CHROMBPNET_MODELS_DICT.get(assay, {}):
-                    models.append({"assay": assay, "cell_type": cell_type})
+            from ..oracles.chrombpnet_source.chrombpnet_globals import iter_unique_models
+            # Dedupe by ENCFF — the registry has aliases (`"limb"` and
+            # `"limb_E12.5"` point to the same model); without dedup
+            # discover_variant_effects would load the same weights twice.
+            models = [
+                {"assay": assay, "cell_type": cell_type}
+                for assay, cell_type, _encff in iter_unique_models()
+            ]
         elif name == "legnet":
             from ..oracles.legnet_source.legnet_globals import LEGNET_AVAILABLE_CELLTYPES
             models = [{"cell_type": ct} for ct in LEGNET_AVAILABLE_CELLTYPES]
