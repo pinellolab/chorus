@@ -25,7 +25,7 @@ Design notes
 from __future__ import annotations
 
 import logging
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +35,11 @@ logger = logging.getLogger(__name__)
 #   - LegNet: assay/cell_type live on __init__; load_pretrained_model
 #     takes no required args.
 #   - ChromBPNet: assay/cell_type/fold are load_pretrained_model args.
+#     Pre-fetch BOTH K562 + HepG2 because the shipped notebooks use
+#     both (advanced_multi_oracle_analysis.ipynb and
+#     comprehensive_oracle_showcase.ipynb hit HepG2 mid-run; v27 P1
+#     finding). Each entry in the list triggers one load → one ENCODE
+#     tarball download.
 #   - Everything else (enformer, borzoi, sei, alphagenome): no required
 #     config for prefetch — bare load_pretrained_model().
 # Passing ChromBPNet-style kwargs to LegNet.load_pretrained_model breaks
@@ -42,23 +47,47 @@ logger = logging.getLogger(__name__)
 _DEFAULT_CTOR_KWARGS: Dict[str, Dict[str, object]] = {
     "legnet": {"assay": "LentiMPRA", "cell_type": "HepG2"},
 }
-_DEFAULT_LOAD_KWARGS: Dict[str, Dict[str, object]] = {
-    "chrombpnet": {"assay": "DNASE", "cell_type": "K562", "fold": 0},
+# A LIST of dicts means "load each in sequence" (e.g. for pre-caching
+# multiple ChromBPNet (assay, cell_type) tarballs). A single dict means
+# "load once with these kwargs". Empty / missing means "bare call".
+_DEFAULT_LOAD_KWARGS: Dict[str, Union[Dict[str, object], List[Dict[str, object]]]] = {
+    "chrombpnet": [
+        {"assay": "DNASE", "cell_type": "K562", "fold": 0},
+        {"assay": "DNASE", "cell_type": "HepG2", "fold": 0},
+    ],
 }
 
 
 def _weight_prefetch_script(oracle: str) -> str:
-    """Render a throwaway script that loads the oracle once.
+    """Render a throwaway script that loads the oracle once (or N times).
 
     Runs inside the oracle's conda env via ``EnvironmentRunner``. The
     first ``load_pretrained_model`` call triggers any lazy downloads
     (ENCODE tarballs, Zenodo tarballs, TF Hub, HF Hub) into their
-    respective caches.
+    respective caches. When ``_DEFAULT_LOAD_KWARGS[oracle]`` is a list
+    we loop over entries, each one tripping one cache fetch, so a
+    single ``chorus setup`` run pre-caches every (assay, cell_type)
+    pair the shipped notebooks need.
     """
     ctor_kwargs = _DEFAULT_CTOR_KWARGS.get(oracle.lower(), {})
     load_kwargs = _DEFAULT_LOAD_KWARGS.get(oracle.lower(), {})
     ctor_repr = "".join(f", {k}={v!r}" for k, v in ctor_kwargs.items())
-    load_repr = ", ".join(f"{k}={v!r}" for k, v in load_kwargs.items())
+
+    # Normalize to a list of load-kwarg dicts. Empty dict → single bare
+    # call; single dict → single call with those kwargs; list of dicts
+    # → one call per dict.
+    if isinstance(load_kwargs, list):
+        load_calls = load_kwargs
+    else:
+        load_calls = [load_kwargs]
+    load_reprs = [
+        ", ".join(f"{k}={v!r}" for k, v in entry.items())
+        for entry in load_calls
+    ]
+    load_lines = "\n    ".join(
+        f"oracle.load_pretrained_model({rep})" for rep in load_reprs
+    )
+
     # ``use_environment=False`` makes the oracle load directly in the
     # current subprocess (we are already inside the oracle's conda env
     # via ``run_script_in_environment``); chorus.__init__.create_oracle
@@ -69,7 +98,7 @@ import json, sys
 import chorus
 try:
     oracle = chorus.create_oracle({oracle!r}, use_environment=False{ctor_repr})
-    oracle.load_pretrained_model({load_repr})
+    {load_lines}
     print(json.dumps({{'success': True}}))
 except Exception as exc:
     import traceback

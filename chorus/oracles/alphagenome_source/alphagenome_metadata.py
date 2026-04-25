@@ -213,6 +213,19 @@ class AlphaGenomeMetadata:
         return summary
 
     def search_tracks(self, query: str):
+        """Substring search across all four searchable fields.
+
+        Searches: ``identifier`` (e.g. ``CAGE/hCAGE CL:0000182/+``),
+        ``name``, ``description`` (e.g. ``CAGE:hepatocyte``), and
+        ``cell_type`` (e.g. ``HepG2``, ``hepatocyte``). Case-insensitive.
+
+        **Why this matters**: identifiers use Cell Ontology IDs
+        (``CL:0000182`` for hepatocyte) or EFO IDs (``EFO:0001187`` for
+        HepG2) — *not* human-readable names. So a user filtering with
+        ``df[df['identifier'].str.contains('HepG2')]`` will get 0 hits;
+        prefer this method, which searches all four fields and returns
+        the same DataFrame.
+        """
         import pandas as pd
 
         query_lower = query.lower()

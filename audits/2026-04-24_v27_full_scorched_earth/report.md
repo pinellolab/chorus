@@ -102,22 +102,19 @@ download cost up front, OR a `chorus prefetch --notebook
 advanced_multi_oracle` helper. Cheapest: add HepG2 + K562 to
 `_DEFAULT_LOAD_KWARGS["chrombpnet"]` as a list.
 
-### P2 — AlphaGenome track discovery uses Cell Ontology IDs, not human-readable names
+### ~~P2 — AlphaGenome track discovery uses Cell Ontology IDs~~ (RETRACTED)
 
-**Symptom:** `oracle.get_track_info('CAGE')['identifier'].str.contains('HepG2')`
-returns 0 matches. AlphaGenome encodes cell types as Cell Ontology
-IDs:
-`CAGE/hCAGE CL:0000182/+` (= hepatocyte). Description column shows
-`CAGE:hepatocyte` but most users will keyword-search the identifier.
+**This finding was a probe bug, not a real issue.** During the audit I
+filtered with `tracks['identifier'].str.contains('HepG2')` (which
+returns 0 because identifiers use Cell Ontology / EFO codes), but
+`AlphaGenomeMetadata.search_tracks('HepG2')` already searches across
+identifier + name + description + cell_type and returns 562 matching
+tracks. Same for `search_tracks('hepatocyte')` → 18 matches. The
+existing API works correctly; my probe just used the wrong column.
 
-**Documented impact on the v27 known-science probe:** I had to look up
-`CL:0000182` from OBO before I could find the SORT1/hepatocyte tracks.
-A first-time biologist user will trip on this.
-
-**Recommended fix (not landed):** add a synonym map (or fuzzy search)
-in `AlphaGenomeMetadata.search_tracks` so that
-`search('HepG2')` and `search('hepatocyte')` both return CL:0000182.
-Or add the human-readable name into the identifier column itself.
+Landed during follow-up: clarifying docstring on `search_tracks`
+warning users that identifier-only filters miss matches because of
+the ontology-ID encoding, so they reach for `search_tracks` instead.
 
 ### P2 — `chorus --version` flag missing
 

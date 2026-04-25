@@ -400,10 +400,17 @@ def genome_info(args):
 
 def main(argv: Optional[List[str]] = None):
     """Main CLI entry point."""
+    from chorus import __version__ as _chorus_version
+
     parser = argparse.ArgumentParser(
         description="Chorus: Modular framework for genomic foundation models"
     )
-    
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"chorus {_chorus_version}",
+    )
+
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
     
     # Setup command
