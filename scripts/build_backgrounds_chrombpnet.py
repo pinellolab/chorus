@@ -292,6 +292,11 @@ def predict_profiles_batch(model, seqs):
         predictions = model([ohe_batch, *bias_inputs], training=False)
     probabilities = predictions[0].numpy()
     counts = predictions[1].numpy()
+    # BPNet CHIP models output (B, L, 2) for two strands — sum before scoring
+    if probabilities.ndim == 3:
+        probabilities = probabilities.sum(axis=-1)   # (B, L, 2) → (B, L)
+    if counts.ndim == 2 and counts.shape[1] > 1:
+        counts = counts.sum(axis=-1, keepdims=True)  # (B, 2) → (B, 1)
     norm_prob = probabilities - np.mean(probabilities, axis=1, keepdims=True)
     softmax_probs = np.exp(norm_prob) / np.sum(np.exp(norm_prob), axis=1, keepdims=True)
     profiles = softmax_probs * np.exp(counts[:, 0:1])
