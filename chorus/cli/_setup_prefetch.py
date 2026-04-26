@@ -50,12 +50,64 @@ _DEFAULT_CTOR_KWARGS: Dict[str, Dict[str, object]] = {
 # A LIST of dicts means "load each in sequence" (e.g. for pre-caching
 # multiple ChromBPNet (assay, cell_type) tarballs). A single dict means
 # "load once with these kwargs". Empty / missing means "bare call".
-_DEFAULT_LOAD_KWARGS: Dict[str, Union[Dict[str, object], List[Dict[str, object]]]] = {
-    "chrombpnet": [
-        {"assay": "DNASE", "cell_type": "K562", "fold": 0},
-        {"assay": "DNASE", "cell_type": "HepG2", "fold": 0},
-    ],
-}
+# ChromBPNet uses a special prefetch script (see _chrombpnet_prefetch_script)
+# that iterates ALL registered models, so it is NOT listed here.
+_DEFAULT_LOAD_KWARGS: Dict[str, Union[Dict[str, object], List[Dict[str, object]]]] = {}
+
+
+def _chrombpnet_prefetch_script() -> str:
+    """Prefetch ALL ChromBPNet + BPNet model weights.
+
+    Iterates every registered ATAC/DNASE model (42 unique ENCFFs) and
+    every CHIP/BPNet model (744 TF x cell_type pairs), downloading each
+    on first access.  This makes discovery mode work without mid-analysis
+    download delays.
+    """
+    return """
+import json, sys, os, logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger("prefetch")
+
+import chorus
+from chorus.oracles.chrombpnet_source.chrombpnet_globals import (
+    iter_unique_models, iter_unique_bpnet_models,
+)
+
+oracle = chorus.create_oracle("chrombpnet", use_environment=False)
+
+# --- ATAC / DNASE models (42 unique) ---
+atac_dnase = list(iter_unique_models())
+logger.info("Prefetching %d ChromBPNet ATAC/DNASE models ...", len(atac_dnase))
+n_ok, n_fail = 0, 0
+for i, (assay, cell_type, encff) in enumerate(atac_dnase, 1):
+    try:
+        oracle.load_pretrained_model(assay=assay, cell_type=cell_type, fold=0)
+        n_ok += 1
+        logger.info("  [%d/%d] %s:%s OK", i, len(atac_dnase), assay, cell_type)
+    except Exception as exc:
+        n_fail += 1
+        logger.warning("  [%d/%d] %s:%s FAILED: %s", i, len(atac_dnase), assay, cell_type, exc)
+logger.info("ATAC/DNASE: %d OK, %d failed", n_ok, n_fail)
+
+# --- CHIP / BPNet models (744 unique) ---
+chip_models = list(iter_unique_bpnet_models())
+logger.info("Prefetching %d BPNet/CHIP models ...", len(chip_models))
+n_ok_chip, n_fail_chip = 0, 0
+for i, (cell_type, tf, model_url, identifier) in enumerate(chip_models, 1):
+    try:
+        oracle.load_pretrained_model(assay="CHIP", cell_type=cell_type, TF=tf, fold=0)
+        n_ok_chip += 1
+        if i % 50 == 0 or i == len(chip_models):
+            logger.info("  [%d/%d] CHIP models downloaded (%d OK so far)", i, len(chip_models), n_ok_chip)
+    except Exception as exc:
+        n_fail_chip += 1
+        if n_fail_chip <= 5:
+            logger.warning("  CHIP:%s:%s FAILED: %s", cell_type, tf, exc)
+
+logger.info("CHIP: %d OK, %d failed", n_ok_chip, n_fail_chip)
+total_fail = n_fail + n_fail_chip
+print(json.dumps({"success": total_fail == 0, "atac_dnase": n_ok, "chip": n_ok_chip, "failed": total_fail}))
+"""
 
 
 def _weight_prefetch_script(oracle: str) -> str:
@@ -117,7 +169,11 @@ def prefetch_weights(oracle: str, runner, timeout: Optional[int] = None) -> Tupl
     # No hard cap: large Zenodo archives (3 GB+) can't finish under the
     # default 120 s health timeout. Let the network take what it needs.
     # Callers can pass an explicit timeout for tests.
-    script = _weight_prefetch_script(oracle)
+    # ChromBPNet uses a special script that iterates ALL 786 models.
+    if oracle.lower() == "chrombpnet":
+        script = _chrombpnet_prefetch_script()
+    else:
+        script = _weight_prefetch_script(oracle)
     result = runner.run_script_in_environment(oracle, script, timeout=timeout)
 
     if result.returncode != 0:
