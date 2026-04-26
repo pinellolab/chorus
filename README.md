@@ -22,7 +22,7 @@ mamba activate chorus
 python -m pip install -e .
 ```
 
-Prerequisite: **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>, plus ~60 GB free disk for all oracles' models, genomes, backgrounds, and conda environments. Works on Linux x86_64 and macOS (Intel / Apple Silicon). A single oracle needs ~6 GB; ChromBPNet is the largest at ~38 GB (786 individual models).
+Prerequisite: **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>, plus **~25 GB free disk** for the default install (all 6 oracle envs + hg38 + per-oracle CDF backgrounds + 2 ChromBPNet default models). Works on Linux x86_64 and macOS (Intel / Apple Silicon). A single oracle env is ~6 GB. If you opt in to `chorus setup --all-chrombpnet` to pre-cache every published ChromBPNet/BPNet model up front, plan for **~60 GB** total — the 786 individual models add ~30 GB on their own.
 
 ### 2. Download all 6 oracles + hg38 + backgrounds (~45–60 min, unattended)
 
