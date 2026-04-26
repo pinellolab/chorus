@@ -52,7 +52,16 @@ _DEFAULT_CTOR_KWARGS: Dict[str, Dict[str, object]] = {
 # "load once with these kwargs". Empty / missing means "bare call".
 # ChromBPNet uses a special prefetch script (see _chrombpnet_prefetch_script)
 # that iterates ALL registered models, so it is NOT listed here.
-_DEFAULT_LOAD_KWARGS: Dict[str, Union[Dict[str, object], List[Dict[str, object]]]] = {}
+_DEFAULT_LOAD_KWARGS: Dict[str, Union[Dict[str, object], List[Dict[str, object]]]] = {
+    # ChromBPNet fast-path default: pre-cache K562 + HepG2 DNase only
+    # (~1.4 GB total). The shipped quickstart + advanced + comprehensive
+    # notebooks all use these two. Pre-caching every published model is
+    # opt-in via `chorus setup --oracle chrombpnet --all-chrombpnet`.
+    "chrombpnet": [
+        {"assay": "DNASE", "cell_type": "K562",  "fold": 0},
+        {"assay": "DNASE", "cell_type": "HepG2", "fold": 0},
+    ],
+}
 
 
 def _chrombpnet_prefetch_script() -> str:
@@ -158,8 +167,20 @@ except Exception as exc:
 """
 
 
-def prefetch_weights(oracle: str, runner, timeout: Optional[int] = None) -> Tuple[bool, Optional[str]]:
+def prefetch_weights(
+    oracle: str,
+    runner,
+    timeout: Optional[int] = None,
+    *,
+    full_chrombpnet: bool = False,
+) -> Tuple[bool, Optional[str]]:
     """Trigger the oracle's lazy-download path by loading the default model.
+
+    For ChromBPNet, the default fast path pre-caches only K562 + HepG2
+    DNase (~1.4 GB; matches the shipped notebooks). Pass
+    ``full_chrombpnet=True`` to instead pre-cache all 786 ChromBPNet +
+    BPNet models (~30 GB, 3-4 hours of network downloads). All other
+    oracles ignore this flag.
 
     Returns ``(success, error_message)``.
     """
@@ -169,8 +190,7 @@ def prefetch_weights(oracle: str, runner, timeout: Optional[int] = None) -> Tupl
     # No hard cap: large Zenodo archives (3 GB+) can't finish under the
     # default 120 s health timeout. Let the network take what it needs.
     # Callers can pass an explicit timeout for tests.
-    # ChromBPNet uses a special script that iterates ALL 786 models.
-    if oracle.lower() == "chrombpnet":
+    if oracle.lower() == "chrombpnet" and full_chrombpnet:
         script = _chrombpnet_prefetch_script()
     else:
         script = _weight_prefetch_script(oracle)
@@ -241,16 +261,24 @@ def prefetch_for_oracle(
     skip_backgrounds: bool = False,
     skip_genome: bool = False,
     weights_timeout: Optional[int] = None,
+    full_chrombpnet: bool = False,
 ) -> Tuple[bool, List[str]]:
     """Run all applicable prefetch steps for ``oracle``.
 
     Returns ``(all_succeeded, error_messages)``. An empty error list on
     success lets the caller safely write the setup-complete marker.
+
+    ``full_chrombpnet=True`` switches the chrombpnet weight prefetch from
+    the fast 2-model default (~1.4 GB) to the full 786-model catalogue
+    (~30 GB). Has no effect on other oracles.
     """
     errors: List[str] = []
 
     if not skip_weights:
-        ok, err = prefetch_weights(oracle, runner, timeout=weights_timeout)
+        ok, err = prefetch_weights(
+            oracle, runner, timeout=weights_timeout,
+            full_chrombpnet=full_chrombpnet,
+        )
         if not ok:
             errors.append(f"weights: {err}")
 

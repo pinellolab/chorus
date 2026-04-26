@@ -81,10 +81,10 @@ on first use.
 | Tracks | 5,313 (ENCODE experiments: DNASE, ATAC, histone marks, CAGE, TF ChIP) |
 | Model | Single pre-trained model (TFHub `deepmind/enformer/1`) |
 | Input length | 393,216 bp |
-| Output bins | 896 bins x 128 bp = 114,688 bp |
+| Output bins | 896 bins × 128 bp = 114,688 bp |
 | Build script | `scripts/build_backgrounds_enformer.py` |
 | Conda env | `chorus-enformer` (TensorFlow) |
-| NPZ size | ~557 MB |
+| NPZ size | ~523 MB |
 
 **Layer types used**: chromatin_accessibility, tf_binding, histone_marks,
 tss_activity, gene_expression, splicing.
@@ -103,12 +103,12 @@ No custom model support (single Enformer weights).
 | Property | Value |
 |----------|-------|
 | Tracks | 7,611 (ENCODE + Roadmap: DNASE, ATAC, histone, CAGE, RNA-seq) |
-| Model | 6 replicate folds (HuggingFace `johahi/borzoi-replicate-{0..5}`) |
+| Model | 4 replicate folds (HuggingFace `johahi/borzoi-replicate-{0..3}`); chorus default = fold 0 |
 | Input length | 524,288 bp |
-| Output bins | 6,144 bins x 128 bp |
+| Output bins | 6,144 bins × 32 bp |
 | Build script | `scripts/build_backgrounds_borzoi.py` |
 | Conda env | `chorus-borzoi` (PyTorch) |
-| NPZ size | ~800 MB |
+| NPZ size | ~766 MB |
 
 **Layer types used**: Same as Enformer (chromatin_accessibility, tf_binding,
 histone_marks, tss_activity, gene_expression, splicing).
@@ -124,11 +124,11 @@ defined by Borzoi metadata.
 |----------|-------|
 | Tracks | 786 (42 ChromBPNet ATAC/DNASE + 744 BPNet/CHIP) |
 | Model | One model per track (ENCODE ChromBPNet + JASPAR BPNet) |
-| Input length | 2,114 bp (ChromBPNet) / 1,000 bp (BPNet) |
-| Output bins | 1,000 bp at 1-bp resolution |
+| Input length | 2,114 bp (both ChromBPNet and BPNet) |
+| Output length | 1,000 bp at 1-bp resolution |
 | Build script | `scripts/build_backgrounds_chrombpnet.py` |
 | Conda env | `chorus-chrombpnet` (TensorFlow) |
-| NPZ size | ~82 MB |
+| NPZ size | ~78 MB |
 
 **Track families**:
 - **ATAC/DNASE** (42 tracks): ENCODE-published ChromBPNet models.
@@ -146,12 +146,11 @@ Pseudocount = 1.0.
 `(B, L, 2)`. Strands are summed before scoring.
 
 **Extensibility**: Supports custom models via `is_custom=True` in
-`load_pretrained_model()`. New tracks can be added incrementally:
-
-```bash
-# Build CDF for a new model and append to existing NPZ
-chorus backgrounds build --oracle chrombpnet --track CHIP:MyCell:MyTF --gpu 0
-```
+`load_pretrained_model()`. To add a new track and CDF row in one pass,
+register it in `chrombpnet_globals.py` and run the build script with
+`--only-missing` (see "Bring your own ChromBPNet model" below). The
+script auto-merges new rows into the existing NPZ via
+`PerTrackNormalizer.append_tracks`.
 
 **Sharded build**: For large-scale rebuilds across multiple GPUs, use:
 
@@ -165,13 +164,14 @@ bash scripts/run_bpnet_cdf_build.sh  # 6-GPU parallel build
 
 | Property | Value |
 |----------|-------|
-| Tracks | 40 (high-level regulatory element classes) |
+| Tracks | 40 (high-level regulatory element classes — used for percentile scoring) |
+| Underlying profiles | 21,907 chromatin profiles internally; Sei aggregates these into 40 classes for variant scoring |
 | Model | Single pre-trained model (Zenodo) |
 | Input length | 4,096 bp |
 | Output | 40 sequence class scores |
 | Build script | `scripts/build_backgrounds_sei.py` |
 | Conda env | `chorus-sei` (PyTorch) |
-| NPZ size | ~3.5 MB |
+| NPZ size | ~2.8 MB |
 
 **Layer types used**: regulatory_classification (signed, [-1, 1]).
 
@@ -211,11 +211,11 @@ the list and providing model weights.
 |----------|-------|
 | Tracks | 5,168 (human functional genomics: ATAC, DNASE, histone, CAGE, RNA, CHIP) |
 | Model | Single gated model (HuggingFace `google/alphagenome-all-folds`, requires auth) |
-| Input length | 524,288 bp |
-| Output bins | 4,096 bins x 128 bp |
+| Input length | 1,048,576 bp (up to 1 MB) |
+| Output | 1-bp resolution for most modalities (some at 128 bp) |
 | Build script | `scripts/build_backgrounds_alphagenome.py` |
 | Conda env | `chorus-alphagenome` (JAX) |
-| NPZ size | ~543 MB |
+| NPZ size | ~263 MB |
 
 **Layer types used**: chromatin_accessibility, tf_binding, histone_marks,
 tss_activity, gene_expression.
@@ -323,80 +323,62 @@ oracle.load_pretrained_model(
 ### Step 3: Build the CDF background for your model
 
 The CDF background requires scoring ~10K common variants and ~30K baseline
-positions through your model. This takes a few minutes on a GPU.
+positions through your model. The recommended path is to register your
+custom track in the script's model list and run the existing build pipeline,
+which handles batched inference, reservoir sampling, and CDF compaction
+for you.
+
+**Step 3a — register your track.** Edit
+`chorus/oracles/chrombpnet_source/chrombpnet_globals.py` and add an
+entry pointing at your custom weights, e.g.:
 
 ```python
-import numpy as np
-from chorus.oracles.chrombpnet import ChromBPNetOracle
-
-oracle = ChromBPNetOracle(use_environment=False)
-oracle.load_pretrained_model(
-    assay="ATAC", cell_type="my_cell_line",
-    weights="/path/to/my_model", is_custom=True,
-)
-
-# --- Score variants (effect CDF) ---
-# Use the same variant set as the built-in builds
-from chorus.analysis.normalization import PerTrackNormalizer
-import math
-
-# Load the SNP set used by the build scripts
-# (or use your own set of ~10K common variants)
-snp_effects = []
-for snp in my_variant_list:  # your list of (chrom, pos, ref, alt)
-    result_ref = oracle.predict((snp.chrom, snp.pos - 1057, snp.pos + 1057))
-    result_alt = oracle.predict_with_variant(snp)  # your variant scoring
-    effect = abs(math.log2((alt_signal + 1.0) / (ref_signal + 1.0)))
-    snp_effects.append(effect)
-
-effect_cdf = np.sort(snp_effects)
-
-# --- Score baselines (summary + perbin CDFs) ---
-baseline_signals = []
-for chrom, pos in my_baseline_positions:  # ~30K random + cCRE + TSS positions
-    result = oracle.predict((chrom, pos - 1057, pos + 1057))
-    window_sum = result.values[250:751].sum()  # 501-bp center window
-    baseline_signals.append(window_sum)
-
-summary_cdf = np.sort(baseline_signals)
+# Use a stable identifier for `cell_type` so the resulting track_id
+# is "ATAC:my_cell_line" — this becomes the row key in the NPZ.
+CHROMBPNET_MODELS_DICT["ATAC"]["my_cell_line"] = "MY_CUSTOM_001"  # arbitrary id
 ```
 
-**Easier approach** — use the existing build script directly:
+For an externally-provided weights path, you'll also want to extend
+`ChromBPNetOracle._download_chrombpnet_model` (or
+`_download_model_from_JASPAR` for CHIP) to recognise the custom id and
+copy / symlink your weights into
+`downloads/chrombpnet/ATAC_my_cell_line/`.
+
+**Step 3b — run the build.** With the dict updated, the existing
+`--only-missing` pass will pick up just your new track:
 
 ```bash
-# The build script handles all the scoring details for you.
-# You just need to make sure your model is accessible.
 mamba run -n chorus-chrombpnet python scripts/build_backgrounds_chrombpnet.py \
-    --part both --track ATAC:my_cell_line --gpu 0
+    --part both --only-missing --gpu 0
 ```
+
+This writes interim files at `~/.chorus/backgrounds/chrombpnet_*_interim.npz`
+containing only the new row(s), then auto-merges into the main NPZ via
+`merge_to_final_incremental` (which calls `PerTrackNormalizer.append_tracks`
+with dedup).
 
 ### Step 4: Append your CDF to the main NPZ
 
-If you used the build script, the CDF is already in the interim files.
-Merge with:
+If you ran the build script with `--only-missing --part both`, the
+merge happens automatically and your row is already in the main NPZ.
+
+**Alternative — bring your own NPZ.** If you have CDF rows you computed
+outside the build script (e.g. from a different scoring pipeline),
+package them into a small NPZ and append:
 
 ```bash
 chorus backgrounds add-tracks --oracle chrombpnet --npz my_custom_cdfs.npz
 ```
 
-Or via Python:
+The source NPZ must follow the same schema as
+`~/.chorus/backgrounds/chrombpnet_pertrack.npz`: keys `track_ids`,
+`effect_cdfs`, `summary_cdfs`, `perbin_cdfs` (optional), `signed_flags`,
+and the matching `_counts` arrays. See `PerTrackNormalizer.build_and_save`
+for the exact contract.
 
-```python
-from chorus.analysis.normalization import PerTrackNormalizer
-
-path, n_added = PerTrackNormalizer.append_tracks(
-    oracle_name="chrombpnet",
-    new_track_ids=["ATAC:my_cell_line"],
-    new_effect_cdfs=effect_cdf.reshape(1, -1),      # (1, 10000)
-    new_summary_cdfs=summary_cdf.reshape(1, -1),     # (1, 10000)
-    new_perbin_cdfs=perbin_cdf.reshape(1, -1),       # (1, 10000) — optional
-    new_signed_flags=np.array([False]),               # unsigned for ATAC/CHIP
-    new_effect_counts=np.array([len(snp_effects)]),
-    new_summary_counts=np.array([len(baseline_signals)]),
-    new_perbin_counts=np.array([len(perbin_values)]),
-)
-print(f"Added {n_added} tracks → {path}")
-```
+Or call `PerTrackNormalizer.append_tracks(...)` directly from Python —
+it handles dedup against existing track_ids and concatenates rows
+preserving every counts array.
 
 ### Step 5: Verify
 
@@ -478,19 +460,21 @@ a self-contained module with a standardized interface.
 Create `chorus/oracles/my_oracle.py` subclassing `OracleBase`:
 
 ```python
-from typing import List, Optional
+from typing import List, Tuple
 from ..core.base import OracleBase
+from ..core.result import OraclePrediction
 
 class MyOracle(OracleBase):
-    oracle_name = "myoracle"
-
     def __init__(self, use_environment=True, **kwargs):
         super().__init__(use_environment=use_environment, **kwargs)
+        self.oracle_name = "myoracle"   # must match the conda env suffix
+        # Set any model-specific defaults here (sequence_length, bin_size, …).
 
-    def load_pretrained_model(self, weights=None, **kwargs):
+    # ── Required abstract methods (6 total) ──
+
+    def load_pretrained_model(self, weights: str = None) -> None:
         """Load model weights from disk or download."""
-        # Download weights if not cached
-        # Load into self.model
+        # Download weights if not cached, then load into self.model
         self.loaded = True
 
     def list_assay_types(self) -> List[str]:
@@ -499,25 +483,37 @@ class MyOracle(OracleBase):
     def list_cell_types(self) -> List[str]:
         return ["K562", "HepG2"]
 
-    def _predict_raw(self, sequence: str, assay_ids=None):
-        """Run the model and return raw predictions.
+    def _predict(self, seq: str, assay_ids: List[str]) -> OraclePrediction:
+        """Run the model and return predictions.
 
-        This is called by OracleBase.predict() after input validation.
-        Return an OraclePrediction with Track objects.
+        Called by OracleBase.predict() after input validation.
+        Return an OraclePrediction with Track objects, one per assay_id.
         """
         # Your inference code here
-        pass
+        ...
+
+    def _get_context_size(self) -> int:
+        """Required input length the model expects (in bp)."""
+        return 2114
+
+    def _get_sequence_length_bounds(self) -> Tuple[int, int]:
+        """Min and max sequence lengths the model accepts (in bp)."""
+        return (2114, 2114)
 ```
 
-**Required methods** (from `OracleBase`):
+**Required methods** (from `OracleBase`, all `@abstractmethod`):
 - `load_pretrained_model(weights)` — load model weights
 - `list_assay_types()` — return available assay types
 - `list_cell_types()` — return available cell types
+- `_predict(seq, assay_ids)` — internal prediction; returns `OraclePrediction`
+- `_get_context_size()` — required input length in bp
+- `_get_sequence_length_bounds()` — `(min, max)` accepted seq length
 
 **Key conventions**:
-- `oracle_name` must be a lowercase string matching the conda env suffix
-- Model weights go in `~/chorus/downloads/{oracle_name}/`
-- Use `self.device` for GPU/CPU selection (auto-detected or user-set)
+- `self.oracle_name` is set in `__init__` as a lowercase string matching
+  the conda env suffix (e.g. `chorus-myoracle` env → `oracle_name="myoracle"`).
+- Model weights go in `~/chorus/downloads/{oracle_name}/`.
+- Use `self.device` for GPU/CPU selection (auto-detected or user-set).
 
 ### Step 2: Register the oracle
 
@@ -532,6 +528,9 @@ ORACLES = {
 }
 ```
 
+This is required for `chorus.create_oracle("myoracle")` and the prefetch
+helpers to find your class.
+
 ### Step 3: Create the conda environment
 
 Create `environments/chorus-myoracle.yml`:
@@ -543,11 +542,16 @@ channels:
   - defaults
 dependencies:
   - python=3.10
+  - numpy
+  - pysam
   - pip
   - pip:
-    - torch>=2.0    # or tensorflow, jax — whatever your model needs
-    - -e .          # install chorus itself
+    - torch>=2.0   # or tensorflow, jax — whatever your model needs
 ```
+
+Note: oracle envs **don't** install chorus itself; the build scripts
+add the repo to `sys.path` at runtime. Keeps the env minimal and
+isolates your model's deps from chorus's.
 
 Then build it:
 
@@ -555,9 +559,10 @@ Then build it:
 mamba env create -f environments/chorus-myoracle.yml
 ```
 
-The CLI auto-discovers oracle environments by scanning
-`environments/chorus-*.yml`, so `chorus setup --oracle myoracle` will
-work automatically.
+`chorus setup --oracle myoracle` will then build this env automatically
+(the CLI scans `environments/chorus-*.yml` for available oracles), but
+the oracle still has to be registered in `ORACLES` (Step 2) for
+prefetch and discovery to work end-to-end.
 
 ### Step 4: Write the CDF build script
 
@@ -672,13 +677,13 @@ chorus backgrounds status --oracle chrombpnet
 Example output:
 
 ```
-  enformer         5313 tracks  557.2 MB  2026-04-20 14:30  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
-  borzoi           7611 tracks  800.1 MB  2026-04-18 09:15  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
-  chrombpnet        786 tracks   82.4 MB  2026-04-26 17:58  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
-                           ATAC/DNASE: 42  CHIP: 744
-  sei                40 tracks    3.5 MB  2026-04-19 11:00  CDFs: effect_cdfs, summary_cdfs
-  legnet              3 tracks    0.2 MB  2026-04-17 16:45  CDFs: effect_cdfs, summary_cdfs
-  alphagenome       5168 tracks  543.0 MB  2026-04-22 20:30  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
+  enformer         5313 tracks  522.9 MB  2026-04-24 23:53  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
+  borzoi           7611 tracks  766.1 MB  2026-04-24 23:43  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
+  chrombpnet        786 tracks   78.6 MB  2026-04-26 15:04  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
+                         ATAC/DNASE: 42  CHIP: 744
+  sei                40 tracks    2.8 MB  2026-04-25 00:29  CDFs: effect_cdfs, summary_cdfs
+  legnet              3 tracks    0.2 MB  2026-04-24 23:54  CDFs: effect_cdfs, summary_cdfs
+  alphagenome       5168 tracks  262.8 MB  2026-04-24 23:32  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
 ```
 
 ## Code reference

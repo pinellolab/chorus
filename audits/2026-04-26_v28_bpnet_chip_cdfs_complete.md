@@ -112,3 +112,22 @@ Remote tracks: 786
 
 All 744 models produced consistent, non-zero outputs across all 6 shards.
 Zero errors, zero failed model loads, zero OOM events.
+
+## Setup-flow change (separate commit `43d93d6`)
+
+A separate commit on this branch (`setup: prefetch ALL 786 ChromBPNet/BPNet
+weights during chorus setup`) added a `_chrombpnet_prefetch_script` that
+iterates every registered model on `chorus setup --oracle chrombpnet`.
+
+That changed the default disk + time cost of `chorus setup` for
+chrombpnet from ~1.4 GB / ~9 min (K562 + HepG2 DNase only) to ~30 GB /
+3-4 h (all 42 ChromBPNet ATAC/DNase + 744 BPNet). The follow-up audit
+flagged this as a silent UX regression for new users following the
+README quickstart.
+
+**Resolution (this branch's audit-fix commit):** the full prefetch is
+now opt-in via `chorus setup --oracle chrombpnet --all-chrombpnet`.
+Default behavior reverts to the v27 fast path (K562 + HepG2 DNase
+only) to keep `chorus setup` finishing in ~60 min as the README
+advertises. Users who want every model up-front can opt in; everyone
+else gets lazy on-demand downloads on first `predict()`.

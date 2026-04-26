@@ -104,6 +104,7 @@ def setup_environments(args):
             skip_weights=args.no_weights,
             skip_backgrounds=args.no_backgrounds,
             skip_genome=args.no_genome,
+            full_chrombpnet=getattr(args, "all_chrombpnet", False),
         )
         if not ok:
             logger.error(f"✗ Prefetch failed for {oracle}. Details:")
@@ -455,6 +456,16 @@ def main(argv: Optional[List[str]] = None):
         '--hf-token',
         default=None,
         help='HuggingFace token (required for alphagenome if not already logged in)'
+    )
+    setup_parser.add_argument(
+        '--all-chrombpnet',
+        action='store_true',
+        help=(
+            "Pre-cache ALL 786 ChromBPNet/BPNet model weights during setup "
+            "(~30 GB, 3-4 h). Default fast path caches only K562 + HepG2 "
+            "DNase (~1.4 GB, ~9 min) — enough for the shipped notebooks. "
+            "Other models download lazily on first use."
+        ),
     )
     setup_parser.set_defaults(func=setup_environments)
     

@@ -78,6 +78,7 @@ def setup_all_oracles(args) -> int:
             skip_weights=args.no_weights,
             skip_backgrounds=args.no_backgrounds,
             skip_genome=args.no_genome,
+            full_chrombpnet=getattr(args, "all_chrombpnet", False),
         )
         if not ok:
             logger.error(f"✗ prefetch failed for {oracle}:")

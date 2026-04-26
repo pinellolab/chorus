@@ -58,6 +58,8 @@ def backgrounds_status(args):
 
 def backgrounds_build(args):
     """Build CDF backgrounds for an oracle (delegates to build script)."""
+    import subprocess
+
     oracle = args.oracle
     script = Path(__file__).resolve().parents[2] / "scripts" / f"build_backgrounds_{oracle}.py"
     if not script.exists():
@@ -67,28 +69,19 @@ def backgrounds_build(args):
     # Determine the conda env
     env_name = f"chorus-{oracle}" if oracle != "base" else "chorus"
 
-    # Build the command
-    cmd_parts = ["mamba", "run", "-n", env_name, "python", str(script)]
-
-    if args.track:
-        cmd_parts.extend(["--track", args.track])
+    # Build the command as a list (avoid shell quoting issues)
+    cmd_parts = ["mamba", "run", "-n", env_name, "python", str(script), "--part", "both"]
     if args.only_missing:
         cmd_parts.append("--only-missing")
-    cmd_parts.extend(["--part", "both"])
     if args.gpu is not None:
         cmd_parts.extend(["--gpu", str(args.gpu)])
 
-    cmd = " ".join(cmd_parts)
-    logger.info(f"Running: {cmd}")
-    ret = os.system(cmd)
+    logger.info(f"Running: {' '.join(cmd_parts)}")
+    result = subprocess.run(cmd_parts, check=False)
 
-    if ret == 0 and not args.track:
-        # After a full build, the script handles merging internally
+    if result.returncode == 0:
         logger.info("Build completed successfully.")
-    elif ret == 0 and args.track:
-        logger.info(f"Built CDF for track {args.track}. Use 'chorus backgrounds status' to verify.")
-
-    return ret >> 8  # os.system returns waitpid-style status
+    return result.returncode
 
 
 def backgrounds_add_tracks(args):
@@ -153,12 +146,10 @@ def register_backgrounds_subcommand(subparsers):
         help="Build CDF backgrounds for an oracle",
         description=(
             "Run the CDF build pipeline for an oracle. By default builds all\n"
-            "tracks; use --track to build a single track, or --only-missing\n"
-            "to skip tracks already in the NPZ."
+            "tracks; use --only-missing to skip tracks already in the NPZ."
         ),
     )
     build_p.add_argument("--oracle", required=True, help="Oracle name (e.g. chrombpnet)")
-    build_p.add_argument("--track", help="Build only this track ID (e.g. CHIP:K562:REST)")
     build_p.add_argument("--only-missing", action="store_true", help="Skip tracks already in the NPZ")
     build_p.add_argument("--gpu", type=int, help="GPU index to use")
     build_p.set_defaults(func=backgrounds_build)
