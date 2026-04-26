@@ -22,7 +22,7 @@ mamba activate chorus
 python -m pip install -e .
 ```
 
-Prerequisite: **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>, plus ~20 GB free disk for models + genomes + envs. Works on Linux x86_64 and macOS (Intel / Apple Silicon).
+Prerequisite: **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>, plus ~60 GB free disk for all oracles' models, genomes, backgrounds, and conda environments. Works on Linux x86_64 and macOS (Intel / Apple Silicon). A single oracle needs ~6 GB; ChromBPNet is the largest at ~38 GB (786 individual models).
 
 ### 2. Download all 6 oracles + hg38 + backgrounds (~45–60 min, unattended)
 
@@ -261,7 +261,7 @@ Chorus converts every raw prediction into an **effect percentile** and **activit
 | AlphaGenome | ~260 MB | 5,168 |
 | Enformer | ~520 MB | 5,313 |
 | Borzoi | ~770 MB | 7,611 |
-| ChromBPNet | ~2.4 MB | per-model |
+| ChromBPNet | ~82 MB | 786 (42 ATAC/DNASE + 744 CHIP) |
 | Sei | ~2.8 MB | 40 classes |
 | LegNet | ~210 KB | 3 cell types |
 
@@ -655,6 +655,27 @@ chorus health
 chorus remove --oracle enformer
 ```
 
+#### Managing CDF backgrounds
+
+```bash
+# View background status for all oracles
+chorus backgrounds status
+
+# View details for one oracle (shows ATAC/DNASE vs CHIP breakdown for ChromBPNet)
+chorus backgrounds status --oracle chrombpnet
+
+# Build CDF for a specific track (e.g. after adding a custom model)
+chorus backgrounds build --oracle chrombpnet --track CHIP:MyCell:MyTF --gpu 0
+
+# Build CDFs for all tracks not yet in the NPZ
+chorus backgrounds build --oracle chrombpnet --only-missing --gpu 0
+
+# Append tracks from a user-built NPZ
+chorus backgrounds add-tracks --oracle chrombpnet --npz my_custom_cdfs.npz
+```
+
+See [`docs/NORMALIZATION_GUIDE.md`](docs/NORMALIZATION_GUIDE.md) for walkthroughs on bringing custom ChromBPNet/LegNet models and adding new oracles.
+
 ### Model-specific details
 
 #### Enformer
@@ -961,6 +982,7 @@ After the TLDR and Python API, these documents go deeper:
 | [`docs/variant_analysis_framework.md`](docs/variant_analysis_framework.md) | 5-layer scoring strategy, track selection by disease area |
 | [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md) | Full Python API reference (oracles, analysis, utilities, MCP tools) |
 | [`docs/METHOD_REFERENCE.md`](docs/METHOD_REFERENCE.md) | Method-level reference for advanced users |
+| [`docs/NORMALIZATION_GUIDE.md`](docs/NORMALIZATION_GUIDE.md) | Per-oracle CDF normalization, custom models, adding new oracles |
 | [`docs/VISUALIZATION_GUIDE.md`](docs/VISUALIZATION_GUIDE.md) | pyGenomeTracks + IGV visualization patterns |
 | [`docs/IMPLEMENTATION_GUIDE.md`](docs/IMPLEMENTATION_GUIDE.md) | Notes for extending Chorus with new oracles |
 | [`docs/THIRD_PARTY.md`](docs/THIRD_PARTY.md) | Upstream oracles, papers, and licenses Chorus builds on |
@@ -979,16 +1001,15 @@ We welcome contributions! Areas needing work:
 
 We've designed Chorus to make it easy to add new genomic prediction models. Each oracle runs in its own isolated conda environment, avoiding dependency conflicts between different frameworks (TensorFlow, PyTorch, JAX, etc.).
 
-**For detailed instructions on implementing a new oracle, see our [Contributing Guide](CONTRIBUTING.md).**
+**For a complete step-by-step walkthrough, see [`docs/NORMALIZATION_GUIDE.md` → "Adding a new oracle"](docs/NORMALIZATION_GUIDE.md#walkthrough-adding-a-new-oracle).** It covers: creating the oracle class, registering it, creating the conda environment, writing the CDF build script, uploading backgrounds to HuggingFace, and a verification checklist.
 
 Key steps:
-1. Inherit from `OracleBase` and implement required methods
-2. Define your conda environment configuration
-3. Use the environment isolation system for model loading and predictions
-4. Add tests and example notebooks
-5. Submit a PR with your implementation
-
-The contributing guide includes complete code examples and templates to get you started.
+1. Inherit from `OracleBase` and implement `load_pretrained_model()`, `list_assay_types()`, `list_cell_types()`
+2. Register in `chorus/oracles/__init__.py`
+3. Create `environments/chorus-myoracle.yml`
+4. Write `scripts/build_backgrounds_myoracle.py` for CDF normalization
+5. Upload backgrounds to `lucapinello/chorus-backgrounds` on HuggingFace
+6. Submit a PR with your implementation
 
 ### Citation
 
@@ -1089,7 +1110,7 @@ The per-bin CDFs are used by `perbin_floor_rescale_batch` to rescale raw IGV bin
 | AlphaGenome | 5,168 | 10,000 | 31,500 | 260 MB |
 | Enformer | 5,313 | 10,000 | 31,500 | 520 MB |
 | Borzoi | 7,611 | 10,000 | 31,500 | 770 MB |
-| ChromBPNet | per-model | 10,000 | 31,500 | 2.4 MB |
+| ChromBPNet | 786 (42 ATAC/DNASE + 744 CHIP) | 10,000 | 31,500 | 82 MB |
 | Sei | 40 classes | 10,000 | 31,500 | 2.8 MB |
 | LegNet | 3 cell types | 10,000 | 31,500 | 210 KB |
 
