@@ -131,3 +131,32 @@ def iter_unique_models():
     for key, (assay, cell_type) in seen.items():
         encff = key.split(":", 1)[1]
         yield assay, cell_type, encff
+
+
+def iter_unique_bpnet_models():
+    """Iterate ``(cell_type, tf, model_url, identifier)`` for every
+    BPNet/CHIP model in the JASPAR_DeepLearning 2026 release.
+
+    Reads from ``chrombpnet_JASPAR_metadata.tsv``. Each entry is unique
+    per ``(TF, cell_line)``; the TSV may have multiple replicates per
+    pair, in which case we yield only the first (matches
+    ``BPNetMetadata.get_weights_by_cell_and_tf`` behaviour).
+
+    Used by:
+    - ``scripts/build_backgrounds_chrombpnet.py --assay CHIP`` to score
+      per-track CDFs over all 1259 TF binding models.
+    - Future MCP / discovery code that wants to enumerate the BPNet
+      catalogue without the heavyweight ``BPNetMetadata`` class.
+    """
+    import os
+    import pandas as pd
+
+    metadata_path = os.path.join(
+        os.path.dirname(__file__), "chrombpnet_JASPAR_metadata.tsv",
+    )
+    df = pd.read_csv(metadata_path, sep="\t")
+    # Drop dups so we only yield one model per (TF, CELL_LINE).
+    df = df.drop_duplicates(subset=["TF_NAME", "CELL_LINE"], keep="first")
+    for _, row in df.iterrows():
+        identifier = f"{row['BASE_ID']}.{row['VERSION']}"
+        yield row["CELL_LINE"], row["TF_NAME"], row["MODEL_URL"], identifier
