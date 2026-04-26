@@ -27,7 +27,20 @@ import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--part", choices=["variants", "baselines", "merge", "merge-incremental", "both", "all"], default="all")
+parser.add_argument(
+    "--part",
+    choices=["variants", "baselines", "merge", "merge-incremental", "merge-shards", "both", "all"],
+    default="all",
+)
+parser.add_argument(
+    "--assay",
+    choices=["ATAC_DNASE", "CHIP", "all"],
+    default="ATAC_DNASE",
+    help="Which model family to score. ATAC_DNASE = the 42 ChromBPNet "
+    "ENCODE models (~22 min/model on Metal). CHIP = the 1259 BPNet "
+    "JASPAR models (~3 min/model on Metal — much smaller arch). "
+    "all = both, sequentially.",
+)
 parser.add_argument("--gpu", type=int, default=0)
 parser.add_argument("--fold", type=int, default=0)
 parser.add_argument("--n-variants", type=int, default=10000)
@@ -40,6 +53,21 @@ parser.add_argument(
     help="Skip models whose track_id is already present in the existing "
     "chrombpnet_pertrack.npz. Pair with --part merge-incremental to "
     "stitch new rows into the existing NPZ.",
+)
+parser.add_argument(
+    "--shard",
+    type=int,
+    default=None,
+    help="0-indexed shard for distributed builds. When set with "
+    "--shard-of, this process only handles models with idx %% N == "
+    "<shard>. Interim files get a `.shard<N>of<M>` suffix; collect "
+    "from all shards on one machine and run --part merge-shards.",
+)
+parser.add_argument(
+    "--shard-of",
+    type=int,
+    default=None,
+    help="Total number of shards. Required when --shard is set.",
 )
 args = parser.parse_args()
 
@@ -121,6 +149,39 @@ class ReservoirSampler:
         return int((self.counts > 0).sum())
 
 
+def _track_id_for(spec: dict) -> str:
+    """Track-id string used in the NPZ row index.
+
+    Mirrors `chorus/oracles/chrombpnet.py:555` so the NPZ matches what
+    predictions actually emit.
+    """
+    if spec["assay"] == "CHIP":
+        return f"CHIP:{spec['cell_type']}:{spec['TF']}"
+    return f"{spec['assay']}:{spec['cell_type']}"
+
+
+def _enumerate_models(assay_choice: str) -> list[dict]:
+    """Build the master list of model specs for a given --assay flag."""
+    from chorus.oracles.chrombpnet_source.chrombpnet_globals import (
+        iter_unique_models, iter_unique_bpnet_models,
+    )
+    specs: list[dict] = []
+    if assay_choice in ("ATAC_DNASE", "all"):
+        for assay, ct, _encff in iter_unique_models():
+            specs.append({"assay": assay, "cell_type": ct})
+    if assay_choice in ("CHIP", "all"):
+        for cell_type, tf, _url, _id in iter_unique_bpnet_models():
+            specs.append({"assay": "CHIP", "cell_type": cell_type, "TF": tf})
+    return specs
+
+
+def _interim_suffix() -> str:
+    """File suffix when sharded: `.shard<N>of<M>`. Empty when not."""
+    if args.shard is None or args.shard_of is None:
+        return ""
+    return f".shard{args.shard}of{args.shard_of}"
+
+
 def load_models_and_setup():
     """Load reference, set up GPU, return (oracle, models_to_score, ref)."""
     os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
@@ -143,16 +204,12 @@ def load_models_and_setup():
 
     import tensorflow as tf
     import pysam
-    from chorus.oracles.chrombpnet_source.chrombpnet_globals import iter_unique_models
     from chorus.oracles.chrombpnet import ChromBPNetOracle
 
     ref_path = os.path.join(REPO_ROOT, "genomes/hg38.fa")
     ref = pysam.FastaFile(ref_path)
 
-    # Dedupe by ENCFF: registry has aliases ("limb" + "limb_E12.5"
-    # point to the same model). Without dedup we'd compute identical
-    # CDFs twice.
-    models_to_score = [(assay, ct) for assay, ct, _encff in iter_unique_models()]
+    models_to_score = _enumerate_models(args.assay)
 
     # Optional incremental mode: skip models already present in the NPZ.
     if args.only_missing:
@@ -160,14 +217,31 @@ def load_models_and_setup():
         if os.path.exists(existing_npz):
             existing = set(str(t) for t in np.load(existing_npz, allow_pickle=False)["track_ids"])
             before = len(models_to_score)
-            models_to_score = [(a, c) for a, c in models_to_score if f"{a}:{c}" not in existing]
+            models_to_score = [s for s in models_to_score if _track_id_for(s) not in existing]
             logger.info(
                 "--only-missing: existing NPZ has %d tracks; %d/%d to build (%d skipped).",
                 len(existing), len(models_to_score), before, before - len(models_to_score),
             )
         else:
             logger.info("--only-missing: no existing NPZ — building all %d.", len(models_to_score))
-    logger.info("Will score %d models (fold %d)", len(models_to_score), args.fold)
+
+    # Sharding: each process handles only models where idx % shard_of == shard.
+    # Stable across processes because _enumerate_models returns a deterministic order.
+    if args.shard is not None or args.shard_of is not None:
+        if args.shard is None or args.shard_of is None:
+            raise SystemExit("--shard and --shard-of must be set together")
+        if not (0 <= args.shard < args.shard_of):
+            raise SystemExit(f"--shard ({args.shard}) must be in [0, {args.shard_of})")
+        before = len(models_to_score)
+        models_to_score = [s for i, s in enumerate(models_to_score)
+                           if i % args.shard_of == args.shard]
+        logger.info(
+            "--shard %d/%d: processing %d/%d models on this worker.",
+            args.shard, args.shard_of, len(models_to_score), before,
+        )
+
+    logger.info("Will score %d models (assay=%s, fold %d)",
+                len(models_to_score), args.assay, args.fold)
 
     oracle = ChromBPNetOracle(use_environment=False, reference_fasta=ref_path)
     return oracle, models_to_score, ref, tf
@@ -196,9 +270,26 @@ def get_sequence(ref, chrom, pos):
 
 
 def predict_profiles_batch(model, seqs):
-    """Run ChromBPNet on a batch of sequences. Returns (B, OUTPUT_LENGTH) array."""
+    """Run ChromBPNet or BPNet on a batch of sequences.
+
+    ChromBPNet takes 1 input (sequence) and returns (profile, counts).
+    BPNet (CHIP/JASPAR) takes 3 inputs (sequence + zero profile_bias +
+    zero counts_bias) and returns the same shape. We auto-detect by
+    checking ``len(model.inputs)``.
+
+    Returns (B, OUTPUT_LENGTH) profile array with predicted counts
+    folded in (softmax × exp(counts)).
+    """
     ohe_batch = np.stack([one_hot_encode(s) for s in seqs])
-    predictions = model(ohe_batch, training=False)
+    if len(model.inputs) == 1:
+        predictions = model(ohe_batch, training=False)
+    else:
+        # BPNet: pad with zero bias inputs that match expected shapes.
+        bias_inputs = []
+        for inp in model.inputs[1:]:
+            shape = [ohe_batch.shape[0]] + [d if d is not None else 1 for d in inp.shape[1:]]
+            bias_inputs.append(np.zeros(shape, dtype=np.float32))
+        predictions = model([ohe_batch, *bias_inputs], training=False)
     probabilities = predictions[0].numpy()
     counts = predictions[1].numpy()
     norm_prob = probabilities - np.mean(probabilities, axis=1, keepdims=True)
@@ -227,8 +318,12 @@ def build_all_models(do_variants: bool, do_baselines: bool):
     oracle, models_to_score, ref, tf = load_models_and_setup()
     n_tracks = len(models_to_score)
 
-    track_ids = [f"{a}:{c}" for a, c in models_to_score]
-    logger.info("Track IDs: %s", track_ids)
+    track_ids = [_track_id_for(s) for s in models_to_score]
+    if len(track_ids) <= 24:
+        logger.info("Track IDs: %s", track_ids)
+    else:
+        logger.info("Track IDs: %d entries (first 5: %s ... last 5: %s)",
+                    len(track_ids), track_ids[:5], track_ids[-5:])
 
     effect_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size) if do_variants else None
     summary_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size) if do_baselines else None
@@ -312,16 +407,19 @@ def build_all_models(do_variants: bool, do_baselines: bool):
                     len(baseline_positions), len(rand_positions), len(ccre_positions), len(tss_list))
 
     # Iterate over models
-    for model_idx, (assay, cell_type) in enumerate(models_to_score):
+    for model_idx, spec in enumerate(models_to_score):
+        tid = _track_id_for(spec)
         logger.info("=" * 60)
-        logger.info("Model %d/%d: %s:%s (fold %d)",
-                    model_idx + 1, n_tracks, assay, cell_type, args.fold)
+        logger.info("Model %d/%d: %s (fold %d)", model_idx + 1, n_tracks, tid, args.fold)
         logger.info("=" * 60)
 
         try:
-            oracle.load_pretrained_model(assay=assay, cell_type=cell_type, fold=args.fold)
+            # Pass the spec dict as kwargs — chrombpnet.py accepts:
+            #   load_pretrained_model(assay='ATAC', cell_type='K562', fold=...)
+            #   load_pretrained_model(assay='CHIP', cell_type='K562', TF='REST', fold=...)
+            oracle.load_pretrained_model(fold=args.fold, **spec)
         except Exception as exc:
-            logger.warning("Failed to load %s:%s: %s", assay, cell_type, str(exc)[:200])
+            logger.warning("Failed to load %s: %s", tid, str(exc)[:200])
             continue
 
         model = oracle.model
@@ -390,9 +488,10 @@ def build_all_models(do_variants: bool, do_baselines: bool):
     # Save interim files
     signed_flags = np.zeros(n_tracks, dtype=bool)  # all unsigned
 
+    suffix = _interim_suffix()
     if do_variants:
         effect_matrix = effect_reservoir.to_cdf_matrix(n_points=args.n_cdf_points)
-        interim_path = os.path.join(cache_dir, "chrombpnet_effect_cdfs_interim.npz")
+        interim_path = os.path.join(cache_dir, f"chrombpnet_effect_cdfs_interim{suffix}.npz")
         np.savez_compressed(
             interim_path,
             track_ids=np.array(track_ids, dtype='U'),
@@ -405,7 +504,7 @@ def build_all_models(do_variants: bool, do_baselines: bool):
     if do_baselines:
         summary_matrix = summary_reservoir.to_cdf_matrix(n_points=args.n_cdf_points)
         perbin_matrix = perbin_reservoir.to_cdf_matrix(n_points=args.n_cdf_points)
-        interim_path = os.path.join(cache_dir, "chrombpnet_baseline_cdfs_interim.npz")
+        interim_path = os.path.join(cache_dir, f"chrombpnet_baseline_cdfs_interim{suffix}.npz")
         np.savez_compressed(
             interim_path,
             track_ids=np.array(track_ids, dtype='U'),
@@ -521,6 +620,166 @@ def merge_to_final_incremental():
     )
 
 
+def merge_shards():
+    """Collect interim NPZs from all shards (`.shard<N>of<M>` suffix),
+    concatenate by row in shard order, and stitch onto the existing
+    NPZ if present (else write a fresh one).
+
+    Run on whichever machine you've ``rsync``'d all the shards onto.
+    Expects ``chrombpnet_effect_cdfs_interim.shard*ofM.npz`` and
+    ``chrombpnet_baseline_cdfs_interim.shard*ofM.npz`` files at
+    ``~/.chorus/backgrounds/``. M is auto-detected from filenames.
+    """
+    import glob
+    import re
+    from chorus.analysis.normalization import PerTrackNormalizer
+
+    pattern = os.path.join(cache_dir, "chrombpnet_effect_cdfs_interim.shard*of*.npz")
+    effect_files = sorted(glob.glob(pattern))
+    if not effect_files:
+        logger.error("No shard files found matching %s", pattern)
+        return
+
+    # Parse shard indices, verify a contiguous 0..M-1 set.
+    shard_re = re.compile(r"shard(\d+)of(\d+)\.npz$")
+    shards: dict[int, tuple[str, str]] = {}
+    total_shards = None
+    for f in effect_files:
+        m = shard_re.search(f)
+        if not m:
+            continue
+        idx, total = int(m.group(1)), int(m.group(2))
+        if total_shards is None:
+            total_shards = total
+        elif total_shards != total:
+            logger.error("Mismatched --shard-of in shard files: %d vs %d", total_shards, total)
+            return
+        baseline_f = f.replace("effect", "baseline")
+        if not os.path.exists(baseline_f):
+            logger.error("Missing baseline shard: %s", baseline_f)
+            return
+        shards[idx] = (f, baseline_f)
+
+    missing_shards = sorted(set(range(total_shards)) - set(shards))
+    if missing_shards:
+        logger.error("Missing shards %s of %d total", missing_shards, total_shards)
+        return
+
+    logger.info("Merging %d shards.", total_shards)
+
+    all_ids: list[str] = []
+    all_effect = []
+    all_summary = []
+    all_perbin = []
+    all_signed = []
+    all_effect_counts = []
+    all_summary_counts = []
+    all_perbin_counts = []
+
+    for i in range(total_shards):
+        eff_path, base_path = shards[i]
+        eff = np.load(eff_path, allow_pickle=False)
+        base = np.load(base_path, allow_pickle=False)
+        eff_ids = list(eff["track_ids"].astype(str))
+        base_ids = list(base["track_ids"].astype(str))
+        assert eff_ids == base_ids, f"shard {i}: effect/baseline track_id ordering must agree"
+        all_ids.extend(eff_ids)
+        all_effect.append(eff["effect_cdfs"])
+        all_summary.append(base["summary_cdfs"])
+        all_perbin.append(base["perbin_cdfs"])
+        all_signed.append(eff["signed_flags"])
+        if "effect_counts" in eff:
+            all_effect_counts.append(eff["effect_counts"])
+        if "summary_counts" in base:
+            all_summary_counts.append(base["summary_counts"])
+        if "perbin_counts" in base:
+            all_perbin_counts.append(base["perbin_counts"])
+
+    # Concatenate
+    new_effect = np.concatenate(all_effect)
+    new_summary = np.concatenate(all_summary)
+    new_perbin = np.concatenate(all_perbin)
+    new_signed = np.concatenate(all_signed)
+    new_effect_counts = np.concatenate(all_effect_counts) if all_effect_counts else None
+    new_summary_counts = np.concatenate(all_summary_counts) if all_summary_counts else None
+    new_perbin_counts = np.concatenate(all_perbin_counts) if all_perbin_counts else None
+
+    # Stitch onto existing NPZ if present (lets a CHIP build extend the
+    # ATAC/DNASE 42-track NPZ in place; without an existing NPZ, this
+    # writes a CHIP-only file).
+    existing_path = os.path.join(cache_dir, "chrombpnet_pertrack.npz")
+    if os.path.exists(existing_path):
+        existing = np.load(existing_path, allow_pickle=False)
+        existing_ids = list(existing["track_ids"].astype(str))
+        existing_count = len(existing_ids)
+        # De-dup any collisions (e.g. re-running the same shards)
+        seen = set(existing_ids)
+        merged_ids: list[str] = list(existing_ids)
+        keep_mask = np.zeros(len(all_ids), dtype=bool)
+        for j, tid in enumerate(all_ids):
+            if tid not in seen:
+                merged_ids.append(tid)
+                keep_mask[j] = True
+                seen.add(tid)
+        new_effect = new_effect[keep_mask]
+        new_summary = new_summary[keep_mask]
+        new_perbin = new_perbin[keep_mask]
+        new_signed = new_signed[keep_mask]
+        if new_effect_counts is not None:
+            new_effect_counts = new_effect_counts[keep_mask]
+        if new_summary_counts is not None:
+            new_summary_counts = new_summary_counts[keep_mask]
+        if new_perbin_counts is not None:
+            new_perbin_counts = new_perbin_counts[keep_mask]
+
+        merged_effect = np.concatenate([existing["effect_cdfs"], new_effect])
+        merged_summary = np.concatenate([existing["summary_cdfs"], new_summary])
+        merged_perbin = np.concatenate([existing["perbin_cdfs"], new_perbin])
+        merged_signed = np.concatenate([existing["signed_flags"], new_signed])
+        merged_effect_counts = (
+            np.concatenate([existing["effect_counts"], new_effect_counts])
+            if new_effect_counts is not None and "effect_counts" in existing else None
+        )
+        merged_summary_counts = (
+            np.concatenate([existing["summary_counts"], new_summary_counts])
+            if new_summary_counts is not None and "summary_counts" in existing else None
+        )
+        merged_perbin_counts = (
+            np.concatenate([existing["perbin_counts"], new_perbin_counts])
+            if new_perbin_counts is not None and "perbin_counts" in existing else None
+        )
+        new_count = sum(keep_mask)
+    else:
+        merged_ids = all_ids
+        merged_effect = new_effect
+        merged_summary = new_summary
+        merged_perbin = new_perbin
+        merged_signed = new_signed
+        merged_effect_counts = new_effect_counts
+        merged_summary_counts = new_summary_counts
+        merged_perbin_counts = new_perbin_counts
+        existing_count = 0
+        new_count = len(all_ids)
+
+    path = PerTrackNormalizer.build_and_save(
+        oracle_name="chrombpnet",
+        track_ids=merged_ids,
+        effect_cdfs=merged_effect,
+        summary_cdfs=merged_summary,
+        perbin_cdfs=merged_perbin,
+        signed_flags=merged_signed,
+        effect_counts=merged_effect_counts,
+        summary_counts=merged_summary_counts,
+        perbin_counts=merged_perbin_counts,
+        cache_dir=cache_dir,
+    )
+    logger.info(
+        "DONE — merged NPZ has %d tracks (%d existing + %d new from %d shards): %s (%.1f MB)",
+        len(merged_ids), existing_count, new_count, total_shards,
+        path, path.stat().st_size / 1e6,
+    )
+
+
 if args.part == "variants":
     build_all_models(do_variants=True, do_baselines=False)
 elif args.part == "baselines":
@@ -529,9 +788,15 @@ elif args.part == "merge":
     merge_to_final()
 elif args.part == "merge-incremental":
     merge_to_final_incremental()
+elif args.part == "merge-shards":
+    merge_shards()
 elif args.part in ("both", "all"):
     build_all_models(do_variants=True, do_baselines=True)
-    if args.only_missing:
+    if args.shard is not None:
+        # Sharded run — DON'T auto-merge. Each shard writes its own
+        # interim files; aggregate on one machine via --part merge-shards.
+        logger.info("Sharded build complete. Run --part merge-shards on the aggregator.")
+    elif args.only_missing:
         merge_to_final_incremental()
     else:
         merge_to_final()
