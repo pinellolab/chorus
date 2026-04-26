@@ -560,6 +560,10 @@ def main(argv: Optional[List[str]] = None):
     )
     genome_info_parser.set_defaults(func=genome_info)
     
+    # Backgrounds command
+    from ._backgrounds import register_backgrounds_subcommand
+    bg_parser = register_backgrounds_subcommand(subparsers)
+
     # Parse arguments
     args = parser.parse_args(argv)
 
@@ -578,6 +582,11 @@ def main(argv: Optional[List[str]] = None):
     # Handle genome subcommand without action
     if args.command == 'genome' and not hasattr(args, 'func'):
         genome_parser.print_help()
+        return 0
+
+    # Handle backgrounds subcommand without action
+    if args.command == 'backgrounds' and not hasattr(args, 'func'):
+        bg_parser.print_help()
         return 0
     
     # Execute command

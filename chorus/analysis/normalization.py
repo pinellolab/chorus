@@ -698,6 +698,97 @@ class PerTrackNormalizer:
         )
         return path
 
+    @staticmethod
+    def append_tracks(
+        oracle_name: str,
+        new_track_ids: list[str],
+        new_effect_cdfs: np.ndarray | None = None,
+        new_summary_cdfs: np.ndarray | None = None,
+        new_perbin_cdfs: np.ndarray | None = None,
+        new_signed_flags: np.ndarray | None = None,
+        new_effect_counts: np.ndarray | None = None,
+        new_summary_counts: np.ndarray | None = None,
+        new_perbin_counts: np.ndarray | None = None,
+        cache_dir: str | None = None,
+    ) -> tuple[Path, int]:
+        """Append new tracks to an existing per-track NPZ file.
+
+        Loads the existing ``{oracle}_pertrack.npz``, skips any
+        *new_track_ids* that already exist, concatenates the rest,
+        and saves back.  If no existing file is found, creates one
+        from scratch.
+
+        Returns:
+            ``(path, n_added)`` — path to the saved file and the number
+            of tracks that were actually appended (after dedup).
+        """
+        if cache_dir is None:
+            cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+        out_dir = Path(cache_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        npz_path = out_dir / PerTrackNormalizer.npz_filename(oracle_name)
+
+        # Load existing data (if any)
+        existing: dict[str, np.ndarray] = {}
+        existing_ids: set[str] = set()
+        if npz_path.exists():
+            with np.load(str(npz_path), allow_pickle=False) as data:
+                for key in data.files:
+                    existing[key] = data[key]
+            existing_ids = set(str(t) for t in existing.get("track_ids", []))
+
+        # Filter out duplicates
+        keep = [i for i, tid in enumerate(new_track_ids) if tid not in existing_ids]
+        if not keep:
+            logger.info(
+                "append_tracks('%s'): all %d tracks already present, nothing to add.",
+                oracle_name, len(new_track_ids),
+            )
+            return npz_path, 0
+
+        keep_idx = np.array(keep)
+        added_ids = [new_track_ids[i] for i in keep]
+
+        def _concat(existing_key, new_matrix):
+            """Concatenate existing rows with new rows (filtered by keep_idx)."""
+            if new_matrix is None:
+                return existing.get(existing_key)
+            new_rows = new_matrix[keep_idx]
+            old = existing.get(existing_key)
+            if old is not None:
+                return np.concatenate([old, new_rows], axis=0)
+            return new_rows
+
+        def _concat_1d(existing_key, new_arr):
+            """Concatenate 1-D arrays (flags, counts)."""
+            if new_arr is None:
+                return existing.get(existing_key)
+            new_vals = new_arr[keep_idx]
+            old = existing.get(existing_key)
+            if old is not None:
+                return np.concatenate([old, new_vals])
+            return new_vals
+
+        merged_ids = list(existing.get("track_ids", [])) + added_ids
+
+        path = PerTrackNormalizer.build_and_save(
+            oracle_name=oracle_name,
+            track_ids=merged_ids,
+            effect_cdfs=_concat("effect_cdfs", new_effect_cdfs),
+            summary_cdfs=_concat("summary_cdfs", new_summary_cdfs),
+            perbin_cdfs=_concat("perbin_cdfs", new_perbin_cdfs),
+            signed_flags=_concat_1d("signed_flags", new_signed_flags),
+            effect_counts=_concat_1d("effect_counts", new_effect_counts),
+            summary_counts=_concat_1d("summary_counts", new_summary_counts),
+            perbin_counts=_concat_1d("perbin_counts", new_perbin_counts),
+            cache_dir=cache_dir,
+        )
+        logger.info(
+            "append_tracks('%s'): added %d new tracks (%d total).",
+            oracle_name, len(added_ids), len(merged_ids),
+        )
+        return path, len(added_ids)
+
     # ------------------------------------------------------------------
     # Summary / diagnostics
     # ------------------------------------------------------------------

@@ -560,25 +560,19 @@ def merge_to_final():
 def merge_to_final_incremental():
     """Stitch newly-built CDF rows onto the existing chrombpnet_pertrack.npz.
 
-    Loads the current NPZ + the two interim files written by an
-    ``--only-missing --part both`` run, concatenates rows preserving
-    track-id order (existing first, then new), and writes the merged
-    NPZ in place.
+    Loads the two interim files written by an ``--only-missing --part both``
+    run and appends them to the existing NPZ via
+    ``PerTrackNormalizer.append_tracks()``, which handles deduplication.
     """
     from chorus.analysis.normalization import PerTrackNormalizer
 
     effect_path = os.path.join(cache_dir, "chrombpnet_effect_cdfs_interim.npz")
     baseline_path = os.path.join(cache_dir, "chrombpnet_baseline_cdfs_interim.npz")
-    existing_path = os.path.join(cache_dir, "chrombpnet_pertrack.npz")
 
     if not os.path.exists(effect_path) or not os.path.exists(baseline_path):
         logger.error("Missing interim files — run with --only-missing --part both first")
         return
-    if not os.path.exists(existing_path):
-        logger.error("No existing NPZ found at %s — use --part merge instead", existing_path)
-        return
 
-    existing = np.load(existing_path, allow_pickle=False)
     effect_data = np.load(effect_path, allow_pickle=False)
     baseline_data = np.load(baseline_path, allow_pickle=False)
 
@@ -586,42 +580,23 @@ def merge_to_final_incremental():
     assert new_ids == list(baseline_data["track_ids"].astype(str)), \
         "interim effect/baseline track_id ordering must agree"
 
-    existing_count = len(existing["track_ids"])  # capture now — `existing`'s file is overwritten by build_and_save
-    merged_ids = list(existing["track_ids"].astype(str)) + new_ids
-
-    def stack(name: str):
-        return np.concatenate([existing[name], effect_data[name] if "effect" in name else baseline_data[name]])
-
-    merged_effect = np.concatenate([existing["effect_cdfs"], effect_data["effect_cdfs"]])
-    merged_summary = np.concatenate([existing["summary_cdfs"], baseline_data["summary_cdfs"]])
-    merged_perbin = np.concatenate([existing["perbin_cdfs"], baseline_data["perbin_cdfs"]])
-    merged_signed = np.concatenate([existing["signed_flags"], effect_data["signed_flags"]])
-
-    def maybe_concat(name: str, src):
-        if name in existing and name in src:
-            return np.concatenate([existing[name], src[name]])
-        return None
-
-    merged_effect_counts  = maybe_concat("effect_counts",  effect_data)
-    merged_summary_counts = maybe_concat("summary_counts", baseline_data)
-    merged_perbin_counts  = maybe_concat("perbin_counts",  baseline_data)
-
-    path = PerTrackNormalizer.build_and_save(
+    path, n_added = PerTrackNormalizer.append_tracks(
         oracle_name="chrombpnet",
-        track_ids=merged_ids,
-        effect_cdfs=merged_effect,
-        summary_cdfs=merged_summary,
-        perbin_cdfs=merged_perbin,
-        signed_flags=merged_signed,
-        effect_counts=merged_effect_counts,
-        summary_counts=merged_summary_counts,
-        perbin_counts=merged_perbin_counts,
+        new_track_ids=new_ids,
+        new_effect_cdfs=effect_data["effect_cdfs"],
+        new_summary_cdfs=baseline_data["summary_cdfs"],
+        new_perbin_cdfs=baseline_data.get("perbin_cdfs"),
+        new_signed_flags=effect_data["signed_flags"],
+        new_effect_counts=effect_data.get("effect_counts"),
+        new_summary_counts=baseline_data.get("summary_counts"),
+        new_perbin_counts=baseline_data.get("perbin_counts"),
         cache_dir=cache_dir,
     )
+
+    total = len(np.load(str(path), allow_pickle=False)["track_ids"])
     logger.info(
-        "DONE — merged NPZ has %d tracks (%d existing + %d new): %s (%.1f MB)",
-        len(merged_ids), existing_count, len(new_ids),
-        path, path.stat().st_size / 1e6,
+        "DONE — merged NPZ has %d tracks (%d new from this run): %s (%.1f MB)",
+        total, n_added, path, path.stat().st_size / 1e6,
     )
 
 
