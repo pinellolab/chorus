@@ -1,10 +1,10 @@
-# BPNet/CHIP CDFs: 6-GPU sharded rebuild, 768-track NPZ on HF
+# BPNet/CHIP CDFs: 6-GPU sharded rebuild, 786-track NPZ on HF
 
 **Date**: 2026-04-26
 **Platform**: 3 Linux machines (ml003: 2x V100-16GB, ml007: 2x A100-40GB, ml008: 2x A100-80GB)
 **Branch**: `audit/2026-04-26-bpnet-cdfs-complete`
 **HF artifact**: `huggingface.co/datasets/lucapinello/chorus-backgrounds`
-@ commit [`8d78353`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds/commit/8d78353ba0c6222f299c013efa1483b353182916)
+@ commit [`c1e5fc1`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds/commit/c1e5fc161ad4f5acedd2607dd6217ef5996096a1)
 
 ## Why
 
@@ -53,7 +53,7 @@ Total wall time: ~50 min (limited by slowest V100 shards).
 - **0 failed models** — all 744 BPNet/CHIP models loaded and scored successfully
 - No JASPAR mirror flakiness encountered
 
-### Merge
+### Merge (CHIP shards)
 
 ```bash
 mamba run -n chorus python scripts/build_backgrounds_chrombpnet.py --part merge-shards
@@ -61,31 +61,41 @@ mamba run -n chorus python scripts/build_backgrounds_chrombpnet.py --part merge-
 
 Output: `768 tracks (24 existing + 744 new from 6 shards)`
 
-Note: 24 existing ChromBPNet ATAC/DNASE tracks (not 42) were present in
-the pre-existing NPZ. The 18-track gap from the v28 catalog expansion
-(PR #50) appears to have not been included in the NPZ that was on-disk
-at build time. This does not affect the CHIP tracks.
+### Gap-fill: 18 missing ChromBPNet ATAC/DNASE tracks
 
-### Verification
+The pre-existing NPZ had only 24 of 42 ChromBPNet tracks. The 18 missing
+tracks from the v28 catalog expansion (PR #50) were backfilled on ml007:
 
-- Total tracks: **768** (24 ATAC/DNASE + 744 CHIP)
+```bash
+mamba run -n chorus-chrombpnet python scripts/build_backgrounds_chrombpnet.py \
+    --part both --only-missing --gpu 0
+```
+
+18 models (10 ATAC + 8 DNASE) downloaded from ENCODE and scored in ~2.5 h
+(download-dominated, ~10 min/model). All produced 9,609 effect + 29,004
+summary + 928,128 perbin samples each, matching the existing tracks.
+
+### Verification (final 786-track NPZ)
+
+- Total tracks: **786** (42 ATAC/DNASE + 744 CHIP)
 - `effect_counts > 0`: **True** (all tracks)
 - `summary_counts > 0`: **True** (all tracks)
 - `perbin_counts > 0`: **True** (all tracks)
 - Monotone `effect_cdfs`: **True** (first 50 checked)
 - Monotone `summary_cdfs`: **True** (first 50 checked)
-- File size: **80.5 MB**
+- File size: **82.4 MB**
 
 ### HuggingFace push
 
-Uploaded `chrombpnet_pertrack.npz` (768 tracks, 80.5 MB) to
-`lucapinello/chorus-backgrounds` at commit `8d78353`.
+1. Initial push (768 tracks, 80.5 MB) at commit `8d78353`.
+2. Final push (786 tracks, 82.4 MB) at commit
+   [`c1e5fc1`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds/commit/c1e5fc161ad4f5acedd2607dd6217ef5996096a1).
 
 ### Round-trip verification
 
 ```
 download_pertrack_backgrounds('chrombpnet') -> downloaded: 1
-Remote tracks: 768
+Remote tracks: 786
 ```
 
 ## Preflight issues resolved
