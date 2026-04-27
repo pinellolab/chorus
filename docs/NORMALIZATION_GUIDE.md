@@ -203,7 +203,7 @@ No custom model support.
 |----------|-------|
 | Tracks | 3 (K562, HepG2, WTC11 MPRA) |
 | Model | One model per cell type |
-| Input length | 230 bp |
+| Input length | 200 bp (`LEGNET_WINDOW`) |
 | Output | 1 scalar (promoter activity) |
 | Build script | `scripts/build_backgrounds_legnet.py` |
 | Conda env | `chorus-legnet` (PyTorch) |
@@ -344,8 +344,11 @@ oracle.load_pretrained_model(
 ### Step 3: Build the per-track CDF for your model
 
 The CDF needs ~10K random SNPs (effect rows) and ~30K baseline positions
-(summary + perbin rows) through your model. On a single GPU this is
-~5 min for ChromBPNet, ~3 min for BPNet.
+(summary + perbin rows) through your model. Rough wall-clock per model:
+~22 min for ChromBPNet on Apple M3 Ultra Metal, ~5 min on a CUDA A100;
+BPNet (smaller architecture) is ~2× faster either way. The
+[full sharded build](#sharded-build) of all 786 ChromBPNet+BPNet
+models takes about 6 hours on a single GPU.
 
 **Recommended path — bypass the build script and call its scoring
 helpers directly** so you don't have to fork the registry. Save your
