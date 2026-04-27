@@ -22,7 +22,7 @@ mamba activate chorus
 python -m pip install -e .
 ```
 
-Prerequisite: **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>, plus **~25 GB free disk** for the default install (all 6 oracle envs + hg38 + per-oracle CDF backgrounds + 2 ChromBPNet default models — K562 and HepG2 DNase, the fast path used by every shipped notebook). Works on Linux x86_64 and macOS (Intel / Apple Silicon). A single oracle env is ~6 GB. If you opt in to `chorus setup --all-chrombpnet` to pre-cache every published ChromBPNet/BPNet model up front, plan for **~60 GB** total — the 786 individual models add ~30 GB on their own. Other ChromBPNet cell types download lazily on first `predict()` regardless.
+Prerequisite: **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>, plus **~25 GB free disk** for the default install (all 6 oracle envs + hg38 + per-oracle CDF backgrounds + 2 ChromBPNet default models — K562 and HepG2 DNase, the fast path used by every shipped notebook). Works on Linux x86_64 and macOS (Intel / Apple Silicon). A single oracle env is ~6 GB. If you opt in to `chorus setup --all-chrombpnet` to pre-cache every published ChromBPNet/BPNet model up front, plan for **~60 GB** total — the 786 individual models add ~30 GB on their own. Other ChromBPNet cell types download lazily the first time you `load_pretrained_model(...)` for them.
 
 ### 2. Download all 6 oracles + hg38 + backgrounds (~45–60 min, unattended)
 
@@ -109,9 +109,9 @@ Chorus provides a consistent, easy-to-use API for working with state-of-the-art 
 - **Enformer**: Predicts gene expression and chromatin states from DNA sequences
 - **Borzoi**: Enhanced model for regulatory genomics predictions
 - **ChromBPNet / BPNet**: Predicts chromatin accessibility (ChromBPNet) and TF binding (BPNet) at base-pair resolution
-- **Sei**: Sequence regulatory effect predictions across 21,907 chromatin profiles
+- **Sei**: Sequence regulatory effect predictions — 21,907 underlying chromatin profiles aggregated into 40 sequence classes used for variant scoring
 - **LegNet**: Regulatory regions activity prediction using models trained on MPRA data
-- **AlphaGenome**: Google DeepMind's model predicting 5,731 genomic tracks at single base-pair resolution from 1MB input
+- **AlphaGenome**: Google DeepMind's model predicting 5,731 genomic tracks (5,168 human-only — the CDF-backed subset chorus normalizes against; 563 mouse) at single base-pair resolution from 1MB input
 
 Key features:
 - 🧬 Unified API across different models
@@ -667,10 +667,9 @@ chorus backgrounds status
 # View details for one oracle (shows ATAC/DNASE vs CHIP breakdown for ChromBPNet)
 chorus backgrounds status --oracle chrombpnet
 
-# Build CDF for a specific track (e.g. after adding a custom model)
-chorus backgrounds build --oracle chrombpnet --track CHIP:MyCell:MyTF --gpu 0
-
-# Build CDFs for all tracks not yet in the NPZ
+# Build CDFs for any tracks not yet in the NPZ (e.g. after registering a
+# new ChromBPNet model in chrombpnet_globals.py — see the BYOM walkthrough
+# in docs/NORMALIZATION_GUIDE.md)
 chorus backgrounds build --oracle chrombpnet --only-missing --gpu 0
 
 # Append tracks from a user-built NPZ
