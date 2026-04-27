@@ -10,9 +10,27 @@ to add new models and extend the backgrounds.
 Every oracle produces raw prediction values (e.g. predicted DNASE signal
 in counts, or a log2 fold-change variant effect). These raw values are
 hard to interpret across tracks and oracles because each has different
-scale and dynamic range. Normalization maps raw values to percentiles
-[0, 1] (or [-1, 1] for signed layers) by ranking them against a
-pre-computed background distribution.
+scale and dynamic range. Normalization ranks each raw value against a
+pre-computed background distribution to give a percentile.
+
+### Signed vs unsigned tracks
+
+Each track is one of two flavours:
+
+- **Unsigned** layers (chromatin accessibility, TF binding, histone
+  marks, TSS activity, splicing): only the **magnitude** of an effect
+  matters. Effects are scored as `|log2 fold-change|` and percentiles
+  fall in `[0, 1]`. A value of 0.95 means "this variant's effect is
+  larger than 95% of common-variant effects on this track".
+- **Signed** layers (gene expression, MPRA / promoter activity, Sei
+  regulatory class): direction matters too. Effects use the raw
+  log-fold-change or `alt − ref` difference, and percentiles fall in
+  `[-1, 1]` — sign carries the up/down direction, magnitude carries
+  the rank.
+
+The flavour is stored per-track via the `signed_flags` array in each
+NPZ. The `LAYER_CONFIGS` table later in this doc lists the formula and
+default sign per layer type.
 
 ### Three CDF types
 
@@ -20,9 +38,9 @@ For each track in each oracle, we store three empirical CDFs:
 
 | CDF | What it normalizes | How it's built | Output range |
 |-----|--------------------|----------------|--------------|
-| **effect_cdfs** | Variant effect scores | Score ~10K common SNPs (gnomAD) | [0, 1] or [-1, 1] |
+| **effect_cdfs** | Variant effect scores | Score ~10K random SNPs sampled uniformly across chr1–chr22 | [0, 1] or [-1, 1] |
 | **summary_cdfs** | Baseline signal levels | Predict ~30K genomic positions (random + cCREs + TSS) | [0, 1] |
-| **perbin_cdfs** | Per-bin signal values | Same positions, per-bin (128bp or 1bp) values | [0, 1] |
+| **perbin_cdfs** | Per-bin signal values | Same positions, per-bin (oracle-dependent resolution) | [0, 1] |
 
 **Effect percentile**: "How extreme is this variant's effect compared to
 common variants?" A score at the 95th percentile means 95% of common
@@ -39,14 +57,6 @@ tracks with different dynamic ranges can be displayed on a common scale.
 Each CDF is a sorted 1-D array of 10,000 background values per track.
 Lookup uses binary search (`np.searchsorted`) to find the rank of a raw
 value, then divides by the total sample count to get the percentile.
-
-For **unsigned** layers (chromatin, TF binding, histone marks, CAGE,
-splicing): raw effect scores are converted to absolute values, and the
-percentile maps to [0, 1] reflecting effect magnitude.
-
-For **signed** layers (gene expression, MPRA, Sei classification): the
-sign is preserved, and the percentile maps to [-1, 1] reflecting both
-direction and magnitude.
 
 ### Storage format
 
@@ -152,11 +162,16 @@ register it in `chrombpnet_globals.py` and run the build script with
 script auto-merges new rows into the existing NPZ via
 `PerTrackNormalizer.append_tracks`.
 
-**Sharded build**: For large-scale rebuilds across multiple GPUs, use:
+**Sharded build**: For a full rebuild of the 744 BPNet/CHIP CDFs
+across multiple GPUs (~6 hours wall on 6× CUDA cards):
 
 ```bash
 bash scripts/run_bpnet_cdf_build.sh  # 6-GPU parallel build
 ```
+
+For a single custom track (BYOM walkthrough below), use
+`--only-missing` instead — the 6-GPU script is overkill and would
+re-score all 786 tracks.
 
 ---
 
@@ -238,6 +253,13 @@ From `chorus/analysis/scorers.py` — `LAYER_CONFIGS`:
 | `regulatory_classification` | N/A | diff | 0.0 | Yes [-1,1] | Sei |
 | `splicing` | 501 bp | log2fc | 1.0 | No [0,1] | Enformer, Borzoi |
 
+**Splicing layer note**: `splicing` covers Enformer / Borzoi tracks
+whose ENCODE assay metadata indicates a splicing-related readout
+(e.g. shRNA-knockdown RNA-seq used to derive splice-site usage). It
+shares the unsigned-log2FC math with chromatin_accessibility but is
+listed separately so future oracle-specific overrides (windowing, mask)
+can override only the splicing tracks.
+
 **Formula definitions**:
 - `log2fc`: `log2((alt + pseudocount) / (ref + pseudocount))`
 - `logfc`: `log((alt + pseudocount) / (ref + pseudocount))`
@@ -265,188 +287,234 @@ For ChromBPNet, additional flags support distributed builds:
 - `--only-missing`: skip tracks already in the existing NPZ
 - `--assay CHIP|ATAC_DNASE`: build only one assay family
 
-## Walkthrough: Bring your own ChromBPNet model
+## Walkthrough: Bring your own ChromBPNet or BPNet model
 
-This is the most common case — you trained a ChromBPNet or BPNet model
-outside Chorus and want to use it with full percentile normalization.
+You trained a ChromBPNet or BPNet model outside chorus (custom cell
+type, your own ChIP-seq, a tweaked architecture) and want to use it
+with full percentile normalization.
 
-### Step 1: Organize your model weights
+### Step 1: Locate your `.h5` weights file
 
-Chorus expects a directory containing the ChromBPNet model files (the same
-structure that `chrombpnet` produces after training):
-
-```
-my_model/
-  models/
-    chrombpnet_nobias.h5     # or .keras
-```
-
-For BPNet (CHIP/TF) models from JASPAR, the structure is:
+Chorus's `weights=` parameter is a **path to the actual `.h5` (or
+`.keras`) file**, not a parent directory:
 
 ```
-my_bpnet_model/
-  model.h5
+# ChromBPNet — output of the chrombpnet training pipeline:
+/path/to/your_run/models/chrombpnet_nobias.h5
+
+# BPNet (CHIP/TF) — single-file model:
+/path/to/your_run/model.h5
 ```
 
-### Step 2: Verify the model loads
+If you have a directory layout instead, point `weights=` at the file
+inside it; chorus does not search for or auto-resolve filenames.
+
+### Step 2: Smoke-test the load + predict
 
 ```python
 from chorus.oracles.chrombpnet import ChromBPNetOracle
 
 oracle = ChromBPNetOracle(use_environment=False)
 
-# Load your custom model — is_custom=True bypasses the built-in registry
+# is_custom=True bypasses the built-in registry — `cell_type` becomes
+# part of the track_id ("ATAC:my_cell_line") and is otherwise free-form.
 oracle.load_pretrained_model(
-    assay="ATAC",              # or "DNASE" or "CHIP"
-    cell_type="my_cell_line",  # any string you choose — becomes the track ID
-    weights="/path/to/my_model",
+    assay="ATAC",                                      # "ATAC" / "DNASE" / "CHIP"
+    cell_type="my_cell_line",
+    weights="/path/to/your_run/models/chrombpnet_nobias.h5",
     is_custom=True,
 )
 
-# Quick smoke test
-result = oracle.predict(("chr1", 1000000, 1002114), assay_ids=["ATAC:my_cell_line"])
-print(result)
+# Quick check — should return finite values
+result = oracle.predict(("chr1", 1000000, 1002114))
+print(next(iter(result.items())))  # (track_id, OraclePredictionTrack)
 ```
 
-If using CHIP, also pass `TF="MyTF"`:
+For CHIP/BPNet, also pass `TF="MyTF"` so the track_id becomes
+`CHIP:my_cell_line:MyTF`:
 
 ```python
 oracle.load_pretrained_model(
-    assay="CHIP",
-    cell_type="K562",
-    TF="MyTF",
-    weights="/path/to/my_bpnet_model",
+    assay="CHIP", cell_type="my_cell_line", TF="MyTF",
+    weights="/path/to/your_run/model.h5",
     is_custom=True,
 )
 ```
 
-### Step 3: Build the CDF background for your model
+### Step 3: Build the per-track CDF for your model
 
-The CDF background requires scoring ~10K common variants and ~30K baseline
-positions through your model. The recommended path is to register your
-custom track in the script's model list and run the existing build pipeline,
-which handles batched inference, reservoir sampling, and CDF compaction
-for you.
+The CDF needs ~10K random SNPs (effect rows) and ~30K baseline positions
+(summary + perbin rows) through your model. On a single GPU this is
+~5 min for ChromBPNet, ~3 min for BPNet.
 
-**Step 3a — register your track.** Edit
-`chorus/oracles/chrombpnet_source/chrombpnet_globals.py` and add an
-entry pointing at your custom weights, e.g.:
+**Recommended path — bypass the build script and call its scoring
+helpers directly** so you don't have to fork the registry. Save your
+results into an NPZ that `chorus backgrounds add-tracks` accepts:
 
 ```python
-# Use a stable identifier for `cell_type` so the resulting track_id
-# is "ATAC:my_cell_line" — this becomes the row key in the NPZ.
-CHROMBPNET_MODELS_DICT["ATAC"]["my_cell_line"] = "MY_CUSTOM_001"  # arbitrary id
+from pathlib import Path
+import numpy as np
+
+from chorus.oracles.chrombpnet import ChromBPNetOracle
+from chorus.analysis.normalization import PerTrackNormalizer
+
+# ---- 1. Load your custom model ----
+oracle = ChromBPNetOracle(use_environment=False)
+oracle.load_pretrained_model(
+    assay="ATAC", cell_type="my_cell_line",
+    weights="/path/to/your_run/models/chrombpnet_nobias.h5",
+    is_custom=True,
+)
+
+# ---- 2. Reuse the build script's scoring helpers (variants + baselines) ----
+# scripts/build_backgrounds_chrombpnet.py exposes:
+#   - get_sequence(ref, chrom, pos)
+#   - predict_profiles_batch(model, seqs)
+#   - score_window_sum(profile)  → 501-bp center sum
+#   - compute_effect(ref_val, alt_val)  → log2 fold-change
+# Copy or import those + drive your own variant set / baseline set.
+# Put effects, summaries, perbin into 1×10000 sorted arrays each.
+
+effect_cdf  = np.sort(np.asarray(your_abs_log2fc_per_snp,  dtype=np.float32))
+summary_cdf = np.sort(np.asarray(your_window_sums,         dtype=np.float32))
+perbin_cdf  = np.sort(np.asarray(your_per_bin_values,      dtype=np.float32))
+
+# ---- 3. Save in the per-track NPZ schema ----
+out = Path("/tmp/my_chrombpnet_track.npz")
+np.savez_compressed(
+    out,
+    track_ids=np.array(["ATAC:my_cell_line"], dtype="U"),
+    effect_cdfs=effect_cdf.reshape(1, -1),       # (1, 10000)
+    summary_cdfs=summary_cdf.reshape(1, -1),     # (1, 10000)
+    perbin_cdfs=perbin_cdf.reshape(1, -1),       # (1, 10000)
+    signed_flags=np.array([False]),              # ATAC/DNASE/CHIP are unsigned
+    effect_counts=np.array([len(your_abs_log2fc_per_snp)]),
+    summary_counts=np.array([len(your_window_sums)]),
+    perbin_counts=np.array([len(your_per_bin_values)]),
+)
+print(f"Wrote {out}")
 ```
 
-For an externally-provided weights path, you'll also want to extend
-`ChromBPNetOracle._download_chrombpnet_model` (or
-`_download_model_from_JASPAR` for CHIP) to recognise the custom id and
-copy / symlink your weights into
-`downloads/chrombpnet/ATAC_my_cell_line/`.
-
-**Step 3b — run the build.** With the dict updated, the existing
-`--only-missing` pass will pick up just your new track:
+### Step 4: Append your CDF row to the main NPZ
 
 ```bash
-mamba run -n chorus-chrombpnet python scripts/build_backgrounds_chrombpnet.py \
-    --part both --only-missing --gpu 0
+chorus backgrounds add-tracks --oracle chrombpnet --npz /tmp/my_chrombpnet_track.npz
 ```
 
-This writes interim files at `~/.chorus/backgrounds/chrombpnet_*_interim.npz`
-containing only the new row(s), then auto-merges into the main NPZ via
-`merge_to_final_incremental` (which calls `PerTrackNormalizer.append_tracks`
-with dedup).
+The source NPZ must use the schema written in Step 3 — keys
+`track_ids`, `effect_cdfs`, `summary_cdfs`, `perbin_cdfs` (optional),
+`signed_flags`, and the matching `_counts` arrays. Duplicates against
+existing `track_ids` are skipped automatically.
 
-### Step 4: Append your CDF to the main NPZ
+You can also call the underlying API from Python:
 
-If you ran the build script with `--only-missing --part both`, the
-merge happens automatically and your row is already in the main NPZ.
+```python
+from chorus.analysis.normalization import PerTrackNormalizer
 
-**Alternative — bring your own NPZ.** If you have CDF rows you computed
-outside the build script (e.g. from a different scoring pipeline),
-package them into a small NPZ and append:
-
-```bash
-chorus backgrounds add-tracks --oracle chrombpnet --npz my_custom_cdfs.npz
+path, n_added = PerTrackNormalizer.append_tracks(
+    oracle_name="chrombpnet",
+    new_track_ids=["ATAC:my_cell_line"],
+    new_effect_cdfs=effect_cdf.reshape(1, -1),
+    new_summary_cdfs=summary_cdf.reshape(1, -1),
+    new_perbin_cdfs=perbin_cdf.reshape(1, -1),
+    new_signed_flags=np.array([False]),
+    new_effect_counts=np.array([len(your_abs_log2fc_per_snp)]),
+    new_summary_counts=np.array([len(your_window_sums)]),
+    new_perbin_counts=np.array([len(your_per_bin_values)]),
+)
+print(f"Appended {n_added} new tracks → {path}")
 ```
-
-The source NPZ must follow the same schema as
-`~/.chorus/backgrounds/chrombpnet_pertrack.npz`: keys `track_ids`,
-`effect_cdfs`, `summary_cdfs`, `perbin_cdfs` (optional), `signed_flags`,
-and the matching `_counts` arrays. See `PerTrackNormalizer.build_and_save`
-for the exact contract.
-
-Or call `PerTrackNormalizer.append_tracks(...)` directly from Python —
-it handles dedup against existing track_ids and concatenates rows
-preserving every counts array.
 
 ### Step 5: Verify
 
 ```bash
 chorus backgrounds status --oracle chrombpnet
-# Should show your new track in the count
+# Track count should be one higher (e.g. 786 → 787) and your new
+# `ATAC:my_cell_line` row should appear.
 ```
 
-Now your custom model's predictions will be normalized to percentiles
-automatically whenever Chorus scores variants through it.
+From now on any chorus call that scores `assay_ids=["ATAC:my_cell_line"]`
+through your custom model returns percentile-normalised effects.
 
 ## Walkthrough: Bring your own LegNet model
 
-If you trained a LegNet MPRA model for a new cell type:
+You trained a LegNet MPRA model for a cell type chorus doesn't ship
+(default registry covers K562, HepG2, WTC11).
 
-### Step 1: Organize weights
+### Step 1: Register your cell type
 
-LegNet expects a directory with:
+`LegNetOracle.__init__` validates `cell_type` against
+`LEGNET_AVAILABLE_CELLTYPES`, so add yours **before** instantiating:
+
+```python
+# chorus/oracles/legnet_source/legnet_globals.py
+LEGNET_AVAILABLE_CELLTYPES = ["K562", "HepG2", "WTC11", "my_cell"]
+```
+
+### Step 2: Organize your weights into LegNet's expected layout
+
+LegNet resolves model paths as
+`{model_dir}/{assay}_{cell_type}/{model_id}/weights.ckpt`. So if you
+pass `model_dir="/path/to/my_legnet_models"`, lay your files out like:
 
 ```
-my_legnet_model/
-  example/
-    weights.ckpt
-  config.json
+/path/to/my_legnet_models/
+  LentiMPRA_my_cell/
+    example/                   # the default model_id
+      weights.ckpt
+      config.json              # hyperparameters
 ```
 
-### Step 2: Load and test
+(`assay` defaults to `"LentiMPRA"`; `model_id` defaults to `"example"`.
+Override either via the constructor.)
+
+### Step 3: Smoke-test the load + predict
+
+LegNet input length is 200 bp (`LEGNET_WINDOW = 200`):
 
 ```python
 from chorus.oracles.legnet import LegNetOracle
 
-oracle = LegNetOracle(use_environment=False)
-oracle.cell_type = "my_cell"
-oracle.assay = "MPRA"
-oracle.load_pretrained_model(weights="/path/to/my_legnet_model")
+oracle = LegNetOracle(
+    cell_type="my_cell",
+    use_environment=False,
+    model_dir="/path/to/my_legnet_models",   # parent dir; see layout above
+)
+oracle.load_pretrained_model()  # picks up weights from model_dir
 
-# Test prediction
-result = oracle.predict("ACGT" * 57 + "AC")  # 230 bp input
+# 200 bp test sequence
+result = oracle.predict("ACGT" * 50)
 print(result)
 ```
 
-### Step 3: Build CDF and append
+### Step 4: Build CDF and append
 
-Use the same approach as ChromBPNet — either the build script or manual
-scoring + `PerTrackNormalizer.append_tracks()`.
-
-For LegNet, the key difference is that promoter_activity is a **signed**
-layer ([-1, 1]), so:
+Same shape as the ChromBPNet walkthrough above (Step 3 there) but with
+`signed_flags=np.array([True])` because `promoter_activity` is a
+**signed** layer (Δ-formula, [-1, 1]):
 
 ```python
-PerTrackNormalizer.append_tracks(
+import numpy as np
+from chorus.analysis.normalization import PerTrackNormalizer
+
+# After scoring your variants and baselines yourself:
+path, n_added = PerTrackNormalizer.append_tracks(
     oracle_name="legnet",
-    new_track_ids=["MPRA:my_cell"],
+    new_track_ids=["LentiMPRA:my_cell"],
     new_effect_cdfs=effect_cdf.reshape(1, -1),
     new_summary_cdfs=summary_cdf.reshape(1, -1),
     new_signed_flags=np.array([True]),   # signed for MPRA
     new_effect_counts=np.array([n_variants]),
     new_summary_counts=np.array([n_baselines]),
 )
+print(f"Appended {n_added} → {path}")
 ```
 
-### Step 4: Register the cell type (optional)
+### Step 5: Verify
 
-To make it discoverable via `oracle.list_cell_types()`, add your cell
-type to `chorus/oracles/legnet_globals.py`:
-
-```python
-LEGNET_AVAILABLE_CELLTYPES = ["K562", "HepG2", "WTC11", "my_cell"]
+```bash
+chorus backgrounds status --oracle legnet
+# Should show 4 tracks now (was 3) including LentiMPRA:my_cell.
 ```
 
 ## Walkthrough: Adding a new oracle

@@ -11,15 +11,31 @@ what a user types in natural language and what Claude returns.
    chorus setup --oracle alphagenome   # or enformer, etc.
    ```
 
-2. MCP configured (one-time — see [main README](../README.md#mcp-server)):
-   ```bash
-   claude mcp add chorus -- mamba run -n chorus chorus-mcp
-   ```
+2. MCP configured (one-time). Pick one of the two paths the README
+   documents in [§MCP server](../README.md#mcp-server):
+
+   - **Per-project** — drop a `.mcp.json` into the repo you're working in.
+     Best when you want chorus available only inside that project.
+   - **Global** — add it once to Claude Code's CLI config:
+     ```bash
+     claude mcp add chorus -- mamba run -n chorus chorus-mcp
+     ```
+     Best when you use chorus from many directories.
 
 3. Claude Code launched:
    ```bash
    claude     # from any project folder
    ```
+
+4. **Verify the connection** (do this once, before the real questions):
+
+   > *"What chorus oracles are available, and which ones do I have set up locally?"*
+
+   Claude should call `list_oracles` and `oracle_status` and reply with
+   the 6 oracle names plus an "installed / not installed" status per
+   oracle. If you instead see "I don't have access to chorus tools",
+   the MCP install above didn't take effect — restart Claude Code or
+   double-check your `.mcp.json` / `claude mcp list` output.
 
 ---
 
@@ -68,8 +84,9 @@ so you can visually confirm the prediction.
 
 1. Calls `discover_variant_cell_types(oracle_name="alphagenome",
    position="chr16:53767042", ref_allele="T", alt_alleles=["C"],
-   gene_name="FTO")` — screens ~472 cell types for DNASE/ATAC effects,
-   then runs full multi-layer analysis on the top 5 cell types.
+   gene_name="FTO")` — screens every cell type in AlphaGenome's
+   ontology for DNASE / ATAC effects, then runs full multi-layer
+   analysis on the top 5.
 2. Returns a ranked cell-type list + one report per top cell type.
 
 ---
