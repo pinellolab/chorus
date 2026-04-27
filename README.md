@@ -22,7 +22,7 @@ mamba activate chorus
 python -m pip install -e .
 ```
 
-Prerequisite: **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>, plus **~25 GB free disk** for the default install (all 6 oracle envs + hg38 + per-oracle CDF backgrounds + 2 ChromBPNet default models). Works on Linux x86_64 and macOS (Intel / Apple Silicon). A single oracle env is ~6 GB. If you opt in to `chorus setup --all-chrombpnet` to pre-cache every published ChromBPNet/BPNet model up front, plan for **~60 GB** total — the 786 individual models add ~30 GB on their own.
+Prerequisite: **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>, plus **~25 GB free disk** for the default install (all 6 oracle envs + hg38 + per-oracle CDF backgrounds + 2 ChromBPNet default models — K562 and HepG2 DNase, the fast path used by every shipped notebook). Works on Linux x86_64 and macOS (Intel / Apple Silicon). A single oracle env is ~6 GB. If you opt in to `chorus setup --all-chrombpnet` to pre-cache every published ChromBPNet/BPNet model up front, plan for **~60 GB** total — the 786 individual models add ~30 GB on their own. Other ChromBPNet cell types download lazily on first `predict()` regardless.
 
 ### 2. Download all 6 oracles + hg38 + backgrounds (~45–60 min, unattended)
 
@@ -73,13 +73,16 @@ print(f"Variant result: scored {n_alts} alt alleles "
 
 ### 4. Use with Claude Code
 
-Chorus ships an MCP server with 22 tools. Add it once:
+Chorus ships an MCP server with **22 tools** ([full list](#mcp-server)
+under "MCP server"). Add it once:
 
 ```bash
 claude mcp add chorus -- mamba run -n chorus chorus-mcp
 ```
 
 Then in Claude Code:
+
+> *"What chorus oracles are available?"* — sanity-check the connection (Claude calls `list_oracles`).
 
 > *"Predict DNase accessibility at chr11:5,247,000–5,248,000 with Enformer for K562, then compute the effect of rs12740374 on SORT1 expression with AlphaGenome."*
 
@@ -160,7 +163,7 @@ Start with one or two oracles and add more with `chorus setup --oracle <name>` l
 | **Sei** | 4 GB | optional | ~2 s | regulatory sequence-class profiling |
 | **AlphaGenome** | 16 GB | strongly recommended | ~30 s (GPU) / 2–5 min (CPU) | comprehensive multi-layer (5,731 tracks, 1 Mb window) |
 
-All oracles auto-detect CUDA via `torch.cuda.is_available()` / `jax.device_get`; respect `CUDA_VISIBLE_DEVICES` to pin to a specific GPU. Pass `device='cuda'` / `'cpu'` / `'mps'` explicitly if needed. GPU support: NVIDIA CUDA (Linux) is auto-detected. Apple Metal is experimental and not fully supported by all oracles (see AlphaGenome section).
+All oracles auto-detect CUDA via `torch.cuda.is_available()` / `jax.device_get`; respect `CUDA_VISIBLE_DEVICES` to pin to a specific GPU. Pass `device='cuda'` / `'cpu'` / `'mps'` explicitly if needed. **GPU support:** NVIDIA CUDA (Linux) is auto-detected; Apple Metal is supported via `tensorflow-metal` for the TF-backed oracles (Enformer, ChromBPNet) and PyTorch MPS for the PyTorch-backed oracles (Borzoi, Sei, LegNet). AlphaGenome runs on JAX and currently falls back to CPU on Apple Silicon (the JAX-Metal backend is still maturing).
 
 ### Installation — detailed
 
