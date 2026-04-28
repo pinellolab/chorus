@@ -22,7 +22,7 @@ mamba activate chorus
 python -m pip install -e .
 ```
 
-Prerequisite: **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>, plus **~25 GB free disk** for the default install (all 6 oracle envs + hg38 + per-oracle CDF backgrounds + 2 ChromBPNet default models — K562 and HepG2 DNase, the fast path used by every shipped notebook). Works on Linux x86_64 and macOS (Intel / Apple Silicon). A single oracle env is ~6 GB. If you opt in to `chorus setup --all-chrombpnet` to pre-cache every published ChromBPNet/BPNet model up front, plan for **~60 GB** total — the 786 individual models add ~30 GB on their own. Other ChromBPNet cell types download lazily the first time you `load_pretrained_model(...)` for them.
+Prerequisite: **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>, plus **~25 GB free disk** for the default install (all 6 oracle envs + hg38 + per-oracle CDF backgrounds + 2 ChromBPNet default models — K562 and HepG2 DNase, the fast path used by every shipped notebook). Works on Linux x86_64 and macOS (Intel / Apple Silicon). A single oracle env is ~6 GB. If you opt in to `chorus setup --all-chrombpnet` to pre-cache every published ChromBPNet model up front, **plan for ~100 GB total** — each of the 42 ChromBPNet ATAC/DNase models is ~720 MB as a tarball but unpacks to ~1.8 GB on disk (5 fold ensembles), so the full set is ~76 GB additional. The 744 BPNet/CHIP TF-binding models are tiny (~410 MB combined). Other ChromBPNet cell types download lazily the first time you `load_pretrained_model(...)` for them.
 
 ### 2. Download all 6 oracles + hg38 + backgrounds (~45–60 min, unattended)
 
