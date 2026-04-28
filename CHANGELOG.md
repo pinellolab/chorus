@@ -4,6 +4,27 @@ All notable changes to Chorus are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.1] — 2026-04-28
+
+### Fixed
+
+- **Disk-size claim for `--all-chrombpnet` was off by ~2.5×.** The
+  v0.2.0 README and CLI help text said the opt-in full ChromBPNet
+  prefetch needed ~30 GB additional / ~60 GB total. A user actually
+  running it had to kill the install when disk filled up. Re-measured
+  on a freshly-extracted ENCODE model: per-model is ~720 MB tarball
+  + ~1.1 GB extracted (5 fold ensembles) = **~1.8 GB on disk**. With
+  42 ChromBPNet ATAC/DNase models that's **~76 GB** for the full
+  ChromBPNet weights alone, plus ~410 MB for all 744 BPNet/CHIP TF
+  models. **Total `--all-chrombpnet` install footprint is now
+  documented as ~100 GB** (was ~60 GB). Default fast-path install
+  (~25 GB, K562+HepG2 DNase only) is unaffected.
+
+  Updated everywhere the old number appeared: `README.md`,
+  `chorus/cli/main.py` (`--all-chrombpnet` --help text),
+  `chorus/cli/_setup_prefetch.py`, and the two multi-oracle
+  notebook intros.
+
 ## [0.2.0] — 2026-04-27
 
 This release is the cumulative output of the v22 → v29 audit chain
@@ -37,9 +58,11 @@ ChromBPNet's percentile-normalisation coverage from 24 → 786 tracks.
   `build`, and `add-tracks` for managing per-track CDF backgrounds
   without leaving the shell.
 - **`chorus setup --all-chrombpnet` opt-in flag** — pre-cache every
-  one of the 786 ChromBPNet/BPNet models during setup (~30 GB extra,
-  3–4 h). Default behaviour stays on the v0.1 fast path (K562 +
-  HepG2 DNase only, ~1.4 GB).
+  one of the 786 ChromBPNet/BPNet models during setup (~76 GB on
+  disk, 3–4 h). Each of the 42 ChromBPNet ATAC/DNase models is
+  ~720 MB tarball + ~1.1 GB extracted = ~1.8 GB; the 744 BPNet/CHIP
+  models are tiny (~410 MB combined). Default behaviour stays on
+  the v0.1 fast path (K562 + HepG2 DNase only, ~3.5 GB).
 - **`chorus --version` flag** — was missing in 0.1.
 - **`EnvironmentNotReadyError`** — predict / load now raise a clear
   actionable error pointing to `chorus setup` / `chorus health` when
@@ -65,8 +88,14 @@ ChromBPNet's percentile-normalisation coverage from 24 → 786 tracks.
 
 - **README quickstart** rewritten to four numbered steps that read
   in one lunch break (PR #42 + later refinements). Disk requirement
-  reduced from "~80 GB" to **~25 GB default / ~60 GB with
-  `--all-chrombpnet`** after the prefetch revert in PR #55.
+  reduced from "~80 GB" (which itself was an under-estimate) to
+  **~25 GB default / ~100 GB with `--all-chrombpnet`** after the
+  prefetch revert in PR #55. Note: the `--all-chrombpnet` figure
+  was originally documented as ~60 GB; an audit on 2026-04-28
+  re-measured each ENCODE ChromBPNet model on disk
+  (~720 MB tarball + ~1.1 GB extracted = ~1.8 GB per model × 42
+  models ≈ 76 GB just for ChromBPNet weights) and corrected the
+  claim to ~100 GB total.
 - **`chorus setup --oracle <X>` exit codes** — `chorus setup`,
   `chorus health`, `chorus genome download`, `chorus remove` all
   now return non-zero on bad input and surface the valid-name list.

@@ -462,9 +462,12 @@ def main(argv: Optional[List[str]] = None):
         action='store_true',
         help=(
             "Pre-cache ALL 786 ChromBPNet/BPNet model weights during setup "
-            "(~30 GB, 3-4 h). Default fast path caches only K562 + HepG2 "
-            "DNase (~1.4 GB, ~9 min) — enough for the shipped notebooks. "
-            "Other models download lazily on first use."
+            "(~76 GB on disk, 3-4 h). Each of the 42 ChromBPNet ATAC/DNase "
+            "models is ~720 MB tarball + ~1.1 GB extracted = ~1.8 GB; the "
+            "744 BPNet/CHIP models are tiny (~410 MB combined). Default "
+            "fast path caches only K562 + HepG2 DNase (~3.5 GB, ~9 min) "
+            "— enough for the shipped notebooks. Other models download "
+            "lazily on first use."
         ),
     )
     setup_parser.set_defaults(func=setup_environments)
