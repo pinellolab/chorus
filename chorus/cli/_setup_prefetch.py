@@ -179,7 +179,9 @@ def prefetch_weights(
     For ChromBPNet, the default fast path pre-caches only K562 + HepG2
     DNase (~1.4 GB; matches the shipped notebooks). Pass
     ``full_chrombpnet=True`` to instead pre-cache all 786 ChromBPNet +
-    BPNet models (~30 GB, 3-4 hours of network downloads). All other
+    BPNet models (~76 GB on disk after extraction; 42 × ~720 MB
+    tarballs + 5-fold extracted weights, plus 744 tiny BPNet h5 files;
+    3-4 hours of network downloads). All other
     oracles ignore this flag.
 
     Returns ``(success, error_message)``.
@@ -270,7 +272,7 @@ def prefetch_for_oracle(
 
     ``full_chrombpnet=True`` switches the chrombpnet weight prefetch from
     the fast 2-model default (~1.4 GB) to the full 786-model catalogue
-    (~30 GB). Has no effect on other oracles.
+    (~76 GB on disk). Has no effect on other oracles.
     """
     errors: List[str] = []
 
