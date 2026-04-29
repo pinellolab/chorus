@@ -474,16 +474,18 @@ def main(argv: Optional[List[str]] = None):
         ),
     )
     setup_parser.add_argument(
-        '--include-experimental',
+        '--include-alternative-backends',
+        '--include-experimental',  # legacy alias from PR #62 review
+        dest='include_alternative_backends',
         action='store_true',
         help=(
-            "Include experimental / opt-in oracles in the default "
-            "`chorus setup` flow. Currently this only affects "
-            "alphagenome_pt (the PyTorch backend for AlphaGenome) — "
-            "without this flag, that env is skipped to avoid surprising "
-            "users with a ~5 GB env build + ~3.4 GB weight download "
-            "for an opt-in spike. Install it explicitly with "
-            "`chorus setup --oracle alphagenome_pt`."
+            "Include alternative (opt-in by default) backends in the "
+            "default `chorus setup` flow. Currently affects only "
+            "alphagenome_pt — the PyTorch backend for AlphaGenome — "
+            "which uses the same weights as the default JAX backend "
+            "but is skipped from the default install to keep size "
+            "bounded (~5 GB env + ~3.4 GB weights extra). Install it "
+            "explicitly with `chorus setup --oracle alphagenome_pt`."
         ),
     )
     setup_parser.set_defaults(func=setup_environments)

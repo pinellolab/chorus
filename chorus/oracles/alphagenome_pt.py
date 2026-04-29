@@ -1,19 +1,33 @@
-"""AlphaGenome PyTorch backend oracle (spike).
+"""AlphaGenome PyTorch backend oracle.
 
-Wraps the upstream PyTorch port at ``genomicsxai/alphagenome-pytorch``.
-Track schema, assay identifiers, and the ``alphagenome_tracks.json`` cache
-are shared with the JAX-backed :class:`AlphaGenomeOracle`; only the
+Wraps the upstream PyTorch port at ``genomicsxai/alphagenome-pytorch``,
+which ships safetensors weights converted from the official JAX
+checkpoint (`gtca/alphagenome_pytorch` on HF) — **same model, same
+weights** as the default JAX-backed :class:`AlphaGenomeOracle`. Outputs
+agree within fp32 implementation noise (1–2 % per-track relative diff on
+chorus-API-level scoring; verified on M3 Ultra + A100 in the audits at
+``audits/2026-04-29_alphagenome_pytorch_spike/`` and
+``audits/2026-04-29_alphagenome_pt_stress_test/``).
+
+Track schema, assay identifiers, and the ``alphagenome_tracks.json``
+metadata cache are shared with :class:`AlphaGenomeOracle`; only the
 load + forward path differs.
 
-The PyTorch port adds:
+What this backend buys you over the JAX default:
 
-- Native MPS support on Apple Silicon (the JAX path forces CPU on macOS).
+- Native MPS support on Apple Silicon (the JAX path forces CPU on macOS;
+  this is the main reason the PyTorch backend exists).
+- Public HF weights — no `google/alphagenome-all-folds` license accept
+  needed for the PyTorch path.
 - Turnkey variant scoring via ``alphagenome_pytorch.variant_scoring``
-  (not yet wired through chorus — exposed only via the upstream API).
-- LoRA / linear-probe fine-tuning hooks (also not yet wired through chorus).
+  (exposed via the upstream API — not yet wired through chorus).
+- LoRA / linear-probe fine-tuning hooks (also not yet wired through
+  chorus).
 
-This is an opt-in side-by-side backend pending equivalence and benchmark
-verification. Use ``chorus.create_oracle('alphagenome_pt', ...)``.
+Use ``chorus.create_oracle('alphagenome_pt', ...)``. Call
+``chorus.recommend_alphagenome_backend(window_size_bp)`` (or
+``oracle.recommend_backend(window_size_bp)``) to decide which backend
+fits a given query.
 """
 
 from ..core.base import OracleBase

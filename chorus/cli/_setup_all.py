@@ -22,15 +22,17 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Oracles excluded from the default ``chorus setup`` flow because they're
-# experimental / opt-in. Users can still install them explicitly via
-# ``chorus setup --oracle <name>``. Listing one here keeps default
-# install size bounded and avoids surprising users with downloads they
-# didn't ask for.
+# alternative backends for an oracle that's already installed by default.
+# Listing one here keeps default install size bounded — it's a disk-cost
+# decision, not a stability one. Users still install them explicitly via
+# ``chorus setup --oracle <name>`` or pass ``--include-alternative-backends``
+# to the bare ``chorus setup`` command.
 _SKIP_FROM_DEFAULT_SETUP = {
-    # Opt-in PyTorch backend for AlphaGenome (PR #62 spike). Users who
-    # want it run `chorus setup --oracle alphagenome_pt` explicitly. The
-    # JAX `alphagenome` oracle is the default backend and is still
-    # included in the default flow.
+    # PyTorch backend for AlphaGenome — same model + same weights as the
+    # default JAX `alphagenome` oracle (safetensors-converted from the
+    # official JAX checkpoint). Skipped only because the env is ~5 GB and
+    # the weights are ~3.4 GB, on top of the JAX backend the user already
+    # gets. Opt in with `chorus setup --oracle alphagenome_pt`.
     "alphagenome_pt",
 }
 
@@ -48,18 +50,25 @@ def setup_all_oracles(args) -> int:
         logger.error("No oracle environment definitions found.")
         return 1
 
-    # Filter experimental oracles unless --include-experimental was passed.
-    include_experimental = getattr(args, "include_experimental", False)
-    if include_experimental:
+    # Filter alternative-backend oracles unless --include-alternative-backends
+    # was passed. The legacy --include-experimental alias keeps the same
+    # behavior for anyone who scripted against the older name.
+    include_alt = getattr(args, "include_alternative_backends", False) or getattr(
+        args, "include_experimental", False
+    )
+    if include_alt:
         oracles = all_oracles
     else:
         oracles = [o for o in all_oracles if o not in _SKIP_FROM_DEFAULT_SETUP]
         skipped = sorted(set(all_oracles) - set(oracles))
         if skipped:
             logger.info(
-                "Skipping experimental oracle(s): %s "
+                "Skipping alternative-backend oracle(s): %s "
                 "(install with `chorus setup --oracle <name>` or pass "
-                "--include-experimental to enable in the default flow)",
+                "--include-alternative-backends to enable in the default "
+                "flow). These are opt-in only because of disk size, not "
+                "stability — see the README's 'Two AlphaGenome backends' "
+                "section for details.",
                 ", ".join(skipped),
             )
 

@@ -26,11 +26,14 @@ logger = logging.getLogger(__name__)
 
 _INSTRUCTIONS = (
     "Unified interface for 6 genomic deep-learning oracles "
-    "(Enformer, Borzoi, ChromBPNet, Sei, LegNet, AlphaGenome) plus an "
-    "experimental PyTorch backend for AlphaGenome (alphagenome_pt). "
+    "(Enformer, Borzoi, ChromBPNet, Sei, LegNet, AlphaGenome). AlphaGenome "
+    "ships with two interchangeable backends — `alphagenome` (JAX, default) "
+    "and `alphagenome_pt` (PyTorch, opt-in alternative) — that share the "
+    "same model and weights and produce equivalent outputs (1–2 % per-track "
+    "fp32 noise). "
     "Discover tracks, load models, make predictions, and analyse variant effects. "
-    "Use `recommend_alphagenome_backend` to choose between the JAX (alphagenome) "
-    "and PyTorch (alphagenome_pt) AlphaGenome backends for a given window size."
+    "Use `recommend_alphagenome_backend` to choose between the JAX and "
+    "PyTorch AlphaGenome backends for a given window size."
 )
 
 mcp = FastMCP("Chorus Genomics", instructions=_INSTRUCTIONS)
@@ -87,12 +90,15 @@ ORACLE_SPECS = {
     },
     "alphagenome_pt": {
         "description": (
-            "AlphaGenome (DeepMind) — PyTorch backend (opt-in, experimental). "
-            "Same 5,731-track schema as `alphagenome`; differs only in load + "
-            "forward path. Useful on Apple Silicon for ≤600 kb windows (5–8× "
-            "faster than JAX CPU on MPS). On Linux/CUDA, prefer `alphagenome` "
-            "(JAX is 1.2–2.8× faster on A100). See "
-            "`recommend_alphagenome_backend(window_size_bp)` for routing."
+            "AlphaGenome (DeepMind) — PyTorch backend (alternative to the "
+            "default JAX `alphagenome` oracle). Same 5,731-track schema, "
+            "same weights — `gtca/alphagenome_pytorch` is converted from "
+            "the official JAX checkpoint and produces equivalent outputs "
+            "(1–2 % per-track fp32 noise verified on M3 Ultra + A100). "
+            "Differs only in load + forward path. Useful on Apple Silicon "
+            "for ≤600 kb windows (5–8× faster than JAX CPU on MPS). On "
+            "Linux/CUDA, prefer `alphagenome` (JAX is 1.2–2.8× faster "
+            "on A100). See `recommend_alphagenome_backend(window_size_bp)`."
         ),
         "framework": "PyTorch",
         "input_size_bp": 1_048_576,
@@ -252,7 +258,7 @@ def recommend_alphagenome_backend(window_size_bp: int) -> dict:
 @mcp.tool()
 @_safe_tool
 def list_oracles() -> dict:
-    """List all genomic oracles (6 production + 1 experimental PyTorch backend) with their specs, environment install status, and loaded status.
+    """List all genomic oracles (6 plus an alternative PyTorch backend for AlphaGenome) with their specs, environment install status, and loaded status.
 
     No model loading is required — this returns static metadata plus live status.
     """
