@@ -1,23 +1,35 @@
 [
   {
-    "cell_type": "fibroblast of mammary gland",
-    "effect": 3.2967044335670703,
-    "abs_effect": 3.2967044335670703,
-    "best_track": "DNASE:fibroblast of mammary gland",
-    "n_tracks": 5
+    "cell_type": "HepG2",
+    "effect": 1.3961915200507815,
+    "abs_effect": 1.3961915200507815,
+    "ref_value": 595.932373046875,
+    "alt_value": 1570.160888671875,
+    "ranking_metric": "alt_x_abs_effect",
+    "ranking_score": 2192.245317879071,
+    "best_track": "DNASE:HepG2",
+    "n_tracks": 562
   },
   {
-    "cell_type": "amniotic epithelial cell",
-    "effect": 2.9595688132036746,
-    "abs_effect": 2.9595688132036746,
-    "best_track": "DNASE:amniotic epithelial cell",
-    "n_tracks": 3
+    "cell_type": "MCF 10A",
+    "effect": 1.5195499993884147,
+    "abs_effect": 1.5195499993884147,
+    "ref_value": 295.93707275390625,
+    "alt_value": 850.3233642578125,
+    "ranking_metric": "alt_x_abs_effect",
+    "ranking_score": 1292.1088676379138,
+    "best_track": "DNASE:MCF 10A",
+    "n_tracks": 6
   },
   {
-    "cell_type": "fibroblast of pulmonary artery",
-    "effect": 2.904556349855798,
-    "abs_effect": 2.904556349855798,
-    "best_track": "DNASE:fibroblast of pulmonary artery",
-    "n_tracks": 5
+    "cell_type": "left lobe of liver",
+    "effect": 1.8402840603565316,
+    "abs_effect": 1.8402840603565316,
+    "ref_value": 184.88961791992188,
+    "alt_value": 664.634521484375,
+    "ranking_metric": "alt_x_abs_effect",
+    "ranking_score": 1223.116315850386,
+    "best_track": "DNASE:left lobe of liver",
+    "n_tracks": 6
   }
 ]

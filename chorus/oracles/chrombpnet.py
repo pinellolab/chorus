@@ -294,6 +294,12 @@ class ChromBPNetOracle(OracleBase):
         try:
             from huggingface_hub import hf_hub_download
         except ImportError:
+            logger.warning(
+                "huggingface_hub not available in this Python environment; "
+                "ChromBPNet slim mirror disabled, falling back to the "
+                "~700 MB ENCODE tarball flow. Add 'huggingface_hub>=0.20.0' "
+                "to environments/chorus-chrombpnet.yml to fix."
+            )
             return None
         try:
             manifest_local = hf_hub_download(
@@ -342,6 +348,11 @@ class ChromBPNetOracle(OracleBase):
         try:
             from huggingface_hub import hf_hub_download
         except ImportError:
+            logger.warning(
+                "huggingface_hub not available in this Python environment; "
+                "BPNet slim mirror disabled, falling back to JASPAR mencius. "
+                "Add 'huggingface_hub>=0.20.0' to environments/chorus-chrombpnet.yml to fix."
+            )
             return None
         try:
             h5_local = hf_hub_download(

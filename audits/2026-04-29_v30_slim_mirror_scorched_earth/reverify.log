@@ -1,0 +1,34 @@
+
+=== 6. Default model_type is chrombpnet_nobias ===
+  default model_type = 'chrombpnet_nobias'
+PASS  default flipped to chrombpnet_nobias
+
+=== 9. Round-trip — load K562 DNase ChromBPNet via current code path ===
+Loading in environment
+  load time: 9.8s
+  model_path: /Users/lp698/.cache/huggingface/hub/models--lucapinello--chorus-chrombpnet-slim/snapshots/9fe92856bd189042207a8696f96758c53ea5cdd6/DNASE/K562/fold_0/model.chrombpnet_nobias.fold_0.ENCSR000EOT.h5
+  source: HF cache
+PASS  K562 DNase nobias loaded
+
+=== 10. Fig 3f triangulation — ChromBPNet HepG2 + K562 + GM12878 DNase ===
+2026-04-29 10:48:04,251 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 10:48:06,410 - chorus.core.base - INFO - Using conda environment: chorus-chrombpnet
+2026-04-29 10:48:06,553 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-29 10:48:06,573 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-29 10:48:06,720 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/HepG2/fold_0/model.chrombpnet_nobias.fold_0.ENCSR149XIL.h5 "HTTP/1.1 302 Found"
+2026-04-29 10:48:06,797 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/lucapinello/chorus-chrombpnet-slim/xet-read-token/9fe92856bd189042207a8696f96758c53ea5cdd6 "HTTP/1.1 200 OK"
+2026-04-29 10:48:10,626 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:HepG2 via HF slim mirror (ENCFF615AKY)
+2026-04-29 10:48:10,627 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-29 10:48:13,775 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully in environment!
+ChromBPNet (chrombpnet_nobias) Fig 3f swap predictions:
+  region: chrX:48782929-48783129 (K562 GATA1 enhancer)
+  replacement: 99598_GENERATED_HEPG2 (200 bp)
+
+Loading in environment
+  HepG2 loaded in 9.5s
+    model_path: /Users/lp698/.cache/huggingface/hub/models--lucapinello--chorus-chrombpnet-slim/snapshots/9fe92856bd189042207a8696f96758c53ea5cdd6/DNASE/HepG2/fold_0/model.chrombpnet_nobias.fold_0.ENCSR149XIL.h5
+Traceback (most recent call last):
+  File "<stdin>", line 57, in <module>
+AttributeError: 'NoneType' object has no attribute 'predict'
+
+DONE
