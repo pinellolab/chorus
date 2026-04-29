@@ -19,6 +19,15 @@ PREDICT_TEMPLATE = (
     / "templates" / "predict_template.py"
 )
 
+# The use_environment=False direct-load path on the oracle has the SAME
+# call shape as the subprocess template, so it needs the same regression
+# pin. (Audit-followup: F2 fix landed in the template but missed the
+# twin in alphagenome_pt.py until this test caught it.)
+ORACLE_FILE = (
+    Path(__file__).resolve().parent.parent
+    / "chorus" / "oracles" / "alphagenome_pt.py"
+)
+
 
 def test_predict_template_passes_organism_index_as_tensor():
     """v62-audit F2 (2026-04-29): the production predict template was
@@ -41,6 +50,23 @@ def test_predict_template_passes_organism_index_as_tensor():
     assert "organism_index=torch.tensor(" in src, (
         "predict_template.py should pass organism_index as a torch.Tensor "
         "(see v62-audit F2 in audits/2026-04-29_alphagenome_pt_stress_test/)."
+    )
+
+
+def test_oracle_direct_path_passes_organism_index_as_tensor():
+    """Same F2 regression but for the use_environment=False path on
+    AlphaGenomePTOracle._predict_direct. The first F2 fix landed only
+    in the subprocess template; this test catches the twin call site
+    in the oracle module."""
+    src = ORACLE_FILE.read_text()
+    assert "organism_index=0," not in src, (
+        "alphagenome_pt.py must not pass organism_index=0 in the "
+        "_predict_direct path — same TypeError as the template (F2). "
+        "Use organism_index=torch.tensor([0], dtype=torch.long, device=device)."
+    )
+    assert "organism_index=torch.tensor(" in src, (
+        "alphagenome_pt.py _predict_direct should pass organism_index "
+        "as a torch.Tensor (mirror of the template fix)."
     )
 
 

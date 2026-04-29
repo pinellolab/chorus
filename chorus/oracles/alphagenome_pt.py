@@ -380,10 +380,12 @@ class AlphaGenomePTOracle(OracleBase):
         with torch.no_grad():
             # Use forward() instead of predict() so we can pass heads= to
             # skip computation for output types we don't need. predict()
-            # is a thin wrapper without that filter.
+            # is a thin wrapper without that filter. forward() requires
+            # organism_index as a Tensor — predict() accepts int and
+            # converts internally, but we lose the heads= filter there.
             output = self._model(
                 dna_onehot,
-                organism_index=0,
+                organism_index=torch.tensor([0], dtype=torch.long, device=device),
                 heads=heads if heads else None,
             )
 
