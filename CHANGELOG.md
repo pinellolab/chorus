@@ -4,6 +4,34 @@ All notable changes to Chorus are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **Cell-type discovery default ranking is now `alt_x_abs_effect`**
+  (was `abs_effect` = raw |log2FC|). Investigating the SORT1 rs12740374
+  example revealed that `|log2FC|` over a 501 bp window with
+  `pseudocount=1.0` systematically rewards cell types with closed
+  baseline chromatin: when `ref` is near zero, creating a *de novo* TF
+  binding site produces a huge fold-change even when the absolute
+  alt-allele activity is modest. For SORT1, the well-known HepG2
+  enhancer (alt_sum=1571, top-2 of 472 cell types by absolute alt
+  signal) was buried at rank #59, while three closed-baseline
+  fibroblast/epithelial cell types (alt_sum 161–378) took the top
+  three slots.
+
+  The new default `alt_x_abs_effect = alt_value × |log2FC|` rewards
+  both effect magnitude and final activity, recovering HepG2 #1 and
+  liver lobes #2–#5 — matching the canonical SORT1 biology. The old
+  metric is still available via `ranking_metric="abs_effect"`, and a
+  filtered variant `ranking_metric="abs_effect_min_ref"` lets callers
+  apply a baseline-activity floor.
+
+  The MCP tool `discover_variant_cell_types` and the Python helpers
+  `discover_cell_types` / `discover_and_report` all expose the new
+  parameter; the SORT1 cell-type-screen example was regenerated with
+  the new default.
+
 ## [0.2.1] — 2026-04-28
 
 ### Fixed
