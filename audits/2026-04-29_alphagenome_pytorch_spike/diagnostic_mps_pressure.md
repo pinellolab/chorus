@@ -122,16 +122,16 @@ becoming the bottleneck once the working set exceeds on-die cache.
 | 768–896 kb | borderline; check `current_allocated_memory()` | cliff-zone, run-state-dependent |
 | ≥896 kb | **JAX CPU** | post-cliff, MPS slower than CPU |
 
-A future tiling helper (predict 4× 256 kb tiles + stitch with
-attention-receptive-field overlap) would unlock full-1 MB MPS at
-~15 s per query (4 × 3.77 s + stitch overhead), 3.3× faster than
-JAX CPU. Tiling is the **real fix** — deferred to a follow-up PR
-because it requires non-trivial boundary handling.
+**Tiling is NOT the fix** (decided): splitting a 1 MB query into 4×
+256 kb tiles caps attention's receptive field at the tile boundary,
+which changes the inference contract — different model, not a perf
+fix. The user explicitly rejected this approach.
 
-A simpler band-aid: the oracle could expose
-`oracle.predict_tile_size_hint = 768 * 1024` and have higher-level
-chorus code chunk longer queries before calling. This deserves a
-small dedicated PR.
+The chosen response is `chorus.recommend_alphagenome_backend(window_size_bp)`:
+a routing helper that returns the right oracle + device per
+(platform, window_size) without auto-routing. Users get a clear
+recommendation grounded in the audit numbers and always know which
+backend produced their predictions.
 
 ## Follow-up tests (only if H₁ is suggested but ambiguous)
 

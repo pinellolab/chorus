@@ -44,6 +44,17 @@ class AlphaGenomePTOracle(OracleBase):
     HF_REPO = "gtca/alphagenome_pytorch"
     WEIGHTS_FILENAME = "model_all_folds.safetensors"
 
+    # Same fold semantics as the JAX oracle: 'all_folds' (default) or
+    # 'fold_0'..'fold_3'. Maps to the matching safetensors file at
+    # `gtca/alphagenome_pytorch`.
+    _FOLD_TO_FILE = {
+        "all_folds": "model_all_folds.safetensors",
+        "fold_0": "model_fold_0.safetensors",
+        "fold_1": "model_fold_1.safetensors",
+        "fold_2": "model_fold_2.safetensors",
+        "fold_3": "model_fold_3.safetensors",
+    }
+
     def __init__(
         self,
         use_environment: bool = True,
@@ -51,6 +62,7 @@ class AlphaGenomePTOracle(OracleBase):
         model_load_timeout: Optional[int] = 900,
         predict_timeout: Optional[int] = 600,
         device: Optional[str] = None,
+        fold: str = "all_folds",
         organism: str = "human",
         hf_repo: Optional[str] = None,
         weights_filename: Optional[str] = None,
@@ -67,9 +79,19 @@ class AlphaGenomePTOracle(OracleBase):
         self.sequence_length = 1_048_576
         self.target_length = 1_048_576
         self.bin_size = 1
+        self.fold = fold
         self.organism = organism
         self.hf_repo = hf_repo or self.HF_REPO
-        self.weights_filename = weights_filename or self.WEIGHTS_FILENAME
+        if weights_filename is not None:
+            self.weights_filename = weights_filename
+        elif fold in self._FOLD_TO_FILE:
+            self.weights_filename = self._FOLD_TO_FILE[fold]
+        else:
+            raise ValueError(
+                f"Unknown fold '{fold}'. Expected one of "
+                f"{sorted(self._FOLD_TO_FILE)} or pass weights_filename "
+                "explicitly."
+            )
 
         self._model = None
         self._track_dict = None
@@ -434,6 +456,17 @@ class AlphaGenomePTOracle(OracleBase):
         if query:
             return metadata.search_tracks(query)
         return metadata.get_track_summary()
+
+    # ------------------------------------------------------------------
+    # Backend routing helper
+    # ------------------------------------------------------------------
+    def recommend_backend(self, window_size_bp: int) -> dict:
+        """Suggest whether to use the JAX or PyTorch AlphaGenome backend
+        for a given query window size on this host. Same return shape
+        as :func:`chorus.recommend_alphagenome_backend`."""
+        from ._alphagenome_routing import recommend_alphagenome_backend
+
+        return recommend_alphagenome_backend(window_size_bp)
 
     # ------------------------------------------------------------------
     # Abstract methods

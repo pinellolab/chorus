@@ -86,6 +86,13 @@ else:
     ORACLES = {}
     get_oracle = None
 
+# AlphaGenome backend routing helper — works without importing the heavy
+# JAX/torch deps so it stays usable in the chorus base env.
+from .oracles._alphagenome_routing import (
+    recommend_alphagenome_backend,
+    format_recommendation as format_alphagenome_recommendation,
+)
+
 # Import utilities
 from .utils import (
     # Sequence utilities
@@ -231,6 +238,8 @@ __all__ = [
     # Oracle utilities
     'get_oracle',
     'create_oracle',
+    'recommend_alphagenome_backend',
+    'format_alphagenome_recommendation',
     'ORACLES',
     
     # Sequence utilities

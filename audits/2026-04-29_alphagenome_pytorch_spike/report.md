@@ -26,11 +26,13 @@ of 96 GB used at the cliff). See
 [`diagnostic_mps_pressure.md`](./diagnostic_mps_pressure.md) for the
 length-sweep + memory-trace evidence.
 
-Verdict: **don't flip the macOS default** in this PR. Ship the PyTorch
-backend as opt-in. Variant-scoring on ≤768 kb windows gets a real Mac
-speedup; ≥896 kb should stay on JAX CPU until chorus ships a sequence-
-tiling helper (4× 256 kb tiles + stitch — projects ~15 s for 1 MB,
-3.3× over JAX CPU). Follow-ups in `## Decisions` below.
+Verdict: **JAX stays the default**. Ship the PyTorch backend as opt-in.
+Add `chorus.recommend_alphagenome_backend(window_size_bp)` so users (or
+chorus itself) can ask "should I use the PT backend for this query?"
+and get a concrete answer grounded in the audit numbers — no auto-
+routing, just a suggestion. Mac users with ≤600 kb windows get a 5–8×
+speedup by following the recommendation; everyone else stays on the
+existing JAX path.
 
 ## What landed in this PR
 
@@ -177,12 +179,16 @@ absolutely but ~10–20× slower than cache). The within-L degradation
 pattern is consistent with MPS allocator fragmentation pushing more
 of the working set out of cache on each call.
 
-**Real fix for 1 MB MPS would be sequence tiling** — splitting a 1 MB
-window into 4× 256 kb tiles, predicting each, and stitching. 4 × 3.77 s
-+ stitch ≈ 15 s, 3.3× faster than JAX CPU's 50 s. Tiling needs careful
-boundary handling for attention's receptive field; deferred to a
-future PR. For now, advice in CHANGELOG: pass `device='cpu'` (or stick
-with the JAX backend) for full 1 MB queries on Mac.
+**Decision: don't tile.** Tiling a 1 MB window into 4× 256 kb sub-tiles
+would technically project to ~15 s per query, but it changes the
+inference contract (attention receptive field gets capped at the tile
+boundary; long-range interactions disappear). That's a different model,
+not a perf fix. Instead, route 1 MB queries to JAX CPU (50 s) — slower
+than ideal but **identical numerics** to what users have today.
+
+The routing helper (`chorus.recommend_alphagenome_backend`) makes the
+trade-off visible to users without auto-routing, so they always know
+which backend their predictions came from.
 
 ### Step 5 — equivalence (test scaffolded; not yet run on real data)
 
@@ -202,6 +208,57 @@ respective conda envs via `mamba run`.
 > to user's CUDA box where the 1 MB JAX side completes in ~3 s instead
 > of ~80 s on macOS CPU._
 
+## Function-mapping audit (chorus public API)
+
+User asked: are all functions mapped between the two oracles? Answer:
+**every public method on `AlphaGenomeOracle` exists with identical
+signature on `AlphaGenomePTOracle`** — the two are drop-in
+interchangeable from chorus's perspective.
+
+| Method | JAX (`AlphaGenomeOracle`) | PT (`AlphaGenomePTOracle`) |
+|---|---|---|
+| `__init__(use_environment, device, fold='all_folds', ...)` | ✅ | ✅ (same `fold` semantics; maps to safetensors filename internally) |
+| `load_pretrained_model()` | ✅ | ✅ |
+| `predict(seq, assay_ids)` (via base) | ✅ | ✅ — same `OraclePrediction` of `Track` objects |
+| `predict_variant_effect(...)` (via base) | ✅ | ✅ — both use the generic two-predict-and-diff path |
+| `list_assay_types()`, `list_cell_types()`, `get_all_assay_ids()` | ✅ | ✅ — both delegate to the shared 5,731-track metadata cache |
+| `get_track_info(query)` | ✅ | ✅ |
+| `fine_tune(...)` | raises NotImplementedError | raises NotImplementedError (upstream supports LoRA + linear probe; not yet wired through chorus) |
+| `_get_context_size()`, `_get_bin_size()`, `_get_sequence_length_bounds()`, `output_size` | ✅ | ✅ — same constants (1 MB / 1 bp / [1000, 1MB]) |
+| `get_status()` | ✅ | ✅ — same dict shape |
+| **`recommend_backend(window_size_bp)` (new)** | ✅ | ✅ — both delegate to `chorus.recommend_alphagenome_backend` |
+
+**Methods exposed by upstream PT but NOT through chorus on either backend** (deferred):
+- `alphagenome_pytorch.variant_scoring.VariantScoringModel` + 7 scorer classes (`CenterMaskScorer`, `GeneMaskLFCScorer`, `ContactMapScorer`, `GeneMaskSplicingScorer`, `SpliceJunctionScorer`, `PolyadenylationScorer`, `GeneMaskActiveScorer`) — chorus continues to use the inherited two-predict-and-diff path; wiring this is a separate PR.
+- LoRA + linear-probe fine-tuning (`alphagenome_pytorch.scripts.finetune`).
+- CONTACT_MAPS and SPLICE_JUNCTIONS heads (PT port returns them; chorus's `alphagenome_metadata.py` strips them via `SKIPPED_OUTPUT_TYPES` for both backends).
+
+So switching backends does NOT change which features chorus exposes —
+both expose the same chorus API, both go through the shared 5,731-track
+catalogue, both produce the same `Track` schema. The differences live
+in HF gating (`gtca/alphagenome_pytorch` is public; `google/alphagenome-all-folds`
+is gated) and in speed.
+
+## Backend routing helper (`recommend_alphagenome_backend`)
+
+Top-level function: `chorus.recommend_alphagenome_backend(window_size_bp)`
+returns a dict with `oracle`, `device`, `reason`, `confidence`, and a
+short `benchmarks` table. Also available as an instance method on both
+oracles: `oracle.recommend_backend(window_size_bp)`.
+
+Logic table:
+
+| Host | Window | Recommendation |
+|---|---|---|
+| Linux + CUDA | any | `alphagenome_pt` on CUDA (medium confidence — not pinned in our benchmark) |
+| macOS + MPS | ≤ 600 kb | `alphagenome_pt` on MPS (high confidence, 5–8× over JAX CPU) |
+| macOS + MPS | > 600 kb | `alphagenome` on CPU (high confidence, post-cliff JAX wins) |
+| no GPU | any | `alphagenome` on CPU (medium confidence, JAX CPU > PT CPU) |
+
+The 600 kb safe-zone is conservative against the empirical 768→896 kb
+cliff, accounting for cumulative session pressure that can pull the
+cliff earlier. Tested in `tests/test_alphagenome_routing.py` (10 cases).
+
 ## Mapping table — PyTorch vs JAX exposure
 
 | Capability | JAX path (today) | PyTorch path (this PR) |
@@ -220,16 +277,12 @@ respective conda envs via `mamba run`.
 ### Will NOT do in this PR (but should track)
 
 1. **Flip macOS default to `alphagenome_pt`** — blocked by the 1 MB MPS
-   regression. Most variant-effect notebooks use the full 1 MB context
-   and would slow down. Reconsider after one of:
-   - We ship a **sequence-tiling helper** that splits a 1 MB query into
-     4× 256 kb tiles, predicts each (3.77 s × 4 = 15 s on MPS, vs 50 s
-     JAX CPU = ~3× speedup), and stitches with attention-receptive-field
-     padding. **This is the real win** — the rope-patch experiment in
-     this PR confirmed the regression is memory-driven, not logspace.
-   - We add a `device='mps' if length < 600_000 else 'cpu'` heuristic
-     as a band-aid until tiling lands.
-   - Upstream adds a stride-aware MPS attention kernel (long-tail).
+   regression. The user explicitly rejected sequence-tiling as a fix
+   (it changes the inference contract by capping attention's receptive
+   field at the tile boundary — different model, not a perf fix).
+   Resolution: ship `recommend_alphagenome_backend()` instead so users
+   get a clear, documented route table per (platform, window_size) and
+   chorus never auto-routes behind their back.
 2. **Wire `VariantScoringModel`** into chorus's `predict_variant_effect`
    path — biggest API improvement upstream offers. Belongs in a
    dedicated PR with side-by-side equivalence checks against the

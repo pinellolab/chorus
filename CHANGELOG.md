@@ -15,17 +15,31 @@ project adheres to [Semantic Versioning](https://semver.org/).
   `chorus.create_oracle('alphagenome_pt', use_environment=True)`. Weights
   are public (no HF gating) at
   [`gtca/alphagenome_pytorch`](https://huggingface.co/gtca/alphagenome_pytorch).
-  - 8–11× faster than CPU on Apple Silicon for sub-1 MB windows via MPS;
-    however, **slower than CPU at the full 1 MB context** due to
-    unified-memory pressure — pass `device='cpu'` for 1 MB queries on
-    Mac. See `audits/2026-04-29_alphagenome_pytorch_spike/` for the full
-    speed table and decision discussion.
+  - 5–8× faster than the JAX default on Apple Silicon for windows
+    ≤ 600 kb via MPS; **slower than JAX CPU past a sharp cliff at
+    768→896 kb** (GPU on-die cache spillover, not RAM swap — verified
+    against memory traces on a 96 GB M3 Ultra). See
+    `audits/2026-04-29_alphagenome_pytorch_spike/` for the full speed
+    table, root-cause investigation, and decision discussion.
   - JAX backend (`alphagenome`) remains the default and is unchanged.
     Track metadata, assay identifiers, and CDF backgrounds are shared
     between backends.
   - Variant scoring, fine-tuning hooks, and CONTACT_MAPS /
     SPLICE_JUNCTIONS exposure available upstream are **not yet wired
     through chorus** — opt-in via direct `alphagenome_pytorch` import.
+
+- **AlphaGenome backend-routing helper** —
+  `chorus.recommend_alphagenome_backend(window_size_bp)` (also exposed
+  as `oracle.recommend_backend(window_size_bp)` on both AlphaGenome
+  oracles) returns a dict with the suggested oracle (`alphagenome` vs
+  `alphagenome_pt`), suggested device, a one-line reason, confidence,
+  and supporting benchmark numbers. Logic:
+  - Linux + CUDA → `alphagenome_pt` on CUDA
+  - macOS + MPS, window ≤ 600 kb → `alphagenome_pt` on MPS
+  - macOS + MPS, window > 600 kb → `alphagenome` on CPU
+  - No GPU → `alphagenome` on CPU
+  Suggestion-only, no auto-routing — users always know which backend
+  produced their predictions.
 
 ## [0.3.0] — 2026-04-28
 
