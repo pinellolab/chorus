@@ -1,14 +1,43 @@
 allele	layer	assay_id	assay_type	cell_type	description	ref_value	alt_value	raw_score	quantile_score	ref_signal_percentile	note	focus_cell_type
-alt_1	tss_activity	CAGE/hCAGE CL:0002555/+	CAGE	fibroblast of mammary gland	variant site	6.870079040527344	9.539203643798828	0.4213158289962389	1.0	1.0		fibroblast of mammary gland
-alt_1	tss_activity	CAGE/hCAGE CL:0002555/-	CAGE	fibroblast of mammary gland	variant site	1.4127006530761719	2.293283462524414	0.44887776465534157	1.0	1.0		fibroblast of mammary gland
-alt_1	chromatin_accessibility	DNASE/CL:0002555 DNase-seq/.	DNASE	fibroblast of mammary gland		23.63454818725586	241.0758819580078	3.2967044335670703	1.0	0.7996		fibroblast of mammary gland
-alt_1	histone_marks	CHIP_HISTONE/CL:0002555 Histone ChIP-seq H3K4me3/.	CHIP	fibroblast of mammary gland		1319.25	2274.75	0.7855309392710813	1.0	0.8661		fibroblast of mammary gland
-alt_1	tf_binding	CHIP_TF/CL:0002555 TF ChIP-seq CTCF/.	CHIP	fibroblast of mammary gland		281.25	387.5	0.4609410176347092	1.0	0.8145		fibroblast of mammary gland
-alt_1	tss_activity	CAGE/hCAGE CL:0002536/+	CAGE	amniotic epithelial cell	variant site	78.17984008789062	51.587921142578125	-0.5904016870449605	1.0	1.0		amniotic epithelial cell
-alt_1	tss_activity	CAGE/hCAGE CL:0002536/-	CAGE	amniotic epithelial cell	variant site	19.992431640625	16.425682067871094	-0.26865416318234625	1.0	1.0		amniotic epithelial cell
-alt_1	chromatin_accessibility	DNASE/CL:0002536 DNase-seq/.	DNASE	amniotic epithelial cell		47.63734436035156	377.3457336425781	2.9595688132036746	1.0	0.8356		amniotic epithelial cell
-alt_1	tss_activity	CAGE/hCAGE CL:0002557/+	CAGE	fibroblast of pulmonary artery	variant site	4.688800811767578	5.812343597412109	0.26002663549647503	1.0	1.0		fibroblast of pulmonary artery
-alt_1	tss_activity	CAGE/hCAGE CL:0002557/-	CAGE	fibroblast of pulmonary artery	variant site	1.6628704071044922	2.237415313720703	0.28186023522897985	1.0	1.0		fibroblast of pulmonary artery
-alt_1	chromatin_accessibility	DNASE/CL:0002557 DNase-seq/.	DNASE	fibroblast of pulmonary artery		20.576858520507812	160.5648193359375	2.904556349855798	1.0	0.7759		fibroblast of pulmonary artery
-alt_1	histone_marks	CHIP_HISTONE/CL:0002557 Histone ChIP-seq H3K4me3/.	CHIP	fibroblast of pulmonary artery		1025.75	1756.75	0.775644947164445	1.0	0.8598		fibroblast of pulmonary artery
-alt_1	tf_binding	CHIP_TF/CL:0002557 TF ChIP-seq CTCF/.	CHIP	fibroblast of pulmonary artery		285.5	356.5	0.31940810290884697	1.0	0.8156		fibroblast of pulmonary artery
+alt_1	chromatin_accessibility	ATAC/EFO:0001187 ATAC-seq/.	ATAC	HepG2		436.2814636230469	735.81884765625	0.7527477718871163	1.0	0.9335		HepG2
+alt_1	tss_activity	CAGE/hCAGE EFO:0001187/+	CAGE	HepG2	variant site	70.5714111328125	167.4461669921875	1.234832270331225	1.0	1.0		HepG2
+alt_1	tss_activity	CAGE/hCAGE EFO:0001187/-	CAGE	HepG2	variant site	22.908042907714844	69.07850646972656	1.5514759911168166	1.0	1.0		HepG2
+alt_1	chromatin_accessibility	DNASE/EFO:0001187 DNase-seq/.	DNASE	HepG2		595.932373046875	1570.160888671875	1.3961915200507815	1.0	0.9684		HepG2
+alt_1	gene_expression	RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+	RNA	HepG2	SORT1 (exons)	0.5204172702062697	0.5946270057133266	0.1330640181030379	1.0	0.8576676813267555		HepG2
+alt_1	gene_expression	RNA_SEQ/EFO:0001187 total RNA-seq/+	RNA	HepG2	SORT1 (exons)	0.23316216468811035	0.26533701306297663	0.12874858643542744	1.0	0.5035163220321193		HepG2
+alt_1	gene_expression	RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-	RNA	HepG2	SORT1 (exons)	503.31102062406995	530.6163969494048	0.052830931367893325	1.0	1.0		HepG2
+alt_1	gene_expression	RNA_SEQ/EFO:0001187 total RNA-seq/-	RNA	HepG2	SORT1 (exons)	436.9698544456845	459.0530250186012	0.04930140646073603	1.0	1.0		HepG2
+alt_1	gene_expression	RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.	RNA	HepG2	SORT1 (exons)	432.3478088378906	462.9143298921131	0.06831147424467508	1.0	1.0		HepG2
+alt_1	histone_marks	CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.	CHIP	HepG2		14302.0	36008.0	1.3320397566829674	1.0	0.9993		HepG2
+alt_1	histone_marks	CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27me3/.	CHIP	HepG2		1330.0	954.375	-0.4783715408958334	1.0	0.9941		HepG2
+alt_1	histone_marks	CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K36me3/.	CHIP	HepG2		1253.75	985.0	-0.3477403943815973	1.0	0.981		HepG2
+alt_1	histone_marks	CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K4me1/.	CHIP	HepG2		16432.0	17640.0	0.10233646201635421	1.0	1.0		HepG2
+alt_1	histone_marks	CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K4me2/.	CHIP	HepG2		25724.0	33752.0	0.3918446589042166	1.0	1.0		HepG2
+alt_1	histone_marks	CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K4me3/.	CHIP	HepG2		8150.0	11936.0	0.5503913334717627	1.0	0.9658		HepG2
+alt_1	histone_marks	CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K79me2/.	CHIP	HepG2		1152.0	1348.625	0.22716608999411178	1.0	0.9482		HepG2
+alt_1	histone_marks	CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K9ac/.	CHIP	HepG2		14652.0	25428.0	0.7952786620673109	1.0	0.9962		HepG2
+alt_1	histone_marks	CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K9me3/.	CHIP	HepG2		548.625	467.625	-0.23001370692455683	1.0	0.8691		HepG2
+alt_1	histone_marks	CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H4K20me1/.	CHIP	HepG2		1153.0	882.75	-0.38493300894872123	1.0	0.9905		HepG2
+alt_1	tf_binding	CHIP_TF/EFO:0001187 TF ChIP-seq AFF4 genetically modified (insertion) using CRISPR targeting H. sapiens AFF4/.	CHIP	HepG2		1257.0	1980.0	0.6550969580101973	1.0	0.974		HepG2
+alt_1	tf_binding	CHIP_TF/EFO:0001187 TF ChIP-seq AGO2/.	CHIP	HepG2		2453.0	2992.0	0.28645702983519594	1.0	0.9317		HepG2
+alt_1	tf_binding	CHIP_TF/EFO:0001187 TF ChIP-seq AHDC1 genetically modified (insertion) using CRISPR targeting H. sapiens AHDC1/.	CHIP	HepG2		1205.0	2002.0	0.7319325139126229	1.0	0.9989		HepG2
+alt_1	tf_binding	CHIP_TF/EFO:0001187 TF ChIP-seq AHR genetically modified (insertion) using CRISPR targeting H. sapiens AHR/.	CHIP	HepG2		1930.0	2684.0	0.4755739239221247	1.0	0.9509		HepG2
+alt_1	tf_binding	CHIP_TF/EFO:0001187 TF ChIP-seq AKAP8 genetically modified (insertion) using CRISPR targeting H. sapiens AKAP8/.	CHIP	HepG2		1350.0	1853.0	0.45661356929984626	1.0	0.9723		HepG2
+alt_1	tf_binding	CHIP_TF/EFO:0001187 TF ChIP-seq ARHGAP35 genetically modified (insertion) using CRISPR targeting H. sapiens ARHGAP35/.	CHIP	HepG2		1241.0	1549.0	0.3196030419411185	1.0	0.9523		HepG2
+alt_1	tf_binding	CHIP_TF/EFO:0001187 TF ChIP-seq ARID2 genetically modified (insertion) using CRISPR targeting H. sapiens ARID2/.	CHIP	HepG2		790.0	1087.0	0.4599289567775475	1.0	0.9864		HepG2
+alt_1	tf_binding	CHIP_TF/EFO:0001187 TF ChIP-seq ARID3A/.	CHIP	HepG2		1842.0	3566.0	0.9526551448360988	1.0	0.9975		HepG2
+alt_1	tf_binding	CHIP_TF/EFO:0001187 TF ChIP-seq ARID3A genetically modified (insertion) using CRISPR targeting H. sapiens ARID3A/.	CHIP	HepG2		2416.0	4812.0	0.9937189501992897	1.0	0.999		HepG2
+alt_1	tf_binding	CHIP_TF/EFO:0001187 TF ChIP-seq ARID4A genetically modified (insertion) using CRISPR targeting H. sapiens ARID4A/.	CHIP	HepG2		1567.0	2430.0	0.6326243339135207	1.0	0.9393		HepG2
+alt_1	tf_binding	CHIP_TF/EFO:0001187 TF ChIP-seq ARID4B genetically modified (insertion) using CRISPR targeting H. sapiens ARID4B/.	CHIP	HepG2		3872.0	6672.0	0.7848840024846704	1.0	0.951		HepG2
+alt_1	chromatin_accessibility	DNASE/EFO:0001200 DNase-seq/.	DNASE	MCF 10A		295.93707275390625	850.3233642578125	1.5195499993884147	1.0	0.9261		MCF 10A
+alt_1	gene_expression	RNA_SEQ/EFO:0001200 total RNA-seq/+	RNA	MCF 10A	SORT1 (exons)	0.15709604251952397	0.16815288293929326	0.06760022636625988	1.0	0.4387530177390574		MCF 10A
+alt_1	gene_expression	RNA_SEQ/EFO:0001200 total RNA-seq/-	RNA	MCF 10A	SORT1 (exons)	174.83448864164808	176.9924098423549	0.012267032471093817	1.0	1.0		MCF 10A
+alt_1	tf_binding	CHIP_TF/EFO:0001200 TF ChIP-seq CTCF/.	CHIP	MCF 10A		419.5	417.5	-0.0068781777048005635	1.0	0.9028		MCF 10A
+alt_1	splicing	SPLICE_SITE_USAGE/usage_EFO:0001200 total RNA-seq/+	SPLICE_SITES	MCF 10A		0.00743354856967926	0.006085984408855438	-0.001931070834447018	1.0	0.8785		MCF 10A
+alt_1	splicing	SPLICE_SITE_USAGE/usage_EFO:0001200 total RNA-seq/-	SPLICE_SITES	MCF 10A		0.0012115715071558952	0.001219164114445448	1.0940520128099608e-05		0.6958		MCF 10A
+alt_1	chromatin_accessibility	ATAC/UBERON:0001115 ATAC-seq/.	ATAC	left lobe of liver		193.91758728027344	658.2459716796875	1.7579525806801553	1.0	0.8948		left lobe of liver
+alt_1	chromatin_accessibility	DNASE/UBERON:0001115 DNase-seq/.	DNASE	left lobe of liver		184.88961791992188	664.634521484375	1.8402840603565316	1.0	0.9061		left lobe of liver
+alt_1	gene_expression	RNA_SEQ/UBERON:0001115 total RNA-seq/+	RNA	left lobe of liver	SORT1 (exons)	0.34597748801821754	0.39024968374343144	0.12008603171641123	1.0	0.8548336307337042		left lobe of liver
+alt_1	gene_expression	RNA_SEQ/UBERON:0001115 total RNA-seq/-	RNA	left lobe of liver	SORT1 (exons)	422.5929652622768	446.2302536737351	0.0544254985802131	1.0	1.0		left lobe of liver
+alt_1	splicing	SPLICE_SITE_USAGE/usage_UBERON:0001115 total RNA-seq/+	SPLICE_SITES	left lobe of liver		0.0036717690527439117	0.003382507711648941	-0.0004158491477178489		0.8365		left lobe of liver
+alt_1	splicing	SPLICE_SITE_USAGE/usage_UBERON:0001115 total RNA-seq/-	SPLICE_SITES	left lobe of liver		0.0006938772276043892	0.0007803542539477348	0.00012466808232810327		0.5317		left lobe of liver

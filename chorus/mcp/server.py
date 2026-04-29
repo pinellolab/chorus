@@ -1044,6 +1044,8 @@ def discover_variant_cell_types(
     top_n: int = 5,
     min_effect: float = 0.15,
     user_prompt: Optional[str] = None,
+    ranking_metric: str = "alt_x_abs_effect",
+    min_ref_value: float = 0.0,
 ) -> dict:
     """Discovery mode: find which cell types are most affected by a variant.
 
@@ -1052,7 +1054,7 @@ def discover_variant_cell_types(
 
     **Two-stage analysis:**
     1. Screens all DNASE/ATAC tracks (~472 cell types on AlphaGenome, ~638
-       on Enformer) to rank cell types by chromatin effect magnitude.
+       on Enformer) to rank cell types by ``ranking_metric``.
     2. For each top cell type, runs full multi-layer analysis (chromatin,
        TF, histone, CAGE, RNA) limited to that cell type's tracks.
 
@@ -1072,6 +1074,17 @@ def discover_variant_cell_types(
         min_effect: Minimum |log2FC| in DNASE/ATAC to consider a cell type
             hit (default 0.15).
         user_prompt: Original user prompt, forwarded into each sub-report.
+        ranking_metric: How to rank cell types. Default
+            ``"alt_x_abs_effect"`` (recommended) ranks by
+            ``alt_signal × |log2FC|``, which surfaces the cell type where
+            the post-variant element is most active. Use ``"abs_effect"``
+            to reproduce the historical |log2FC|-only ranking (which has a
+            bias toward closed-baseline cell types — see
+            :func:`chorus.analysis.discovery.discover_cell_types`).
+            Use ``"abs_effect_min_ref"`` with a non-zero ``min_ref_value``
+            to rank by |log2FC| while excluding closed baselines.
+        min_ref_value: Threshold for ``"abs_effect_min_ref"`` (ignored
+            otherwise). Default 0 = no filter.
 
     Returns:
         Dict with:
@@ -1095,6 +1108,8 @@ def discover_variant_cell_types(
         min_effect=min_effect,
         normalizer=state.get_normalizer(oracle_name),
         oracle_name=oracle_name,
+        ranking_metric=ranking_metric,
+        min_ref_value=min_ref_value,
     )
 
     # Format output

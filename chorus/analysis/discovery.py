@@ -43,6 +43,11 @@ class CellTypeHit:
     track (e.g. ``DNASE:HepG2``) so tables / markdown / logs read cleanly.
     The raw AlphaGenome catalog identifier is preserved on
     ``best_track_assay_id`` for traceability and programmatic lookups.
+
+    ``ref_value`` / ``alt_value`` are the (windowed, layer-aggregated) raw
+    signal values that the effect was computed from. They let downstream
+    code re-rank hits by alternative metrics (e.g. ``alt_value × |effect|``)
+    without re-scoring.
     """
     cell_type: str
     best_track: str
@@ -51,6 +56,13 @@ class CellTypeHit:
     abs_effect: float      # |effect|
     track_ids: list[str] = field(default_factory=list)  # all tracks for this cell type
     best_track_assay_id: str = ""  # raw catalog id for traceability
+    ref_value: float = 0.0  # raw ref signal in the scoring window (sum/mean per layer)
+    alt_value: float = 0.0  # raw alt signal in the scoring window
+    ranking_score: float = 0.0  # the metric used to rank this hit (depends on ranking_metric)
+
+
+# Allowed ranking metrics for ``discover_cell_types``.
+RANKING_METRICS = ("alt_x_abs_effect", "abs_effect", "abs_effect_min_ref")
 
 
 def discover_cell_types(
@@ -61,12 +73,14 @@ def discover_cell_types(
     top_n: int = 5,
     min_effect: float = 0.2,
     scout_types: tuple[str, ...] = ("DNASE", "ATAC"),
+    ranking_metric: str = "alt_x_abs_effect",
+    min_ref_value: float = 0.0,
 ) -> list[CellTypeHit]:
     """Discover which cell types are most affected by a variant.
 
     Predicts the variant effect on all DNASE/ATAC tracks (one per cell
-    type), scores each, and returns the top cell types ranked by effect
-    magnitude.
+    type), scores each, and returns the top cell types ranked by the
+    selected ``ranking_metric``.
 
     Args:
         oracle: A loaded Chorus oracle (must support all-track prediction).
@@ -74,12 +88,38 @@ def discover_cell_types(
         alleles: [ref_allele, alt_allele, ...].
         reference_fasta: Path to reference FASTA (if not set on oracle).
         top_n: Number of top cell types to return.
-        min_effect: Minimum |log2FC| to include a cell type.
+        min_effect: Minimum |log2FC| (or |effect|) to include a cell type.
         scout_types: Track types to use for initial screening.
+        ranking_metric: How to rank the hits. One of:
+
+            - ``"alt_x_abs_effect"`` (default) — rank by ``alt_value × |effect|``.
+              Rewards both effect magnitude and absolute final activity. Good
+              for variants that strengthen an existing enhancer (most eQTLs):
+              picks the cell type where the post-variant element is most
+              active. Recommended default.
+            - ``"abs_effect"`` — rank by ``|effect|`` (raw |log2FC|). This is
+              the historical default but has a known bias: when ``ref`` is
+              near zero, fold-change is large by construction even if the
+              absolute change is modest, so cell types with closed baseline
+              chromatin can dominate the top of the list. Kept available for
+              backward-compatibility and reproducing prior runs.
+            - ``"abs_effect_min_ref"`` — rank by ``|effect|`` but exclude any
+              cell type with ``ref_value < min_ref_value``. Use when you only
+              care about already-active regulatory elements.
+
+        min_ref_value: Threshold for ``"abs_effect_min_ref"`` (ignored
+            otherwise). The ``ref_value`` is the layer-aggregated raw signal
+            in the scoring window — a sum over 501 bp for DNASE/ATAC, so
+            ``min_ref_value=50`` filters out near-closed baselines.
 
     Returns:
-        List of CellTypeHit sorted by descending |effect|.
+        List of CellTypeHit sorted by descending ``ranking_score``.
     """
+    if ranking_metric not in RANKING_METRICS:
+        raise ValueError(
+            f"Unknown ranking_metric: {ranking_metric!r}. "
+            f"Choose one of {RANKING_METRICS}."
+        )
     from .scorers import classify_track_layer, LAYER_CONFIGS, _compute_effect
 
     # Get all available scout track IDs
@@ -188,21 +228,38 @@ def discover_cell_types(
             effect=effect,
             abs_effect=abs(effect),
             track_ids=all_ct_tracks,
+            ref_value=float(ref_v),
+            alt_value=float(alt_v),
         ))
 
-    # Sort by |effect| descending
-    hits.sort(key=lambda h: h.abs_effect, reverse=True)
+    # Compute ranking score per the selected metric, then sort.
+    for h in hits:
+        if ranking_metric == "alt_x_abs_effect":
+            h.ranking_score = h.alt_value * h.abs_effect
+        elif ranking_metric == "abs_effect":
+            h.ranking_score = h.abs_effect
+        elif ranking_metric == "abs_effect_min_ref":
+            h.ranking_score = h.abs_effect if h.ref_value >= min_ref_value else -1.0
 
-    # Filter by minimum effect and take top N
-    filtered = [h for h in hits if h.abs_effect >= min_effect][:top_n]
+    hits.sort(key=lambda h: h.ranking_score, reverse=True)
+
+    # Filter by minimum effect (and by min_ref for the *_min_ref metric)
+    # then take top N.
+    filtered = [
+        h for h in hits
+        if h.abs_effect >= min_effect
+        and (ranking_metric != "abs_effect_min_ref" or h.ref_value >= min_ref_value)
+    ][:top_n]
 
     if filtered:
-        logger.info("Top cell types by variant effect:")
+        logger.info("Top cell types by %s:", ranking_metric)
         for h in filtered:
             direction = "+" if h.effect > 0 else ""
-            logger.info("  %s: %s%0.3f log2FC (%s, %d total tracks)",
-                        h.cell_type, direction, h.effect,
-                        h.best_track, len(h.track_ids))
+            logger.info(
+                "  %s: %s%0.3f log2FC, alt=%.1f, score=%.2f (%s, %d total tracks)",
+                h.cell_type, direction, h.effect, h.alt_value, h.ranking_score,
+                h.best_track, len(h.track_ids),
+            )
 
     return filtered
 
@@ -220,6 +277,8 @@ def discover_and_report(
     oracle_name: Optional[str] = None,
     user_prompt: Optional[str] = None,
     tool_name: str = "discover_variant_cell_types",
+    ranking_metric: str = "alt_x_abs_effect",
+    min_ref_value: float = 0.0,
 ):
     """Discovery mode: find top cell types, then build full reports.
 
@@ -235,6 +294,10 @@ def discover_and_report(
             report's AnalysisRequest so the HTML renders the prompt
             the first time it's written (avoids a post-hoc rewrite).
         tool_name: AnalysisRequest.tool_name for each sub-report.
+        ranking_metric: How to rank candidate cell types — see
+            :func:`discover_cell_types`. Default ``"alt_x_abs_effect"``
+            avoids the |log2FC| bias toward closed-baseline cell types.
+        min_ref_value: Threshold used by ``"abs_effect_min_ref"``.
 
     Returns:
         Dict with discovery results and per-cell-type reports.
@@ -256,6 +319,8 @@ def discover_and_report(
     hits = discover_cell_types(
         oracle, variant_position, alleles,
         top_n=top_n, min_effect=min_effect,
+        ranking_metric=ranking_metric,
+        min_ref_value=min_ref_value,
     )
 
     if not hits:
@@ -320,6 +385,10 @@ def discover_and_report(
                 "cell_type": h.cell_type,
                 "effect": h.effect,
                 "abs_effect": h.abs_effect,
+                "ref_value": h.ref_value,
+                "alt_value": h.alt_value,
+                "ranking_metric": ranking_metric,
+                "ranking_score": h.ranking_score,
                 "best_track": h.best_track,
                 "n_tracks": len(h.track_ids),
             }
