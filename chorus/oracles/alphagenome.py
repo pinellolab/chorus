@@ -458,6 +458,21 @@ class AlphaGenomeOracle(OracleBase):
             return metadata.get_track_summary()
 
     # ------------------------------------------------------------------
+    # Backend routing helper
+    # ------------------------------------------------------------------
+    def recommend_backend(self, window_size_bp: int) -> dict:
+        """Suggest whether to use the JAX or PyTorch AlphaGenome backend
+        for a given query window size on this host.
+
+        Returns a dict with ``oracle``, ``device``, ``reason``,
+        ``confidence``, and a ``benchmarks`` table. See
+        :func:`chorus.recommend_alphagenome_backend` for full details.
+        """
+        from ._alphagenome_routing import recommend_alphagenome_backend
+
+        return recommend_alphagenome_backend(window_size_bp)
+
+    # ------------------------------------------------------------------
     # Abstract method implementations
     # ------------------------------------------------------------------
     def fine_tune(

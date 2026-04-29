@@ -1,0 +1,33 @@
+Fetching SORT1 ±262144 bp window...
+  seq length: 524288 bp
+
+=== JAX backend (alphagenome) ===
+2026-04-29 20:10:53,656 - chorus.core.base - INFO - CHORUS_NO_TIMEOUT is set - all timeouts disabled
+2026-04-29 20:10:53,656 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 20:11:04,488 - chorus.core.base - INFO - Using conda environment: chorus-alphagenome
+2026-04-29 20:11:04,488 - chorus.oracles.alphagenome - INFO - Loading AlphaGenome model
+2026-04-29 20:14:22,513 - chorus.oracles.alphagenome - INFO - AlphaGenome model loaded successfully in environment!
+2026-04-29 20:14:22,516 - chorus.oracles.alphagenome - INFO - AlphaGenome: removed N-padding, using 524288 bp of 524288 bp real genome sequence (original 1048576 bp with Ns)
+2026-04-29 20:17:15,113 - chorus.oracles.alphagenome_source.alphagenome_metadata - INFO - Loaded 5731 AlphaGenome tracks
+  predict took 172.8s
+
+=== PT backend (alphagenome_pt) ===
+2026-04-29 20:17:16,083 - chorus.core.base - INFO - CHORUS_NO_TIMEOUT is set - all timeouts disabled
+2026-04-29 20:17:16,083 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 20:17:18,189 - chorus.core.base - INFO - Using conda environment: chorus-alphagenome_pt
+2026-04-29 20:17:18,189 - chorus.oracles.alphagenome_pt - INFO - Loading AlphaGenome PyTorch port
+2026-04-29 20:17:34,161 - chorus.oracles.alphagenome_pt - INFO - AlphaGenome PyTorch model loaded in environment (device=cuda)
+2026-04-29 20:17:34,164 - chorus.oracles.alphagenome - INFO - AlphaGenome: removed N-padding, using 524288 bp of 524288 bp real genome sequence (original 1048576 bp with Ns)
+  predict took 24.3s
+
+# Per-assay equivalence (524 kb SORT1, sliced via chorus local_index)
+
+| Assay | JAX shape | PT shape | max abs Δ | mean abs Δ | mean rel Δ | sum jax | sum pt | sum Δ |
+|---|---|---|---:|---:|---:|---:|---:|---:|
+| `DNASE/EFO:0002067 DNase-seq/.` | (524288,) | (524288,) | 0.4802 | 0.0010 | 0.0093 | 58181.57 | 57800.08 | -0.0066 |
+| `DNASE/EFO:0001187 DNase-seq/.` | (524288,) | (524288,) | 0.3544 | 0.0011 | 0.0140 | 42121.87 | 42643.47 | +0.0124 |
+| `DNASE/EFO:0002784 DNase-seq/.` | (524288,) | (524288,) | 0.3525 | 0.0007 | 0.0127 | 30985.71 | 30664.07 | -0.0104 |
+| `ATAC/EFO:0002067 ATAC-seq/.` | (524288,) | (524288,) | 0.3058 | 0.0008 | 0.0074 | 53445.22 | 53298.20 | -0.0028 |
+| `ATAC/EFO:0001187 ATAC-seq/.` | (524288,) | (524288,) | 0.3679 | 0.0013 | 0.0138 | 49847.18 | 50493.17 | +0.0130 |
+| `CAGE/hCAGE EFO:0002067/+` | (524288,) | (524288,) | 39.9819 | 0.0009 | 0.0088 | 55710.15 | 55836.29 | +0.0023 |
+| `CAGE/hCAGE EFO:0001187/+` | (524288,) | (524288,) | 25.1348 | 0.0008 | 0.0083 | 50516.51 | 50556.43 | +0.0008 |

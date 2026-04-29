@@ -26,8 +26,14 @@ logger = logging.getLogger(__name__)
 
 _INSTRUCTIONS = (
     "Unified interface for 6 genomic deep-learning oracles "
-    "(Enformer, Borzoi, ChromBPNet, Sei, LegNet, AlphaGenome). "
-    "Discover tracks, load models, make predictions, and analyse variant effects."
+    "(Enformer, Borzoi, ChromBPNet, Sei, LegNet, AlphaGenome). AlphaGenome "
+    "ships with two interchangeable backends — `alphagenome` (JAX, default) "
+    "and `alphagenome_pt` (PyTorch, opt-in alternative) — that share the "
+    "same model and weights and produce equivalent outputs (1–2 % per-track "
+    "fp32 noise). "
+    "Discover tracks, load models, make predictions, and analyse variant effects. "
+    "Use `recommend_alphagenome_backend` to choose between the JAX and "
+    "PyTorch AlphaGenome backends for a given window size."
 )
 
 mcp = FastMCP("Chorus Genomics", instructions=_INSTRUCTIONS)
@@ -77,6 +83,25 @@ ORACLE_SPECS = {
     "alphagenome": {
         "description": "AlphaGenome (DeepMind) — 1-bp resolution across 5,731 tracks",
         "framework": "JAX",
+        "input_size_bp": 1_048_576,
+        "output_bins": 1_048_576,
+        "resolution_bp": 1,
+        "assay_types": ["DNASE", "ATAC", "CAGE", "CHIP", "RNA", "SPLICE_SITES", "PRO_CAP"],
+    },
+    "alphagenome_pt": {
+        "description": (
+            "AlphaGenome (DeepMind) — PyTorch backend. Second of two "
+            "interchangeable AlphaGenome oracles (the other is "
+            "`alphagenome`, JAX). Same 5,731-track schema, same weights "
+            "— `gtca/alphagenome_pytorch` is the official JAX checkpoint "
+            "converted to safetensors and produces equivalent outputs "
+            "(1–2 % per-track fp32 noise, verified on M3 Ultra + A100). "
+            "Differs only in load + forward path. Useful on Apple Silicon "
+            "for ≤600 kb windows (5–8× faster than JAX CPU on MPS). On "
+            "Linux/CUDA, prefer `alphagenome` (JAX is 1.2–2.8× faster "
+            "on A100). See `recommend_alphagenome_backend(window_size_bp)`."
+        ),
+        "framework": "PyTorch",
         "input_size_bp": 1_048_576,
         "output_bins": 1_048_576,
         "resolution_bp": 1,
@@ -205,8 +230,36 @@ def _auto_region(oracle, position: str) -> str:
 
 @mcp.tool()
 @_safe_tool
+def recommend_alphagenome_backend(window_size_bp: int) -> dict:
+    """Suggest which AlphaGenome backend to use for a given query window size.
+
+    Two AlphaGenome backends ship with chorus: the JAX reference (`alphagenome`,
+    default) and the upstream PyTorch port (`alphagenome_pt`, opt-in). Their
+    public API is interchangeable — same 5,731-track schema, same predict
+    surface — but speed profiles differ by platform and window size:
+
+    - macOS + MPS, ≤600 kb: PyTorch backend wins (5–8× over JAX CPU).
+    - macOS + MPS, >600 kb: JAX wins (post a GPU on-die cache cliff at ~768→896 kb).
+    - Linux + CUDA, any window: JAX wins (1.2–2.8× over PyTorch on A100).
+    - No GPU: JAX wins.
+
+    Args:
+        window_size_bp: Centred input window in base pairs (e.g. 524288 for
+            a 512 kb query, 1048576 for a 1 MB query).
+
+    Returns:
+        Dict with `oracle` (string), `device` (string), `reason` (string),
+        `confidence` ("high"/"medium"), and a short `benchmarks` table.
+        Suggestion-only — no auto-routing happens.
+    """
+    from chorus import recommend_alphagenome_backend as _recommend
+    return _recommend(window_size_bp)
+
+
+@mcp.tool()
+@_safe_tool
 def list_oracles() -> dict:
-    """List all 6 genomic oracles with their specs, environment install status, and loaded status.
+    """List all genomic oracles (6 plus an alternative PyTorch backend for AlphaGenome) with their specs, environment install status, and loaded status.
 
     No model loading is required — this returns static metadata plus live status.
     """
@@ -331,7 +384,10 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
             "note": "Load with: load_oracle('chrombpnet', assay='ATAC', cell_type='K562') or load_oracle('chrombpnet', assay='CHIP', cell_type='K562', TF='GATA1')",
         }
 
-    if oracle_name == "alphagenome":
+    if oracle_name in ("alphagenome", "alphagenome_pt"):
+        # Both backends share the same 5,731-track metadata cache; only
+        # the load + forward path differs. list_tracks routes through
+        # the same metadata module either way.
         from chorus.oracles.alphagenome_source.alphagenome_metadata import get_metadata
         meta = get_metadata()
         if query:

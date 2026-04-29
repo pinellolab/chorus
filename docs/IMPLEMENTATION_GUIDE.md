@@ -12,13 +12,15 @@ chorus/
 │   ├── interval.py      # Genomic interval utilities
 │   ├── exceptions.py    # Custom exceptions
 │   └── environment/     # Isolated conda-env runner (runner.py, manager.py)
-├── oracles/             # All 6 oracles fully implemented
+├── oracles/             # 6 oracles + a second AlphaGenome backend (PyTorch)
 │   ├── enformer.py
 │   ├── borzoi.py
 │   ├── chrombpnet.py
 │   ├── sei.py
 │   ├── legnet.py
-│   └── alphagenome.py
+│   ├── alphagenome.py       # AlphaGenome — JAX backend
+│   ├── alphagenome_pt.py    # AlphaGenome — PyTorch backend (same model + same weights, MPS-capable on Mac)
+│   └── _alphagenome_routing.py  # `recommend_alphagenome_backend(window_size_bp)`
 ├── analysis/            # Multi-layer analysis + reporting
 │   ├── variant_report.py        # build_variant_report + HTML rendering
 │   ├── batch_scoring.py         # score_variant_batch (per-track TSV)

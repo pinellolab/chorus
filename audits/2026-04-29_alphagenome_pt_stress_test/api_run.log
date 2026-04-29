@@ -1,0 +1,63 @@
+Fetching SORT1 ±262144 bp window...
+  seq length: 524288 bp
+
+=== JAX backend (alphagenome) ===
+2026-04-29 13:45:45,782 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 13:45:47,036 - chorus.core.base - INFO - Using conda environment: chorus-alphagenome
+2026-04-29 13:45:47,036 - chorus.oracles.alphagenome - INFO - Loading AlphaGenome model
+2026-04-29 13:47:41,707 - chorus.oracles.alphagenome - INFO - AlphaGenome model loaded successfully in environment!
+2026-04-29 13:47:41,709 - chorus.oracles.alphagenome - INFO - AlphaGenome: removed N-padding, using 524288 bp of 524288 bp real genome sequence (original 1048576 bp with Ns)
+2026-04-29 13:50:14,152 - chorus.oracles.alphagenome_source.alphagenome_metadata - INFO - Loaded 5731 AlphaGenome tracks
+  predict took 152.5s
+
+=== PT backend (alphagenome_pt) ===
+2026-04-29 13:50:14,512 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 13:50:15,405 - chorus.core.base - INFO - Using conda environment: chorus-alphagenome_pt
+2026-04-29 13:50:15,405 - chorus.oracles.alphagenome_pt - INFO - Loading AlphaGenome PyTorch port
+2026-04-29 13:50:21,375 - chorus.oracles.alphagenome_pt - INFO - AlphaGenome PyTorch model loaded in environment (device=mps)
+2026-04-29 13:50:21,377 - chorus.oracles.alphagenome - INFO - AlphaGenome: removed N-padding, using 524288 bp of 524288 bp real genome sequence (original 1048576 bp with Ns)
+Traceback (most recent call last):
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/audits/2026-04-29_alphagenome_pt_stress_test/run_chorus_api.py", line 124, in <module>
+    main()
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/audits/2026-04-29_alphagenome_pt_stress_test/run_chorus_api.py", line 72, in main
+    pt_arrays, pt_t = predict_one("alphagenome_pt", seq)
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/audits/2026-04-29_alphagenome_pt_stress_test/run_chorus_api.py", line 53, in predict_one
+    out = o._predict(seq, assay_ids=ASSAY_IDS)
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/chorus/oracles/alphagenome_pt.py", line 265, in _predict
+    raw_result = self._predict_in_environment(full_seq, assay_ids)
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/chorus/oracles/alphagenome_pt.py", line 328, in _predict_in_environment
+    result = self.run_code_in_environment(
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/chorus/core/base.py", line 176, in run_code_in_environment
+    return self._env_runner.run_code_in_environment(
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/chorus/core/environment/runner.py", line 236, in run_code_in_environment
+    raise RuntimeError(f"Code execution failed: {output_data['error']}\n{output_data.get('traceback', '')}")
+RuntimeError: Code execution failed: embedding(): argument 'indices' (position 2) must be Tensor, not int
+Traceback (most recent call last):
+  File "/var/folders/7p/_kcvnvxn73v6lcg8t5y2r6t80000gn/T/tmp4rnup9lw.py", line 119, in <module>
+    output = model(
+             ^^^^^^
+  File "/Users/lp698/miniforge3/envs/chorus-alphagenome_pt/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lp698/miniforge3/envs/chorus-alphagenome_pt/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lp698/miniforge3/envs/chorus-alphagenome_pt/lib/python3.12/site-packages/alphagenome_pytorch/model.py", line 723, in forward
+    self._compute_embeddings_ncl(dna_sequence, organism_index, resolutions)
+  File "/Users/lp698/miniforge3/envs/chorus-alphagenome_pt/lib/python3.12/site-packages/alphagenome_pytorch/model.py", line 541, in _compute_embeddings_ncl
+    org_emb = self.organism_embed(organism_index).unsqueeze(1)  # (B, 1, 1536)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lp698/miniforge3/envs/chorus-alphagenome_pt/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1779, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lp698/miniforge3/envs/chorus-alphagenome_pt/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1790, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/lp698/miniforge3/envs/chorus-alphagenome_pt/lib/python3.12/site-packages/torch/nn/modules/sparse.py", line 189, in forward
+    return F.embedding(
+           ^^^^^^^^^^^^
+  File "/Users/lp698/miniforge3/envs/chorus-alphagenome_pt/lib/python3.12/site-packages/torch/nn/functional.py", line 2567, in embedding
+    return torch.embedding(weight, input, padding_idx, scale_grad_by_freq, sparse)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: embedding(): argument 'indices' (position 2) must be Tensor, not int
+

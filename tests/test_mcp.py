@@ -307,11 +307,13 @@ except ImportError:
 
 @pytest.mark.skipif(not _has_fastmcp, reason="fastmcp not installed")
 class TestServerTools:
-    def test_list_oracles_returns_all_six(self):
+    def test_list_oracles_returns_expected_set(self):
         from chorus.mcp.server import ORACLE_SPECS
-        # Verify we have all 6 oracles in specs
-        assert len(ORACLE_SPECS) == 6
-        expected = {"enformer", "borzoi", "chrombpnet", "sei", "legnet", "alphagenome"}
+        # 6 production oracles + 1 opt-in PyTorch backend for AlphaGenome.
+        expected = {
+            "enformer", "borzoi", "chrombpnet", "sei", "legnet",
+            "alphagenome", "alphagenome_pt",
+        }
         assert set(ORACLE_SPECS.keys()) == expected
 
     def test_oracle_specs_keys(self):

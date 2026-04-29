@@ -1,0 +1,18 @@
+jax devices: [CudaDevice(id=0)]
+default backend: gpu
+loading model on cuda:0...
+Fetching 12 files:   0%|          | 0/12 [00:00<?, ?it/s]Fetching 12 files: 100%|██████████| 12/12 [00:00<00:00, 9577.86it/s]
+/data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-alphagenome/lib/python3.11/site-packages/pyfaidx/__init__.py:596: UserWarning: for fsspec: HTTPFileSystem assuming index is current
+  warnings.warn("for fsspec: %s assuming index is current" % type(self._fs).__name__)
+/data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-alphagenome/lib/python3.11/site-packages/pyfaidx/__init__.py:596: UserWarning: for fsspec: HTTPFileSystem assuming index is current
+  warnings.warn("for fsspec: %s assuming index is current" % type(self._fs).__name__)
+load took 61.2s
+
+| L (kb) | mean (s) | step Δtime |
+|---:|---:|---:|
+| 64 | 0.07 | +0.00 |
+| 128 | 0.16 | +0.09 |
+| 256 | 0.33 | +0.16 |
+| 512 | 0.65 | +0.32 |
+| 768 | 0.50 | -0.15 |
+| 1024 | 0.69 | +0.19 |

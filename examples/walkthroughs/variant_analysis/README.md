@@ -118,7 +118,9 @@ oracle by the `scripts/build_backgrounds_*.py` scripts and auto-loaded
 when an oracle is loaded via MCP or the Python API.
 
 Backgrounds are available for all 6 oracles: AlphaGenome, Enformer, Borzoi,
-ChromBPNet, Sei, and LegNet. They are hosted on HuggingFace at
+ChromBPNet, Sei, and LegNet (the JAX and PyTorch AlphaGenome backends
+share the same per-track CDFs since they produce equivalent outputs).
+They are hosted on HuggingFace at
 [lucapinello/chorus-backgrounds](https://huggingface.co/datasets/lucapinello/chorus-backgrounds)
 and **downloaded automatically** when an oracle is loaded. No manual setup needed.
 

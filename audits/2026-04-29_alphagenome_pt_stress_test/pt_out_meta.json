@@ -1,0 +1,25 @@
+{
+  "backend": "pt",
+  "device_per_window": {
+    "128k": "mps",
+    "524k": "mps",
+    "1m": "cpu"
+  },
+  "windows": [
+    "128k",
+    "524k",
+    "1m"
+  ],
+  "heads": [
+    "DNASE",
+    "ATAC",
+    "CAGE",
+    "RNA_SEQ"
+  ],
+  "timings_s": {
+    "128k": 3.102447271347046,
+    "524k": 10.769639015197754,
+    "1m": 99.75986909866333
+  },
+  "platform": "macOS-26.1-arm64-arm-64bit"
+}
