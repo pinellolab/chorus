@@ -473,6 +473,19 @@ def main(argv: Optional[List[str]] = None):
             "(~1.8 GB per model on disk)."
         ),
     )
+    setup_parser.add_argument(
+        '--include-experimental',
+        action='store_true',
+        help=(
+            "Include experimental / opt-in oracles in the default "
+            "`chorus setup` flow. Currently this only affects "
+            "alphagenome_pt (the PyTorch backend for AlphaGenome) — "
+            "without this flag, that env is skipped to avoid surprising "
+            "users with a ~5 GB env build + ~3.4 GB weight download "
+            "for an opt-in spike. Install it explicitly with "
+            "`chorus setup --oracle alphagenome_pt`."
+        ),
+    )
     setup_parser.set_defaults(func=setup_environments)
     
     # List command

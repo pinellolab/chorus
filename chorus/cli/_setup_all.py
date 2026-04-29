@@ -21,6 +21,19 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Oracles excluded from the default ``chorus setup`` flow because they're
+# experimental / opt-in. Users can still install them explicitly via
+# ``chorus setup --oracle <name>``. Listing one here keeps default
+# install size bounded and avoids surprising users with downloads they
+# didn't ask for.
+_SKIP_FROM_DEFAULT_SETUP = {
+    # Opt-in PyTorch backend for AlphaGenome (PR #62 spike). Users who
+    # want it run `chorus setup --oracle alphagenome_pt` explicitly. The
+    # JAX `alphagenome` oracle is the default backend and is still
+    # included in the default flow.
+    "alphagenome_pt",
+}
+
 
 def setup_all_oracles(args) -> int:
     """Implementation of ``chorus setup --oracle all``."""
@@ -30,10 +43,25 @@ def setup_all_oracles(args) -> int:
     from ._tokens import prompt_ldlink_token, resolve_hf_token
 
     manager = EnvironmentManager()
-    oracles = manager.list_available_oracles()
-    if not oracles:
+    all_oracles = manager.list_available_oracles()
+    if not all_oracles:
         logger.error("No oracle environment definitions found.")
         return 1
+
+    # Filter experimental oracles unless --include-experimental was passed.
+    include_experimental = getattr(args, "include_experimental", False)
+    if include_experimental:
+        oracles = all_oracles
+    else:
+        oracles = [o for o in all_oracles if o not in _SKIP_FROM_DEFAULT_SETUP]
+        skipped = sorted(set(all_oracles) - set(oracles))
+        if skipped:
+            logger.info(
+                "Skipping experimental oracle(s): %s "
+                "(install with `chorus setup --oracle <name>` or pass "
+                "--include-experimental to enable in the default flow)",
+                ", ".join(skipped),
+            )
 
     # HF token gate — must resolve BEFORE we start downloading 10+ GB of
     # env + weights only to fail on the last oracle.
