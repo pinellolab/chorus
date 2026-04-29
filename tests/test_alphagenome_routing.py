@@ -48,13 +48,20 @@ class TestMacOSWithMPS:
 # ---------------------------------------------------------------------------
 
 class TestLinuxWithCUDA:
-    def test_picks_pt_cuda_for_any_window(self):
+    def test_picks_jax_cuda_for_any_window(self):
+        """Verified on A100 (audit 2026-04-29 Linux/CUDA addendum):
+        JAX with CUDA is 1.2–2.8× faster than the PyTorch port at every
+        window length, with no 1 MB cliff on either backend. The routing
+        helper recommends JAX on Linux/CUDA. PT is still a valid choice
+        for portability reasons but not the speed-driven recommendation.
+        """
         for L in (128_000, 524_288, 1_048_576):
             rec = recommend_alphagenome_backend(
                 L, system="Linux", has_cuda=True, has_mps=False,
             )
-            assert rec["oracle"] == "alphagenome_pt"
+            assert rec["oracle"] == "alphagenome"
             assert rec["device"] == "cuda"
+            assert rec["confidence"] == "high"
 
 
 # ---------------------------------------------------------------------------

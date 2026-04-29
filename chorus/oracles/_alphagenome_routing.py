@@ -113,21 +113,37 @@ def recommend_alphagenome_backend(
         "PT MPS @896kb":  "84.87 s (cliff)",
         "PT MPS @1MB":    "174.48 s (post-cliff)",
     }
+    benchmarks_linux_cuda = {
+        "JAX CUDA @128kb": "0.16 s",
+        "JAX CUDA @524kb": "0.65 s",
+        "JAX CUDA @1MB":   "0.69 s",
+        "PT CUDA @128kb":  "0.21 s",
+        "PT CUDA @524kb":  "0.85 s",
+        "PT CUDA @1MB":    "1.95 s",
+    }
 
-    # Linux + CUDA: PyTorch CUDA is the standard fastest path. We lack
-    # benchmarks for this machine but the recommendation is well
-    # supported by the upstream port's design.
+    # Linux + CUDA: counter-intuitive but verified on A100 — JAX with
+    # CUDA support is FASTER than the PyTorch port at every window
+    # length (1.2–2.8× across 128 kb → 1 MB). PT's value here is
+    # portability + smaller install (no full XLA / CUDA toolkit pulled
+    # in, looser CUDA-version pinning), not raw speed. Recommend JAX
+    # when it's available; users who prefer the PyTorch path for
+    # ergonomic reasons can pass the recommendation aside and pick
+    # `alphagenome_pt` explicitly.
     if system == "Linux" and has_cuda:
         return {
-            "oracle": "alphagenome_pt",
+            "oracle": "alphagenome",
             "device": "cuda",
             "reason": (
-                "Linux/CUDA: the PyTorch port is expected to be the fastest "
-                "path at every window size. Benchmark on your hardware to "
-                "confirm — chorus has not run a CUDA pin."
+                "Linux/CUDA: JAX with CUDA is 1.2–2.8× faster than the "
+                "PyTorch port at every window size on A100 (no cliff up "
+                "to 1 MB on either backend). PT remains useful for "
+                "portability — smaller install, looser CUDA-version "
+                "pinning, drop-in for PyTorch pipelines — but not for "
+                "raw speed."
             ),
-            "confidence": "medium",
-            "benchmarks": {},
+            "confidence": "high",
+            "benchmarks": benchmarks_linux_cuda,
         }
 
     # macOS + MPS: PyTorch MPS wins by 5–8× for windows that fit in

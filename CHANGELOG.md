@@ -33,9 +33,15 @@ project adheres to [Semantic Versioning](https://semver.org/).
   as `oracle.recommend_backend(window_size_bp)` on both AlphaGenome
   oracles) returns a dict with the suggested oracle (`alphagenome` vs
   `alphagenome_pt`), suggested device, a one-line reason, confidence,
-  and supporting benchmark numbers. Logic:
-  - Linux + CUDA → `alphagenome_pt` on CUDA
-  - macOS + MPS, window ≤ 600 kb → `alphagenome_pt` on MPS
+  and supporting benchmark numbers. Logic (verified on M3 Ultra +
+  A100):
+  - Linux + CUDA → `alphagenome` on CUDA — counter-intuitively, JAX
+    with CUDA is 1.2–2.8× *faster* than the PyTorch port at every
+    window length. PT remains useful for portability (smaller install,
+    looser CUDA-version pinning) but not for raw speed.
+  - macOS + MPS, window ≤ 600 kb → `alphagenome_pt` on MPS (5–8× over
+    JAX CPU; safe-zone is conservative under the empirical
+    768→896 kb GPU on-die cache cliff)
   - macOS + MPS, window > 600 kb → `alphagenome` on CPU
   - No GPU → `alphagenome` on CPU
   Suggestion-only, no auto-routing — users always know which backend
