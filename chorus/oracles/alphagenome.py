@@ -92,6 +92,9 @@ class AlphaGenomeOracle(OracleBase):
     # Model loading
     # ------------------------------------------------------------------
     def load_pretrained_model(self, weights: str = None) -> None:
+        # Raise EnvironmentNotReadyError up-front if env setup failed and
+        # the user explicitly asked for use_environment=True (issue #64).
+        self._check_env_ready()
         logger.info("Loading AlphaGenome model")
 
         if self.use_environment:

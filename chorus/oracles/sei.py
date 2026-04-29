@@ -127,6 +127,9 @@ class SeiOracle(OracleBase):
     
     def load_pretrained_model(self, weights: str | None = None) -> None:
         """Load Sei model weights."""
+        # Raise EnvironmentNotReadyError up-front if env setup failed and
+        # the user explicitly asked for use_environment=True (issue #64).
+        self._check_env_ready()
         if weights is not None:
             self.model_dir = weights
 

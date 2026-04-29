@@ -101,6 +101,9 @@ class EnformerOracle(OracleBase):
     
     def load_pretrained_model(self, weights: str = None) -> None:
         """Load Enformer model in the appropriate environment."""
+        # Raise EnvironmentNotReadyError up-front if env setup failed and
+        # the user explicitly asked for use_environment=True (issue #64).
+        self._check_env_ready()
         if weights is None:
             weights = self.get_model_weights_path()
         
