@@ -167,6 +167,46 @@ class TestChromBPNetOracle:
         assert oracle._try_slim_hf_chrombpnet() is None
         assert oracle._try_slim_hf_bpnet() is None
 
+    def test_chrombpnet_env_yaml_has_huggingface_hub(self):
+        """v0.3 regression guard for v30-audit F1 (2026-04-29):
+        ``_try_slim_hf_chrombpnet`` does ``from huggingface_hub import
+        hf_hub_download`` inside a try/except ImportError that returns
+        None silently — so if ``huggingface_hub`` is missing from the
+        per-oracle env yaml, the prefetch script silently falls back to
+        the ~700 MB ENCODE tarball flow and the headline 1.5 GB slim
+        mirror promise is broken on every fresh ``chorus setup``.
+
+        The chorus base env gets ``huggingface_hub`` transitively via
+        ``setup.py`` install_requires, but the per-oracle envs only
+        get whatever is listed in ``environments/chorus-<oracle>.yml``.
+        Pin it explicitly here to keep the slim path live across
+        future env churn.
+        """
+        import yaml
+        from pathlib import Path
+        env_yaml = (
+            Path(__file__).resolve().parent.parent
+            / "environments" / "chorus-chrombpnet.yml"
+        )
+        with open(env_yaml) as fh:
+            cfg = yaml.safe_load(fh)
+        # Walk dependencies looking for the pip block
+        pip_block = None
+        for dep in cfg.get("dependencies", []):
+            if isinstance(dep, dict) and "pip" in dep:
+                pip_block = dep["pip"]
+                break
+        assert pip_block is not None, (
+            "chorus-chrombpnet.yml missing a `pip:` block — slim mirror "
+            "won't have huggingface_hub available."
+        )
+        listed = " ".join(str(p) for p in pip_block)
+        assert "huggingface_hub" in listed, (
+            "huggingface_hub must be in environments/chorus-chrombpnet.yml's "
+            "pip block. Without it, _try_slim_hf_chrombpnet silently "
+            "falls back to ENCODE tarballs (v30 audit F1)."
+        )
+
 
 class TestSeiOracle:
     """Test Sei oracle implementation."""
