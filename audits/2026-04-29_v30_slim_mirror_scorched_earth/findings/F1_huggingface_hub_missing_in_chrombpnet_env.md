@@ -1,7 +1,7 @@
 # F1 (P0) — `huggingface_hub` missing in `chorus-chrombpnet` env, slim mirror silently disabled during prefetch
 
 **Severity**: P0 — the headline v0.3.0 feature ("1.5 GB slim mirror replaces ~100 GB ENCODE tarballs") doesn't actually fire during the most common code path (`chorus setup`).
-**Status**: open.
+**Status**: **CLOSED** — fix landed in `a13282c` and re-tested end-to-end on 2026-04-29 (see "Re-test results" section at the bottom).
 **Branch / commit**: `feat/chrombpnet-hf-slim-mirror` @ `802c7b1`.
 **Discovered**: v30 scorched-earth audit, 2026-04-29.
 
@@ -119,3 +119,39 @@ The CHANGELOG entry says:
 This is true *for runtime* (a user calling `chorus.create_oracle('chrombpnet', use_environment=True).load_pretrained_model(...)` from the chorus base env) but **false for `chorus setup`** which is the path most users hit on first install. We should either:
 - Fix the env (recommended — restores the headline behaviour), OR
 - Soften the CHANGELOG to say "1.49 GB at runtime via the chorus base env; setup prefetch still pulls ENCODE tarballs by design" (worse — defeats the purpose).
+
+## Re-test results (2026-04-29, post-fix `a13282c`)
+
+Performed end-to-end on the v30 audit machine after applying the fix:
+
+```
+mamba env remove -n chorus-chrombpnet -y
+rm -rf downloads/chrombpnet/*
+rm -rf ~/.cache/huggingface/hub/models--lucapinello--chorus-chrombpnet-slim
+mamba run -n chorus chorus setup --oracle chrombpnet
+```
+
+| Metric | F1-affected (initial v30 setup) | F1-fixed (post-`a13282c`) | Improvement |
+|---|---:|---:|---:|
+| Wall clock | **22 m 44 s** | **1 m 24 s** | **16× faster** |
+| `downloads/chrombpnet/` size after setup | 3.5 GB (HepG2 + K562 ENCODE tarballs unpacked) | **0 B** (just the sentinel `.chorus_setup_v1`) | **71× smaller** |
+| HF cache delta (`models--lucapinello--chorus-chrombpnet-slim/`) | 0 B (never populated) | **49 MB** (manifest.json + 2 fold-0 nobias h5 symlinks) | exactly the slim payload |
+| chrombpnet env build | 40 s (was 40 s; env yaml only added one tiny pip dep) | 54 s | unchanged within noise |
+| chrombpnet weight prefetch | 22 m 04 s (ENCODE tarballs over HTTPS) | **40 s** (manifest.json + 2 × ~25 MB h5 from HF CloudFront) | 33× faster |
+
+Spot checks:
+
+- `mamba run -n chorus-chrombpnet python -c "import huggingface_hub; print(huggingface_hub.__version__)"` → `1.12.2 OK` (was: `ModuleNotFoundError`).
+- `f1_retest.log` shows `Installing pip packages: tensorflow==2.15.1, …, huggingface_hub>=0.20.0, …` during env creation — the yaml fix is being applied.
+- No fallback warnings in the log. No `encodeproject.org` URLs. No tarball downloads.
+- HF cache contents (after setup):
+  ```
+  ~/.cache/huggingface/hub/models--lucapinello--chorus-chrombpnet-slim/
+    snapshots/9fe92856…/manifest.json
+    snapshots/9fe92856…/DNASE/HepG2/fold_0/model.chrombpnet_nobias.fold_0.ENCSR149XIL.h5
+    snapshots/9fe92856…/DNASE/K562/fold_0/model.chrombpnet_nobias.fold_0.ENCSR000EOT.h5
+  ```
+
+Re-test artifacts: `audits/2026-04-29_v30_slim_mirror_scorched_earth/f1_retest.log`, `f1_retest_start.txt`, `f1_retest_end.txt`.
+
+**Verdict**: F1 is closed. The slim mirror now fires correctly during `chorus setup`. The CHANGELOG's "1.5 GB / ~5 min" claim for the fast-path default is now actually achieved at install time, not just at runtime.

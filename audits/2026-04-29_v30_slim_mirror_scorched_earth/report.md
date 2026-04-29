@@ -5,7 +5,7 @@
 **Branch**: `feat/chrombpnet-hf-slim-mirror` @ `802c7b1` at start; `a13282c` after F1 fix.
 **Auditor**: Claude Opus 4.7 (1M context).
 **Scope**: First end-to-end scorched-earth install of v0.3.0 (slim ChromBPNet HF mirror + `chrombpnet_nobias` default flip).
-**Outcome**: **1 P0 finding (F1, fix landed in `a13282c`)**. All 346 fast tests + 3/4 integration tests pass. Slim mirror works correctly at runtime (chorus base env). Three-oracle Fig 3f directional triangulation reproduces the paper's claim.
+**Outcome**: **1 P0 finding (F1, fix landed in `a13282c`, end-to-end re-tested green)**. All 346 fast tests + 3/4 integration tests pass. Slim mirror now fires correctly during `chorus setup` (1m 24s vs 22m 44s before). Three-oracle Fig 3f directional triangulation reproduces the paper's claim.
 
 ## Why this audit
 
@@ -96,7 +96,16 @@ except ImportError:
 2. Replaced the silent `except ImportError: return None` in both `_try_slim_hf_chrombpnet` and `_try_slim_hf_bpnet` with a `logger.warning` that names the missing dep + the env yaml to fix — so future "why didn't HF fire?" debugging is one log line away.
 3. Added regression test `tests/test_oracles.py::TestChromBPNetOracle::test_chrombpnet_env_yaml_has_huggingface_hub` that parses the env yaml directly. Verified the test fails without the fix and passes with it.
 
-**Re-test status**: the fix is committed and the unit test passes. End-to-end re-test (wipe `chorus-chrombpnet` env, rebuild from updated yaml, observe slim mirror fires during prefetch) is **deferred** — would add ~25 min of env rebuild on top of the already-completed 2 h audit. Recommended as a quick follow-up on the next clean install.
+**Re-test status**: **DONE** — performed end-to-end on the same audit machine after the fix landed:
+
+| Metric | F1-affected (initial setup) | F1-fixed (re-test) | Δ |
+|---|---:|---:|---|
+| Wall clock | 22 m 44 s | **1 m 24 s** | 16× faster |
+| `downloads/chrombpnet/` after setup | 3.5 GB ENCODE tarballs | **0 B** (sentinel only) | 71× smaller |
+| HF cache delta | 0 (never populated) | **49 MB** (manifest + 2 nobias h5s) | exactly the slim payload |
+| chrombpnet weight prefetch alone | 22 m 04 s | **40 s** | 33× faster |
+
+`mamba run -n chorus-chrombpnet python -c "import huggingface_hub"` → succeeds (was: `ModuleNotFoundError`). No fallback warnings, no `encodeproject.org` URLs in `f1_retest.log`. Both K562 and HepG2 fold-0 nobias h5's resolved to `~/.cache/huggingface/hub/models--lucapinello--chorus-chrombpnet-slim/...`. Artifacts: `f1_retest.log`, `f1_retest_start.txt`, `f1_retest_end.txt`.
 
 **Why prior audit missed it**: the prior agent's Step 1 round-trip loaded already-cached `.h5` files directly via TensorFlow and compared bit-equality. It never invoked `chorus setup`, never exercised the chorus-chrombpnet env in isolation, and never measured wall-time for a fresh install.
 
@@ -153,7 +162,7 @@ The paper's qualitative claim (HepG2 ↑, K562 ↓, GM12878 mostly unchanged) re
 v0.3.0's design is sound and the runtime path works correctly. The only finding is F1 — the per-oracle env yaml didn't list `huggingface_hub`, so the prefetch silently fell through to ENCODE — and is now fixed in `a13282c`.
 
 **Recommendations**:
-1. Merge `feat/chrombpnet-hf-slim-mirror` into main once F1 is end-to-end re-tested on a fresh install (wipe chrombpnet env, re-run `chorus setup --oracle chrombpnet`, expect ~50 MB of HF download instead of 3.5 GB of ENCODE tarball, total <1 min wall).
+1. **Merge `feat/chrombpnet-hf-slim-mirror` into main.** F1 is closed (re-test confirmed the slim mirror fires during `chorus setup` — 1m 24s wall vs 22m 44s pre-fix; HF cache populates with the 49 MB slim payload; downloads/ stays at 0 B). All blocking work for the v0.3.0 release is done.
 2. Carry the F1 lesson into the queued **`docs/plans/sei-hf-mirror.md`** (v0.4.0 sei mirror): add `huggingface_hub` to `chorus-sei.yml` in the same commit that adds `_try_hf_sei`, ship a matching env-yaml regression test. Plan doc was committed in this same audit.
 3. Sei prefetch took 70 min via Zenodo on this run (vs 35 min in v29). The sei mirror plan is doubly worthwhile — Zenodo throughput is volatile.
 
