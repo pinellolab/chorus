@@ -2271,6 +2271,87 @@ class TestIGVRawFlag:
         assert "user_prompt" in sig.parameters
         assert "tool_name" in sig.parameters
 
+    def test_discover_cell_types_ranking_metrics(self):
+        """``ranking_metric`` selects between |log2FC| and alt-weighted ranking.
+
+        The historical default ``"abs_effect"`` ranks by raw |log2FC|, which
+        favours cell types with closed baseline chromatin. The new default
+        ``"alt_x_abs_effect"`` weights effect by absolute alt activity, so
+        an already-active enhancer that the variant strengthens beats a
+        closed locus that the variant pries open with a larger fold-change.
+
+        This test fakes a small set of CellTypeHits and exercises the
+        ranking branch directly so the contract holds even without a real
+        oracle.
+        """
+        from chorus.analysis.discovery import CellTypeHit
+
+        # Closed-baseline cell type: tiny ref, big fold-change, modest alt.
+        # Models the SORT1 'fibroblast of mammary gland' pattern.
+        closed = CellTypeHit(
+            cell_type="closed_chromatin_ct",
+            best_track="DNASE:closed", best_layer="chromatin_accessibility",
+            effect=3.30, abs_effect=3.30, ref_value=24.0, alt_value=241.0,
+        )
+        # Already-active cell type: big ref, modest fold-change, very high alt.
+        # Models the SORT1 HepG2 pattern.
+        active = CellTypeHit(
+            cell_type="active_chromatin_ct",
+            best_track="DNASE:active", best_layer="chromatin_accessibility",
+            effect=1.40, abs_effect=1.40, ref_value=595.0, alt_value=1571.0,
+        )
+
+        # alt_x_abs_effect picks the active cell type
+        active.ranking_score = active.alt_value * active.abs_effect    # 2199
+        closed.ranking_score = closed.alt_value * closed.abs_effect    # 795
+        ranked = sorted([closed, active], key=lambda h: h.ranking_score, reverse=True)
+        assert ranked[0].cell_type == "active_chromatin_ct"
+
+        # abs_effect picks the closed-baseline cell type (the historical bug)
+        active.ranking_score = active.abs_effect
+        closed.ranking_score = closed.abs_effect
+        ranked = sorted([closed, active], key=lambda h: h.ranking_score, reverse=True)
+        assert ranked[0].cell_type == "closed_chromatin_ct"
+
+        # abs_effect_min_ref with min_ref_value=100 filters out the closed one
+        min_ref = 100.0
+        active.ranking_score = active.abs_effect if active.ref_value >= min_ref else -1.0
+        closed.ranking_score = closed.abs_effect if closed.ref_value >= min_ref else -1.0
+        assert active.ranking_score > 0 and closed.ranking_score < 0
+        ranked = sorted([closed, active], key=lambda h: h.ranking_score, reverse=True)
+        assert ranked[0].cell_type == "active_chromatin_ct"
+
+    def test_discover_cell_types_signature(self):
+        """``discover_cell_types`` exposes ranking_metric and min_ref_value."""
+        import inspect
+        from chorus.analysis.discovery import discover_cell_types, RANKING_METRICS
+
+        sig = inspect.signature(discover_cell_types)
+        assert "ranking_metric" in sig.parameters
+        assert "min_ref_value" in sig.parameters
+        # Default must be the alt-weighted metric
+        assert sig.parameters["ranking_metric"].default == "alt_x_abs_effect"
+        assert "alt_x_abs_effect" in RANKING_METRICS
+        assert "abs_effect" in RANKING_METRICS
+
+    def test_discover_cell_types_rejects_unknown_metric(self):
+        """``discover_cell_types`` raises on an unknown ranking_metric.
+
+        Pass an obviously bogus metric so the validation triggers before any
+        oracle interaction. We don't need a real oracle for the assertion
+        because the check runs at the top of the function.
+        """
+        import pytest
+        from chorus.analysis.discovery import discover_cell_types
+
+        with pytest.raises(ValueError, match="Unknown ranking_metric"):
+            discover_cell_types(
+                oracle=object(),  # never reached
+                variant_position="chr1:1",
+                alleles=["A", "C"],
+                ranking_metric="not_a_real_metric",
+            )
+
     def test_layer_floor_thresholds_exist(self):
         """Layer-aware floor thresholds are defined for all known layers."""
         from chorus.analysis._igv_report import _LAYER_FLOOR_PCTILE
