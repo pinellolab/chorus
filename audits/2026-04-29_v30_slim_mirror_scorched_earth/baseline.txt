@@ -1,0 +1,25 @@
+=== BASELINE INVENTORY (before scorch) ===
+Wed Apr 29 08:23:21 EDT 2026
+
+Branch:
+802c7b1 Slim ChromBPNet HuggingFace mirror + chrombpnet_nobias default (0.3.0)
+678dbd5 slim-mirror: Step 1 round-trip check passed (HepG2 + K562 DNase)
+62fd9b0 docs: plan for slim ChromBPNet HuggingFace mirror
+802c7b1688cc273d7e1bdb80b211077da81cfb07
+
+Sizes:
+1.6G	/Users/lp698/.chorus
+9.9G	/Users/lp698/Projects/chorus.bak-2026-04-28/downloads
+3.0G	/Users/lp698/Projects/chorus.bak-2026-04-28/genomes
+
+Envs:
+1.5G	/Users/lp698/miniforge3/envs/chorus
+3.0G	/Users/lp698/miniforge3/envs/chorus-alphagenome
+1.8G	/Users/lp698/miniforge3/envs/chorus-borzoi
+1.9G	/Users/lp698/miniforge3/envs/chorus-chrombpnet
+1.9G	/Users/lp698/miniforge3/envs/chorus-enformer
+1.5G	/Users/lp698/miniforge3/envs/chorus-legnet
+1.3G	/Users/lp698/miniforge3/envs/chorus-sei
+
+chorus version installed:
+0.2.0

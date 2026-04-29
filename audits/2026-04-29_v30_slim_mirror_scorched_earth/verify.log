@@ -1,0 +1,117 @@
+
+=== 1. chorus --version ===
+PASS  chorus 0.3.0
+
+=== 2. chorus list ===
+Available oracle environments:
+--------------------------------------------------
+alphagenome          chorus-alphagenome        ✓ Installed
+borzoi               chorus-borzoi             ✓ Installed
+chrombpnet           chorus-chrombpnet         ✓ Installed
+enformer             chorus-enformer           ✓ Installed
+legnet               chorus-legnet             ✓ Installed
+sei                  chorus-sei                ✓ Installed
+--------------------------------------------------
+
+=== 3. chorus health ===
+2026-04-29 10:27:34,903 - chorus.cli.main - INFO - 
+Checking alphagenome...
+2026-04-29 10:27:39,045 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/whoami-v2 "HTTP/1.1 200 OK"
+2026-04-29 10:27:46,306 - chorus.cli.main - INFO - ✓ alphagenome: Healthy
+2026-04-29 10:27:46,306 - chorus.cli.main - INFO - 
+Checking borzoi...
+2026-04-29 10:27:55,542 - chorus.cli.main - INFO - ✓ borzoi: Healthy
+2026-04-29 10:27:55,543 - chorus.cli.main - INFO - 
+Checking chrombpnet...
+2026-04-29 10:28:01,179 - chorus.cli.main - INFO - ✓ chrombpnet: Healthy
+2026-04-29 10:28:01,179 - chorus.cli.main - INFO - 
+Checking enformer...
+2026-04-29 10:28:07,054 - chorus.cli.main - INFO - ✓ enformer: Healthy
+2026-04-29 10:28:07,054 - chorus.cli.main - INFO - 
+Checking legnet...
+2026-04-29 10:28:11,317 - chorus.cli.main - INFO - ✓ legnet: Healthy
+2026-04-29 10:28:11,317 - chorus.cli.main - INFO - 
+Checking sei...
+2026-04-29 10:28:18,195 - chorus.cli.main - INFO - ✓ sei: Healthy
+
+=== 4. chorus backgrounds status ===
+  enformer          5313 tracks   522.9 MB  2026-04-29 09:15  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
+  borzoi            7611 tracks   766.1 MB  2026-04-29 08:49  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
+  chrombpnet         786 tracks    78.6 MB  2026-04-29 09:12  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
+                         ATAC/DNASE: 42  CHIP: 744
+  sei                 40 tracks     2.8 MB  2026-04-29 10:27  CDFs: effect_cdfs, summary_cdfs
+  legnet               3 tracks     0.2 MB  2026-04-29 09:17  CDFs: effect_cdfs, summary_cdfs
+  alphagenome       5168 tracks   262.8 MB  2026-04-29 08:33  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
+
+=== 5. --all-chrombpnet flag still present ===
+PASS  flag present
+
+=== 6. NEW: Default model_type is chrombpnet_nobias ===
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ImportError: cannot import name 'ChromBPNet' from 'chorus.oracles.chrombpnet' (/Users/lp698/Projects/chorus.bak-2026-04-28/chorus/oracles/chrombpnet.py)
+
+=== 7. NEW: chrombpnet downloads/ size after setup (slim mirror) ===
+  downloads/chrombpnet/ = 3.5G (was 3.5 GB on v29 fast-path)
+INFO  size = 3589MB (slim default keeps fast-path; full registry only via --all-chrombpnet)
+
+=== 8. NEW: HF cache populated ===
+  ~/.cache/huggingface/hub = 1.4G
+INFO  HF cache populated lazily on first load_oracle
+
+=== 9. NEW: Round-trip — load K562 DNase ChromBPNet (default = nobias) via HF mirror ===
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+ImportError: cannot import name 'ChromBPNet' from 'chorus.oracles.chrombpnet' (/Users/lp698/Projects/chorus.bak-2026-04-28/chorus/oracles/chrombpnet.py)
+
+=== 10. Fig 3f triangulation — ChromBPNet HepG2 + K562 + GM12878 DNase ===
+Traceback (most recent call last):
+  File "<stdin>", line 5, in <module>
+ImportError: cannot import name 'ChromBPNet' from 'chorus.oracles.chrombpnet' (/Users/lp698/Projects/chorus.bak-2026-04-28/chorus/oracles/chrombpnet.py)
+
+=== 11. Fast pytest ===
+
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+  /Users/lp698/miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+    parser.resetCache()
+
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_mathtext.py:45
+  /Users/lp698/miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+    ParserElement.enablePackrat()
+
+tests/test_utils.py::TestNormalizationUtils::test_quantile_normalize
+  /Users/lp698/miniforge3/envs/chorus/lib/python3.10/site-packages/numpy/core/numeric.py:407: RuntimeWarning: invalid value encountered in cast
+    multiarray.copyto(res, fill_value, casting='unsafe')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+346 passed, 4 deselected, 14 warnings in 425.82s (0:07:05)
+
+=== 12. Integration tests (slow) ===
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+  /Users/lp698/miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+    parse = parser.parseString(pattern)
+
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+  /Users/lp698/miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+    parser.resetCache()
+
+../../miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_mathtext.py:45
+  /Users/lp698/miniforge3/envs/chorus/lib/python3.10/site-packages/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+    ParserElement.enablePackrat()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3 passed, 1 skipped, 346 deselected, 13 warnings in 680.97s (0:11:20)
+
+=== DONE ===
+OVERALL: PASS
