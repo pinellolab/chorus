@@ -384,6 +384,9 @@ class ChromBPNetOracle(OracleBase):
         ``model_type='chrombpnet'`` explicitly for the bias-aware
         variant; that path falls back to the full ENCODE tarball.
         """
+        # Raise EnvironmentNotReadyError up-front if env setup failed and
+        # the user explicitly asked for use_environment=True (issue #64).
+        self._check_env_ready()
 
         if assay is None or cell_type is None:
             raise InvalidAssayError(
