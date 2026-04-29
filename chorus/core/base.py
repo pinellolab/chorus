@@ -121,15 +121,35 @@ class OracleBase(ABC):
                 # Validate environment
                 is_valid, issues = self._env_manager.validate_environment(self.oracle_name)
                 if not is_valid:
-                    msg = (
-                        f"Environment validation failed for {self.oracle_name}: "
-                        f"{'; '.join(issues)}. Run 'chorus health --oracle "
-                        f"{self.oracle_name}' to diagnose, or 'chorus setup "
-                        f"--oracle {self.oracle_name} --force' to rebuild."
+                    # Distinguish transient timeouts (slow NFS, cold-cache
+                    # `import jax`) from genuine missing-dep failures.
+                    # Genuine failures return fast and are real signal;
+                    # timeouts are not — the actual subprocess invocation
+                    # has its own per-call timeout and will surface a real
+                    # ModuleNotFoundError if the env is truly broken.
+                    # Issue #64.
+                    timeout_only = bool(issues) and all(
+                        i.startswith("Timeout while checking dependency")
+                        for i in issues
                     )
-                    logger.warning(msg)
-                    self._env_setup_error = msg
-                    self.use_environment = False
+                    if timeout_only:
+                        logger.warning(
+                            f"Environment validation for {self.oracle_name} "
+                            f"timed out ({'; '.join(issues)}). Proceeding "
+                            f"with use_environment=True; the actual run "
+                            f"will surface any real issue."
+                        )
+                        # Keep use_environment=True; do NOT set _env_setup_error.
+                    else:
+                        msg = (
+                            f"Environment validation failed for {self.oracle_name}: "
+                            f"{'; '.join(issues)}. Run 'chorus health --oracle "
+                            f"{self.oracle_name}' to diagnose, or 'chorus setup "
+                            f"--oracle {self.oracle_name} --force' to rebuild."
+                        )
+                        logger.warning(msg)
+                        self._env_setup_error = msg
+                        self.use_environment = False
                 else:
                     logger.info(f"Using conda environment: chorus-{self.oracle_name}")
         except ImportError as e:

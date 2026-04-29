@@ -71,8 +71,11 @@ class BorzoiOracle(OracleBase):
         return ""
     
     def load_pretrained_model(self, weights: str = None) -> None:
+        # Raise EnvironmentNotReadyError up-front if env setup failed and
+        # the user explicitly asked for use_environment=True (issue #64).
+        self._check_env_ready()
         logger.info(f"Loading Borzoi model fold {self.fold}")
-        
+
         if self.use_environment:
             self._load_in_environment(weights)
         else:

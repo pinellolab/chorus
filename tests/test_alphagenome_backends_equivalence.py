@@ -1,171 +1,126 @@
 """Numerical equivalence between AlphaGenome JAX and PyTorch backends.
 
 Gated with ``@pytest.mark.integration`` — runs both backends inside their
-respective conda envs, predicts a 1 MB SORT1 window with each, and asserts
-the per-track outputs agree within tolerance.
+respective conda envs via chorus's normal Oracle API, predicts a 1 MB
+SORT1 window with each, and asserts per-track agreement.
 
-Run from the repo root:
+Run from the repo root::
 
     pytest tests/test_alphagenome_backends_equivalence.py -m integration -v
 
-Skips automatically if either env is missing.
+Skips automatically if either env or the hg38 reference is missing.
+
+History
+-------
+The original test (pre-#63) compared JAX and PyTorch outputs at the
+*raw model head*. JAX's DNase head exposes 305 tracks and the PyTorch
+port's exposes 384 — they're different upstream filtering choices,
+not different weights. The shape-parity assertion was bound to fail
+on any platform; it just didn't surface until the Linux/CUDA spot-check
+on `audit/linux-cuda-pr62`.
+
+The fix is to compare at the chorus-API layer instead. ``oracle.predict()``
+goes through ``_local_index`` slicing in
+``chorus/oracles/alphagenome.py:_predict``, which selects the user-
+requested tracks by identifier from the shared 5,731-track metadata
+cache (`alphagenome_tracks.json`) — so post-slicing arrays are
+shape-compatible across backends regardless of raw-head shape. Closes
+#63 (raw-head shape mismatch) and #65 (eliminates the bare-`mamba`
+subprocess calls that broke when this test was invoked under
+``mamba run -n chorus pytest``).
 """
 from __future__ import annotations
 
-import json
-import os
-import subprocess
-import textwrap
 from pathlib import Path
 
 import numpy as np
 import pytest
 
 
+# 1 MB SORT1 window centered at rs12740374's TSS (chr1:109,274,968).
+# Same window as the v30 macOS audit and the audit/linux-cuda-pr62 audit
+# so the equivalence numbers stay comparable.
 SORT1_WINDOW = (
     "chr1",
     109_274_968 - 524_288,
     109_274_968 + 524_288,
 )
+
 GENOME_FASTA = Path(__file__).parent.parent / "genomes" / "hg38.fa"
 
-
-def _env_exists(env_name: str) -> bool:
-    try:
-        out = subprocess.run(
-            ["mamba", "env", "list", "--json"],
-            capture_output=True, text=True, check=True,
-        )
-        envs = json.loads(out.stdout).get("envs", [])
-        return any(env_name == os.path.basename(p) for p in envs)
-    except Exception:
-        return False
-
-
-PT_RUNNER = textwrap.dedent(
-    r"""
-    import os, sys, json, numpy as np
-    os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
-    os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
-
-    args = json.loads(sys.argv[1])
-    fasta = args["fasta"]; chrom = args["chrom"]
-    start = args["start"]; end = args["end"]; device_name = args["device"]
-
-    import pyfaidx
-    seq = str(pyfaidx.Fasta(fasta)[chrom][start:end]).upper()
-    seq = seq.strip("N")
-    # round to nearest power of 2 in [2**15, 2**20]
-    valid = [2**p for p in range(15, 21)]
-    target = max(v for v in valid if v <= len(seq))
-    trim = (len(seq) - target) // 2
-    seq = seq[trim:trim + target]
-
-    import torch, huggingface_hub
-    from alphagenome_pytorch import AlphaGenome
-
-    weights = huggingface_hub.hf_hub_download("gtca/alphagenome_pytorch", "model_all_folds.safetensors")
-    device = torch.device(device_name)
-    model = AlphaGenome.from_pretrained(weights, device=device); model.eval()
-
-    arr = np.zeros((len(seq), 4), dtype=np.float32)
-    for i, b in enumerate(seq):
-        j = "ACGT".find(b)
-        if j >= 0: arr[i, j] = 1.0
-    x = torch.from_numpy(arr).unsqueeze(0).to(device)
-    org = torch.tensor([0], dtype=torch.long, device=device)
-    with torch.no_grad():
-        out = model(x, organism_index=org, heads=("atac","dnase"))
-    dnase_1 = out["dnase"][1][0].detach().cpu().numpy()  # (L, n_tracks)
-    np.savez_compressed(args["out"], dnase_1=dnase_1)
-    print(json.dumps({"length": len(seq), "shape": list(dnase_1.shape)}))
-    """
-)
-
-
-JAX_RUNNER = textwrap.dedent(
-    r"""
-    import os, sys, json, platform, numpy as np
-    if platform.system() == "Darwin":
-        os.environ["JAX_PLATFORMS"] = "cpu"
-
-    args = json.loads(sys.argv[1])
-    fasta = args["fasta"]; chrom = args["chrom"]
-    start = args["start"]; end = args["end"]
-
-    import pyfaidx
-    seq = str(pyfaidx.Fasta(fasta)[chrom][start:end]).upper()
-    seq = seq.strip("N")
-    valid = [2**p for p in range(15, 21)]
-    target = max(v for v in valid if v <= len(seq))
-    trim = (len(seq) - target) // 2
-    seq = seq[trim:trim + target]
-
-    import jax
-    from alphagenome.models.dna_output import OutputType
-    from alphagenome_research.model.dna_model import create_from_huggingface
-    jax_device = jax.devices("cpu")[0]
-    model = create_from_huggingface("all_folds", device=jax_device)
-    out = model.predict_sequence(seq, requested_outputs=[OutputType.DNASE], ontology_terms=None)
-    dnase = np.asarray(out[OutputType.DNASE].values)  # (L, n_tracks)
-    np.savez_compressed(args["out"], dnase=dnase)
-    print(json.dumps({"length": len(seq), "shape": list(dnase.shape)}))
-    """
-)
-
-
-def _run(env: str, code: str, args: dict, tmp_out: Path) -> dict:
-    args = {**args, "out": str(tmp_out)}
-    r = subprocess.run(
-        ["mamba", "run", "-n", env, "python", "-c", code, json.dumps(args)],
-        capture_output=True, text=True, timeout=1800,
-    )
-    if r.returncode != 0:
-        raise RuntimeError(f"subprocess in {env} failed:\n{r.stderr}")
-    last = next(l for l in reversed(r.stdout.strip().splitlines()) if l.startswith("{"))
-    return json.loads(last)
+# Three canonical AlphaGenome assay identifiers (format
+# "{output_type}/{name}/{strand}", verified via
+# chorus.oracles.alphagenome_source.alphagenome_metadata.get_metadata().search_tracks).
+# Same K562 / HepG2 / hepatocyte set used in the v30 macOS Tier-1 audit.
+ASSAY_IDS = [
+    "DNASE/EFO:0002067 DNase-seq/.",   # K562 DNase
+    "DNASE/EFO:0001187 DNase-seq/.",   # HepG2 DNase
+    "DNASE/CL:0000182 DNase-seq/.",    # hepatocyte DNase
+]
 
 
 @pytest.mark.integration
-def test_jax_pt_dnase_equivalence_at_sort1(tmp_path):
-    """JAX and PyTorch backends should agree on DNase predictions at the
-    SORT1 locus to within tight tolerance.
+def test_jax_pt_chorus_api_equivalence_at_sort1():
+    """JAX and PyTorch AlphaGenome backends produce equivalent chorus-API outputs.
 
-    The PyTorch port's README claims per-head + full-forward equivalence
-    against the JAX checkpoint. This test pins that claim against actual
-    chorus inputs (one assay, one canonical region) so a future weight
-    refresh upstream doesn't silently drift our results.
+    Compares the ``oracle.predict()`` output array per assay — chorus's
+    ``local_index`` slicing maps the user-requested identifier to the
+    same logical track on both backends, so post-slicing arrays are
+    shape-compatible regardless of raw head shape. Tolerances:
+    ``max(|pt - jax|) < 0.1`` (absolute), ``mean rel < 5%``. The v30
+    macOS and Linux/CUDA audits both reported 0.74–1.85 % per-track
+    relative error, well inside this bound.
     """
     if not GENOME_FASTA.exists():
-        pytest.skip("hg38.fa not present — `chorus genome download hg38` first")
-    if not _env_exists("chorus-alphagenome"):
-        pytest.skip("chorus-alphagenome env missing")
-    if not _env_exists("chorus-alphagenome_pt"):
-        pytest.skip("chorus-alphagenome_pt env missing")
+        pytest.skip(
+            "hg38.fa not present — run `chorus genome download hg38` first"
+        )
 
-    chrom, start, end = SORT1_WINDOW
-    pt_out = tmp_path / "pt.npz"
-    jax_out = tmp_path / "jax.npz"
+    # Skip cleanly when either env is missing — uses chorus's own
+    # EnvironmentManager so we resolve `mamba`/`conda` the same way the
+    # framework does (handles `mamba run` invocation, MAMBA_EXE, etc.).
+    from chorus.core.environment import EnvironmentManager
 
-    base_args = {
-        "fasta": str(GENOME_FASTA),
-        "chrom": chrom, "start": start, "end": end,
-    }
-    _run("chorus-alphagenome_pt", PT_RUNNER,
-         {**base_args, "device": "cpu"}, pt_out)
-    _run("chorus-alphagenome", JAX_RUNNER, base_args, jax_out)
+    mgr = EnvironmentManager()
+    for env in ("alphagenome", "alphagenome_pt"):
+        if not mgr.environment_exists(env):
+            pytest.skip(f"chorus-{env} env missing")
 
-    pt = np.load(pt_out)["dnase_1"]
-    jx = np.load(jax_out)["dnase"]
+    import chorus
 
-    # Shapes should match (L, n_tracks). PyTorch returns (L, n_tracks)
-    # at resolution 1 — same as JAX's predict_sequence per-track output.
-    assert pt.shape == jx.shape, f"shape mismatch: pt={pt.shape} jax={jx.shape}"
+    preds = {}
+    for name in ("alphagenome", "alphagenome_pt"):
+        oracle = chorus.create_oracle(
+            name,
+            use_environment=True,
+            reference_fasta=str(GENOME_FASTA),
+        )
+        oracle.load_pretrained_model()
+        preds[name] = oracle.predict(SORT1_WINDOW, ASSAY_IDS)
 
-    # Per-track absolute and relative tolerances. Upstream claims numerical
-    # equivalence; we pin a generous bound so weight conversions or attn
-    # numerics changes get flagged but minor implementation drift doesn't.
-    abs_diff = np.abs(pt - jx).max()
-    rel_diff = np.abs(pt - jx).mean() / (np.abs(jx).mean() + 1e-9)
-    assert abs_diff < 0.1, f"max abs diff {abs_diff:.4f} exceeds 0.1"
-    assert rel_diff < 0.05, f"mean rel diff {rel_diff:.4f} exceeds 5%"
+    for aid in ASSAY_IDS:
+        jax_track = preds["alphagenome"][aid]
+        pt_track = preds["alphagenome_pt"][aid]
+        a = jax_track.values
+        b = pt_track.values
+
+        assert a.shape == b.shape, (
+            f"{aid}: chorus-API per-track shape mismatch "
+            f"(jax={a.shape}, pt={b.shape}). The local_index slicing was "
+            f"supposed to align both backends — investigate metadata."
+        )
+        assert a.ndim == 1, (
+            f"{aid}: per-track values should be 1-D after slicing, got {a.shape}"
+        )
+
+        max_abs = float(np.abs(a - b).max())
+        mean_rel = float(np.abs(a - b).mean() / (np.abs(a).mean() + 1e-9))
+
+        assert max_abs < 0.1, (
+            f"{aid}: max abs diff {max_abs:.4f} exceeds 0.1 — JAX vs PyTorch "
+            f"backend drift. Audit numbers from PR #62 were < 0.05."
+        )
+        assert mean_rel < 0.05, (
+            f"{aid}: mean rel diff {mean_rel:.4f} exceeds 5% — JAX vs "
+            f"PyTorch backend drift. Audit numbers from PR #62 were < 2%."
+        )
