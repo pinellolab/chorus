@@ -26,6 +26,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+# HuggingFace slim mirror for ChromBPNet/BPNet weights.
+# Contains only fold-0 chrombpnet_nobias h5's per cell-type (42 models)
+# and the 744 BPNet/CHIP h5's. ~1.5 GB total vs ~100 GB for the full
+# ENCODE-tarball prefetch. See docs/plans/chrombpnet-hf-slim-mirror.md
+# and audits/2026-04-28_chrombpnet_slim_mirror/ for the design and
+# verification trail.
+HF_SLIM_REPO = "lucapinello/chorus-chrombpnet-slim"
+HF_SLIM_REPO_TYPE = "model"
+
+
 class ChromBPNetOracle(OracleBase):
     """ChromBPNet oracle implementation for TF binding and chromatin accessibility."""
 
@@ -264,6 +275,86 @@ class ChromBPNetOracle(OracleBase):
                 fcntl.flock(lock_fh, fcntl.LOCK_UN)
                 
 
+    # ── HF slim-mirror helpers (added in 0.3.0) ──────────────────────
+
+    def _try_slim_hf_chrombpnet(self) -> Optional[Path]:
+        """Try to fetch the fold-0 ``chrombpnet_nobias`` h5 from the
+        HF slim mirror (``lucapinello/chorus-chrombpnet-slim``).
+
+        Returns the local cached path on success, ``None`` on miss or
+        when the mirror isn't applicable (CHIP, fold ≠ 0, custom
+        model, missing huggingface_hub, network down, repo error).
+        Callers fall back to the existing ENCODE-tarball flow.
+        """
+        if self.assay == "CHIP" or self.fold != 0:
+            return None
+        encff = CHROMBPNET_MODELS_DICT.get(self.assay, {}).get(self.cell_type)
+        if not encff:
+            return None
+        try:
+            from huggingface_hub import hf_hub_download
+        except ImportError:
+            return None
+        try:
+            manifest_local = hf_hub_download(
+                repo_id=HF_SLIM_REPO,
+                filename="manifest.json",
+                repo_type=HF_SLIM_REPO_TYPE,
+            )
+        except Exception as exc:  # pragma: no cover — network / repo missing
+            logger.info("HF slim mirror unavailable (%s); falling back to ENCODE.", exc)
+            return None
+        try:
+            with open(manifest_local) as f:
+                manifest = json.load(f)
+            entry = manifest.get(encff)
+            if not entry or entry.get("kind") != "ChromBPNet":
+                return None
+            slim_path = entry["slim_path"]  # e.g. DNASE/HepG2/fold_0/model.chrombpnet_nobias.fold_0.ENCSR149XIL.h5
+            h5_local = hf_hub_download(
+                repo_id=HF_SLIM_REPO,
+                filename=slim_path,
+                repo_type=HF_SLIM_REPO_TYPE,
+            )
+            logger.info("Resolved %s:%s via HF slim mirror (%s)", self.assay, self.cell_type, encff)
+            return Path(h5_local)
+        except Exception as exc:  # pragma: no cover
+            logger.info("HF slim fetch failed (%s); falling back to ENCODE.", exc)
+            return None
+
+    def _try_slim_hf_bpnet(self) -> Optional[Path]:
+        """Try to fetch a BPNet/CHIP h5 by JASPAR ``BP_BASE_ID`` from
+        the slim mirror. Same semantics as the ChromBPNet variant —
+        returns ``None`` on miss; caller falls back to JASPAR.
+        """
+        if self.assay != "CHIP" or self.tf is None:
+            return None
+        try:
+            model_url = self.JASPAR_metadata.get_weights_by_cell_and_tf(
+                self.tf, self.cell_type
+            )
+        except Exception:
+            return None
+        # URL ends with /<BP_BASE_ID>/<BP_BASE_ID>_model.h5
+        bp_id = os.path.basename(os.path.dirname(model_url))
+        if not bp_id.startswith("BP"):
+            return None
+        try:
+            from huggingface_hub import hf_hub_download
+        except ImportError:
+            return None
+        try:
+            h5_local = hf_hub_download(
+                repo_id=HF_SLIM_REPO,
+                filename=f"BPNet/{bp_id}.h5",
+                repo_type=HF_SLIM_REPO_TYPE,
+            )
+            logger.info("Resolved CHIP:%s:%s via HF slim mirror (%s)", self.cell_type, self.tf, bp_id)
+            return Path(h5_local)
+        except Exception as exc:  # pragma: no cover
+            logger.info("HF slim BPNet fetch failed (%s); falling back to JASPAR.", exc)
+            return None
+
     def load_pretrained_model(
             self,
             assay: Optional[str] = None,
@@ -271,10 +362,17 @@ class ChromBPNetOracle(OracleBase):
             weights: Optional[str] = None,
             TF: Optional[str] = None,
             fold: int = 0,
-            model_type: str = 'chrombpnet',
+            model_type: str = 'chrombpnet_nobias',
             is_custom: bool = False
         ) -> None:
-        """Load ChromBPNet model weights."""
+        """Load ChromBPNet model weights.
+
+        ``model_type`` default in chorus ≥ 0.3 is ``'chrombpnet_nobias'``
+        (bias-corrected, what the Kundaje paper recommends for variant
+        analysis and what the HF slim mirror ships). Pass
+        ``model_type='chrombpnet'`` explicitly for the bias-aware
+        variant; that path falls back to the full ENCODE tarball.
+        """
 
         if assay is None or cell_type is None:
             raise InvalidAssayError(
@@ -322,26 +420,38 @@ class ChromBPNetOracle(OracleBase):
             self.JASPAR_metadata = BPNetMetadata()
 
         if weights is None:
-            # Check whether the user has provided assay and cell-type
-            # Download weights and return path to them
-
-            weights = self.get_model_weights_path(assay, cell_type, fold, TF, model_type)
-            if not os.path.exists(weights):
-                if assay != "CHIP":
-                    self._download_chrombpnet_model()
-
-                    # Rechecking due to download
-                    weights = self.get_model_weights_path(assay, cell_type, fold, TF, model_type)
-
-                else:
-                    self._download_model_from_JASPAR()
-            if not os.path.exists(weights):
-                raise FileNotFoundError(f"Weights file {weights} not found even after downloading from ENCODE")
-
-            self.model_path = weights
+            # HF slim mirror first (chorus ≥ 0.3) — covers the common
+            # case (fold=0 + chrombpnet_nobias for ATAC/DNase, or any
+            # CHIP/BPNet model). On miss / network failure we fall
+            # through to the existing ENCODE / JASPAR tarball flow so
+            # users on alternate folds or the bias-aware variant keep
+            # working.
+            slim_path = None
+            if not is_custom:
+                if assay != "CHIP" and fold == 0 and model_type == "chrombpnet_nobias":
+                    slim_path = self._try_slim_hf_chrombpnet()
+                elif assay == "CHIP":
+                    slim_path = self._try_slim_hf_bpnet()
+            if slim_path is not None:
+                self.model_path = str(slim_path)
+            else:
+                # Existing ENCODE/JASPAR tarball flow
+                weights = self.get_model_weights_path(assay, cell_type, fold, TF, model_type)
+                if not os.path.exists(weights):
+                    if assay != "CHIP":
+                        self._download_chrombpnet_model()
+                        # Rechecking due to download
+                        weights = self.get_model_weights_path(assay, cell_type, fold, TF, model_type)
+                    else:
+                        self._download_model_from_JASPAR()
+                if not os.path.exists(weights):
+                    raise FileNotFoundError(
+                        f"Weights file {weights} not found even after downloading from ENCODE"
+                    )
+                self.model_path = weights
         else:
             # Use directly the specified path
-            self.model_path = weights            
+            self.model_path = weights
 
         # Now load the model
         logger.info(f"Loading ChromBPNet model...")

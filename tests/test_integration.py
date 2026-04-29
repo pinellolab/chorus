@@ -87,13 +87,20 @@ def test_pertrack_background_download(tmp_path, oracle):
 @pytest.mark.integration
 def test_chrombpnet_fresh_single_model_download(tmp_path):
     """Download one ChromBPNet model (ATAC:K562, ~500 MB tarball) from
-    scratch and verify the resume helper fetches, unpacks, and loads
-    it. v8 preserved the 37 GB ``downloads/chrombpnet/`` across every
-    'fresh install' audit, so the ENCODE-to-disk path was never
-    verified from zero.
+    scratch via the ENCODE tarball fallback path and verify the resume
+    helper fetches, unpacks, and loads it. v8 preserved the 37 GB
+    ``downloads/chrombpnet/`` across every 'fresh install' audit, so
+    the ENCODE-to-disk path was never verified from zero.
 
     Uses an isolated temp ``download_dir`` on the instance so the
-    real 37 GB cache isn't touched.
+    real cache isn't touched.
+
+    NB: chorus ≥ 0.3 routes the default fold-0 ``chrombpnet_nobias``
+    request through the HuggingFace slim mirror and never touches the
+    ENCODE tarball path. To keep this test specifically exercising the
+    tarball fallback (the intent of the original v9 test), we pass
+    ``model_type='chrombpnet'`` (bias-aware variant — only available
+    via the full ENCODE tarball).
     """
     import chorus
 
@@ -116,8 +123,11 @@ def test_chrombpnet_fresh_single_model_download(tmp_path):
     oracle.download_dir = Path(tmp_path) / "chrombpnet"
     oracle.download_dir.mkdir(parents=True, exist_ok=True)
 
-    # Load ATAC:K562 fold 0 — smallest ATAC model family, known good
-    oracle.load_pretrained_model(assay="ATAC", cell_type="K562", fold=0)
+    # Load ATAC:K562 fold 0 with the bias-aware variant to force the
+    # ENCODE tarball path (slim HF mirror only ships the nobias variant).
+    oracle.load_pretrained_model(
+        assay="ATAC", cell_type="K562", fold=0, model_type="chrombpnet",
+    )
     assert oracle.loaded, "model should be loaded after load_pretrained_model"
 
     # Final tarball should have been extracted into the tmp download_dir
