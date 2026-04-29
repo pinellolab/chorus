@@ -1,0 +1,25 @@
+region: chrX:48782929-48783129 (K562 GATA1 enhancer, 200bp swap)
+replacement: 99598_GENERATED_HEPG2
+window: 2114bp (ChromBPNet input length, centered on swap midpoint)
+
+Loading in environment
+HepG2 loaded in 5.7s  source=HF cache
+  ref_signal_200bp=29.5780  alt_signal_200bp=4036.7958  log2FC=+7.09
+
+Loading in environment
+K562 loaded in 5.8s  source=HF cache
+  ref_signal_200bp=685.9443  alt_signal_200bp=12.2449  log2FC=-5.81
+
+Loading in environment
+GM12878 loaded in 9.7s  source=HF cache
+  ref_signal_200bp=10.2768  alt_signal_200bp=3.5770  log2FC=-1.52
+
+=== summary ===
+  HepG2 :  ↑  | got log2FC = +7.09  PASS
+  K562  :  ↓  | got log2FC = -5.81  PASS
+  GM12878: ~0 | got log2FC = -1.52  FAIL
+
+Cross-oracle agreement at chrX:48,782,929-48,783,129:
+  HepG2 DNase   Enformer +4.22  AlphaGenome +8.22  ChromBPNet +7.09
+  K562  DNase   Enformer -4.04  AlphaGenome -5.03  ChromBPNet -5.81
+  GM12878 DNase Enformer +0.04  AlphaGenome +0.32  ChromBPNet -1.52

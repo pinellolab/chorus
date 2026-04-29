@@ -55,3 +55,9 @@ dependencies:
     # Additional utilities
     - scikit-learn>=1.1.2 #>=1.0.0
     - logomaker>=0.8
+
+    # HuggingFace slim mirror (chorus ≥ 0.3.0). Required so that the
+    # in-env prefetch path can fetch fold-0 chrombpnet_nobias h5's and
+    # BPNet h5's from lucapinello/chorus-chrombpnet-slim instead of
+    # silently falling back to the ~700 MB ENCODE tarballs.
+    - huggingface_hub>=0.20.0
