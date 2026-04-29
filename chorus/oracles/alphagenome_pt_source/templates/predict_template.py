@@ -105,7 +105,7 @@ with torch.no_grad():
     # filtering.
     output = model(
         dna_onehot,
-        organism_index=0,  # 0 = human
+        organism_index=torch.tensor([0], dtype=torch.long, device=device),  # 0 = human
         heads=heads if heads else None,
     )
 

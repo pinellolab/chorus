@@ -1,0 +1,26 @@
+Loading PT AlphaGenome port (CPU initial; per-window switch)...
+2026-04-29 13:38:32,123 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/gtca/alphagenome_pytorch/resolve/main/model_all_folds.safetensors "HTTP/1.1 302 Found"
+2026-04-29 13:38:32,599 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/models/gtca/alphagenome_pytorch/xet-read-token/b01c0ffa73e07c053491f3b5ea8bcf67d93b9920 "HTTP/1.1 200 OK"
+  weights @ /Users/lp698/.cache/huggingface/hub/models--gtca--alphagenome_pytorch/snapshots/b01c0ffa73e07c053491f3b5ea8bcf67d93b9920/model_all_folds.safetensors
+  loaded (cpu) in 96.0s
+  moved model to mps in 0.2s
+window 128k (131072 bp) on mps: predicting...
+  predict 128k: 3.10s
+    DNASE      shape=(131072, 384)
+    ATAC       shape=(131072, 256)
+    CAGE       shape=(131072, 640)
+    RNA_SEQ    shape=(131072, 768)
+window 524k (524288 bp) on mps: predicting...
+  predict 524k: 10.77s
+    DNASE      shape=(524288, 384)
+    ATAC       shape=(524288, 256)
+    CAGE       shape=(524288, 640)
+    RNA_SEQ    shape=(524288, 768)
+  moved model to cpu in 0.4s
+window 1m (1048576 bp) on cpu: predicting...
+  predict 1m: 99.76s
+    DNASE      shape=(1048576, 384)
+    ATAC       shape=(1048576, 256)
+    CAGE       shape=(1048576, 640)
+    RNA_SEQ    shape=(1048576, 768)
+{"ok": true, "n_arrays": 12, "backend": "pt", "device_per_window": {"128k": "mps", "524k": "mps", "1m": "cpu"}, "windows": ["128k", "524k", "1m"], "heads": ["DNASE", "ATAC", "CAGE", "RNA_SEQ"], "timings_s": {"128k": 3.102447271347046, "524k": 10.769639015197754, "1m": 99.75986909866333}, "platform": "macOS-26.1-arm64-arm-64bit"}

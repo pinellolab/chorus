@@ -1,0 +1,26 @@
+Loading JAX AlphaGenome model (CPU, Darwin)...
+Fetching 12 files:   0%|          | 0/12 [00:00<?, ?it/s]Fetching 12 files: 100%|██████████| 12/12 [00:00<00:00, 11364.11it/s]
+/Users/lp698/miniforge3/envs/chorus-alphagenome/lib/python3.11/site-packages/pyfaidx/__init__.py:596: UserWarning: for fsspec: HTTPFileSystem assuming index is current
+  warnings.warn("for fsspec: %s assuming index is current" % type(self._fs).__name__)
+/Users/lp698/miniforge3/envs/chorus-alphagenome/lib/python3.11/site-packages/pyfaidx/__init__.py:596: UserWarning: for fsspec: HTTPFileSystem assuming index is current
+  warnings.warn("for fsspec: %s assuming index is current" % type(self._fs).__name__)
+  loaded in 195.2s
+window 128k (131072 bp): predicting...
+  predict 128k: 14.70s
+    DNASE      shape=(131072, 305)
+    ATAC       shape=(131072, 167)
+    CAGE       shape=(131072, 546)
+    RNA_SEQ    shape=(131072, 667)
+window 524k (524288 bp): predicting...
+  predict 524k: 61.13s
+    DNASE      shape=(524288, 305)
+    ATAC       shape=(524288, 167)
+    CAGE       shape=(524288, 546)
+    RNA_SEQ    shape=(524288, 667)
+window 1m (1048576 bp): predicting...
+  predict 1m: 98.60s
+    DNASE      shape=(1048576, 305)
+    ATAC       shape=(1048576, 167)
+    CAGE       shape=(1048576, 546)
+    RNA_SEQ    shape=(1048576, 667)
+{"ok": true, "n_arrays": 12, "backend": "jax", "device": "cpu", "windows": ["128k", "524k", "1m"], "heads": ["DNASE", "ATAC", "CAGE", "RNA_SEQ"], "timings_s": {"128k": 14.696424007415771, "524k": 61.125446796417236, "1m": 98.60081315040588}, "platform": "macOS-26.1-arm64-arm-64bit"}

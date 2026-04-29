@@ -1,0 +1,22 @@
+2026-04-29 13:56:53,971 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 13:56:54,975 - chorus.core.base - INFO - Using conda environment: chorus-alphagenome
+2026-04-29 13:56:54,975 - chorus.oracles.alphagenome - INFO - Loading AlphaGenome model
+2026-04-29 13:58:57,610 - chorus.oracles.alphagenome - INFO - AlphaGenome model loaded successfully in environment!
+Region: chrX:48782929-48783129
+Replacement seq: 200 bp
+
+=== JAX backend ===
+Traceback (most recent call last):
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/audits/2026-04-29_alphagenome_pt_stress_test/run_app_swap.py", line 109, in <module>
+    main()
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/audits/2026-04-29_alphagenome_pt_stress_test/run_app_swap.py", line 74, in main
+    jax_layers, jax_t = run_one("alphagenome")
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/audits/2026-04-29_alphagenome_pt_stress_test/run_app_swap.py", line 43, in run_one
+    report = analyze_region_swap(
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/chorus/analysis/region_swap.py", line 52, in analyze_region_swap
+    wt_pred = oracle.predict((chrom, start, end), assay_ids)
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/chorus/core/base.py", line 221, in predict
+    predictions = self._predict(input_data, assay_ids)
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/chorus/oracles/alphagenome.py", line 206, in _predict
+    raise ValueError(
+ValueError: Reference FASTA required for genomic coordinate input

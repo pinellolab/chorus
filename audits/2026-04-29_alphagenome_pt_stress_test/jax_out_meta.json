@@ -1,0 +1,21 @@
+{
+  "backend": "jax",
+  "device": "cpu",
+  "windows": [
+    "128k",
+    "524k",
+    "1m"
+  ],
+  "heads": [
+    "DNASE",
+    "ATAC",
+    "CAGE",
+    "RNA_SEQ"
+  ],
+  "timings_s": {
+    "128k": 14.696424007415771,
+    "524k": 61.125446796417236,
+    "1m": 98.60081315040588
+  },
+  "platform": "macOS-26.1-arm64-arm-64bit"
+}

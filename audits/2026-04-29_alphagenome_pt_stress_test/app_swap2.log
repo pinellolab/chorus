@@ -1,0 +1,109 @@
+2026-04-29 13:59:21,242 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 13:59:22,188 - chorus.core.base - INFO - Using conda environment: chorus-alphagenome
+2026-04-29 13:59:22,188 - chorus.oracles.alphagenome - INFO - Loading AlphaGenome model
+2026-04-29 14:01:07,263 - chorus.oracles.alphagenome - INFO - AlphaGenome model loaded successfully in environment!
+2026-04-29 14:04:16,476 - chorus.oracles.alphagenome_source.alphagenome_metadata - INFO - Loaded 5731 AlphaGenome tracks
+2026-04-29 14:07:54,050 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:07:54,050 - chorus.utils.annotations - INFO - Loading GTF features (gene) from gencode.v48.basic.annotation.gtf (one-time)...
+2026-04-29 14:07:55,474 - chorus.utils.annotations - INFO - Cached 78686 gene features from GTF
+2026-04-29 14:07:55,482 - chorus.analysis.variant_report - INFO - Genes in prediction window: GATA1, GLOD5, HDAC6, ERAS, PCSK1N, SUV39H1, WAS, TIMM17B, PQBP1, SLC35A2
+2026-04-29 14:07:55,482 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:07:55,482 - chorus.utils.annotations - INFO - Loading GTF features (exon) from gencode.v48.basic.annotation.gtf (one-time)...
+2026-04-29 14:08:01,878 - chorus.utils.annotations - INFO - Cached 1007879 exon features from GTF
+2026-04-29 14:08:02,084 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:02,084 - chorus.utils.annotations - INFO - Loading GTF features (transcript) from gencode.v48.basic.annotation.gtf (one-time)...
+2026-04-29 14:08:04,055 - chorus.utils.annotations - INFO - Cached 158367 transcript features from GTF
+2026-04-29 14:08:04,083 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,084 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,089 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,090 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,095 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,096 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,100 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,100 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,104 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,105 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,109 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,110 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,114 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,114 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,118 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,119 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,124 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,124 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,128 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,129 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,133 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,134 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,138 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,139 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,143 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,144 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,148 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,150 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,154 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,155 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,159 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,160 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,164 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,165 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,170 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,171 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,176 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,177 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,182 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,183 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,189 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,189 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,194 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,195 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,199 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,200 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,205 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,206 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,210 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,211 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,215 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,216 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,220 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,220 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,224 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,225 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,229 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,230 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,234 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,235 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,239 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,240 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,244 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,245 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,249 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,250 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,254 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,254 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,259 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,260 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,264 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,265 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,269 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,270 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,274 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,275 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,280 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,280 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,286 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,287 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,291 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+2026-04-29 14:08:04,291 - chorus.utils.annotations - INFO - Annotation file already exists: /Users/lp698/Projects/chorus.bak-2026-04-28/annotations/gencode.v48.basic.annotation.gtf
+Region: chrX:48782929-48783129
+Replacement seq: 200 bp
+
+=== JAX backend ===
+Traceback (most recent call last):
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/audits/2026-04-29_alphagenome_pt_stress_test/run_app_swap.py", line 113, in <module>
+    main()
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/audits/2026-04-29_alphagenome_pt_stress_test/run_app_swap.py", line 78, in main
+    jax_layers, jax_t = run_one("alphagenome")
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/audits/2026-04-29_alphagenome_pt_stress_test/run_app_swap.py", line 59, in run_one
+    for layer in report.layer_summaries:
+AttributeError: 'VariantReport' object has no attribute 'layer_summaries'

@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/audits/2026-04-29_alphagenome_pt_stress_test/compare.py", line 118, in <module>
+    main()
+  File "/Users/lp698/Projects/chorus.bak-2026-04-28/audits/2026-04-29_alphagenome_pt_stress_test/compare.py", line 28, in main
+    jax = np.load(jax_path)
+  File "/Users/lp698/miniforge3/envs/chorus/lib/python3.10/site-packages/numpy/lib/npyio.py", line 444, in load
+    ret = NpzFile(fid, own_fid=own_fid, allow_pickle=allow_pickle,
+  File "/Users/lp698/miniforge3/envs/chorus/lib/python3.10/site-packages/numpy/lib/npyio.py", line 190, in __init__
+    _zip = zipfile_factory(fid)
+  File "/Users/lp698/miniforge3/envs/chorus/lib/python3.10/site-packages/numpy/lib/npyio.py", line 103, in zipfile_factory
+    return zipfile.ZipFile(file, *args, **kwargs)
+  File "/Users/lp698/miniforge3/envs/chorus/lib/python3.10/zipfile.py", line 1288, in __init__
+    self._RealGetContents()
+  File "/Users/lp698/miniforge3/envs/chorus/lib/python3.10/zipfile.py", line 1355, in _RealGetContents
+    raise BadZipFile("File is not a zip file")
+zipfile.BadZipFile: File is not a zip file
