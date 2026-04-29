@@ -23,18 +23,12 @@ logger = logging.getLogger(__name__)
 
 # Oracles excluded from the default ``chorus setup`` flow because they're
 # alternative backends for an oracle that's already installed by default.
-# Listing one here keeps default install size bounded — it's a disk-cost
-# decision, not a stability one. Users still install them explicitly via
-# ``chorus setup --oracle <name>`` or pass ``--include-alternative-backends``
-# to the bare ``chorus setup`` command.
-_SKIP_FROM_DEFAULT_SETUP = {
-    # PyTorch backend for AlphaGenome — same model + same weights as the
-    # default JAX `alphagenome` oracle (safetensors-converted from the
-    # official JAX checkpoint). Skipped only because the env is ~5 GB and
-    # the weights are ~3.4 GB, on top of the JAX backend the user already
-    # gets. Opt in with `chorus setup --oracle alphagenome_pt`.
-    "alphagenome_pt",
-}
+# Currently empty — both AlphaGenome backends (JAX `alphagenome` and
+# PyTorch `alphagenome_pt`) install by default so Mac users get MPS
+# access without an extra setup step. The infrastructure stays in place
+# for future opt-in oracles. The ``--include-alternative-backends`` flag
+# is preserved as a no-op for now to keep CLI shape stable.
+_SKIP_FROM_DEFAULT_SETUP: set[str] = set()
 
 
 def setup_all_oracles(args) -> int:

@@ -22,11 +22,11 @@ mamba activate chorus
 python -m pip install -e .
 ```
 
-Prerequisite: **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>, plus **~25 GB free disk** for the default install (all 6 oracle envs + hg38 + per-oracle CDF backgrounds; ChromBPNet/BPNet weights now stream from a slim HuggingFace mirror — only ~50 MB pre-cached for the K562 + HepG2 DNase fast path used by every shipped notebook). Works on Linux x86_64 and macOS (Intel / Apple Silicon). A single oracle env is ~6 GB. Opting in to `chorus setup --all-chrombpnet` pre-caches every fold-0 bias-corrected ChromBPNet model from the slim mirror (~1.5 GB additional, ~5 min). Other ChromBPNet cell types download lazily on first `load_pretrained_model(...)` regardless. If you specifically need the full bias-aware `chrombpnet` variant or fold ≠ 0, chorus falls back to the original ENCODE tarball for that specific model (~1.8 GB on disk per model). The PyTorch backend for AlphaGenome (`alphagenome_pt`, same model + same weights as the default JAX backend) is **not** included in the default install to keep install size bounded — opt in with `chorus setup --oracle alphagenome_pt` (~5 GB env + ~3.4 GB weights). See [Two AlphaGenome backends](#two-alphagenome-backends) for when it's useful.
+Prerequisite: **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>, plus **~28 GB free disk** for the default install (6 oracles + a second AlphaGenome backend for Mac MPS speed; hg38; per-oracle CDF backgrounds). Both AlphaGenome backends — `alphagenome` (JAX, default) and `alphagenome_pt` (PyTorch, same model + same weights, converted to safetensors) — install by default so Mac users automatically get the MPS-accelerated path; see [Two AlphaGenome backends](#two-alphagenome-backends). ChromBPNet/BPNet weights stream from a slim HuggingFace mirror — only ~50 MB pre-cached for the K562 + HepG2 DNase fast path used by every shipped notebook. Works on Linux x86_64 and macOS (Intel / Apple Silicon). A single oracle env is ~3 GB on average. Opting in to `chorus setup --all-chrombpnet` pre-caches every fold-0 bias-corrected ChromBPNet model from the slim mirror (~1.5 GB additional, ~5 min). Other ChromBPNet cell types download lazily on first `load_pretrained_model(...)` regardless. If you specifically need the full bias-aware `chrombpnet` variant or fold ≠ 0, chorus falls back to the original ENCODE tarball for that specific model (~1.8 GB on disk per model).
 
-### 2. Download all 6 oracles + hg38 + backgrounds (~45–60 min, unattended)
+### 2. Download all 6 oracles + hg38 + backgrounds (~55–75 min, unattended)
 
-> The `alphagenome_pt` PyTorch backend (same model, same weights as the default `alphagenome` — just converted to safetensors) is **skipped from the default `chorus setup` flow** to keep the install size bounded (~5 GB env + ~3.4 GB weights extra). Opt in with `chorus setup --oracle alphagenome_pt` separately, or pass `--include-alternative-backends` to the bare `chorus setup` to include it.
+> Both AlphaGenome backends — JAX (`alphagenome`, gated) and PyTorch (`alphagenome_pt`, public mirror of the same weights converted to safetensors) — install by default. The PyTorch backend adds ~2.6 GB of disk and ~10–13 min to setup; in exchange Mac users get the MPS-accelerated path automatically (5–8× faster than JAX CPU at ≤600 kb windows). Linux/CUDA users will likely use the JAX backend in practice (it's faster on A100), but the PyTorch backend is still useful for portability.
 
 ```bash
 chorus setup
@@ -174,8 +174,8 @@ Chorus ships **two interchangeable AlphaGenome oracles for the same model with t
 
 | Oracle | Backend | Weight source | HF gating | Default? | Best for |
 |---|---|---|---|---|---|
-| `alphagenome` | JAX (Google DeepMind reference) | `google/alphagenome-all-folds` | gated | yes — installed by default `chorus setup` | macOS at any window size, Linux/CUDA at any window size |
-| `alphagenome_pt` | PyTorch ([genomicsxai/alphagenome-pytorch](https://github.com/genomicsxai/alphagenome-pytorch)) | `gtca/alphagenome_pytorch` — *converted from the official JAX checkpoint* (same numbers, safetensors format) | public | no — opt-in via `chorus setup --oracle alphagenome_pt` (skipped from default install only because of size: ~5 GB env + ~3.4 GB weights) | macOS at ≤600 kb (5–8× faster than JAX CPU on MPS) |
+| `alphagenome` | JAX (Google DeepMind reference) | `google/alphagenome-all-folds` | gated (HF token + accept terms) | yes — installed by default `chorus setup` | macOS at any window size, Linux/CUDA at any window size |
+| `alphagenome_pt` | PyTorch ([genomicsxai/alphagenome-pytorch](https://github.com/genomicsxai/alphagenome-pytorch)) | `gtca/alphagenome_pytorch` — *converted from the official JAX checkpoint* (same numbers, safetensors format) | public on HF, but the **non-commercial model terms still apply to the weights** regardless of which mirror you download from — read [Google's AlphaGenome model terms](https://deepmind.google.com/science/alphagenome/model-terms) before commercial-adjacent use | yes — installed by default `chorus setup` (~1.7 GB env + ~880 MB weights on top of the JAX backend) | macOS at ≤600 kb (5–8× faster than JAX CPU on MPS) |
 
 **The two backends produce equivalent outputs.** Verified on M3 Ultra and A100: per-track agreement within 1–2 % relative error at 524 kb across all 7 chorus-exposed assays, within 0.02 log₂ on full Fig 3f region-swap layer scores. The small residual diff is fp32 implementation noise (different op orderings, conv kernels, attention numerics across JAX and PyTorch), not different weights. Full audit at `audits/2026-04-29_alphagenome_pytorch_spike/` and `audits/2026-04-29_alphagenome_pt_stress_test/`.
 
@@ -186,7 +186,7 @@ Chorus ships **two interchangeable AlphaGenome oracles for the same model with t
 - **macOS + MPS, window >600 kb**: prefer `alphagenome` on CPU (PyTorch MPS regresses past a GPU on-die cache cliff at ~768→896 kb on M3 Ultra).
 - **No GPU**: prefer `alphagenome` on CPU (JAX CPU is 30–65 % faster than PyTorch CPU for this model).
 
-The recommendation is suggestion-only — chorus never auto-routes between backends, so users always know which backend produced their predictions. Upstream's PyTorch port also exposes `VariantScoringModel` + 7 scorer classes, LoRA + linear-probe fine-tuning, and CONTACT_MAPS / SPLICE_JUNCTIONS heads — **none of these are wired through the chorus API yet** for either backend; opt-in via direct `alphagenome_pytorch` import if needed.
+The recommendation is suggestion-only — chorus never auto-routes between backends, so users always know which backend produced their predictions. Upstream's PyTorch port also exposes `VariantScoringModel` + 7 scorer classes, LoRA + linear-probe fine-tuning, and CONTACT_MAPS / SPLICE_JUNCTIONS heads — **none of these are wired through the chorus API yet** for either backend; access them via direct `alphagenome_pytorch` import if you need them today.
 
 ### Installation — detailed
 
@@ -224,12 +224,12 @@ chorus setup --oracle chrombpnet    # TensorFlow-based (includes BPNet for TF bi
 chorus setup --oracle sei           # PyTorch-based
 chorus setup --oracle legnet        # PyTorch-based
 
-# Alternative: PyTorch backend for AlphaGenome — same model, same weights
-# as the default JAX backend (converted to safetensors). Skipped from the
-# default `chorus setup` flow only because of the extra disk cost (~5 GB
-# env + ~3.4 GB weights). Useful for full GPU speed on Apple Silicon at
-# ≤600 kb windows; on Linux/CUDA the JAX backend is faster (see
-# "Two AlphaGenome backends" below).
+# PyTorch backend for AlphaGenome — same model, same weights as the
+# default JAX backend (converted to safetensors). Both AlphaGenome
+# backends install by default in `chorus setup`. This explicit form is
+# only useful if you want to add it after a previous `--oracle <other>`
+# install, or if you ran setup with `--no-weights` and want to add PT
+# weights afterward. (See "Two AlphaGenome backends" below.)
 chorus setup --oracle alphagenome_pt
 
 # List available environments

@@ -8,20 +8,21 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **AlphaGenome PyTorch backend (alternative, opt-in)** —
+- **AlphaGenome PyTorch backend (second AlphaGenome oracle, installed by default)** —
   `AlphaGenomePTOracle` wraps the upstream
   [`genomicsxai/alphagenome-pytorch`](https://github.com/genomicsxai/alphagenome-pytorch)
   port. **Same model, same weights** as the default JAX `alphagenome`
   oracle: [`gtca/alphagenome_pytorch`](https://huggingface.co/gtca/alphagenome_pytorch)
   is the official JAX checkpoint converted to safetensors. Outputs
   agree within fp32 implementation noise (1–2 % per-track on chorus-API
-  scoring, verified on M3 Ultra + A100). Skipped from the default
-  `chorus setup` flow only because of disk size (~5 GB env + ~3.4 GB
-  weights extra) — opt in with `chorus setup --oracle alphagenome_pt`.
+  scoring, verified on M3 Ultra + A100). Both backends now install by
+  default in `chorus setup` (~1.7 GB env + ~880 MB weights for the PT
+  side, ~10–13 min extra wall-clock). The PT mirror's HF repo is
+  public, but Google's non-commercial AlphaGenome model terms still
+  apply to the weights regardless of which mirror they came from —
+  read https://deepmind.google.com/science/alphagenome/model-terms.
   New conda env `chorus-alphagenome_pt`. Use via
   `chorus.create_oracle('alphagenome_pt', use_environment=True)`.
-  Weights are public (no HF token / license accept needed for the PT
-  path).
   - 5–8× faster than the JAX default on Apple Silicon for windows
     ≤ 600 kb via MPS; **slower than JAX CPU past a sharp cliff at
     768→896 kb** (GPU on-die cache spillover, not RAM swap — verified
@@ -33,7 +34,8 @@ project adheres to [Semantic Versioning](https://semver.org/).
     between backends.
   - Variant scoring, fine-tuning hooks, and CONTACT_MAPS /
     SPLICE_JUNCTIONS exposure available upstream are **not yet wired
-    through chorus** — opt-in via direct `alphagenome_pytorch` import.
+    through chorus** — accessible via direct `alphagenome_pytorch`
+    import for users who need them.
 
 - **AlphaGenome backend-routing helper** —
   `chorus.recommend_alphagenome_backend(window_size_bp)` (also exposed

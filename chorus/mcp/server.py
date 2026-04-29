@@ -90,11 +90,12 @@ ORACLE_SPECS = {
     },
     "alphagenome_pt": {
         "description": (
-            "AlphaGenome (DeepMind) — PyTorch backend (alternative to the "
-            "default JAX `alphagenome` oracle). Same 5,731-track schema, "
-            "same weights — `gtca/alphagenome_pytorch` is converted from "
-            "the official JAX checkpoint and produces equivalent outputs "
-            "(1–2 % per-track fp32 noise verified on M3 Ultra + A100). "
+            "AlphaGenome (DeepMind) — PyTorch backend. Second of two "
+            "interchangeable AlphaGenome oracles (the other is "
+            "`alphagenome`, JAX). Same 5,731-track schema, same weights "
+            "— `gtca/alphagenome_pytorch` is the official JAX checkpoint "
+            "converted to safetensors and produces equivalent outputs "
+            "(1–2 % per-track fp32 noise, verified on M3 Ultra + A100). "
             "Differs only in load + forward path. Useful on Apple Silicon "
             "for ≤600 kb windows (5–8× faster than JAX CPU on MPS). On "
             "Linux/CUDA, prefer `alphagenome` (JAX is 1.2–2.8× faster "
