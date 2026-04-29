@@ -1,0 +1,19 @@
+GPU: NVIDIA A100 80GB PCIe, total: 79.3 GB
+free at start: 78.8 GB
+after model load: 1.7 GB allocated, 76.1 GB free
+
+| L (kb) | mean (s) | step Δtime | peak mem (MB) | step Δmem |
+|---:|---:|---:|---:|---:|
+| 64 | 0.12 | +0.00 | 3874 | +0 |
+| 128 | 0.21 | +0.09 | 6159 | +2285 |
+| 256 | 0.40 | +0.19 | 10569 | +4411 |
+| 512 | 0.85 | +0.44 | 19404 | +8835 |
+| 768 | 1.36 | +0.52 | 28577 | +9172 |
+| 1024 | 1.95 | +0.59 | 37766 | +9189 |
+
+=== Cliff detection ===
+  64kb -> 128kb: time 0.12s -> 0.21s, ratio 1.77x (L ratio 2.00x)
+  128kb -> 256kb: time 0.21s -> 0.40s, ratio 1.94x (L ratio 2.00x)
+  256kb -> 512kb: time 0.40s -> 0.85s, ratio 2.11x (L ratio 2.00x)
+  512kb -> 768kb: time 0.85s -> 1.36s, ratio 1.61x (L ratio 1.50x)
+  768kb -> 1024kb: time 1.36s -> 1.95s, ratio 1.43x (L ratio 1.33x)

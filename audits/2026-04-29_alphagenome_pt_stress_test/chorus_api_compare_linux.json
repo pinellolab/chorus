@@ -1,0 +1,81 @@
+{
+  "window_bp": 524288,
+  "tss": [
+    "chr1",
+    109274968
+  ],
+  "jax_predict_s": 172.77606892585754,
+  "pt_predict_s": 24.297571659088135,
+  "rows": [
+    {
+      "assay": "DNASE/EFO:0002067 DNase-seq/.",
+      "shape_mismatch": false,
+      "max_abs": 0.48021697998046875,
+      "mean_abs": 0.001035127088532026,
+      "mean_rel": 0.00932777632530399,
+      "sum_jax": 58181.57374010049,
+      "sum_pt": 57800.077355994305,
+      "sum_rel_diff": -0.006556996650010487
+    },
+    {
+      "assay": "DNASE/EFO:0001187 DNase-seq/.",
+      "shape_mismatch": false,
+      "max_abs": 0.3543558120727539,
+      "mean_abs": 0.0011265160975321895,
+      "mean_rel": 0.014021669196542604,
+      "sum_jax": 42121.86552919075,
+      "sum_pt": 42643.473009781286,
+      "sum_rel_diff": 0.01238329485262345
+    },
+    {
+      "assay": "DNASE/EFO:0002784 DNase-seq/.",
+      "shape_mismatch": false,
+      "max_abs": 0.35249900817871094,
+      "mean_abs": 0.0007492686595364348,
+      "mean_rel": 0.012677861199758339,
+      "sum_jax": 30985.712348047782,
+      "sum_pt": 30664.070648465855,
+      "sum_rel_diff": -0.010380322903958718
+    },
+    {
+      "assay": "ATAC/EFO:0002067 ATAC-seq/.",
+      "shape_mismatch": false,
+      "max_abs": 0.3058452606201172,
+      "mean_abs": 0.0007555300634392251,
+      "mean_rel": 0.007411614281499721,
+      "sum_jax": 53445.21813599441,
+      "sum_pt": 53298.19556940203,
+      "sum_rel_diff": -0.002750902170859682
+    },
+    {
+      "assay": "ATAC/EFO:0001187 ATAC-seq/.",
+      "shape_mismatch": false,
+      "max_abs": 0.3679161071777344,
+      "mean_abs": 0.00130971925855061,
+      "mean_rel": 0.013775503966428349,
+      "sum_jax": 49847.18418129043,
+      "sum_pt": 50493.16735881834,
+      "sum_rel_diff": 0.012959271183272945
+    },
+    {
+      "assay": "CAGE/hCAGE EFO:0002067/+",
+      "shape_mismatch": false,
+      "max_abs": 39.98193359375,
+      "mean_abs": 0.0009306339916024546,
+      "mean_rel": 0.008758191977197414,
+      "sum_jax": 55710.1546606638,
+      "sum_pt": 55836.28910861669,
+      "sum_rel_diff": 0.0022641195078561163
+    },
+    {
+      "assay": "CAGE/hCAGE EFO:0001187/+",
+      "shape_mismatch": false,
+      "max_abs": 25.134765625,
+      "mean_abs": 0.0008005007994562456,
+      "mean_rel": 0.008308036329040138,
+      "sum_jax": 50516.50500401713,
+      "sum_pt": 50556.431371876046,
+      "sum_rel_diff": 0.0007903628300440914
+    }
+  ]
+}
