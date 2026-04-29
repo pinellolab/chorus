@@ -1,0 +1,28 @@
+Step 2 — repack ChromBPNet ATAC/DNase fold-0 nobias h5's — PASSED 2026-04-28
+
+Initial run failed silently: tar TOC paths are `./fold_0/...` (no leading
+`models/` prefix); my regex assumed `^models/fold_0/...`. Fixed regex to
+`(?:^|/)fold_0/model\.chrombpnet_nobias\.fold_0\.(ENCSR[A-Z0-9]+)\.h5$`
++ search anywhere instead of match-from-start. Also enabled
+`python -u` for visible progress. Re-run extracted all 42 in ~50 min
+(16 cached tarballs from the failed first run: extract-only ~10 s
+each; remaining 26 had to download ~720 MB each, parallel × 4).
+
+Step 3 — BPNet/CHIP bulk fetch from JASPAR mirror — PASSED 2026-04-28
+
+744/744 model.h5 files downloaded successfully via 8-way parallel pool.
+Each file 563,760 bytes uniformly. 401 MB on disk total, 419 MB
+in manifest size summation (matches plan).
+
+Manifest rebuild (post-script crash on a KeyError on ALREADY_SLIM
+entries) walks the filesystem directly:
+
+  manifest: 786 entries
+    ChromBPNet ATAC/DNase ENCFF entries: 42 (1074.5 MB)
+    BPNet/CHIP BP entries:               744 (419.4 MB)
+    Total slim mirror size:              1493.9 MB (1.49 GB)
+
+Matches plan target of ≈1.5 GB. 67× reduction vs ENCODE-tarball-based
+~100 GB prefetch.
+
+Cleared for Step 4 (HF upload).

@@ -1,0 +1,24 @@
+Step 1 — local repack round-trip — PASSED 2026-04-28
+
+Source files (already cached on disk):
+  downloads/chrombpnet/DNASE_HepG2/models/fold_0/model.chrombpnet_nobias.fold_0.ENCSR149XIL.h5  (25,583,536 bytes)
+  downloads/chrombpnet/DNASE_K562/models/fold_0/model.chrombpnet_nobias.fold_0.ENCSR000EOT.h5   (25,583,536 bytes)
+
+Slim staging layout (mirroring proposed HF tree):
+  /tmp/hf-staging/DNASE/HepG2/fold_0/model.chrombpnet_nobias.fold_0.ENCSR149XIL.h5
+  /tmp/hf-staging/DNASE/K562/fold_0/model.chrombpnet_nobias.fold_0.ENCSR000EOT.h5
+
+sha256 source vs slim:
+  HepG2 dd39ac49d485608ff836abb57199bc28c6e8d0fabd9b74da13cd80b77247e2ea  match ✓
+  K562  920780b6855e45efa9c62bb00b79f60ed21b64c371fb01145cf7f83468cb8bfd  match ✓
+
+TF load + predict round-trip (chrX:48,782,929-48,783,129 GATA1 enhancer,
+2114 bp window centred on midpoint, hg38, ChromBPNet env Metal GPU):
+  HepG2: profile bit-equal ✓, counts bit-equal ✓ (counts=4.50, profile.mean=6.87)
+  K562:  profile bit-equal ✓, counts bit-equal ✓ (counts=6.82, profile.mean=5.12)
+
+Sanity: K562 counts > HepG2 counts at GATA1 enhancer is biologically expected
+(GATA1 = erythroid TF, K562 = erythroleukemia line, much more open chromatin
+than HepG2 hepatocytes).
+
+Cleared for Step 2.
