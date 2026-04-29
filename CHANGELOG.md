@@ -4,6 +4,29 @@ All notable changes to Chorus are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
 project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **AlphaGenome PyTorch backend (opt-in, experimental)** —
+  `AlphaGenomePTOracle` wraps the upstream
+  [`genomicsxai/alphagenome-pytorch`](https://github.com/genomicsxai/alphagenome-pytorch)
+  port. New conda env `chorus-alphagenome_pt`. Use via
+  `chorus.create_oracle('alphagenome_pt', use_environment=True)`. Weights
+  are public (no HF gating) at
+  [`gtca/alphagenome_pytorch`](https://huggingface.co/gtca/alphagenome_pytorch).
+  - 8–11× faster than CPU on Apple Silicon for sub-1 MB windows via MPS;
+    however, **slower than CPU at the full 1 MB context** due to
+    unified-memory pressure — pass `device='cpu'` for 1 MB queries on
+    Mac. See `audits/2026-04-29_alphagenome_pytorch_spike/` for the full
+    speed table and decision discussion.
+  - JAX backend (`alphagenome`) remains the default and is unchanged.
+    Track metadata, assay identifiers, and CDF backgrounds are shared
+    between backends.
+  - Variant scoring, fine-tuning hooks, and CONTACT_MAPS /
+    SPLICE_JUNCTIONS exposure available upstream are **not yet wired
+    through chorus** — opt-in via direct `alphagenome_pytorch` import.
+
 ## [0.3.0] — 2026-04-28
 
 ### ⚠️ Breaking change
