@@ -178,6 +178,12 @@ produced the numbers, and when it was generated.
   right tool.
 - **AlphaGenome is recommended** for most users: 1 Mb window, 5,731
   tracks, single base-pair resolution, covers all regulatory layers.
+  Chorus ships two interchangeable AlphaGenome oracles — `alphagenome`
+  (JAX, default) and `alphagenome_pt` (PyTorch, same model + same
+  weights). Ask Claude *"which AlphaGenome backend should I use for a
+  524 kb window on my machine?"* and it'll call the
+  `recommend_alphagenome_backend` MCP tool — short answer: PyTorch on
+  Apple Silicon for ≤600 kb, JAX everywhere else.
 - **ChromBPNet** is useful as a second opinion at base resolution for
   specific TF binding questions.
 - **Start broad, then narrow.** Use `discover_variant` or

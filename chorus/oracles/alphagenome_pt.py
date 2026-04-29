@@ -1,4 +1,34 @@
-"""AlphaGenome oracle implementation."""
+"""AlphaGenome PyTorch backend oracle.
+
+Wraps the upstream PyTorch port at ``genomicsxai/alphagenome-pytorch``,
+which ships safetensors weights converted from the official JAX
+checkpoint (`gtca/alphagenome_pytorch` on HF) — **same model, same
+weights** as the default JAX-backed :class:`AlphaGenomeOracle`. Outputs
+agree within fp32 implementation noise (1–2 % per-track relative diff on
+chorus-API-level scoring; verified on M3 Ultra + A100 in the audits at
+``audits/2026-04-29_alphagenome_pytorch_spike/`` and
+``audits/2026-04-29_alphagenome_pt_stress_test/``).
+
+Track schema, assay identifiers, and the ``alphagenome_tracks.json``
+metadata cache are shared with :class:`AlphaGenomeOracle`; only the
+load + forward path differs.
+
+What this backend buys you over the JAX default:
+
+- Native MPS support on Apple Silicon (the JAX path forces CPU on macOS;
+  this is the main reason the PyTorch backend exists).
+- Public HF weights — no `google/alphagenome-all-folds` license accept
+  needed for the PyTorch path.
+- Turnkey variant scoring via ``alphagenome_pytorch.variant_scoring``
+  (exposed via the upstream API — not yet wired through chorus).
+- LoRA / linear-probe fine-tuning hooks (also not yet wired through
+  chorus).
+
+Use ``chorus.create_oracle('alphagenome_pt', ...)``. Call
+``chorus.recommend_alphagenome_backend(window_size_bp)`` (or
+``oracle.recommend_backend(window_size_bp)``) to decide which backend
+fits a given query.
+"""
 
 from ..core.base import OracleBase
 from ..core.result import OraclePrediction, OraclePredictionTrack
@@ -16,18 +46,28 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 
-class AlphaGenomeOracle(OracleBase):
-    """AlphaGenome oracle with automatic environment management.
+class AlphaGenomePTOracle(OracleBase):
+    """AlphaGenome PyTorch-port oracle (opt-in backend).
 
-    AlphaGenome (Google DeepMind, Nature 2026) predicts 5,731 human functional
-    genomic tracks at single base-pair resolution from up to 1 MB of DNA
-    sequence using a JAX-based model.
-
-    Track identifiers use the AlphaGenome naming convention, e.g.
-    ``"CL:0000084 ATAC-seq"`` for T-cell ATAC-seq. Use
-    ``list_assay_types()`` and ``get_track_info(query)`` to discover
-    available tracks.
+    Mirrors :class:`AlphaGenomeOracle` shape; differs only in load + forward.
+    Shares the 5,731-track metadata cache and `Track` conversion conventions
+    so percentile CDFs, walkthroughs, and report templates port over without
+    schema changes.
     """
+
+    HF_REPO = "gtca/alphagenome_pytorch"
+    WEIGHTS_FILENAME = "model_all_folds.safetensors"
+
+    # Same fold semantics as the JAX oracle: 'all_folds' (default) or
+    # 'fold_0'..'fold_3'. Maps to the matching safetensors file at
+    # `gtca/alphagenome_pytorch`.
+    _FOLD_TO_FILE = {
+        "all_folds": "model_all_folds.safetensors",
+        "fold_0": "model_fold_0.safetensors",
+        "fold_1": "model_fold_1.safetensors",
+        "fold_2": "model_fold_2.safetensors",
+        "fold_3": "model_fold_3.safetensors",
+    }
 
     def __init__(
         self,
@@ -38,8 +78,10 @@ class AlphaGenomeOracle(OracleBase):
         device: Optional[str] = None,
         fold: str = "all_folds",
         organism: str = "human",
+        hf_repo: Optional[str] = None,
+        weights_filename: Optional[str] = None,
     ):
-        self.oracle_name = "alphagenome"
+        self.oracle_name = "alphagenome_pt"
 
         super().__init__(
             use_environment=use_environment,
@@ -48,18 +90,26 @@ class AlphaGenomeOracle(OracleBase):
             device=device,
         )
 
-        # AlphaGenome specific parameters
-        self.sequence_length = 1_048_576  # 1 MB input window
-        self.target_length = 1_048_576    # single bp resolution output
-        self.bin_size = 1                 # default (most modalities are 1bp)
+        self.sequence_length = 1_048_576
+        self.target_length = 1_048_576
+        self.bin_size = 1
         self.fold = fold
         self.organism = organism
+        self.hf_repo = hf_repo or self.HF_REPO
+        if weights_filename is not None:
+            self.weights_filename = weights_filename
+        elif fold in self._FOLD_TO_FILE:
+            self.weights_filename = self._FOLD_TO_FILE[fold]
+        else:
+            raise ValueError(
+                f"Unknown fold '{fold}'. Expected one of "
+                f"{sorted(self._FOLD_TO_FILE)} or pass weights_filename "
+                "explicitly."
+            )
 
-        # Model state
         self._model = None
         self._track_dict = None
 
-        # Reference genome
         self.reference_fasta = reference_fasta
         self.model_dir = None
 
@@ -72,7 +122,7 @@ class AlphaGenomeOracle(OracleBase):
     def get_model_dir_path(self) -> str:
         if self.model_dir is None:
             parent = os.path.dirname(os.path.realpath(__file__))
-            self.model_dir = os.path.join(parent, "alphagenome_source")
+            self.model_dir = os.path.join(parent, "alphagenome_pt_source")
         return self.model_dir
 
     def get_templates_dir(self) -> str:
@@ -89,85 +139,79 @@ class AlphaGenomeOracle(OracleBase):
             return inp.read(), "__ARGS_FILE_NAME__"
 
     # ------------------------------------------------------------------
-    # Model loading
+    # Loading
     # ------------------------------------------------------------------
     def load_pretrained_model(self, weights: str = None) -> None:
-        logger.info("Loading AlphaGenome model")
-
+        logger.info("Loading AlphaGenome PyTorch port")
         if self.use_environment:
             self._load_in_environment(weights)
         else:
             self._load_direct(weights)
 
+    def _resolve_torch_device(self):
+        import torch
+
+        if self.device == "mps":
+            return torch.device("mps")
+        if self.device == "cuda" or (self.device and self.device.startswith("cuda:")):
+            return torch.device(self.device)
+        if self.device == "cpu":
+            return torch.device("cpu")
+        # Auto: MPS > CUDA > CPU. CUDA wins on Linux boxes; MPS wins on macOS.
+        if torch.backends.mps.is_available():
+            return torch.device("mps")
+        if torch.cuda.is_available():
+            return torch.device("cuda")
+        return torch.device("cpu")
+
     def _load_direct(self, weights: str) -> None:
         try:
-            import os
-            import platform as _platform
-
-            # JAX_PLATFORMS must be set BEFORE importing jax so the Metal
-            # plugin is never initialised on macOS (crashes with
-            # "UNIMPLEMENTED: default_memory_space").
-            force_cpu = (
-                _platform.system() == "Darwin"
-                and not (self.device and self.device.startswith("metal"))
-            )
-            if force_cpu:
-                os.environ["JAX_PLATFORMS"] = "cpu"
-
-            import jax
             import huggingface_hub
-            from alphagenome_research.model.dna_model import create_from_huggingface
+            from .alphagenome_pt_source import _mps_compat  # noqa: F401
+            from alphagenome_pytorch import AlphaGenome
 
-            # Ensure HuggingFace auth (required for gated AlphaGenome model)
             try:
                 huggingface_hub.whoami()
             except huggingface_hub.errors.LocalTokenNotFoundError:
-                hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+                hf_token = os.environ.get("HF_TOKEN") or os.environ.get(
+                    "HUGGING_FACE_HUB_TOKEN"
+                )
                 if hf_token:
-                    huggingface_hub.login(token=hf_token, add_to_git_credential=False)
-                else:
-                    raise ModelNotLoadedError(
-                        "AlphaGenome requires HuggingFace authentication. "
-                        "Set the HF_TOKEN environment variable or run `huggingface-cli login`. "
-                        "You must also accept the model license at "
-                        "https://huggingface.co/google/alphagenome-all-folds."
+                    huggingface_hub.login(
+                        token=hf_token, add_to_git_credential=False
                     )
 
-            if force_cpu:
-                jax_device = jax.devices("cpu")[0]
-            elif self.device and self.device.startswith("cpu"):
-                jax_device = jax.devices("cpu")[0]
-            elif self.device and self.device.startswith("gpu"):
-                jax_device = jax.devices("gpu")[0]
-            elif self.device and self.device.startswith("metal"):
-                jax_device = jax.devices("METAL")[0]
-            else:
-                # Auto-detect: prefer CUDA GPU > CPU (Metal skipped)
-                available_platforms = {d.platform for d in jax.devices()}
-                if "gpu" in available_platforms:
-                    jax_device = jax.devices("gpu")[0]
-                else:
-                    jax_device = jax.devices("cpu")[0]
+            weights_path = huggingface_hub.hf_hub_download(
+                repo_id=self.hf_repo, filename=self.weights_filename
+            )
+            device = self._resolve_torch_device()
+            model = AlphaGenome.from_pretrained(weights_path, device=device)
+            model.eval()
 
-            model = create_from_huggingface(self.fold, device=jax_device)
             self._model = model
             self.model = model
             self.loaded = True
-            logger.info("AlphaGenome model loaded successfully on %s", jax_device)
-        except ModelNotLoadedError:
-            raise
+            logger.info(
+                "AlphaGenome PyTorch model loaded on %s (weights: %s)",
+                device,
+                weights_path,
+            )
         except Exception as e:
-            raise ModelNotLoadedError(f"Failed to load AlphaGenome model: {e}.")
+            raise ModelNotLoadedError(
+                f"Failed to load AlphaGenome PyTorch model: {e}."
+            )
 
     def _load_in_environment(self, weights: str) -> None:
         args = {
             "device": self.device,
-            "fold": self.fold,
+            "hf_repo": self.hf_repo,
+            "weights_filename": self.weights_filename,
         }
-
         import tempfile
 
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as arg_file:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".txt", delete=False
+        ) as arg_file:
             json.dump(args, arg_file)
             arg_file.flush()
 
@@ -177,14 +221,16 @@ class AlphaGenomeOracle(OracleBase):
             model_info = self.run_code_in_environment(
                 template, timeout=self.model_load_timeout
             )
-
             if model_info and model_info.get("loaded"):
                 self.loaded = True
                 self._model_info = model_info
-                logger.info("AlphaGenome model loaded successfully in environment!")
+                logger.info(
+                    "AlphaGenome PyTorch model loaded in environment (device=%s)",
+                    model_info.get("device"),
+                )
             else:
                 raise ModelNotLoadedError(
-                    "Failed to load AlphaGenome model in environment"
+                    "Failed to load AlphaGenome PyTorch model in environment"
                 )
         finally:
             os.unlink(arg_file.name)
@@ -200,7 +246,6 @@ class AlphaGenomeOracle(OracleBase):
         if assay_ids is None:
             assay_ids = self.get_all_assay_ids()
 
-        # Build query interval
         if isinstance(seq, tuple):
             if self.reference_fasta is None:
                 raise ValueError(
@@ -224,13 +269,11 @@ class AlphaGenomeOracle(OracleBase):
 
         full_seq = input_interval.sequence
 
-        # AlphaGenome uses smart positional embeddings and handles variable-
-        # length input natively.  N-padding (which extend() adds near
-        # chromosome edges) produces near-zero signal and should be avoided.
-        # The model requires input lengths that are compatible with its
-        # internal architecture — empirically, powers of 2 from 2^15 (32kb)
-        # to 2^20 (1MB) all work reliably.
-        full_seq = self._strip_n_padding(full_seq)
+        # Same N-padding handling as the JAX path — AlphaGenome architecture
+        # accepts variable-length input but rejects sequences padded with N.
+        from .alphagenome import AlphaGenomeOracle
+
+        full_seq = AlphaGenomeOracle._strip_n_padding(full_seq)
 
         if self.use_environment:
             raw_result = self._predict_in_environment(full_seq, assay_ids)
@@ -248,14 +291,16 @@ class AlphaGenomeOracle(OracleBase):
                 raise ValueError(f"Assay ID not found in metadata: {assay_id}")
             info = metadata.get_track_info(track_id)
             if info is None:
-                raise ValueError(f"No track info for index {track_id} (assay {assay_id})")
+                raise ValueError(
+                    f"No track info for index {track_id} (assay {assay_id})"
+                )
             types_info = metadata.parse_description(info["description"])
             resolution = info.get("resolution", 1)
 
             values = np.array(raw_result["values"][ind], dtype=np.float32)
 
             track = OraclePredictionTrack.create(
-                source_model="alphagenome",
+                source_model="alphagenome_pt",
                 assay_id=assay_id,
                 track_id=track_id,
                 assay_type=types_info["assay_type"],
@@ -274,12 +319,11 @@ class AlphaGenomeOracle(OracleBase):
 
         return final_prediction
 
-    def _predict_in_environment(
-        self, seq: str, assay_ids: List[str]
-    ) -> dict:
+    def _predict_in_environment(self, seq: str, assay_ids: List[str]) -> dict:
         args = {
             "device": self.device,
-            "fold": self.fold,
+            "hf_repo": self.hf_repo,
+            "weights_filename": self.weights_filename,
             "length": self.sequence_length,
             "sequence": seq,
             "assay_ids": assay_ids,
@@ -307,11 +351,10 @@ class AlphaGenomeOracle(OracleBase):
             get_metadata,
             SKIPPED_OUTPUT_TYPES,
         )
-        from alphagenome.models.dna_output import OutputType
+        import torch
 
         metadata = get_metadata()
 
-        # Determine which output types we need
         needed_output_types = set()
         for aid in assay_ids:
             idx = metadata.get_track_by_identifier(aid)
@@ -322,113 +365,88 @@ class AlphaGenomeOracle(OracleBase):
                 raise ValueError(f"No track info for index {idx} (assay {aid})")
             needed_output_types.add(info["output_type"])
 
-        requested_outputs = [
-            ot
-            for ot in OutputType
-            if ot.name in needed_output_types
-            and ot.name not in SKIPPED_OUTPUT_TYPES
-        ]
-
-        output = self._model.predict_sequence(
-            seq,
-            requested_outputs=requested_outputs,
-            ontology_terms=None,
+        _OUTPUT_TYPE_TO_PT_KEY = {
+            "ATAC": "atac",
+            "DNASE": "dnase",
+            "CAGE": "cage",
+            "RNA_SEQ": "rna_seq",
+            "CHIP_HISTONE": "chip_histone",
+            "CHIP_TF": "chip_tf",
+            "PROCAP": "procap",
+            "SPLICE_SITES": "splice_sites",
+            "SPLICE_SITE_USAGE": "splice_site_usage",
+        }
+        heads = tuple(
+            _OUTPUT_TYPE_TO_PT_KEY[ot]
+            for ot in needed_output_types
+            if ot in _OUTPUT_TYPE_TO_PT_KEY and ot not in SKIPPED_OUTPUT_TYPES
         )
 
-        # Extract per-assay values
+        device = next(self._model.parameters()).device
+        _BASE_TO_IDX = {"A": 0, "C": 1, "G": 2, "T": 3}
+        seq_arr = np.zeros((len(seq), 4), dtype=np.float32)
+        for i, b in enumerate(seq):
+            j = _BASE_TO_IDX.get(b.upper(), -1)
+            if j >= 0:
+                seq_arr[i, j] = 1.0
+        dna_onehot = torch.from_numpy(seq_arr).unsqueeze(0).to(device)
+
+        with torch.no_grad():
+            # Use forward() instead of predict() so we can pass heads= to
+            # skip computation for output types we don't need. predict()
+            # is a thin wrapper without that filter. forward() requires
+            # organism_index as a Tensor — predict() accepts int and
+            # converts internally, but we lose the heads= filter there.
+            output = self._model(
+                dna_onehot,
+                organism_index=torch.tensor([0], dtype=torch.long, device=device),
+                heads=heads if heads else None,
+            )
+
         collected = []
         resolutions = []
         for aid in assay_ids:
             idx = metadata.get_track_by_identifier(aid)
-            if idx is None:
-                raise ValueError(f"Assay ID not found in metadata: {aid}")
             info = metadata.get_track_info(idx)
-            if info is None:
-                raise ValueError(f"No track info for index {idx} (assay {aid})")
             ot_name = info["output_type"]
             local_idx = info["local_index"]
-            ot_enum = OutputType[ot_name]
-            track_data = output.get(ot_enum)
-            if track_data is None:
+            res = info.get("resolution", 1)
+            pt_key = _OUTPUT_TYPE_TO_PT_KEY.get(ot_name)
+            if pt_key is None or pt_key not in output:
                 raise ValueError(
-                    f"No prediction data for output type {ot_name} (assay {aid})"
+                    f"Output type {ot_name} not produced by PyTorch port "
+                    f"(key={pt_key})"
                 )
-            values = np.asarray(track_data.values)[:, local_idx]
-            collected.append(values.tolist())
-            resolutions.append(info["resolution"])
+            head_out = output[pt_key]
+            if isinstance(head_out, dict):
+                if res not in head_out:
+                    res = next(iter(head_out.keys()))
+                tensor = head_out[res]
+            else:
+                tensor = head_out
+            arr = tensor.detach().cpu().numpy()
+            if arr.ndim == 3:
+                track_values = arr[0, :, local_idx]
+            elif arr.ndim == 2:
+                track_values = arr[:, local_idx]
+            else:
+                raise ValueError(
+                    f"Unexpected output array shape {arr.shape} for {ot_name}"
+                )
+            collected.append(track_values.astype(np.float32).tolist())
+            resolutions.append(int(res))
 
         return {"values": collected, "resolutions": resolutions}
 
     # ------------------------------------------------------------------
-    # N-padding removal
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _strip_n_padding(seq: str) -> str:
-        """Remove N-padding and round to a valid AlphaGenome input length.
-
-        AlphaGenome handles variable-length input natively via smart positional
-        embeddings, but requires lengths compatible with its architecture.
-        Empirically, powers of 2 from 2^15 (32,768) to 2^20 (1,048,576) all
-        work.  N-padding (from chromosome edges) produces near-zero signal and
-        should always be stripped.
-
-        Returns the sequence unchanged if it has no N-padding and is already a
-        valid length (the common case for mid-chromosome queries).
-        """
-        import math
-
-        _VALID_LENGTHS = [2**p for p in range(15, 21)]  # 32k to 1MB
-
-        # Fast path: already the target length with no edge Ns
-        if len(seq) == 1_048_576 and seq[0] != "N" and seq[-1] != "N":
-            return seq
-
-        # Strip leading/trailing N-runs
-        stripped = seq.strip("N")
-        if len(stripped) == len(seq):
-            # No N-padding was present — return as-is if valid length
-            if len(seq) in _VALID_LENGTHS:
-                return seq
-            # Round down to nearest valid length
-            for vl in reversed(_VALID_LENGTHS):
-                if vl <= len(seq):
-                    trim = len(seq) - vl
-                    trim_left = trim // 2
-                    return seq[trim_left:trim_left + vl]
-
-        # N-padding was stripped — round down to nearest valid length
-        for vl in reversed(_VALID_LENGTHS):
-            if vl <= len(stripped):
-                trim = len(stripped) - vl
-                trim_left = trim // 2
-                result = stripped[trim_left:trim_left + vl]
-                logger.info(
-                    "AlphaGenome: removed N-padding, using %d bp of %d bp "
-                    "real genome sequence (original %d bp with Ns)",
-                    vl, len(stripped), len(seq),
-                )
-                return result
-
-        # Sequence too short even after stripping
-        logger.warning(
-            "AlphaGenome: only %d bp of real genome sequence available "
-            "(minimum 32,768). Using what's available — predictions may fail.",
-            len(stripped),
-        )
-        return stripped
-
-    # ------------------------------------------------------------------
-    # Metadata helpers
+    # Metadata helpers (delegate to shared cache)
     # ------------------------------------------------------------------
     def list_assay_types(self) -> List[str]:
         from .alphagenome_source.alphagenome_metadata import get_metadata
-
         return get_metadata().list_assay_types()
 
     def list_cell_types(self) -> List[str]:
         from .alphagenome_source.alphagenome_metadata import get_metadata
-
         return get_metadata().list_cell_types()
 
     def get_all_assay_ids(self) -> List[str]:
@@ -437,11 +455,10 @@ class AlphaGenomeOracle(OracleBase):
         metadata = get_metadata()
         ids = []
         for aid, idx in metadata._track_index_map.items():
-            # Skip padding tracks (placeholder slots in AlphaGenome metadata)
-            if '/Padding/' in aid:
+            if "/Padding/" in aid:
                 continue
             info = metadata.get_track_info(idx)
-            if info and info.get('name', '').lower() == 'padding':
+            if info and info.get("name", "").lower() == "padding":
                 continue
             ids.append(aid)
         return ids
@@ -454,32 +471,29 @@ class AlphaGenomeOracle(OracleBase):
         metadata = get_metadata()
         if query:
             return metadata.search_tracks(query)
-        else:
-            return metadata.get_track_summary()
+        return metadata.get_track_summary()
 
     # ------------------------------------------------------------------
     # Backend routing helper
     # ------------------------------------------------------------------
     def recommend_backend(self, window_size_bp: int) -> dict:
         """Suggest whether to use the JAX or PyTorch AlphaGenome backend
-        for a given query window size on this host.
-
-        Returns a dict with ``oracle``, ``device``, ``reason``,
-        ``confidence``, and a ``benchmarks`` table. See
-        :func:`chorus.recommend_alphagenome_backend` for full details.
-        """
+        for a given query window size on this host. Same return shape
+        as :func:`chorus.recommend_alphagenome_backend`."""
         from ._alphagenome_routing import recommend_alphagenome_backend
 
         return recommend_alphagenome_backend(window_size_bp)
 
     # ------------------------------------------------------------------
-    # Abstract method implementations
+    # Abstract methods
     # ------------------------------------------------------------------
     def fine_tune(
         self, tracks: List[Track], track_names: List[str], **kwargs
     ) -> None:
         raise NotImplementedError(
-            "Fine-tuning is not yet implemented for AlphaGenome"
+            "Fine-tuning via chorus is not yet wired for the PyTorch backend. "
+            "Upstream supports LoRA + linear-probe via "
+            "alphagenome_pytorch.scripts.finetune."
         )
 
     def _get_context_size(self) -> int:

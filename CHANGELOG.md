@@ -6,6 +6,56 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **AlphaGenome PyTorch backend (second AlphaGenome oracle, installed by default)** —
+  `AlphaGenomePTOracle` wraps the upstream
+  [`genomicsxai/alphagenome-pytorch`](https://github.com/genomicsxai/alphagenome-pytorch)
+  port. **Same model, same weights** as the default JAX `alphagenome`
+  oracle: [`gtca/alphagenome_pytorch`](https://huggingface.co/gtca/alphagenome_pytorch)
+  is the official JAX checkpoint converted to safetensors. Outputs
+  agree within fp32 implementation noise (1–2 % per-track on chorus-API
+  scoring, verified on M3 Ultra + A100). Both backends now install by
+  default in `chorus setup` (~1.7 GB env + ~880 MB weights for the PT
+  side, ~10–13 min extra wall-clock). The PT mirror's HF repo is
+  public, but Google's non-commercial AlphaGenome model terms still
+  apply to the weights regardless of which mirror they came from —
+  read https://deepmind.google.com/science/alphagenome/model-terms.
+  New conda env `chorus-alphagenome_pt`. Use via
+  `chorus.create_oracle('alphagenome_pt', use_environment=True)`.
+  - 5–8× faster than the JAX default on Apple Silicon for windows
+    ≤ 600 kb via MPS; **slower than JAX CPU past a sharp cliff at
+    768→896 kb** (GPU on-die cache spillover, not RAM swap — verified
+    against memory traces on a 96 GB M3 Ultra). See
+    `audits/2026-04-29_alphagenome_pytorch_spike/` for the full speed
+    table, root-cause investigation, and decision discussion.
+  - JAX backend (`alphagenome`) remains the default and is unchanged.
+    Track metadata, assay identifiers, and CDF backgrounds are shared
+    between backends.
+  - Variant scoring, fine-tuning hooks, and CONTACT_MAPS /
+    SPLICE_JUNCTIONS exposure available upstream are **not yet wired
+    through chorus** — accessible via direct `alphagenome_pytorch`
+    import for users who need them.
+
+- **AlphaGenome backend-routing helper** —
+  `chorus.recommend_alphagenome_backend(window_size_bp)` (also exposed
+  as `oracle.recommend_backend(window_size_bp)` on both AlphaGenome
+  oracles) returns a dict with the suggested oracle (`alphagenome` vs
+  `alphagenome_pt`), suggested device, a one-line reason, confidence,
+  and supporting benchmark numbers. Logic (verified on M3 Ultra +
+  A100):
+  - Linux + CUDA → `alphagenome` on CUDA — counter-intuitively, JAX
+    with CUDA is 1.2–2.8× *faster* than the PyTorch port at every
+    window length. PT remains useful for portability (smaller install,
+    looser CUDA-version pinning) but not for raw speed.
+  - macOS + MPS, window ≤ 600 kb → `alphagenome_pt` on MPS (5–8× over
+    JAX CPU; safe-zone is conservative under the empirical
+    768→896 kb GPU on-die cache cliff)
+  - macOS + MPS, window > 600 kb → `alphagenome` on CPU
+  - No GPU → `alphagenome` on CPU
+  Suggestion-only, no auto-routing — users always know which backend
+  produced their predictions.
+
 ### Changed
 
 - **Cell-type discovery default ranking is now `alt_x_abs_effect`**

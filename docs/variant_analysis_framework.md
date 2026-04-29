@@ -9,6 +9,13 @@ A systematic approach to interpreting GWAS variants using genomic deep learning 
 model available. It can capture variant-to-gene effects up to 500kb+ — essential for distal
 enhancer variants, which are the majority of GWAS signals.
 
+> Chorus ships **two interchangeable AlphaGenome backends** — `alphagenome` (JAX, default)
+> and `alphagenome_pt` (PyTorch, same model + same weights, MPS-capable on Apple Silicon).
+> Both install by default and produce equivalent outputs (1–2 % per-track fp32 noise).
+> Use `chorus.recommend_alphagenome_backend(window_size_bp)` (or the matching MCP tool) to
+> pick the right backend for your platform + window size. The framework below applies
+> identically to both.
+
 | Oracle | Resolution | Output window | Role in analysis |
 |--------|-----------|---------------|------------------|
 | **AlphaGenome** | 1bp | **1 Mb** | **Primary.** Full 5-layer analysis: accessibility, histone marks, TF ChIP, CAGE, RNA-seq. Can reach distal target genes. |

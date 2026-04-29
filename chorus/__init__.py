@@ -49,6 +49,7 @@ if not os.environ.get('CHORUS_DISABLE_ORACLE_IMPORTS'):
             SeiOracle,
             LegNetOracle,
             AlphaGenomeOracle,
+            AlphaGenomePTOracle,
             get_oracle,
             ORACLES
         )
@@ -65,6 +66,7 @@ if not os.environ.get('CHORUS_DISABLE_ORACLE_IMPORTS'):
         SeiOracle = None
         LegNetOracle = None
         AlphaGenomeOracle = None
+        AlphaGenomePTOracle = None
         ORACLES = {}
 
         def get_oracle(name: str):
@@ -80,8 +82,16 @@ else:
     SeiOracle = None
     LegNetOracle = None
     AlphaGenomeOracle = None
+    AlphaGenomePTOracle = None
     ORACLES = {}
     get_oracle = None
+
+# AlphaGenome backend routing helper — works without importing the heavy
+# JAX/torch deps so it stays usable in the chorus base env.
+from .oracles._alphagenome_routing import (
+    recommend_alphagenome_backend,
+    format_recommendation as format_alphagenome_recommendation,
+)
 
 # Import utilities
 from .utils import (
@@ -174,8 +184,11 @@ def create_oracle(oracle_name: str, use_environment: bool = False, **kwargs):
         elif oracle_name.lower() == 'alphagenome':
             from .oracles.alphagenome import AlphaGenomeOracle
             return AlphaGenomeOracle(use_environment=True, **kwargs)
+        elif oracle_name.lower() == 'alphagenome_pt':
+            from .oracles.alphagenome_pt import AlphaGenomePTOracle
+            return AlphaGenomePTOracle(use_environment=True, **kwargs)
         else:
-            valid = "enformer, borzoi, chrombpnet, sei, legnet, alphagenome"
+            valid = "enformer, borzoi, chrombpnet, sei, legnet, alphagenome, alphagenome_pt"
             raise ValueError(
                 f"Unknown oracle: '{oracle_name}'. "
                 f"Valid oracle names: {valid}"
@@ -220,10 +233,13 @@ __all__ = [
     'SeiOracle',
     'LegNetOracle',
     'AlphaGenomeOracle',
-    
+    'AlphaGenomePTOracle',
+
     # Oracle utilities
     'get_oracle',
     'create_oracle',
+    'recommend_alphagenome_backend',
+    'format_alphagenome_recommendation',
     'ORACLES',
     
     # Sequence utilities

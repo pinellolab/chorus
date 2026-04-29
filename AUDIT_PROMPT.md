@@ -416,7 +416,7 @@ structure:
 - Issues encountered: <list or "none">
 
 ## Phase 2: Backgrounds
-- All 6 oracles auto-downloaded: <yes/no>
+- All 6 oracle background sets auto-downloaded (alphagenome / alphagenome_pt share one set): <yes/no>
 - All percentile lookups returned valid [0,1] values: <yes/no>
 - Issues: <list>
 

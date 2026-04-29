@@ -21,6 +21,15 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Oracles excluded from the default ``chorus setup`` flow because they're
+# alternative backends for an oracle that's already installed by default.
+# Currently empty — both AlphaGenome backends (JAX `alphagenome` and
+# PyTorch `alphagenome_pt`) install by default so Mac users get MPS
+# access without an extra setup step. The infrastructure stays in place
+# for future opt-in oracles. The ``--include-alternative-backends`` flag
+# is preserved as a no-op for now to keep CLI shape stable.
+_SKIP_FROM_DEFAULT_SETUP: set[str] = set()
+
 
 def setup_all_oracles(args) -> int:
     """Implementation of ``chorus setup --oracle all``."""
@@ -30,10 +39,32 @@ def setup_all_oracles(args) -> int:
     from ._tokens import prompt_ldlink_token, resolve_hf_token
 
     manager = EnvironmentManager()
-    oracles = manager.list_available_oracles()
-    if not oracles:
+    all_oracles = manager.list_available_oracles()
+    if not all_oracles:
         logger.error("No oracle environment definitions found.")
         return 1
+
+    # Filter alternative-backend oracles unless --include-alternative-backends
+    # was passed. The legacy --include-experimental alias keeps the same
+    # behavior for anyone who scripted against the older name.
+    include_alt = getattr(args, "include_alternative_backends", False) or getattr(
+        args, "include_experimental", False
+    )
+    if include_alt:
+        oracles = all_oracles
+    else:
+        oracles = [o for o in all_oracles if o not in _SKIP_FROM_DEFAULT_SETUP]
+        skipped = sorted(set(all_oracles) - set(oracles))
+        if skipped:
+            logger.info(
+                "Skipping alternative-backend oracle(s): %s "
+                "(install with `chorus setup --oracle <name>` or pass "
+                "--include-alternative-backends to enable in the default "
+                "flow). These are opt-in only because of disk size, not "
+                "stability — see the README's 'Two AlphaGenome backends' "
+                "section for details.",
+                ", ".join(skipped),
+            )
 
     # HF token gate — must resolve BEFORE we start downloading 10+ GB of
     # env + weights only to fail on the last oracle.
