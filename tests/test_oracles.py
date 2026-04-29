@@ -128,15 +128,44 @@ class TestBorzoiOracle:
 
 class TestChromBPNetOracle:
     """Test ChromBPNet oracle implementation."""
-    
+
     def test_initialization(self):
         """Test ChromBPNet initialization."""
         oracle = ChromBPNetOracle()
-        
+
         assert oracle.sequence_length == 2114
         assert oracle.output_length == 1000
         assert oracle.bin_size == 1
         assert not oracle.loaded
+
+    def test_default_model_type_is_nobias(self):
+        """v0.3 breaking change: default ``model_type`` is now
+        ``'chrombpnet_nobias'`` (bias-corrected). Regression guard so we
+        don't accidentally flip back to the bias-aware variant."""
+        import inspect
+        sig = inspect.signature(ChromBPNetOracle.load_pretrained_model)
+        assert sig.parameters["model_type"].default == "chrombpnet_nobias", (
+            "ChromBPNet default model_type must stay 'chrombpnet_nobias' "
+            "for chorus ≥ 0.3 — flipping back to 'chrombpnet' would silently "
+            "regress every shipped notebook + report."
+        )
+
+    def test_hf_slim_helpers_exist(self):
+        """v0.3: HF slim mirror helpers must be wired so the oracle
+        falls through to HF before ENCODE tarball downloads."""
+        oracle = ChromBPNetOracle()
+        assert hasattr(oracle, "_try_slim_hf_chrombpnet"), \
+            "missing _try_slim_hf_chrombpnet helper"
+        assert hasattr(oracle, "_try_slim_hf_bpnet"), \
+            "missing _try_slim_hf_bpnet helper"
+        # Smoke: helpers should return None gracefully when called
+        # without configured assay/cell_type (no network roundtrip).
+        oracle.assay = None
+        oracle.cell_type = None
+        oracle.fold = 0
+        oracle.tf = None
+        assert oracle._try_slim_hf_chrombpnet() is None
+        assert oracle._try_slim_hf_bpnet() is None
 
 
 class TestSeiOracle:

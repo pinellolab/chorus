@@ -461,13 +461,16 @@ def main(argv: Optional[List[str]] = None):
         '--all-chrombpnet',
         action='store_true',
         help=(
-            "Pre-cache ALL 786 ChromBPNet/BPNet model weights during setup "
-            "(~76 GB on disk, 3-4 h). Each of the 42 ChromBPNet ATAC/DNase "
-            "models is ~720 MB tarball + ~1.1 GB extracted = ~1.8 GB; the "
-            "744 BPNet/CHIP models are tiny (~410 MB combined). Default "
-            "fast path caches only K562 + HepG2 DNase (~3.5 GB, ~9 min) "
-            "— enough for the shipped notebooks. Other models download "
-            "lazily on first use."
+            "Pre-cache ALL 786 ChromBPNet/BPNet fold-0 nobias h5 weights "
+            "during setup from the HuggingFace slim mirror "
+            "(lucapinello/chorus-chrombpnet-slim, ~1.5 GB total, ~5 min). "
+            "Default fast path caches only K562 + HepG2 DNase (~50 MB, "
+            "~10 s) — enough for the shipped notebooks. Other models "
+            "download lazily on first use. To use the full bias-aware "
+            "ChromBPNet variant or fold ≠ 0 instead of the slim mirror, "
+            "pass model_type='chrombpnet' / fold=N at load_pretrained_model "
+            "time; chorus falls back to the full ENCODE tarball for those "
+            "(~1.8 GB per model on disk)."
         ),
     )
     setup_parser.set_defaults(func=setup_environments)

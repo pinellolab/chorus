@@ -32,6 +32,74 @@ project adheres to [Semantic Versioning](https://semver.org/).
   parameter; the SORT1 cell-type-screen example was regenerated with
   the new default.
 
+## [0.3.0] — 2026-04-28
+
+### ⚠️ Breaking change
+
+**ChromBPNet default `model_type` flipped from `'chrombpnet'` (bias-aware)
+to `'chrombpnet_nobias'` (bias-corrected).** Predictions from
+`load_pretrained_model(assay='DNASE', cell_type='K562')` (i.e. the
+default call shape used in every shipped notebook and the README
+quickstart) **will shift in magnitude and shape** because the
+bias-corrected model removes Tn5 / DNase-cleavage motif bias. The new
+default is what the Kundaje paper recommends for variant analysis,
+motif discovery, and region-swap predictions — which is what chorus
+is used for.
+
+To preserve old behaviour exactly, pass `model_type='chrombpnet'`:
+```python
+oracle.load_pretrained_model(
+    assay="DNASE", cell_type="K562", model_type="chrombpnet",
+)
+```
+The bias-aware variant is no longer in the default cache; chorus falls
+back to the full ENCODE tarball flow for it (~1.8 GB on disk per
+model). All other API shapes are unchanged.
+
+### Added
+
+- **HuggingFace slim mirror** at
+  [`lucapinello/chorus-chrombpnet-slim`](https://huggingface.co/lucapinello/chorus-chrombpnet-slim)
+  containing only the artifacts chorus actually loads at inference
+  time: 42 fold-0 ChromBPNet `chrombpnet_nobias` h5's
+  (1,074 MB) + 744 BPNet/CHIP h5's (419 MB) = **1.49 GB total**.
+  Replaces the previous ~100 GB ENCODE-tarball-based prefetch path.
+  See `audits/2026-04-28_chrombpnet_slim_mirror/` for the design,
+  build pipeline, manifest, and round-trip verification.
+- New `_try_slim_hf_chrombpnet()` and `_try_slim_hf_bpnet()` helpers
+  on `ChromBPNetOracle`. `load_pretrained_model()` now tries the HF
+  slim mirror first for the common case (fold=0 +
+  `chrombpnet_nobias`, or any CHIP/BPNet model) and falls back to
+  ENCODE / JASPAR transparently when:
+  - The mirror is missing the requested ENCFF / BP_BASE_ID.
+  - The user requested fold ≠ 0 or `model_type='chrombpnet'`.
+  - `huggingface_hub` is unavailable or the network is down.
+
+### Changed
+
+- **Default `chorus setup --oracle chrombpnet` footprint:** ~3.5 GB
+  → ~50 MB. Two slim h5's (K562 + HepG2 DNase) replace two ENCODE
+  tarballs as the fast-path default.
+- **`chorus setup --all-chrombpnet` footprint:** ~100 GB → **~1.5 GB**
+  (67× reduction). All 786 fold-0 nobias h5's stream from HF in ~5 min
+  vs ~3-4 h of ENCODE tarball downloads + extraction.
+- README, CLI `--help` text, and internal docstrings updated to the
+  new disk-size figures.
+
+### Migration notes
+
+- **Numerical comparisons against pre-0.3 ChromBPNet outputs will
+  change.** The bias-corrected model removes systematic enzymatic
+  motif preferences. Re-baseline any analysis that pinned exact
+  values; rankings + relative effects are largely preserved but exact
+  magnitudes shift.
+- If you have manual model paths set on the oracle (`oracle.model_path
+  = ...`), nothing changes.
+- If you load with `model_type='chrombpnet'` explicitly, nothing
+  changes — that path still goes through the ENCODE tarball flow.
+- If you load with no `model_type` kwarg, you now get the
+  bias-corrected variant. Pass `model_type='chrombpnet'` to opt back in.
+
 ## [0.2.1] — 2026-04-28
 
 ### Fixed
