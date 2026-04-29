@@ -1,0 +1,64 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.20, pytest-9.0.3, pluggy-1.6.0 -- /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/bin/python
+cachedir: .pytest_cache
+rootdir: /PHShome/lp698/chorus
+configfile: pytest.ini
+plugins: anyio-4.13.0, cov-7.1.0
+collecting ... collected 1 item
+
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_dnase_equivalence_at_sort1 FAILED [100%]
+
+=================================== FAILURES ===================================
+____________________ test_jax_pt_dnase_equivalence_at_sort1 ____________________
+
+tmp_path = PosixPath('/tmp/pytest-of-lp698/pytest-83/test_jax_pt_dnase_equivalence_0')
+
+    @pytest.mark.integration
+    def test_jax_pt_dnase_equivalence_at_sort1(tmp_path):
+        """JAX and PyTorch backends should agree on DNase predictions at the
+        SORT1 locus to within tight tolerance.
+    
+        The PyTorch port's README claims per-head + full-forward equivalence
+        against the JAX checkpoint. This test pins that claim against actual
+        chorus inputs (one assay, one canonical region) so a future weight
+        refresh upstream doesn't silently drift our results.
+        """
+        if not GENOME_FASTA.exists():
+            pytest.skip("hg38.fa not present — `chorus genome download hg38` first")
+        if not _env_exists("chorus-alphagenome"):
+            pytest.skip("chorus-alphagenome env missing")
+        if not _env_exists("chorus-alphagenome_pt"):
+            pytest.skip("chorus-alphagenome_pt env missing")
+    
+        chrom, start, end = SORT1_WINDOW
+        pt_out = tmp_path / "pt.npz"
+        jax_out = tmp_path / "jax.npz"
+    
+        base_args = {
+            "fasta": str(GENOME_FASTA),
+            "chrom": chrom, "start": start, "end": end,
+        }
+        _run("chorus-alphagenome_pt", PT_RUNNER,
+             {**base_args, "device": "cpu"}, pt_out)
+        _run("chorus-alphagenome", JAX_RUNNER, base_args, jax_out)
+    
+        pt = np.load(pt_out)["dnase_1"]
+        jx = np.load(jax_out)["dnase"]
+    
+        # Shapes should match (L, n_tracks). PyTorch returns (L, n_tracks)
+        # at resolution 1 — same as JAX's predict_sequence per-track output.
+>       assert pt.shape == jx.shape, f"shape mismatch: pt={pt.shape} jax={jx.shape}"
+E       AssertionError: shape mismatch: pt=(1048576, 384) jax=(1048576, 305)
+E       assert (1048576, 384) == (1048576, 305)
+E         
+E         At index 1 diff: 384 != 305
+E         
+E         Full diff:
+E           (
+E               1048576,
+E         -     305,...
+E         
+E         ...Full output truncated (4 lines hidden), use '-vv' to show
+
+tests/test_alphagenome_backends_equivalence.py:177: AssertionError
+======================== 1 failed in 599.58s (0:09:59) =========================

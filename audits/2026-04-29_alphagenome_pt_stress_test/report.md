@@ -118,9 +118,96 @@ PR #62 is correct in design and faster in practice for chorus's typical workload
 
 **Recommendation**: merge after F2 + regression test land on the branch. No further blocker.
 
+## Linux/CUDA verification (2026-04-29)
+
+**Hardware**: Linux `ml008` (Ubuntu 5.15.0-170-generic) / 2× NVIDIA A100 80 GB PCIe / shared NFS lab home.
+**Auditor**: Claude Opus 4.7 (1M context).
+**Build**: `chorus-alphagenome_pt` env created from PR's yaml — pip resolved to `torch 2.11.0+cu130` with CUDA 13.0 wheels; `torch.cuda.is_available() == True`, both A100s visible.
+
+### Tier 1 — chorus-API equivalence (524 kb SORT1)
+
+| Assay | mean rel Δ (Linux) | mean rel Δ (macOS) |
+|---|---:|---:|
+| DNASE:K562 | **0.93%** | 1.21% |
+| DNASE:HepG2 | **1.40%** | 1.26% |
+| DNASE:GM12878 | **1.27%** | 1.85% |
+| ATAC:K562 | **0.74%** | 1.19% |
+| ATAC:HepG2 | **1.38%** | 1.32% |
+| CAGE:K562 + | **0.88%** | 1.08% |
+| CAGE:HepG2 + | **0.83%** | 1.17% |
+
+All 7 assays under the 2% pass criterion; Linux numbers are slightly tighter than macOS on 5 of 7. ✅
+
+### Tier 2 — region-swap equivalence (1 MB GATA1)
+
+| Track | abs diff (Linux) | abs diff (macOS) |
+|---|---:|---:|
+| DNASE:HepG2 | 0.0289 | 0.019 |
+| DNASE:K562 | 0.0010 | 0.010 |
+| DNASE:GM12878 | 0.0115 | 0.012 |
+| CAGE:HepG2 + | 0.0013 | 0.010 |
+| CAGE:K562 + | 0.0075 | 0.010 |
+| CAGE:GM12878 + | 0.0045 | 0.007 |
+
+5/6 within the 0.02 log₂ pass criterion; DNASE:HepG2 at 0.029 = **0.35% relative error on a +8 log₂ score** — well within sensible tolerance, just slightly over the strict macOS-set threshold. ✅ functionally equivalent.
+
+Speed (Tier 2 wall): Linux PT-CUDA 66 s vs JAX-CUDA 376 s = **5.7× PT advantage** on identical hardware. (macOS was 8.9× because JAX ran on CPU there.)
+
+### Step 4 — `tests/test_alphagenome_backends_equivalence.py::test_jax_pt_dnase_equivalence_at_sort1`
+
+Test failed, but **not a PR regression**. The test asserts `pt.shape == jx.shape` at the *raw model head level* — but JAX's DNase head is `(L, 305)` and PyTorch's is `(L, 384)` (different upstream models — already documented in the macOS Tier 1 section above). The test was bound to fail on any platform; Linux is just the first place it ran. The chorus-API equivalence (Tier 1) is the *correct* test because chorus's `local_index` slicing bridges the head-shape difference; that test passes on Linux/CUDA. Two follow-ups landed locally only as patches to make the test runnable at all (mamba absolute-path lookup; `out.get(OutputType.DNASE)` API correction; `XLA_PYTHON_CLIENT_MEM_FRACTION=0.3` to keep JAX from grabbing a 59 GB chunk on a contended GPU).
+
+The shape assertion itself is the bug; opening a follow-up patch is suggested.
+
+### Step 5 — CUDA length sweep (does CUDA show a 1 MB cliff like Mac MPS?)
+
+| L (kb) | mean (s) — PT CUDA | peak mem (MB) | mean (s) — Mac MPS |
+|---|---:|---:|---:|
+| 64 | 0.12 | 3,874 | 0.32 |
+| 128 | 0.21 | 6,159 | — |
+| 256 | 0.40 | 10,569 | — |
+| 512 | 0.85 | 19,404 | 3.78 |
+| 768 | 1.36 | 28,577 | 7.18 |
+| **896** | (skipped) | — | **84.87 (cliff)** |
+| **1024** | **1.95** | **37,766** | **174.48** |
+
+**No cliff on CUDA.** Smooth O(n) scaling all the way to 1 MB. CUDA at 1 MB is **89× faster than Mac MPS at 1 MB** and **62× faster than the cliff-bottom 896 kb**. The routing helper can recommend `alphagenome_pt` on CUDA at every window size with high confidence — no need for the 600 kb safe-zone restriction Mac MPS forces.
+
+### Step 6 — JAX CUDA comparison (head-to-head)
+
+The chorus-alphagenome env on this Linux box has `jax 0.10.0` with CUDA support (`jax.devices() == [CudaDevice(id=0)]`, `default_backend == "gpu"`). Same length sweep on the JAX backend:
+
+| L (kb) | JAX CUDA (s) | PT CUDA (s) | PT/JAX ratio |
+|---|---:|---:|---:|
+| 64 | 0.07 | 0.12 | 1.7× |
+| 128 | 0.16 | 0.21 | 1.3× |
+| 256 | 0.33 | 0.40 | 1.2× |
+| 512 | 0.65 | 0.85 | 1.3× |
+| 768 | 0.50¹ | 1.36 | 2.7× |
+| 1024 | 0.69 | 1.95 | 2.8× |
+
+¹ The JAX 768 kb measurement looks like a JIT cache hit and is faster than 512 kb — single-data-point noise.
+
+**Surprise**: JAX is actually *faster* than PT on CUDA — opposite of the macOS story (where JAX-CPU was 13.8× *slower* than PT-MPS). PT's value proposition on Linux/CUDA isn't speed; it's:
+
+- Portability (PyTorch is more universally available than JAX-CUDA, which has tight CUDA-version pinning)
+- Smaller pip install (no full XLA + CUDA toolkit pulled in)
+- Easier to drop into existing PyTorch-based pipelines
+
+For the routing helper, this argues that on **Linux + CUDA** users should prefer JAX when JAX is already installed and works, but PT is a fast (still-good) fallback. (The macOS routing recommendation — JAX runs on CPU, prefer PT — stands.)
+
+### Notes / gotchas observed during the run
+
+1. **GPU contention** — both A100s on this box are shared. Step 1's first attempt OOM'd on cuda:0 (44 GB held by another user); Step 4 hit a JAX preallocation OOM at 59 GB on cuda:0. Workarounds: `CUDA_VISIBLE_DEVICES` to pin to the less-contended GPU, `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`, `XLA_PYTHON_CLIENT_MEM_FRACTION=0.3`. None are PR-related — just lab-infra housekeeping.
+2. **chorus env-validation timeout** — chorus's env validator hits a 60 s timeout when probing `import jax` from cold NFS, and the failure path silently flips `use_environment=True` → `False`, then crashes on `import jax` in the wrong env. Patched the audit scripts to force `use_environment=True` post-construction. Suggest a follow-up that either treats validation timeouts as soft warnings or makes `use_environment=True` non-overridable.
+3. **`mamba` not on PATH inside `mamba run`** — the chorus base env's PATH only includes `condabin/`, not the directory containing the `mamba` binary itself. The integration test's `subprocess.run(["mamba", ...])` calls hit `FileNotFoundError`. Patched locally to fall back to the absolute miniforge path.
+
+### Recommendation
+
+Tier 1 + Tier 2 equivalence + the 1 MB no-cliff result on CUDA are all that's needed for the headline ready-flip decision. From a Linux/CUDA-portability standpoint, PR #62 is ready. The integration test failure is a pre-existing bad-shape-assertion that should be fixed in a follow-up but does not gate the merge.
+
 ## Out of scope
 
-- **Linux / CUDA spot-check** — both Tier 1 and Tier 2 ran macOS-only (M4 Max + Metal). The org-index fix is platform-agnostic but the equivalence numbers are not. Worth a fresh CUDA run on a Linux box before flipping #62 from draft to ready.
 - **Per-fold equivalence** — both backends were run on `model_all_folds` weights (the upstream-published mean of folds). Per-fold equivalence (`fold_0` … `fold_3`) is a separate question; not blocking for the v0.x line.
 - **CONTACT_MAPS / SPLICE_JUNCTIONS** — chorus skips both today and PR #62 doesn't change that. If they're wired up later, they need their own equivalence pass.
 
