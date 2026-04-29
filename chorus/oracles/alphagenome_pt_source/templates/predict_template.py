@@ -43,6 +43,9 @@ repo_id = args.get("hf_repo", "gtca/alphagenome_pytorch")
 filename = args.get("weights_filename", "alphagenome.pt")
 weights_path = huggingface_hub.hf_hub_download(repo_id=repo_id, filename=filename)
 
+# Install the MPS-compat rope patch before model construction.
+from chorus.oracles.alphagenome_pt_source import _mps_compat  # noqa: F401
+
 from alphagenome_pytorch import AlphaGenome
 from chorus.oracles.alphagenome_source.alphagenome_metadata import (
     get_metadata,

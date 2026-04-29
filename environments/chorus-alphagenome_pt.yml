@@ -28,6 +28,7 @@ dependencies:
     - huggingface_hub
     - aiohttp
     - fsspec
+    - requests
 
     - pybigwig
     - pyranges

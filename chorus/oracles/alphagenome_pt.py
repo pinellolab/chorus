@@ -131,6 +131,7 @@ class AlphaGenomePTOracle(OracleBase):
     def _load_direct(self, weights: str) -> None:
         try:
             import huggingface_hub
+            from .alphagenome_pt_source import _mps_compat  # noqa: F401
             from alphagenome_pytorch import AlphaGenome
 
             try:

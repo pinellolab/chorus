@@ -19,16 +19,18 @@ hoped for:
 | 524 kb | 21.96 s | 32.69 s | **3.77 s** | PT MPS (5.8× over JAX) |
 | **1 MB** | **50.29 s** | 84.46 s | 216.39 s | **JAX CPU** (PT MPS regresses) |
 
-**MPS is 5–8× faster than the current default (JAX CPU) at sub-1 MB**,
-but **regresses badly at the full 1 MB context**. Cause: 1 MB inference
-exceeds Apple unified-memory budget, forcing MPS↔system-RAM swaps. The
-slowdown is reproducible across multiple runs (255 s, 226 s, 167 s).
+**MPS is 5–8× faster than the current default (JAX CPU) at ≤768 kb
+windows**, but **regresses badly past a sharp cliff at ~768→896 kb**
+caused by **GPU on-die cache spillover** — not RAM swap (only ~4 GB
+of 96 GB used at the cliff). See
+[`diagnostic_mps_pressure.md`](./diagnostic_mps_pressure.md) for the
+length-sweep + memory-trace evidence.
 
 Verdict: **don't flip the macOS default** in this PR. Ship the PyTorch
-backend as opt-in. Variant-scoring on smaller windows (≤524 kb) gets a
-real Mac speedup; 1 MB notebooks should keep using JAX CPU until either
-upstream lands an MPS `logspace` kernel or chorus ships a tiling helper.
-Follow-ups in `## Decisions` below.
+backend as opt-in. Variant-scoring on ≤768 kb windows gets a real Mac
+speedup; ≥896 kb should stay on JAX CPU until chorus ships a sequence-
+tiling helper (4× 256 kb tiles + stitch — projects ~15 s for 1 MB,
+3.3× over JAX CPU). Follow-ups in `## Decisions` below.
 
 ## What landed in this PR
 
@@ -37,6 +39,7 @@ Follow-ups in `## Decisions` below.
 | `environments/chorus-alphagenome_pt.yml` | New conda env (Python 3.12 + torch + alphagenome-pytorch[scoring]) |
 | `chorus/oracles/alphagenome_pt.py` | `AlphaGenomePTOracle` — mirrors `AlphaGenomeOracle` shape; load + forward swapped to PyTorch port |
 | `chorus/oracles/alphagenome_pt_source/__init__.py` | Empty package marker |
+| `chorus/oracles/alphagenome_pt_source/_mps_compat.py` | MPS-compat monkey-patch for `apply_rope` (`torch.logspace` → `torch.exp(linspace * log(10))`); installed automatically by templates and direct-load |
 | `chorus/oracles/alphagenome_pt_source/templates/{__init__,load_template,predict_template}.py` | Subprocess templates run inside `chorus-alphagenome_pt` |
 | `chorus/oracles/__init__.py` | Register `alphagenome_pt` in `ORACLES` + `get_oracle` |
 | `chorus/__init__.py` | Wire `create_oracle('alphagenome_pt', ...)` |
@@ -126,7 +129,62 @@ hot-cached pool, so each step round-trips data through main memory.
 The `aten::logspace.out` CPU fallback aggravates this by forcing
 dozens of MPS↔system memory copies per attention block.
 
-### Step 4 — equivalence (test scaffolded; not yet run on real data)
+### Step 4 — MPS rope patch (logspace workaround) — landed but didn't help
+
+Investigated whether the per-attention-block `aten::logspace.out` CPU
+fallback was the cause of the 1 MB regression.
+`alphagenome_pytorch.attention.apply_rope` calls
+`torch.logspace(log10(1), log10(N), steps, base=10)` to compute rope
+base frequencies; on MPS this falls back to CPU and prints a warning
+per attention block.
+
+`chorus/oracles/alphagenome_pt_source/_mps_compat.py` monkey-patches
+`apply_rope` to substitute `torch.exp(torch.linspace(0, log10(N), steps) * log(10))`
+which is mathematically identical (verified to 7×10⁻⁷ — float32 ulp)
+and uses only ops with native MPS kernels.
+
+**Result: patch is bit-equivalent on CPU but did not move the 1 MB
+MPS number** (222 s with patch vs 216 s without — within run-to-run
+noise; 524 kb stays at 3.78 s with vs 3.77 s without). The logspace
+fallback is a small per-block overhead, not the cause of the 1 MB
+regression. The patch ships anyway because it's correct, eliminates
+the user-facing warning, and makes the code slightly more robust if
+upstream changes the call site.
+
+### Step 4b — root cause investigation: MPS cliff is GPU cache spillover, not RAM swap
+
+User asked "is it truly memory bandwidth? how can we be sure?" — full
+diagnostic in [`diagnostic_mps_pressure.md`](./diagnostic_mps_pressure.md).
+
+Length sweep on MPS (rope-patched, fp32) on M3 Ultra (96 GB):
+
+| L (kb) | mean (s) | mem (MB) | step Δtime | step Δmem |
+|---:|---:|---:|---:|---:|
+| 64 → 768 | 0.32 → 7.18 | 1881 → 3667 | smooth, near-linear | +325 MB / 128 kb (linear) |
+| **896** | **84.87** | 3994 | **+77.69 s (12× jump)** | +327 MB (no anomaly) |
+| 1024 | 174.48 | 4319 | +89.61 s | +325 MB |
+
+**Cliff is between 768 → 896 kb** with within-L iter time growing
+80 → 152 → 292 s at 1024 kb. Memory grew **linearly across the cliff**
+(no swap), only ~4 GB used of 96 GB physical. `vm_stat` showed no
+swap-out delta during runs.
+
+Verdict: **GPU on-die cache spillover**, not raw RAM exhaustion or
+logspace fallback. Apple Silicon GPUs have a ~32 MB system-level
+cache; once activations + attention working set exceed it, every op
+pays full unified-memory-bandwidth cost (800 GB/s on M3 Ultra is fast
+absolutely but ~10–20× slower than cache). The within-L degradation
+pattern is consistent with MPS allocator fragmentation pushing more
+of the working set out of cache on each call.
+
+**Real fix for 1 MB MPS would be sequence tiling** — splitting a 1 MB
+window into 4× 256 kb tiles, predicting each, and stitching. 4 × 3.77 s
++ stitch ≈ 15 s, 3.3× faster than JAX CPU's 50 s. Tiling needs careful
+boundary handling for attention's receptive field; deferred to a
+future PR. For now, advice in CHANGELOG: pass `device='cpu'` (or stick
+with the JAX backend) for full 1 MB queries on Mac.
+
+### Step 5 — equivalence (test scaffolded; not yet run on real data)
 
 `tests/test_alphagenome_backends_equivalence.py::test_jax_pt_dnase_equivalence_at_sort1`
 runs both backends on a 1 MB SORT1 window and asserts:
@@ -164,10 +222,14 @@ respective conda envs via `mamba run`.
 1. **Flip macOS default to `alphagenome_pt`** — blocked by the 1 MB MPS
    regression. Most variant-effect notebooks use the full 1 MB context
    and would slow down. Reconsider after one of:
-   - Upstream adds an MPS-native `logspace` (track via
-     [pytorch/pytorch#141287](https://github.com/pytorch/pytorch/issues/141287))
-   - We ship a tiling helper that splits 1 MB → 4× 256 kb on MPS
+   - We ship a **sequence-tiling helper** that splits a 1 MB query into
+     4× 256 kb tiles, predicts each (3.77 s × 4 = 15 s on MPS, vs 50 s
+     JAX CPU = ~3× speedup), and stitches with attention-receptive-field
+     padding. **This is the real win** — the rope-patch experiment in
+     this PR confirmed the regression is memory-driven, not logspace.
    - We add a `device='mps' if length < 600_000 else 'cpu'` heuristic
+     as a band-aid until tiling lands.
+   - Upstream adds a stride-aware MPS attention kernel (long-tail).
 2. **Wire `VariantScoringModel`** into chorus's `predict_variant_effect`
    path — biggest API improvement upstream offers. Belongs in a
    dedicated PR with side-by-side equivalence checks against the
