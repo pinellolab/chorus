@@ -92,6 +92,12 @@ mamba run -n chorus-chrombpnet python scripts/build_backgrounds_chrombpnet.py \
   --model-type chrombpnet_nobias \
   2>&1 | tee logs/bg_chrombpnet_baselines_atac.log
 
+# Phase 1 finished: run `--part merge` (or `--part merge-incremental`) NOW
+# to consume the ATAC/DNASE interim NPZ before Phase 2 writes a new one.
+# Otherwise Phase 2 will refuse to overwrite (since v0.4.x's --force-gated
+# safety check, fixing #71/#73). Pass `--force` if you intentionally want
+# to discard the Phase 1 interim and rebuild Phase 2 in isolation.
+
 # === Phase 2: CHIP/BPNet models (1259 models, ~10-20 h on A100) ===
 mamba run -n chorus-chrombpnet python scripts/build_backgrounds_chrombpnet.py \
   --part variants --assay CHIP --gpu 0 \
@@ -114,16 +120,18 @@ If you have 2 GPUs available, parallelize the CHIP phase across them:
 
 ```bash
 # Terminal 1 (GPU 0):
-... --part variants --assay CHIP --gpu 0 --shard 0 --shard-of 2 ...
-... --part baselines --assay CHIP --gpu 0 --shard 0 --shard-of 2 ...
+CUDA_VISIBLE_DEVICES=0 ... --part variants --assay CHIP --gpu 0 --shard 0 --shard-of 2 ...
+CUDA_VISIBLE_DEVICES=0 ... --part baselines --assay CHIP --gpu 0 --shard 0 --shard-of 2 ...
 
 # Terminal 2 (GPU 1):
-... --part variants --assay CHIP --gpu 1 --shard 1 --shard-of 2 ...
-... --part baselines --assay CHIP --gpu 1 --shard 1 --shard-of 2 ...
+CUDA_VISIBLE_DEVICES=1 ... --part variants --assay CHIP --gpu 0 --shard 1 --shard-of 2 ...
+CUDA_VISIBLE_DEVICES=1 ... --part baselines --assay CHIP --gpu 0 --shard 1 --shard-of 2 ...
 
 # After both finish:
 mamba run -n chorus python scripts/build_backgrounds_chrombpnet.py --part merge-shards
 ```
+
+The outer `CUDA_VISIBLE_DEVICES` is what pins each terminal to its physical GPU. The inner `--gpu 0` is now a no-op when the env var is set (v0.4.x fix for #72/#74; previously the `--gpu` arg silently clobbered the outer var and both terminals fought over GPU 0).
 
 ## Spot-check before upload
 
