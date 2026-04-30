@@ -60,6 +60,15 @@ git pull origin main  # make sure you have the --model-type flag
 # Confirm env exists
 mamba env list | grep chrombpnet
 
+# IMPORTANT — verify huggingface_hub is in the env. The
+# chorus-chrombpnet env yml (post-PR-#60) lists huggingface_hub>=0.20.0,
+# but older installs predate that and need a manual install. Without
+# huggingface_hub the build script falls back to the ~700 MB-per-model
+# ENCODE tarball flow, which turns a 3-5 h ATAC/DNase run into a 30+ h
+# run because it re-downloads tarballs we don't need.
+mamba run -n chorus-chrombpnet python -c "import huggingface_hub" \
+  || mamba run -n chorus-chrombpnet pip install "huggingface_hub>=0.20.0"
+
 # Confirm slim mirror is reachable + has all 786 models
 mamba run -n chorus-chrombpnet python -c "
 from chorus.oracles.chrombpnet_source.chrombpnet_globals import (
