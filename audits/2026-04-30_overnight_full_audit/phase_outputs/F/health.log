@@ -1,0 +1,39 @@
+=== Phase F: chorus health for each oracle ===
+Wed Apr 29 23:19:51 EDT 2026
+
+--- chorus health --oracle alphagenome ---
+2026-04-29 23:19:52,735 - chorus.cli.main - INFO - 
+Checking alphagenome...
+2026-04-29 23:19:56,571 - httpx - INFO - HTTP Request: GET https://huggingface.co/api/whoami-v2 "HTTP/1.1 200 OK"
+2026-04-29 23:20:13,267 - chorus.cli.main - INFO - ✓ alphagenome: Healthy
+
+--- chorus health --oracle alphagenome_pt ---
+2026-04-29 23:20:14,992 - chorus.cli.main - INFO - 
+Checking alphagenome_pt...
+2026-04-29 23:20:33,224 - chorus.cli.main - INFO - ✓ alphagenome_pt: Healthy
+
+--- chorus health --oracle borzoi ---
+2026-04-29 23:20:34,924 - chorus.cli.main - INFO - 
+Checking borzoi...
+2026-04-29 23:20:43,842 - chorus.cli.main - INFO - ✓ borzoi: Healthy
+
+--- chorus health --oracle chrombpnet ---
+2026-04-29 23:20:45,530 - chorus.cli.main - INFO - 
+Checking chrombpnet...
+2026-04-29 23:20:55,246 - chorus.cli.main - INFO - ✓ chrombpnet: Healthy
+
+--- chorus health --oracle enformer ---
+2026-04-29 23:20:56,904 - chorus.cli.main - INFO - 
+Checking enformer...
+2026-04-29 23:21:09,768 - chorus.cli.main - INFO - ✓ enformer: Healthy
+
+--- chorus health --oracle legnet ---
+2026-04-29 23:21:11,401 - chorus.cli.main - INFO - 
+Checking legnet...
+2026-04-29 23:21:17,716 - chorus.cli.main - INFO - ✓ legnet: Healthy
+
+--- chorus health --oracle sei ---
+2026-04-29 23:21:19,339 - chorus.cli.main - INFO - 
+Checking sei...
+2026-04-29 23:21:27,891 - chorus.cli.main - INFO - ✓ sei: Healthy
+

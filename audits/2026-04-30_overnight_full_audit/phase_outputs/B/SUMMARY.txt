@@ -1,0 +1,8 @@
+All Phase B smokes done at Wed Apr 29 23:03:29 EDT 2026
+PASS  alphagenome_pt
+PASS  alphagenome
+FAIL  borzoi
+FAIL  chrombpnet
+FAIL  enformer
+PASS  legnet
+FAIL  sei

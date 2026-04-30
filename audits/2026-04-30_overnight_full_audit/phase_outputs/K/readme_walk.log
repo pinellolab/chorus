@@ -1,0 +1,36 @@
+=== Phase K: README walkthrough as new user ===
+Wed Apr 29 23:22:39 EDT 2026
+
+--- README §3 'Predict — wild-type + SNP effect in one block' ---
+
+2026-04-29 23:22:41,637 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 23:22:47,615 - chorus.core.base - INFO - Using conda environment: chorus-enformer
+2026-04-29 23:22:47,615 - chorus.oracles.enformer - INFO - Loading Enformer model from lucapinello/chorus-enformer...
+2026-04-29 23:22:53,018 - chorus.oracles.enformer - INFO - Enformer model loaded successfully in environment!
+2026-04-29 23:22:53,112 - chorus.oracles.enformer_source.enformer_metadata - INFO - Loaded 5313 track metadata entries
+Enformer loaded
+K562 DNase tracks (first 3):
+Empty DataFrame
+Columns: [index, genome, identifier, file, clip, scale, sum_stat, description]
+Index: []
+
+--- chorus genome list ---
+Available genomes:
+----------------------------------------------------------------------
+hg38       Human genome assembly GRCh38/hg38             ✓ Downloaded
+hg19       Human genome assembly GRCh37/hg19             ✗ Not downloaded
+mm10       Mouse genome assembly GRCm38/mm10             ✗ Not downloaded
+mm9        Mouse genome assembly NCBI37/mm9              ✗ Not downloaded
+dm6        Drosophila melanogaster genome assembly BDGP6/dm6 ✗ Not downloaded
+ce11       C. elegans genome assembly WBcel235/ce11      ✗ Not downloaded
+----------------------------------------------------------------------
+Total: 1/6 genomes downloaded
+
+--- chorus backgrounds list (list of cached cdfs) ---
+total 3345024
+-rw-r--r--@ 1 lp698  staff   263M Apr 26 15:58 alphagenome_pertrack.npz
+-rw-r--r--@ 1 lp698  staff   766M Apr 26 16:09 borzoi_pertrack.npz
+-rw-r--r--@ 1 lp698  staff    79M Apr 26 16:25 chrombpnet_pertrack.npz
+-rw-r--r--@ 1 lp698  staff   523M Apr 26 16:26 enformer_pertrack.npz
+-rw-r--r--@ 1 lp698  staff   208K Apr 26 16:28 legnet_pertrack.npz
+-rw-r--r--@ 1 lp698  staff   2.8M Apr 26 17:03 sei_pertrack.npz

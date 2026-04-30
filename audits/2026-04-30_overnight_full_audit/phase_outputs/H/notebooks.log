@@ -1,0 +1,15 @@
+=== Phase H: Notebook execution ===
+Wed Apr 29 23:26:29 EDT 2026
+
+--- single_oracle_quickstart.ipynb ---
+    self.convert_notebooks()
+  File "/Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages/nbconvert/nbconvertapp.py", line 597, in convert_notebooks
+    self.convert_single_notebook(notebook_filename)
+  File "/Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages/nbconvert/nbconvertapp.py", line 566, in convert_single_notebook
+    write_results = self.write_single_notebook(output, resources)
+  File "/Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages/nbconvert/nbconvertapp.py", line 526, in write_single_notebook
+    return self.writer.write(output, resources, notebook_name=notebook_name)
+  File "/Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages/nbconvert/writers/files.py", line 152, in write
+    with open(dest_path, "w", encoding="utf-8") as f:
+FileNotFoundError: [Errno 2] No such file or directory: 'examples/notebooks/audits/2026-04-30_overnight_full_audit/phase_outputs/H/executed/quickstart.ipynb'
+

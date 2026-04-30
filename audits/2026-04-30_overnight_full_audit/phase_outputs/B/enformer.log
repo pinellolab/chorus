@@ -1,0 +1,58 @@
+=== enformer ===
+Wed Apr 29 22:58:32 EDT 2026
+2026-04-29 22:58:34,337 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 22:58:40,688 - chorus.core.base - INFO - Using conda environment: chorus-enformer
+[construct] 6.4s
+2026-04-29 22:58:40,689 - chorus.oracles.enformer - INFO - Loading Enformer model from lucapinello/chorus-enformer...
+2026-04-29 22:58:46,914 - chorus.oracles.enformer - INFO - Enformer model loaded successfully in environment!
+[load] 6.2s
+2026-04-29 22:58:46,994 - chorus.oracles.enformer_source.enformer_metadata - INFO - Loaded 5313 track metadata entries
+[result] FAIL
+Traceback (most recent call last):
+  File "<stdin>", line 15, in <module>
+  File "/Users/lp698/chorus_test/chorus/chorus/core/base.py", line 241, in predict
+    predictions = self._predict(input_data, assay_ids)
+  File "/Users/lp698/chorus_test/chorus/chorus/oracles/enformer.py", line 247, in _predict
+    predictions = self._predict_in_environment(full_seq, assay_ids)
+  File "/Users/lp698/chorus_test/chorus/chorus/oracles/enformer.py", line 300, in _predict_in_environment
+    predictions_list = self.run_code_in_environment(template, timeout=self.predict_timeout)
+  File "/Users/lp698/chorus_test/chorus/chorus/core/base.py", line 196, in run_code_in_environment
+    return self._env_runner.run_code_in_environment(
+  File "/Users/lp698/chorus_test/chorus/chorus/core/environment/runner.py", line 236, in run_code_in_environment
+    raise RuntimeError(f"Code execution failed: {output_data['error']}\n{output_data.get('traceback', '')}")
+RuntimeError: Code execution failed: Enformer track identifier(s) not found in metadata: ['DNASE:K562']. Use oracle.get_track_info() to list valid identifiers, or oracle.get_track_info(pattern) to search (e.g. 'DNASE:K562').
+Traceback (most recent call last):
+  File "/var/folders/gx/xj1t8pkx1gvdn92fgw2g7vpm0000gn/T/tmpxfduvabk.py", line 83, in <module>
+    raise ValueError(
+ValueError: Enformer track identifier(s) not found in metadata: ['DNASE:K562']. Use oracle.get_track_info() to list valid identifiers, or oracle.get_track_info(pattern) to search (e.g. 'DNASE:K562').
+
+
+=== enformer ===
+Wed Apr 29 23:21:41 EDT 2026
+2026-04-29 23:21:42,776 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 23:21:48,581 - chorus.core.base - INFO - Using conda environment: chorus-enformer
+[construct] 5.8s
+2026-04-29 23:21:48,582 - chorus.oracles.enformer - INFO - Loading Enformer model from lucapinello/chorus-enformer...
+2026-04-29 23:21:54,000 - chorus.oracles.enformer - INFO - Enformer model loaded successfully in environment!
+[load] 5.4s
+2026-04-29 23:21:54,079 - chorus.oracles.enformer_source.enformer_metadata - INFO - Loaded 5313 track metadata entries
+[result] FAIL
+Traceback (most recent call last):
+  File "<stdin>", line 15, in <module>
+  File "/Users/lp698/chorus_test/chorus/chorus/core/base.py", line 241, in predict
+    predictions = self._predict(input_data, assay_ids)
+  File "/Users/lp698/chorus_test/chorus/chorus/oracles/enformer.py", line 268, in _predict
+    predictions = self._predict_in_environment(full_seq, assay_ids)
+  File "/Users/lp698/chorus_test/chorus/chorus/oracles/enformer.py", line 321, in _predict_in_environment
+    predictions_list = self.run_code_in_environment(template, timeout=self.predict_timeout)
+  File "/Users/lp698/chorus_test/chorus/chorus/core/base.py", line 196, in run_code_in_environment
+    return self._env_runner.run_code_in_environment(
+  File "/Users/lp698/chorus_test/chorus/chorus/core/environment/runner.py", line 236, in run_code_in_environment
+    raise RuntimeError(f"Code execution failed: {output_data['error']}\n{output_data.get('traceback', '')}")
+RuntimeError: Code execution failed: Enformer track identifier(s) not found in metadata: ['DNASE:K562']. Use oracle.get_track_info() to list valid identifiers, or oracle.get_track_info(pattern) to search (e.g. 'DNASE:K562').
+Traceback (most recent call last):
+  File "/var/folders/gx/xj1t8pkx1gvdn92fgw2g7vpm0000gn/T/tmpwvtdm_dw.py", line 83, in <module>
+    raise ValueError(
+ValueError: Enformer track identifier(s) not found in metadata: ['DNASE:K562']. Use oracle.get_track_info() to list valid identifiers, or oracle.get_track_info(pattern) to search (e.g. 'DNASE:K562').
+
+

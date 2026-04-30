@@ -1,0 +1,24 @@
+=== legnet ===
+Wed Apr 29 22:59:20 EDT 2026
+2026-04-29 22:59:22,323 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 22:59:23,790 - chorus.core.base - INFO - Using conda environment: chorus-legnet
+[construct] 1.5s
+2026-04-29 22:59:27,466 - chorus.oracles.legnet - INFO - LegNet model loaded successfully in environment!
+[load] 3.7s
+[predict] 3.9s
+[result] 1 tracks
+  ✓ LentiMPRA:HepG2: shape=(1,), mean=0.5285, max=0.5285
+[result] PASS — 1 tracks, all finite, predict took 3.9s
+
+=== legnet ===
+Wed Apr 29 23:22:26 EDT 2026
+2026-04-29 23:22:28,338 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 23:22:29,728 - chorus.core.base - INFO - Using conda environment: chorus-legnet
+[construct] 1.4s
+2026-04-29 23:22:33,041 - chorus.oracles.legnet - INFO - LegNet model loaded successfully in environment!
+[load] 3.3s
+[predict] 3.6s
+[result] 1 tracks
+  ✓ LentiMPRA:HepG2: shape=(1,), mean=0.5285, max=0.5285
+[result] PASS — 1 tracks, all finite, predict took 3.6s
+

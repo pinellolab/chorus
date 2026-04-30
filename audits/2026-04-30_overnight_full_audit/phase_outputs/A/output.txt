@@ -1,0 +1,79 @@
+=== A.1 Fast suite ===
+Wed Apr 29 22:58:00 EDT 2026
+  /Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages/numpy/core/numeric.py:407: RuntimeWarning: invalid value encountered in cast
+    multiarray.copyto(res, fill_value, casting='unsafe')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+368 passed, 1 skipped, 5 deselected, 14 warnings in 311.73s (0:05:11)
+
+=== A.2 Integration suite imports ===
+  ok: tests.test_alphagenome_pt_predict_template
+  ok: tests.test_alphagenome_backends_equivalence
+  ok: tests.test_utils
+  ok: tests.test_oracles
+  ok: tests.test_core
+  FAIL: tests.test_error_recover -> No module named 'tests.test_error_recover'
+  ok: tests.test_analysis
+  ok: tests.test_region_manipulation
+  ok: tests.test_prediction_methods
+  ok: tests.test_smoke_predict
+  ok: tests.test_environment_setup_gating
+  ok: tests.test_alphagenome_routing
+  ok: tests.test_integration
+  FAIL: tests.test_mc -> No module named 'tests.test_mc'
+  ok: tests.test_setup_all_skip_optin
+
+=== A.3 chorus --help ===
+usage: chorus [-h] [--version]
+              {setup,list,validate,remove,health,genome,backgrounds} ...
+
+Chorus: Modular framework for genomic foundation models
+
+positional arguments:
+  {setup,list,validate,remove,health,genome,backgrounds}
+                        Available commands
+    setup               Set up oracle environments + pre-download weights,
+                        backgrounds, hg38
+    list                List available environments
+    validate            Validate environments
+    remove              Remove an environment
+    health              Check environment health
+    genome              Manage reference genomes
+    backgrounds         Manage per-track CDF background distributions
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+
+=== A.4 Stale references in docs ===
+--- 'tfhub' in non-audit docs ---
+README.md:955:TensorFlow Hub caches downloaded models at `/var/folders/.../T/tfhub_modules/` (macOS) or `/tmp/tfhub_modules/` (Linux). **This cache is outside `~/.chorus/` and survives chorus teardowns.** If an earlier Enformer download was interrupted, the cached directory ends up missing `saved_model.pb` and Enformer fails to load with:
+README.md:966:rm -rf /var/folders/*/*/T/tfhub_modules
+README.md:969:rm -rf /tmp/tfhub_modules
+tests/test_error_recovery.py:213:    (missing ``saved_model.pb``), ``_load_enformer_with_tfhub_recovery``
+tests/test_error_recovery.py:217:        from chorus.oracles.enformer import _load_enformer_with_tfhub_recovery
+tests/test_error_recovery.py:219:        bad_dir = tmp_path / "tfhub_modules" / "corrupt"
+tests/test_error_recovery.py:235:        result = _load_enformer_with_tfhub_recovery(FakeHub(), "https://tfhub.dev/enformer")
+tests/test_error_recovery.py:241:        from chorus.oracles.enformer import _load_enformer_with_tfhub_recovery
+tests/test_error_recovery.py:246:            _load_enformer_with_tfhub_recovery(FakeHub(), "https://tfhub.dev/enformer")
+scripts/build_backgrounds_enformer.py:200:    enformer = hub.load("https://tfhub.dev/deepmind/enformer/1")
+--- 'johahi' in non-audit docs ---
+CHANGELOG.md:16:  | Borzoi | [`lucapinello/chorus-borzoi`](https://huggingface.co/lucapinello/chorus-borzoi) (4 folds) | `johahi/borzoi-replicate-{0..3}` |
+README.md:302:| Borzoi | [`lucapinello/chorus-borzoi`](https://huggingface.co/lucapinello/chorus-borzoi) | [`johahi/borzoi-replicate-{0..3}`](https://huggingface.co/johahi/borzoi-replicate-0) | ~6 GB (4 folds) |
+docs/NORMALIZATION_GUIDE.md:116:| Model | 4 replicate folds (HuggingFace `johahi/borzoi-replicate-{0..3}`); chorus default = fold 0 |
+docs/plans/sei-hf-mirror.md:108:- Mirroring **other** Zenodo-hosted weights. Scan if needed: only sei currently uses Zenodo as primary. Borzoi pulls from HF (`johahi/borzoi-replicate-0`), enformer from TFHub, alphagenome from Google's HF, legnet from a small Zenodo bundle that finishes in <30 sec.
+scripts/build_backgrounds_borzoi.py:157:    model = Borzoi.from_pretrained(f'johahi/borzoi-replicate-{args.fold}')
+chorus/oracles/borzoi_source/templates/load_template.py:12:    (per-fold subdirs); fall back to johahi/borzoi-replicate-{fold} on
+chorus/oracles/borzoi_source/templates/load_template.py:26:        print(f"chorus-borzoi mirror unavailable ({exc}); falling back to johahi")
+chorus/oracles/borzoi_source/templates/load_template.py:27:        return Borzoi.from_pretrained(f'johahi/borzoi-replicate-{fold}')
+chorus/oracles/borzoi.py:115:            flashzoi = Borzoi.from_pretrained(f'johahi/borzoi-replicate-{self.fold}')
+chorus/oracles/borzoi_source/templates/predict_template.py:20:    johahi's original repos."""
+--- 'zenodo.org/record/4906997' in non-audit docs ---
+README.md:304:| Sei | [`lucapinello/chorus-sei`](https://huggingface.co/lucapinello/chorus-sei) | Zenodo [4906997](https://zenodo.org/record/4906997) | 3.28 GB |
+docs/plans/sei-hf-mirror.md:12:Mirror the Sei weights bundle (`https://zenodo.org/record/4906997/files/sei_model.tar.gz`, ~2.5 GB unpacked) to a new HuggingFace model repo `lucapinello/chorus-sei`. Switch `chorus/oracles/sei.py:_download_sei_model` to fetch from HF first, with the existing Zenodo URL as fallback. Empirically Zenodo/CERN drops to ~50 MB/min during off-hours; HF CloudFront sustains ~50–100 MB/sec — that's a **~50–80× speedup** for the sei phase of `chorus setup --oracle sei`.
+docs/plans/sei-hf-mirror.md:69:- Repo README: explain what's in the mirror, that it's a drop-in for the Zenodo tarball at `zenodo.org/record/4906997`, and how to use chorus to fetch it.
+docs/plans/sei-hf-mirror.md:102:- Source URL: `https://zenodo.org/record/4906997/files/sei_model.tar.gz` (cited at `chorus/oracles/sei.py:570`).
+chorus/oracles/sei.py:574:        return "https://zenodo.org/record/4906997/files/sei_model.tar.gz"
+
+=== A.5 git status clean? ===
+?? audits/2026-04-30_overnight_full_audit/

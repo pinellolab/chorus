@@ -1,0 +1,24 @@
+=== chrombpnet ===
+Wed Apr 29 22:59:04 EDT 2026
+2026-04-29 22:59:05,723 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 22:59:08,843 - chorus.core.base - INFO - Using conda environment: chorus-chrombpnet
+[construct] 3.1s
+[result] FAIL
+Traceback (most recent call last):
+  File "<stdin>", line 11, in <module>
+  File "/Users/lp698/chorus_test/chorus/chorus/oracles/chrombpnet.py", line 392, in load_pretrained_model
+    raise InvalidAssayError(
+chorus.core.exceptions.InvalidAssayError: You must provide both `assay` and `cell_type` when `weights` is None.
+
+=== chrombpnet ===
+Wed Apr 29 23:22:10 EDT 2026
+2026-04-29 23:22:12,254 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 23:22:15,464 - chorus.core.base - INFO - Using conda environment: chorus-chrombpnet
+[construct] 3.2s
+[result] FAIL
+Traceback (most recent call last):
+  File "<stdin>", line 11, in <module>
+  File "/Users/lp698/chorus_test/chorus/chorus/oracles/chrombpnet.py", line 392, in load_pretrained_model
+    raise InvalidAssayError(
+chorus.core.exceptions.InvalidAssayError: You must provide both `assay` and `cell_type` when `weights` is None.
+

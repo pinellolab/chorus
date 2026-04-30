@@ -1,0 +1,24 @@
+=== sei ===
+Wed Apr 29 22:59:08 EDT 2026
+2026-04-29 22:59:10,673 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 22:59:12,619 - chorus.core.base - INFO - Using conda environment: chorus-sei
+[construct] 1.9s
+2026-04-29 22:59:20,439 - chorus.oracles.sei - INFO - Sei model loaded successfully in environment!
+[load] 7.8s
+[result] FAIL
+Traceback (most recent call last):
+  File "<stdin>", line 15, in <module>
+AttributeError: 'SeiOracle' object has no attribute 'list_assay_ids'. Did you mean: 'list_assay_types'?
+
+=== sei ===
+Wed Apr 29 23:22:15 EDT 2026
+2026-04-29 23:22:17,324 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 23:22:19,206 - chorus.core.base - INFO - Using conda environment: chorus-sei
+[construct] 1.9s
+2026-04-29 23:22:26,633 - chorus.oracles.sei - INFO - Sei model loaded successfully in environment!
+[load] 7.4s
+[result] FAIL
+Traceback (most recent call last):
+  File "<stdin>", line 15, in <module>
+AttributeError: 'SeiOracle' object has no attribute 'list_assay_ids'. Did you mean: 'list_assay_types'?
+

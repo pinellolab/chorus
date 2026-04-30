@@ -1,0 +1,94 @@
+
+=== enformer ===
+2026-04-29 23:24:56,215 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 23:25:05,145 - chorus.core.base - INFO - Using conda environment: chorus-enformer
+[construct] 8.9s
+2026-04-29 23:25:05,145 - chorus.oracles.enformer - INFO - Loading Enformer model from lucapinello/chorus-enformer...
+2026-04-29 23:25:14,182 - chorus.oracles.enformer - INFO - Enformer model loaded successfully in environment!
+[load] 9.0s
+2026-04-29 23:25:14,275 - chorus.oracles.enformer_source.enformer_metadata - INFO - Loaded 5313 track metadata entries
+[predict] 8.6s
+  ✓ ENCFF413AHU: shape=(896,), mean=0.4684, max=15.0404
+
+=== borzoi ===
+2026-04-29 23:25:22,832 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 23:25:24,354 - chorus.core.base - INFO - Using conda environment: chorus-borzoi
+[construct] 1.5s
+2026-04-29 23:25:24,354 - chorus.oracles.borzoi - INFO - Loading Borzoi model fold 0
+2026-04-29 23:25:28,802 - chorus.oracles.borzoi - INFO - Borzoi model loaded successfully in environment!
+[load] 4.4s
+2026-04-29 23:25:28,941 - chorus.oracles.borzoi_source.borzoi_metadata - INFO - Created mapping for 7611 track identifiers
+2026-04-29 23:25:28,941 - chorus.oracles.borzoi_source.borzoi_metadata - INFO - First few identifiers: ['CNhs10608+', 'CNhs10608-', 'CNhs10610+', 'CNhs10610-', 'CNhs10612+']
+[predict] 6.2s
+  ✓ CNhs10608+: shape=(6144,), mean=0.1444, max=94.3499
+
+=== chrombpnet ===
+2026-04-29 23:25:34,958 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 23:25:37,899 - chorus.core.base - INFO - Using conda environment: chorus-chrombpnet
+[construct] 2.9s
+2026-04-29 23:25:38,025 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-29 23:25:38,032 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-29 23:25:38,070 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/K562/fold_0/model.chrombpnet_nobias.fold_0.ENCSR000EOT.h5 "HTTP/1.1 302 Found"
+2026-04-29 23:25:38,070 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:K562 via HF slim mirror (ENCFF574YLK)
+2026-04-29 23:25:38,070 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+Loading in environment
+2026-04-29 23:25:42,476 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully in environment!
+[load] 4.6s
+[predict] 4.4s
+  ✓ DNASE:K562: shape=(2114,), mean=1.2285, max=47.6856
+
+=== sei ===
+2026-04-29 23:25:46,836 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 23:25:48,628 - chorus.core.base - INFO - Using conda environment: chorus-sei
+[construct] 1.8s
+2026-04-29 23:25:56,080 - chorus.oracles.sei - INFO - Sei model loaded successfully in environment!
+[load] 7.5s
+[result] FAIL
+Traceback (most recent call last):
+  File "/Users/lp698/chorus_test/chorus/audits/2026-04-30_overnight_full_audit/phase_outputs/G/_smoke.py", line 69, in smoke
+    result = oracle.predict(**predict_kwargs)
+  File "/Users/lp698/chorus_test/chorus/chorus/core/base.py", line 238, in predict
+    self._validate_assay_ids(assay_ids)
+  File "/Users/lp698/chorus_test/chorus/chorus/oracles/sei.py", line 361, in _validate_assay_ids
+    for ai in assay_ids:
+TypeError: 'NoneType' object is not iterable
+
+=== legnet ===
+2026-04-29 23:25:56,117 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 23:25:57,507 - chorus.core.base - INFO - Using conda environment: chorus-legnet
+[construct] 1.4s
+2026-04-29 23:26:00,853 - chorus.oracles.legnet - INFO - LegNet model loaded successfully in environment!
+[load] 3.3s
+[predict] 3.6s
+  ✓ LentiMPRA:HepG2: shape=(1,), mean=0.5285, max=0.5285
+
+=== alphagenome ===
+2026-04-29 23:26:04,414 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 23:26:05,585 - chorus.core.base - INFO - Using conda environment: chorus-alphagenome
+[construct] 1.2s
+2026-04-29 23:26:05,585 - chorus.oracles.alphagenome - INFO - Loading AlphaGenome model
+2026-04-29 23:26:58,658 - chorus.oracles.alphagenome - INFO - AlphaGenome model loaded successfully in environment!
+[load] 53.1s
+2026-04-29 23:28:42,074 - chorus.oracles.alphagenome_source.alphagenome_metadata - INFO - Loaded 5731 AlphaGenome tracks
+[predict] 103.4s
+  ✓ DNASE/EFO:0002067 DNase-seq/.: shape=(1048576,), mean=0.0839, max=78.0000
+
+=== alphagenome_pt ===
+2026-04-29 23:28:42,097 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 23:28:43,080 - chorus.core.base - INFO - Using conda environment: chorus-alphagenome_pt
+[construct] 1.0s
+2026-04-29 23:28:43,080 - chorus.oracles.alphagenome_pt - INFO - Loading AlphaGenome PyTorch port
+2026-04-29 23:28:50,583 - chorus.oracles.alphagenome_pt - INFO - AlphaGenome PyTorch model loaded in environment (device=mps)
+[load] 7.5s
+[predict] 42.6s
+  ✓ DNASE/EFO:0002067 DNase-seq/.: shape=(1048576,), mean=0.0836, max=77.2727
+
+
+=== Phase G summary ===
+  enformer              PASS — 1 tracks, all finite, predict=8.6s
+  borzoi                PASS — 1 tracks, all finite, predict=6.2s
+  chrombpnet            PASS — 1 tracks, all finite, predict=4.4s
+  sei                   FAIL: TypeError: 'NoneType' object is not iterable
+  legnet                PASS — 1 tracks, all finite, predict=3.6s
+  alphagenome           PASS — 1 tracks, all finite, predict=103.4s
+  alphagenome_pt        PASS — 1 tracks, all finite, predict=42.6s

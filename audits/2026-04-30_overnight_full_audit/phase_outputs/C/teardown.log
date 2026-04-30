@@ -1,0 +1,45 @@
+=== Phase C: Teardown ===
+Wed Apr 29 23:04:03 EDT 2026
+
+--- removing chorus-alphagenome ---
+Transaction finished
+
+Environment removed at prefix: /Users/lp698/.local/share/mamba/envs/chorus-alphagenome
+
+--- removing chorus-alphagenome_pt ---
+Transaction finished
+
+Environment removed at prefix: /Users/lp698/.local/share/mamba/envs/chorus-alphagenome_pt
+
+--- removing chorus-borzoi ---
+Transaction finished
+
+Environment removed at prefix: /Users/lp698/.local/share/mamba/envs/chorus-borzoi
+
+--- removing chorus-chrombpnet ---
+Transaction finished
+
+Environment removed at prefix: /Users/lp698/.local/share/mamba/envs/chorus-chrombpnet
+
+--- removing chorus-enformer ---
+Transaction finished
+
+Environment removed at prefix: /Users/lp698/.local/share/mamba/envs/chorus-enformer
+
+--- removing chorus-legnet ---
+Transaction finished
+
+Environment removed at prefix: /Users/lp698/.local/share/mamba/envs/chorus-legnet
+
+--- removing chorus-sei ---
+Transaction finished
+
+Environment removed at prefix: /Users/lp698/.local/share/mamba/envs/chorus-sei
+
+--- removing base chorus env (LAST) ---
+Transaction finished
+
+Environment removed at prefix: /Users/lp698/.local/share/mamba/envs/chorus
+
+=== After teardown ===
+  (no chorus envs remain)
