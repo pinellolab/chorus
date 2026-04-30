@@ -1,0 +1,20 @@
+=== CDF smoke: pull new CDF, run ChromBPNet variant analysis, verify percentiles ===
+Thu Apr 30 06:49:34 EDT 2026
+
+-rw-r--r--@ 1 lp698  staff    79M Apr 26 16:25 /Users/lp698/.chorus/backgrounds/chrombpnet_pertrack.npz
+347be84e93810d61aa2c69a2c23c2b30e582cd0dd59dd5c8f23d5b84e3c35bca  /Users/lp698/.chorus/backgrounds/chrombpnet_pertrack.npz
+expected sha256: be61e9e8f9b919b43c599b7fbc9deb74f8f1e6dc1da5e2cdb92036a85bf13205
+
+Downloaded 0 file(s) from HF
+
+347be84e93810d61aa2c69a2c23c2b30e582cd0dd59dd5c8f23d5b84e3c35bca  /Users/lp698/.chorus/backgrounds/chrombpnet_pertrack.npz
+
+--- Spot-check: track count + monotonicity ---
+Keys: ['track_ids', 'effect_cdfs', 'summary_cdfs', 'perbin_cdfs', 'signed_flags', 'effect_counts', 'summary_counts', 'perbin_counts']
+Tracks: 786 (expect 786 — 22 ATAC + 20 DNASE + 744 CHIP)
+effect_counts: min=9609 median=9609 max=9609
+  track 684 CHIP:K562:JUN                   mono=True  p50=1.7008 p95=9.6284 p99=15.6011
+  track 559 CHIP:HepG2:PBX2                 mono=True  p50=4.1523 p95=11.2819 p99=26.4816
+  track 629 CHIP:myotube:CTCF               mono=True  p50=0.7366 p95=4.4954 p99=16.4839
+  track 192 CHIP:K562:IRF1                  mono=True  p50=2.7035 p95=7.2546 p99=12.0189
+  track 763 CHIP:brain microvascular endothelial cell:CTCF  mono=True  p50=2.9127 p95=33.5641 p99=161.3282
