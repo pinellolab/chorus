@@ -18,17 +18,36 @@ logger = logging.getLogger(__name__)
 
 
 def _load_enformer_with_tfhub_recovery(hub, weights: str):
-    """Call ``hub.load(weights)`` with retry on a corrupt tfhub cache.
+    """Load Enformer SavedModel — prefer the chorus HF mirror at
+    ``lucapinello/chorus-enformer`` when ``weights`` is a HF repo id
+    (looks like ``user/repo-name``); fall back to TFHub's
+    ``hub.load(URL)`` for full URLs.
 
-    TensorFlow Hub stores downloaded models at ``tfhub_modules/<hash>/``. If
-    the first download was interrupted the directory exists but has no
-    ``saved_model.pb``/``saved_model.pbtxt`` — ``hub.load`` then raises
-    ``ValueError`` with the offending path in the message. We detect that
-    exact failure, wipe the bad directory, and retry once. Any other error
-    propagates.
+    On a corrupt tfhub cache (``saved_model.pb`` missing because an
+    earlier download was interrupted), wipe the bad directory and retry
+    once. Any other error propagates.
     """
     import re
     import shutil
+
+    # HF repo path: "user/repo-name" — not a URL.
+    if "/" in weights and not weights.startswith("http"):
+        try:
+            from huggingface_hub import snapshot_download
+            import tensorflow as tf
+            local_dir = snapshot_download(
+                repo_id=weights,
+                repo_type="model",
+                allow_patterns=["saved_model.pb", "variables/*"],
+            )
+            logger.info("Loading Enformer SavedModel from HF mirror at %s", local_dir)
+            return tf.saved_model.load(local_dir)
+        except Exception as exc:
+            logger.info(
+                "HF mirror load failed (%s); falling back to TFHub", exc
+            )
+            weights = "https://tfhub.dev/deepmind/enformer/1"
+
     try:
         return hub.load(weights)
     except Exception as exc:
@@ -171,8 +190,10 @@ class EnformerOracle(OracleBase):
                     logger.info("No GPU detected, using CPU")
             
             os.environ["TFHUB_DOWNLOAD_PROGRESS"] = "1"
-            enformer = _load_enformer_with_tfhub_recovery(hub, weights)
-            self._enformer_model = enformer.model
+            loaded = _load_enformer_with_tfhub_recovery(hub, weights)
+            # HF mirror returns the bare SavedModel; TFHub wraps in an
+            # enformer object with a `.model` attribute. Unwrap if present.
+            self._enformer_model = loaded.model if hasattr(loaded, "model") else loaded
             self.model = self._enformer_model
             self._load_track_metadata()
             self.loaded = True
