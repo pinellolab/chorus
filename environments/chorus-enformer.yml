@@ -37,6 +37,10 @@ dependencies:
     - tensorflow-hub>=0.12.0
     - tensorflow-datasets>=4.0.0
     - setuptools<81  # tensorflow_hub requires pkg_resources
+    # HF Hub for fetching the chorus mirror at lucapinello/chorus-enformer
+    # (the original TFHub URL now redirects through Kaggle; chorus mirrors
+    # for resilience). Falls back to TFHub if HF unreachable.
+    - huggingface_hub>=0.20
     # CUDA support for GPU (Linux only — macOS adaptation removes these).
     # TF 2.13 requires CUDA 11.8 + cuDNN 8.6.
     - nvidia-cublas-cu11>=11.11

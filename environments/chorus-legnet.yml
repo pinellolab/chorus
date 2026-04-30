@@ -22,6 +22,8 @@ dependencies:
   - tqdm>=4.62.0
   - h5py>=3.6.0
   - requests
+  # HF Hub for chorus-legnet mirror (with Zenodo fallback)
+  - huggingface_hub>=0.20
 
   # PyTorch ecosystem (GPU)
   - pytorch-gpu>=2.0

@@ -358,7 +358,30 @@ class LegNetOracle(OracleBase):
 
     def get_zenodo_link(self) -> str:
         return "https://zenodo.org/records/17863550/files/chorus_small_legnet.zip"
-    
+
+    def _try_hf_mirror(self, dest_zip: Path) -> bool:
+        """Fetch chorus_small_legnet.zip from the chorus HF mirror at
+        lucapinello/chorus-legnet. Returns True on success, False on
+        any failure so the caller can fall back to Zenodo."""
+        try:
+            from huggingface_hub import hf_hub_download
+        except ImportError:
+            logger.info("huggingface_hub not available; using Zenodo fallback for LegNet")
+            return False
+        try:
+            local = hf_hub_download(
+                repo_id="lucapinello/chorus-legnet",
+                filename="chorus_small_legnet.zip",
+                repo_type="model",
+            )
+            import shutil as _shutil
+            _shutil.copyfile(local, dest_zip)
+            logger.info("Fetched LegNet zip from chorus HF mirror.")
+            return True
+        except Exception as exc:
+            logger.info(f"chorus-legnet HF mirror unavailable ({exc}); using Zenodo fallback")
+            return False
+
     def _download_legnet_model(self):
         import zipfile
         import shutil
@@ -376,11 +399,14 @@ class LegNetOracle(OracleBase):
         )
 
         if not Path(download_file_path).exists():
-            download_with_resume(
-                download_link,
-                download_file_path,
-                label=f"legnet:{os.path.basename(download_link)}",
-            )
+            # Prefer chorus-controlled HF mirror; fall back to Zenodo on
+            # any failure (network, mirror missing the file, etc.).
+            if not self._try_hf_mirror(Path(download_file_path)):
+                download_with_resume(
+                    download_link,
+                    download_file_path,
+                    label=f"legnet:{os.path.basename(download_link)}",
+                )
             logger.info("Download completed!")
         
         # Now extract the file in the same download folder

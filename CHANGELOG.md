@@ -8,6 +8,17 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **HuggingFace mirror consolidation for Enformer, Borzoi, Sei, and LegNet weights.** Chorus now ships a chorus-controlled HF mirror for each non-AlphaGenome oracle, so the install path doesn't depend on third-party hosts that have shown lifecycle volatility (TFHub deprecation in particular). Each loader prefers the chorus mirror and falls back to the original source on any failure — no behavior change in the happy path, redundancy on the unhappy.
+
+  | Oracle | New chorus mirror | Original source |
+  |---|---|---|
+  | Enformer | [`lucapinello/chorus-enformer`](https://huggingface.co/lucapinello/chorus-enformer) | TFHub `deepmind/enformer/1` (redirects to Kaggle) |
+  | Borzoi | [`lucapinello/chorus-borzoi`](https://huggingface.co/lucapinello/chorus-borzoi) (4 folds) | `johahi/borzoi-replicate-{0..3}` |
+  | Sei | [`lucapinello/chorus-sei`](https://huggingface.co/lucapinello/chorus-sei) | Zenodo `4906997` |
+  | LegNet | [`lucapinello/chorus-legnet`](https://huggingface.co/lucapinello/chorus-legnet) | Zenodo `17863550` |
+
+  Each mirror's README explicitly identifies (a) where the weights came from, (b) who owns the weights, (c) which model terms apply to the weights regardless of mirror, (d) which code license applies to the chorus loader. License terms applying to the *weights* are unchanged by mirroring (Sei stays CC-BY-NC, etc.). `huggingface_hub>=0.20` added to the four corresponding env yamls so users get the HF path by default; older installs predating this fall back to the original source via `ImportError`-handling. Sei tarball verified byte-and-md5 against Zenodo's published `4297aafb711aec4ecccb645b8928ea26`. See `audits/2026-04-29_hf_mirror_consolidation/report.md` for the full inventory and verification trail.
+
 - **AlphaGenome PyTorch backend (second AlphaGenome oracle, installed by default)** —
   `AlphaGenomePTOracle` wraps the upstream
   [`genomicsxai/alphagenome-pytorch`](https://github.com/genomicsxai/alphagenome-pytorch)

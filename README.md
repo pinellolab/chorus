@@ -290,6 +290,22 @@ Chorus converts every raw prediction into an **effect percentile** and **activit
 
 **Nothing to configure.** `chorus setup` pre-downloads the relevant backgrounds for every oracle. If you skipped that step, on the first variant analysis for a given oracle the backgrounds are automatically fetched from the public HuggingFace dataset [`lucapinello/chorus-backgrounds`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds) and cached at `~/.chorus/backgrounds/`.
 
+#### Where the oracle weights come from
+
+Chorus mirrors every oracle's weights to chorus-controlled HuggingFace repos so the install path stays stable even if upstream sources move (TFHub deprecation, Zenodo single-link records, third-party HF accounts). Each loader prefers the chorus mirror and falls back to the original source on any failure — so chorus stays bootable even if the mirror is unreachable.
+
+| Oracle | Chorus mirror | Original source | Mirror size |
+|---|---|---|---|
+| AlphaGenome (JAX) | not mirrored — official source | [`google/alphagenome-all-folds`](https://huggingface.co/google/alphagenome-all-folds) (gated) | — |
+| AlphaGenome (PyTorch) | not mirrored — upstream port | [`gtca/alphagenome_pytorch`](https://huggingface.co/gtca/alphagenome_pytorch) | — |
+| Enformer | [`lucapinello/chorus-enformer`](https://huggingface.co/lucapinello/chorus-enformer) | TFHub `deepmind/enformer/1` (now redirects to Kaggle) | 961 MB |
+| Borzoi | [`lucapinello/chorus-borzoi`](https://huggingface.co/lucapinello/chorus-borzoi) | [`johahi/borzoi-replicate-{0..3}`](https://huggingface.co/johahi/borzoi-replicate-0) | ~6 GB (4 folds) |
+| ChromBPNet | [`lucapinello/chorus-chrombpnet-slim`](https://huggingface.co/lucapinello/chorus-chrombpnet-slim) | ENCODE per-experiment tarballs | 1.49 GB (786 h5's) |
+| Sei | [`lucapinello/chorus-sei`](https://huggingface.co/lucapinello/chorus-sei) | Zenodo [4906997](https://zenodo.org/record/4906997) | 3.28 GB |
+| LegNet | [`lucapinello/chorus-legnet`](https://huggingface.co/lucapinello/chorus-legnet) | Zenodo [17863550](https://zenodo.org/records/17863550) | 38 MB |
+
+The chorus mirrors are byte-identical to the originals (verified via md5 / size against upstream metadata where published). License terms applying to the *weights* are unchanged by mirroring — see each mirror's README on HuggingFace for explicit attribution and the upstream model terms.
+
 | Oracle | File size | Tracks covered |
 |---|---|---|
 | AlphaGenome | ~260 MB | 5,168 |

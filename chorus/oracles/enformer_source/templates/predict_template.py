@@ -23,10 +23,27 @@ if device:
 seq = args['sequence']
 
 
-# Load model (cached in TFHub)
-# Enformer model has a specific structure - we need to get the model attribute
-enformer = hub.load(args['model_weights'])
-model = enformer.model
+# Load model. Chorus prefers the HF mirror at lucapinello/chorus-enformer
+# for resilience; fall back to the original TFHub URL on any HF failure.
+def _load(weights):
+    if "/" in weights and not weights.startswith("http"):
+        try:
+            from huggingface_hub import snapshot_download
+            local = snapshot_download(
+                repo_id=weights,
+                repo_type="model",
+                allow_patterns=["saved_model.pb", "variables/*"],
+            )
+            return tf.saved_model.load(local)
+        except Exception:
+            weights = "https://tfhub.dev/deepmind/enformer/1"
+    return hub.load(weights)
+
+
+loaded = _load(args['model_weights'])
+# HF mirror returns the bare SavedModel; TFHub wraps in an enformer object
+# with a `.model` attribute. Unwrap if needed.
+model = loaded.model if hasattr(loaded, "model") else loaded
 
 # One-hot encode
 mapping = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
