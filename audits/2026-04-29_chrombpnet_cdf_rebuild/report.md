@@ -84,24 +84,9 @@ The handoff predicted *"rankings preserved on large-effect SNPs, magnitudes shif
 
 ## Upload status
 
-**Blocked on a write-scope HF token.** Attempted upload from chorus base env returned `403 Forbidden: you must use a write token to upload to a repository`. The cached token (`HfApi().whoami()` → `lucapinello`, `auths: []`) is read-only. Maintainer needs to re-login with a write-scope token (or set `HF_TOKEN` to one) and re-run:
+**Uploaded.** Commit: <https://huggingface.co/datasets/lucapinello/chorus-backgrounds/commit/008483049f8ba75701190db3c17077343c52beb5> (write-scope token supplied by the maintainer after the audit's first-pass upload returned 403 from the cached read-only token).
 
-```bash
-mamba run -n chorus python -c "
-import os
-from huggingface_hub import HfApi
-api = HfApi()
-api.upload_file(
-    path_or_fileobj=os.path.expanduser('~/.chorus/backgrounds/chrombpnet_pertrack.npz'),
-    path_in_repo='chrombpnet_pertrack.npz',
-    repo_id='lucapinello/chorus-backgrounds',
-    repo_type='dataset',
-    commit_message='Rebuild ChromBPNet CDFs against chrombpnet_nobias (0.3.0+ default)',
-)
-"
-```
-
-The NPZ at `~/.chorus/backgrounds/chrombpnet_pertrack.npz` is unmodified since the merge-incremental step — same SHA256 as recorded above.
+Round-trip verified: a fresh `hf_hub_download` of the uploaded file produced sha256 `be61e9e8f9b919b43c599b7fbc9deb74f8f1e6dc1da5e2cdb92036a85bf13205` — identical to the local sha256 captured before upload, so the artefact on HF matches what was built.
 
 ## Follow-ups
 
