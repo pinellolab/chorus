@@ -15,6 +15,12 @@
 
 Four steps. Steps 1 + 2 are copy-paste. Step 3 is a runnable snippet. Step 4 hooks chorus up to Claude Code.
 
+**Before you start** — three things you need:
+
+- **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>
+- **~28 GB free disk** — see [Disk usage breakdown](#disk-usage-breakdown) if you want the per-oracle / per-asset numbers
+- **Linux x86_64 or macOS** (Intel / Apple Silicon)
+
 ### 1. Install (5 minutes)
 
 ```bash
@@ -24,27 +30,23 @@ mamba activate chorus
 python -m pip install -e .
 ```
 
-Prerequisite: **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>, plus **~28 GB free disk** for the default install (6 oracles + a second AlphaGenome backend for Mac MPS speed; hg38; per-oracle CDF backgrounds). Both AlphaGenome backends — `alphagenome` (JAX, default) and `alphagenome_pt` (PyTorch, same model + same weights, converted to safetensors) — install by default so Mac users automatically get the MPS-accelerated path; see [Two AlphaGenome backends](#two-alphagenome-backends). ChromBPNet/BPNet weights stream from a slim HuggingFace mirror — only ~50 MB pre-cached for the K562 + HepG2 DNase fast path used by every shipped notebook. Works on Linux x86_64 and macOS (Intel / Apple Silicon). A single oracle env is ~3 GB on average. Opting in to `chorus setup --all-chrombpnet` pre-caches every fold-0 bias-corrected ChromBPNet model from the slim mirror (~1.5 GB additional, ~5 min). Other ChromBPNet cell types download lazily on first `load_pretrained_model(...)` regardless. If you specifically need the full bias-aware `chrombpnet` variant or fold ≠ 0, chorus falls back to the original ENCODE tarball for that specific model (~1.8 GB on disk per model).
-
-### 2. Download all 6 oracles + hg38 + backgrounds (~55–75 min, unattended)
-
-> Both AlphaGenome backends — JAX (`alphagenome`, gated) and PyTorch (`alphagenome_pt`, public mirror of the same weights converted to safetensors) — install by default. The PyTorch backend adds ~2.6 GB of disk and ~10–13 min to setup; in exchange Mac users get the MPS-accelerated path automatically (5–8× faster than JAX CPU at ≤600 kb windows). Linux/CUDA users will likely use the JAX backend in practice (it's faster on A100), but the PyTorch backend is still useful for portability.
+### 2. Get every oracle, weight, and reference — batteries included (~55–75 min, unattended)
 
 ```bash
 chorus setup
 ```
 
-One command. Pulls every oracle's weights, all background CDFs, and the hg38 reference — everything pre-downloaded so your first prediction doesn't block on a multi-GB tarball. When prompted:
+One command, walk away, come back to a complete chorus install. When prompted:
 
 - **HuggingFace token** (required — AlphaGenome is a gated model):
   1. Create a read token at <https://huggingface.co/settings/tokens>
   2. Accept the license at <https://huggingface.co/google/alphagenome-all-folds>
   3. Paste the token when `chorus setup` asks.
-- **LDlink token** (optional — only for `fine_map_causal_variant`): register free at <https://ldlink.nih.gov/?tab=apiaccess>, paste when prompted. Press Enter to skip — not needed for most workflows.
+- **LDlink token** (optional — only for `fine_map_causal_variant`): register free at <https://ldlink.nih.gov/?tab=apiaccess>, paste when prompted. Press Enter to skip.
 
-> **Want to start in 2 minutes?** `chorus setup --oracle enformer` installs just the lightweight CPU starter; you can add more oracles later with `chorus setup --oracle <name>`.
+### 3. Your first prediction — score a SNP at the β-globin locus
 
-### 3. Predict — wild-type + SNP effect in one block
+A 30-second taste of what chorus does. The snippet loads Enformer, predicts DNase accessibility around `chr11:5,247,500` (in the β-globin locus, expressed in K562), then scans **every possible SNP at that one base** to score the effect of A/C/G/T. One real wild-type signal, three counter-factual variants — the same shape every chorus prediction takes.
 
 ```python
 import chorus
@@ -75,29 +77,31 @@ print(f"Variant result: scored {n_alts} alt alleles "
       f"({list(effects['predictions'].keys())})")
 ```
 
-### 4. Use with Claude Code
+### 4. Skip the code — drive chorus from Claude in plain English 🤖
 
-Chorus ships an MCP server with **22 tools** ([full list](#mcp-server)
-under "MCP server"). Add it once:
+Hook chorus up to Claude Code once and then *describe* the analysis you want. Claude figures out which models to load, which tracks to score, and which chorus tool to call.
 
 ```bash
 claude mcp add chorus -- mamba run -n chorus chorus-mcp
 ```
 
-Then in Claude Code:
-
-> *"What chorus oracles are available?"* — sanity-check the connection (Claude calls `list_oracles`).
+Now ask, in any Claude Code prompt:
 
 > *"Predict DNase accessibility at chr11:5,247,000–5,248,000 with Enformer for K562, then compute the effect of rs12740374 on SORT1 expression with AlphaGenome."*
 
-Claude will use the chorus MCP tools (`list_tracks`, `predict`, `predict_variant_effect`, `analyze_variant_multilayer`, …) to answer.
+> *"Find the cell types where the SNP rs12740374 most strongly opens chromatin."*
+
+> *"Replace the 200 bp endogenous enhancer at chrX:48,782,929–48,783,129 with this synthetic sequence and predict accessibility in HepG2, K562, and GM12878."*
+
+That's it. No more boilerplate, no juggling oracle APIs — chorus exposes **22 MCP tools** ([full list](#mcp-server)) covering prediction, variant effects, region swaps, multi-layer analysis, gene-TSS lookups, and cell-type discovery, and Claude picks the right one for the question.
 
 ### What to read next
 
+- [Notebooks](#notebooks) — three end-to-end tutorials you can follow start-to-finish (start here)
+- [Worked application examples](#worked-application-examples) — driven by natural-language prompts; the *what can chorus do?* tour
+- [MCP server](#mcp-server) — full Claude Code + Claude Desktop setup with all 22 tools
 - [Python API](#python-api) — 9 runnable recipes (region replacement, gene expression, sub-region scoring, variant-to-gene, …)
 - [Pick an oracle](#pick-an-oracle) — hardware matrix, which one to start with
-- [MCP server](#mcp-server) — full Claude Code + Claude Desktop setup
-- [Notebooks](#notebooks) — three end-to-end tutorials
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -108,25 +112,9 @@ _Everything below is optional — the TLDR above is enough to get running. Secti
 
 ### What chorus is
 
-Chorus provides a consistent, easy-to-use API for working with state-of-the-art genomic deep learning models including:
+Six state-of-the-art genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Sei, LegNet, AlphaGenome — wired through one API. The same five lines of Python predict variant effects on chromatin accessibility (ChromBPNet, base-pair resolution), TF binding (Enformer, BPNet), 5,731 multi-modal tracks at 1 Mb context (AlphaGenome), or RNA-seq-grade gene expression (Borzoi). Every prediction comes with **effect-percentile and activity-percentile scores** ranked against ~10 k random SNPs and ~30 k genome-wide cCREs, so a `+0.45 log₂FC` becomes `0.962 effect %ile, 0.81 activity %ile` — directly interpretable, not a raw fold-change you have to calibrate yourself.
 
-- **Enformer**: Predicts gene expression and chromatin states from DNA sequences
-- **Borzoi**: Enhanced model for regulatory genomics predictions
-- **ChromBPNet / BPNet**: Predicts chromatin accessibility (ChromBPNet) and TF binding (BPNet) at base-pair resolution
-- **Sei**: Sequence regulatory effect predictions — 21,907 underlying chromatin profiles aggregated into 40 sequence classes used for variant scoring
-- **LegNet**: Regulatory regions activity prediction using models trained on MPRA data
-- **AlphaGenome**: Google DeepMind's model predicting 5,731 genomic tracks (5,168 human-only — the CDF-backed subset chorus normalizes against; 563 mouse) at single base-pair resolution from 1MB input
-
-Key features:
-- 🧬 Unified API across different models
-- 📊 Built-in visualization tools for genomic tracks
-- 🔬 Variant effect prediction
-- 🎯 In silico mutagenesis and sequence optimization
-- 📈 Effect-percentile scoring against pre-computed genome-wide backgrounds (auto-downloaded from HuggingFace) — not RNA-seq-style quantile normalization; each variant's effect is ranked against ~10k random SNPs
-- 🚀 Enhanced sequence editing logic
-- 🔧 Isolated conda environments for each oracle to avoid dependency conflicts
-- 🧪 Sub-region scoring, gene expression analysis (CAGE + RNA-seq), and variant-to-gene effect prediction
-- 🤖 MCP server for AI assistant integration (Claude, etc.)
+Each oracle runs in its own conda environment (no TF/PyTorch/JAX dependency hell), every weight + reference + background is pre-mirrored to a chorus-controlled HuggingFace org (no broken-link surprises), and the **22-tool MCP server** lets you ask Claude to run the analysis in plain English. See [Pick an oracle](#pick-an-oracle) for the per-oracle hardware/cost matrix.
 
 ### Key terms
 
@@ -138,11 +126,11 @@ Key features:
 | **Effect percentile** | How extreme a variant's effect is compared to ~10,000 random SNPs (≥99th = stronger than 99% of random variants) |
 | **log2FC** | Log2 fold-change between alternate and reference allele predictions — the raw effect size (most layers). Gene-expression uses **lnFC** (natural log) and MPRA uses **Δ (alt−ref)**; every report states the formula used per layer. |
 
-### Worked application examples
+### Worked application examples — seven things you can do today
 
-Every subfolder under [`examples/walkthroughs/`](examples/walkthroughs/) is a concrete, ready-to-reproduce use case with full outputs in **Markdown, JSON, TSV, and HTML** (with an embedded IGV browser):
+Every example below was generated **end-to-end by Claude Code talking to chorus's MCP server**. No code was written by hand — the original natural-language prompt is preserved at the top of every report, so you can read what was asked, look at what came back, and reproduce it by pasting the same prompt into your own Claude session.
 
-| I want to... | Example |
+| I want to… | Example |
 |---|---|
 | Analyze a GWAS / clinical variant in a specific cell type | [variant_analysis/SORT1_rs12740374](examples/walkthroughs/variant_analysis/SORT1_rs12740374/) |
 | I have a variant but don't know the relevant tissue | [discovery/SORT1_cell_type_screen](examples/walkthroughs/discovery/SORT1_cell_type_screen/) |
@@ -152,7 +140,7 @@ Every subfolder under [`examples/walkthroughs/`](examples/walkthroughs/) is a co
 | Replicate a published regulatory variant finding | [validation/SORT1_rs12740374_with_CEBP](examples/walkthroughs/validation/SORT1_rs12740374_with_CEBP/) |
 | Cross-validate a variant across multiple oracles | [validation/SORT1_rs12740374_multioracle](examples/walkthroughs/validation/SORT1_rs12740374_multioracle/) |
 
-These examples were generated through Claude Code using Chorus's MCP server — the same way you'll use it. Every report preserves the original prompt at the top, so you can see exactly what was asked and reproduce it. See [`examples/walkthroughs/README.md`](examples/walkthroughs/README.md) for the full list with per-persona ("Geneticist", "Bioinformatician", "Clinician", "Computational biologist") starting points.
+Every report ships in **Markdown + JSON + TSV + HTML with an embedded IGV browser**. Pick the format your downstream pipeline likes; they're consistent. [`examples/walkthroughs/README.md`](examples/walkthroughs/README.md) has the full catalogue with per-persona ("Geneticist", "Bioinformatician", "Clinician", "Computational biologist") starting points.
 
 ### Pick an oracle
 
@@ -168,7 +156,7 @@ Start with one or two oracles and add more with `chorus setup --oracle <name>` l
 | **AlphaGenome** | 16 GB | strongly recommended | ~30 s (GPU) / 2–5 min (CPU) | comprehensive multi-layer (5,731 tracks, 1 Mb window) |
 | **AlphaGenome (PyTorch backend)** ⓘ | 16 GB | recommended (esp. Apple Silicon) | ~3.8 s @524 kb on Mac MPS / ~2 s @1 MB on CUDA | alternative backend with the same weights; see [Two AlphaGenome backends](#two-alphagenome-backends) below |
 
-All oracles auto-detect CUDA via `torch.cuda.is_available()` / `jax.device_get`; respect `CUDA_VISIBLE_DEVICES` to pin to a specific GPU. Pass `device='cuda'` / `'cpu'` / `'mps'` explicitly if needed. **GPU support:** NVIDIA CUDA (Linux) is auto-detected; Apple Metal is supported via `tensorflow-metal` for the TF-backed oracles (Enformer, ChromBPNet), PyTorch MPS for the PyTorch-backed oracles (Borzoi, Sei, LegNet), and PyTorch MPS for the AlphaGenome PyTorch backend (`alphagenome_pt`). The default JAX `alphagenome` oracle falls back to CPU on Apple Silicon (the JAX-Metal backend is still maturing) — install `alphagenome_pt` if you want full Mac GPU speed for ≤600 kb windows.
+**GPU detection is automatic** — every oracle picks CUDA / MPS / CPU based on what's available; pass `device='cuda'` / `'cpu'` / `'mps'` to override, or set `CUDA_VISIBLE_DEVICES` to pin to a specific GPU. The platform-by-oracle support matrix and Apple Silicon nuances live in [Installation — detailed](#installation--detailed).
 
 #### Two AlphaGenome backends
 
@@ -195,6 +183,30 @@ The recommendation is suggestion-only — chorus never auto-routes between backe
 The TLDR's `chorus setup` does everything you need. This section covers the edge cases: upgrading, per-oracle setup, token plumbing, manual genome management, and backgrounds.
 
 > **Two env files, one source of truth.** The root `environment.yml` is what you install. The per-oracle files in `environments/` are consumed internally by `chorus setup --oracle <name>` — you don't install them directly.
+
+#### Platform & GPU support
+
+| Platform | Default oracle path | Notes |
+|---|---|---|
+| **Linux x86_64 + NVIDIA CUDA** | full GPU acceleration on every oracle | NVIDIA CUDA auto-detected; pass `device='cuda'` / `CUDA_VISIBLE_DEVICES=N` to pin to a specific GPU |
+| **macOS (Apple Silicon)** | TF-backed oracles (Enformer, ChromBPNet) and PyTorch-backed (Borzoi, Sei, LegNet) use Metal automatically | `tensorflow-metal` for TF; PyTorch MPS for the rest |
+| **macOS (Intel)** | CPU on every oracle | works, just slower |
+| **AlphaGenome on Apple Silicon** | use the `alphagenome_pt` PyTorch backend (installed by default) for MPS at ≤600 kb windows | the JAX `alphagenome` oracle falls back to CPU on Apple Silicon — JAX-Metal still matures; see [Two AlphaGenome backends](#two-alphagenome-backends) |
+
+#### Disk usage breakdown
+
+The default `chorus setup` (all 6 oracles, both AlphaGenome backends, hg38, all CDF backgrounds) lands at **~28 GB**:
+
+| Bucket | Size |
+|---|---|
+| 6 oracle conda envs (~3 GB each) | ~18 GB |
+| `hg38` reference fasta + index | ~3 GB |
+| Per-oracle CDF backgrounds (`~/.chorus/backgrounds/`) | ~2 GB |
+| AlphaGenome PyTorch backend (`alphagenome_pt`, default-on so Mac users get MPS speed) | ~2.6 GB |
+| ChromBPNet slim HuggingFace mirror — fast-path pre-cache (K562 + HepG2 DNase) | ~50 MB |
+| **Total default** | **~28 GB** |
+
+Opting in via `chorus setup --all-chrombpnet` pre-caches every fold-0 bias-corrected ChromBPNet model from the slim mirror (+~1.5 GB, ~5 min). Other ChromBPNet cell types download lazily on first `load_pretrained_model(...)` regardless. If you specifically need the full bias-aware `chrombpnet` variant or fold ≠ 0, chorus falls back to the original ENCODE tarball for that specific model (+~1.8 GB on disk per model). See [Where the oracle weights come from](#where-the-oracle-weights-come-from) for the full mirror map.
 
 #### Upgrading
 
@@ -488,19 +500,19 @@ wt_files = predictions.save_predictions_as_bedgraph(output_dir="bedgraph_outputs
 
 ```
 
-### Notebooks
+### Notebooks — three sittings, zero to confident
 
-Three notebooks are provided, from introductory to advanced (all work once `chorus setup` has completed):
+Three end-to-end Jupyter notebooks shipped with the repo. Run them in order — by the time you finish notebook 3 you'll have used every oracle, scored a variant across five regulatory layers, and rendered a coolbox track view of your own predictions. All three work as soon as `chorus setup` finishes; no extra downloads needed.
 
-| Notebook | Oracles | What it covers |
+| Notebook | Oracles | What you'll build |
 |----------|---------|----------------|
-| `examples/notebooks/single_oracle_quickstart.ipynb` | Enformer | Deep single-oracle tutorial: predictions, region replacement, insertion, variant effects, gene expression, coolbox visualization |
-| `examples/notebooks/comprehensive_oracle_showcase.ipynb` | All 6 | All oracles side by side, cross-oracle comparison, variant analysis with gene expression, sub-region scoring |
-| `examples/notebooks/advanced_multi_oracle_analysis.ipynb` | Enformer + ChromBPNet/BPNet + LegNet | CHIP-seq TF binding, strand-specific tracks, Interval API, effect-percentile normalization, cell-type switching |
+| `examples/notebooks/single_oracle_quickstart.ipynb` | Enformer | Predictions → region replacement → sequence insertion → variant effect → gene expression → coolbox visualization. The "I get it now" notebook. |
+| `examples/notebooks/comprehensive_oracle_showcase.ipynb` | All 6 | Same variant scored by every oracle side-by-side. Cross-model agreement, sub-region scoring, gene-expression layer integration. |
+| `examples/notebooks/advanced_multi_oracle_analysis.ipynb` | Enformer + ChromBPNet/BPNet + LegNet | CHIP-seq TF footprinting, strand-specific tracks, the Interval API, effect-percentile normalization, cell-type switching. The graduate-level notebook. |
 
-### MCP server
+### MCP server — chorus, but you talk to Claude
 
-Chorus includes an MCP (Model Context Protocol) server that lets AI assistants like Claude directly load oracles, predict variant effects, and analyze gene expression — all through natural language conversation. The TLDR above covered the one-liner; this section has the full details.
+Chorus's MCP (Model Context Protocol) server is what makes the lunch-break tour Step 4 work. Claude (or any MCP-aware client) loads oracles, predicts variant effects, scores regions, and writes full HTML/MD reports — all from natural-language prompts. Step 4 above gave you the one-liner; this section has every config detail (Claude Code, Claude Desktop, manual testing, the full 22-tool catalogue).
 
 #### Setup for Claude Code
 
