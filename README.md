@@ -28,21 +28,23 @@ mamba activate chorus
 python -m pip install -e .
 ```
 
-### 2. Download all 6 oracles + hg38 + backgrounds (~55–75 min, unattended)
+### 2. Get every oracle, weight, and reference — batteries included (~55–75 min, unattended)
 
 ```bash
 chorus setup
 ```
 
-One command. Pulls every oracle's weights, all background CDFs, and the hg38 reference — everything pre-downloaded so your first prediction doesn't block on a multi-GB tarball. When prompted:
+One command, walk away, come back to a complete chorus install. When prompted:
 
 - **HuggingFace token** (required — AlphaGenome is a gated model):
   1. Create a read token at <https://huggingface.co/settings/tokens>
   2. Accept the license at <https://huggingface.co/google/alphagenome-all-folds>
   3. Paste the token when `chorus setup` asks.
-- **LDlink token** (optional — only for `fine_map_causal_variant`): register free at <https://ldlink.nih.gov/?tab=apiaccess>, paste when prompted. Press Enter to skip — not needed for most workflows.
+- **LDlink token** (optional — only for `fine_map_causal_variant`): register free at <https://ldlink.nih.gov/?tab=apiaccess>, paste when prompted. Press Enter to skip.
 
-### 3. Predict — wild-type + SNP effect in one block
+### 3. Your first prediction — score a SNP at the β-globin locus
+
+A 30-second taste of what chorus does. The snippet loads Enformer, predicts DNase accessibility around `chr11:5,247,500` (in the β-globin locus, expressed in K562), then scans **every possible SNP at that one base** to score the effect of A/C/G/T. One real wild-type signal, three counter-factual variants — the same shape every chorus prediction takes.
 
 ```python
 import chorus
@@ -73,29 +75,31 @@ print(f"Variant result: scored {n_alts} alt alleles "
       f"({list(effects['predictions'].keys())})")
 ```
 
-### 4. Use with Claude Code
+### 4. Skip the code — drive chorus from Claude in plain English 🤖
 
-Chorus ships an MCP server with **22 tools** ([full list](#mcp-server)
-under "MCP server"). Add it once:
+Hook chorus up to Claude Code once and then *describe* the analysis you want. Claude figures out which models to load, which tracks to score, and which chorus tool to call.
 
 ```bash
 claude mcp add chorus -- mamba run -n chorus chorus-mcp
 ```
 
-Then in Claude Code:
-
-> *"What chorus oracles are available?"* — sanity-check the connection (Claude calls `list_oracles`).
+Now ask, in any Claude Code prompt:
 
 > *"Predict DNase accessibility at chr11:5,247,000–5,248,000 with Enformer for K562, then compute the effect of rs12740374 on SORT1 expression with AlphaGenome."*
 
-Claude will use the chorus MCP tools (`list_tracks`, `predict`, `predict_variant_effect`, `analyze_variant_multilayer`, …) to answer.
+> *"Find the cell types where the SNP rs12740374 most strongly opens chromatin."*
+
+> *"Replace the 200 bp endogenous enhancer at chrX:48,782,929–48,783,129 with this synthetic sequence and predict accessibility in HepG2, K562, and GM12878."*
+
+That's it. No more boilerplate, no juggling oracle APIs — chorus exposes **22 MCP tools** ([full list](#mcp-server)) covering prediction, variant effects, region swaps, multi-layer analysis, gene-TSS lookups, and cell-type discovery, and Claude picks the right one for the question.
 
 ### What to read next
 
+- [Notebooks](#notebooks) — three end-to-end tutorials you can follow start-to-finish (start here)
+- [Worked application examples](#worked-application-examples) — driven by natural-language prompts; the *what can chorus do?* tour
+- [MCP server](#mcp-server) — full Claude Code + Claude Desktop setup with all 22 tools
 - [Python API](#python-api) — 9 runnable recipes (region replacement, gene expression, sub-region scoring, variant-to-gene, …)
 - [Pick an oracle](#pick-an-oracle) — hardware matrix, which one to start with
-- [MCP server](#mcp-server) — full Claude Code + Claude Desktop setup
-- [Notebooks](#notebooks) — three end-to-end tutorials
 - [Troubleshooting](#troubleshooting)
 
 ---
