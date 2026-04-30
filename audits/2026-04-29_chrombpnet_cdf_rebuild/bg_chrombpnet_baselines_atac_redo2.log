@@ -1,0 +1,528 @@
+2026-04-30 09:46:41,624 - __main__ - INFO - Will score 42 models (assay=ATAC_DNASE, fold 0)
+2026-04-30 09:46:41,625 - chorus.core.base - INFO - CHORUS_NO_TIMEOUT is set - all timeouts disabled
+2026-04-30 09:46:41,625 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-30 09:46:41,625 - __main__ - INFO - Track IDs: 42 entries (first 5: ['ATAC:K562', 'ATAC:HepG2', 'ATAC:GM12878', 'ATAC:IMR-90', 'ATAC:neural_tube'] ... last 5: ['DNASE:liver_E11.5', 'DNASE:forebrain_E14.5', 'DNASE:midbrain_E11.5', 'DNASE:hindbrain_E14.5', 'DNASE:embryonic_facial_prominence_E14.5'])
+2026-04-30 09:46:41,625 - chorus.utils.annotations - INFO - Loading /PHShome/lp698/chorus/annotations/GRCh38-cCREs.bed ...
+2026-04-30 09:46:44,717 - chorus.utils.annotations - INFO - Loaded 2345453 cCREs across 8 categories
+2026-04-30 09:46:46,387 - chorus.utils.annotations - INFO - Sampled 11500 positions from 8 cCRE categories
+2026-04-30 09:46:46,406 - chorus.utils.annotations - INFO - Annotation file already exists: /PHShome/lp698/chorus/annotations/gencode.v48.basic.annotation.gtf
+2026-04-30 09:46:46,406 - chorus.utils.annotations - INFO - Loading GTF features (gene) from gencode.v48.basic.annotation.gtf (one-time)...
+2026-04-30 09:46:49,835 - chorus.utils.annotations - INFO - Cached 78686 gene features from GTF
+2026-04-30 09:46:50,069 - __main__ - INFO - Total baseline positions: 29500 (random=15000, cCRE=11500, TSS=3000)
+2026-04-30 09:46:50,069 - __main__ - INFO - ============================================================
+2026-04-30 09:46:50,069 - __main__ - INFO - Model 1/42: ATAC:K562 (fold 0)
+2026-04-30 09:46:50,069 - __main__ - INFO - ============================================================
+2026-04-30 09:46:50,275 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:46:50,281 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:46:50,341 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/K562/fold_0/model.chrombpnet_nobias.fold_0.ENCSR868FGK.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:46:50,342 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:K562 via HF slim mirror (ENCFF984RAF)
+2026-04-30 09:46:50,342 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:46:50,412 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:46:50.439849: I tensorflow/core/platform/cpu_feature_guard.cc:151] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2026-04-30 09:46:50.704810: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1525] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 79193 MB memory:  -> device: 0, name: NVIDIA A100 80GB PCIe, pci bus id: 0000:81:00.0, compute capability: 8.0
+2026-04-30 09:46:52,591 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:46:54.089191: I tensorflow/stream_executor/cuda/cuda_dnn.cc:368] Loaded cuDNN version 8906
+2026-04-30 09:46:54.156115: I tensorflow/core/platform/default/subprocess.cc:304] Start cannot spawn child process: No such file or directory
+2026-04-30 09:46:54.157696: I tensorflow/core/platform/default/subprocess.cc:304] Start cannot spawn child process: No such file or directory
+2026-04-30 09:46:54.157715: W tensorflow/stream_executor/gpu/asm_compiler.cc:80] Couldn't get ptxas version string: INTERNAL: Couldn't invoke ptxas --version
+2026-04-30 09:46:54.159673: I tensorflow/core/platform/default/subprocess.cc:304] Start cannot spawn child process: No such file or directory
+2026-04-30 09:46:54.159741: W tensorflow/stream_executor/gpu/redzone_allocator.cc:314] INTERNAL: Failed to launch ptxas
+Relying on driver to perform ptx compilation. 
+Modify $PATH to customize ptxas location.
+This message will be only logged once.
+2026-04-30 09:47:31,281 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:47:31,281 - __main__ - INFO - ============================================================
+2026-04-30 09:47:31,281 - __main__ - INFO - Model 2/42: ATAC:HepG2 (fold 0)
+2026-04-30 09:47:31,281 - __main__ - INFO - ============================================================
+2026-04-30 09:47:31,330 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:47:31,336 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:47:31,377 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/HepG2/fold_0/model.chrombpnet_nobias.fold_0.ENCSR291GJU.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:47:31,378 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:HepG2 via HF slim mirror (ENCFF137WCM)
+2026-04-30 09:47:31,378 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:47:31,378 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:47:31,560 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:48:08,753 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:48:08,753 - __main__ - INFO - ============================================================
+2026-04-30 09:48:08,753 - __main__ - INFO - Model 3/42: ATAC:GM12878 (fold 0)
+2026-04-30 09:48:08,753 - __main__ - INFO - ============================================================
+2026-04-30 09:48:08,801 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:48:08,807 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:48:08,855 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/GM12878/fold_0/model.chrombpnet_nobias.fold_0.ENCSR637XSC.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:48:08,856 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:GM12878 via HF slim mirror (ENCFF142IOR)
+2026-04-30 09:48:08,856 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:48:08,856 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:48:09,031 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:48:46,276 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:48:46,276 - __main__ - INFO - ============================================================
+2026-04-30 09:48:46,276 - __main__ - INFO - Model 4/42: ATAC:IMR-90 (fold 0)
+2026-04-30 09:48:46,276 - __main__ - INFO - ============================================================
+2026-04-30 09:48:46,342 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:48:46,354 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:48:46,399 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/IMR-90/fold_0/model.chrombpnet_nobias.fold_0.ENCSR200OML.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:48:46,400 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:IMR-90 via HF slim mirror (ENCFF113GSV)
+2026-04-30 09:48:46,400 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:48:46,400 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:48:46,573 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:49:23,782 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:49:23,783 - __main__ - INFO - ============================================================
+2026-04-30 09:49:23,783 - __main__ - INFO - Model 5/42: ATAC:neural_tube (fold 0)
+2026-04-30 09:49:23,783 - __main__ - INFO - ============================================================
+2026-04-30 09:49:23,842 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:49:23,854 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:49:23,895 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/neural_tube/fold_0/model.chrombpnet_nobias.fold_0.ENCSR282YTE.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:49:23,896 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:neural_tube via HF slim mirror (ENCFF031NTE)
+2026-04-30 09:49:23,897 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:49:23,897 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:49:24,072 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:50:01,361 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:50:01,361 - __main__ - INFO - ============================================================
+2026-04-30 09:50:01,362 - __main__ - INFO - Model 6/42: ATAC:heart (fold 0)
+2026-04-30 09:50:01,362 - __main__ - INFO - ============================================================
+2026-04-30 09:50:01,428 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:50:01,441 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:50:01,485 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/heart/fold_0/model.chrombpnet_nobias.fold_0.ENCSR068YGC.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:50:01,486 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:heart via HF slim mirror (ENCFF621FME)
+2026-04-30 09:50:01,486 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:50:01,487 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:50:01,662 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:50:38,883 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:50:38,883 - __main__ - INFO - ============================================================
+2026-04-30 09:50:38,884 - __main__ - INFO - Model 7/42: ATAC:hindbrain (fold 0)
+2026-04-30 09:50:38,884 - __main__ - INFO - ============================================================
+2026-04-30 09:50:38,931 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:50:38,936 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:50:38,980 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/hindbrain/fold_0/model.chrombpnet_nobias.fold_0.ENCSR012YAB.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:50:38,981 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:hindbrain via HF slim mirror (ENCFF620TIL)
+2026-04-30 09:50:38,981 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:50:38,981 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:50:39,155 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:51:16,361 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:51:16,361 - __main__ - INFO - ============================================================
+2026-04-30 09:51:16,361 - __main__ - INFO - Model 8/42: ATAC:liver (fold 0)
+2026-04-30 09:51:16,362 - __main__ - INFO - ============================================================
+2026-04-30 09:51:16,407 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:51:16,413 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:51:16,451 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/liver/fold_0/model.chrombpnet_nobias.fold_0.ENCSR032HKE.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:51:16,452 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:liver via HF slim mirror (ENCFF302KPO)
+2026-04-30 09:51:16,453 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:51:16,453 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:51:16,627 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:51:53,951 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:51:53,951 - __main__ - INFO - ============================================================
+2026-04-30 09:51:53,951 - __main__ - INFO - Model 9/42: ATAC:limb (fold 0)
+2026-04-30 09:51:53,951 - __main__ - INFO - ============================================================
+2026-04-30 09:51:54,013 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:51:54,024 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:51:54,078 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/limb/fold_0/model.chrombpnet_nobias.fold_0.ENCSR551WBK.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:51:54,079 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:limb via HF slim mirror (ENCFF606BNG)
+2026-04-30 09:51:54,080 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:51:54,080 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:51:54,254 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:52:31,575 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:52:31,575 - __main__ - INFO - ============================================================
+2026-04-30 09:52:31,575 - __main__ - INFO - Model 10/42: ATAC:embryonic_facial_prominence (fold 0)
+2026-04-30 09:52:31,575 - __main__ - INFO - ============================================================
+2026-04-30 09:52:31,619 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:52:31,625 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:52:31,673 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/embryonic_facial_prominence/fold_0/model.chrombpnet_nobias.fold_0.ENCSR150RMQ.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:52:31,675 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:embryonic_facial_prominence via HF slim mirror (ENCFF894OSV)
+2026-04-30 09:52:31,675 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:52:31,675 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:52:31,849 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:53:09,168 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:53:09,169 - __main__ - INFO - ============================================================
+2026-04-30 09:53:09,169 - __main__ - INFO - Model 11/42: ATAC:forebrain (fold 0)
+2026-04-30 09:53:09,169 - __main__ - INFO - ============================================================
+2026-04-30 09:53:09,231 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:53:09,242 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:53:09,284 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/forebrain/fold_0/model.chrombpnet_nobias.fold_0.ENCSR273UFV.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:53:09,285 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:forebrain via HF slim mirror (ENCFF501TIK)
+2026-04-30 09:53:09,285 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:53:09,285 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:53:09,459 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:53:46,780 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:53:46,780 - __main__ - INFO - ============================================================
+2026-04-30 09:53:46,780 - __main__ - INFO - Model 12/42: ATAC:midbrain (fold 0)
+2026-04-30 09:53:46,780 - __main__ - INFO - ============================================================
+2026-04-30 09:53:46,833 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:53:46,839 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:53:46,883 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/midbrain/fold_0/model.chrombpnet_nobias.fold_0.ENCSR382RUC.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:53:46,884 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:midbrain via HF slim mirror (ENCFF503GTJ)
+2026-04-30 09:53:46,884 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:53:46,884 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:53:47,056 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:54:24,355 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:54:24,356 - __main__ - INFO - ============================================================
+2026-04-30 09:54:24,356 - __main__ - INFO - Model 13/42: ATAC:limb_E11.5 (fold 0)
+2026-04-30 09:54:24,356 - __main__ - INFO - ============================================================
+2026-04-30 09:54:24,408 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:54:24,414 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:54:24,455 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/limb_E11.5/fold_0/model.chrombpnet_nobias.fold_0.ENCSR377YDY.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:54:24,456 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:limb_E11.5 via HF slim mirror (ENCFF236MMP)
+2026-04-30 09:54:24,457 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:54:24,457 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:54:24,631 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:55:01,904 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:55:01,904 - __main__ - INFO - ============================================================
+2026-04-30 09:55:01,904 - __main__ - INFO - Model 14/42: ATAC:limb_E14.5 (fold 0)
+2026-04-30 09:55:01,904 - __main__ - INFO - ============================================================
+2026-04-30 09:55:01,956 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:55:01,963 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:55:02,011 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/limb_E14.5/fold_0/model.chrombpnet_nobias.fold_0.ENCSR460BUL.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:55:02,012 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:limb_E14.5 via HF slim mirror (ENCFF905ILM)
+2026-04-30 09:55:02,012 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:55:02,012 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:55:02,186 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:55:39,662 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:55:39,662 - __main__ - INFO - ============================================================
+2026-04-30 09:55:39,662 - __main__ - INFO - Model 15/42: ATAC:heart_E11.5 (fold 0)
+2026-04-30 09:55:39,662 - __main__ - INFO - ============================================================
+2026-04-30 09:55:39,711 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:55:39,717 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:55:39,766 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/heart_E11.5/fold_0/model.chrombpnet_nobias.fold_0.ENCSR820ACB.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:55:39,767 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:heart_E11.5 via HF slim mirror (ENCFF750NGU)
+2026-04-30 09:55:39,767 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:55:39,767 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:55:39,940 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:56:17,196 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:56:17,196 - __main__ - INFO - ============================================================
+2026-04-30 09:56:17,196 - __main__ - INFO - Model 16/42: ATAC:heart_E12.5 (fold 0)
+2026-04-30 09:56:17,196 - __main__ - INFO - ============================================================
+2026-04-30 09:56:17,254 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:56:17,260 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:56:17,299 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/heart_E12.5/fold_0/model.chrombpnet_nobias.fold_0.ENCSR652CNN.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:56:17,300 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:heart_E12.5 via HF slim mirror (ENCFF054CFO)
+2026-04-30 09:56:17,300 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:56:17,301 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:56:17,474 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:56:54,669 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:56:54,669 - __main__ - INFO - ============================================================
+2026-04-30 09:56:54,669 - __main__ - INFO - Model 17/42: ATAC:liver_E11.5 (fold 0)
+2026-04-30 09:56:54,669 - __main__ - INFO - ============================================================
+2026-04-30 09:56:54,716 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:56:54,723 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:56:54,761 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/liver_E11.5/fold_0/model.chrombpnet_nobias.fold_0.ENCSR785NEL.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:56:54,762 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:liver_E11.5 via HF slim mirror (ENCFF596GBF)
+2026-04-30 09:56:54,762 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:56:54,762 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:56:54,936 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:57:32,213 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:57:32,213 - __main__ - INFO - ============================================================
+2026-04-30 09:57:32,213 - __main__ - INFO - Model 18/42: ATAC:liver_E12.5 (fold 0)
+2026-04-30 09:57:32,213 - __main__ - INFO - ============================================================
+2026-04-30 09:57:32,261 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:57:32,267 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:57:32,319 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/liver_E12.5/fold_0/model.chrombpnet_nobias.fold_0.ENCSR302LIV.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:57:32,320 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:liver_E12.5 via HF slim mirror (ENCFF129BPA)
+2026-04-30 09:57:32,320 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:57:32,320 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:57:32,493 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:58:09,782 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:58:09,783 - __main__ - INFO - ============================================================
+2026-04-30 09:58:09,783 - __main__ - INFO - Model 19/42: ATAC:hindbrain_E14.5 (fold 0)
+2026-04-30 09:58:09,783 - __main__ - INFO - ============================================================
+2026-04-30 09:58:09,831 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:58:09,838 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:58:09,911 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/hindbrain_E14.5/fold_0/model.chrombpnet_nobias.fold_0.ENCSR798FDL.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:58:09,912 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:hindbrain_E14.5 via HF slim mirror (ENCFF528XQO)
+2026-04-30 09:58:09,912 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:58:09,912 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:58:10,086 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:58:47,353 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:58:47,353 - __main__ - INFO - ============================================================
+2026-04-30 09:58:47,353 - __main__ - INFO - Model 20/42: ATAC:embryonic_facial_prominence_E12.5 (fold 0)
+2026-04-30 09:58:47,354 - __main__ - INFO - ============================================================
+2026-04-30 09:58:47,421 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:58:47,432 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:58:47,491 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/embryonic_facial_prominence_E12.5/fold_0/model.chrombpnet_nobias.fold_0.ENCSR031HDN.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:58:47,492 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:embryonic_facial_prominence_E12.5 via HF slim mirror (ENCFF927BHN)
+2026-04-30 09:58:47,492 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:58:47,492 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:58:47,668 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 09:59:24,998 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 09:59:24,999 - __main__ - INFO - ============================================================
+2026-04-30 09:59:24,999 - __main__ - INFO - Model 21/42: ATAC:embryonic_facial_prominence_E14.5 (fold 0)
+2026-04-30 09:59:24,999 - __main__ - INFO - ============================================================
+2026-04-30 09:59:25,066 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 09:59:25,078 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 09:59:25,134 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/embryonic_facial_prominence_E14.5/fold_0/model.chrombpnet_nobias.fold_0.ENCSR876SYO.h5 "HTTP/1.1 302 Found"
+2026-04-30 09:59:25,135 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:embryonic_facial_prominence_E14.5 via HF slim mirror (ENCFF817FFY)
+2026-04-30 09:59:25,135 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 09:59:25,135 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 09:59:25,310 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:00:02,614 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:00:02,614 - __main__ - INFO - ============================================================
+2026-04-30 10:00:02,614 - __main__ - INFO - Model 22/42: ATAC:neural_tube_unknown_stage (fold 0)
+2026-04-30 10:00:02,614 - __main__ - INFO - ============================================================
+2026-04-30 10:00:02,677 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:00:02,690 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:00:02,735 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/ATAC/neural_tube_unknown_stage/fold_0/model.chrombpnet_nobias.fold_0.ENCSR700QBR.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:00:02,736 - chorus.oracles.chrombpnet - INFO - Resolved ATAC:neural_tube_unknown_stage via HF slim mirror (ENCFF941SIQ)
+2026-04-30 10:00:02,737 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:00:02,737 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:00:02,914 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:00:40,201 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:00:40,201 - __main__ - INFO - ============================================================
+2026-04-30 10:00:40,201 - __main__ - INFO - Model 23/42: DNASE:HepG2 (fold 0)
+2026-04-30 10:00:40,201 - __main__ - INFO - ============================================================
+2026-04-30 10:00:40,244 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:00:40,251 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:00:40,290 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/HepG2/fold_0/model.chrombpnet_nobias.fold_0.ENCSR149XIL.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:00:40,291 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:HepG2 via HF slim mirror (ENCFF615AKY)
+2026-04-30 10:00:40,291 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:00:40,291 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:00:40,468 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:01:17,750 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:01:17,751 - __main__ - INFO - ============================================================
+2026-04-30 10:01:17,751 - __main__ - INFO - Model 24/42: DNASE:IMR-90 (fold 0)
+2026-04-30 10:01:17,751 - __main__ - INFO - ============================================================
+2026-04-30 10:01:17,803 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:01:17,809 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:01:17,858 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/IMR-90/fold_0/model.chrombpnet_nobias.fold_0.ENCSR477RTP.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:01:17,860 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:IMR-90 via HF slim mirror (ENCFF515HBV)
+2026-04-30 10:01:17,860 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:01:17,860 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:01:18,034 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:01:55,386 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:01:55,387 - __main__ - INFO - ============================================================
+2026-04-30 10:01:55,387 - __main__ - INFO - Model 25/42: DNASE:GM12878 (fold 0)
+2026-04-30 10:01:55,387 - __main__ - INFO - ============================================================
+2026-04-30 10:01:55,434 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:01:55,440 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:01:55,482 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/GM12878/fold_0/model.chrombpnet_nobias.fold_0.ENCSR000EMT.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:01:55,483 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:GM12878 via HF slim mirror (ENCFF673TIN)
+2026-04-30 10:01:55,483 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:01:55,484 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:01:55,662 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:02:33,376 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:02:33,377 - __main__ - INFO - ============================================================
+2026-04-30 10:02:33,377 - __main__ - INFO - Model 26/42: DNASE:K562 (fold 0)
+2026-04-30 10:02:33,377 - __main__ - INFO - ============================================================
+2026-04-30 10:02:33,424 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:02:33,430 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:02:33,475 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/K562/fold_0/model.chrombpnet_nobias.fold_0.ENCSR000EOT.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:02:33,476 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:K562 via HF slim mirror (ENCFF574YLK)
+2026-04-30 10:02:33,476 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:02:33,476 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:02:33,655 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:03:11,306 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:03:11,306 - __main__ - INFO - ============================================================
+2026-04-30 10:03:11,306 - __main__ - INFO - Model 27/42: DNASE:H1 (fold 0)
+2026-04-30 10:03:11,306 - __main__ - INFO - ============================================================
+2026-04-30 10:03:11,371 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:03:11,383 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:03:11,435 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/H1/fold_0/model.chrombpnet_nobias.fold_0.ENCSR000EMU.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:03:11,436 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:H1 via HF slim mirror (ENCFF138PJQ)
+2026-04-30 10:03:11,436 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:03:11,437 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:03:11,617 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:03:49,309 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:03:49,310 - __main__ - INFO - ============================================================
+2026-04-30 10:03:49,310 - __main__ - INFO - Model 28/42: DNASE:forelimb_bud (fold 0)
+2026-04-30 10:03:49,310 - __main__ - INFO - ============================================================
+2026-04-30 10:03:49,358 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:03:49,369 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:03:49,408 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/forelimb_bud/fold_0/model.chrombpnet_nobias.fold_0.ENCSR000CNB.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:03:49,409 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:forelimb_bud via HF slim mirror (ENCFF244FWC)
+2026-04-30 10:03:49,409 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:03:49,409 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:03:49,584 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:04:26,977 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:04:26,978 - __main__ - INFO - ============================================================
+2026-04-30 10:04:26,978 - __main__ - INFO - Model 29/42: DNASE:hindlimb_bud (fold 0)
+2026-04-30 10:04:26,978 - __main__ - INFO - ============================================================
+2026-04-30 10:04:27,041 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:04:27,052 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:04:27,102 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/hindlimb_bud/fold_0/model.chrombpnet_nobias.fold_0.ENCSR000CNF.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:04:27,104 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:hindlimb_bud via HF slim mirror (ENCFF676WUE)
+2026-04-30 10:04:27,104 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:04:27,104 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:04:27,526 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:05:04,780 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:05:04,781 - __main__ - INFO - ============================================================
+2026-04-30 10:05:04,781 - __main__ - INFO - Model 30/42: DNASE:forebrain (fold 0)
+2026-04-30 10:05:04,781 - __main__ - INFO - ============================================================
+2026-04-30 10:05:04,826 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:05:04,832 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:05:04,871 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/forebrain/fold_0/model.chrombpnet_nobias.fold_0.ENCSR014SFF.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:05:04,872 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:forebrain via HF slim mirror (ENCFF271AKE)
+2026-04-30 10:05:04,872 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:05:04,872 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:05:05,048 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:05:42,412 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:05:42,412 - __main__ - INFO - ============================================================
+2026-04-30 10:05:42,412 - __main__ - INFO - Model 31/42: DNASE:liver (fold 0)
+2026-04-30 10:05:42,412 - __main__ - INFO - ============================================================
+2026-04-30 10:05:42,458 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:05:42,465 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:05:42,515 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/liver/fold_0/model.chrombpnet_nobias.fold_0.ENCSR000CNJ.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:05:42,516 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:liver via HF slim mirror (ENCFF053FQE)
+2026-04-30 10:05:42,516 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:05:42,516 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:05:42,690 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:06:20,042 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:06:20,043 - __main__ - INFO - ============================================================
+2026-04-30 10:06:20,043 - __main__ - INFO - Model 32/42: DNASE:limb (fold 0)
+2026-04-30 10:06:20,043 - __main__ - INFO - ============================================================
+2026-04-30 10:06:20,101 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:06:20,113 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:06:20,161 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/limb/fold_0/model.chrombpnet_nobias.fold_0.ENCSR661HDP.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:06:20,162 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:limb via HF slim mirror (ENCFF067XGA)
+2026-04-30 10:06:20,162 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:06:20,162 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:06:20,336 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:06:57,614 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:06:57,614 - __main__ - INFO - ============================================================
+2026-04-30 10:06:57,614 - __main__ - INFO - Model 33/42: DNASE:neural_tube (fold 0)
+2026-04-30 10:06:57,614 - __main__ - INFO - ============================================================
+2026-04-30 10:06:57,671 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:06:57,678 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:06:57,719 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/neural_tube/fold_0/model.chrombpnet_nobias.fold_0.ENCSR312QVY.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:06:57,720 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:neural_tube via HF slim mirror (ENCFF541EGW)
+2026-04-30 10:06:57,720 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:06:57,720 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:06:57,897 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:07:35,165 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:07:35,165 - __main__ - INFO - ============================================================
+2026-04-30 10:07:35,165 - __main__ - INFO - Model 34/42: DNASE:embryonic_facial_prominence (fold 0)
+2026-04-30 10:07:35,165 - __main__ - INFO - ============================================================
+2026-04-30 10:07:35,229 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:07:35,242 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:07:35,297 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/embryonic_facial_prominence/fold_0/model.chrombpnet_nobias.fold_0.ENCSR196VDE.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:07:35,298 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:embryonic_facial_prominence via HF slim mirror (ENCFF715EMI)
+2026-04-30 10:07:35,298 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:07:35,298 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:07:35,473 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:08:12,794 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:08:12,794 - __main__ - INFO - ============================================================
+2026-04-30 10:08:12,794 - __main__ - INFO - Model 35/42: DNASE:midbrain (fold 0)
+2026-04-30 10:08:12,794 - __main__ - INFO - ============================================================
+2026-04-30 10:08:12,914 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:08:12,926 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:08:12,980 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/midbrain/fold_0/model.chrombpnet_nobias.fold_0.ENCSR367FCW.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:08:12,981 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:midbrain via HF slim mirror (ENCFF431PYL)
+2026-04-30 10:08:12,981 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:08:12,981 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:08:13,155 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:08:50,439 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:08:50,440 - __main__ - INFO - ============================================================
+2026-04-30 10:08:50,440 - __main__ - INFO - Model 36/42: DNASE:hindbrain (fold 0)
+2026-04-30 10:08:50,440 - __main__ - INFO - ============================================================
+2026-04-30 10:08:50,503 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:08:50,515 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:08:50,561 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/hindbrain/fold_0/model.chrombpnet_nobias.fold_0.ENCSR358ESL.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:08:50,562 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:hindbrain via HF slim mirror (ENCFF186EHP)
+2026-04-30 10:08:50,562 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:08:50,562 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:08:50,739 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:09:28,195 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:09:28,195 - __main__ - INFO - ============================================================
+2026-04-30 10:09:28,195 - __main__ - INFO - Model 37/42: DNASE:limb_E14.5 (fold 0)
+2026-04-30 10:09:28,195 - __main__ - INFO - ============================================================
+2026-04-30 10:09:28,255 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:09:28,267 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:09:28,319 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/limb_E14.5/fold_0/model.chrombpnet_nobias.fold_0.ENCSR636NXY.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:09:28,320 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:limb_E14.5 via HF slim mirror (ENCFF275WOE)
+2026-04-30 10:09:28,320 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:09:28,320 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:09:28,502 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:10:05,854 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:10:05,855 - __main__ - INFO - ============================================================
+2026-04-30 10:10:05,855 - __main__ - INFO - Model 38/42: DNASE:liver_E11.5 (fold 0)
+2026-04-30 10:10:05,855 - __main__ - INFO - ============================================================
+2026-04-30 10:10:05,899 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:10:05,906 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:10:05,948 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/liver_E11.5/fold_0/model.chrombpnet_nobias.fold_0.ENCSR561FZE.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:10:05,949 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:liver_E11.5 via HF slim mirror (ENCFF044WHP)
+2026-04-30 10:10:05,949 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:10:05,949 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:10:06,122 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:10:43,640 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:10:43,640 - __main__ - INFO - ============================================================
+2026-04-30 10:10:43,641 - __main__ - INFO - Model 39/42: DNASE:forebrain_E14.5 (fold 0)
+2026-04-30 10:10:43,641 - __main__ - INFO - ============================================================
+2026-04-30 10:10:43,704 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:10:43,716 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:10:43,762 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/forebrain_E14.5/fold_0/model.chrombpnet_nobias.fold_0.ENCSR337EDG.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:10:43,763 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:forebrain_E14.5 via HF slim mirror (ENCFF251GBK)
+2026-04-30 10:10:43,763 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:10:43,763 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:10:43,941 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:11:21,363 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:11:21,363 - __main__ - INFO - ============================================================
+2026-04-30 10:11:21,364 - __main__ - INFO - Model 40/42: DNASE:midbrain_E11.5 (fold 0)
+2026-04-30 10:11:21,364 - __main__ - INFO - ============================================================
+2026-04-30 10:11:21,410 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:11:21,416 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:11:21,459 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/midbrain_E11.5/fold_0/model.chrombpnet_nobias.fold_0.ENCSR292QBA.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:11:21,460 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:midbrain_E11.5 via HF slim mirror (ENCFF858GDY)
+2026-04-30 10:11:21,460 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:11:21,460 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:11:21,635 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:11:58,999 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:11:58,999 - __main__ - INFO - ============================================================
+2026-04-30 10:11:58,999 - __main__ - INFO - Model 41/42: DNASE:hindbrain_E14.5 (fold 0)
+2026-04-30 10:11:58,999 - __main__ - INFO - ============================================================
+2026-04-30 10:11:59,051 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:11:59,058 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:11:59,166 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/hindbrain_E14.5/fold_0/model.chrombpnet_nobias.fold_0.ENCSR179PIH.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:11:59,167 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:hindbrain_E14.5 via HF slim mirror (ENCFF911DCI)
+2026-04-30 10:11:59,167 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:11:59,168 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:11:59,342 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:12:36,695 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:12:36,696 - __main__ - INFO - ============================================================
+2026-04-30 10:12:36,696 - __main__ - INFO - Model 42/42: DNASE:embryonic_facial_prominence_E14.5 (fold 0)
+2026-04-30 10:12:36,696 - __main__ - INFO - ============================================================
+2026-04-30 10:12:36,758 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+2026-04-30 10:12:36,769 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+2026-04-30 10:12:36,820 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/embryonic_facial_prominence_E14.5/fold_0/model.chrombpnet_nobias.fold_0.ENCSR959HKR.h5 "HTTP/1.1 302 Found"
+2026-04-30 10:12:36,821 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:embryonic_facial_prominence_E14.5 via HF slim mirror (ENCFF424ENU)
+2026-04-30 10:12:36,821 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+2026-04-30 10:12:36,821 - chorus.oracles.chrombpnet - INFO - Auto-detected 1 GPU(s)
+2026-04-30 10:12:36,999 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully!
+2026-04-30 10:13:14,341 - __main__ - INFO -   Baselines done in 0.6 min, 29,004 summary + 928,128 perbin samples for this model
+2026-04-30 10:13:15,045 - __main__ - INFO - Saved baseline interim: /PHShome/lp698/.chorus/backgrounds/chrombpnet_baseline_cdfs_interim.npz
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly
+Loading directly

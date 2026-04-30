@@ -1,0 +1,5 @@
+2026-04-30 08:33:57,313 - numexpr.utils - INFO - Note: detected 255 virtual cores but NumExpr set to maximum of 64, check "NUMEXPR_MAX_THREADS" environment variable.
+2026-04-30 08:33:57,314 - numexpr.utils - INFO - Note: NumExpr detected 255 cores but "NUMEXPR_MAX_THREADS" not set, so enforcing safe limit of 16.
+2026-04-30 08:33:57,314 - numexpr.utils - INFO - NumExpr defaulting to 16 threads.
+2026-04-30 08:50:58,801 - chorus.analysis.normalization - INFO - Saved per-track CDFs for 'chrombpnet': 744 tracks, 74.3 MB → /PHShome/lp698/.chorus/backgrounds/chrombpnet_pertrack.npz
+2026-04-30 08:50:58,832 - __main__ - INFO - DONE — final file: /PHShome/lp698/.chorus/backgrounds/chrombpnet_pertrack.npz (78.0 MB)
