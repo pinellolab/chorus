@@ -43,6 +43,19 @@ parser.add_argument(
 )
 parser.add_argument("--gpu", type=int, default=0)
 parser.add_argument("--fold", type=int, default=0)
+parser.add_argument(
+    "--model-type",
+    choices=["chrombpnet_nobias", "chrombpnet"],
+    default="chrombpnet_nobias",
+    help="ChromBPNet variant. Default `chrombpnet_nobias` (bias-corrected) "
+    "matches the 0.3+ chorus default — the variant the slim HF mirror "
+    "ships and the one user-facing predictions go through. The legacy "
+    "`chrombpnet` variant (bias-aware) is available for ablation studies "
+    "but produces percentiles that don't match what `oracle.predict()` "
+    "returns for default loads in 0.3+. The pre-0.3 CDFs on HF were built "
+    "against `chrombpnet`; see audits/2026-04-29_chrombpnet_cdf_rebuild/ "
+    "for the rebuild against `chrombpnet_nobias`.",
+)
 parser.add_argument("--n-variants", type=int, default=10000)
 parser.add_argument("--reservoir-size", type=int, default=50000)
 parser.add_argument("--n-cdf-points", type=int, default=10000)
@@ -422,7 +435,12 @@ def build_all_models(do_variants: bool, do_baselines: bool):
             # Pass the spec dict as kwargs — chrombpnet.py accepts:
             #   load_pretrained_model(assay='ATAC', cell_type='K562', fold=...)
             #   load_pretrained_model(assay='CHIP', cell_type='K562', TF='REST', fold=...)
-            oracle.load_pretrained_model(fold=args.fold, **spec)
+            # model_type is pinned to args.model_type (default
+            # `chrombpnet_nobias` post-0.3) so the resulting CDF matches
+            # what `oracle.predict()` returns for default loads.
+            oracle.load_pretrained_model(
+                fold=args.fold, model_type=args.model_type, **spec,
+            )
         except Exception as exc:
             logger.warning("Failed to load %s: %s", tid, str(exc)[:200])
             continue
