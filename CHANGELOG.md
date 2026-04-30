@@ -6,7 +6,11 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-04-30
+
 ### Added
+
+- **Rebuilt ChromBPNet per-track CDFs against `chrombpnet_nobias`** to match the 0.3+ default model variant. Prior 0.2.x CDFs were built against the bias-aware `chrombpnet`; effect-percentile lookups now point at the matching empirical distribution. New NPZ on [`lucapinello/chorus-backgrounds`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds): 786 tracks (22 ATAC + 20 DNASE + 744 CHIP), all CDFs monotone, every reservoir filled (effect_count=9609 per track), sha256 `be61e9e8...`. ATAC/DNase percentiles shift 13.5–29.3% at p95 (the bias correction strips enzymatic motif preferences); CHIP/BPNet percentiles ~unchanged (already nobias-equivalent in the old NPZ). Built on A100 in ~10 h. Audit at `audits/2026-04-29_chrombpnet_cdf_rebuild/report.md`.
 
 - **HuggingFace mirror consolidation for Enformer, Borzoi, Sei, and LegNet weights.** Chorus now ships a chorus-controlled HF mirror for each non-AlphaGenome oracle, so the install path doesn't depend on third-party hosts that have shown lifecycle volatility (TFHub deprecation in particular). Each loader prefers the chorus mirror and falls back to the original source on any failure — no behavior change in the happy path, redundancy on the unhappy.
 
