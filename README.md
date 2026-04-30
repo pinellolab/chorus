@@ -13,6 +13,12 @@
 
 Four steps. Steps 1 + 2 are copy-paste. Step 3 is a runnable snippet. Step 4 hooks chorus up to Claude Code.
 
+**Before you start** — three things you need:
+
+- **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>
+- **~28 GB free disk** — see [Disk usage breakdown](#disk-usage-breakdown) if you want the per-oracle / per-asset numbers
+- **Linux x86_64 or macOS** (Intel / Apple Silicon)
+
 ### 1. Install (5 minutes)
 
 ```bash
@@ -22,11 +28,7 @@ mamba activate chorus
 python -m pip install -e .
 ```
 
-Prerequisite: **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>, plus **~28 GB free disk** for the default install (6 oracles + a second AlphaGenome backend for Mac MPS speed; hg38; per-oracle CDF backgrounds). Both AlphaGenome backends — `alphagenome` (JAX, default) and `alphagenome_pt` (PyTorch, same model + same weights, converted to safetensors) — install by default so Mac users automatically get the MPS-accelerated path; see [Two AlphaGenome backends](#two-alphagenome-backends). ChromBPNet/BPNet weights stream from a slim HuggingFace mirror — only ~50 MB pre-cached for the K562 + HepG2 DNase fast path used by every shipped notebook. Works on Linux x86_64 and macOS (Intel / Apple Silicon). A single oracle env is ~3 GB on average. Opting in to `chorus setup --all-chrombpnet` pre-caches every fold-0 bias-corrected ChromBPNet model from the slim mirror (~1.5 GB additional, ~5 min). Other ChromBPNet cell types download lazily on first `load_pretrained_model(...)` regardless. If you specifically need the full bias-aware `chrombpnet` variant or fold ≠ 0, chorus falls back to the original ENCODE tarball for that specific model (~1.8 GB on disk per model).
-
 ### 2. Download all 6 oracles + hg38 + backgrounds (~55–75 min, unattended)
-
-> Both AlphaGenome backends — JAX (`alphagenome`, gated) and PyTorch (`alphagenome_pt`, public mirror of the same weights converted to safetensors) — install by default. The PyTorch backend adds ~2.6 GB of disk and ~10–13 min to setup; in exchange Mac users get the MPS-accelerated path automatically (5–8× faster than JAX CPU at ≤600 kb windows). Linux/CUDA users will likely use the JAX backend in practice (it's faster on A100), but the PyTorch backend is still useful for portability.
 
 ```bash
 chorus setup
@@ -193,6 +195,21 @@ The recommendation is suggestion-only — chorus never auto-routes between backe
 The TLDR's `chorus setup` does everything you need. This section covers the edge cases: upgrading, per-oracle setup, token plumbing, manual genome management, and backgrounds.
 
 > **Two env files, one source of truth.** The root `environment.yml` is what you install. The per-oracle files in `environments/` are consumed internally by `chorus setup --oracle <name>` — you don't install them directly.
+
+#### Disk usage breakdown
+
+The default `chorus setup` (all 6 oracles, both AlphaGenome backends, hg38, all CDF backgrounds) lands at **~28 GB**:
+
+| Bucket | Size |
+|---|---|
+| 6 oracle conda envs (~3 GB each) | ~18 GB |
+| `hg38` reference fasta + index | ~3 GB |
+| Per-oracle CDF backgrounds (`~/.chorus/backgrounds/`) | ~2 GB |
+| AlphaGenome PyTorch backend (`alphagenome_pt`, default-on so Mac users get MPS speed) | ~2.6 GB |
+| ChromBPNet slim HuggingFace mirror — fast-path pre-cache (K562 + HepG2 DNase) | ~50 MB |
+| **Total default** | **~28 GB** |
+
+Opting in via `chorus setup --all-chrombpnet` pre-caches every fold-0 bias-corrected ChromBPNet model from the slim mirror (+~1.5 GB, ~5 min). Other ChromBPNet cell types download lazily on first `load_pretrained_model(...)` regardless. If you specifically need the full bias-aware `chrombpnet` variant or fold ≠ 0, chorus falls back to the original ENCODE tarball for that specific model (+~1.8 GB on disk per model). See [Where the oracle weights come from](#where-the-oracle-weights-come-from) for the full mirror map.
 
 #### Upgrading
 
