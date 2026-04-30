@@ -1,0 +1,42 @@
+=== D.1 list_oracles count + framework ===
+Wed Apr 29 22:58:48 EDT 2026
+Oracle count: 7 (expected 7)
+  alphagenome           JAX           context= 1048576 bp
+  alphagenome_pt        PyTorch       context= 1048576 bp
+  borzoi                PyTorch       context=  524288 bp
+  chrombpnet            TensorFlow    context=    2114 bp
+  enformer              TensorFlow    context=  393216 bp
+  legnet                PyTorch       context=     200 bp
+  sei                   PyTorch       context=    4096 bp
+
+=== D.2 recommend_alphagenome_backend (4 platform combos) ===
+  Darwin+mps: alphagenome_pt     on mps    (high)
+  Darwin+cpu: alphagenome        on cpu    (medium)
+  Linux+cuda: alphagenome        on cuda   (high)
+  Linux+cpu: alphagenome        on cpu    (medium)
+
+=== D.3 list_tracks via MCP for each oracle ===
+2026-04-29 22:58:57,112 - chorus.oracles.enformer_source.enformer_metadata - INFO - Loaded 5313 track metadata entries
+2026-04-29 22:58:57,241 - chorus.oracles.borzoi_source.borzoi_metadata - INFO - Created mapping for 7611 track identifiers
+2026-04-29 22:58:57,241 - chorus.oracles.borzoi_source.borzoi_metadata - INFO - First few identifiers: ['CNhs10608+', 'CNhs10608-', 'CNhs10610+', 'CNhs10610-', 'CNhs10612+']
+2026-04-29 22:58:57,464 - chorus.oracles.chrombpnet_source.metadata - INFO - BPNet metadata loaded.
+2026-04-29 22:58:57,473 - chorus.oracles.alphagenome_source.alphagenome_metadata - INFO - Loaded 5731 AlphaGenome tracks
+  enformer            keys=['oracle', 'assay_types', 'cell_types', 'note']
+  borzoi              keys=['oracle', 'assay_types', 'cell_types', 'note']
+  chrombpnet          keys=['oracle', 'assay_types', 'ATAC_cell_types', 'DNASE_cell_types', 'CHIP_cell_types', 'CHIP_TFs']
+  sei                 keys=['oracle', 'assay_types', 'note']
+  legnet              keys=['oracle', 'assay_types', 'cell_types', 'note']
+  alphagenome         keys=['oracle', 'assay_types', 'cell_types', 'note']
+  alphagenome_pt      keys=['oracle', 'assay_types', 'cell_types', 'note']
+
+=== D.4 chorus list ===
+Available oracle environments:
+--------------------------------------------------
+alphagenome          chorus-alphagenome        ✓ Installed
+alphagenome_pt       chorus-alphagenome_pt     ✓ Installed
+borzoi               chorus-borzoi             ✓ Installed
+chrombpnet           chorus-chrombpnet         ✓ Installed
+enformer             chorus-enformer           ✓ Installed
+legnet               chorus-legnet             ✓ Installed
+sei                  chorus-sei                ✓ Installed
+--------------------------------------------------

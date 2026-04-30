@@ -1,0 +1,26 @@
+=== borzoi ===
+Wed Apr 29 22:58:55 EDT 2026
+2026-04-29 22:58:57,428 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 22:58:59,072 - chorus.core.base - INFO - Using conda environment: chorus-borzoi
+[construct] 1.6s
+2026-04-29 22:58:59,072 - chorus.oracles.borzoi - INFO - Loading Borzoi model fold 0
+2026-04-29 22:59:03,953 - chorus.oracles.borzoi - INFO - Borzoi model loaded successfully in environment!
+[load] 4.9s
+[result] FAIL
+Traceback (most recent call last):
+  File "<stdin>", line 15, in <module>
+AttributeError: 'BorzoiOracle' object has no attribute 'list_assay_ids'. Did you mean: 'list_assay_types'?
+
+=== borzoi ===
+Wed Apr 29 23:22:02 EDT 2026
+2026-04-29 23:22:03,881 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 23:22:05,359 - chorus.core.base - INFO - Using conda environment: chorus-borzoi
+[construct] 1.5s
+2026-04-29 23:22:05,360 - chorus.oracles.borzoi - INFO - Loading Borzoi model fold 0
+2026-04-29 23:22:10,477 - chorus.oracles.borzoi - INFO - Borzoi model loaded successfully in environment!
+[load] 5.1s
+[result] FAIL
+Traceback (most recent call last):
+  File "<stdin>", line 15, in <module>
+AttributeError: 'BorzoiOracle' object has no attribute 'list_assay_ids'. Did you mean: 'list_assay_types'?
+

@@ -1,0 +1,41 @@
+=== Phase D: Rebuild base + pip install -e . ===
+Wed Apr 29 23:05:30 EDT 2026
+
+--- mamba env create -f environment.yml ---
+    mamba activate chorus
+
+Or to execute a single command in this environment, use:
+
+    mamba run -n chorus mycommand
+
+warning  libmamba You are using 'pip' as an additional package manager.
+    Be aware that packages installed with 'pip' are managed independently from 'conda-forge' channel.
+
+Installing pip packages: coolbox>=0.4.0, oxbow>=0.4.0, fastmcp>=3.0, huggingface_hub>=0.20.0
+
+--- pip install -e . ---
+Requirement already satisfied: shellingham>=1.3.0 in /Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages (from typer->huggingface_hub>=0.20.0->chorus==0.3.0) (1.5.4)
+Requirement already satisfied: annotated-doc>=0.0.2 in /Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages (from typer->huggingface_hub>=0.20.0->chorus==0.3.0) (0.0.4)
+Building wheels for collected packages: chorus
+  Building editable for chorus (pyproject.toml): started
+  Building editable for chorus (pyproject.toml): finished with status 'done'
+  Created wheel for chorus: filename=chorus-0.3.0-0.editable-py3-none-any.whl size=26179 sha256=dac59b5ffb95d2c9a2bce99971c126e2b6f6d0083d2503341a74712974e53ed8
+  Stored in directory: /private/var/folders/gx/xj1t8pkx1gvdn92fgw2g7vpm0000gn/T/pip-ephem-wheel-cache-p62csc2k/wheels/ce/e7/de/dcfbcc5fc7a3172614897121a8b46629a3ac344a683353480e
+Successfully built chorus
+Installing collected packages: chorus
+Successfully installed chorus-0.3.0
+
+--- chorus --version ---
+chorus 0.3.0
+
+--- chorus list ---
+Available oracle environments:
+--------------------------------------------------
+alphagenome          chorus-alphagenome        ✗ Not installed
+alphagenome_pt       chorus-alphagenome_pt     ✗ Not installed
+borzoi               chorus-borzoi             ✗ Not installed
+chrombpnet           chorus-chrombpnet         ✗ Not installed
+enformer             chorus-enformer           ✗ Not installed
+legnet               chorus-legnet             ✗ Not installed
+sei                  chorus-sei                ✗ Not installed
+--------------------------------------------------

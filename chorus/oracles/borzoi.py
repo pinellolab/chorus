@@ -112,7 +112,31 @@ class BorzoiOracle(OracleBase):
         try:
             from borzoi_pytorch import Borzoi
             import torch
-            flashzoi = Borzoi.from_pretrained(f'johahi/borzoi-replicate-{self.fold}')
+
+            # Prefer the chorus HF mirror at lucapinello/chorus-borzoi
+            # (per-fold subdirs); fall back to johahi/borzoi-replicate-{fold}
+            # on any failure. Both have the same flashzoi PyTorch weights.
+            try:
+                from huggingface_hub import snapshot_download
+                local_dir = snapshot_download(
+                    repo_id="lucapinello/chorus-borzoi",
+                    repo_type="model",
+                    allow_patterns=[f"fold_{self.fold}/*"],
+                )
+                fold_path = os.path.join(local_dir, f"fold_{self.fold}")
+                if not os.path.isdir(fold_path):
+                    raise FileNotFoundError(
+                        f"fold_{self.fold}/ missing in chorus-borzoi mirror"
+                    )
+                flashzoi = Borzoi.from_pretrained(fold_path)
+            except Exception as exc:
+                logger.info(
+                    "chorus-borzoi mirror unavailable (%s); falling back to johahi",
+                    exc,
+                )
+                flashzoi = Borzoi.from_pretrained(
+                    f"johahi/borzoi-replicate-{self.fold}"
+                )
             
             if self.device is None:
                 if torch.cuda.is_available():

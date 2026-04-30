@@ -1,0 +1,50 @@
+=== Preflight snapshot ===
+Wed Apr 29 23:03:19 EDT 2026
+
+## current commit
+ac17f0c feat: consolidate Enformer + Borzoi + LegNet weights under chorus HF org (#68)
+8c2243c prep: ChromBPNet CDF rebuild against chrombpnet_nobias (script + handoff) (#67)
+b3bf94a Post-PR-#62 follow-ups: env-setup gating + equivalence-test rewrite (closes #63, #64, #65) (#66)
+
+## chorus envs (sizes)
+  chorus  (1.6G)
+  chorus-alphagenome  (3.0G)
+  chorus-alphagenome_pt  (1.7G)
+  chorus-borzoi  (1.8G)
+  chorus-chrombpnet  (1.9G)
+  chorus-enformer  (1.9G)
+  chorus-legnet  (1.6G)
+  chorus-sei  (1.3G)
+
+## chorus list
+Available oracle environments:
+--------------------------------------------------
+alphagenome          chorus-alphagenome        ✓ Installed
+alphagenome_pt       chorus-alphagenome_pt     ✓ Installed
+borzoi               chorus-borzoi             ✓ Installed
+chrombpnet           chorus-chrombpnet         ✓ Installed
+enformer             chorus-enformer           ✓ Installed
+legnet               chorus-legnet             ✓ Installed
+sei                  chorus-sei                ✓ Installed
+--------------------------------------------------
+
+## HF cache
+7.8G	/Users/lp698/.cache/huggingface
+
+## Backgrounds (cdfs)
+total 3345024
+-rw-r--r--@ 1 lp698  staff   263M Apr 26 15:58 alphagenome_pertrack.npz
+-rw-r--r--@ 1 lp698  staff   766M Apr 26 16:09 borzoi_pertrack.npz
+-rw-r--r--@ 1 lp698  staff    79M Apr 26 16:25 chrombpnet_pertrack.npz
+-rw-r--r--@ 1 lp698  staff   523M Apr 26 16:26 enformer_pertrack.npz
+-rw-r--r--@ 1 lp698  staff   208K Apr 26 16:28 legnet_pertrack.npz
+-rw-r--r--@ 1 lp698  staff   2.8M Apr 26 17:03 sei_pertrack.npz
+
+## Genomes
+total 6393560
+-rw-r--r--@ 1 lp698  staff   3.0G Apr 26 16:08 hg38.fa
+-rw-r--r--@ 1 lp698  staff    19K Apr 26 16:08 hg38.fa.fai
+
+## HF token cached?
+  yes (~/.cache/huggingface/token)
+  HF_TOKEN env NOT set

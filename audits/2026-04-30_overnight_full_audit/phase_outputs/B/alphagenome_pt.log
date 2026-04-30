@@ -1,0 +1,14 @@
+=== alphagenome_pt ===
+Wed Apr 29 23:02:11 EDT 2026
+2026-04-29 23:02:13,522 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-04-29 23:02:14,825 - chorus.core.base - INFO - Using conda environment: chorus-alphagenome_pt
+[construct] 1.3s
+2026-04-29 23:02:14,825 - chorus.oracles.alphagenome_pt - INFO - Loading AlphaGenome PyTorch port
+2026-04-29 23:02:26,205 - chorus.oracles.alphagenome_pt - INFO - AlphaGenome PyTorch model loaded in environment (device=mps)
+[load] 11.4s
+2026-04-29 23:03:28,900 - chorus.oracles.alphagenome_source.alphagenome_metadata - INFO - Loaded 5731 AlphaGenome tracks
+[predict] 62.7s
+[result] 1 tracks
+  ✓ DNASE/EFO:0002067 DNase-seq/.: shape=(1048576,), mean=0.0836, max=77.2727
+[result] PASS — 1 tracks, all finite, predict took 62.7s
+

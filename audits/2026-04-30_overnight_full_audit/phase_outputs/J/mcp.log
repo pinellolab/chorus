@@ -1,0 +1,32 @@
+=== Phase J: MCP server smoke ===
+Wed Apr 29 23:22:10 EDT 2026
+
+--- list_oracles ---
+2026-04-29 23:22:13,736 - chorus.mcp.state - INFO - Auto-detected hg38 at /Users/lp698/chorus_test/chorus/genomes/hg38.fa
+Got 7 oracles
+  enformer              TensorFlow    installed=True  loaded=False
+  borzoi                PyTorch       installed=True  loaded=False
+  chrombpnet            TensorFlow    installed=True  loaded=False
+  sei                   PyTorch       installed=True  loaded=False
+  legnet                PyTorch       installed=True  loaded=False
+  alphagenome           JAX           installed=True  loaded=False
+  alphagenome_pt        PyTorch       installed=True  loaded=False
+
+--- recommend_alphagenome_backend ---
+  L= 128000: alphagenome_pt     on mps    (high)
+  L= 524288: alphagenome_pt     on mps    (high)
+  L=1048576: alphagenome        on cpu    (high)
+
+--- list_tracks(K562 across oracles) ---
+2026-04-29 23:22:19,186 - chorus.oracles.enformer_source.enformer_metadata - INFO - Loaded 5313 track metadata entries
+2026-04-29 23:22:19,324 - chorus.oracles.borzoi_source.borzoi_metadata - INFO - Created mapping for 7611 track identifiers
+2026-04-29 23:22:19,324 - chorus.oracles.borzoi_source.borzoi_metadata - INFO - First few identifiers: ['CNhs10608+', 'CNhs10608-', 'CNhs10610+', 'CNhs10610-', 'CNhs10612+']
+2026-04-29 23:22:19,563 - chorus.oracles.chrombpnet_source.metadata - INFO - BPNet metadata loaded.
+2026-04-29 23:22:19,572 - chorus.oracles.alphagenome_source.alphagenome_metadata - INFO - Loaded 5731 AlphaGenome tracks
+  enformer              num_results=485  first 2: ['ENCFF899YDP', 'ENCFF515UNC']
+  borzoi                num_results=529  first 2: ['CNhs11250+', 'CNhs11250-']
+  chrombpnet            num_results=-  first 2: []
+  sei                   num_results=-  first 2: []
+  legnet                num_results=-  first 2: []
+  alphagenome           num_results=331  first 2: ['ATAC/EFO:0002067 ATAC-seq/.', 'CAGE/hCAGE EFO:0002067/+']
+  alphagenome_pt        num_results=331  first 2: ['ATAC/EFO:0002067 ATAC-seq/.', 'CAGE/hCAGE EFO:0002067/+']
