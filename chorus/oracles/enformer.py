@@ -89,8 +89,14 @@ class EnformerOracle(OracleBase):
         self._enformer_model = None
         self._track_dict = None
         
-        # Default model path
-        self.default_model_path = "https://tfhub.dev/deepmind/enformer/1"
+        # Default model path. Chorus mirrors the original DeepMind
+        # SavedModel at huggingface.co/lucapinello/chorus-enformer for
+        # resilience — the original TFHub URL now redirects through
+        # Kaggle. The HF mirror is byte-identical to the TFHub-cached
+        # version (saved_model.pb + variables/) and chorus prefers it
+        # at load time.
+        self.default_model_path = "lucapinello/chorus-enformer"
+        self.tfhub_fallback_url = "https://tfhub.dev/deepmind/enformer/1"
         
         # Reference genome
         self.reference_fasta = reference_fasta

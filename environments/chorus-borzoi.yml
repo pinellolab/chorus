@@ -21,6 +21,8 @@ dependencies:
   # Utilities
   - tqdm>=4.62.0
   - h5py>=3.6.0
+  # HF Hub for chorus-borzoi mirror (with johahi fallback)
+  - huggingface_hub>=0.20
   
   # PyTorch ecosystem
   - pytorch>=2.0.0

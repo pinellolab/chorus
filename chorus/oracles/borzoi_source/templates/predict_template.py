@@ -12,7 +12,28 @@ with open("__ARGS_FILE_NAME__") as inp:  # to be formatted by calling script
     args = json.load(inp)
 
 from borzoi_pytorch import Borzoi
-flashzoi = Borzoi.from_pretrained(f'johahi/borzoi-replicate-{args["fold"]}')
+
+
+def _load_borzoi(fold: int):
+    """Same HF-mirror-first loader as load_template.py — prefer the
+    chorus-controlled mirror at lucapinello/chorus-borzoi, fall back to
+    johahi's original repos."""
+    try:
+        from huggingface_hub import snapshot_download
+        local_dir = snapshot_download(
+            repo_id="lucapinello/chorus-borzoi",
+            repo_type="model",
+            allow_patterns=[f"fold_{fold}/*"],
+        )
+        fold_path = os.path.join(local_dir, f"fold_{fold}")
+        if not os.path.isdir(fold_path):
+            raise FileNotFoundError(f"fold_{fold}/ missing in chorus-borzoi mirror")
+        return Borzoi.from_pretrained(fold_path)
+    except Exception:
+        return Borzoi.from_pretrained(f'johahi/borzoi-replicate-{fold}')
+
+
+flashzoi = _load_borzoi(args["fold"])
 
 device = args['device']
 if device is None or device == 'auto':
