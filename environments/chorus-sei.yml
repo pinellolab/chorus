@@ -21,6 +21,8 @@ dependencies:
   # Utilities
   - tqdm>=4.62.0
   - h5py>=3.6.0
+  # HF Hub for chorus-sei mirror (with Zenodo fallback)
+  - huggingface_hub>=0.20
   
   # PyTorch ecosystem
   # NB: the previous pin (pytorch>=1.13.0,<2.0.0 + cudatoolkit=11.7) caused a

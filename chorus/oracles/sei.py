@@ -573,6 +573,30 @@ class SeiOracle(OracleBase):
     def get_zenodo_link(self) -> str:
         return "https://zenodo.org/record/4906997/files/sei_model.tar.gz"
 
+    def _try_hf_mirror(self, dest_tar: "Path") -> bool:
+        """Fetch sei_model.tar.gz from the chorus HF mirror at
+        lucapinello/chorus-sei. Returns True on success. On any failure
+        (no huggingface_hub, network, repo missing, etc.) returns False
+        so the caller can fall back to Zenodo."""
+        try:
+            from huggingface_hub import hf_hub_download
+        except ImportError:
+            logger.info("huggingface_hub not available; using Zenodo fallback for Sei")
+            return False
+        try:
+            local = hf_hub_download(
+                repo_id="lucapinello/chorus-sei",
+                filename="sei_model.tar.gz",
+                repo_type="model",
+            )
+            import shutil as _shutil
+            _shutil.copyfile(local, dest_tar)
+            logger.info("Fetched Sei tarball from chorus HF mirror.")
+            return True
+        except Exception as exc:
+            logger.info(f"chorus-sei HF mirror unavailable ({exc}); using Zenodo fallback")
+            return False
+
     def _download_sei_model(self):
         from pathlib import Path
         import tarfile
@@ -590,7 +614,10 @@ class SeiOracle(OracleBase):
         )
 
         if not Path(download_file_path).exists():
-            self._download_with_resume(download_link, download_file_path)
+            # Prefer chorus-controlled HF mirror; fall back to Zenodo
+            # on any failure.
+            if not self._try_hf_mirror(Path(download_file_path)):
+                self._download_with_resume(download_link, download_file_path)
             logger.info("Download completed!")
         else:
             logger.info("Sei model archive is already downloaded!")
