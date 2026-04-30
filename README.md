@@ -42,8 +42,6 @@ One command. Pulls every oracle's weights, all background CDFs, and the hg38 ref
   3. Paste the token when `chorus setup` asks.
 - **LDlink token** (optional — only for `fine_map_causal_variant`): register free at <https://ldlink.nih.gov/?tab=apiaccess>, paste when prompted. Press Enter to skip — not needed for most workflows.
 
-> **Want to start in 2 minutes?** `chorus setup --oracle enformer` installs just the lightweight CPU starter; you can add more oracles later with `chorus setup --oracle <name>`.
-
 ### 3. Predict — wild-type + SNP effect in one block
 
 ```python
