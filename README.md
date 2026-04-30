@@ -1,6 +1,5 @@
 <div align="center">
 
-# **Chorus**
 <img src="logo.png" alt="Chorus" width="250">
 
 *Accessible Sequence to Function Analyses: Predict how a genetic variant changes gene regulation — chromatin accessibility, transcription factor binding, histone marks, gene expression — across thousands of cell types.* 
