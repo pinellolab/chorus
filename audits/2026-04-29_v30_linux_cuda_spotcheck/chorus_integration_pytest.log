@@ -1,0 +1,26 @@
+...s                                                                     [100%]
+=============================== warnings summary ===============================
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+  /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+    parse = parser.parseString(pattern)
+
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+  /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+    parser.resetCache()
+
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_mathtext.py:45
+  /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+    ParserElement.enablePackrat()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+3 passed, 1 skipped, 346 deselected, 13 warnings in 613.52s (0:10:13)
