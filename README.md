@@ -200,14 +200,31 @@ After the first install, to upgrade cleanly:
 
 ```bash
 cd chorus && git pull
-# Remove oracle envs first (while the chorus CLI is still available):
-chorus remove --oracle enformer
-# Repeat for each oracle you had installed...
+# Remove all oracle envs, weights, and backgrounds in one command:
+chorus cleanup --all
 # Then remove the base env:
 mamba env remove -n chorus -y
 ```
 
 Then re-run the Fresh Install steps above.
+
+#### Uninstalling / starting from scratch
+
+```bash
+# Preview what will be deleted (safe — no changes):
+chorus cleanup --all --dry-run
+
+# Remove everything: all oracle envs, downloaded weights, background CDFs, and genomes:
+chorus cleanup --all
+
+# Finer-grained options:
+chorus cleanup --oracle enformer          # one oracle only (env + weights)
+chorus cleanup --oracle all               # all oracle envs + weights, keep backgrounds/genomes
+chorus cleanup --backgrounds              # remove ~/.chorus/backgrounds/*.npz only
+chorus cleanup --genomes                  # remove downloaded reference genomes only
+```
+
+The base `chorus` environment itself is not removed by `chorus cleanup` — remove it manually with `mamba env remove -n chorus -y` if you want a complete wipe.
 
 #### Setting up oracle environments one-by-one
 
@@ -244,6 +261,14 @@ chorus health --timeout 300
 ```
 
 **Note:** `chorus setup` pre-downloads each oracle's default weights + background CDFs + the `hg38` reference at install time, so subsequent `chorus health` / prediction calls are fast. If you opted out via `--no-weights`, the first prediction will still do a lazy download.
+
+**Slow or unstable connection?** Use `--setup-timeout SECONDS` to cap how long each phase (env build and weight download) is allowed to run before aborting with a clear error:
+
+```bash
+chorus setup --oracle borzoi --setup-timeout 3600   # 1-hour cap per phase
+```
+
+Default is unlimited. If a phase times out, re-run the same command — mamba and HuggingFace downloads resume from where they left off.
 
 #### Tokens
 
