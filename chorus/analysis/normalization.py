@@ -366,12 +366,19 @@ class PerTrackNormalizer:
             return True
         return self.npz_path(oracle_name).exists()
 
+    # Oracles that share an identical CDF with another oracle.
+    _CDF_ALIASES: dict[str, str] = {"alphagenome_pt": "alphagenome"}
+
     def _ensure_loaded(self, oracle_name: str) -> dict | None:
         """Lazy-load the NPZ for *oracle_name*.  Returns the data dict or None."""
         if oracle_name in self._loaded:
             return self._loaded[oracle_name]
         path = self.npz_path(oracle_name)
         if not path.exists():
+            # Fall back to a known alias (e.g. alphagenome_pt → alphagenome)
+            alias = self._CDF_ALIASES.get(oracle_name)
+            if alias:
+                return self._ensure_loaded(alias)
             return None
         data = np.load(str(path), allow_pickle=False)
         entry = {
@@ -473,6 +480,8 @@ class PerTrackNormalizer:
         if cdf_matrix is None:
             return None
         idx = entry["track_index"].get(track_id)
+        if idx is None and track_id.endswith((":+", ":-")):
+            idx = entry["track_index"].get(track_id.rsplit(":", 1)[0])
         if idx is None:
             return None
         if not self._has_samples(entry, cdf_key, idx):
@@ -501,6 +510,8 @@ class PerTrackNormalizer:
         if cdf_matrix is None:
             return None
         idx = entry["track_index"].get(track_id)
+        if idx is None and track_id.endswith((":+", ":-")):
+            idx = entry["track_index"].get(track_id.rsplit(":", 1)[0])
         if idx is None:
             return None
         if not self._has_samples(entry, cdf_key, idx):
@@ -587,6 +598,8 @@ class PerTrackNormalizer:
         if cdf_matrix is None:
             return None
         idx = entry["track_index"].get(track_id)
+        if idx is None and track_id.endswith((":+", ":-")):
+            idx = entry["track_index"].get(track_id.rsplit(":", 1)[0])
         if idx is None:
             return None
         cdf = cdf_matrix[idx]
@@ -851,6 +864,12 @@ def get_pertrack_normalizer(
     if n > 0 and norm.has_oracle(oracle_name):
         norm._ensure_loaded(oracle_name)
         return norm
+
+    # alphagenome_pt produces identical predictions to alphagenome (same
+    # model + weights, different backend), so share the JAX CDF rather
+    # than requiring a separate upload.
+    if oracle_name == "alphagenome_pt":
+        return get_pertrack_normalizer("alphagenome", cache_dir=cache_dir)
 
     return None
 
