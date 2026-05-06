@@ -132,15 +132,22 @@ class GenomeManager:
             logger.info(f"Downloading {genome_id} from {url}...")
             logger.info("This may take several minutes depending on your connection speed...")
             download_with_resume(url, gz_path, label=f"{genome_id} genome")
-            
-            # Decompress
-            logger.info(f"Decompressing {genome_id}...")
-            with gzip.open(gz_path, 'rb') as f_in:
-                with open(fasta_path, 'wb') as f_out:
-                    shutil.copyfileobj(f_in, f_out)
-            
-            # Remove compressed file
-            gz_path.unlink()
+
+            # Decompress — guard against concurrent runs where another
+            # process may have already decompressed and deleted the .gz.
+            if fasta_path.exists():
+                gz_path.unlink(missing_ok=True)
+            elif gz_path.exists():
+                logger.info(f"Decompressing {genome_id}...")
+                with gzip.open(gz_path, 'rb') as f_in:
+                    with open(fasta_path, 'wb') as f_out:
+                        shutil.copyfileobj(f_in, f_out)
+                gz_path.unlink(missing_ok=True)
+            else:
+                raise FileNotFoundError(
+                    f"{gz_path} missing after download and {fasta_path} "
+                    "not present — re-run with --force to retry."
+                )
             
             # Create FASTA index
             logger.info(f"Creating FASTA index for {genome_id}...")
