@@ -82,7 +82,8 @@ def setup_environments(args):
             if stale.exists():
                 stale.unlink()
 
-        if not manager.create_environment(oracle, force=args.force):
+        if not manager.create_environment(oracle, force=args.force,
+                                           timeout=getattr(args, "setup_timeout", None)):
             logger.error(
                 f"✗ Failed to build env for {oracle}. "
                 f"Re-run with --force to rebuild, or check the mamba/conda output above."
@@ -105,6 +106,7 @@ def setup_environments(args):
             skip_backgrounds=args.no_backgrounds,
             skip_genome=args.no_genome,
             full_chrombpnet=getattr(args, "all_chrombpnet", False),
+            weights_timeout=getattr(args, "setup_timeout", None),
         )
         if not ok:
             logger.error(f"✗ Prefetch failed for {oracle}. Details:")
@@ -474,6 +476,19 @@ def main(argv: Optional[List[str]] = None):
         ),
     )
     setup_parser.add_argument(
+        '--setup-timeout',
+        dest='setup_timeout',
+        type=int,
+        default=None,
+        metavar='SECONDS',
+        help=(
+            "Max seconds allowed for each phase (env build and weight "
+            "download). Default: unlimited. Useful on slow or unstable "
+            "connections. Set CHORUS_NO_TIMEOUT=1 to disable all timeouts "
+            "globally."
+        ),
+    )
+    setup_parser.add_argument(
         '--include-alternative-backends',
         '--include-experimental',  # legacy alias from PR #62 review
         dest='include_alternative_backends',
@@ -595,6 +610,48 @@ def main(argv: Optional[List[str]] = None):
     # Backgrounds command
     from ._backgrounds import register_backgrounds_subcommand
     bg_parser = register_backgrounds_subcommand(subparsers)
+
+    # Cleanup command
+    from ._cleanup import cleanup_resources
+    cleanup_parser = subparsers.add_parser(
+        'cleanup',
+        help='Remove conda environments, downloaded weights, CDFs, and genomes',
+        description=(
+            "Remove chorus data to free disk space or prepare for a fresh install.\n\n"
+            "Examples:\n"
+            "  chorus cleanup --oracle enformer           # remove one oracle\n"
+            "  chorus cleanup --oracle all                # remove all oracle envs + weights\n"
+            "  chorus cleanup --all                       # everything\n"
+            "  chorus cleanup --all --dry-run             # preview without deleting"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    cleanup_parser.add_argument(
+        '--oracle',
+        metavar='NAME',
+        help='Oracle to clean up (name or "all"). Removes the conda env and downloaded weights.',
+    )
+    cleanup_parser.add_argument(
+        '--backgrounds',
+        action='store_true',
+        help='Remove background CDF files from ~/.chorus/backgrounds/',
+    )
+    cleanup_parser.add_argument(
+        '--genomes',
+        action='store_true',
+        help='Remove downloaded reference genomes',
+    )
+    cleanup_parser.add_argument(
+        '--all',
+        action='store_true',
+        help='Remove everything: all oracle envs, weights, backgrounds, and genomes',
+    )
+    cleanup_parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='Print what would be deleted without actually deleting anything',
+    )
+    cleanup_parser.set_defaults(func=cleanup_resources)
 
     # Parse arguments
     args = parser.parse_args(argv)
