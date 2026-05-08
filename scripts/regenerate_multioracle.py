@@ -69,6 +69,22 @@ USER_PROMPT = (
     "agree on direction, and which assay/cell type drove each call."
 )
 
+def get_max_output_size():
+    """Returns the maximum output size across all possible models."""
+    from chorus.oracles.chrombpnet import ChromBPNetOracle
+    from chorus.oracles.legnet import LegNetOracle
+    from chorus.oracles.alphagenome import AlphaGenomeOracle
+
+    sizes = []
+    sizes.append(ChromBPNetOracle().output_size)
+    sizes.append(LegNetOracle().sequence_length)    # to match output size
+    sizes.append(AlphaGenomeOracle().output_size)
+
+    if not sizes:
+        raise RuntimeError("Could not determine any oracle output_size")
+
+    return max(sizes)
+
 
 # ---------------------------------------------------------------------------
 # Per-oracle runners
@@ -91,8 +107,16 @@ def _build_variant_report(oracle, oracle_name: str, assay_ids=None):
     # Provide a small genomic region centred on the variant. Most oracles
     # only look ±half-window-size around the variant position; passing a 2bp
     # region here keeps the API contract satisfied without wasting compute.
+    max_window = get_max_output_size()
+    half_window = max_window // 2
+
+    start = VARIANT["position"] - half_window
+    end = VARIANT["position"] + half_window
+
+    region_str = f"{VARIANT['chrom']}:{start}-{end}"
     position_str = f"{VARIANT['chrom']}:{VARIANT['position']}"
-    region_str = f"{VARIANT['chrom']}:{VARIANT['position']}-{VARIANT['position'] + 1}"
+    # position_str = f"{VARIANT['chrom']}:{VARIANT['position']}"
+    # region_str = f"{VARIANT['chrom']}:{VARIANT['position']}-{VARIANT['position'] + 1}"
     # Oracles use different attribute names for their single-track id:
     # LegNetOracle exposes ``assay_id`` (e.g. "LentiMPRA:HepG2"); ChromBPNet
     # stores ``assay`` + ``cell_type`` separately. Build the per-oracle
@@ -164,7 +188,7 @@ def _save_oracle_artefacts(report, oracle_name: str):
 def run_chrombpnet():
     from chorus.oracles.chrombpnet import ChromBPNetOracle
     oracle = ChromBPNetOracle()
-    oracle.load_pretrained_model(assay="ATAC", cell_type="HepG2", fold=0)
+    oracle.load_pretrained_model(assay="DNASE", cell_type="HepG2", fold=0)
     report = _build_variant_report(oracle, oracle_name="chrombpnet")
     return _save_oracle_artefacts(report, "chrombpnet")
 
@@ -226,6 +250,12 @@ def consolidate():
     import pickle
     from chorus.analysis import MultiOracleReport
     from chorus.analysis.analysis_request import AnalysisRequest
+    # Fix numpy pickle compatibility (old -> new internal paths)
+    try:
+        import numpy.core.numeric as numeric
+        sys.modules["numpy._core.numeric"] = numeric
+    except Exception:
+        pass
 
     per_oracle = {}
     reports = []

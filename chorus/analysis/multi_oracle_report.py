@@ -364,7 +364,14 @@ class MultiOracleReport:
                 window_bp = (
                     ref_t.prediction_interval.reference.end - t_start
                 )
-                bin_size = max(1, window_bp // 3000)
+
+                from ._igv_report import (
+                    _calculate_track_bin_size,
+                    _HIGH_RES_ORACLES
+                )
+                bin_size, agg_method = _calculate_track_bin_size(
+                    t_res, window_bp, ref_t.source_model
+                )
 
                 ref_vals = ref_t.values
                 alt_vals = alt_t.values
@@ -375,10 +382,12 @@ class MultiOracleReport:
                 ref_features = _downsample_to_features(
                     ref_vals, pred_chrom, t_start, t_res, bin_size,
                     skip_zeros=not floor_ok,
+                    aggregation_method=agg_method
                 )
                 alt_features = _downsample_to_features(
                     alt_vals, pred_chrom, t_start, t_res, bin_size,
                     skip_zeros=not floor_ok,
+                    aggregation_method=agg_method
                 )
                 if floor_ok:
                     scale_cfg = {"min": 0, "max": _DISPLAY_MAX,
@@ -391,6 +400,12 @@ class MultiOracleReport:
                 # Prefix track label with oracle name so stacked panels
                 # are identifiable at a glance.
                 panel_label = f"{oracle_name} · {short}"
+
+                if oracle_name == "legnet":
+                    # LentiMPRA uses per-track normalization (no per-bin background distribution).
+                    panel_label = f"{panel_label} (per-track norm)"
+
+                source_model = ref_t.source_model
                 tracks.append({
                     "name": panel_label,
                     "type": "merged",
@@ -400,6 +415,7 @@ class MultiOracleReport:
                             "type": "wig",
                             "name": f"{panel_label} ref",
                             "color": f"rgb({_REF_COLOR})",
+                            "windowFunction": "max" if source_model in _HIGH_RES_ORACLES else "mean",
                             **scale_cfg,
                             "features": ref_features,
                         },
@@ -407,6 +423,7 @@ class MultiOracleReport:
                             "type": "wig",
                             "name": f"{panel_label} alt",
                             "color": f"rgb({rgb})",
+                            "windowFunction": "max" if source_model in _HIGH_RES_ORACLES else "mean",
                             **scale_cfg,
                             "features": alt_features,
                         },
