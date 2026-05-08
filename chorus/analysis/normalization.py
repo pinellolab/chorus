@@ -550,6 +550,54 @@ class PerTrackNormalizer:
     ) -> np.ndarray | None:
         """Map per-bin values to genome-wide percentiles [0, 1] for visualization."""
         return self._lookup_batch(oracle_name, track_id, "perbin_cdfs", raw_values, signed=False)
+    
+    def _find_matching_cdf(self, entry: dict, idx: int, track_id: str) -> np.ndarray | None:
+        """Retrieve the CDF array for track at *idx*, falling back through CDF types.
+        
+        Tries perbin_cdfs → summary_cdfs → effect_cdfs, returning the first
+        valid array found.
+        """
+        for cdf_key in ("perbin_cdfs", "summary_cdfs", "effect_cdfs"):
+            cdf_matrix = entry.get(cdf_key)
+            if cdf_matrix is None:
+                continue
+            
+            try:
+                cdf = cdf_matrix[idx]
+            except (IndexError, TypeError):
+                continue
+            
+            if cdf is not None and len(cdf) > 0:
+                logger.debug(f"Using {cdf_key} for '{track_id}'")
+                return cdf
+
+        logger.warning(f"No valid CDF found for '{track_id}' (index {idx})")
+        return None
+    
+    def _match_track_id(self, track_id: str, track_index: dict) -> str | None:
+        """Find *track_id* in *track_index*, trying common alternative formats.
+        
+        Returns the matched key, or None if no match is found.
+        """
+        if track_id in track_index:
+            return track_id
+
+        # Build candidate list from track_id components
+        parts = track_id.split(":")
+        candidates = [
+            track_id.replace(":", "_"),
+            track_id.replace("_", ":"),
+        ]
+        if len(parts) >= 2:
+            candidates.append(parts[-1])  # Last component only
+
+        for candidate in candidates:
+            if candidate in track_index:
+                logger.debug(f"Track ID matched: '{track_id}' → '{candidate}'")
+                return candidate
+
+        logger.warning(f"Track '{track_id}' not found (candidates: {candidates})")
+        return None
 
     def perbin_floor_rescale_batch(
         self,
@@ -583,17 +631,26 @@ class PerTrackNormalizer:
         entry = self._ensure_loaded(oracle_name)
         if entry is None:
             return None
-        cdf_matrix = entry.get("perbin_cdfs")
-        if cdf_matrix is None:
+
+        # Match track ID with possible alternative formats
+        track_index = entry.get("track_index", {})
+        matched_id = self._match_track_id(track_id, track_index)
+        if matched_id is None:
             return None
-        idx = entry["track_index"].get(track_id)
-        if idx is None:
+        
+        idx = track_index[matched_id]
+
+        # Find appropriate CDF (perbin → summary → effect fallback)
+        cdf = self._find_matching_cdf(entry, idx, matched_id)
+        if cdf is None:
             return None
-        cdf = cdf_matrix[idx]
+
+        # Compute thresholds and rescale
         n = len(cdf)
         floor = float(cdf[min(int(floor_pctile * n), n - 1)])
         peak = float(cdf[min(int(peak_pctile * n), n - 1)])
         denom = max(peak - floor, 1e-9)
+
         out = (raw_values.astype(np.float64) - floor) / denom
         return np.clip(out, 0.0, max_value)
 

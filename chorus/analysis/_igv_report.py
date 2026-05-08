@@ -137,7 +137,7 @@ _DEFAULT_FLOOR_PCTILE = 0.95
 # 3x stronger than the genome-wide top 1%.  Bins above 3.0 clip but
 # this is rare for real biology.
 _DISPLAY_MAX = 3.0
-
+_HIGH_RES_ORACLES = ["chrombpnet", "legnet"] # for visualization mean vs max pooling
 
 def apply_floor_rescale(
     normalizer,
@@ -162,12 +162,14 @@ def apply_floor_rescale(
     (:func:`chorus.analysis.causal._build_causal_igv`) so both reports
     render the same "scaled-by-default" IGV tracks.
     """
+    
     if normalizer is None or oracle_name is None:
         return False, ref_vals, alt_vals
     from .normalization import PerTrackNormalizer
     if not isinstance(normalizer, PerTrackNormalizer):
         return False, ref_vals, alt_vals
     floor_p = _LAYER_FLOOR_PCTILE.get(layer, _DEFAULT_FLOOR_PCTILE)
+
     ref_fl = normalizer.perbin_floor_rescale_batch(
         oracle_name, assay_id, ref_vals,
         floor_pctile=floor_p,
@@ -186,6 +188,29 @@ def apply_floor_rescale(
         return False, ref_vals, alt_vals
     return True, ref_fl, alt_fl
 
+def _calculate_track_bin_size(
+    resolution: int,
+    window_bp: int,
+    source_oracle: str,
+) -> tuple[int, str]:
+    """Calculate appropriate bin size and aggregation method.
+    
+    Returns:
+        (bin_size, aggregation_method) where aggregation is "mean" or "max"
+    """
+
+    # For chrombpnet or legnet models, apply max pooling
+    # For any other oracle, apply mean pooling
+    if source_oracle == "chrombpnet":
+        bin_size = 20
+        return bin_size, "mean"
+    elif source_oracle == "legnet":
+        return resolution, "max"
+    
+    # Fallback: return 3_000 features per bin
+    num_features = 3_000
+    bin_size = window_bp // num_features
+    return bin_size, "mean"
 
 def build_igv_html(
     ref_pred,
@@ -279,8 +304,9 @@ def build_igv_html(
         layer = classify_track_layer(ref_track)
         rgb = _LAYER_COLORS.get(layer, "70,130,180")
 
-        t_start = ref_track.prediction_interval.reference.start
         t_res = ref_track.resolution
+        actual_bp_in_array = len(ref_track.values) * t_res
+        t_start = variant_pos - (actual_bp_in_array // 2)
 
         ref_vals = ref_track.values
         alt_vals = alt_track.values
@@ -291,15 +317,21 @@ def build_igv_html(
             floor_ok, ref_vals, alt_vals = apply_floor_rescale(
                 normalizer, oracle_name, assay_id, layer, ref_vals, alt_vals,
             )
-
+        
+        track_bin_size, agg_method = _calculate_track_bin_size(
+            t_res, window_bp, first.source_model,
+        )
+        
         ref_features = _downsample_to_features(
-            ref_vals, variant_chrom, t_start, t_res, bin_size,
+            ref_vals, variant_chrom, t_start, t_res, track_bin_size,
             skip_zeros=not floor_ok,
+            aggregation_method=agg_method
         )
         alt_features = _downsample_to_features(
-            alt_vals, variant_chrom, t_start, t_res, bin_size,
+            alt_vals, variant_chrom, t_start, t_res, track_bin_size,
             skip_zeros=not floor_ok,
-        )
+            aggregation_method=agg_method
+        )        
 
         group_id = assay_id.replace(":", "_").replace(" ", "_")
         if floor_ok:
@@ -322,6 +354,7 @@ def build_igv_html(
                 display_name = f"{ref_track.assay_type}:{ref_track.cell_type}"
 
         # Merged overlay: ref (grey) + alt (coloured) on same panel
+        source_model = first.source_model
         tracks.append({
             "name": f"{display_name}{name_suffix}",
             "type": "merged",
@@ -331,6 +364,7 @@ def build_igv_html(
                     "type": "wig",
                     "name": f"{display_name} ref",
                     "color": f"rgb({_REF_COLOR})",
+                    "windowFunction": "max" if source_model in _HIGH_RES_ORACLES else "mean",
                     **scale_cfg,
                     "features": ref_features,
                 },
@@ -338,6 +372,7 @@ def build_igv_html(
                     "type": "wig",
                     "name": f"{display_name} alt",
                     "color": f"rgb({rgb})",
+                    "windowFunction": "max" if source_model in _HIGH_RES_ORACLES else "mean",
                     **scale_cfg,
                     "features": alt_features,
                 },
@@ -408,6 +443,7 @@ def _downsample_to_features(
     resolution: int,
     bin_size: int,
     skip_zeros: bool = True,
+    aggregation_method: str = "mean"
 ) -> list[dict]:
     """Downsample a signal array into IGV wig features.
 
@@ -430,7 +466,11 @@ def _downsample_to_features(
 
     for i in range(0, n, bins_per):
         chunk = vals[i:i + bins_per]
-        v = float(np.mean(chunk))
+
+        if aggregation_method == "mean":
+            v = float(np.mean(chunk))
+        else:
+            v = float(np.max(chunk))
 
         # Skip near-zero bins to reduce JSON size (only for raw data)
         if skip_zeros and abs(v) < threshold * 0.1:
