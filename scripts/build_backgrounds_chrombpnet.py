@@ -41,7 +41,14 @@ parser.add_argument(
     "JASPAR models (~3 min/model on Metal — much smaller arch). "
     "all = both, sequentially.",
 )
-parser.add_argument("--gpu", type=int, default=0)
+parser.add_argument(
+    "--gpu",
+    type=int,
+    default=0,
+    help="Pin TensorFlow to this GPU index. No-op if CUDA_VISIBLE_DEVICES "
+    "is already set in the calling shell — the outer env var wins, so "
+    "`CUDA_VISIBLE_DEVICES=1 ... --gpu 0` puts the work on physical GPU 1.",
+)
 parser.add_argument("--fold", type=int, default=0)
 parser.add_argument(
     "--model-type",
@@ -66,6 +73,15 @@ parser.add_argument(
     help="Skip models whose track_id is already present in the existing "
     "chrombpnet_pertrack.npz. Pair with --part merge-incremental to "
     "stitch new rows into the existing NPZ.",
+)
+parser.add_argument(
+    "--force",
+    action="store_true",
+    help="Overwrite an existing interim NPZ even if its track-id set "
+    "differs from the current run. Default: refuse to overwrite and "
+    "exit with a diff, to protect the documented two-pass flow "
+    "(--assay ATAC_DNASE then --assay CHIP) which would otherwise "
+    "silently lose the first pass's tracks.",
 )
 parser.add_argument(
     "--shard",
@@ -195,9 +211,54 @@ def _interim_suffix() -> str:
     return f".shard{args.shard}of{args.shard_of}"
 
 
+def _check_interim_compatibility(interim_path: str, new_track_ids, force: bool, label: str) -> None:
+    """Refuse to overwrite an interim NPZ whose track-id set differs from
+    the current run, unless --force was passed. Closes #71/#73.
+
+    The documented two-pass flow (``--assay ATAC_DNASE`` then ``--assay
+    CHIP``) would otherwise silently overwrite the first pass's interim
+    with the second pass's smaller track set, producing a 744-track
+    final NPZ where 786 was expected.
+    """
+    if not os.path.exists(interim_path):
+        return
+    try:
+        existing = list(np.load(interim_path, allow_pickle=False)["track_ids"].astype(str))
+    except Exception as exc:
+        if force:
+            return
+        raise SystemExit(
+            f"Existing {label} interim at {interim_path} is unreadable "
+            f"({exc}); pass --force to overwrite."
+        )
+    new_set, old_set = set(new_track_ids), set(existing)
+    if new_set == old_set:
+        return  # same tracks → plain overwrite is harmless
+    if force:
+        return
+    only_existing = sorted(old_set - new_set)
+    only_new = sorted(new_set - old_set)
+    raise SystemExit(
+        f"Refusing to overwrite {label} interim at {interim_path}.\n"
+        f"  Existing tracks: {len(existing)} (e.g. {only_existing[:3]})\n"
+        f"  New tracks:      {len(new_track_ids)} (e.g. {only_new[:3]})\n"
+        f"  Only in existing: {len(only_existing)}; only in new: {len(only_new)}.\n"
+        f"This usually means a previous staged run wrote tracks for a "
+        f"different --assay group (the documented two-pass flow). Run "
+        f"`--part merge` (or `--part merge-incremental`) to consume the "
+        f"existing interim first, then re-run, or pass --force to discard "
+        f"the existing interim and write only the current run's tracks."
+    )
+
+
 def load_models_and_setup():
     """Load reference, set up GPU, return (oracle, models_to_score, ref)."""
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+    # Honour pre-set CUDA_VISIBLE_DEVICES from the calling shell so the
+    # documented parallel-launch pattern works as cluster-user mental model
+    # expects (`CUDA_VISIBLE_DEVICES=N ... --gpu 0` per terminal pins the
+    # outer physical GPU, not the inner --gpu arg). Closes #72/#74.
+    if "CUDA_VISIBLE_DEVICES" not in os.environ:
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
     try:
         import nvidia
@@ -515,6 +576,7 @@ def build_all_models(do_variants: bool, do_baselines: bool):
     if do_variants:
         effect_matrix = effect_reservoir.to_cdf_matrix(n_points=args.n_cdf_points)
         interim_path = os.path.join(cache_dir, f"chrombpnet_effect_cdfs_interim{suffix}.npz")
+        _check_interim_compatibility(interim_path, track_ids, args.force, "effect-CDF")
         np.savez_compressed(
             interim_path,
             track_ids=np.array(track_ids, dtype='U'),
@@ -528,6 +590,7 @@ def build_all_models(do_variants: bool, do_baselines: bool):
         summary_matrix = summary_reservoir.to_cdf_matrix(n_points=args.n_cdf_points)
         perbin_matrix = perbin_reservoir.to_cdf_matrix(n_points=args.n_cdf_points)
         interim_path = os.path.join(cache_dir, f"chrombpnet_baseline_cdfs_interim{suffix}.npz")
+        _check_interim_compatibility(interim_path, track_ids, args.force, "baseline-CDF")
         np.savez_compressed(
             interim_path,
             track_ids=np.array(track_ids, dtype='U'),

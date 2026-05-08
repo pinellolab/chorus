@@ -1,0 +1,26 @@
+=== platform ===
+Linux ml008 5.15.0-170-generic #180-Ubuntu SMP Fri Jan 9 16:10:31 UTC 2026 x86_64
+
+=== GPUs ===
+0, NVIDIA A100 80GB PCIe, 81920 MiB
+1, NVIDIA A100 80GB PCIe, 81920 MiB
+
+=== python (chorus base env) ===
+Python 3.10.20
+
+=== git tip ===
+f6933bd2e5373ec0d74051af705766e3cea1c606
+f6933bd docs(audit): PR description for v0.3.0 release (review-ready)
+
+=== huggingface_hub in chorus base env ===
+1.12.0
+
+=== conda envs available ===
+  chorus                             /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus                   
+  chorus-chrombpnet-v30test          /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus-chrombpnet-v30test
+                                     /data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-alphagenome     
+                                     /data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-borzoi          
+                                     /data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-chrombpnet      
+                                     /data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-enformer        
+                                     /data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-legnet          
+                                     /data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-sei             
