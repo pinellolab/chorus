@@ -24,15 +24,15 @@
       "layer": "chromatin_accessibility",
       "oracles": {
         "chrombpnet": {
-          "raw_score": 0.528543239432768,
-          "assay_id": "ATAC:HepG2",
+          "raw_score": 1.1727387570021977,
+          "assay_id": "DNASE:HepG2",
           "cell_type": "HepG2",
           "quantile_score": 1.0,
-          "description": "ATAC:HepG2"
+          "description": "DNASE:HepG2"
         },
         "legnet": null,
         "alphagenome": {
-          "raw_score": 1.397686429616199,
+          "raw_score": 1.3576294553094166,
           "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
           "cell_type": "HepG2",
           "quantile_score": 1.0,
@@ -46,7 +46,7 @@
       "oracles": {
         "chrombpnet": null,
         "legnet": {
-          "raw_score": 0.29691410064697266,
+          "raw_score": 6.079673767089844e-05,
           "assay_id": "LentiMPRA:HepG2",
           "cell_type": "HepG2",
           "quantile_score": null,
@@ -62,7 +62,7 @@
         "chrombpnet": null,
         "legnet": null,
         "alphagenome": {
-          "raw_score": 2.7589466653239807,
+          "raw_score": 2.809251306725026,
           "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
           "cell_type": "HepG2",
           "quantile_score": 1.0,
@@ -77,7 +77,7 @@
         "chrombpnet": null,
         "legnet": null,
         "alphagenome": {
-          "raw_score": 1.3324789327389268,
+          "raw_score": 1.2904314231448404,
           "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
           "cell_type": "HepG2",
           "quantile_score": 1.0,
@@ -92,7 +92,7 @@
         "chrombpnet": null,
         "legnet": null,
         "alphagenome": {
-          "raw_score": 1.5573681943125333,
+          "raw_score": 1.5449543841258857,
           "assay_id": "CAGE/hCAGE EFO:0001187/-",
           "cell_type": "HepG2",
           "quantile_score": 1.0,
@@ -110,6 +110,6 @@
     "tracks_requested": "assay_ids as listed in each per-oracle request",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-04-22 17:21 UTC"
+    "generated_at": "2026-05-07 16:11 UTC"
   }
 }
