@@ -16,8 +16,18 @@
 ✅ **README links audited** (51 targets) — all resolve. (Two Zenodo URLs return HTTP 403 to scripted HEAD but are valid via API/browser.)  
 ✅ **Branch pushed** to `origin/fix/post-v040-followups`.
 
-🟡 **One deferred item** (not blocking the PR but worth flagging for a follow-up):
-the local DHS-augmented ChromBPNet CDF (built 2026-05-07, 42 tracks, 18,672 effect samples / track) was **not uploaded to HF** — it's missing the 744 BPNet/CHIP tracks that the HF-shipped CDF has. The audit was therefore run against the **HF-shipped 786-track CDF**. SORT1 chrombpnet effect under HF CDF: `+0.318 log2FC, ≥99th %ile`. Same qualitative interpretation as the local-DHS run. To ship the DHS augmentation, rebuild **all 786 tracks** with DHS, then upload — see "Deferred work" below.
+~~🟡 **One deferred item**: the local DHS-augmented ChromBPNet CDF
+was missing the 744 BPNet/CHIP tracks; needed a rebuild + HF upload.~~
+✅ **Closed 2026-05-09**: the GPU-machine agent rebuilt the 744 CHIP
+rows with DHS augmentation on ml007 (~6 h, 2× A100); the local 42
+ATAC/DNASE rows were spliced in on this Mac; resulting **uniform
+786-track DHS-augmented NPZ** (sha
+`526beb2ce8310f6fdb331f766eac55ce3262b67f1a43416532d8bad8f83183eb`)
+uploaded to `huggingface.co/datasets/lucapinello/chorus-backgrounds`.
+See `audits/2026-05-09_dhs_chrombpnet_full_rebuild.md` for the
+sub-audit.  After the upload, all 786 tracks have uniform sampling
+(`effect_counts=18672`, `summary_counts=34004`,
+`perbin_counts=1088128`).
 
 ---
 
@@ -111,9 +121,12 @@ No CDF is bypassed; no hardcoded thresholds; the DHS-augmented samples (when pre
 
 ## Deferred work (post-merge follow-ups)
 
-1. **DHS-augmented ChromBPNet CDF — rebuild ALL 786 tracks, then upload to HF.**  
-   The 2026-05-07 rebuild only covered the 42 ATAC/DNASE tracks; it dropped the 744 BPNet/CHIP tracks. To ship the DHS augmentation safely, the same DHS-sampling logic in `scripts/build_backgrounds_chrombpnet.py` needs to apply to the BPNet/CHIP build path too, then `huggingface-cli upload` the resulting NPZ.  
-   The unified rendering code is a **no-op** without DHS augmentation (it just uses whatever CDF is on disk), so this can ship later as a pure dataset update.
+1. ~~**DHS-augmented ChromBPNet CDF — rebuild ALL 786 tracks, then
+   upload to HF.**~~ ✅ **Closed 2026-05-09.**  Hybrid build (744 CHIP
+   rows on ml007 + 42 ATAC/DNASE rows from the local Mac May-7
+   rebuild, spliced together on this Mac), uniform 786-track NPZ
+   live on `lucapinello/chorus-backgrounds`.  Sub-audit:
+   `audits/2026-05-09_dhs_chrombpnet_full_rebuild.md`.
 
 2. **Doc P2 polish** — surface the unified `rescale_for_display()` helper in `VISUALIZATION_GUIDE.md` (currently only mentioned in `README.md`); add a paragraph explaining that signed layers now use symmetric `[-3, +3]` rescale.
 
