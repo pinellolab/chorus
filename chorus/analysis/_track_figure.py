@@ -54,21 +54,22 @@ def render_track_figures(
     gene_name: Optional[str] = None,
     zoom_in_bp: int = 2000,
     dpi: int = 150,
+    normalizer=None,
+    oracle_name: Optional[str] = None,
+    normalize: bool = True,
 ) -> dict[str, str]:
     """Render zoom-in and zoom-out track figures as base64-encoded PNGs.
 
-    Args:
-        ref_pred: Reference OraclePrediction.
-        alt_pred: Alternate OraclePrediction.
-        variant_chrom: Chromosome.
-        variant_pos: Variant genomic position.
-        gene_name: Gene to highlight in annotation.
-        zoom_in_bp: Window size (bp) for zoom-in figure.
-        dpi: Output resolution.
+    By default (``normalize=True``) the panels are CDF-rescaled to the
+    canonical 0–3.0 (unsigned) or ±3.0 (signed) scale used by the IGV /
+    CoolBox / notebook paths, so every renderer shares one source of
+    truth: ``1.0 = genome-wide p99``.  The normalizer is auto-loaded
+    from ``~/.chorus/backgrounds/`` (or the HuggingFace mirror) using
+    the first track's ``source_model`` as the oracle name.
 
-    Returns:
-        Dict with optional keys ``"zoom_in"`` and ``"zoom_out"``, each
-        a base64-encoded PNG string.
+    Pass ``normalize=False`` to opt out and get autoscaled raw values
+    (legacy behaviour).  Pass an explicit ``normalizer=`` /
+    ``oracle_name=`` to override the auto-load.
     """
     from .scorers import classify_track_layer
 
@@ -95,6 +96,19 @@ def render_track_figures(
     pred_start = first.prediction_interval.reference.start
     pred_end = first.prediction_interval.reference.end
 
+    # Auto-load normalizer + oracle_name from the track's source_model
+    # so default usage matches the IGV / CoolBox panels without the
+    # caller having to pass anything.  Pass ``normalize=False`` to opt out.
+    if normalize:
+        if oracle_name is None:
+            oracle_name = getattr(first, "source_model", None)
+        if normalizer is None and oracle_name:
+            try:
+                from chorus.analysis.normalization import get_normalizer
+                normalizer = get_normalizer(oracle_name)
+            except Exception:
+                normalizer = None
+
     results = {}
 
     # --- Zoom-in figure ---
@@ -108,6 +122,8 @@ def render_track_figures(
             title=f"Zoom-in: local regulatory context ({variant_chrom}:{variant_pos:,})",
             show_genes=True,
             dpi=dpi,
+            normalizer=normalizer,
+            oracle_name=oracle_name,
         )
         if b64:
             results["zoom_in"] = b64
@@ -123,6 +139,8 @@ def render_track_figures(
             show_genes=True,
             show_exons=True,
             dpi=dpi,
+            normalizer=normalizer,
+            oracle_name=oracle_name,
         )
         if b64:
             results["zoom_out"] = b64
@@ -132,11 +150,14 @@ def render_track_figures(
 
 # Keep old single-figure API for backwards compat
 def render_track_figure(ref_pred, alt_pred, variant_chrom, variant_pos,
-                        gene_name=None, zoom_bp=2000, dpi=150):
+                        gene_name=None, zoom_bp=2000, dpi=150,
+                        normalizer=None, oracle_name=None,
+                        normalize: bool = True):
     """Render track figures. Returns the zoom-in PNG (or first available)."""
     figs = render_track_figures(
         ref_pred, alt_pred, variant_chrom, variant_pos,
         gene_name=gene_name, zoom_in_bp=zoom_bp, dpi=dpi,
+        normalizer=normalizer, oracle_name=oracle_name, normalize=normalize,
     )
     return figs.get("zoom_in", figs.get("zoom_out", ""))
 
@@ -150,6 +171,7 @@ def _render_figure(
     variant_chrom, variant_pos, gene_name,
     x_start, x_end, pred_start, pred_end,
     title="", show_genes=True, show_exons=False, dpi=150,
+    normalizer=None, oracle_name=None,
 ) -> str:
     """Render a multi-panel figure for a subset of tracks."""
     import matplotlib
@@ -206,6 +228,8 @@ def _render_figure(
             show_legend=(i == 0),
             show_exon_shading=(show_exons and exons is not None),
             exons=exons,
+            normalizer=normalizer,
+            oracle_name=oracle_name,
         )
 
     # Gene annotation panel
@@ -244,12 +268,19 @@ def _plot_track_panel(
     x_start, x_end, variant_pos,
     assay_id, color, show_legend=False,
     show_exon_shading=False, exons=None,
+    normalizer=None, oracle_name=None,
 ):
     """Plot a single ref-vs-alt signal panel."""
     import matplotlib.ticker as ticker
 
+    from .scorers import classify_track_layer, LAYER_CONFIGS
+    from ._igv_report import rescale_for_display
+
     t_res = ref_track.resolution
     t_start = ref_track.prediction_interval.reference.start
+    layer = classify_track_layer(ref_track)
+    layer_cfg = LAYER_CONFIGS.get(layer)
+    is_signed = bool(layer_cfg and layer_cfg.signed)
 
     # Extract the visible window from the arrays
     bin_s = max(0, (x_start - t_start) // t_res)
@@ -262,6 +293,27 @@ def _plot_track_panel(
     x_coords = np.arange(bin_s, bin_e) * t_res + t_start
     ref_vals = ref_track.values[bin_s:bin_e].astype(np.float64)
     alt_vals = alt_track.values[bin_s:bin_e].astype(np.float64)
+
+    # Unified rescale (same path IGV/CoolBox/notebooks use).  When a
+    # normalizer is supplied, ref/alt are CDF-rescaled to [0, 3] (unsigned)
+    # or [-3, +3] (signed) and the y-axis snaps to those limits.  Without
+    # a normalizer we fall through to the legacy autoscale (with the
+    # signed-layer symmetric y-axis fix below).
+    rescaled_cfg = None
+    if normalizer is not None and oracle_name is not None:
+        ref_resc, cfg_r = rescale_for_display(
+            ref_vals, layer, normalizer=normalizer,
+            oracle_name=oracle_name, assay_id=assay_id,
+        )
+        alt_resc, cfg_a = rescale_for_display(
+            alt_vals, layer, normalizer=normalizer,
+            oracle_name=oracle_name, assay_id=assay_id,
+        )
+        if cfg_r["rescaled"] and cfg_a["rescaled"]:
+            ref_vals = np.asarray(ref_resc)
+            alt_vals = np.asarray(alt_resc)
+            rescaled_cfg = cfg_r
+            is_signed = cfg_r["signed"]
 
     # Smooth
     n = len(ref_vals)
@@ -297,9 +349,28 @@ def _plot_track_panel(
     ax.set_ylabel(assay_id, fontsize=8, fontweight="bold", rotation=0,
                   labelpad=65, ha="right", va="center")
 
-    # Y-axis
-    ymax = max(float(np.max(ref_vals)), float(np.max(alt_vals)), 0.01) * 1.05
-    ax.set_ylim(bottom=0, top=ymax)
+    # Y-axis: when CDF-rescaled, snap to the canonical [0,3] (unsigned)
+    # or [-3,+3] (signed) range so the panel is comparable to the IGV/
+    # CoolBox/notebook renders of the same track.  When NOT rescaled
+    # (no normalizer), fall back to autoscale with the signed-layer
+    # symmetric range so the negative tail of RNA/Sei/MPRA tracks stays
+    # visible.
+    if rescaled_cfg is not None:
+        ax.set_ylim(bottom=rescaled_cfg["ymin"], top=rescaled_cfg["ymax"])
+        if rescaled_cfg["signed"]:
+            ax.axhline(0, color="#9ca3af", linewidth=0.4, linestyle=":",
+                       alpha=0.6, zorder=1)
+    elif is_signed:
+        vmax = max(float(np.max(ref_vals)), float(np.max(alt_vals)), 0.0)
+        vmin = min(float(np.min(ref_vals)), float(np.min(alt_vals)), 0.0)
+        span = max(vmax - vmin, 0.01) * 1.05
+        center = (vmax + vmin) / 2.0
+        ax.set_ylim(bottom=center - span / 2.0, top=center + span / 2.0)
+        ax.axhline(0, color="#9ca3af", linewidth=0.4, linestyle=":",
+                   alpha=0.6, zorder=1)
+    else:
+        ymax = max(float(np.max(ref_vals)), float(np.max(alt_vals)), 0.01) * 1.05
+        ax.set_ylim(bottom=0, top=ymax)
     ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3, integer=False))
     ax.tick_params(axis="y", labelsize=7, length=2)
     ax.tick_params(axis="x", labelsize=0, length=0)

@@ -693,10 +693,55 @@ class PerTrackNormalizer:
         flags = entry.get("signed_flags")
         if flags is None:
             return False
-        idx = entry["track_index"].get(track_id)
-        if idx is None:
+        # Use the same fuzzy track-id matching as perbin_floor_rescale_batch
+        # so callers don't have to know the exact NPZ key (e.g. LegNet
+        # passes "LentiMPRA:HepG2" but the row is keyed "HepG2").
+        track_index = entry.get("track_index", {})
+        matched_id = self._match_track_id(track_id, track_index)
+        if matched_id is None:
             return False
-        return bool(flags[idx])
+        return bool(flags[track_index[matched_id]])
+
+    def signed_floor_rescale_batch(
+        self,
+        oracle_name: str,
+        track_id: str,
+        raw_values: np.ndarray,
+        peak_pctile: float = 0.99,
+        max_value: float = 3.0,
+    ) -> np.ndarray | None:
+        """Rescale **signed** raw values to ``[-max_value, +max_value]``.
+
+        Uses ``p99(|cdf|)`` as the unit so ``±1.0`` corresponds to the
+        genome-wide top-1% absolute effect for the track.  Both the
+        positive and negative tails render symmetrically, unlike
+        :meth:`perbin_floor_rescale_batch` which clips negatives to 0.
+
+        Same CDF-fallback chain as the unsigned version
+        (perbin → summary → effect via :meth:`_find_matching_cdf`),
+        so e.g. LegNet (no ``perbin_cdfs``) uses ``summary_cdfs``.
+        """
+        entry = self._ensure_loaded(oracle_name)
+        if entry is None:
+            return None
+        track_index = entry.get("track_index", {})
+        matched_id = self._match_track_id(track_id, track_index)
+        if matched_id is None:
+            return None
+        idx = track_index[matched_id]
+        cdf = self._find_matching_cdf(entry, idx, matched_id)
+        if cdf is None:
+            return None
+        # |cdf|.p99 — the magnitude that defines "1.0" on either side.
+        # The original CDF is sorted (ascending); for signed values we
+        # need to compute the abs-percentile from the underlying samples.
+        abs_cdf = np.sort(np.abs(cdf))
+        n = len(abs_cdf)
+        unit = float(abs_cdf[min(int(peak_pctile * n), n - 1)])
+        if unit < 1e-9:
+            return None
+        out = raw_values.astype(np.float64) / unit
+        return np.clip(out, -max_value, max_value)
 
     # ------------------------------------------------------------------
     # Building / saving
