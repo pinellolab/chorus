@@ -6,7 +6,7 @@
 - **Oracle**: chrombpnet
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: DNASE:HepG2
-- **Generated**: 2026-05-08 14:07 UTC
+- **Generated**: 2026-05-09 02:57 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -21,7 +21,7 @@
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| DNASE:HepG2 | 48.5 | 60.7 | +0.318 | 0.96 | 0.605 | Strong opening |
+| DNASE:HepG2 | 48.5 | 60.7 | +0.318 | ≥99th | 0.603 | Strong opening |
 
 ---
 **Score guide:**

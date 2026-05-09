@@ -54,8 +54,8 @@
             "alt_value": 605.572213485837,
             "raw_score": 1.240812529069907,
             "description": "DNASE:HepG2",
-            "quantile_score": 0.9987,
-            "ref_signal_percentile": 0.8975
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 0.8865
           }
         ]
       },
@@ -69,8 +69,8 @@
           "alt_value": 605.572213485837,
           "raw_score": 1.240812529069907,
           "description": "DNASE:HepG2",
-          "quantile_score": 0.9987,
-          "ref_signal_percentile": 0.8975
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.8865
         }
       ]
     }
@@ -83,6 +83,6 @@
     "tracks_requested": "1 tracks",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-05-08 23:18 UTC"
+    "generated_at": "2026-05-09 02:58 UTC"
   }
 }
