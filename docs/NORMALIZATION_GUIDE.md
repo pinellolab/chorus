@@ -637,46 +637,271 @@ prefetch and discovery to work end-to-end.
 
 ### Step 4: Write the CDF build script
 
-Create `scripts/build_backgrounds_myoracle.py`. Follow the pattern of
-any existing build script. The key structure:
+The CDF build is where most of the layer-specific judgment lives.
+A new oracle can't reuse an existing build script verbatim because
+**what you sample matters more than how you score**. The same model
+will produce wildly different percentiles depending on whether your
+"baseline" reservoir was drawn from random genome (mostly silent),
+ENCODE cCREs (mostly active), DHS summits (open chromatin),
+TSSs (transcription start), exons (gene bodies), or splice junctions.
+This section is the recipe.
+
+#### What goes in each CDF
+
+Each oracle ships **three CDF matrices** (`(n_tracks, n_points)` each)
+in a single `{oracle}_pertrack.npz`:
+
+| CDF | Sampled from | Used for |
+|---|---|---|
+| `effect_cdfs` | **|effect|** (or signed effect) of ~10–20 K SNPs against the same track | "How unusual is this variant's effect?" → `Effect %ile` column in reports |
+| `summary_cdfs` | **window-sum** (or layer-specific aggregate) at ~30–35 K genomic positions | "How active is this site genome-wide?" → `Activity %ile` column |
+| `perbin_cdfs` | **individual bin values** at the same baseline positions, dozens of bins per position | IGV / matplotlib / CoolBox display rescale via `rescale_for_display` |
+
+Each row is a **sorted** array (the empirical CDF). Lookups use binary
+search; see [Lookup mechanism](#lookup-mechanism). All three CDFs use the
+same baseline position set — you sample the positions once and feed
+them into both `summary_cdfs` (window aggregate) and `perbin_cdfs`
+(per-bin values within the window).
+
+Rule of thumb for sample counts: **~20 K samples per track** for
+effect, **~30–35 K** for summary, **~1 M total** for perbin (tens of
+bins × thousands of positions). Below that you start seeing
+visible discreteness in the percentile output.
+
+#### Reservoir sampling in practice
+
+For long runs (e.g. 1 M perbin samples × 786 tracks), build the CDF
+incrementally using the `ReservoirSampler` pattern from
+`scripts/build_backgrounds_chrombpnet.py:ReservoirSampler` —
+fixed-capacity uniform sampling so memory stays bounded. The sampler
+exposes `to_cdf_matrix(n_points=10000)` which returns the compact
+sorted CDF directly.
+
+#### What to sample, layer by layer
+
+Helpers used below all live in `chorus.utils.annotations`:
+`sample_ccre_positions()`, `sample_dhs_positions()`,
+`load_dhs_vocabulary()`, `get_gene_tss()`, `get_gene_exons()`,
+`get_screen_ccres()`. All of them are seeded and produce
+deterministic outputs.
+
+**`chromatin_accessibility` (DNASE / ATAC) — sharp, focused peaks.**
+Window 501 bp, log2FC, unsigned.
+
+- **Effect**: ~10 K random genome-wide SNPs (existing) + ~10 K SNPs at
+  random offsets within ±150 bp of DHS peak summits
+  (`sample_dhs_positions(10_000, ...)`). Mixing in DHS-anchored SNPs
+  shifts the interpretation from "unusual among all genomic SNPs"
+  toward "unusual among SNPs at real regulatory elements" — much more
+  discriminating for cell-type-specific peaks. See
+  `scripts/build_backgrounds_chrombpnet.py` `--n-dhs-variants`
+  for the canonical implementation.
+- **Summary / perbin baseline**: ~25 K random + cCRE positions
+  (`sample_ccre_positions()`) + ~5 K DHS summits
+  (`sample_dhs_positions(5_000, ...)`).
+
+**`tf_binding` (ChIP-TF) — sharp binding peaks.** Window 501 bp,
+log2FC, unsigned.
+
+- **Effect**: random SNPs + (optionally) DHS-anchored SNPs as above.
+  The 744 BPNet/CHIP tracks in the canonical chrombpnet NPZ use the
+  same random+DHS recipe — TF binding sites overlap heavily with
+  open chromatin, so DHS sampling is the cheapest "in TF-relevant
+  regions" enrichment.
+- **Summary / perbin baseline**: random + cCRE (`PLS`, `dELS`, `pELS`,
+  `CA-CTCF`, `CA-TF`) + DHS summits.
+
+**`histone_marks` (ChIP-Histone) — broad domains.** Window **2001 bp**
+(not 501 — histones cover wider regions), log2FC, unsigned.
+
+- **Effect**: same random + DHS recipe; the wider scoring window
+  averages over the histone domain.
+- **Summary / perbin baseline**: random + cCRE (especially `pELS`
+  and `dELS`) + DHS summits.
+
+**`tss_activity` (CAGE / PRO-CAP) — TSS-localized.** Window 501 bp,
+log2FC, unsigned.
+
+- **Effect**: random SNPs is fine — CAGE peaks are sharp, sample
+  quality dominates over enrichment.
+- **Summary / perbin baseline**: random + cCRE **+ explicitly
+  GENCODE TSSs** (use `get_gene_tss()` over a list of protein-coding
+  genes, sample ~5–10 K). Without TSSs the summary distribution is
+  dominated by silent regions and produces inflated "this CAGE site
+  is active" percentiles. See `build_backgrounds_borzoi.py` and
+  `build_backgrounds_alphagenome.py` for how the 'CAGE summary
+  routing' adds TSSs while skipping cCREs.
+
+**`gene_expression` (RNA-seq) — broad gene bodies; signed effects.**
+Window **N/A — exon-based**, logfc, **signed**.
+
+- **Effect**: random SNPs scored as `mean(prediction[exon_bins])` for
+  each gene — i.e. for each variant, find the nearest gene's exons,
+  average the model's per-bin predictions over those exon bins, then
+  compute the log fold change of that exon-mean vs ref. This is
+  RNA-specific: gene expression is integrated over exons, not at one
+  point. See `build_backgrounds_borzoi.py:exon_bins_for_window` for
+  the exon-mask machinery.
+- **Summary / perbin baseline**: gene-body midpoints (use
+  `get_gene_exons()` per gene, sample midpoint per gene; ~10–15 K
+  genes). RNA tracks are signed because alleles can repress
+  transcription — effect/summary CDFs include negative values, so
+  set `signed_flags[idx] = True` for these tracks. Display rescale
+  for signed tracks goes through `signed_floor_rescale_batch`
+  (symmetric `[-3, +3]`) instead of the unsigned floor-rescale.
+
+**`splicing` (splice site / SPLICE_SITES) — sharp signals at
+splice junctions.** Window 501 bp, log2FC, unsigned.
+
+- **Effect**: random SNPs + (highest signal-to-noise) **GENCODE exon
+  boundaries**. Sample ~5–10 K splice donors / acceptors using
+  `get_gene_exons()` and taking each exon's `start` and `end` minus
+  one (donor / acceptor positions). Random SNPs alone give a
+  splicing-effect distribution dominated by intergenic regions where
+  the splicing model predicts ~0 anyway.
+- **Summary / perbin baseline**: splice sites + cCRE (`PLS`).
+
+**`promoter_activity` (LentiMPRA) — element-level point predictions;
+signed.** No window (the model emits one number per ~200 bp element),
+diff, **signed**.
+
+- **Effect**: random ~200 bp regulatory regions tested by the model.
+  No genome-wide SNP scan applies because the model doesn't have a
+  spatial output — it's just `alt_score - ref_score` per element.
+- **Summary / perbin baseline**: same set of ~30 K random + cCRE
+  elements scored by the model. `perbin_cdfs` is **absent** for
+  LegNet (there's no per-bin axis); IGV display falls back to
+  `summary_cdfs` via `rescale_for_display`'s `_find_matching_cdf`
+  fallback. Since LegNet predictions can be repressive, set
+  `signed_flags = ones`.
+
+**`regulatory_classification` (Sei) — sequence-class probabilities;
+signed.** No window, diff, **signed**.
+
+- **Effect**: random SNPs + cCRE-anchored SNPs. Each track is a class
+  ("CTCF", "Promoter", "Enhancer", …); the effect is `alt_class_prob
+  − ref_class_prob`.
+- **Summary / perbin baseline**: random + cCRE positions; cCRE
+  enrichment matters because most of the genome is "Background"
+  class, and you want enough samples in each non-background class
+  for the per-class CDFs to be informative. Sei has no spatial
+  output, so `perbin_cdfs` is absent; same fallback as LegNet.
+
+#### Common pitfalls
+
+- **All-random baseline** for any layer that has cell-type-specific
+  signal: the genome is mostly silent, so your `summary_cdfs` p99
+  becomes "the few real peaks that randomly landed in the sample",
+  and any moderately-active site looks like a 99th-percentile site.
+  Mix in DHS / cCRE / TSS as appropriate.
+- **Forgetting `signed_flags=True`** for RNA / MPRA / Sei tracks:
+  the rescaler will silently clip negative effects to 0 and the
+  repressive half of the distribution disappears from IGV.
+- **Mismatched scoring window between build and live**: the build
+  script's window (`profile[ws:we]`) must match what
+  `oracle.score_track_effect()` does at inference time. ChromBPNet's
+  build uses `profile[250:751]` of the 1000-bin output; the live
+  scorer uses `score_region(POS-250, POS+251, 'sum')` which lands
+  on the same bins thanks to `prediction_interval = input_interval`
+  (PR #76). If you change the build window, update the live scorer
+  in lockstep — otherwise scores are correct but percentiles are
+  miscalibrated.
+- **Per-bin samples drawn only from peak centers**: the perbin CDF
+  is for *display rescaling*, so it needs bins from peak flanks too
+  to characterize the noise floor. Sample 16-32 random bins per
+  baseline position rather than one bin at the center.
+- **Boundary effects**: skip variants/positions within ~5 Mb of
+  chromosome ends. ENCODE peak callers and most reference genomes
+  have noisy edges that produce outlier predictions and skew the
+  CDFs.
+
+#### Build script skeleton
 
 ```python
-import argparse
-import numpy as np
+import argparse, numpy as np
 from chorus.analysis.normalization import PerTrackNormalizer
+from chorus.utils.annotations import (
+    sample_ccre_positions, sample_dhs_positions, get_gene_tss,
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--part", choices=["variants", "baselines", "both", "merge"])
 parser.add_argument("--gpu", type=int, default=0)
-parser.add_argument("--only-missing", action="store_true")
+parser.add_argument("--n-variants", type=int, default=10_000)
+parser.add_argument("--n-dhs-variants", type=int, default=10_000,
+    help="DHS-anchored SNPs (summit ±150 bp). 0 to disable.")
+parser.add_argument("--n-dhs-peaks", type=int, default=5_000)
 args = parser.parse_args()
 
 ORACLE_NAME = "myoracle"
-
-# 1. Define your track IDs
 track_ids = ["DNASE:K562", "DNASE:HepG2"]
+n_tracks = len(track_ids)
 
-# 2. For each track, score variants and baselines
-#    (use ReservoirSampler from existing scripts for memory efficiency)
+# ── Variant set: random genome SNPs + DHS-anchored SNPs ──
+variant_positions = generate_random_snps(args.n_variants, seed=42)
+if args.n_dhs_variants > 0:
+    variant_positions += dhs_anchored_snps(
+        sample_dhs_positions(args.n_dhs_variants, seed=43),
+        max_offset_bp=150, seed=44,
+    )
 
-# 3. Save
+# ── Baseline position set: random + cCRE + (layer-specific) ──
+baseline_positions = []
+baseline_positions.extend(random_genome_positions(20_000, seed=99))
+baseline_positions.extend(sample_ccre_positions(seed=42))      # ~20 K
+baseline_positions.extend(sample_dhs_positions(args.n_dhs_peaks, seed=567))
+# For tss_activity / gene_expression layers, also:
+#   baseline_positions.extend(get_gene_tss(...).head(10_000))
+# For splicing layer:
+#   baseline_positions.extend(get_splice_sites(...))
+
+# ── Score each track ──
+effect_sampler = ReservoirSampler(n_tracks, capacity=50_000)
+summary_sampler = ReservoirSampler(n_tracks, capacity=50_000)
+perbin_sampler = ReservoirSampler(n_tracks, capacity=50_000)
+signed_flags = np.zeros(n_tracks, dtype=bool)   # True per-track for signed layers
+
+for ti, track_id in enumerate(track_ids):
+    layer = classify_layer(track_id)            # your mapping
+    signed_flags[ti] = is_signed_layer(layer)
+    for snp in variant_positions:
+        ref_v, alt_v = score_track(model, snp, layer)
+        eff = compute_effect(ref_v, alt_v, layer)   # log2fc / logfc / diff
+        if not signed_flags[ti]:
+            eff = abs(eff)
+        effect_sampler.add(ti, eff)
+    for pos in baseline_positions:
+        win_value = score_window(model, pos, layer)
+        summary_sampler.add(ti, win_value)
+        for bin_value in sample_bins(model, pos, n=32):
+            perbin_sampler.add(ti, bin_value)
+
+# ── Save the merged NPZ ──
 PerTrackNormalizer.build_and_save(
     oracle_name=ORACLE_NAME,
     track_ids=track_ids,
-    effect_cdfs=effect_matrix,     # (n_tracks, 10000)
-    summary_cdfs=summary_matrix,
-    perbin_cdfs=perbin_matrix,     # optional
+    effect_cdfs=effect_sampler.to_cdf_matrix(n_points=10_000),
+    summary_cdfs=summary_sampler.to_cdf_matrix(n_points=10_000),
+    perbin_cdfs=perbin_sampler.to_cdf_matrix(n_points=10_000),
+    effect_counts=effect_sampler.get_counts(),
+    summary_counts=summary_sampler.get_counts(),
+    perbin_counts=perbin_sampler.get_counts(),
     signed_flags=signed_flags,
-    effect_counts=effect_counts,
-    summary_counts=summary_counts,
-    perbin_counts=perbin_counts,
 )
 ```
 
-Then run:
+The full reference implementation (with sharded multi-GPU support,
+incremental rebuilds, and the full DHS hooks) lives in
+`scripts/build_backgrounds_chrombpnet.py`. For RNA-style exon-based
+scoring see `scripts/build_backgrounds_borzoi.py:exon_bins_for_window`.
+For element-level signed scoring (LentiMPRA / Sei) see
+`scripts/build_backgrounds_legnet.py` and `_sei.py`.
+
+Run:
 
 ```bash
-mamba run -n chorus-myoracle python scripts/build_backgrounds_myoracle.py --part both --gpu 0
+mamba run -n chorus-myoracle python scripts/build_backgrounds_myoracle.py \
+  --part both --gpu 0 --n-variants 10000 --n-dhs-variants 10000 --n-dhs-peaks 5000
 ```
 
 ### Step 5: Upload backgrounds to HuggingFace (optional)
