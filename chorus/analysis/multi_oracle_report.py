@@ -375,21 +375,24 @@ class MultiOracleReport:
 
                 ref_vals = ref_t.values
                 alt_vals = alt_t.values
-                floor_ok, ref_vals, alt_vals = apply_floor_rescale(
+                floor_ok, ref_vals, alt_vals, signed_track = apply_floor_rescale(
                     normalizer, oracle_for_norm, aid, layer,
                     ref_vals, alt_vals,
                 )
                 ref_features = _downsample_to_features(
                     ref_vals, pred_chrom, t_start, t_res, bin_size,
-                    skip_zeros=not floor_ok,
+                    skip_zeros=not (floor_ok or signed_track),
                     aggregation_method=agg_method
                 )
                 alt_features = _downsample_to_features(
                     alt_vals, pred_chrom, t_start, t_res, bin_size,
-                    skip_zeros=not floor_ok,
+                    skip_zeros=not (floor_ok or signed_track),
                     aggregation_method=agg_method
                 )
-                if floor_ok:
+                if floor_ok and signed_track:
+                    scale_cfg = {"min": -_DISPLAY_MAX, "max": _DISPLAY_MAX,
+                                 "autoscale": False}
+                elif floor_ok:
                     scale_cfg = {"min": 0, "max": _DISPLAY_MAX,
                                  "autoscale": False}
                 else:

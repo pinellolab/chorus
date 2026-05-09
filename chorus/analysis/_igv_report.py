@@ -123,11 +123,11 @@ _REF_COLOR = "180,180,180"  # light grey — strong contrast with vivid alt
 _LAYER_FLOOR_PCTILE = {
     "tss_activity":              0.95,  # CAGE/PRO-CAP — sharp TSS peaks
     "tf_binding":                0.95,  # ChIP-TF — sharp binding peaks
-    "chromatin_accessibility":   0.95,  # DNASE/ATAC — focused peaks
+    "chromatin_accessibility":   0.90,  # DNASE/ATAC — lowered from 0.95 so the peak base/shoulder displays alongside the top
     "splicing":                  0.95,  # SPLICE — sharp signals
     "histone_marks":             0.90,  # ChIP-Histone — broad domains
     "gene_expression":           0.90,  # RNA-seq — broad coverage
-    "promoter_activity":         0.95,
+    "promoter_activity":         0.85,  # LentiMPRA via LegNet — predictions are even sparser than chromatin (most of genome is not a strong promoter); floor at p85 keeps moderately-active promoters visible.  Note: LegNet's summary_cdfs is signed, so repressive values still clip to 0; lowering the floor expands only the positive half.
     "regulatory_classification": 0.95,
 }
 _PEAK_PCTILE = 0.99
@@ -139,6 +139,107 @@ _DEFAULT_FLOOR_PCTILE = 0.95
 _DISPLAY_MAX = 3.0
 _HIGH_RES_ORACLES = ["chrombpnet", "legnet"] # for visualization mean vs max pooling
 
+
+def rescale_for_display(
+    values,
+    layer: str,
+    normalizer=None,
+    oracle_name: str | None = None,
+    assay_id: str | None = None,
+):
+    """Single-track display rescale.  Canonical helper used by every
+    track-rendering path (IGV WIG, matplotlib PNG, CoolBox, notebooks)
+    so they share one source of truth for normalization semantics.
+
+    Returns ``(out_values, cfg)`` where ``cfg`` is a dict with:
+
+    - ``rescaled`` (bool): True iff CDF-based rescale was applied.
+      False means the values were returned unchanged and the caller
+      should autoscale per-track.
+    - ``signed`` (bool): True iff the layer is signed (Borzoi RNA, Sei,
+      LentiMPRA).  Signed tracks use symmetric ``[-DISPLAY_MAX, +DISPLAY_MAX]``;
+      unsigned use ``[0, DISPLAY_MAX]``.
+    - ``ymin`` / ``ymax`` (float): suggested y-axis limits.  Renderers
+      can use these to set IGV ``min``/``max``, matplotlib ``set_ylim``,
+      or CoolBox ``MinValue``/``MaxValue``.
+    - ``floor_pctile`` / ``peak_pctile`` / ``display_max`` (float): the
+      thresholds used (informational; same for every rendering path).
+
+    All semantics:
+      - 1.0 (unsigned) or ±1.0 (signed) = genome-wide p99 of |signal|
+      - DISPLAY_MAX = 3.0 = 3× p99 above the floor (cap)
+      - 0.0 (unsigned) = below the layer floor (genome-wide noise)
+
+    Pass ``normalizer=None`` to opt out (returns values unchanged with
+    ``rescaled=False``, ``ymin/ymax`` set to data min/max for autoscale).
+    """
+    import numpy as np
+
+    if normalizer is None or oracle_name is None or assay_id is None:
+        v = np.asarray(values)
+        return values, {
+            "rescaled": False, "signed": False,
+            "ymin": float(v.min()) if v.size else 0.0,
+            "ymax": float(v.max()) if v.size else 1.0,
+            "floor_pctile": None, "peak_pctile": None,
+            "display_max": _DISPLAY_MAX,
+        }
+
+    from .normalization import PerTrackNormalizer
+    if not isinstance(normalizer, PerTrackNormalizer):
+        v = np.asarray(values)
+        return values, {
+            "rescaled": False, "signed": False,
+            "ymin": float(v.min()) if v.size else 0.0,
+            "ymax": float(v.max()) if v.size else 1.0,
+            "floor_pctile": None, "peak_pctile": None,
+            "display_max": _DISPLAY_MAX,
+        }
+
+    signed = normalizer.is_signed(oracle_name, assay_id)
+    if signed:
+        out = normalizer.signed_floor_rescale_batch(
+            oracle_name, assay_id, values,
+            peak_pctile=_PEAK_PCTILE, max_value=_DISPLAY_MAX,
+        )
+        if out is None:
+            v = np.asarray(values)
+            return values, {
+                "rescaled": False, "signed": True,
+                "ymin": float(v.min()) if v.size else -1.0,
+                "ymax": float(v.max()) if v.size else 1.0,
+                "floor_pctile": None, "peak_pctile": _PEAK_PCTILE,
+                "display_max": _DISPLAY_MAX,
+            }
+        return out, {
+            "rescaled": True, "signed": True,
+            "ymin": -_DISPLAY_MAX, "ymax": _DISPLAY_MAX,
+            "floor_pctile": None, "peak_pctile": _PEAK_PCTILE,
+            "display_max": _DISPLAY_MAX,
+        }
+
+    floor_p = _LAYER_FLOOR_PCTILE.get(layer, _DEFAULT_FLOOR_PCTILE)
+    out = normalizer.perbin_floor_rescale_batch(
+        oracle_name, assay_id, values,
+        floor_pctile=floor_p, peak_pctile=_PEAK_PCTILE, max_value=_DISPLAY_MAX,
+    )
+    if out is None:
+        v = np.asarray(values)
+        return values, {
+            "rescaled": False, "signed": False,
+            "ymin": float(v.min()) if v.size else 0.0,
+            "ymax": float(v.max()) if v.size else 1.0,
+            "floor_pctile": floor_p, "peak_pctile": _PEAK_PCTILE,
+            "display_max": _DISPLAY_MAX,
+        }
+    return out, {
+        "rescaled": True, "signed": False,
+        "ymin": 0.0, "ymax": _DISPLAY_MAX,
+        "floor_pctile": floor_p, "peak_pctile": _PEAK_PCTILE,
+        "display_max": _DISPLAY_MAX,
+    }
+
+
 def apply_floor_rescale(
     normalizer,
     oracle_name: str | None,
@@ -149,44 +250,39 @@ def apply_floor_rescale(
 ):
     """Floor-subtract + rescale a ref/alt value pair using the normalizer.
 
-    Returns ``(floor_ok, ref_scaled, alt_scaled)``.  When ``floor_ok`` is
-    ``True`` the returned arrays are mapped to ``[0, _DISPLAY_MAX]`` with
-    layer-aware thresholds (p95 / p99 for sharp signals, p90 / p99 for
-    broad histone marks) — 1.0 on the y-axis then corresponds to the
-    genome-wide p99 peak in that assay, making tracks comparable across
-    assays *and* across reports. When False, callers should fall back to
-    raw autoscale.
+    Returns ``(rescaled, ref_out, alt_out, signed)``.
 
-    This helper is shared by the standard variant-report IGV
-    (:func:`build_igv_html`) and the causal-report IGV
-    (:func:`chorus.analysis.causal._build_causal_igv`) so both reports
-    render the same "scaled-by-default" IGV tracks.
+    - ``rescaled=True, signed=False``: unsigned floor-rescale, values map
+      to ``[0, _DISPLAY_MAX]`` with layer-aware thresholds (p95/p99 for
+      sharp signals, p90/p99 for broad domains).  1.0 = genome-wide p99
+      peak.  IGV scale_cfg should be ``{min: 0, max: _DISPLAY_MAX}``.
+    - ``rescaled=True, signed=True``: signed symmetric rescale, values
+      map to ``[-_DISPLAY_MAX, +_DISPLAY_MAX]`` using ``p99(|cdf|)`` as
+      the unit.  ±1.0 = genome-wide top-1% absolute effect.  IGV
+      scale_cfg should be ``{min: -_DISPLAY_MAX, max: +_DISPLAY_MAX}``.
+    - ``rescaled=False``: no normalizer / no CDF / lookup miss.  Caller
+      should fall back to raw autoscale.
+
+    Used by every IGV-rendering path so panels share the same semantics.
     """
-    
-    if normalizer is None or oracle_name is None:
-        return False, ref_vals, alt_vals
-    from .normalization import PerTrackNormalizer
-    if not isinstance(normalizer, PerTrackNormalizer):
-        return False, ref_vals, alt_vals
-    floor_p = _LAYER_FLOOR_PCTILE.get(layer, _DEFAULT_FLOOR_PCTILE)
 
-    ref_fl = normalizer.perbin_floor_rescale_batch(
-        oracle_name, assay_id, ref_vals,
-        floor_pctile=floor_p,
-        peak_pctile=_PEAK_PCTILE,
-        max_value=_DISPLAY_MAX,
+    # Delegate to the unified single-track rescaler (rescale_for_display)
+    # so IGV, matplotlib, CoolBox and notebook callers all share the same
+    # semantics — only the wrapper differs (this one returns a 4-tuple
+    # for the ref/alt pair instead of (values, cfg)).
+    ref_out, cfg_ref = rescale_for_display(
+        ref_vals, layer, normalizer=normalizer,
+        oracle_name=oracle_name, assay_id=assay_id,
     )
-    if ref_fl is None:
-        return False, ref_vals, alt_vals
-    alt_fl = normalizer.perbin_floor_rescale_batch(
-        oracle_name, assay_id, alt_vals,
-        floor_pctile=floor_p,
-        peak_pctile=_PEAK_PCTILE,
-        max_value=_DISPLAY_MAX,
+    alt_out, cfg_alt = rescale_for_display(
+        alt_vals, layer, normalizer=normalizer,
+        oracle_name=oracle_name, assay_id=assay_id,
     )
-    if alt_fl is None:
-        return False, ref_vals, alt_vals
-    return True, ref_fl, alt_fl
+    # Both ref/alt should have identical scale_cfg (same track, same CDF).
+    # If either failed to rescale, fall back to passthrough.
+    if not (cfg_ref["rescaled"] and cfg_alt["rescaled"]):
+        return False, ref_vals, alt_vals, cfg_ref["signed"]
+    return True, ref_out, alt_out, cfg_ref["signed"]
 
 def _calculate_track_bin_size(
     resolution: int,
@@ -200,10 +296,18 @@ def _calculate_track_bin_size(
     """
 
     # For chrombpnet or legnet models, apply max pooling
-    # For any other oracle, apply mean pooling
+    # For any other oracle, apply mean pooling.
+    # ChromBPNet's 1-bp output produces narrow tall peaks; mean-pooling
+    # over 20 bp dilutes a single sharp peak with 19 near-zero neighbors,
+    # then the p95 floor-rescale clips the diluted value below zero —
+    # the panel ends up 97 % empty.  Max-pooling preserves the peak top
+    # within each 20-bp bin so the panel actually shows the peak shape.
+    # (PR #79's description says "max pooling preserves peak signals for
+    # ChromBPNet"; the original code path returned "mean" — taking the
+    # description as ground truth.)
     if source_oracle == "chrombpnet":
         bin_size = 20
-        return bin_size, "mean"
+        return bin_size, "max"
     elif source_oracle == "legnet":
         return resolution, "max"
     
@@ -313,28 +417,36 @@ def build_igv_html(
 
         # Apply layer-aware floor-subtract + rescale when available
         floor_ok = False
+        signed_track = False
         if use_floor:
-            floor_ok, ref_vals, alt_vals = apply_floor_rescale(
+            floor_ok, ref_vals, alt_vals, signed_track = apply_floor_rescale(
                 normalizer, oracle_name, assay_id, layer, ref_vals, alt_vals,
             )
-        
+
         track_bin_size, agg_method = _calculate_track_bin_size(
             t_res, window_bp, first.source_model,
         )
-        
+
+        # Signed tracks have negative values that ``skip_zeros`` would
+        # incorrectly count as background — disable the threshold drop
+        # so the repressive half stays in the wig features.
         ref_features = _downsample_to_features(
             ref_vals, variant_chrom, t_start, t_res, track_bin_size,
-            skip_zeros=not floor_ok,
+            skip_zeros=not (floor_ok or signed_track),
             aggregation_method=agg_method
         )
         alt_features = _downsample_to_features(
             alt_vals, variant_chrom, t_start, t_res, track_bin_size,
-            skip_zeros=not floor_ok,
+            skip_zeros=not (floor_ok or signed_track),
             aggregation_method=agg_method
-        )        
+        )
 
         group_id = assay_id.replace(":", "_").replace(" ", "_")
-        if floor_ok:
+        if floor_ok and signed_track:
+            # Symmetric signed scale: ±1.0 = genome-wide top-1% |effect|.
+            scale_cfg = {"min": -_DISPLAY_MAX, "max": _DISPLAY_MAX, "autoscale": False}
+            name_suffix = ""
+        elif floor_ok:
             scale_cfg = {"min": 0, "max": _DISPLAY_MAX, "autoscale": False}
             name_suffix = ""
         else:

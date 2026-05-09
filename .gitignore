@@ -142,3 +142,10 @@ scripts/internal/
 
 # Per-oracle pickle snapshots for multi-oracle consolidator (regenerate on demand)
 examples/walkthroughs/validation/SORT1_rs12740374_multioracle/*.pkl
+
+# DHS vocabulary download (90 MB, fetched via gdown when needed)
+annotations/
+
+# Local screenshot sweeps (regenerate via headless Chrome on demand)
+screenshots/
+examples/walkthroughs/**/screenshot_*.png
