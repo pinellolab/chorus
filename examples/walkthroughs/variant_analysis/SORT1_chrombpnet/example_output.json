@@ -27,8 +27,8 @@
             "alt_value": 60.72449456900358,
             "raw_score": 0.3176740092562657,
             "description": "DNASE:HepG2",
-            "quantile_score": 0.9616,
-            "ref_signal_percentile": 0.6046
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 0.6029
           }
         ]
       },
@@ -42,8 +42,8 @@
           "alt_value": 60.72449456900358,
           "raw_score": 0.3176740092562657,
           "description": "DNASE:HepG2",
-          "quantile_score": 0.9616,
-          "ref_signal_percentile": 0.6046
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.6029
         }
       ]
     }
@@ -56,6 +56,6 @@
     "tracks_requested": "DNASE:HepG2",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-05-08 14:07 UTC"
+    "generated_at": "2026-05-09 02:57 UTC"
   }
 }
