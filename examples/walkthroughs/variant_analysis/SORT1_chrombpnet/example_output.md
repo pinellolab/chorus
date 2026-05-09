@@ -1,12 +1,12 @@
 ## Analysis Request
 
-> Score chr1:109274968 G>T using ChromBPNet ATAC model in HepG2. Gene: SORT1.
+> Score chr1:109274968 G>T using ChromBPNet DNASE model in HepG2. Gene: SORT1.
 
 - **Tool**: `analyze_variant_multilayer`
 - **Oracle**: chrombpnet
 - **Normalizer**: per-track background CDFs
-- **Tracks requested**: ATAC:HepG2
-- **Generated**: 2026-04-21 13:08 UTC
+- **Tracks requested**: DNASE:HepG2
+- **Generated**: 2026-05-08 14:07 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -15,13 +15,13 @@
 **Gene**: SORT1
 **Other nearby genes**: CELSR2
 
-**Summary**: Chromatin accessibility (DNASE/ATAC): strong opening (+0.53, ATAC:HepG2).
+**Summary**: Chromatin accessibility (DNASE/ATAC): strong opening (+0.32, DNASE:HepG2).
 
 #### Chromatin accessibility (DNASE/ATAC)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| ATAC:HepG2 | 636 | 917 | +0.529 | ≥99th | 0.809 | Strong opening |
+| DNASE:HepG2 | 48.5 | 60.7 | +0.318 | 0.96 | 0.605 | Strong opening |
 
 ---
 **Score guide:**

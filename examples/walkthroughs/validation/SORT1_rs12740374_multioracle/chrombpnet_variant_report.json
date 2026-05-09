@@ -50,12 +50,12 @@
             "assay_type": "DNASE",
             "cell_type": "HepG2",
             "layer": "chromatin_accessibility",
-            "ref_value": 291.47426925599575,
-            "alt_value": 658.3518172651529,
-            "raw_score": 1.1727387570021977,
+            "ref_value": 255.6614961475134,
+            "alt_value": 605.572213485837,
+            "raw_score": 1.240812529069907,
             "description": "DNASE:HepG2",
-            "quantile_score": 1.0,
-            "ref_signal_percentile": 0.8868
+            "quantile_score": 0.9987,
+            "ref_signal_percentile": 0.8975
           }
         ]
       },
@@ -65,12 +65,12 @@
           "assay_type": "DNASE",
           "cell_type": "HepG2",
           "layer": "chromatin_accessibility",
-          "ref_value": 291.47426925599575,
-          "alt_value": 658.3518172651529,
-          "raw_score": 1.1727387570021977,
+          "ref_value": 255.6614961475134,
+          "alt_value": 605.572213485837,
+          "raw_score": 1.240812529069907,
           "description": "DNASE:HepG2",
-          "quantile_score": 1.0,
-          "ref_signal_percentile": 0.8868
+          "quantile_score": 0.9987,
+          "ref_signal_percentile": 0.8975
         }
       ]
     }
@@ -83,6 +83,6 @@
     "tracks_requested": "1 tracks",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-05-07 16:00 UTC"
+    "generated_at": "2026-05-08 23:18 UTC"
   }
 }
