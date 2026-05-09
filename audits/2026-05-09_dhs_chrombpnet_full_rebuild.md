@@ -132,3 +132,52 @@ sha256 of re-downloaded file: b8f8148453e8285195b77430970a2187ecd8df2d2a2b0074c5
   notebooks still produce sensible CHIP normalization output (regenerate
   `validation/SORT1_rs12740374_multioracle/rs12740374_SORT1_chrombpnet_report.html`
   and look for the chrombpnet panel showing reasonable percentile spread).
+
+---
+
+## Follow-up — 2026-05-09 (uniform DHS coverage shipped)
+
+The "ATAC/DNASE rows still v29 non-DHS" caveat above is now closed.
+Splice approach (no further model-recompute needed):
+
+1. The local 42-row DHS-augmented ATAC/DNASE NPZ already on Mac Studio
+   (`/tmp/dhs_local_backup_2026-05-08.npz`, sha
+   `896e72f1…b151431`, built 2026-05-07 against `chrombpnet_nobias`,
+   18,672 effect samples + 34,004 summary samples per row) was merged
+   in-place into the 786-row HF NPZ produced this morning, replacing
+   the v29 ATAC/DNASE rows at their existing track-id positions.
+2. Result: uniform 786-track NPZ where every row has
+   `effect_counts=18672, summary_counts=34004, perbin_counts=1088128`.
+3. Uploaded to HuggingFace
+   (`huggingface.co/datasets/lucapinello/chorus-backgrounds/chrombpnet_pertrack.npz`),
+   sha256 `526beb2ce8310f6fdb331f766eac55ce3262b67f1a43416532d8bad8f83183eb`,
+   78.5 MB.  Round-trip-verified.
+
+### Verification against the uniform NPZ (Mac M3 Ultra)
+
+| Check | Result |
+|---|---|
+| `pytest -m "not integration"` | ✅ 376 passed, 1 skipped, 5 deselected (~287 s) |
+| Pull NPZ from HF (cold cache) | ✅ sha matches upload |
+| All ATAC/DNASE + CHIP `effect_counts` uniform 18672 | ✅ |
+| Regenerate SORT1 chrombpnet single-oracle | ✅ Effect=+0.318, %ile=0.96, Activity=0.605 (was ≥99th under v29) — **slight conservative shift expected** because the DHS-augmented effect background contains more high-effect SNPs |
+| Regenerate SORT1 multi-oracle (chrombpnet/legnet/alphagenome/consolidate) | ✅ all four artefacts written |
+| Programmatic IGV inspection of 18 walkthrough HTMLs | ✅ 0 issues — all panels show data |
+
+### What "uniform DHS" changes for users
+
+- **Effect %ile** for ATAC/DNASE tracks at moderate-effect variants
+  (~0.3 log2FC) drops from "≥99th" to "0.95–0.97".  This is the
+  intended behaviour: the previous random-only background
+  underestimated how many regulatory-region SNPs have meaningful
+  effects, which inflated percentiles.  Strong variants (>0.5 log2FC)
+  are still ≥99th.
+- **Activity %ile** essentially unchanged (the cCRE-anchored summary
+  reservoir already covered regulatory regions; adding 5K DHS summits
+  on top is a small adjustment).
+- **Cross-track comparison** is now meaningful — ATAC/DNASE and
+  ChIP-TF/Histone all use the same sampling regime (10K random + 8.7K
+  DHS), so a 0.95 effect-percentile means the same thing whether the
+  track is ATAC or CHIP.
+
+Branch ready to merge.
