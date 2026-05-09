@@ -726,6 +726,11 @@ def sample_ccre_positions(
 _DHS_VOCAB_CACHE: "pd.DataFrame | None" = None
 
 
+_DHS_VOCAB_HF_REPO = "lucapinello/chorus-backgrounds"
+_DHS_VOCAB_HF_FILENAME = "dhs_vocabulary_hg38.txt.gz"
+_DHS_VOCAB_SHA256 = "0a4d215026744780ce7f562244e6f46b6387bab9875ca56ad543d30a024c1c48"
+
+
 def load_dhs_vocabulary(dhs_path: "str | None" = None) -> "pd.DataFrame":
     """Load the Meuleman et al. DHS Index vocabulary (hg38).
 
@@ -734,9 +739,17 @@ def load_dhs_vocabulary(dhs_path: "str | None" = None) -> "pd.DataFrame":
     Cached in process so repeated CDF builds don't re-parse the 90 MB
     bgzip every call.
 
-    Download with:
-        gdown --id 16wbuNmHnwsek3USWM04nR535vPavNZka \\
-              -O annotations/dhs_vocabulary_hg38.txt.gz
+    The file is auto-downloaded from
+    ``huggingface.co/datasets/lucapinello/chorus-backgrounds`` on first
+    use (~90 MB, sha256 ``0a4d2150…1c1c48``) and cached at
+    ``annotations/dhs_vocabulary_hg38.txt.gz`` in the repo root.  This
+    keeps every chorus install (every shard of a multi-GPU CDF rebuild,
+    every fresh-clone audit) working from byte-identical input — no
+    manual ``gdown`` step required.
+
+    The original distribution lives at
+    ``meuleman.org/DHS_Index_and_Vocabulary_hg38_WM20190703.txt.gz``;
+    our HF mirror is a verbatim copy.
     """
     global _DHS_VOCAB_CACHE
     if _DHS_VOCAB_CACHE is not None:
@@ -746,12 +759,43 @@ def load_dhs_vocabulary(dhs_path: "str | None" = None) -> "pd.DataFrame":
         path = Path(CHORUS_ANNOTATIONS_DIR) / "dhs_vocabulary_hg38.txt.gz"
     else:
         path = Path(dhs_path)
+
     if not path.exists():
-        raise FileNotFoundError(
-            f"DHS vocabulary not found at {path}. "
-            "Download with: gdown --id 16wbuNmHnwsek3USWM04nR535vPavNZka "
-            "-O annotations/dhs_vocabulary_hg38.txt.gz"
+        # Auto-fetch from HuggingFace.  Same pattern as per-track NPZ
+        # downloads — no external Google Drive dependency, no manual
+        # gdown step needed.
+        try:
+            from huggingface_hub import hf_hub_download
+        except ImportError as exc:
+            raise FileNotFoundError(
+                f"DHS vocabulary not found at {path} and huggingface_hub "
+                f"is not installed.  Install it (`pip install huggingface_hub`) "
+                f"to enable auto-fetch from {_DHS_VOCAB_HF_REPO}, or download "
+                f"manually with: gdown --id 16wbuNmHnwsek3USWM04nR535vPavNZka "
+                f"-O {path}."
+            ) from exc
+        path.parent.mkdir(parents=True, exist_ok=True)
+        logger.info(
+            "DHS vocabulary not cached at %s — downloading from "
+            "huggingface.co/datasets/%s ...",
+            path, _DHS_VOCAB_HF_REPO,
         )
+        downloaded = hf_hub_download(
+            repo_id=_DHS_VOCAB_HF_REPO,
+            filename=_DHS_VOCAB_HF_FILENAME,
+            repo_type="dataset",
+            local_dir=str(path.parent),
+        )
+        # hf_hub_download usually returns the same path; if not, move it.
+        dl_path = Path(downloaded)
+        if dl_path.resolve() != path.resolve() and dl_path.exists():
+            dl_path.replace(path)
+        if not path.exists():
+            raise FileNotFoundError(
+                f"DHS vocabulary download finished but file not found at "
+                f"{path}. Tried HF mirror {_DHS_VOCAB_HF_REPO}."
+            )
+        logger.info("DHS vocabulary cached at %s", path)
     df = pd.read_csv(
         path, sep="\t", compression="gzip", low_memory=False,
         usecols=["seqname", "start", "end", "identifier",
