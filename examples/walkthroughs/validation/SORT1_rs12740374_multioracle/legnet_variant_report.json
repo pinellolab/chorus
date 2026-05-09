@@ -50,8 +50,8 @@
             "assay_type": "LentiMPRA",
             "cell_type": "HepG2",
             "layer": "promoter_activity",
-            "ref_value": -0.7386444211006165,
-            "alt_value": -0.7385836243629456,
+            "ref_value": -0.7386637330055237,
+            "alt_value": -0.7386029362678528,
             "raw_score": 6.079673767089844e-05,
             "description": "LentiMPRA:HepG2"
           }
@@ -63,8 +63,8 @@
           "assay_type": "LentiMPRA",
           "cell_type": "HepG2",
           "layer": "promoter_activity",
-          "ref_value": -0.7386444211006165,
-          "alt_value": -0.7385836243629456,
+          "ref_value": -0.7386637330055237,
+          "alt_value": -0.7386029362678528,
           "raw_score": 6.079673767089844e-05,
           "description": "LentiMPRA:HepG2"
         }
@@ -79,6 +79,6 @@
     "tracks_requested": "1 tracks",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-05-07 16:03 UTC"
+    "generated_at": "2026-05-08 14:12 UTC"
   }
 }
