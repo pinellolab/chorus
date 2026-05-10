@@ -618,16 +618,17 @@ class ChromBPNetOracle(OracleBase):
         else:
             raise ValueError(f"Unsupported sequence type: {type(seq)}")
 
-        # If the caller passes a query wider than the model's input window
-        # (e.g. PR #79's get_max_output_size makes the multi-oracle region
-        # ~1 Mb), the legacy `_predict_direct` sliding formula is buggy and
-        # crashes with an IndexError.  Route wide queries through
-        # `predict_sliding`, which uses the same model.predict_on_batch path
-        # but with correct stitching.  Variant scoring downstream
-        # (`score_region`) still slices the canonical 501 bp window, so
-        # the table values are unchanged.
-        if len(query_interval) > self.sequence_length:
-            return self.predict_sliding(query_interval, assay_ids)
+        # Wide-query handling: queries larger than the model's input window
+        # (e.g. the multi-oracle 1 Mb flow) flow through naturally — the
+        # env-runner template (`chrombpnet_source/templates/predict_template.py`)
+        # has the correct stride-output_length sliding formula and produces
+        # correct (probabilities, counts) for `_transform_predictions_to_tracks`
+        # to stitch.  Direct mode (`use_environment=False`) goes through
+        # `_predict_direct`, which has the same correct formula below.
+        # Callers who want explicit control of the sliding-window batching
+        # (e.g. for cigar-substituted intervals from
+        # `regenerate_multioracle.run_chrombpnet`) can call `predict_sliding`
+        # directly — that path doesn't auto-trigger from here.
 
         input_interval = query_interval.extend(self.sequence_length)
         prediction_interval = query_interval.extend(self.output_size)
@@ -872,10 +873,17 @@ class ChromBPNetOracle(OracleBase):
         MAPPING = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
 
         if len(seq) > self.sequence_length:
+            # Stride-output_length (1000 bp) sliding windows of size
+            # sequence_length (2114 bp).  num_windows is the count we need
+            # to cover the input; seq_len rounds up to fit them exactly.
+            # NOTE: must divide by ``self.output_length``, not
+            # ``self.sequence_length`` — using the latter under-counts and
+            # allocates a too-small `one_hot`, causing IndexError on long
+            # inputs.  Matches the env-runner template
+            # (chrombpnet_source/templates/predict_template.py).
             num_windows_stride_one = (len(seq) - self.sequence_length + 1)
-            num_windows = (num_windows_stride_one + self.sequence_length - 1) // self.sequence_length + 1
+            num_windows = (num_windows_stride_one + self.sequence_length - 1) // self.output_length + 1
 
-            # Define seq_len and flag
             seq_len = (self.output_length * (num_windows - 1)) + self.sequence_length
             trimmed = False
         else:
