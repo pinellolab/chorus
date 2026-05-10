@@ -1014,6 +1014,12 @@ def download_pertrack_backgrounds(
     bg_dir = Path(cache_dir)
     bg_dir.mkdir(parents=True, exist_ok=True)
 
+    # alphagenome_pt aliases to alphagenome's NPZ — there is no separate
+    # alphagenome_pt_pertrack.npz on HF.  Skip the download attempt (the
+    # 404 is expected) and let the caller's alias-aware lookup take over.
+    if oracle_name in PerTrackNormalizer._CDF_ALIASES:
+        return 0
+
     fname = PerTrackNormalizer.npz_filename(oracle_name)
     local_path = bg_dir / fname
     if local_path.exists():
