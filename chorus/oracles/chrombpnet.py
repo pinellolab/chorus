@@ -618,6 +618,17 @@ class ChromBPNetOracle(OracleBase):
         else:
             raise ValueError(f"Unsupported sequence type: {type(seq)}")
 
+        # If the caller passes a query wider than the model's input window
+        # (e.g. PR #79's get_max_output_size makes the multi-oracle region
+        # ~1 Mb), the legacy `_predict_direct` sliding formula is buggy and
+        # crashes with an IndexError.  Route wide queries through
+        # `predict_sliding`, which uses the same model.predict_on_batch path
+        # but with correct stitching.  Variant scoring downstream
+        # (`score_region`) still slices the canonical 501 bp window, so
+        # the table values are unchanged.
+        if len(query_interval) > self.sequence_length:
+            return self.predict_sliding(query_interval, assay_ids)
+
         input_interval = query_interval.extend(self.sequence_length)
         prediction_interval = query_interval.extend(self.output_size)
 
@@ -683,7 +694,154 @@ class ChromBPNetOracle(OracleBase):
             final_prediction.add(track_id, track)
         
         return final_prediction
-    
+
+    def predict_sliding(
+        self,
+        seq: "str | Tuple[str, int, int] | Interval",
+        assay_ids: List[str] = None,
+        step: int = None,
+    ) -> OraclePrediction:
+        """Sliding-window ChromBPNet across a region wider than the model input.
+
+        For an interval longer than ``sequence_length`` (2114 bp), runs the
+        model at ``step``-spaced centers across the region and stitches the
+        central ``output_length`` (1000 bp) predictions into a continuous
+        track.  ``step`` defaults to ``output_length`` (non-overlapping
+        central outputs).
+
+        Returns an :class:`OraclePrediction` whose ``values`` cover exactly
+        the requested interval at 1 bp resolution, with cigar substitutions
+        on the input interval preserved (so this works for ref-vs-alt
+        rendering across a wide locus).
+        """
+        # Resolve to an Interval that supports sequence extraction with cigar
+        if isinstance(seq, tuple):
+            chrom, start, end = seq
+            query_interval = Interval.make(GenomeRef(
+                chrom=chrom, start=start, end=end,
+                fasta=self.reference_fasta,
+            ))
+        elif isinstance(seq, str):
+            query_interval = Interval.make(Sequence(sequence=seq))
+        elif isinstance(seq, Interval):
+            query_interval = seq
+        else:
+            raise ValueError(f"Unsupported sequence type: {type(seq)}")
+
+        Q = len(query_interval)
+        if Q <= self.sequence_length:
+            return self._predict(seq, assay_ids)
+
+        if step is None:
+            step = self.output_length
+        if not (0 < step <= self.output_length):
+            raise ValueError(
+                f"step must be in (0, output_length={self.output_length}]"
+            )
+
+        # Build full sequence over the query (preserves cigar substitutions).
+        # Then pad with N's on each side so each 2114-bp window has its
+        # central 1000-bp output landing inside the query.
+        side_pad = (self.sequence_length - self.output_length) // 2  # 557
+        # Number of stride-step windows whose central output covers Q
+        num_windows = (Q + step - 1) // step
+        # Total bases needed in the input sequence
+        needed_len = (num_windows - 1) * step + self.sequence_length
+
+        target_len = max(needed_len, self.sequence_length)
+        left_pad = side_pad
+        right_pad = target_len - Q - left_pad
+        if query_interval.reference.extendible:
+            stage1 = query_interval.extend(Q + left_pad, how="left")
+            input_interval = stage1.extend(target_len, how="right")
+        else:
+            input_interval = query_interval.extend(target_len, how="both")
+        full_seq = input_interval.sequence
+
+        import tensorflow as tf
+        MAPPING = {"A": 0, "C": 1, "G": 2, "T": 3}
+        N = self.sequence_length
+        OUT = self.output_length
+        actual_num_windows = max(1, (len(full_seq) - N) // step + 1)
+
+        all_profiles = []
+        BATCH = max(1, getattr(self, "batch_size", 8))
+        for batch_start in range(0, actual_num_windows, BATCH):
+            batch_end = min(batch_start + BATCH, actual_num_windows)
+            B = batch_end - batch_start
+            ohe = np.zeros((B, N, 4), dtype=np.float32)
+            for k in range(B):
+                offset = (batch_start + k) * step
+                window = full_seq[offset : offset + N]
+                for i, base in enumerate(window):
+                    j = MAPPING.get(base.upper())
+                    if j is not None:
+                        ohe[k, i, j] = 1.0
+            ohe_tf = tf.constant(ohe, dtype=tf.float32)
+
+            if self.assay == "CHIP":
+                profile_bias = np.zeros((B, OUT, 2), dtype=np.float32)
+                count_bias = np.zeros((B, 1), dtype=np.float32)
+                preds = self.model.predict_on_batch(
+                    [ohe_tf, profile_bias, count_bias]
+                )
+            else:
+                preds = self.model.predict_on_batch(ohe_tf)
+            probs, counts = preds[0], preds[1]
+            if probs.ndim == 3 and probs.shape[-1] == 2 and self.assay != "CHIP":
+                probs = probs.sum(axis=-1)
+            for b in range(B):
+                p = probs[b]
+                if p.ndim == 2:
+                    p = p.sum(axis=-1)
+                norm_p = p - np.mean(p)
+                sm = np.exp(norm_p) / np.sum(np.exp(norm_p))
+                profile = sm * np.exp(counts[b][0])
+                all_profiles.append(profile)
+
+        # Stitch central outputs.  Window k's central output covers the
+        # query bases at positions [k*step, k*step + OUT).
+        out = np.zeros(Q, dtype=np.float64)
+        weight = np.zeros(Q, dtype=np.float64)
+        for k, profile in enumerate(all_profiles):
+            qstart = k * step - left_pad + side_pad
+            qend = qstart + OUT
+            qs = max(qstart, 0)
+            qe = min(qend, Q)
+            if qe <= qs:
+                continue
+            ps = qs - qstart
+            pe = ps + (qe - qs)
+            out[qs:qe] += profile[ps:pe]
+            weight[qs:qe] += 1.0
+        weight = np.where(weight == 0, 1.0, weight)
+        out = out / weight  # average overlap (with step=OUT, no overlap → no-op)
+
+        prediction_interval = query_interval
+        track = OraclePredictionTrack.create(
+            source_model="chrombpnet",
+            assay_id=None,
+            track_id=None,
+            assay_type=self.assay,
+            cell_type=self.cell_type,
+            query_interval=query_interval,
+            prediction_interval=prediction_interval,
+            input_interval=input_interval,
+            resolution=self.bin_size,
+            values=out,
+            metadata=None,
+            preferred_aggregation="mean",
+            preferred_interpolation="linear_divided",
+            preferred_scoring_strategy="mean",
+        )
+        track_id = (
+            f"{self.assay}:{self.cell_type}" if self.assay != "CHIP"
+            else f"{self.assay}:{self.cell_type}:{self.tf}:+"
+        )
+        final = OraclePrediction()
+        final.add(track_id, track)
+        return final
+
     def _predict_in_environment(self, seq: str, assay_ids: List[str]) -> Tuple[np.ndarray, np.ndarray]:
         args = {
             "device": self.device,

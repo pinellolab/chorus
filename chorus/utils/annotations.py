@@ -14,6 +14,7 @@ Performance notes:
 import os
 import gzip
 import logging
+import random
 from pathlib import Path
 from typing import Optional, Dict, List, Tuple, Union
 import pandas as pd
@@ -716,3 +717,133 @@ def sample_ccre_positions(
     logger.info("Sampled %d positions from %d cCRE categories",
                 len(positions), len(n_per_category))
     return positions
+
+
+# ---------------------------------------------------------------------------
+# Meuleman et al. DHS index (hg38, ~3.6 M peaks)
+# ---------------------------------------------------------------------------
+
+_DHS_VOCAB_CACHE: "pd.DataFrame | None" = None
+
+
+_DHS_VOCAB_HF_REPO = "lucapinello/chorus-backgrounds"
+_DHS_VOCAB_HF_FILENAME = "dhs_vocabulary_hg38.txt.gz"
+_DHS_VOCAB_SHA256 = "0a4d215026744780ce7f562244e6f46b6387bab9875ca56ad543d30a024c1c48"
+
+
+def load_dhs_vocabulary(dhs_path: "str | None" = None) -> "pd.DataFrame":
+    """Load the Meuleman et al. DHS Index vocabulary (hg38).
+
+    Columns returned: ``seqname, start, end, identifier, mean_signal,
+    numsamples, summit, component``.  Filtered to autosomes chr1–22.
+    Cached in process so repeated CDF builds don't re-parse the 90 MB
+    bgzip every call.
+
+    The file is auto-downloaded from
+    ``huggingface.co/datasets/lucapinello/chorus-backgrounds`` on first
+    use (~90 MB, sha256 ``0a4d2150…1c1c48``) and cached at
+    ``annotations/dhs_vocabulary_hg38.txt.gz`` in the repo root.  This
+    keeps every chorus install (every shard of a multi-GPU CDF rebuild,
+    every fresh-clone audit) working from byte-identical input — no
+    manual ``gdown`` step required.
+
+    The original distribution lives at
+    ``meuleman.org/DHS_Index_and_Vocabulary_hg38_WM20190703.txt.gz``;
+    our HF mirror is a verbatim copy.
+    """
+    global _DHS_VOCAB_CACHE
+    if _DHS_VOCAB_CACHE is not None:
+        return _DHS_VOCAB_CACHE
+
+    if dhs_path is None:
+        path = Path(CHORUS_ANNOTATIONS_DIR) / "dhs_vocabulary_hg38.txt.gz"
+    else:
+        path = Path(dhs_path)
+
+    if not path.exists():
+        # Auto-fetch from HuggingFace.  Same pattern as per-track NPZ
+        # downloads — no external Google Drive dependency, no manual
+        # gdown step needed.
+        try:
+            from huggingface_hub import hf_hub_download
+        except ImportError as exc:
+            raise FileNotFoundError(
+                f"DHS vocabulary not found at {path} and huggingface_hub "
+                f"is not installed.  Install it (`pip install huggingface_hub`) "
+                f"to enable auto-fetch from {_DHS_VOCAB_HF_REPO}, or download "
+                f"manually with: gdown --id 16wbuNmHnwsek3USWM04nR535vPavNZka "
+                f"-O {path}."
+            ) from exc
+        path.parent.mkdir(parents=True, exist_ok=True)
+        logger.info(
+            "DHS vocabulary not cached at %s — downloading from "
+            "huggingface.co/datasets/%s ...",
+            path, _DHS_VOCAB_HF_REPO,
+        )
+        downloaded = hf_hub_download(
+            repo_id=_DHS_VOCAB_HF_REPO,
+            filename=_DHS_VOCAB_HF_FILENAME,
+            repo_type="dataset",
+            local_dir=str(path.parent),
+        )
+        # hf_hub_download usually returns the same path; if not, move it.
+        dl_path = Path(downloaded)
+        if dl_path.resolve() != path.resolve() and dl_path.exists():
+            dl_path.replace(path)
+        if not path.exists():
+            raise FileNotFoundError(
+                f"DHS vocabulary download finished but file not found at "
+                f"{path}. Tried HF mirror {_DHS_VOCAB_HF_REPO}."
+            )
+        logger.info("DHS vocabulary cached at %s", path)
+    df = pd.read_csv(
+        path, sep="\t", compression="gzip", low_memory=False,
+        usecols=["seqname", "start", "end", "identifier",
+                 "mean_signal", "numsamples", "summit", "component"],
+    )
+    valid = {f"chr{i}" for i in range(1, 23)}
+    df = df[df["seqname"].isin(valid)].copy()
+    _DHS_VOCAB_CACHE = df
+    logger.info("Loaded %d DHS peaks across %d components",
+                len(df), df["component"].nunique())
+    return df
+
+
+def sample_dhs_positions(
+    n: int,
+    dhs_path: "str | None" = None,
+    min_numsamples: "int | None" = None,
+    max_numsamples: "int | None" = None,
+    min_signal_quantile: "float | None" = None,
+    max_signal_quantile: "float | None" = None,
+    seed: int = 42,
+) -> "list[tuple[str, int]]":
+    """Sample (chrom, summit) positions from the Meuleman DHS vocabulary.
+
+    Simple seeded random sampling.  Optional filters:
+
+    - ``min_numsamples`` / ``max_numsamples`` constrain cell-type
+      specificity (1 = highly specific, 733 = ubiquitous).
+    - ``min_signal_quantile`` / ``max_signal_quantile`` constrain peak
+      strength via the empirical ``mean_signal`` distribution.
+
+    Returns at most ``n`` positions.
+    """
+    df = load_dhs_vocabulary(dhs_path)
+    if min_numsamples is not None:
+        df = df[df["numsamples"] >= min_numsamples]
+    if max_numsamples is not None:
+        df = df[df["numsamples"] <= max_numsamples]
+    if min_signal_quantile is not None:
+        lo = df["mean_signal"].quantile(min_signal_quantile)
+        df = df[df["mean_signal"] >= lo]
+    if max_signal_quantile is not None:
+        hi = df["mean_signal"].quantile(max_signal_quantile)
+        df = df[df["mean_signal"] <= hi]
+    rng = random.Random(seed)
+    k = min(n, len(df))
+    chosen = rng.sample(range(len(df)), k)
+    return [
+        (df.iloc[i]["seqname"], int(df.iloc[i]["summit"]))
+        for i in chosen
+    ]

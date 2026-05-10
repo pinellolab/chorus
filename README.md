@@ -213,14 +213,31 @@ After the first install, to upgrade cleanly:
 
 ```bash
 cd chorus && git pull
-# Remove oracle envs first (while the chorus CLI is still available):
-chorus remove --oracle enformer
-# Repeat for each oracle you had installed...
+# Remove all oracle envs, weights, and backgrounds in one command:
+chorus cleanup --all
 # Then remove the base env:
 mamba env remove -n chorus -y
 ```
 
 Then re-run the Fresh Install steps above.
+
+#### Uninstalling / starting from scratch
+
+```bash
+# Preview what will be deleted (safe — no changes):
+chorus cleanup --all --dry-run
+
+# Remove everything: all oracle envs, downloaded weights, background CDFs, and genomes:
+chorus cleanup --all
+
+# Finer-grained options:
+chorus cleanup --oracle enformer          # one oracle only (env + weights)
+chorus cleanup --oracle all               # all oracle envs + weights, keep backgrounds/genomes
+chorus cleanup --backgrounds              # remove ~/.chorus/backgrounds/*.npz only
+chorus cleanup --genomes                  # remove downloaded reference genomes only
+```
+
+The base `chorus` environment itself is not removed by `chorus cleanup` — remove it manually with `mamba env remove -n chorus -y` if you want a complete wipe.
 
 #### Setting up oracle environments one-by-one
 
@@ -257,6 +274,14 @@ chorus health --timeout 300
 ```
 
 **Note:** `chorus setup` pre-downloads each oracle's default weights + background CDFs + the `hg38` reference at install time, so subsequent `chorus health` / prediction calls are fast. If you opted out via `--no-weights`, the first prediction will still do a lazy download.
+
+**Slow or unstable connection?** Use `--setup-timeout SECONDS` to cap how long each phase (env build and weight download) is allowed to run before aborting with a clear error:
+
+```bash
+chorus setup --oracle borzoi --setup-timeout 3600   # 1-hour cap per phase
+```
+
+Default is unlimited. If a phase times out, re-run the same command — mamba and HuggingFace downloads resume from where they left off.
 
 #### Tokens
 
@@ -1163,7 +1188,7 @@ For each position, the layer-appropriate window-sum is added to the track's rese
 
 At each of the same ~31,500 positions, **32 random bins** from the full output window are added to the perbin reservoir. This captures the per-bin (not per-window) distribution at the track's native resolution (1 bp for ATAC/CAGE/RNA/PRO-CAP/splice; 128 bp for ChIP-Histone/TF in AlphaGenome).
 
-The per-bin CDFs are used by `perbin_floor_rescale_batch` to rescale raw IGV bin values onto a uniform `[0, 1.5]` display scale where `1.0` always corresponds to the top-1% genome-wide bin value for that track. This makes overlaid tracks visually comparable across cell types.
+The per-bin CDFs are used by the unified `chorus.analysis._igv_report.rescale_for_display` helper (which all four track-rendering paths — IGV, matplotlib, CoolBox, notebooks — share) to rescale raw bin values onto a uniform `[0, 3.0]` display scale where `1.0` corresponds to the top-1% genome-wide bin value for that track and `3.0` is a hard cap. Signed layers (Borzoi RNA, Sei, LentiMPRA) use the symmetric variant `signed_floor_rescale_batch`, mapping to `[-3.0, +3.0]` with `±1.0 = p99(|effect|)`. This makes overlaid tracks visually comparable across cell types and across renderers.
 
 #### Sample sizes per oracle
 
@@ -1241,7 +1266,8 @@ In the resulting report, every track row gets two extra columns — `Effect %ile
 | **Effect percentile** (unsigned) | `[0, 1]` | `0.95` = stronger than 95% of ~10K random SNPs in the same track |
 | **Effect percentile** (signed) | `[-1, 1]` | `+0.95` = strongly above-baseline gain; `-0.95` = strongly above-baseline loss |
 | **Activity percentile** | `[0, 1]` | `0.95` = reference signal at this site is in the top 5% genome-wide for this track |
-| **IGV per-bin display value** | `[0, 1.5]` | `1.0` = top-1% bin value genome-wide for this track; `0` = below the noise floor |
+| **Display rescale (unsigned)** | `[0, 3.0]` | `1.0` = top-1% bin value genome-wide; `3.0` = hard cap (3× p99); `0` = below the layer floor (p90 / p95 / p85 depending on layer) |
+| **Display rescale (signed layers)** | `[-3.0, +3.0]` | `±1.0` = p99 of `|effect|` genome-wide; symmetric so repressive (negative) signals stay visible. Used by Borzoi RNA, Sei, LentiMPRA. |
 
 **Sanity-check rule of thumb:** a *biologically interesting* variant typically shows **effect percentile > 0.95** AND **activity percentile > 0.5** in the same track — i.e. an unusually large effect at a site that already has real regulatory activity.
 

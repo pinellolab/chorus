@@ -19,43 +19,43 @@
       "scores_by_layer": {
         "chromatin_accessibility": [
           {
-            "assay_id": "ATAC:HepG2",
-            "assay_type": "ATAC",
+            "assay_id": "DNASE:HepG2",
+            "assay_type": "DNASE",
             "cell_type": "HepG2",
             "layer": "chromatin_accessibility",
-            "ref_value": 635.6930961374892,
-            "alt_value": 917.4119157849345,
-            "raw_score": 0.528543239432768,
-            "description": "ATAC:HepG2",
-            "quantile_score": 1.0,
-            "ref_signal_percentile": 0.8088
+            "ref_value": 48.525416523218155,
+            "alt_value": 60.72449456900358,
+            "raw_score": 0.3176740092562657,
+            "description": "DNASE:HepG2",
+            "quantile_score": 0.9616,
+            "ref_signal_percentile": 0.6046
           }
         ]
       },
       "all_scores": [
         {
-          "assay_id": "ATAC:HepG2",
-          "assay_type": "ATAC",
+          "assay_id": "DNASE:HepG2",
+          "assay_type": "DNASE",
           "cell_type": "HepG2",
           "layer": "chromatin_accessibility",
-          "ref_value": 635.6930961374892,
-          "alt_value": 917.4119157849345,
-          "raw_score": 0.528543239432768,
-          "description": "ATAC:HepG2",
-          "quantile_score": 1.0,
-          "ref_signal_percentile": 0.8088
+          "ref_value": 48.525416523218155,
+          "alt_value": 60.72449456900358,
+          "raw_score": 0.3176740092562657,
+          "description": "DNASE:HepG2",
+          "quantile_score": 0.9616,
+          "ref_signal_percentile": 0.6046
         }
       ]
     }
   },
   "analysis_request": {
-    "user_prompt": "Score chr1:109274968 G>T using ChromBPNet ATAC model in HepG2. Gene: SORT1.",
+    "user_prompt": "Score chr1:109274968 G>T using ChromBPNet DNASE model in HepG2. Gene: SORT1.",
     "tool_name": "analyze_variant_multilayer",
     "oracle_name": "chrombpnet",
     "normalizer_name": "per-track background CDFs",
-    "tracks_requested": "ATAC:HepG2",
+    "tracks_requested": "DNASE:HepG2",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-04-21 13:08 UTC"
+    "generated_at": "2026-05-09 21:25 UTC"
   }
 }

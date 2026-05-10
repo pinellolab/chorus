@@ -214,7 +214,7 @@ class EnvironmentManager:
             raise RuntimeError(f"Execution failed: {result.stderr}")
 
     
-    def create_environment(self, oracle: str, force: bool = False) -> bool:
+    def create_environment(self, oracle: str, force: bool = False, timeout: int | None = None) -> bool:
         """
         Create a mamba environment for the given oracle.
 
@@ -225,6 +225,8 @@ class EnvironmentManager:
         Args:
             oracle: Name of the oracle
             force: If True, recreate environment even if it exists
+            timeout: Max seconds to wait for ``mamba env create``.
+                     None (default) means no limit.
 
         Returns:
             True if successful, False otherwise
@@ -304,11 +306,31 @@ class EnvironmentManager:
                 text=True
             )
 
+            _timed_out = []
+            if timeout is not None:
+                import threading
+                def _kill():
+                    _timed_out.append(True)
+                    process.kill()
+                timer = threading.Timer(timeout, _kill)
+                timer.start()
+            else:
+                timer = None
+
             # Stream output live
             for line in process.stdout:
                 print(line, end="")
 
             process.wait()
+            if timer is not None:
+                timer.cancel()
+
+            if _timed_out:
+                raise RuntimeError(
+                    f"chorus setup timed out after {timeout}s while building "
+                    f"the {oracle} environment. Re-run with a larger "
+                    f"--setup-timeout value or check your connection."
+                )
 
             if process.returncode != 0:
                 logger.error(f"Failed to create environment: {process.stderr}")
