@@ -315,13 +315,30 @@ class OraclePredictionTrack:
         )
         track.to_bedgraph(str(filepath), write_header=write_header)
 
-    def get_coolbox_representation(self, 
+    def get_coolbox_representation(self,
                                    title: str | None = None,
-                                   override_params: dict | None = None, 
-                                   signal_threshold: float | None = None, 
+                                   override_params: dict | None = None,
+                                   signal_threshold: float | None = None,
                                    add_xaxis: bool = True,
                                    add_highlight: bool = False,
-                                   add_vlines: bool = True):
+                                   add_vlines: bool = True,
+                                   normalizer=None,
+                                   oracle_name: str | None = None,
+                                   normalize: bool = True):
+        """Render the track as a CoolBox ``BedGraph`` frame.
+
+        By default (``normalize=True``), values are CDF-rescaled via the
+        canonical :func:`chorus.analysis._igv_report.rescale_for_display`
+        helper so this panel uses the **same 0-3.0 / ±3.0 scale and
+        "1.0 = genome-wide p99" semantics** as the IGV / matplotlib
+        renderers.  The normalizer is auto-loaded from
+        ``~/.chorus/backgrounds/`` (or the HuggingFace mirror) using
+        ``self.source_model`` as the oracle name.
+
+        Pass ``normalize=False`` to opt out and get raw autoscaled
+        values (legacy behaviour).  Pass an explicit ``normalizer=`` to
+        override the auto-load.
+        """
         from coolbox.api import (
             BedGraph,
             TrackHeight,
@@ -340,16 +357,50 @@ class OraclePredictionTrack:
         if title is None:
             title = self.assay_id
         df = self.to_dataframe(use_reference_interval=True)
+
+        # CDF-rescale via the unified helper.  Auto-load the per-track
+        # normalizer from ``~/.chorus/backgrounds/`` (or the HuggingFace
+        # mirror) using ``self.source_model`` so this panel matches the
+        # IGV / matplotlib / notebook renders of the same track without
+        # the caller having to pass anything.  Set ``normalize=False``
+        # to opt out and get raw autoscaled values.
+        ymin, ymax = None, None
+        if normalize:
+            if oracle_name is None:
+                oracle_name = getattr(self, "source_model", None)
+            if normalizer is None and oracle_name:
+                try:
+                    from chorus.analysis.normalization import get_normalizer
+                    normalizer = get_normalizer(oracle_name)
+                except Exception:
+                    normalizer = None
+            if normalizer is not None and oracle_name is not None:
+                from chorus.analysis._igv_report import rescale_for_display
+                from chorus.analysis.scorers import classify_track_layer
+                layer = classify_track_layer(self)
+                rescaled, cfg = rescale_for_display(
+                    df['value'].to_numpy(), layer,
+                    normalizer=normalizer, oracle_name=oracle_name,
+                    assay_id=self.assay_id,
+                )
+                if cfg["rescaled"]:
+                    df = df.copy()
+                    df['value'] = rescaled
+                    ymin, ymax = cfg["ymin"], cfg["ymax"]
+        if ymin is None:
+            ymin = float(min(df['value'].min(), 0))
+            ymax = float(df['value'].max())
+
         coolbox_file = self._storage / self.COOLBOX_FILE_NAME
         df.to_csv(coolbox_file, sep='\t', index=False, header=False)
         if signal_threshold is None:
-            signal_threshold = df['value'].max() + 0.1 
-      
+            signal_threshold = ymax + 0.1
+
         frame = BedGraph(str(coolbox_file),  threshold=signal_threshold, threshold_color=coolbox_params['threshold_color']) +\
             TrackHeight(coolbox_params['height']) +\
             Color(coolbox_params['color']) +\
-            MinValue(min(df['value'].min(), 0) ) +\
-            MaxValue(df['value'].max()) +\
+            MinValue(ymin) +\
+            MaxValue(ymax) +\
             Title(title)
        
         if add_vlines:
@@ -560,6 +611,13 @@ class OraclePrediction:
     def add(self, assay_id: str, track: OraclePredictionTrack):
         if assay_id in self.tracks:
             raise Exception(f"The following assay_id already exists: {assay_id}")
+        # Some oracles (notably ChromBPNet) create the track without an
+        # explicit assay_id and rely on the OraclePrediction dict key for
+        # identification.  Backfill the field here so downstream code
+        # (CoolBox auto-rescale, normalization lookups, IGV labels) always
+        # has a valid assay_id without having to thread the dict key.
+        if track.assay_id is None:
+            track.assay_id = assay_id
         self.tracks[assay_id] = track
 
     def __iter__(self):

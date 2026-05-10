@@ -2153,7 +2153,17 @@ class TestPerTrackNormalizer:
         assert norm.effect_percentile("no_oracle", track_ids[0], 0.5) is None
 
     def test_perbin_none_for_scalar_oracles(self):
-        """When perbin_cdfs is absent, perbin methods return None."""
+        """When perbin_cdfs is absent.
+
+        ``perbin_percentile_batch`` (used for the effect/activity tables)
+        still returns None — it specifically wants the per-bin CDF.
+
+        ``perbin_floor_rescale_batch`` (used for IGV display) now falls
+        back to summary_cdfs → effect_cdfs via ``_find_matching_cdf``,
+        so scalar oracles like LegNet still get a usable rescale rather
+        than the panel autoscaling per-track.  This is PR #79's
+        intentional behaviour change.
+        """
         norm, track_ids, _ = self._make_normalizer(with_perbin=False)
         result = norm.perbin_percentile_batch(
             "test_oracle", track_ids[0], np.array([1.0]),
@@ -2162,7 +2172,50 @@ class TestPerTrackNormalizer:
         result2 = norm.perbin_floor_rescale_batch(
             "test_oracle", track_ids[0], np.array([1.0]),
         )
-        assert result2 is None
+        # Falls back to summary_cdfs → returns a rescaled value
+        assert result2 is not None
+        assert result2.shape == (1,)
+
+    def test_rescale_for_display_unified_helper(self):
+        """``rescale_for_display`` is the single source of truth for the
+        IGV / matplotlib / CoolBox / notebook rendering paths.  Verify
+        each branch returns the right (values, cfg) pair.
+        """
+        from chorus.analysis._igv_report import rescale_for_display, _DISPLAY_MAX
+        norm, track_ids, _ = self._make_normalizer()
+        vals = np.array([0.0, 1.0, 5.0, 10.0, 30.0])
+
+        # Unsigned track (track_ids[0] has signed_flags[0]=False) →
+        # rescaled to [0, DISPLAY_MAX], cfg.signed=False.
+        out, cfg = rescale_for_display(
+            vals, "chromatin_accessibility", normalizer=norm,
+            oracle_name="test_oracle", assay_id=track_ids[0],
+        )
+        assert cfg["rescaled"] is True
+        assert cfg["signed"] is False
+        assert cfg["ymin"] == 0.0
+        assert cfg["ymax"] == _DISPLAY_MAX
+        assert out.min() >= 0.0 and out.max() <= _DISPLAY_MAX
+
+        # Signed track (track_ids[1] has signed_flags[1]=True) →
+        # rescaled to [-DISPLAY_MAX, +DISPLAY_MAX] symmetrically.
+        out2, cfg2 = rescale_for_display(
+            np.array([-1.0, 0.0, 1.0]),
+            "promoter_activity", normalizer=norm,
+            oracle_name="test_oracle", assay_id=track_ids[1],
+        )
+        assert cfg2["rescaled"] is True
+        assert cfg2["signed"] is True
+        assert cfg2["ymin"] == -_DISPLAY_MAX
+        assert cfg2["ymax"] == _DISPLAY_MAX
+
+        # No normalizer → passthrough (values unchanged, cfg.rescaled=False).
+        out3, cfg3 = rescale_for_display(vals, "chromatin_accessibility")
+        assert cfg3["rescaled"] is False
+        assert cfg3["signed"] is False
+        # ymin/ymax fall back to data min/max for autoscale
+        assert cfg3["ymin"] == float(vals.min())
+        assert cfg3["ymax"] == float(vals.max())
 
     def test_get_denominator_padding_vs_compaction(self):
         """Denominator uses count when < CDF width (padding case)."""
@@ -2958,8 +3011,11 @@ class TestMultiOracleReport:
         """``apply_floor_rescale`` should passthrough cleanly when it can't rescale.
 
         A None normalizer or a wrong-type normalizer must return
-        ``(False, ref_unchanged, alt_unchanged)`` so the causal + variant
-        renderers can fall back to raw autoscale without extra guards.
+        ``(False, ref_unchanged, alt_unchanged, signed=False)`` so the
+        causal + variant renderers can fall back to raw autoscale without
+        extra guards.  The fourth tuple element distinguishes signed
+        symmetric rescale (when True) from unsigned floor-rescale (when
+        False) — see the signed_floor_rescale_batch path.
         """
         import numpy as np
         from chorus.analysis._igv_report import apply_floor_rescale
@@ -2968,17 +3024,21 @@ class TestMultiOracleReport:
         alt = np.array([1.2, 2.1, 2.8])
 
         # None normalizer — passthrough
-        ok, r, a = apply_floor_rescale(None, None, "x", "chromatin_accessibility",
-                                       ref, alt)
+        ok, r, a, signed = apply_floor_rescale(
+            None, None, "x", "chromatin_accessibility", ref, alt,
+        )
         assert ok is False
+        assert signed is False
         assert r is ref and a is alt  # unchanged references
 
         # Non-PerTrackNormalizer type — passthrough
         class _NotPT:
             pass
-        ok, r, a = apply_floor_rescale(_NotPT(), "oracle", "assay",
-                                       "tf_binding", ref, alt)
+        ok, r, a, signed = apply_floor_rescale(
+            _NotPT(), "oracle", "assay", "tf_binding", ref, alt,
+        )
         assert ok is False
+        assert signed is False
         assert r is ref and a is alt
 
     def test_markdown_summary_contains_consensus_table(self):

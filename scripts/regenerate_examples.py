@@ -45,6 +45,7 @@ BASE = os.path.join(REPO_ROOT, 'examples/walkthroughs')
 
 HEPG2_TRACKS = [
     "DNASE/EFO:0001187 DNase-seq/.",                         # DNASE
+    "ATAC/EFO:0001187 ATAC-seq/.",                           # ATAC
     "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",  # CEBPA
     "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",              # CEBPB
     "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",   # H3K27ac
@@ -76,43 +77,43 @@ ALPHAGENOME_EXAMPLES = [
         "html_name": "rs12740374_SORT1_alphagenome_report.html",
         "user_prompt": "Analyze rs12740374 (chr1:109274968 G>T) in HepG2 liver cells using DNASE, CEBPA/CEBPB ChIP, H3K27ac, and CAGE tracks. Gene is SORT1.",
     },
-    {
-        "name": "BCL11A rs1427407 (K562 erythroid)",
-        "dir": f"{BASE}/variant_analysis/BCL11A_rs1427407",
-        "type": "variant",
-        "position": "chr2:60490908",
-        "ref": "G", "alt": "T",
-        "gene": "BCL11A",
-        "assay_ids": K562_TRACKS,
-        "cell_type": "K562",
-        "html_name": "rs1427407_BCL11A_alphagenome_report.html",
-        "user_prompt": "Analyze rs1427407 (chr2:60490908 G>T) in K562 erythroid cells using DNASE, GATA1/TAL1 ChIP, H3K27ac, and CAGE tracks. Gene is BCL11A.",
-    },
-    {
-        "name": "FTO rs1421085 (HepG2 — nearest liver/metabolic)",
-        "dir": f"{BASE}/variant_analysis/FTO_rs1421085",
-        "type": "variant",
-        "position": "chr16:53767042",
-        "ref": "T", "alt": "C",
-        "gene": "FTO",
-        "assay_ids": HEPG2_TRACKS,
-        "cell_type": "HepG2",
-        "html_name": "rs1421085_FTO_alphagenome_report.html",
-        "user_prompt": "Analyze rs1421085 (chr16:53767042 T>C) in HepG2 cells. Gene is FTO. Using HepG2 as the nearest available metabolic cell type.",
-    },
-    # validation — forced HepG2 CEBP tracks to match the paper
-    {
-        "name": "SORT1 with CEBP (validation)",
-        "dir": f"{BASE}/validation/SORT1_rs12740374_with_CEBP",
-        "type": "variant",
-        "position": "chr1:109274968",
-        "ref": "G", "alt": "T",
-        "gene": "SORT1",
-        "assay_ids": HEPG2_TRACKS,
-        "cell_type": "HepG2",
-        "html_name": "rs12740374_SORT1_CEBP_validation_report.html",
-        "user_prompt": "Validate AlphaGenome paper finding: rs12740374 (chr1:109274968 G>T) should show CEBPA/CEBPB binding gain in HepG2. Using forced HepG2 tracks.",
-    },
+    # {
+    #     "name": "BCL11A rs1427407 (K562 erythroid)",
+    #     "dir": f"{BASE}/variant_analysis/BCL11A_rs1427407",
+    #     "type": "variant",
+    #     "position": "chr2:60490908",
+    #     "ref": "G", "alt": "T",
+    #     "gene": "BCL11A",
+    #     "assay_ids": K562_TRACKS,
+    #     "cell_type": "K562",
+    #     "html_name": "rs1427407_BCL11A_alphagenome_report.html",
+    #     "user_prompt": "Analyze rs1427407 (chr2:60490908 G>T) in K562 erythroid cells using DNASE, GATA1/TAL1 ChIP, H3K27ac, and CAGE tracks. Gene is BCL11A.",
+    # },
+    # {
+    #     "name": "FTO rs1421085 (HepG2 — nearest liver/metabolic)",
+    #     "dir": f"{BASE}/variant_analysis/FTO_rs1421085",
+    #     "type": "variant",
+    #     "position": "chr16:53767042",
+    #     "ref": "T", "alt": "C",
+    #     "gene": "FTO",
+    #     "assay_ids": HEPG2_TRACKS,
+    #     "cell_type": "HepG2",
+    #     "html_name": "rs1421085_FTO_alphagenome_report.html",
+    #     "user_prompt": "Analyze rs1421085 (chr16:53767042 T>C) in HepG2 cells. Gene is FTO. Using HepG2 as the nearest available metabolic cell type.",
+    # },
+    # # validation — forced HepG2 CEBP tracks to match the paper
+    # {
+    #     "name": "SORT1 with CEBP (validation)",
+    #     "dir": f"{BASE}/validation/SORT1_rs12740374_with_CEBP",
+    #     "type": "variant",
+    #     "position": "chr1:109274968",
+    #     "ref": "G", "alt": "T",
+    #     "gene": "SORT1",
+    #     "assay_ids": HEPG2_TRACKS,
+    #     "cell_type": "HepG2",
+    #     "html_name": "rs12740374_SORT1_CEBP_validation_report.html",
+    #     "user_prompt": "Validate AlphaGenome paper finding: rs12740374 (chr1:109274968 G>T) should show CEBPA/CEBPB binding gain in HepG2. Using forced HepG2 tracks.",
+    # },
 ]
 
 ENFORMER_EXAMPLES = [
@@ -141,7 +142,7 @@ CHROMBPNET_EXAMPLES = [
         "position": "chr1:109274968",
         "ref": "G", "alt": "T",
         "gene": "SORT1",
-        "assay": "ATAC", "cell_type": "HepG2",
+        "assay": "DNASE", "cell_type": "HepG2",
         "html_name": "rs12740374_SORT1_chrombpnet_report.html",
     },
 ]

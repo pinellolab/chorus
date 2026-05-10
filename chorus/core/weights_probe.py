@@ -151,7 +151,10 @@ def _probe_alphagenome_pt() -> Tuple[bool, List[str]]:
 _ARTIFACT_PROBES: Dict[str, Callable[[], Tuple[bool, List[str]]]] = {
     "sei": _probe_sei,
     "legnet": _probe_legnet,
-    "chrombpnet": _probe_chrombpnet,
+    # ChromBPNet default path (fold=0, chrombpnet_nobias) downloads to
+    # the HF hub cache (~/.cache/huggingface/) via the slim mirror, not
+    # to CHORUS_DOWNLOADS_DIR — same as enformer/borzoi.
+    "chrombpnet": _probe_library_cached,
     "alphagenome": _probe_alphagenome,
     "alphagenome_pt": _probe_alphagenome_pt,
     "enformer": _probe_library_cached,
