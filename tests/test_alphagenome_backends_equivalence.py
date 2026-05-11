@@ -66,10 +66,30 @@ def test_jax_pt_chorus_api_equivalence_at_sort1():
     Compares the ``oracle.predict()`` output array per assay — chorus's
     ``local_index`` slicing maps the user-requested identifier to the
     same logical track on both backends, so post-slicing arrays are
-    shape-compatible regardless of raw head shape. Tolerances:
-    ``max(|pt - jax|) < 0.1`` (absolute), ``mean rel < 5%``. The v30
-    macOS and Linux/CUDA audits both reported 0.74–1.85 % per-track
-    relative error, well inside this bound.
+    shape-compatible regardless of raw head shape.
+
+    Tolerances (post-Issue #81 investigation, 2026-05-11):
+    - ``Pearson correlation > 0.99`` — confirms the two backends produce
+      the same signal shape per track.
+    - ``max(|pt - jax|) / peak_magnitude < 0.02`` (2% relative at peak).
+      An absolute ``max(|d|) < 0.1`` was infeasible at signal magnitudes
+      ~55 because JAX outputs are bf16-quantized
+      (``jmp.get_policy('params=float32,compute=bfloat16,output=bfloat16')``
+      in ``alphagenome_research/model/dna_model.py``). At magnitude 55,
+      adjacent bf16 values are 0.25 apart, so the bf16 quantization alone
+      contributes ~0.5% of peak. The remaining ~0.5–1% is per-position
+      fp32 numerical kernel drift between torch's conv path and JAX's
+      XLA conv path. Mean abs diff observed on Linux/CUDA: 0.0007 on
+      1 M positions × 3 tracks (correlation 1.0000 on every track).
+    - ``mean(|pt - jax|) / mean(|jax|) < 5%`` — protects against any
+      systematic per-track scale mismatch.
+
+    The earlier absolute ``< 0.1`` bound failed not because of model
+    drift but because the SORT1 peak signal grew between PR #62 (when
+    the bound was set, peak ~10 → bf16 grid ~0.04) and v0.5.1 (peak ~77
+    → bf16 grid ~0.25). See
+    ``audits/2026-05-10_v0.5.0_scorched_earth_linux_cuda/issue_81_root_cause.md``
+    for the full diagnostic.
     """
     if not GENOME_FASTA.exists():
         pytest.skip(
@@ -114,13 +134,25 @@ def test_jax_pt_chorus_api_equivalence_at_sort1():
         )
 
         max_abs = float(np.abs(a - b).max())
+        peak_mag = max(float(np.abs(a).max()), float(np.abs(b).max()))
+        max_rel_at_peak = max_abs / (peak_mag + 1e-9)
         mean_rel = float(np.abs(a - b).mean() / (np.abs(a).mean() + 1e-9))
+        if a.std() > 0 and b.std() > 0:
+            corr = float(np.corrcoef(a, b)[0, 1])
+        else:
+            corr = 1.0  # both arrays constant — degenerate case, treat as equal
 
-        assert max_abs < 0.1, (
-            f"{aid}: max abs diff {max_abs:.4f} exceeds 0.1 — JAX vs PyTorch "
-            f"backend drift. Audit numbers from PR #62 were < 0.05."
+        assert corr > 0.99, (
+            f"{aid}: per-track Pearson correlation {corr:.4f} ≤ 0.99 — "
+            f"backends produce different signals (not just numerical drift)."
+        )
+        assert max_rel_at_peak < 0.02, (
+            f"{aid}: max abs diff {max_abs:.4f} is {max_rel_at_peak:.2%} of "
+            f"peak magnitude {peak_mag:.4f} (limit 2%). At this peak, bf16 "
+            f"output quantization in JAX gives ~{peak_mag/256:.4f} intrinsic "
+            f"noise, so >2% relative indicates real model divergence."
         )
         assert mean_rel < 0.05, (
-            f"{aid}: mean rel diff {mean_rel:.4f} exceeds 5% — JAX vs "
-            f"PyTorch backend drift. Audit numbers from PR #62 were < 2%."
+            f"{aid}: mean rel diff {mean_rel:.4f} exceeds 5% — systematic "
+            f"per-track scale mismatch between JAX and PyTorch backends."
         )

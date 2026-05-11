@@ -1,0 +1,53 @@
+[fast-pytest] Sun May 10 06:15:24 PM UTC 2026
+F...s................................................................... [ 18%]
+........................................................................ [ 37%]
+........................................................................ [ 56%]
+.............................s.......................................... [ 75%]
+........................................................................ [ 94%]
+......................                                                   [100%]
+=================================== FAILURES ===================================
+_________________ test_jax_pt_chorus_api_equivalence_at_sort1 __________________
+tests/test_alphagenome_backends_equivalence.py:119: in test_jax_pt_chorus_api_equivalence_at_sort1
+    assert max_abs < 0.1, (
+E   AssertionError: DNASE/EFO:0002067 DNase-seq/.: max abs diff 0.4878 exceeds 0.1 — JAX vs PyTorch backend drift. Audit numbers from PR #62 were < 0.05.
+E   assert 0.4877967834472656 < 0.1
+=============================== warnings summary ===============================
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+  /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+    parse = parser.parseString(pattern)
+
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+  /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+    parser.resetCache()
+
+../../../data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_mathtext.py:45
+  /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+    ParserElement.enablePackrat()
+
+tests/test_integration.py::test_pertrack_background_download[sei]
+tests/test_integration.py::test_pertrack_background_download[legnet]
+tests/test_smoke_predict.py::TestSmokeChrombpnet::test_predict
+  /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/huggingface_hub/file_download.py:1842: DeprecationWarning: hf_xet.download_files() is deprecated. Use XetSession().new_file_download_group().start_download_file() instead.
+    xet_get(
+
+tests/test_utils.py::TestNormalizationUtils::test_quantile_normalize
+  /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/numpy/core/numeric.py:407: RuntimeWarning: invalid value encountered in cast
+    multiarray.copyto(res, fill_value, casting='unsafe')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+1 failed, 379 passed, 2 skipped, 17 warnings in 1634.29s (0:27:14)
+
+[fast-pytest] exit=1
+[fast-pytest-done] Sun May 10 06:42:41 PM UTC 2026

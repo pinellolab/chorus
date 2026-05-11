@@ -1,0 +1,59 @@
+2026-05-10 23:34:46,274 - chorus.core.base - INFO - CHORUS_NO_TIMEOUT is set - all timeouts disabled
+2026-05-10 23:34:46,274 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-05-10 23:34:48,848 - chorus.core.base - INFO - Using conda environment: chorus-alphagenome
+2026-05-10 23:34:48,848 - chorus.oracles.alphagenome - INFO - Loading AlphaGenome model
+2026-05-10 23:36:04,188 - chorus.oracles.alphagenome - INFO - AlphaGenome model loaded successfully in environment!
+2026-05-10 23:38:10,134 - chorus.oracles.alphagenome_source.alphagenome_metadata - INFO - Loaded 5731 AlphaGenome tracks
+2026-05-10 23:38:10,325 - chorus.core.base - INFO - CHORUS_NO_TIMEOUT is set - all timeouts disabled
+2026-05-10 23:38:10,325 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+2026-05-10 23:38:12,923 - chorus.core.base - INFO - Using conda environment: chorus-alphagenome_pt
+2026-05-10 23:38:12,924 - chorus.oracles.alphagenome_pt - INFO - Loading AlphaGenome PyTorch port
+2026-05-10 23:38:25,840 - chorus.oracles.alphagenome_pt - INFO - AlphaGenome PyTorch model loaded in environment (device=cuda)
+Comparing 3 tracks at SORT1 (('chr1', 108774968, 109774968))
+
+  - DNASE/EFO:0002067 DNase-seq/.
+  - DNASE/EFO:0001187 DNase-seq/.
+  - DNASE/CL:0000182 DNase-seq/.
+
+======================================================================
+Loading JAX backend...
+JAX model loaded.
+
+Running JAX prediction...
+JAX prediction done.
+
+======================================================================
+Loading PyTorch backend...
+PT model loaded.
+
+Running PT prediction...
+PT prediction done.
+
+======================================================================
+Per-track diff analysis
+
+track                                                           max|d|   mean|d|    corr   jax_mean    pt_mean   ratio
+------------------------------------------------------------------------------------------------------------------------
+DNASE/EFO:0002067 DNase-seq/.                                   0.4760    0.0007  1.0000     0.0841     0.0836  0.9939
+DNASE/EFO:0001187 DNase-seq/.                                   0.4127    0.0008  0.9999     0.0618     0.0624  1.0108
+DNASE/CL:0000182 DNase-seq/.                                    0.1831    0.0005  1.0000     0.0563     0.0567  1.0071
+
+======================================================================
+Global max abs diff: 0.4760  (PR #62 baseline <0.05; test tolerance 0.1)
+
+Pattern probes — for the worst-drifting track:
+  worst track: DNASE/EFO:0002067 DNase-seq/.
+  signal range:  jax=[0.0000, 77.0000]  pt=[0.0000, 77.2768]
+  signal mean:   jax=0.0841  pt=0.0836
+  diff range:    [0.0000, 0.4760]  mean=0.0007
+  top-10 highest-diff positions:
+    bin 339979: jax= 54.7500  pt= 55.2260  |diff|= 0.4760
+    bin 675881: jax= 56.2500  pt= 56.6997  |diff|= 0.4497
+    bin 126323: jax= 38.2500  pt= 38.6617  |diff|= 0.4117
+    bin 349414: jax= 35.0000  pt= 34.5947  |diff|= 0.4053
+    bin 797855: jax= 35.5000  pt= 35.8670  |diff|= 0.3670
+    bin 340088: jax= 31.1250  pt= 31.4910  |diff|= 0.3660
+    bin 349360: jax= 38.7500  pt= 38.4155  |diff|= 0.3345
+    bin 797926: jax= 24.3750  pt= 24.6990  |diff|= 0.3240
+    bin 325317: jax= 22.6250  pt= 22.9461  |diff|= 0.3211
+    bin 797930: jax= 31.0000  pt= 31.2801  |diff|= 0.2801
