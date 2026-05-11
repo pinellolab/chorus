@@ -189,6 +189,10 @@ def classify_track_layer(track) -> str:
         return "gene_expression"
     if assay_type == "LentiMPRA":
         return "promoter_activity"
+    if assay_type == "Enhancer_H3K27ac_DNase":
+        # EPInformer-seq combined enhancer activity (geomean of DNase × H3K27ac).
+        # Scalar regulatory output, signed effect (ALT − REF) — same shape as MPRA.
+        return "promoter_activity"
     if assay_type == "SPLICE_SITES":
         return "splicing"
     if assay_type == "sequence-class":

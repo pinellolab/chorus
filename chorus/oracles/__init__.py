@@ -5,6 +5,7 @@ from .borzoi import BorzoiOracle
 from .chrombpnet import ChromBPNetOracle
 from .sei import SeiOracle
 from .legnet import LegNetOracle
+from .epinformerseq import EPInformerSeqOracle
 from .alphagenome import AlphaGenomeOracle
 from .alphagenome_pt import AlphaGenomePTOracle
 
@@ -15,6 +16,7 @@ ORACLES = {
     'chrombpnet': ChromBPNetOracle,
     'sei': SeiOracle,
     'legnet': LegNetOracle,
+    'epinformerseq': EPInformerSeqOracle,
     'alphagenome': AlphaGenomeOracle,
     'alphagenome_pt': AlphaGenomePTOracle,
 }
@@ -24,7 +26,7 @@ def get_oracle(name: str) -> type:
     Get oracle class by name.
     
     Args:
-        name: Oracle name (enformer, borzoi, chrombpnet, sei, legnet, alphagenome, alphagenome_pt)
+        name: Oracle name (enformer, borzoi, chrombpnet, sei, legnet, epinformerseq, alphagenome, alphagenome_pt)
         
     Returns:
         Oracle class
@@ -40,6 +42,7 @@ __all__ = [
     'ChromBPNetOracle',
     'SeiOracle',
     'LegNetOracle',
+    'EPInformerSeqOracle',
     'AlphaGenomeOracle',
     'AlphaGenomePTOracle',
     'ORACLES',

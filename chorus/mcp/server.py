@@ -80,6 +80,17 @@ ORACLE_SPECS = {
         "resolution_bp": None,
         "assay_types": ["LentiMPRA"],
     },
+    "epinformerseq": {
+        "description": (
+            "EPInformer-seq — 256-bp sequence to scalar enhancer activity "
+            "(linear sqrt(DNase × H3K27ac)), one model per cell type."
+        ),
+        "framework": "PyTorch",
+        "input_size_bp": 256,
+        "output_bins": 1,
+        "resolution_bp": None,
+        "assay_types": ["Enhancer_H3K27ac_DNase"],
+    },
     "alphagenome": {
         "description": "AlphaGenome (DeepMind) — 1-bp resolution across 5,731 tracks",
         "framework": "JAX",
@@ -295,7 +306,7 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
     Does not require the oracle to be loaded — uses metadata classes.
 
     Args:
-        oracle_name: Oracle name (enformer, borzoi, chrombpnet, sei, legnet, alphagenome).
+        oracle_name: Oracle name (enformer, borzoi, chrombpnet, sei, legnet, epinformerseq, alphagenome).
         query: Optional search string to filter tracks (e.g. "K562", "DNASE"). Use the returned 'identifier' field as the assay_id for predictions.
     """
     oracle_name = oracle_name.lower()
@@ -416,6 +427,21 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
             "note": "LegNet predicts lentiMPRA activity. Specify cell_type when loading.",
         }
 
+    if oracle_name == "epinformerseq":
+        from chorus.oracles.epinformerseq_source.epinformerseq_globals import (
+            EPINFORMERSEQ_AVAILABLE_CELLTYPES,
+        )
+        return {
+            "oracle": oracle_name,
+            "assay_types": ["Enhancer_H3K27ac_DNase"],
+            "cell_types": list(EPINFORMERSEQ_AVAILABLE_CELLTYPES),
+            "note": (
+                "EPInformer-seq returns a single scalar per 256-bp window: "
+                "linear sqrt(DNase × H3K27ac) in RPM-space. cell_type is "
+                "set at __init__ time; switch with load_pretrained_model(cell_type=...)."
+            ),
+        }
+
     valid = ", ".join(ORACLE_SPECS.keys())
     return {"error": f"Unknown oracle: '{oracle_name}'. Valid names: {valid}"}
 
@@ -493,7 +519,7 @@ def load_oracle(
     This can take 30 seconds to several minutes depending on the model.
 
     Args:
-        oracle_name: Oracle name (enformer, borzoi, chrombpnet, sei, legnet, alphagenome).
+        oracle_name: Oracle name (enformer, borzoi, chrombpnet, sei, legnet, epinformerseq, alphagenome).
         device: Device to use — "cpu", "cuda", "cuda:0", etc. None = auto-detect.
         assay: (ChromBPNet only) Assay type — "ATAC", "DNASE", or "CHIP".
         cell_type: (ChromBPNet/LegNet) Cell type — e.g. "K562", "HepG2".

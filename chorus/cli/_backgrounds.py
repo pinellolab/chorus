@@ -21,7 +21,7 @@ _BG_DIR = Path.home() / ".chorus" / "backgrounds"
 
 # Oracles that have per-track NPZ backgrounds
 _KNOWN_ORACLES = [
-    "enformer", "borzoi", "chrombpnet", "sei", "legnet", "alphagenome",
+    "enformer", "borzoi", "chrombpnet", "sei", "legnet", "epinformerseq", "alphagenome",
 ]
 
 

@@ -49,6 +49,14 @@ def _probe_legnet() -> Tuple[bool, List[str]]:
     return (True, [])
 
 
+def _probe_epinformerseq() -> Tuple[bool, List[str]]:
+    # Matches EPInformerSeqOracle.__init__ default: cell_type=K562.
+    default = CHORUS_DOWNLOADS_DIR / "epinformerseq" / "K562" / "weights.pt"
+    if not default.exists():
+        return (False, [str(default)])
+    return (True, [])
+
+
 def _hf_cache_dir() -> Path:
     """Resolve the HuggingFace hub cache directory.
 
@@ -151,6 +159,7 @@ def _probe_alphagenome_pt() -> Tuple[bool, List[str]]:
 _ARTIFACT_PROBES: Dict[str, Callable[[], Tuple[bool, List[str]]]] = {
     "sei": _probe_sei,
     "legnet": _probe_legnet,
+    "epinformerseq": _probe_epinformerseq,
     "chrombpnet": _probe_chrombpnet,
     "alphagenome": _probe_alphagenome,
     "alphagenome_pt": _probe_alphagenome_pt,

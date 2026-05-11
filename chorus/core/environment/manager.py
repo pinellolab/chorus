@@ -547,6 +547,7 @@ class EnvironmentManager:
             'borzoi': ['torch'],
             'chrombpnet': ['tensorflow'],
             'legnet': ['torch'],
+            'epinformerseq': ['torch'],
             'alphagenome': ['jax'],
         }
         
