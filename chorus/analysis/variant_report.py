@@ -55,6 +55,10 @@ class TrackScore:
     description: str | None = None  # human-readable track description
     note: str | None = None
     region_label: str | None = None  # e.g. "SORT1 (exons)", "variant site"
+    # True when the scoring window covers fewer than 8 native bins of the
+    # underlying oracle output (AlphaGenome CHIP-TF at 501 bp / 128 bp-bin
+    # = ~4 bins). Quantization at that resolution can mask small effects.
+    low_effective_bins: bool = False
 
     def to_dict(self) -> dict:
         d: dict = {
@@ -76,6 +80,8 @@ class TrackScore:
             d["note"] = self.note
         if self.region_label is not None:
             d["region_label"] = self.region_label
+        if self.low_effective_bins:
+            d["low_effective_bins"] = True
         return d
 
 
@@ -111,6 +117,9 @@ class VariantReport:
     # When True, IGV browser uses raw signal with autoscale instead of
     # the layer-aware floor rescale (default).  Table scores are unaffected.
     _igv_raw: bool = field(default=False, repr=False)
+    # Number of scored tracks dropped from the IGV browser because more
+    # than 50 tracks were scored. The table still shows all of them.
+    _igv_truncated: int = field(default=0, repr=False)
 
     # ------------------------------------------------------------------
     # Serialisation
@@ -849,7 +858,7 @@ def build_variant_report(
     variant_result: dict,
     oracle_name: str,
     gene_name: str | None = None,
-    normalizer: QuantileNormalizer | None = None,
+    normalizer: PerTrackNormalizer | QuantileNormalizer | None = None,
     igv_raw: bool = False,
     analysis_request: AnalysisRequest | None = None,
 ) -> VariantReport:
@@ -867,9 +876,14 @@ def build_variant_report(
         gene_name: Optional gene name for RNA expression scoring.  When
             ``None``, nearby genes are auto-detected for non-coding
             variant interpretation.
-        normalizer: Optional :class:`QuantileNormalizer` with pre-computed
-            background distributions.  Used for table scores AND IGV
-            visualization (rescaled view) unless ``igv_raw=True``.
+        normalizer: Optional normalizer with pre-computed background
+            distributions. A :class:`PerTrackNormalizer` (preferred)
+            powers both table scores AND the IGV rescaled view. A
+            legacy :class:`QuantileNormalizer` only powers table
+            scores — the IGV browser falls back to per-track autoscale
+            and the HTML metadata calls this out. Pass
+            ``chorus.analysis.get_normalizer(oracle_name)`` for full
+            support.
         igv_raw: When ``True``, the IGV browser shows raw signal values
             with per-track autoscale instead of the layer-aware
             floor-rescale view.  Table scores still use the normalizer.
@@ -877,6 +891,27 @@ def build_variant_report(
     Returns:
         A :class:`VariantReport` with per-track, per-layer scores.
     """
+    if (
+        normalizer is not None
+        and not isinstance(normalizer, (PerTrackNormalizer, QuantileNormalizer))
+    ):
+        raise TypeError(
+            f"normalizer must be PerTrackNormalizer, QuantileNormalizer, or None — "
+            f"got {type(normalizer).__name__}. Use "
+            f"chorus.analysis.get_normalizer(oracle_name) for full per-track support."
+        )
+    if (
+        normalizer is not None
+        and not igv_raw
+        and not isinstance(normalizer, PerTrackNormalizer)
+    ):
+        logger.warning(
+            "Received %s for IGV rescale; legacy QuantileNormalizer powers "
+            "table scores but the IGV browser will fall back to per-track "
+            "autoscale. Pass chorus.analysis.get_normalizer(%r) for the "
+            "rescaled IGV view.",
+            type(normalizer).__name__, oracle_name,
+        )
     predictions = variant_result["predictions"]
     variant_info = variant_result["variant_info"]
 
@@ -898,6 +933,14 @@ def build_variant_report(
     # Find all protein-coding genes in the prediction window for
     # per-gene CAGE/RNA scoring.  Always do this regardless of gene_name.
     ref_pred = predictions["reference"]
+    if not ref_pred:
+        from ..core.exceptions import EmptyPredictionsError
+        raise EmptyPredictionsError(
+            "Reference prediction dict is empty — likely the assay_ids "
+            "passed to predict_variant_effect() didn't match any tracks on "
+            f"the {oracle_name!r} oracle. Check assay_ids against "
+            "oracle.get_all_assay_ids() (or pass None/[] to score all tracks)."
+        )
     first_track = next(iter(ref_pred.values()))
     pred_start = first_track.prediction_interval.reference.start
     pred_end = first_track.prediction_interval.reference.end
@@ -1055,12 +1098,26 @@ def build_variant_report(
                 gene_exons=gene_exons,
             )
 
+            # Flag tracks where the scoring window covers < 8 native bins
+            # of the oracle output — those are vulnerable to quantization
+            # masking small effects (e.g. AG CHIP-TF at 501 bp / 128 bp-bin
+            # = 4 bins). DNase/ATAC/CAGE/PROCAP at 1 bp/bin and AG histone
+            # at 2001 bp / 128 bp = 15 bins are both safe.
+            low_bins = False
+            from .scorers import LAYER_CONFIGS
+            cfg = LAYER_CONFIGS.get(layer)
+            if cfg is not None and cfg.window_bp is not None:
+                res = getattr(ref_track, "resolution", 1) or 1
+                if cfg.window_bp / res < 8:
+                    low_bins = True
+
             ts = TrackScore(
                 assay_id=assay_id, assay_type=at, cell_type=ct, description=desc,
                 layer=layer,
                 ref_value=result["ref_value"] if result else None,
                 alt_value=result["alt_value"] if result else None,
                 raw_score=result["raw_score"] if result else None,
+                low_effective_bins=low_bins,
             )
             if result is None:
                 ts.note = "Outside scoring window"
@@ -1113,15 +1170,47 @@ def build_variant_report(
         for ts in scores:
             if ts.assay_id:
                 scored_assay_ids.add(ts.assay_id)
-    if scored_assay_ids and len(scored_assay_ids) <= 50:
+    _IGV_TRACK_LIMIT = 50
+    if scored_assay_ids:
         from ..core.result import OraclePrediction
+
+        # When more than _IGV_TRACK_LIMIT tracks were scored, picking the
+        # top-N by absolute effect magnitude keeps the IGV browser alive
+        # for the most informative tracks instead of dropping it entirely
+        # (the old behaviour was a silent strip with no log / no metadata
+        # callout — see the v0.5.2 collaborator audit).
+        if len(scored_assay_ids) > _IGV_TRACK_LIMIT:
+            best_abs: dict[str, float] = {}
+            for scores in allele_scores.values():
+                for ts in scores:
+                    if not ts.assay_id or ts.raw_score is None:
+                        continue
+                    cur = best_abs.get(ts.assay_id, 0.0)
+                    best_abs[ts.assay_id] = max(cur, abs(ts.raw_score))
+            top_ids = sorted(
+                scored_assay_ids,
+                key=lambda aid: best_abs.get(aid, 0.0),
+                reverse=True,
+            )[:_IGV_TRACK_LIMIT]
+            n_dropped = len(scored_assay_ids) - _IGV_TRACK_LIMIT
+            logger.warning(
+                "IGV browser limited to top %d of %d scored tracks by |effect| "
+                "(dropped %d). Full scores remain in the table.",
+                _IGV_TRACK_LIMIT, len(scored_assay_ids), n_dropped,
+            )
+            report._igv_truncated = n_dropped
+            scored_for_igv = set(top_ids)
+        else:
+            report._igv_truncated = 0
+            scored_for_igv = scored_assay_ids
+
         filtered: dict[str, OraclePrediction] = {}
         for key, pred in predictions.items():
             if pred is None or not hasattr(pred, "tracks"):
                 filtered[key] = pred
                 continue
             sub = OraclePrediction()
-            for aid in scored_assay_ids:
+            for aid in scored_for_igv:
                 if aid in pred.tracks:
                     sub.tracks[aid] = pred.tracks[aid]
             filtered[key] = sub
@@ -1570,6 +1659,16 @@ def _render_track_figure(
                 'Zoom in/out and pan to explore. '
                 'Gene track (RefSeq) loaded automatically.</p>'
             )
+            if getattr(report, '_igv_truncated', 0):
+                parts.append(
+                    '<p style="font-size:.85rem;color:#92400e;background:#fef3c7;'
+                    'border-left:3px solid #f59e0b;padding:.4rem .6rem;'
+                    'margin-top:-.5rem">'
+                    f'<b>Note:</b> IGV browser shows the top 50 scored tracks '
+                    f'by absolute effect magnitude; <b>{report._igv_truncated}</b> '
+                    'lower-effect tracks are omitted here but still appear in '
+                    'the score table above.</p>'
+                )
             # Scale legend
             from .normalization import PerTrackNormalizer
             if report._igv_raw:
@@ -1587,6 +1686,20 @@ def _render_track_figure(
                     '<b>0</b> = noise floor, <b>1.0</b> = top 1% of bins '
                     'genome-wide. Peak shape preserved; tracks comparable '
                     'across cell types.</p>'
+                )
+            elif report._normalizer is not None:
+                # Legacy QuantileNormalizer powers table scores but cannot
+                # drive IGV rescale — make this visible instead of silent.
+                parts.append(
+                    '<p style="font-size:.85rem;color:#92400e;background:#fef3c7;'
+                    'border-left:3px solid #f59e0b;padding:.4rem .6rem;'
+                    'margin-top:-.5rem">'
+                    '<b>Note:</b> a legacy QuantileNormalizer was supplied — '
+                    'IGV rescale requires PerTrackNormalizer. Tracks below '
+                    'are shown with per-track autoscale (Y-axes NOT '
+                    'comparable). Pass <code>'
+                    'chorus.analysis.get_normalizer(oracle_name)</code> '
+                    'for the rescaled view.</p>'
                 )
             parts.append(igv_html)
 

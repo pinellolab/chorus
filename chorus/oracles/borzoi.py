@@ -194,8 +194,8 @@ class BorzoiOracle(OracleBase):
             seq: Either a DNA sequence string or a tuple of (chrom, start, end)
             assay_ids: List of assay identifiers
         """
-        if assay_ids is None:
-            assay_ids =  self.get_all_assay_ids()
+        if not assay_ids:
+            assay_ids = self.get_all_assay_ids()
 
         # Handle genomic coordinates
         if isinstance(seq, tuple):
