@@ -1031,12 +1031,15 @@ def discover_variant(
     top_n: int = 3,
     igv_raw: bool = False,
     user_prompt: Optional[str] = None,
+    ranking_metric: str = "alt_x_abs_effect",
+    min_ref_value: float = 0.0,
 ) -> dict:
     """Discover which cell types and regulatory layers are most affected by a variant.
 
     Predicts variant effect across ALL available tracks (thousands for
     Enformer/Borzoi/AlphaGenome, or iterates all models for ChromBPNet/LegNet),
-    ranks by effect magnitude, and returns the top hits with a full report.
+    ranks by ``ranking_metric``, and returns the top hits with a full
+    report.
 
     This is the primary tool for variant interpretation — it tells you WHERE
     the variant has impact without requiring you to pre-select tracks.
@@ -1049,6 +1052,12 @@ def discover_variant(
         gene_name: Optional gene for expression analysis.
         top_n: Number of top tracks per regulatory layer to show.
         user_prompt: Original user prompt, forwarded into the report header.
+        ranking_metric: How to rank tracks and cell types. Default
+            ``"alt_x_abs_effect"`` (``alt_value × |log2FC|``) avoids
+            inflating closed-baseline tracks where a small absolute
+            change yields a large fold-change. Use ``"abs_effect"`` for
+            the historical raw |log2FC| ranking.
+        min_ref_value: Threshold used by ``"abs_effect_min_ref"``.
     """
     from chorus.analysis.analysis_request import AnalysisRequest
     from chorus.analysis.discovery import discover_variant_effects
@@ -1067,6 +1076,8 @@ def discover_variant(
         normalizer=normalizer,
         output_path=state.output_dir,
         igv_raw=igv_raw,
+        ranking_metric=ranking_metric,
+        min_ref_value=min_ref_value,
     )
 
     # Serialize: extract report as markdown, remove non-serializable VariantReport

@@ -169,10 +169,26 @@ class QuantileNormalizer:
     # ------------------------------------------------------------------
 
     def has_background(self, key: str) -> bool:
-        """Check if a background distribution exists (in memory or on disk)."""
+        """Check if a background distribution exists (in memory or on disk).
+
+        ``key`` is the full ``{oracle}_{layer}`` filename stem (e.g.
+        ``"alphagenome_chromatin_accessibility"``). See
+        :meth:`has_oracle_quantiles` for an oracle-level check that
+        glob-matches any layer.
+        """
         if key in self._distributions:
             return True
         return (self.cache_dir / f"{key}.npy").exists()
+
+    def has_oracle_quantiles(self, oracle_name: str) -> bool:
+        """True if any per-layer Quantile NPY for *oracle_name* exists on disk.
+
+        Mirrors :meth:`PerTrackNormalizer.has_oracle` at the oracle level
+        so callers can ask "is something usable on disk?" without picking
+        which normalizer flavor they want. See module-level
+        :func:`is_ready_for_oracle` for the union over both flavors.
+        """
+        return any(self.cache_dir.glob(f"{oracle_name}_*.npy"))
 
     def get_background(self, key: str) -> BackgroundDistribution | None:
         """Get a background distribution, loading from cache if needed."""
@@ -1168,3 +1184,33 @@ def get_normalizer(
         len(matched), oracle_name,
     )
     return normalizer
+
+
+def is_ready_for_oracle(
+    oracle_name: str, cache_dir: str | None = None,
+) -> bool:
+    """True if either a per-track NPZ or per-layer Quantile NPYs are on disk.
+
+    Unified readiness check across both normalizer flavors. Useful for
+    setup / health-check code that doesn't care which on-disk layout
+    is present, only whether normalization will work for the oracle.
+
+    - :class:`PerTrackNormalizer` looks for ``{oracle}_pertrack.npz``.
+    - :class:`QuantileNormalizer` looks for ``{oracle}_*.npy`` per-layer files.
+
+    Returns True if at least one exists locally (does not trigger a
+    HuggingFace download).
+    """
+    pt = PerTrackNormalizer(cache_dir=cache_dir)
+    if pt.has_oracle(oracle_name):
+        return True
+    # Honor the same alias map the loader uses (e.g. alphagenome_pt → alphagenome)
+    aliased = PerTrackNormalizer._CDF_ALIASES.get(oracle_name)
+    if aliased is not None and pt.has_oracle(aliased):
+        return True
+    q = QuantileNormalizer(cache_dir=cache_dir)
+    if q.has_oracle_quantiles(oracle_name):
+        return True
+    if aliased is not None and q.has_oracle_quantiles(aliased):
+        return True
+    return False
