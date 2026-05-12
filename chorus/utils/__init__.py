@@ -8,7 +8,8 @@ from .sequence import (
     validate_sequence,
     get_gc_content,
     split_sequence_into_windows,
-    pad_sequence
+    pad_sequence,
+    get_centered_window,
 )
 
 from .normalization import (
@@ -55,6 +56,7 @@ __all__ = [
     'get_gc_content',
     'split_sequence_into_windows',
     'pad_sequence',
+    'get_centered_window',
     
     # Normalization utilities
     'normalize_tracks',

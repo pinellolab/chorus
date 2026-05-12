@@ -200,7 +200,12 @@ class AlphaGenomeOracle(OracleBase):
         seq: Union[str, Tuple[str, int, int], Interval],
         assay_ids: Optional[List[str]] = None,
     ) -> OraclePrediction:
-        if assay_ids is None:
+        # Treat None and [] identically — both mean "all tracks". The MCP
+        # docstring (analyze_variant_multilayer.assay_ids) explicitly invites
+        # callers to pass an empty list; without this check the predict loop
+        # silently returns zero tracks and downstream report builders crash
+        # with StopIteration on `next(iter(ref_pred.values()))`.
+        if not assay_ids:
             assay_ids = self.get_all_assay_ids()
 
         # Build query interval

@@ -76,6 +76,13 @@ print(f"Variant result: scored {n_alts} alt alleles "
       f"({list(effects['predictions'].keys())})")
 ```
 
+> **Coordinate convention:** chorus uses **1-based inclusive** positions everywhere
+> (`chr11:5247500`), matching dbSNP / gnomAD / UCSC / IGV. If you assemble ref/alt
+> sequence windows by hand, use
+> [`chorus.utils.get_centered_window`](chorus/utils/sequence.py) — it converts
+> from 1-based to pyfaidx's 0-based half-open internally and validates the ref
+> base against the FASTA so off-by-one bugs fail loudly.
+
 ### 4. Skip the code — drive chorus from Claude in plain English 🤖
 
 Hook chorus up to Claude Code once and then *describe* the analysis you want. Claude figures out which models to load, which tracks to score, and which chorus tool to call.

@@ -358,3 +358,79 @@ def extract_sequence_with_padding(
                 f"Please run 'samtools faidx {fasta_path}' to create index."
             )
         raise
+
+
+def get_centered_window(
+    fasta_path: str,
+    chrom: str,
+    pos_1based: int,
+    length: int,
+    ref: str,
+    alt: str,
+    strict: bool = True,
+) -> Tuple[str, str]:
+    """Build a ref/alt sequence pair centred on a 1-based variant position.
+
+    Chorus coordinates are 1-based inclusive throughout (matches
+    dbSNP / UCSC / IGV — see ``chorus/core/base.py`` for the canonical
+    docstring). pyfaidx / pysam fetch is 0-based half-open, so this
+    helper handles the conversion in one place to avoid the off-by-one
+    bugs that plagued hand-rolled variant-sweep scripts.
+
+    Args:
+        fasta_path: Path to indexed reference FASTA.
+        chrom: Chromosome name (e.g. ``"chr1"``).
+        pos_1based: 1-based variant position (as reported by dbSNP / gnomAD).
+        length: Desired output length (e.g. 2114 for ChromBPNet).
+        ref: Reference allele (single base supported; longer is allowed
+             provided ``len(ref) == len(alt)`` for an in-place SNV/MNV).
+        alt: Alternate allele.
+        strict: If True (default) raise ``ValueError`` on reference-allele
+                mismatch. If False, log a warning and return the
+                FASTA-true sequence as ``ref_seq``.
+
+    Returns:
+        ``(ref_seq, alt_seq)``, each of length ``length``, both upper-case.
+        The variant is positioned at the centre of the window.
+
+    Raises:
+        ValueError: when ``strict=True`` and the FASTA base at
+            ``pos_1based`` does not match ``ref``.
+    """
+    import logging
+    log = logging.getLogger(__name__)
+
+    if len(ref) != len(alt):
+        raise ValueError(
+            f"get_centered_window only supports SNVs/MNVs of equal length: "
+            f"got ref={ref!r} (len {len(ref)}) vs alt={alt!r} (len {len(alt)})."
+        )
+
+    # Convert 1-based variant position to 0-based half-open window
+    # centred on the variant. For length L and 0-based variant index v,
+    # the centred window is [v - L//2, v - L//2 + L).
+    pos_0based = pos_1based - 1
+    half = length // 2
+    win_start = pos_0based - half
+    win_end = win_start + length
+
+    ref_seq = extract_sequence_with_padding(
+        fasta_path, chrom, win_start, win_end, length,
+    )
+
+    # The variant occupies positions [half, half + len(ref)) inside the window
+    var_offset = half
+    seq_ref_base = ref_seq[var_offset:var_offset + len(ref)].upper()
+    if seq_ref_base != ref.upper():
+        msg = (
+            f"Reference allele mismatch at {chrom}:{pos_1based}: "
+            f"expected {ref!r}, found {seq_ref_base!r} in FASTA. "
+            f"Check coordinate convention (chorus uses 1-based inclusive) "
+            f"or strand."
+        )
+        if strict:
+            raise ValueError(msg)
+        log.warning(msg)
+
+    alt_seq = ref_seq[:var_offset] + alt.upper() + ref_seq[var_offset + len(ref):]
+    return ref_seq, alt_seq
