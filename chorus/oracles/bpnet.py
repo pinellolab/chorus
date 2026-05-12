@@ -111,18 +111,19 @@ def encode_sequence(sequence: str) -> np.ndarray:
 def predict_bpnet(
     model: Any,
     sequence: str,
+    sequence_length: int = DEFAULT_SEQUENCE_LENGTH,
     output_length: int = DEFAULT_OUTPUT_LENGTH,
 ) -> dict[str, np.ndarray]:
     """Run a BPNet model on a single sequence and return the raw heads.
 
     Args:
         model: A model returned by :func:`load_bpnet_model`.
-        sequence: A DNA string of length equal to the model's
-            ``sequence_length`` (default 2114). Longer/shorter
-            sequences raise ``ValueError`` — use
+        sequence: A DNA string of length **exactly** ``sequence_length``
+            (default 2114 bp for the canonical BPNet input). Use
             :func:`chorus.utils.get_centered_window` to build the
             correctly-sized input from a 1-based variant position.
-        output_length: The model's profile output length (default 1000).
+        sequence_length: BPNet's expected input length (default 2114).
+        output_length: BPNet's profile output length (default 1000).
 
     Returns:
         ``{"profile": np.ndarray (1, output_length, 2),
@@ -131,11 +132,11 @@ def predict_bpnet(
         ``softmax(profile) * exp(counts)``.
     """
     one_hot = encode_sequence(sequence)
-    if one_hot.shape[0] < output_length:
+    if one_hot.shape[0] != sequence_length:
         raise ValueError(
-            f"BPNet sequence is shorter than output_length: "
-            f"got len={one_hot.shape[0]}, need ≥ {output_length}. Use "
-            f"chorus.utils.get_centered_window(..., length=2114)."
+            f"BPNet expects an input of exactly sequence_length={sequence_length} "
+            f"bp; got len={one_hot.shape[0]}. Use "
+            f"chorus.utils.get_centered_window(..., length={sequence_length})."
         )
 
     one_hot_batch = one_hot[np.newaxis]
