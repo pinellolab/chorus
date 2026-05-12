@@ -1,0 +1,43 @@
+[wipe] Sun May 10 01:26:20 AM UTC 2026
+=== chorus cleanup --all (oracle envs + weights + backgrounds + genome) ===
+  remove /PHShome/lp698/chorus/downloads/sei
+  remove /PHShome/lp698/.chorus/backgrounds/sei_pertrack.npz
+  remove conda env chorus-legnet
+  remove /PHShome/lp698/chorus/downloads/legnet
+  remove /PHShome/lp698/.chorus/backgrounds/legnet_pertrack.npz
+  remove conda env chorus-alphagenome
+  remove /PHShome/lp698/chorus/downloads/alphagenome
+  remove /PHShome/lp698/.chorus/backgrounds/alphagenome_pertrack.npz
+  remove conda env chorus-alphagenome_pt
+  remove /PHShome/lp698/chorus/downloads/alphagenome_pt
+Cleaning backgrounds: /PHShome/lp698/.chorus/backgrounds
+  remove /PHShome/lp698/.chorus/backgrounds/chrombpnet_baseline_cdfs_interim.npz
+  remove /PHShome/lp698/.chorus/backgrounds/chrombpnet_baseline_cdfs_interim.shard0of2.npz
+  remove /PHShome/lp698/.chorus/backgrounds/chrombpnet_baseline_cdfs_interim.shard1of2.npz
+  remove /PHShome/lp698/.chorus/backgrounds/chrombpnet_effect_cdfs_interim.npz
+  remove /PHShome/lp698/.chorus/backgrounds/chrombpnet_effect_cdfs_interim.shard0of2.npz
+  remove /PHShome/lp698/.chorus/backgrounds/chrombpnet_effect_cdfs_interim.shard1of2.npz
+Cleaning genomes: /PHShome/lp698/chorus/genomes
+  remove genome hg38
+Removed: 7 environment(s), 7 weight dir(s), 7 file(s)
+
+=== wipe base chorus env ===
+Transaction finished
+
+Environment removed at prefix: /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus
+
+=== wipe ~/.cache/huggingface (force fresh HF re-downloads) ===
+ls: cannot access '/PHShome/lp698/.cache/huggingface': No such file or directory
+
+=== sanity check: token (outside ~/.chorus) still present? ===
+-rw------- 1 lp698 pinello 37 May 10 01:22 /PHShome/lp698/.token_chorus_audit
+37
+
+=== AFTER state ===
+  ~/.chorus exists? /PHShome/lp698/.chorus
+  ~/.cache/huggingface exists? NO
+  downloads/ exists? /PHShome/lp698/chorus/downloads
+  genomes/: 
+
+panfs://10.129.86.180/hpc/groups/pinello  182T  161T   21T  89% /data/pinello
+[wipe-done] Sun May 10 07:01:55 AM UTC 2026

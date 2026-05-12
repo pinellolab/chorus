@@ -1,0 +1,52 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.20, pytest-9.0.3, pluggy-1.6.0 -- /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/bin/python3.10
+cachedir: .pytest_cache
+rootdir: /PHShome/lp698/chorus
+configfile: pytest.ini
+plugins: anyio-4.13.0, cov-7.1.0
+collecting ... collected 1 item
+
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1 FAILED [100%]
+
+=================================== FAILURES ===================================
+_________________ test_jax_pt_chorus_api_equivalence_at_sort1 __________________
+tests/test_alphagenome_backends_equivalence.py:119: in test_jax_pt_chorus_api_equivalence_at_sort1
+    assert max_abs < 0.1, (
+E   AssertionError: DNASE/EFO:0002067 DNase-seq/.: max abs diff 0.4760 exceeds 0.1 — JAX vs PyTorch backend drift. Audit numbers from PR #62 were < 0.05.
+E   assert 0.4760284423828125 < 0.1
+------------------------------ Captured log call -------------------------------
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+=============================== warnings summary ===============================
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+  /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+    parse = parser.parseString(pattern)
+
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+  /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+    parser.resetCache()
+
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+  /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+    ParserElement.enablePackrat()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+================== 1 failed, 13 warnings in 237.84s (0:03:57) ==================

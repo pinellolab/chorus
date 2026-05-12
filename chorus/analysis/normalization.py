@@ -366,12 +366,19 @@ class PerTrackNormalizer:
             return True
         return self.npz_path(oracle_name).exists()
 
+    # Oracles that share an identical CDF with another oracle.
+    _CDF_ALIASES: dict[str, str] = {"alphagenome_pt": "alphagenome"}
+
     def _ensure_loaded(self, oracle_name: str) -> dict | None:
         """Lazy-load the NPZ for *oracle_name*.  Returns the data dict or None."""
         if oracle_name in self._loaded:
             return self._loaded[oracle_name]
         path = self.npz_path(oracle_name)
         if not path.exists():
+            # Fall back to a known alias (e.g. alphagenome_pt → alphagenome)
+            alias = self._CDF_ALIASES.get(oracle_name)
+            if alias:
+                return self._ensure_loaded(alias)
             return None
         data = np.load(str(path), allow_pickle=False)
         entry = {
@@ -473,6 +480,8 @@ class PerTrackNormalizer:
         if cdf_matrix is None:
             return None
         idx = entry["track_index"].get(track_id)
+        if idx is None and track_id.endswith((":+", ":-")):
+            idx = entry["track_index"].get(track_id.rsplit(":", 1)[0])
         if idx is None:
             return None
         if not self._has_samples(entry, cdf_key, idx):
@@ -501,6 +510,8 @@ class PerTrackNormalizer:
         if cdf_matrix is None:
             return None
         idx = entry["track_index"].get(track_id)
+        if idx is None and track_id.endswith((":+", ":-")):
+            idx = entry["track_index"].get(track_id.rsplit(":", 1)[0])
         if idx is None:
             return None
         if not self._has_samples(entry, cdf_key, idx):
@@ -550,6 +561,71 @@ class PerTrackNormalizer:
     ) -> np.ndarray | None:
         """Map per-bin values to genome-wide percentiles [0, 1] for visualization."""
         return self._lookup_batch(oracle_name, track_id, "perbin_cdfs", raw_values, signed=False)
+    
+    def _find_matching_cdf(self, entry: dict, idx: int, track_id: str) -> np.ndarray | None:
+        """Retrieve the CDF array for track at *idx*, falling back through CDF types.
+
+        Tries perbin_cdfs → summary_cdfs → effect_cdfs, returning the first
+        valid array whose corresponding ``*_counts`` > 0.  Skipping CDF
+        types with zero samples means a track that failed to build at the
+        per-bin stage but succeeded at summary still gets the summary CDF
+        (rather than landing on the all-zero perbin row, which would
+        saturate every display value to ``max_value``).
+        """
+        for cdf_key in ("perbin_cdfs", "summary_cdfs", "effect_cdfs"):
+            cdf_matrix = entry.get(cdf_key)
+            if cdf_matrix is None:
+                continue
+
+            try:
+                cdf = cdf_matrix[idx]
+            except (IndexError, TypeError):
+                continue
+
+            if cdf is None or len(cdf) == 0:
+                continue
+
+            # Skip CDF types where this track has no background samples
+            # (counts[idx] == 0 → all-zero CDF row from a failed build).
+            if not self._has_samples(entry, cdf_key, idx):
+                continue
+
+            logger.debug(f"Using {cdf_key} for '{track_id}'")
+            return cdf
+
+        logger.warning(f"No valid CDF found for '{track_id}' (index {idx})")
+        return None
+    
+    def _match_track_id(self, track_id: str, track_index: dict) -> str | None:
+        """Find *track_id* in *track_index*, trying common alternative formats.
+
+        Returns the matched key, or None if no match is found.
+        """
+        if track_id in track_index:
+            return track_id
+
+        # Build candidate list from track_id components
+        parts = track_id.split(":")
+        candidates = [
+            track_id.replace(":", "_"),
+            track_id.replace("_", ":"),
+        ]
+        # CHIP strand suffix: BPNet/CHIP track IDs end in ":+" or ":-" but
+        # the CDF row is keyed without the strand (e.g. "CHIP:HepG2:CEBPA"
+        # not "CHIP:HepG2:CEBPA:+").  Strip the suffix so per-strand
+        # predictions still hit the merged CDF.
+        if track_id.endswith((":+", ":-")):
+            candidates.append(track_id.rsplit(":", 1)[0])
+        if len(parts) >= 2:
+            candidates.append(parts[-1])  # Last component only
+
+        for candidate in candidates:
+            if candidate in track_index:
+                logger.debug(f"Track ID matched: '{track_id}' → '{candidate}'")
+                return candidate
+
+        logger.warning(f"Track '{track_id}' not found (candidates: {candidates})")
+        return None
 
     def perbin_floor_rescale_batch(
         self,
@@ -558,7 +634,7 @@ class PerTrackNormalizer:
         raw_values: np.ndarray,
         floor_pctile: float = 0.95,
         peak_pctile: float = 0.99,
-        max_value: float = 1.5,
+        max_value: float = 3.0,
     ) -> np.ndarray | None:
         """Rescale raw bin values using CDF-derived noise floor and peak threshold.
 
@@ -583,17 +659,29 @@ class PerTrackNormalizer:
         entry = self._ensure_loaded(oracle_name)
         if entry is None:
             return None
-        cdf_matrix = entry.get("perbin_cdfs")
-        if cdf_matrix is None:
+
+        # Match track ID with possible alternative formats
+        track_index = entry.get("track_index", {})
+        matched_id = self._match_track_id(track_id, track_index)
+        if matched_id is None:
             return None
-        idx = entry["track_index"].get(track_id)
-        if idx is None:
+
+        idx = track_index[matched_id]
+
+        # Find appropriate CDF (perbin → summary → effect fallback).
+        # ``_find_matching_cdf`` skips CDF types with zero samples per
+        # track, so failed-build perbin rows fall through to summary
+        # rather than saturating every display bin to ``max_value``.
+        cdf = self._find_matching_cdf(entry, idx, matched_id)
+        if cdf is None:
             return None
-        cdf = cdf_matrix[idx]
+
+        # Compute thresholds and rescale
         n = len(cdf)
         floor = float(cdf[min(int(floor_pctile * n), n - 1)])
         peak = float(cdf[min(int(peak_pctile * n), n - 1)])
         denom = max(peak - floor, 1e-9)
+
         out = (raw_values.astype(np.float64) - floor) / denom
         return np.clip(out, 0.0, max_value)
 
@@ -605,10 +693,55 @@ class PerTrackNormalizer:
         flags = entry.get("signed_flags")
         if flags is None:
             return False
-        idx = entry["track_index"].get(track_id)
-        if idx is None:
+        # Use the same fuzzy track-id matching as perbin_floor_rescale_batch
+        # so callers don't have to know the exact NPZ key (e.g. LegNet
+        # passes "LentiMPRA:HepG2" but the row is keyed "HepG2").
+        track_index = entry.get("track_index", {})
+        matched_id = self._match_track_id(track_id, track_index)
+        if matched_id is None:
             return False
-        return bool(flags[idx])
+        return bool(flags[track_index[matched_id]])
+
+    def signed_floor_rescale_batch(
+        self,
+        oracle_name: str,
+        track_id: str,
+        raw_values: np.ndarray,
+        peak_pctile: float = 0.99,
+        max_value: float = 3.0,
+    ) -> np.ndarray | None:
+        """Rescale **signed** raw values to ``[-max_value, +max_value]``.
+
+        Uses ``p99(|cdf|)`` as the unit so ``±1.0`` corresponds to the
+        genome-wide top-1% absolute effect for the track.  Both the
+        positive and negative tails render symmetrically, unlike
+        :meth:`perbin_floor_rescale_batch` which clips negatives to 0.
+
+        Same CDF-fallback chain as the unsigned version
+        (perbin → summary → effect via :meth:`_find_matching_cdf`),
+        so e.g. LegNet (no ``perbin_cdfs``) uses ``summary_cdfs``.
+        """
+        entry = self._ensure_loaded(oracle_name)
+        if entry is None:
+            return None
+        track_index = entry.get("track_index", {})
+        matched_id = self._match_track_id(track_id, track_index)
+        if matched_id is None:
+            return None
+        idx = track_index[matched_id]
+        cdf = self._find_matching_cdf(entry, idx, matched_id)
+        if cdf is None:
+            return None
+        # |cdf|.p99 — the magnitude that defines "1.0" on either side.
+        # The original CDF is sorted (ascending); for signed values we
+        # need to compute the abs-percentile from the underlying samples.
+        abs_cdf = np.sort(np.abs(cdf))
+        n = len(abs_cdf)
+        unit = float(abs_cdf[min(int(peak_pctile * n), n - 1)])
+        if unit < 1e-9:
+            return None
+        out = raw_values.astype(np.float64) / unit
+        return np.clip(out, -max_value, max_value)
 
     # ------------------------------------------------------------------
     # Building / saving
@@ -852,6 +985,12 @@ def get_pertrack_normalizer(
         norm._ensure_loaded(oracle_name)
         return norm
 
+    # alphagenome_pt produces identical predictions to alphagenome (same
+    # model + weights, different backend), so share the JAX CDF rather
+    # than requiring a separate upload.
+    if oracle_name == "alphagenome_pt":
+        return get_pertrack_normalizer("alphagenome", cache_dir=cache_dir)
+
     return None
 
 
@@ -874,6 +1013,12 @@ def download_pertrack_backgrounds(
         cache_dir = str(Path.home() / ".chorus" / "backgrounds")
     bg_dir = Path(cache_dir)
     bg_dir.mkdir(parents=True, exist_ok=True)
+
+    # alphagenome_pt aliases to alphagenome's NPZ — there is no separate
+    # alphagenome_pt_pertrack.npz on HF.  Skip the download attempt (the
+    # 404 is expected) and let the caller's alias-aware lookup take over.
+    if oracle_name in PerTrackNormalizer._CDF_ALIASES:
+        return 0
 
     fname = PerTrackNormalizer.npz_filename(oracle_name)
     local_path = bg_dir / fname

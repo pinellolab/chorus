@@ -1,0 +1,43 @@
+[playwright-prep] Sun May 10 06:52:53 PM UTC 2026
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 613.4/613.4 kB 390.5 kB/s  0:00:00
+Using cached pyee-13.0.1-py3-none-any.whl (15 kB)
+Installing collected packages: pyee, greenlet, playwright
+
+Successfully installed greenlet-3.5.0 playwright-1.59.0 pyee-13.0.1
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                        |  70% of 112 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■                |  80% of 112 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■        |  90% of 112 MiB
+|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■| 100% of 112 MiB
+Chrome Headless Shell 147.0.7727.15 (playwright chromium-headless-shell v1217) downloaded to /PHShome/lp698/.cache/ms-playwright/chromium_headless_shell-1217
+
+probe ready (OUT + 90s timeout):
+OUT = Path("audits/2026-05-10_v0.5.0_scorched_earth_linux_cuda/screenshots")
+        page.goto(url, wait_until="networkidle", timeout=90000)
+
+[playwright-run] Sun May 10 06:54:36 PM UTC 2026
+[render] 18 HTML files to audit
+  [1/18] examples/walkthroughs/batch_scoring/batch_sort1_locus_scoring.html
+  [2/18] examples/walkthroughs/causal_prioritization/SORT1_locus/rs12740374_SORT1_locus_causal_report.html
+  [3/18] examples/walkthroughs/discovery/SORT1_cell_type_screen/chr1_109274968_G_T_SORT1_alphagenome_HepG2_report.html
+  [4/18] examples/walkthroughs/discovery/SORT1_cell_type_screen/chr1_109274968_G_T_SORT1_alphagenome_MCF_10A_report.html
+  [5/18] examples/walkthroughs/discovery/SORT1_cell_type_screen/chr1_109274968_G_T_SORT1_alphagenome_left_lobe_of_liver_report.html
+  [6/18] examples/walkthroughs/sequence_engineering/integration_simulation/integration_CMV_PPP1R12C_report.html
+  [7/18] examples/walkthroughs/sequence_engineering/region_swap/region_swap_SORT1_K562_report.html
+  [8/18] examples/walkthroughs/validation/SORT1_rs12740374_multioracle/rs12740374_SORT1_alphagenome_report.html
+  [9/18] examples/walkthroughs/validation/SORT1_rs12740374_multioracle/rs12740374_SORT1_chrombpnet_report.html
+  [10/18] examples/walkthroughs/validation/SORT1_rs12740374_multioracle/rs12740374_SORT1_legnet_report.html
+  [11/18] examples/walkthroughs/validation/SORT1_rs12740374_multioracle/rs12740374_SORT1_multioracle_report.html
+  [12/18] examples/walkthroughs/validation/SORT1_rs12740374_with_CEBP/rs12740374_SORT1_CEBP_validation_report.html
+  [13/18] examples/walkthroughs/validation/TERT_chr5_1295046/chr5_1295046_T_G_TERT_alphagenome_report.html
+  [14/18] examples/walkthroughs/variant_analysis/BCL11A_rs1427407/rs1427407_BCL11A_alphagenome_report.html
+  [15/18] examples/walkthroughs/variant_analysis/FTO_rs1421085/rs1421085_FTO_alphagenome_report.html
+  [16/18] examples/walkthroughs/variant_analysis/SORT1_chrombpnet/rs12740374_SORT1_chrombpnet_report.html
+  [17/18] examples/walkthroughs/variant_analysis/SORT1_enformer/rs12740374_SORT1_enformer_report.html
+  [18/18] examples/walkthroughs/variant_analysis/SORT1_rs12740374/rs12740374_SORT1_alphagenome_report.html
+
+[render] summary: 18 total, 0 failed-to-load
+  no IGV block: 1
+  no glossary:  0
+  JS errors:    0
+
+[playwright-done] Sun May 10 06:59:15 PM UTC 2026

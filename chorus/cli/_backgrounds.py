@@ -19,9 +19,13 @@ logger = logging.getLogger(__name__)
 
 _BG_DIR = Path.home() / ".chorus" / "backgrounds"
 
-# Oracles that have per-track NPZ backgrounds
+# Oracles that have per-track NPZ backgrounds.  alphagenome_pt aliases
+# to alphagenome's NPZ at lookup time (`PerTrackNormalizer._CDF_ALIASES`),
+# but for the status table we still want a row showing the alias is
+# active so users don't think the alphagenome_pt env is missing data.
 _KNOWN_ORACLES = [
-    "enformer", "borzoi", "chrombpnet", "sei", "legnet", "epinformerseq", "alphagenome",
+    "enformer", "borzoi", "chrombpnet", "sei", "legnet",
+    "epinformerseq", "alphagenome", "alphagenome_pt",
 ]
 
 

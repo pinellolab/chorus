@@ -69,6 +69,22 @@ USER_PROMPT = (
     "agree on direction, and which assay/cell type drove each call."
 )
 
+def get_max_output_size():
+    """Returns the maximum output size across all possible models."""
+    from chorus.oracles.chrombpnet import ChromBPNetOracle
+    from chorus.oracles.legnet import LegNetOracle
+    from chorus.oracles.alphagenome import AlphaGenomeOracle
+
+    sizes = []
+    sizes.append(ChromBPNetOracle().output_size)
+    sizes.append(LegNetOracle().sequence_length)    # to match output size
+    sizes.append(AlphaGenomeOracle().output_size)
+
+    if not sizes:
+        raise RuntimeError("Could not determine any oracle output_size")
+
+    return max(sizes)
+
 
 # ---------------------------------------------------------------------------
 # Per-oracle runners
@@ -91,8 +107,16 @@ def _build_variant_report(oracle, oracle_name: str, assay_ids=None):
     # Provide a small genomic region centred on the variant. Most oracles
     # only look ±half-window-size around the variant position; passing a 2bp
     # region here keeps the API contract satisfied without wasting compute.
+    max_window = get_max_output_size()
+    half_window = max_window // 2
+
+    start = VARIANT["position"] - half_window
+    end = VARIANT["position"] + half_window
+
+    region_str = f"{VARIANT['chrom']}:{start}-{end}"
     position_str = f"{VARIANT['chrom']}:{VARIANT['position']}"
-    region_str = f"{VARIANT['chrom']}:{VARIANT['position']}-{VARIANT['position'] + 1}"
+    # position_str = f"{VARIANT['chrom']}:{VARIANT['position']}"
+    # region_str = f"{VARIANT['chrom']}:{VARIANT['position']}-{VARIANT['position'] + 1}"
     # Oracles use different attribute names for their single-track id:
     # LegNetOracle exposes ``assay_id`` (e.g. "LentiMPRA:HepG2"); ChromBPNet
     # stores ``assay`` + ``cell_type`` separately. Build the per-oracle
@@ -163,9 +187,50 @@ def _save_oracle_artefacts(report, oracle_name: str):
 
 def run_chrombpnet():
     from chorus.oracles.chrombpnet import ChromBPNetOracle
-    oracle = ChromBPNetOracle()
-    oracle.load_pretrained_model(assay="ATAC", cell_type="HepG2", fold=0)
+    from chorus.core.interval import Interval, GenomeRef
+    # use_environment=False so predict_sliding can call self.model directly;
+    # we're already inside chorus-chrombpnet env via mamba run.
+    oracle = ChromBPNetOracle(use_environment=False, reference_fasta=GENOME_REF)
+    oracle.load_pretrained_model(assay="DNASE", cell_type="HepG2", fold=0)
     report = _build_variant_report(oracle, oracle_name="chrombpnet")
+
+    # ChromBPNet's intrinsic prediction window is 2114 bp.  At the
+    # multi-oracle locus (1 Mb wide because AlphaGenome's output_size is
+    # 1,048,576 bp), that's 0.2 % of the IGV view → invisible at zoom-out.
+    # Generate a sliding-window track over a wider region for IGV
+    # display only.  Variant scoring (table values, percentiles) is
+    # unchanged — those were already computed inside _build_variant_report
+    # from the canonical narrow window.  We only swap the IGV-display
+    # ``_predictions`` for ref/alt with the wide-locus sliding versions.
+    HALF = 524288  # ±~512 kb (covers the 1 Mb AlphaGenome window)
+    variant_pos = VARIANT["position"]
+    chrom = VARIANT["chrom"]
+    wide_start = max(0, variant_pos - HALF)
+    wide_end = variant_pos + HALF
+
+    logger.info(
+        "Sliding chrombpnet across %s:%d-%d (%.0f kb) for IGV display ...",
+        chrom, wide_start, wide_end, (wide_end - wide_start) / 1000,
+    )
+    ref_iv = Interval.make(GenomeRef(
+        chrom=chrom, start=wide_start, end=wide_end, fasta=GENOME_REF,
+    ))
+    real_pos = (variant_pos - 1) - wide_start  # 0-based variant index
+    alt_iv = ref_iv.replace(seq=VARIANT["alt"], start=real_pos, end=real_pos + 1)
+
+    ref_pred = oracle.predict_sliding(ref_iv)
+    alt_pred = oracle.predict_sliding(alt_iv)
+
+    if report._predictions is None:
+        report._predictions = {}
+    report._predictions["reference"] = ref_pred
+    alt_key = next(
+        (k for k in (report._predictions.keys() if report._predictions else [])
+         if k != "reference"),
+        "alt_1",
+    )
+    report._predictions[alt_key] = alt_pred
+
     return _save_oracle_artefacts(report, "chrombpnet")
 
 
@@ -226,6 +291,12 @@ def consolidate():
     import pickle
     from chorus.analysis import MultiOracleReport
     from chorus.analysis.analysis_request import AnalysisRequest
+    # Fix numpy pickle compatibility (old -> new internal paths)
+    try:
+        import numpy.core.numeric as numeric
+        sys.modules["numpy._core.numeric"] = numeric
+    except Exception:
+        pass
 
     per_oracle = {}
     reports = []

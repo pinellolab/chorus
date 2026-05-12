@@ -227,7 +227,19 @@ def prefetch_backgrounds(oracle: str) -> Tuple[bool, Optional[str]]:
         return (False, f"Download failed: {exc}.")
 
     if n == 0:
-        logger.info("Backgrounds for %s already cached (or unavailable)", oracle)
+        # Special case: alphagenome_pt has no NPZ of its own — it aliases
+        # to alphagenome's CDFs at lookup time
+        # (`PerTrackNormalizer._CDF_ALIASES`).  Don't warn about the 404,
+        # mention the alias instead so users don't think setup half-failed.
+        if oracle == "alphagenome_pt":
+            logger.info(
+                "Backgrounds for %s alias to 'alphagenome' "
+                "(no separate NPZ — same model, different backend)", oracle,
+            )
+        else:
+            logger.info(
+                "Backgrounds for %s already cached (or unavailable)", oracle,
+            )
     else:
         logger.info("✓ pulled %d background file(s) for %s", n, oracle)
     return (True, None)

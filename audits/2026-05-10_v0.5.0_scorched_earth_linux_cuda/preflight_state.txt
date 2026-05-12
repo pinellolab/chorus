@@ -1,0 +1,58 @@
+=== HOST ===
+ml007
+Linux ml007 5.15.0-160-generic #170-Ubuntu SMP Wed Oct 1 10:06:56 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
+
+=== GPUs ===
+GPU 0: NVIDIA A100-PCIE-40GB (UUID: GPU-7376f37d-f71a-6a02-dd01-bbe2ea3fb967)
+GPU 1: NVIDIA A100-PCIE-40GB (UUID: GPU-e27a24a0-4f21-c623-8f31-601a6bfe80c3)
+
+=== git HEAD ===
+3311351 Merge pull request #78 from pinellolab/fix/post-v040-followups
+9adb379 release: bump version to 0.5.0
+51f8dd9 audit: scorched-earth fresh-install verification
+
+=== current chorus envs (BEFORE wipe) ===
+  chorus                             /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus               
+  chorus-alphagenome_pt              /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus-alphagenome_pt
+                                     /data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-alphagenome 
+                                     /data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-borzoi      
+                                     /data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-chrombpnet  
+                                     /data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-enformer    
+                                     /data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-legnet      
+                                     /data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-sei         
+
+=== ~/.chorus contents (BEFORE wipe) ===
+2.3G	/PHShome/lp698/.chorus
+alphagenome_pertrack.npz
+borzoi_pertrack.npz
+chrombpnet_baseline_cdfs_interim.npz
+chrombpnet_baseline_cdfs_interim.shard0of2.npz
+chrombpnet_baseline_cdfs_interim.shard1of2.npz
+chrombpnet_effect_cdfs_interim.npz
+chrombpnet_effect_cdfs_interim.shard0of2.npz
+chrombpnet_effect_cdfs_interim.shard1of2.npz
+chrombpnet_pertrack.npz
+chrombpnet_pertrack.npz.bak.20260509_1409
+
+=== ~/.cache/huggingface (BEFORE wipe) ===
+4.9G	/PHShome/lp698/.cache/huggingface
+hub
+stored_tokens
+token
+xet
+
+=== downloads/ (BEFORE wipe) ===
+88G	/PHShome/lp698/chorus/downloads
+44K	/PHShome/lp698/chorus/downloads/alphagenome
+44K	/PHShome/lp698/chorus/downloads/alphagenome_pt
+44K	/PHShome/lp698/chorus/downloads/borzoi
+80G	/PHShome/lp698/chorus/downloads/chrombpnet
+44K	/PHShome/lp698/chorus/downloads/enformer
+52M	/PHShome/lp698/chorus/downloads/legnet
+8.0G	/PHShome/lp698/chorus/downloads/sei
+
+=== /data free ===
+panfs://10.129.86.180/hpc/groups/pinello  182T  161T   21T  89% /data/pinello
+
+=== chorus version (current install) ===
+chorus 0.5.0

@@ -1,0 +1,91 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.20, pytest-9.0.3, pluggy-1.6.0 -- /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/bin/python3.10
+cachedir: .pytest_cache
+rootdir: /PHShome/lp698/chorus
+configfile: pytest.ini
+plugins: anyio-4.13.0, cov-7.1.0
+collecting ... collected 1 item
+
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1 FAILED [100%]
+
+=================================== FAILURES ===================================
+_________________ test_jax_pt_chorus_api_equivalence_at_sort1 __________________
+tests/test_alphagenome_backends_equivalence.py:118: in test_jax_pt_chorus_api_equivalence_at_sort1
+    oracle.load_pretrained_model()
+chorus/oracles/alphagenome.py:101: in load_pretrained_model
+    self._load_in_environment(weights)
+chorus/oracles/alphagenome.py:180: in _load_in_environment
+    model_info = self.run_code_in_environment(
+chorus/core/base.py:196: in run_code_in_environment
+    return self._env_runner.run_code_in_environment(
+chorus/core/environment/runner.py:236: in run_code_in_environment
+    raise RuntimeError(f"Code execution failed: {output_data['error']}\n{output_data.get('traceback', '')}")
+E   RuntimeError: Code execution failed: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 768.0KiB.
+E   Traceback (most recent call last):
+E     File "/tmp/tmpu2v46psm.py", line 72, in <module>
+E       model = create_from_huggingface(fold, device=jax_device)
+E               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-alphagenome/lib/python3.11/site-packages/alphagenome_research/model/dna_model.py", line 1424, in create_from_huggingface
+E       return create(
+E              ^^^^^^^
+E     File "/data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-alphagenome/lib/python3.11/site-packages/alphagenome_research/model/dna_model.py", line 1342, in create
+E       return AlphaGenomeModel(
+E              ^^^^^^^^^^^^^^^^^
+E     File "/data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-alphagenome/lib/python3.11/site-packages/alphagenome_research/model/dna_model.py", line 422, in __init__
+E       self._params = jax.device_put(params, device)
+E                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-alphagenome/lib/python3.11/site-packages/jax/_src/api.py", line 2189, in device_put
+E       out_flat = dispatch._batched_device_put_impl(
+E                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-alphagenome/lib/python3.11/site-packages/jax/_src/dispatch.py", line 631, in _batched_device_put_impl
+E       shard_arg_results = pxla.shard_args(dsa_shardings, [None] * len(dsa_xs),
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-alphagenome/lib/python3.11/site-packages/jax/_src/profiler.py", line 384, in wrapper
+E       return func(*args, **kwargs)
+E              ^^^^^^^^^^^^^^^^^^^^^
+E     File "/data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-alphagenome/lib/python3.11/site-packages/jax/_src/interpreters/pxla.py", line 122, in shard_args
+E       outs = shard_arg_handlers[t](a, s, l, xcs)
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-alphagenome/lib/python3.11/site-packages/jax/_src/interpreters/pxla.py", line 185, in _shard_np_array
+E       results.append(batched_device_put(aval, sharding, shards, devices))
+E                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     File "/data/pinello/SHARED_SOFTWARE/envs/lp698_envs/chorus-alphagenome/lib/python3.11/site-packages/jax/_src/interpreters/pxla.py", line 226, in batched_device_put
+E       return xc.batched_device_put(aval, sharding, xs, list(devices), committed,
+E              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   jax.errors.JaxRuntimeError: RESOURCE_EXHAUSTED: Out of memory while trying to allocate 768.0KiB.
+------------------------------ Captured log call -------------------------------
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'parseString' deprecated - use 'parse_string'
+WARNING  matplotlib.style.core:core.py:213 In /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/mpl-data/stylelib/classic.mplstyle: 'resetCache' deprecated - use 'reset_cache'
+=============================== warnings summary ===============================
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+  /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+    parse = parser.parseString(pattern)
+
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+  /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+    parser.resetCache()
+
+tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+  /data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+    ParserElement.enablePackrat()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_alphagenome_backends_equivalence.py::test_jax_pt_chorus_api_equivalence_at_sort1
+================== 1 failed, 13 warnings in 212.75s (0:03:32) ==================

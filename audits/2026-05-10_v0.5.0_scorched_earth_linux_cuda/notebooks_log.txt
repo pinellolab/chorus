@@ -1,0 +1,241 @@
+[notebooks] Sun May 10 06:43:09 PM UTC 2026
+
+=== single_oracle_quickstart ===
+[NbConvertApp] Converting notebook /PHShome/lp698/chorus/examples/notebooks/single_oracle_quickstart.ipynb to notebook
+[NbConvertApp] Writing 631389 bytes to /PHShome/lp698/chorus/examples/notebooks/single_oracle_quickstart.ipynb
+[single_oracle_quickstart] exit=0 elapsed=319s
+
+=== advanced_multi_oracle_analysis ===
+[NbConvertApp] Converting notebook /PHShome/lp698/chorus/examples/notebooks/advanced_multi_oracle_analysis.ipynb to notebook
+Traceback (most recent call last):
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/bin/jupyter-nbconvert", line 10, in <module>
+    sys.exit(main())
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/jupyter_core/application.py", line 284, in launch_instance
+    super().launch_instance(argv=argv, **kwargs)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/traitlets/config/application.py", line 1082, in launch_instance
+    app.start()
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/nbconvertapp.py", line 420, in start
+    self.convert_notebooks()
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/nbconvertapp.py", line 597, in convert_notebooks
+    self.convert_single_notebook(notebook_filename)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/nbconvertapp.py", line 563, in convert_single_notebook
+    output, resources = self.export_single_notebook(
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/nbconvertapp.py", line 487, in export_single_notebook
+    output, resources = self.exporter.from_filename(
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/exporters/exporter.py", line 201, in from_filename
+    return self.from_file(f, resources=resources, **kw)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/exporters/exporter.py", line 220, in from_file
+    return self.from_notebook_node(
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/exporters/notebook.py", line 36, in from_notebook_node
+    nb_copy, resources = super().from_notebook_node(nb, resources, **kw)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/exporters/exporter.py", line 154, in from_notebook_node
+    nb_copy, resources = self._preprocess(nb_copy, resources)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/exporters/exporter.py", line 353, in _preprocess
+    nbc, resc = preprocessor(nbc, resc)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/preprocessors/base.py", line 48, in __call__
+    return self.preprocess(nb, resources)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/preprocessors/execute.py", line 103, in preprocess
+    self.preprocess_cell(cell, resources, index)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/preprocessors/execute.py", line 124, in preprocess_cell
+    cell = self.execute_cell(cell, index, store_history=True)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/jupyter_core/utils/__init__.py", line 165, in wrapped
+    return loop.run_until_complete(inner)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbclient/client.py", line 1062, in async_execute_cell
+    await self._check_raise_for_error(cell, cell_index, exec_reply)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbclient/client.py", line 918, in _check_raise_for_error
+    raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
+nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
+------------------
+tracks = ['DNASE:K562'] 
+
+chrombpnet_results = chrombpnet_oracle.predict(
+    ("chrX", 48_730_000, 48_840_000), # Here we need to extend to match Enformer context length
+    tracks
+)
+
+# Save predictions as bedgraph
+bpnet_results = chrombpnet_results.save_predictions_as_bedgraph(
+    output_dir="bedgraph_outputs",
+    prefix="a_wt_chrombpnet"
+)
+------------------
+
+
+[0;31m---------------------------------------------------------------------------[0m
+[0;31mModuleNotFoundError[0m                       Traceback (most recent call last)
+Cell [0;32mIn[12], line 3[0m
+[1;32m      1[0m tracks [38;5;241m=[39m [[38;5;124m'[39m[38;5;124mDNASE:K562[39m[38;5;124m'[39m] 
+[0;32m----> 3[0m chrombpnet_results [38;5;241m=[39m [43mchrombpnet_oracle[49m[38;5;241;43m.[39;49m[43mpredict[49m[43m([49m
+[1;32m      4[0m [43m    [49m[43m([49m[38;5;124;43m"[39;49m[38;5;124;43mchrX[39;49m[38;5;124;43m"[39;49m[43m,[49m[43m [49m[38;5;241;43m48_730_000[39;49m[43m,[49m[43m [49m[38;5;241;43m48_840_000[39;49m[43m)[49m[43m,[49m[43m [49m[38;5;66;43;03m# Here we need to extend to match Enformer context length[39;49;00m
+[1;32m      5[0m [43m    [49m[43mtracks[49m
+[1;32m      6[0m [43m)[49m
+[1;32m      8[0m [38;5;66;03m# Save predictions as bedgraph[39;00m
+[1;32m      9[0m bpnet_results [38;5;241m=[39m chrombpnet_results[38;5;241m.[39msave_predictions_as_bedgraph(
+[1;32m     10[0m     output_dir[38;5;241m=[39m[38;5;124m"[39m[38;5;124mbedgraph_outputs[39m[38;5;124m"[39m,
+[1;32m     11[0m     prefix[38;5;241m=[39m[38;5;124m"[39m[38;5;124ma_wt_chrombpnet[39m[38;5;124m"[39m
+[1;32m     12[0m )
+
+File [0;32m~/chorus/chorus/core/base.py:241[0m, in [0;36mOracleBase.predict[0;34m(self, input_data, assay_ids)[0m
+[1;32m    238[0m [38;5;28mself[39m[38;5;241m.[39m_validate_assay_ids(assay_ids)
+[1;32m    240[0m [38;5;66;03m# Get raw predictions[39;00m
+[0;32m--> 241[0m predictions [38;5;241m=[39m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43m_predict[49m[43m([49m[43minput_data[49m[43m,[49m[43m [49m[43massay_ids[49m[43m)[49m
+[1;32m    242[0m [38;5;28;01mreturn[39;00m predictions
+
+File [0;32m~/chorus/chorus/oracles/chrombpnet.py:630[0m, in [0;36mChromBPNetOracle._predict[0;34m(self, seq, assay_ids)[0m
+[1;32m    621[0m [38;5;66;03m# If the caller passes a query wider than the model's input window[39;00m
+[1;32m    622[0m [38;5;66;03m# (e.g. PR #79's get_max_output_size makes the multi-oracle region[39;00m
+[1;32m    623[0m [38;5;66;03m# ~1 Mb), the legacy `_predict_direct` sliding formula is buggy and[39;00m
+[0;32m   (...)[0m
+[1;32m    627[0m [38;5;66;03m# (`score_region`) still slices the canonical 501 bp window, so[39;00m
+[1;32m    628[0m [38;5;66;03m# the table values are unchanged.[39;00m
+[1;32m    629[0m [38;5;28;01mif[39;00m [38;5;28mlen[39m(query_interval) [38;5;241m>[39m [38;5;28mself[39m[38;5;241m.[39msequence_length:
+[0;32m--> 630[0m     [38;5;28;01mreturn[39;00m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mpredict_sliding[49m[43m([49m[43mquery_interval[49m[43m,[49m[43m [49m[43massay_ids[49m[43m)[49m
+[1;32m    632[0m input_interval [38;5;241m=[39m query_interval[38;5;241m.[39mextend([38;5;28mself[39m[38;5;241m.[39msequence_length)
+[1;32m    633[0m prediction_interval [38;5;241m=[39m query_interval[38;5;241m.[39mextend([38;5;28mself[39m[38;5;241m.[39moutput_size)
+
+File [0;32m~/chorus/chorus/oracles/chrombpnet.py:761[0m, in [0;36mChromBPNetOracle.predict_sliding[0;34m(self, seq, assay_ids, step)[0m
+[1;32m    758[0m     input_interval [38;5;241m=[39m query_interval[38;5;241m.[39mextend(target_len, how[38;5;241m=[39m[38;5;124m"[39m[38;5;124mboth[39m[38;5;124m"[39m)
+[1;32m    759[0m full_seq [38;5;241m=[39m input_interval[38;5;241m.[39msequence
+[0;32m--> 761[0m [38;5;28;01mimport[39;00m[38;5;250m [39m[38;5;21;01mtensorflow[39;00m[38;5;250m [39m[38;5;28;01mas[39;00m[38;5;250m [39m[38;5;21;01mtf[39;00m
+[1;32m    762[0m MAPPING [38;5;241m=[39m {[38;5;124m"[39m[38;5;124mA[39m[38;5;124m"[39m: [38;5;241m0[39m, [38;5;124m"[39m[38;5;124mC[39m[38;5;124m"[39m: [38;5;241m1[39m, [38;5;124m"[39m[38;5;124mG[39m[38;5;124m"[39m: [38;5;241m2[39m, [38;5;124m"[39m[38;5;124mT[39m[38;5;124m"[39m: [38;5;241m3[39m}
+[1;32m    763[0m N [38;5;241m=[39m [38;5;28mself[39m[38;5;241m.[39msequence_length
+
+[0;31mModuleNotFoundError[0m: No module named 'tensorflow'
+
+[advanced_multi_oracle_analysis] exit=1 elapsed=97s
+
+=== comprehensive_oracle_showcase ===
+[NbConvertApp] Converting notebook /PHShome/lp698/chorus/examples/notebooks/comprehensive_oracle_showcase.ipynb to notebook
+Traceback (most recent call last):
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/bin/jupyter-nbconvert", line 10, in <module>
+    sys.exit(main())
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/jupyter_core/application.py", line 284, in launch_instance
+    super().launch_instance(argv=argv, **kwargs)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/traitlets/config/application.py", line 1082, in launch_instance
+    app.start()
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/nbconvertapp.py", line 420, in start
+    self.convert_notebooks()
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/nbconvertapp.py", line 597, in convert_notebooks
+    self.convert_single_notebook(notebook_filename)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/nbconvertapp.py", line 563, in convert_single_notebook
+    output, resources = self.export_single_notebook(
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/nbconvertapp.py", line 487, in export_single_notebook
+    output, resources = self.exporter.from_filename(
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/exporters/exporter.py", line 201, in from_filename
+    return self.from_file(f, resources=resources, **kw)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/exporters/exporter.py", line 220, in from_file
+    return self.from_notebook_node(
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/exporters/notebook.py", line 36, in from_notebook_node
+    nb_copy, resources = super().from_notebook_node(nb, resources, **kw)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/exporters/exporter.py", line 154, in from_notebook_node
+    nb_copy, resources = self._preprocess(nb_copy, resources)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/exporters/exporter.py", line 353, in _preprocess
+    nbc, resc = preprocessor(nbc, resc)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/preprocessors/base.py", line 48, in __call__
+    return self.preprocess(nb, resources)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/preprocessors/execute.py", line 103, in preprocess
+    self.preprocess_cell(cell, resources, index)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbconvert/preprocessors/execute.py", line 124, in preprocess_cell
+    cell = self.execute_cell(cell, index, store_history=True)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/jupyter_core/utils/__init__.py", line 165, in wrapped
+    return loop.run_until_complete(inner)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbclient/client.py", line 1062, in async_execute_cell
+    await self._check_raise_for_error(cell, cell_index, exec_reply)
+  File "/data/pinello/SHARED_SOFTWARE/envs/lab_envs/chorus/lib/python3.10/site-packages/nbclient/client.py", line 918, in _check_raise_for_error
+    raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
+nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
+------------------
+# ChromBPNet: DNASE for HepG2 (cell-type specific model)
+chrombpnet_tracks = ['DNASE:HepG2']
+
+print(f"\n{'='*60}")
+print(f"  CHROMBPNET")
+print(f"{'='*60}")
+chrombpnet_oracle = chorus.create_oracle(
+    'chrombpnet',
+    use_environment=True,
+    reference_fasta=str(genome_path)
+)
+chrombpnet_oracle.load_pretrained_model(assay='DNASE', cell_type='HepG2', fold=0)
+print(f"  Loaded. Making prediction with {len(chrombpnet_tracks)} tracks...")
+chrombpnet_results = chrombpnet_oracle.predict(
+    (GATA1_CHROM, GATA1_START, GATA1_END),
+    chrombpnet_tracks
+)
+for tid, track in chrombpnet_results.items():
+    print(f"    {tid}: shape={track.values.shape}, mean={np.mean(track.values):.4f}, max={np.max(track.values):.4f}")
+------------------
+
+----- stderr -----
+2026-05-10 18:51:39,142 - chorus.core.base - INFO - Device: auto-detect (GPU if available, else CPU)
+----- stdout -----
+
+============================================================
+  CHROMBPNET
+============================================================
+----- stderr -----
+2026-05-10 18:51:43,697 - chorus.core.base - INFO - Using conda environment: chorus-chrombpnet
+----- stderr -----
+2026-05-10 18:51:43,932 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/manifest.json "HTTP/1.1 307 Temporary Redirect"
+----- stderr -----
+2026-05-10 18:51:43,945 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/lucapinello/chorus-chrombpnet-slim/9fe92856bd189042207a8696f96758c53ea5cdd6/manifest.json "HTTP/1.1 200 OK"
+----- stderr -----
+2026-05-10 18:51:44,102 - httpx - INFO - HTTP Request: HEAD https://huggingface.co/lucapinello/chorus-chrombpnet-slim/resolve/main/DNASE/HepG2/fold_0/model.chrombpnet_nobias.fold_0.ENCSR149XIL.h5 "HTTP/1.1 302 Found"
+----- stderr -----
+2026-05-10 18:51:44,107 - chorus.oracles.chrombpnet - INFO - Resolved DNASE:HepG2 via HF slim mirror (ENCFF615AKY)
+----- stderr -----
+2026-05-10 18:51:44,107 - chorus.oracles.chrombpnet - INFO - Loading ChromBPNet model...
+----- stdout -----
+Loading in environment
+----- stderr -----
+2026-05-10 18:51:51,984 - chorus.oracles.chrombpnet - INFO - ChromBPNet model loaded successfully in environment!
+----- stdout -----
+  Loaded. Making prediction with 1 tracks...
+------------------
+
+[0;31m---------------------------------------------------------------------------[0m
+[0;31mModuleNotFoundError[0m                       Traceback (most recent call last)
+Cell [0;32mIn[9], line 14[0m
+[1;32m     12[0m chrombpnet_oracle[38;5;241m.[39mload_pretrained_model(assay[38;5;241m=[39m[38;5;124m'[39m[38;5;124mDNASE[39m[38;5;124m'[39m, cell_type[38;5;241m=[39m[38;5;124m'[39m[38;5;124mHepG2[39m[38;5;124m'[39m, fold[38;5;241m=[39m[38;5;241m0[39m)
+[1;32m     13[0m [38;5;28mprint[39m([38;5;124mf[39m[38;5;124m"[39m[38;5;124m  Loaded. Making prediction with [39m[38;5;132;01m{[39;00m[38;5;28mlen[39m(chrombpnet_tracks)[38;5;132;01m}[39;00m[38;5;124m tracks...[39m[38;5;124m"[39m)
+[0;32m---> 14[0m chrombpnet_results [38;5;241m=[39m [43mchrombpnet_oracle[49m[38;5;241;43m.[39;49m[43mpredict[49m[43m([49m
+[1;32m     15[0m [43m    [49m[43m([49m[43mGATA1_CHROM[49m[43m,[49m[43m [49m[43mGATA1_START[49m[43m,[49m[43m [49m[43mGATA1_END[49m[43m)[49m[43m,[49m
+[1;32m     16[0m [43m    [49m[43mchrombpnet_tracks[49m
+[1;32m     17[0m [43m)[49m
+[1;32m     18[0m [38;5;28;01mfor[39;00m tid, track [38;5;129;01min[39;00m chrombpnet_results[38;5;241m.[39mitems():
+[1;32m     19[0m     [38;5;28mprint[39m([38;5;124mf[39m[38;5;124m"[39m[38;5;124m    [39m[38;5;132;01m{[39;00mtid[38;5;132;01m}[39;00m[38;5;124m: shape=[39m[38;5;132;01m{[39;00mtrack[38;5;241m.[39mvalues[38;5;241m.[39mshape[38;5;132;01m}[39;00m[38;5;124m, mean=[39m[38;5;132;01m{[39;00mnp[38;5;241m.[39mmean(track[38;5;241m.[39mvalues)[38;5;132;01m:[39;00m[38;5;124m.4f[39m[38;5;132;01m}[39;00m[38;5;124m, max=[39m[38;5;132;01m{[39;00mnp[38;5;241m.[39mmax(track[38;5;241m.[39mvalues)[38;5;132;01m:[39;00m[38;5;124m.4f[39m[38;5;132;01m}[39;00m[38;5;124m"[39m)
+
+File [0;32m~/chorus/chorus/core/base.py:241[0m, in [0;36mOracleBase.predict[0;34m(self, input_data, assay_ids)[0m
+[1;32m    238[0m [38;5;28mself[39m[38;5;241m.[39m_validate_assay_ids(assay_ids)
+[1;32m    240[0m [38;5;66;03m# Get raw predictions[39;00m
+[0;32m--> 241[0m predictions [38;5;241m=[39m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43m_predict[49m[43m([49m[43minput_data[49m[43m,[49m[43m [49m[43massay_ids[49m[43m)[49m
+[1;32m    242[0m [38;5;28;01mreturn[39;00m predictions
+
+File [0;32m~/chorus/chorus/oracles/chrombpnet.py:630[0m, in [0;36mChromBPNetOracle._predict[0;34m(self, seq, assay_ids)[0m
+[1;32m    621[0m [38;5;66;03m# If the caller passes a query wider than the model's input window[39;00m
+[1;32m    622[0m [38;5;66;03m# (e.g. PR #79's get_max_output_size makes the multi-oracle region[39;00m
+[1;32m    623[0m [38;5;66;03m# ~1 Mb), the legacy `_predict_direct` sliding formula is buggy and[39;00m
+[0;32m   (...)[0m
+[1;32m    627[0m [38;5;66;03m# (`score_region`) still slices the canonical 501 bp window, so[39;00m
+[1;32m    628[0m [38;5;66;03m# the table values are unchanged.[39;00m
+[1;32m    629[0m [38;5;28;01mif[39;00m [38;5;28mlen[39m(query_interval) [38;5;241m>[39m [38;5;28mself[39m[38;5;241m.[39msequence_length:
+[0;32m--> 630[0m     [38;5;28;01mreturn[39;00m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mpredict_sliding[49m[43m([49m[43mquery_interval[49m[43m,[49m[43m [49m[43massay_ids[49m[43m)[49m
+[1;32m    632[0m input_interval [38;5;241m=[39m query_interval[38;5;241m.[39mextend([38;5;28mself[39m[38;5;241m.[39msequence_length)
+[1;32m    633[0m prediction_interval [38;5;241m=[39m query_interval[38;5;241m.[39mextend([38;5;28mself[39m[38;5;241m.[39moutput_size)
+
+File [0;32m~/chorus/chorus/oracles/chrombpnet.py:761[0m, in [0;36mChromBPNetOracle.predict_sliding[0;34m(self, seq, assay_ids, step)[0m
+[1;32m    758[0m     input_interval [38;5;241m=[39m query_interval[38;5;241m.[39mextend(target_len, how[38;5;241m=[39m[38;5;124m"[39m[38;5;124mboth[39m[38;5;124m"[39m)
+[1;32m    759[0m full_seq [38;5;241m=[39m input_interval[38;5;241m.[39msequence
+[0;32m--> 761[0m [38;5;28;01mimport[39;00m[38;5;250m [39m[38;5;21;01mtensorflow[39;00m[38;5;250m [39m[38;5;28;01mas[39;00m[38;5;250m [39m[38;5;21;01mtf[39;00m
+[1;32m    762[0m MAPPING [38;5;241m=[39m {[38;5;124m"[39m[38;5;124mA[39m[38;5;124m"[39m: [38;5;241m0[39m, [38;5;124m"[39m[38;5;124mC[39m[38;5;124m"[39m: [38;5;241m1[39m, [38;5;124m"[39m[38;5;124mG[39m[38;5;124m"[39m: [38;5;241m2[39m, [38;5;124m"[39m[38;5;124mT[39m[38;5;124m"[39m: [38;5;241m3[39m}
+[1;32m    763[0m N [38;5;241m=[39m [38;5;28mself[39m[38;5;241m.[39msequence_length
+
+[0;31mModuleNotFoundError[0m: No module named 'tensorflow'
+
+[comprehensive_oracle_showcase] exit=1 elapsed=109s
+
+[notebooks-done] Sun May 10 06:51:54 PM UTC 2026

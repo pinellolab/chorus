@@ -984,6 +984,8 @@ def _build_causal_igv(result: CausalResult) -> str:
             from ._igv_report import (
                 _DISPLAY_MAX,
                 _REF_COLOR,
+                _HIGH_RES_ORACLES,
+                _calculate_track_bin_size,
                 _downsample_to_features,
                 apply_floor_rescale,
             )
@@ -993,7 +995,6 @@ def _build_causal_igv(result: CausalResult) -> str:
             pred_start = first_track.prediction_interval.reference.start
             pred_end = first_track.prediction_interval.reference.end
             window_bp = pred_end - pred_start
-            bin_size = max(1, window_bp // 3000)
             alt_rgb = _TOP_VARIANT_COLORS[vi]["r"] if vi < len(_TOP_VARIANT_COLORS) else "70,130,180"
 
             # Route signal tracks through the shared floor-rescale helper
@@ -1027,27 +1028,41 @@ def _build_causal_igv(result: CausalResult) -> str:
                 display = track_display.get(aid, aid)
 
                 layer = classify_track_layer(ref_t)
-                floor_ok, ref_vals, alt_vals = apply_floor_rescale(
+                floor_ok, ref_vals, alt_vals, signed_track = apply_floor_rescale(
                     normalizer, oracle_name, aid, layer,
                     ref_t.values, alt_t.values,
                 )
 
+                # Per-oracle bin size + aggregation: high-resolution
+                # oracles (chrombpnet 1 bp, legnet 200 bp) use max-pooling
+                # so sharp peaks don't get diluted to invisibility when
+                # zoomed out — see _igv_report._calculate_track_bin_size.
+                source_model = getattr(ref_t, "source_model", "") or ""
+                track_bin_size, agg_method = _calculate_track_bin_size(
+                    t_res, window_bp, source_model,
+                )
+
                 ref_feats = _downsample_to_features(
-                    ref_vals, chrom, t_start, t_res, bin_size,
-                    skip_zeros=not floor_ok,
+                    ref_vals, chrom, t_start, t_res, track_bin_size,
+                    skip_zeros=not (floor_ok or signed_track),
+                    aggregation_method=agg_method,
                 )
                 alt_feats = _downsample_to_features(
-                    alt_vals, chrom, t_start, t_res, bin_size,
-                    skip_zeros=not floor_ok,
+                    alt_vals, chrom, t_start, t_res, track_bin_size,
+                    skip_zeros=not (floor_ok or signed_track),
+                    aggregation_method=agg_method,
                 )
 
                 group_id = f"{aid}_{top_s.variant_id}".replace(":", "_").replace(" ", "_")
-                if floor_ok:
+                if floor_ok and signed_track:
+                    scale_cfg = {"min": -_DISPLAY_MAX, "max": _DISPLAY_MAX, "autoscale": False}
+                elif floor_ok:
                     scale_cfg = {"min": 0, "max": _DISPLAY_MAX, "autoscale": False}
                 else:
                     scale_cfg = {"autoscale": True, "autoscaleGroup": group_id}
 
                 rank_label = _TOP_VARIANT_COLORS[vi]["label"] if vi < len(_TOP_VARIANT_COLORS) else f"#{vi+1}"
+                wf = "max" if source_model in _HIGH_RES_ORACLES else "mean"
                 tracks.append({
                     "name": f"{display} ({rank_label} {top_s.variant_id})",
                     "type": "merged",
@@ -1057,6 +1072,7 @@ def _build_causal_igv(result: CausalResult) -> str:
                             "type": "wig",
                             "name": f"{display} ref",
                             "color": f"rgb({_REF_COLOR})",
+                            "windowFunction": wf,
                             **scale_cfg,
                             "features": ref_feats,
                         },
@@ -1064,6 +1080,7 @@ def _build_causal_igv(result: CausalResult) -> str:
                             "type": "wig",
                             "name": f"{display} alt",
                             "color": f"rgb({alt_rgb})",
+                            "windowFunction": wf,
                             **scale_cfg,
                             "features": alt_feats,
                         },
