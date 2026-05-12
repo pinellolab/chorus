@@ -6,8 +6,18 @@ DNase × H3K27ac, in log2(0.1+·) space) for 10 Roadmap cell lines:
 
 Each cell type is one track (assay = ``Enhancer_H3K27ac_DNase``). Produces
 ``epinformerseq_pertrack.npz`` with effect_cdfs (variant ALT − REF) and
-summary_cdfs (baseline at random + cCRE + TSS positions). No perbin CDFs
-since the model output is a single scalar per 256-bp window.
+summary_cdfs (baseline activity at random + cCRE + TSS + DHS-summit
+positions). No perbin CDFs since the model output is a single scalar per
+256-bp window.
+
+Sampling recipe (matches the DHS-augmented chrombpnet CDF in
+``build_backgrounds_chrombpnet.py``):
+  • Effect CDF: 10 000 random SNPs + 10 000 DHS-summit-anchored SNPs
+    (summit ±150 bp jitter). Per-cell-type signed diff = ALT − REF.
+  • Baseline CDF: 15 000 random + ~10 000 cCRE + 3 000 TSS + 5 000 DHS
+    peak summits. Per-cell-type predicted activity at each position.
+The DHS vocabulary auto-fetches from
+``huggingface.co/datasets/lucapinello/chorus-backgrounds`` on first use.
 
 Layer = ``promoter_activity``: signed effect (alt − ref).
 
@@ -33,6 +43,15 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--part", choices=["variants", "baselines", "merge", "both", "all"], default="all")
 parser.add_argument("--device", type=str, default=None)
 parser.add_argument("--n-variants", type=int, default=10000)
+parser.add_argument("--n-dhs-variants", type=int, default=10000,
+    help="DHS-summit-anchored SNPs (summit ±150 bp) to add to the effect CDF. "
+    "Mirrors chrombpnet's --n-dhs-variants. 0 to disable.")
+parser.add_argument("--n-dhs-peaks", type=int, default=5000,
+    help="DHS peak summits to add to the baseline (activity) CDF. "
+    "Mirrors chrombpnet's --n-dhs-peaks. 0 to disable.")
+parser.add_argument("--dhs-path", type=str, default=None,
+    help="Path to dhs_vocabulary_hg38.txt.gz. Defaults to annotations/ in repo root "
+    "(auto-fetched from lucapinello/chorus-backgrounds HF dataset on first use).")
 parser.add_argument("--reservoir-size", type=int, default=50000)
 parser.add_argument("--n-cdf-points", type=int, default=10000)
 args = parser.parse_args()
@@ -188,7 +207,41 @@ def build_variant_backgrounds():
                          "alt": random.choice([b for b in "ACGT" if b != ref_base])})
     random.shuffle(snps)
     snps = snps[:args.n_variants]
-    logger.info("Generated %d SNPs", len(snps))
+    logger.info("Generated %d random SNPs", len(snps))
+
+    # ── DHS-summit-anchored SNPs (for effect CDF) ──
+    # Same recipe as chrombpnet: sample DHS summits from the Meuleman DHS
+    # Index, jitter ±150 bp, draw a single ALT base. The jitter window
+    # keeps the SNP comfortably inside EPInformer-seq's 256-bp prediction
+    # window (which is centered on the SNP position).
+    dhs_snps = []
+    if args.n_dhs_variants > 0:
+        try:
+            from chorus.utils.annotations import sample_dhs_positions
+            dhs_path = args.dhs_path or os.path.join(
+                REPO_ROOT, "annotations", "dhs_vocabulary_hg38.txt.gz")
+            dhs_summit_positions = sample_dhs_positions(
+                args.n_dhs_variants, dhs_path=dhs_path, seed=43,
+            )
+            random.seed(44)
+            for chrom, summit in dhs_summit_positions:
+                offset = random.randint(-150, 150)
+                pos = summit + offset
+                chrom_len = ref.get_reference_length(chrom)
+                if pos < 5_000_000 or pos > chrom_len - 5_000_000:
+                    continue
+                ref_base = ref.fetch(chrom, pos - 1, pos).upper()
+                if ref_base not in "ACGT":
+                    continue
+                dhs_snps.append({"chrom": chrom, "pos": pos, "ref": ref_base,
+                                 "alt": random.choice([b for b in "ACGT" if b != ref_base])})
+            logger.info("Generated %d DHS-summit SNPs", len(dhs_snps))
+        except FileNotFoundError as exc:
+            logger.warning("DHS vocabulary not found — skipping DHS variants: %s", exc)
+
+    all_snps = snps + dhs_snps
+    logger.info("Total SNPs for effect CDF: %d (random=%d, DHS=%d)",
+                len(all_snps), len(snps), len(dhs_snps))
 
     import torch
 
@@ -200,9 +253,9 @@ def build_variant_backgrounds():
             continue
 
         t0 = time.time()
-        for i, snp in enumerate(snps):
+        for i, snp in enumerate(all_snps):
             if (i + 1) % 1000 == 0:
-                logger.info("  %s variant %d/%d", cell_type, i + 1, len(snps))
+                logger.info("  %s variant %d/%d", cell_type, i + 1, len(all_snps))
             seq_ref = get_sequence(snp["chrom"], snp["pos"])
             if seq_ref is None:
                 continue
@@ -289,6 +342,25 @@ def build_baseline_backgrounds():
     if len(tss_list) > 3000:
         tss_list = rng_tss.sample(tss_list, 3000)
 
+    # ── DHS peak summits (for activity CDF) ──
+    # Same recipe as chrombpnet: sample DHS summits unjittered as
+    # "high-activity baseline" anchors. EPInformer-seq is trained on
+    # H3K27ac peak windows (which subsume DHS peaks), so DHS summits are
+    # squarely on-distribution for the model.
+    dhs_baseline_positions = []
+    if args.n_dhs_peaks > 0:
+        try:
+            from chorus.utils.annotations import sample_dhs_positions
+            dhs_path = args.dhs_path or os.path.join(
+                REPO_ROOT, "annotations", "dhs_vocabulary_hg38.txt.gz")
+            dhs_baseline_positions = sample_dhs_positions(
+                args.n_dhs_peaks, dhs_path=dhs_path, seed=567,
+            )
+            logger.info("Generated %d DHS peak-summit baselines",
+                        len(dhs_baseline_positions))
+        except FileNotFoundError as exc:
+            logger.warning("DHS vocabulary not found — skipping DHS baselines: %s", exc)
+
     all_positions = []
     for chrom, pos in rand_positions:
         all_positions.append((chrom, pos))
@@ -296,8 +368,14 @@ def build_baseline_backgrounds():
         all_positions.append((chrom, pos))
     for chrom, pos in tss_list:
         all_positions.append((chrom, int(pos)))
+    for chrom, pos in dhs_baseline_positions:
+        all_positions.append((chrom, int(pos)))
     random.shuffle(all_positions)
-    logger.info("Total positions: %d", len(all_positions))
+    logger.info(
+        "Total baseline positions: %d (random=%d, cCRE=%d, TSS=%d, DHS=%d)",
+        len(all_positions), len(rand_positions), len(ccre_positions),
+        len(tss_list), len(dhs_baseline_positions),
+    )
 
     import torch
 
