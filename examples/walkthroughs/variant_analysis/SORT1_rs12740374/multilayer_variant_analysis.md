@@ -163,7 +163,12 @@ from chorus.analysis import build_variant_report, get_normalizer
 #     genomic_region="chr1:109274968-109274969",
 #     variant_position="chr1:109274968",
 #     alleles=["G", "T"],
-#     assay_ids=["DNASE:HepG2", "CAGE:HepG2", "H3K27ac:HepG2"],
+#     # AlphaGenome track identifiers — see oracle.metadata.search_tracks("HepG2")
+#     assay_ids=[
+#         "DNASE/EFO:0001187 DNase-seq/.",                       # DNASE:HepG2
+#         "CAGE/hCAGE EFO:0001187/+",                            # CAGE:HepG2 (+ strand)
+#         "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.", # H3K27ac:HepG2
+#     ],
 # )
 
 # Build report — auto-detects nearby genes for RNA scoring

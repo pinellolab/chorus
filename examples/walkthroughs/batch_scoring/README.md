@@ -61,7 +61,15 @@ score_variant_batch(
         {"chrom": "chr1", "pos": 109278590, "ref": "G", "alt": "A", "id": "rs2228603"},
         {"chrom": "chr1", "pos": 109271200, "ref": "T", "alt": "C", "id": "rs7528419"},
     ],
-    assay_ids=["DNASE:HepG2", "CAGE:HepG2", "H3K27ac:HepG2"],
+    # AlphaGenome track identifiers — find these via
+    # `oracle.metadata.search_tracks("HepG2")` or
+    # `meta.get_tracks_by_description("DNASE:HepG2")` which both return
+    # full identifier strings of the form "OUTPUT_TYPE/<name>/<strand>".
+    assay_ids=[
+        "DNASE/EFO:0001187 DNase-seq/.",                       # DNASE:HepG2
+        "CAGE/hCAGE EFO:0001187/+",                            # CAGE:HepG2 (+ strand)
+        "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.", # H3K27ac:HepG2
+    ],
     gene_name="SORT1",
     top_n=20,
 )
@@ -89,9 +97,14 @@ variants = [
     # ...
 ]
 
-# For AlphaGenome, use full track IDs (find them with oracle.search_tracks('HepG2 DNase'))
-result = score_variant_batch(oracle, variants, assay_ids=["DNASE:HepG2"],
-                             oracle_name="alphagenome")  # oracle_name enables percentile normalization
+# For AlphaGenome, pass the full track identifier (look it up with
+# `oracle.metadata.search_tracks("HepG2 DNase")` — the value in the
+# `identifier` column is what `assay_ids=` wants).
+result = score_variant_batch(
+    oracle, variants,
+    assay_ids=["DNASE/EFO:0001187 DNase-seq/."],
+    oracle_name="alphagenome",  # enables percentile normalization
+)
 
 # Output formats
 print(result.to_markdown())                 # Ranked table
