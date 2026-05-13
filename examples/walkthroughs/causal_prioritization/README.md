@@ -101,7 +101,13 @@ fine_map_causal_variant(
          "id": "rs629301", "r2": 0.95},
         # ...more variants...
     ],
-    assay_ids=["DNASE:HepG2", "CAGE:HepG2", "H3K27ac:HepG2"],
+    # AlphaGenome track identifiers (look up via
+    # `oracle.metadata.search_tracks("HepG2")`).
+    assay_ids=[
+        "DNASE/EFO:0001187 DNase-seq/.",                       # DNASE:HepG2
+        "CAGE/hCAGE EFO:0001187/+",                            # CAGE:HepG2 (+ strand)
+        "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.", # H3K27ac:HepG2
+    ],
     gene_name="SORT1",
     population="CEU",
     r2_threshold=0.8,

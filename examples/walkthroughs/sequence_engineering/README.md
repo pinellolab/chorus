@@ -45,7 +45,13 @@ analyze_region_swap(
     oracle_name="alphagenome",
     region="chr1:1000500-1001500",          # region to replace
     replacement_sequence="ACGTACGT...",      # new DNA sequence
-    assay_ids=["DNASE:K562", "CAGE:K562", "H3K27ac:K562"],
+    # AlphaGenome track identifiers — look these up via
+    # `oracle.metadata.search_tracks("K562")` (the `identifier` column).
+    assay_ids=[
+        "DNASE/EFO:0002067 DNase-seq/.",                       # DNASE:K562
+        "CAGE/hCAGE EFO:0002067/+",                            # CAGE:K562 (+ strand)
+        "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.", # H3K27ac:K562
+    ],
     gene_name="SORT1",                       # optional
     description="Replace weak promoter with CMV",  # optional
 )
@@ -93,7 +99,13 @@ simulate_integration(
     oracle_name="alphagenome",
     position="chr19:55115000",              # insertion point
     construct_sequence="ACGTACGT...",        # construct DNA
-    assay_ids=["DNASE:K562", "CAGE:K562", "H3K27ac:K562"],
+    # AlphaGenome track identifiers — look these up via
+    # `oracle.metadata.search_tracks("K562")` (the `identifier` column).
+    assay_ids=[
+        "DNASE/EFO:0002067 DNase-seq/.",                       # DNASE:K562
+        "CAGE/hCAGE EFO:0002067/+",                            # CAGE:K562 (+ strand)
+        "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.", # H3K27ac:K562
+    ],
     gene_name="PPP1R12C",                   # optional
     description="AAV-GFP at AAVS1",         # optional
 )
