@@ -58,12 +58,23 @@ class LDVariant:
     is_sentinel: bool = False
 
 
+_GENOME_BUILD_ALIASES = {
+    "hg38": "grch38",
+    "GRCh38": "grch38",
+    "grch38": "grch38",
+    "hg19": "grch37",
+    "GRCh37": "grch37",
+    "grch37": "grch37",
+}
+
+
 def fetch_ld_variants(
     variant_id: str,
     population: str = "CEU",
     r2_threshold: float = 0.8,
     token: str | None = None,
     timeout: float = 30.0,
+    genome_build: str = "grch38",
 ) -> list[LDVariant]:
     """Query LDlink LDproxy API and return LD variants above r2 threshold.
 
@@ -74,12 +85,15 @@ def fetch_ld_variants(
         token: LDlink API token. Register free at
             https://ldlink.nih.gov/?tab=apiaccess
         timeout: Request timeout in seconds.
+        genome_build: Reference build for the LDlink query. Accepts
+            ``"grch38"`` / ``"hg38"`` (default) or ``"grch37"`` / ``"hg19"``.
 
     Returns:
         List of LDVariant objects, sentinel first.
 
     Raises:
         LDLinkError: If the API is unavailable or token is missing.
+        ValueError: If ``genome_build`` isn't recognised.
     """
     token = _resolve_ldlink_token(token)
     if token is None:
@@ -90,6 +104,13 @@ def fetch_ld_variants(
             "(c) run 'chorus setup all' to be prompted once."
         )
 
+    if genome_build not in _GENOME_BUILD_ALIASES:
+        raise ValueError(
+            f"Unknown genome_build {genome_build!r}. "
+            f"Choose one of {sorted(set(_GENOME_BUILD_ALIASES))}."
+        )
+    resolved_build = _GENOME_BUILD_ALIASES[genome_build]
+
     import requests
 
     url = "https://ldlink.nih.gov/LDlinkRest/ldproxy"
@@ -98,7 +119,7 @@ def fetch_ld_variants(
         "pop": population,
         "r2_d": "r2",
         "token": token,
-        "genome_build": "grch38",
+        "genome_build": resolved_build,
     }
 
     logger.info("Querying LDlink LDproxy for %s in %s...", variant_id, population)
