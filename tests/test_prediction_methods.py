@@ -285,50 +285,73 @@ class TestPredictionMethods:
                 assay_ids=["DNase:K562"],
             )
 
-    def test_indel_rejected_before_model_run(self):
-        """predict_variant_effect substitutes a single base at the
-        variant site; passing an indel (``alt='GT'`` or ``ref='GT'``)
-        would be treated as a 1-base swap and score nonsense. Validate
-        up-front — don't burn model time on invalid input.
+    def test_indel_accepted_and_scored(self):
+        """predict_variant_effect now accepts indels and multi-base
+        substitutions (v0.5.5). This test exercises the public API for
+        each variant kind end-to-end via the mocked oracle setup and
+        verifies the call returns a non-empty result dict.
 
-        Regression for v20 §14.2 finding (LegNet silently accepted
-        ``alleles=['G','GT']``).
+        v0.5.5 changed the contract: prior to this release the call
+        raised ``InvalidRegionError("…single-nucleotide variant…")``;
+        now indels go through. Callers that want the old behaviour
+        should set ``snvs_only=True`` on the relevant downstream tool.
         """
+        # Mock genome is all 'A' on chr1 so we choose ref alleles that
+        # match the genome to avoid the ref-mismatch warning path.
+        # 4-bp deletion (LDlink ``"-"`` notation accepted internally
+        # via normalize_allele).
+        r = self.oracle.predict_variant_effect(
+            genomic_region="chr1:100000-200000",
+            variant_position="chr1:150000",
+            alleles=["AAAA", "-"],
+            assay_ids=["DNase:K562"],
+        )
+        assert r["effect_sizes"]
+
+        # 2-bp insertion (LDlink-style ``"-"`` ref).
+        r = self.oracle.predict_variant_effect(
+            genomic_region="chr1:100000-200000",
+            variant_position="chr1:150000",
+            alleles=["-", "GT"],
+            assay_ids=["DNase:K562"],
+        )
+        assert r["effect_sizes"]
+
+        # MNV (same-length multi-base substitution).
+        r = self.oracle.predict_variant_effect(
+            genomic_region="chr1:100000-200000",
+            variant_position="chr1:150000",
+            alleles=["AA", "GT"],
+            assay_ids=["DNase:K562"],
+        )
+        assert r["effect_sizes"]
+
+        # VCF-style anchored insertion (ref="A", alt="AGT" — keeps the
+        # genome anchor at the variant position; insert "GT" after it).
+        r = self.oracle.predict_variant_effect(
+            genomic_region="chr1:100000-200000",
+            variant_position="chr1:150000",
+            alleles=["A", "AGT"],
+            assay_ids=["DNase:K562"],
+        )
+        assert r["effect_sizes"]
+
+    def test_predict_variant_effect_rejects_garbage_allele(self):
+        """Non-ACGTN bases are still rejected (post-v0.5.5 validation)."""
         from chorus.core.exceptions import InvalidRegionError
 
-        # insertion: alt longer than 1
-        with pytest.raises(InvalidRegionError, match="single-nucleotide variant"):
-            self.oracle.predict_variant_effect(
-                genomic_region="chr1:100000-200000",
-                variant_position="chr1:150000",
-                alleles=["G", "GT"],
-                assay_ids=["DNase:K562"],
-            )
-
-        # deletion: ref longer than 1
-        with pytest.raises(InvalidRegionError, match="single-nucleotide variant"):
-            self.oracle.predict_variant_effect(
-                genomic_region="chr1:100000-200000",
-                variant_position="chr1:150000",
-                alleles=["GT", "G"],
-                assay_ids=["DNase:K562"],
-            )
-
-        # empty string allele
-        with pytest.raises(InvalidRegionError, match="single-nucleotide variant"):
-            self.oracle.predict_variant_effect(
-                genomic_region="chr1:100000-200000",
-                variant_position="chr1:150000",
-                alleles=["G", ""],
-                assay_ids=["DNase:K562"],
-            )
-
-        # Invalid base character
-        with pytest.raises(InvalidRegionError, match="single-nucleotide variant"):
+        with pytest.raises(InvalidRegionError):
             self.oracle.predict_variant_effect(
                 genomic_region="chr1:100000-200000",
                 variant_position="chr1:150000",
                 alleles=["G", "X"],
+                assay_ids=["DNase:K562"],
+            )
+        with pytest.raises(InvalidRegionError):
+            self.oracle.predict_variant_effect(
+                genomic_region="chr1:100000-200000",
+                variant_position="chr1:150000",
+                alleles=["G", "AT?"],
                 assay_ids=["DNase:K562"],
             )
 
