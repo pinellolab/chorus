@@ -392,11 +392,6 @@ class OracleBase(ABC):
         region_start_0based = region_start - 1  # 1-based inclusive → 0-based
         var_pos_0based = var_pos - 1            # 1-based → 0-based
 
-        region_interval = Interval.make(GenomeRef(chrom=region_chrom,
-                                                  start=region_start_0based,
-                                                  end=region_end,
-                                                  fasta=genome))
-
         # Parse alleles
         if isinstance(alleles, pd.DataFrame):
             ref_allele = alleles.iloc[0]['ref']
@@ -405,39 +400,72 @@ class OracleBase(ABC):
             ref_allele = alleles[0]
             alt_alleles = alleles[1:]
 
-        # SNV-only validation. `predict_variant_effect` substitutes a
-        # single base at `real_pos` (see lines ~342 / ~347 below), so an
-        # indel (ref='G' / alt='GT' or ref='GT' / alt='G') would silently
-        # be treated as a 1-base swap — giving a semantically nonsense
-        # score. Reject up-front with a clear message naming the bad
-        # allele, so the user doesn't waste an oracle run on invalid
-        # input (v20 §14.2 finding).
-        all_alleles = [ref_allele, *alt_alleles]
-        for a in all_alleles:
-            if not isinstance(a, str) or len(a) != 1 or a.upper() not in "ACGTN":
-                raise InvalidRegionError(
-                    f"Allele {a!r} is not a single-nucleotide variant. "
-                    f"predict_variant_effect currently supports SNVs only "
-                    f"(ref/alt each one of A, C, G, T, N). For indels or "
-                    f"multi-base substitutions, use predict_region_replacement "
-                    f"with explicit genomic_region + seq."
-                )
+        # Normalize alleles up-front: accept LDlink ``"-"`` notation,
+        # uppercase, and validate ACGTN. ``normalize_allele`` raises
+        # ``InvalidRegionError`` on anything else (a base like "X", an
+        # un-normalised dash inside a longer allele like ``"AT-"``, etc.).
+        from ..utils.sequence import normalize_allele
+        ref_allele = normalize_allele(ref_allele)
+        alt_alleles = [normalize_allele(a) for a in alt_alleles]
+        if not alt_alleles:
+            raise InvalidRegionError(
+                "At least one alt allele is required (alleles list must have "
+                "ref + ≥1 alt)."
+            )
+        if ref_allele == "" and all(a == "" for a in alt_alleles):
+            raise InvalidRegionError(
+                "Both ref and alt alleles are empty after normalization — "
+                "nothing to score."
+            )
+
+        # Auto-widen the genomic_region if the user-provided window is
+        # narrower than the ref allele. Common when MCP callers pass a
+        # 1-bp region for an indel; we silently widen here so callers
+        # don't have to know how many bases the ref spans.
+        ref_len = len(ref_allele)
+        ref_end_0based = var_pos_0based + max(1, ref_len)
+        if ref_end_0based > region_end:
+            region_end = ref_end_0based
+
+        region_interval = Interval.make(GenomeRef(chrom=region_chrom,
+                                                  start=region_start_0based,
+                                                  end=region_end,
+                                                  fasta=genome))
 
         intervals = {}
         real_pos = region_interval.ref2query(var_pos_0based, ref_global=True)
-        # Case-insensitive compare: pyfaidx returns lowercase for softmasked
-        # (repetitive) regions, users always pass uppercase.
-        if region_interval[real_pos].upper() != ref_allele.upper():
+
+        # Determine the slice of the reference interval that the ref
+        # allele claims to cover. For a pure insertion (ref==""), this
+        # slice has length 0 and there is nothing to validate against
+        # the genome.
+        ref_genome_seq = ""
+        if ref_len > 0:
+            ref_genome_seq = region_interval[real_pos:real_pos + ref_len].sequence.upper()
+
+        # Case-insensitive compare; pyfaidx returns lowercase for
+        # softmasked regions, callers always pass uppercase.
+        if ref_len > 0 and ref_genome_seq != ref_allele:
             logger.warning(
-                'Provided reference allele %r does not match the genome at this position (%r). Chorus will use the provided allele.',
-                ref_allele, region_interval[real_pos],
+                "Provided reference allele %r does not match the genome at "
+                "%s:%d (genome=%r). Chorus will substitute the provided "
+                "reference allele into the prediction interval — verify "
+                "your coordinates and genome build.",
+                ref_allele, region_chrom, var_pos, ref_genome_seq,
             )
-            intervals['reference'] = region_interval.replace(seq=ref_allele, start=real_pos, end=real_pos+1)
+            intervals['reference'] = region_interval.replace(
+                seq=ref_allele, start=real_pos, end=real_pos + ref_len,
+            )
         else:
             intervals['reference'] = region_interval
-        
+
         for i, alt in enumerate(alt_alleles):
-            intervals[f'alt_{i+1}'] = region_interval.replace(seq=alt, start=real_pos, end=real_pos+1)
+            # Pure insertion: end == start, replace inserts at the
+            # position without deleting anything. Pure deletion:
+            # alt == "", replace deletes ref_len bases without inserting.
+            intervals[f'alt_{i+1}'] = region_interval.replace(
+                seq=alt, start=real_pos, end=real_pos + ref_len,
+            )
 
         
         # Get predictions for each sequence

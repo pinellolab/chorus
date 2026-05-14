@@ -1474,6 +1474,7 @@ def fine_map_causal_variant(
     ldlink_token: Optional[str] = None,
     ldlink_timeout: float = 30.0,
     genome_build: str = "grch38",
+    snvs_only: bool = False,
     user_prompt: Optional[str] = None,
 ) -> dict:
     """Prioritize causal variants from a GWAS locus using multi-layer regulatory evidence.
@@ -1526,6 +1527,11 @@ def fine_map_causal_variant(
             (default 30). Increase for slow networks or large LD blocks.
         genome_build: Reference build for the LDlink LD lookup. Accepts
             ``"grch38"`` / ``"hg38"`` (default) or ``"grch37"`` / ``"hg19"``.
+        snvs_only: When True, restrict scoring to single-nucleotide
+            substitutions (drops insertions, deletions, MNVs, and
+            complex multi-base proxies). Default False — indels and
+            multi-allelic LDlink rows are scored by default as of
+            v0.5.5. Set True to reproduce pre-v0.5.5 behavior.
         user_prompt: Original user prompt, rendered at the top of the report.
     """
     from chorus.analysis.causal import prioritize_causal_variants
@@ -1557,6 +1563,7 @@ def fine_map_causal_variant(
                 token=ldlink_token,
                 timeout=ldlink_timeout,
                 genome_build=genome_build,
+                snvs_only=snvs_only,
             )
         except LDLinkError as exc:
             return {"error": str(exc)}
@@ -1590,6 +1597,7 @@ def fine_map_causal_variant(
         oracle_name=oracle_name,
         normalizer=state.get_normalizer(oracle_name),
         analysis_request=ar,
+        snvs_only=snvs_only,
     )
 
     output = result.to_dict()

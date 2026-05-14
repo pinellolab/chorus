@@ -1213,6 +1213,70 @@ class TestCausalPrioritization:
         assert result.scores[0].variant_id == "rs1"
         assert result.scores[0].composite > result.scores[1].composite
 
+    def test_prioritize_causal_variants_indels(self):
+        """Indels score through prioritize_causal_variants without error."""
+        from chorus.analysis.causal import prioritize_causal_variants, CausalResult
+        from chorus.utils.ld import LDVariant
+
+        oracle = MagicMock()
+        oracle.name = "test_oracle"
+        def mock_predict(**kwargs):
+            return _make_variant_result(
+                {"DNASE:K562": np.ones(1000, dtype=np.float32)},
+                {"DNASE:K562": np.ones(1000, dtype=np.float32) * 1.5},
+                position=kwargs["variant_position"],
+                alleles=kwargs["alleles"],
+            )
+        oracle.predict_variant_effect = mock_predict
+
+        ld_variants = [
+            LDVariant("rs_snv", "chr1", 1000500, "A", "G", r2=1.0, is_sentinel=True, kind="snv"),
+            LDVariant("rs_del", "chr1", 1001500, "A", "",  r2=0.9, kind="deletion"),
+            LDVariant("rs_ins", "chr1", 1002500, "",  "CT", r2=0.85, kind="insertion"),
+        ]
+        result = prioritize_causal_variants(
+            oracle,
+            {"chrom": "chr1", "pos": 1000500, "ref": "A", "alt": "G", "id": "rs_snv"},
+            ld_variants,
+            assay_ids=["DNASE:K562"],
+        )
+        assert isinstance(result, CausalResult)
+        # All three scored — none skipped
+        assert len(result.scores) == 3
+        # kind preserved on the per-variant score record
+        kinds = {s.variant_id: s.kind for s in result.scores}
+        assert kinds == {"rs_snv": "snv", "rs_del": "deletion", "rs_ins": "insertion"}
+
+    def test_prioritize_causal_variants_snvs_only(self):
+        """snvs_only=True drops insertions/deletions before scoring."""
+        from chorus.analysis.causal import prioritize_causal_variants
+        from chorus.utils.ld import LDVariant
+
+        oracle = MagicMock()
+        oracle.name = "test_oracle"
+        oracle.predict_variant_effect = lambda **kw: _make_variant_result(
+            {"DNASE:K562": np.ones(1000, dtype=np.float32)},
+            {"DNASE:K562": np.ones(1000, dtype=np.float32) * 1.2},
+            position=kw["variant_position"],
+            alleles=kw["alleles"],
+        )
+
+        ld_variants = [
+            LDVariant("rs_snv", "chr1", 1000500, "A", "G", r2=1.0, is_sentinel=True, kind="snv"),
+            LDVariant("rs_del", "chr1", 1001500, "A", "",  r2=0.9, kind="deletion"),
+            LDVariant("rs_ins", "chr1", 1002500, "",  "CT", r2=0.85, kind="insertion"),
+        ]
+        result = prioritize_causal_variants(
+            oracle,
+            {"chrom": "chr1", "pos": 1000500, "ref": "A", "alt": "G", "id": "rs_snv"},
+            ld_variants,
+            assay_ids=["DNASE:K562"],
+            snvs_only=True,
+        )
+        # Only the SNV survives
+        assert len(result.scores) == 1
+        assert result.scores[0].variant_id == "rs_snv"
+
     def test_composite_score_components(self):
         from chorus.analysis.causal import CausalVariantScore, _compute_composites, CausalWeights
 
@@ -1348,8 +1412,96 @@ class TestLDUtils:
         assert len(result) == 2  # rs999 filtered out (r2=0.30 < 0.8)
         assert result[0].variant_id == "rs12740374"
         assert result[0].is_sentinel
+        assert result[0].kind == "snv"
         assert result[1].variant_id == "rs629301"
         assert result[1].r2 == 0.95
+
+    def test_parse_ld_response_dash_indel(self):
+        """LDlink ``"-"`` notation is normalised to ``""`` and kind set."""
+        from chorus.utils.ld import parse_ld_response
+
+        tsv = (
+            "RS_Number\tCoord\tAlleles\tMAF\tDistance\tDprime\tR2\n"
+            "rs_sentinel\tchr6:4570564\t(G/T)\t0.05\t0\t1.0\t1.0\n"
+            "rs_del\tchr6:4573808\t(A/-)\t0.05\t3244\t0.95\t0.85\n"
+            "rs_ins\tchr6:4594841\t(-/CT)\t0.05\t24277\t0.95\t0.82\n"
+            "rs_bigdel\tchr6:4570564\t(GAAAAAATAAAAA/-)\t0.05\t0\t0.95\t0.90\n"
+        )
+        result = parse_ld_response(tsv, r2_threshold=0.5)
+        kinds = {v.variant_id: v.kind for v in result}
+        alts = {v.variant_id: v.alt for v in result}
+        refs = {v.variant_id: v.ref for v in result}
+
+        assert kinds["rs_del"] == "deletion"
+        assert alts["rs_del"] == ""
+        assert refs["rs_del"] == "A"
+
+        assert kinds["rs_ins"] == "insertion"
+        assert alts["rs_ins"] == "CT"
+        assert refs["rs_ins"] == ""
+
+        assert kinds["rs_bigdel"] == "deletion"
+        assert refs["rs_bigdel"] == "GAAAAAATAAAAA"
+
+    def test_parse_ld_response_multi_allelic_alt(self):
+        """(A/G,T) comma-split → two LDVariant records at the same position."""
+        from chorus.utils.ld import parse_ld_response
+
+        tsv = (
+            "RS_Number\tCoord\tAlleles\tMAF\tDistance\tDprime\tR2\n"
+            "rs_multi\tchr1:100\t(A/G,T)\t0.05\t0\t1.0\t1.0\n"
+        )
+        result = parse_ld_response(tsv, r2_threshold=0.5)
+        assert len(result) == 2
+        assert all(v.position == 100 and v.ref == "A" for v in result)
+        assert {v.alt for v in result} == {"G", "T"}
+
+    def test_parse_ld_response_correlated_alleles_fanout(self):
+        """Correlated_Alleles ``T=CT,A=-`` → two LDVariant records.
+
+        Per the v0.5.5 contract: each ``SENT=PROXY`` pair becomes its
+        own variant — ``(ref=SENT, alt=PROXY)`` — so a row with
+        Correlated_Alleles emits two scored variants at the same locus.
+        """
+        from chorus.utils.ld import parse_ld_response
+
+        tsv = (
+            "RS_Number\tCoord\tAlleles\tMAF\tDistance\tDprime\tR2\tCorrelated_Alleles\n"
+            "rs_sentinel\tchr6:4580233\t(A/G)\t0.06\t0\t1.0\t1.0\tT=A,A=G\n"
+            ".\tchr6:4581552\t(CT/-)\t0.07\t1319\t0.95\t0.78\tT=CT,A=-\n"
+        )
+        result = parse_ld_response(tsv, r2_threshold=0.5)
+
+        # sentinel SNV row → 2 records; deletion row → 2 records
+        assert len(result) == 4
+        sentinel_records = [v for v in result if v.is_sentinel]
+        assert len(sentinel_records) == 2
+        assert {(v.ref, v.alt) for v in sentinel_records} == {("T", "A"), ("A", "G")}
+
+        proxy_records = [v for v in result if not v.is_sentinel]
+        assert {(v.ref, v.alt, v.kind) for v in proxy_records} == {
+            ("T", "CT", "complex"),  # insertion of C before T
+            ("A", "", "deletion"),
+        }
+
+    def test_fetch_ld_variants_snvs_only_filter(self):
+        """The ``snvs_only`` filter on fetch_ld_variants drops non-SNV kinds."""
+        from chorus.utils.ld import parse_ld_response
+
+        tsv = (
+            "RS_Number\tCoord\tAlleles\tMAF\tDistance\tDprime\tR2\n"
+            "rs_snv\tchr1:100\t(A/G)\t0.05\t0\t1.0\t1.0\n"
+            "rs_del\tchr1:200\t(A/-)\t0.05\t100\t0.95\t0.9\n"
+            "rs_ins\tchr1:300\t(-/CT)\t0.05\t200\t0.95\t0.9\n"
+        )
+        # parse_ld_response itself doesn't filter; the filter is in
+        # fetch_ld_variants (which we can't call offline because it
+        # needs an LDlink token). Verify the building block: every
+        # parsed variant has a `kind` we can filter on.
+        result = parse_ld_response(tsv, r2_threshold=0.5)
+        snv_only = [v for v in result if v.kind == "snv"]
+        assert len(snv_only) == 1
+        assert snv_only[0].variant_id == "rs_snv"
 
 
 # ── Enriched dataclass field tests ────────────────────────────────────

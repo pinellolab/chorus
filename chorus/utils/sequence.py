@@ -1,10 +1,76 @@
 """Sequence manipulation utilities."""
 
 import pysam
-from typing import Tuple, Optional, List
+from typing import Tuple, Optional, List, Literal
 import pandas as pd
 import re
 from ..core.exceptions import InvalidRegionError, FileFormatError
+
+
+_VALID_BASES = frozenset("ACGTN")
+
+
+def normalize_allele(a: object) -> str:
+    """Normalize a single allele string to a canonical empty/ACGTN form.
+
+    Accepts the LDlink-style ``"-"`` deletion notation and ``None`` and
+    returns the empty string. Strips whitespace, uppercases, and
+    validates that the remaining characters are all ``A``/``C``/``G``/
+    ``T``/``N``. Raises ``InvalidRegionError`` on anything else.
+
+    Examples
+    --------
+    >>> normalize_allele("-")
+    ''
+    >>> normalize_allele("a")
+    'A'
+    >>> normalize_allele(" CT ")
+    'CT'
+    >>> normalize_allele(None)
+    ''
+    """
+    if a is None:
+        return ""
+    if not isinstance(a, str):
+        raise InvalidRegionError(
+            f"Allele must be a string (or None / '-'); got {type(a).__name__}: {a!r}"
+        )
+    s = a.strip()
+    if s in ("", "-"):
+        return ""
+    s = s.upper()
+    bad = [c for c in s if c not in _VALID_BASES]
+    if bad:
+        raise InvalidRegionError(
+            f"Allele {a!r} contains non-ACGTN characters: {''.join(sorted(set(bad)))}. "
+            f"Use '-' or '' for indels; ACGTN bases otherwise."
+        )
+    return s
+
+
+def classify_variant(
+    ref: str, alt: str,
+) -> Literal["snv", "insertion", "deletion", "mnv", "complex"]:
+    """Classify a (ref, alt) pair after :func:`normalize_allele`.
+
+    - ``"snv"``: 1-bp substitution (``len(ref) == len(alt) == 1``)
+    - ``"insertion"``: ``ref == ""``, alt non-empty
+    - ``"deletion"``: alt ``== ""``, ref non-empty
+    - ``"mnv"``: same-length multi-base substitution (``len > 1``)
+    - ``"complex"``: anything else (different non-zero lengths, VCF-style
+      anchored indels like ``A`` → ``AT``)
+    """
+    if ref == "" and alt == "":
+        return "complex"
+    if ref == "":
+        return "insertion"
+    if alt == "":
+        return "deletion"
+    if len(ref) == len(alt) == 1:
+        return "snv"
+    if len(ref) == len(alt):
+        return "mnv"
+    return "complex"
 
 
 def extract_sequence(
@@ -377,60 +443,97 @@ def get_centered_window(
     helper handles the conversion in one place to avoid the off-by-one
     bugs that plagued hand-rolled variant-sweep scripts.
 
+    Supports SNVs, MNVs, insertions, deletions, and VCF-style anchored
+    indels. ``ref`` and ``alt`` may differ in length; ``"-"`` (LDlink
+    notation) and ``""`` both mean "no bases on this side". The
+    variant starts at position ``length // 2`` in both returned
+    sequences. ``alt_seq`` is always exactly ``length`` bp — for a
+    deletion, extra genomic flank is fetched on the right to fill the
+    window; for an insertion, the right flank is trimmed.
+
     Args:
         fasta_path: Path to indexed reference FASTA.
         chrom: Chromosome name (e.g. ``"chr1"``).
         pos_1based: 1-based variant position (as reported by dbSNP / gnomAD).
+            For pure insertions this is the position of the base
+            *immediately to the right of* the insertion (matches LDlink).
         length: Desired output length (e.g. 2114 for ChromBPNet).
-        ref: Reference allele (single base supported; longer is allowed
-             provided ``len(ref) == len(alt)`` for an in-place SNV/MNV).
-        alt: Alternate allele.
+        ref: Reference allele. Single base, multi-base (MNV), or
+            empty (``""`` / ``"-"`` for pure insertion).
+        alt: Alternate allele. Single base, multi-base, or empty
+            (``""`` / ``"-"`` for pure deletion).
         strict: If True (default) raise ``ValueError`` on reference-allele
-                mismatch. If False, log a warning and return the
-                FASTA-true sequence as ``ref_seq``.
+                mismatch against the FASTA. If False, log a warning
+                and return the FASTA-true sequence as ``ref_seq``.
 
     Returns:
         ``(ref_seq, alt_seq)``, each of length ``length``, both upper-case.
-        The variant is positioned at the centre of the window.
 
     Raises:
-        ValueError: when ``strict=True`` and the FASTA base at
-            ``pos_1based`` does not match ``ref``.
+        ValueError: when ``strict=True`` and the FASTA bases at
+            ``pos_1based:pos_1based+len(ref)`` do not match ``ref``,
+            or when both ref and alt are empty.
     """
     import logging
     log = logging.getLogger(__name__)
 
-    if len(ref) != len(alt):
+    ref = normalize_allele(ref)
+    alt = normalize_allele(alt)
+    if ref == "" and alt == "":
         raise ValueError(
-            f"get_centered_window only supports SNVs/MNVs of equal length: "
-            f"got ref={ref!r} (len {len(ref)}) vs alt={alt!r} (len {len(alt)})."
+            "Both ref and alt alleles are empty after normalization — "
+            "nothing to score."
         )
 
-    # Convert 1-based variant position to 0-based half-open window
-    # centred on the variant. For length L and 0-based variant index v,
-    # the centred window is [v - L//2, v - L//2 + L).
+    # Convert 1-based variant position to 0-based half-open. The variant
+    # starts at offset `half` inside each returned window.
     pos_0based = pos_1based - 1
     half = length // 2
-    win_start = pos_0based - half
-    win_end = win_start + length
 
-    ref_seq = extract_sequence_with_padding(
-        fasta_path, chrom, win_start, win_end, length,
+    # When alt is shorter than ref (deletion), the alt_seq window pulls
+    # extra genomic flank on the right; fetch enough to cover that.
+    extra_right = max(0, len(ref) - len(alt))
+    fetch_len = length + extra_right
+    fetch_start = pos_0based - half
+    fetch_end = fetch_start + fetch_len
+
+    big_window = extract_sequence_with_padding(
+        fasta_path, chrom, fetch_start, fetch_end, fetch_len,
     )
 
-    # The variant occupies positions [half, half + len(ref)) inside the window
-    var_offset = half
-    seq_ref_base = ref_seq[var_offset:var_offset + len(ref)].upper()
-    if seq_ref_base != ref.upper():
-        msg = (
-            f"Reference allele mismatch at {chrom}:{pos_1based}: "
-            f"expected {ref!r}, found {seq_ref_base!r} in FASTA. "
-            f"Check coordinate convention (chorus uses 1-based inclusive) "
-            f"or strand."
-        )
-        if strict:
-            raise ValueError(msg)
-        log.warning(msg)
+    # Sanity-check the ref allele against the FASTA when present.
+    if len(ref) > 0:
+        seq_ref_base = big_window[half:half + len(ref)].upper()
+        if seq_ref_base != ref:
+            msg = (
+                f"Reference allele mismatch at {chrom}:{pos_1based}: "
+                f"expected {ref!r}, found {seq_ref_base!r} in FASTA. "
+                f"Check coordinate convention (chorus uses 1-based inclusive) "
+                f"or strand."
+            )
+            if strict:
+                raise ValueError(msg)
+            log.warning(msg)
 
-    alt_seq = ref_seq[:var_offset] + alt.upper() + ref_seq[var_offset + len(ref):]
+    # ref_seq: trim the (possibly oversized) big_window down to `length`
+    # bp, with the ref allele anchored at `half`.
+    ref_seq = big_window[:length]
+
+    # alt_seq: splice. Left flank is the first `half` bp of the genomic
+    # context; then alt; then right flank starting after the ref's
+    # footprint, padded out to `length`.
+    left_flank = big_window[:half]
+    right_flank_genome_start = half + len(ref)
+    right_flank_needed = length - half - len(alt)
+    right_flank = big_window[
+        right_flank_genome_start:right_flank_genome_start + right_flank_needed
+    ]
+    alt_seq = left_flank + alt + right_flank
+
+    if len(alt_seq) != length:
+        raise ValueError(
+            f"Internal error building alt_seq: got len={len(alt_seq)}, "
+            f"expected {length}. ref={ref!r} alt={alt!r} pos={pos_1based}"
+        )
+
     return ref_seq, alt_seq

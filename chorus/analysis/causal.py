@@ -64,6 +64,11 @@ class CausalVariantScore:
     # Composite
     composite: float
 
+    # "snv" | "insertion" | "deletion" | "mnv" | "complex" — derived from
+    # ref/alt at score time. Defaults to "snv" for backwards compatibility
+    # with code that builds CausalVariantScore by hand.
+    kind: str = "snv"
+
     # Per-layer breakdown
     per_layer_scores: dict = field(default_factory=dict)
     per_layer_directions: dict = field(default_factory=dict)
@@ -122,6 +127,7 @@ class CausalResult:
                 "position": s.position,
                 "ref": s.ref,
                 "alt": s.alt,
+                "kind": getattr(s, "kind", "snv"),
                 "r2": s.r2,
                 "is_sentinel": s.is_sentinel,
                 "gene_name": s.gene_name,
@@ -169,6 +175,7 @@ class CausalResult:
                     "position": s.position,
                     "ref": s.ref,
                     "alt": s.alt,
+                    "kind": getattr(s, "kind", "snv"),
                     "r2": s.r2,
                     "is_sentinel": s.is_sentinel,
                     "gene_name": s.gene_name,
@@ -279,9 +286,10 @@ class CausalResult:
                 "|------|---------|-----|-----------|--------|-------------|-----------|"]
         for i, s in enumerate(self.scores, 1):
             mark = " ★" if s.is_sentinel else ""
+            kind_suffix = "" if getattr(s, "kind", "snv") == "snv" else f" ({s.kind})"
             sign = "+" if s.max_effect >= 0 else ""
             rows.append(
-                f"| {i} | {s.variant_id}{mark} | {s.r2:.2f} "
+                f"| {i} | {s.variant_id}{mark}{kind_suffix} | {s.r2:.2f} "
                 f"| {sign}{s.max_effect:.3f} | {s.n_layers_affected} "
                 f"| {s.convergence_score:.2f} | {s.composite:.3f} |"
             )
@@ -314,7 +322,8 @@ class CausalResult:
         rows = [header, sep]
         for i, s in enumerate(self.scores, 1):
             mark = " ★" if s.is_sentinel else ""
-            row = f"| {i} | {s.variant_id}{mark} | {s.r2:.2f} |"
+            kind_suffix = "" if getattr(s, "kind", "snv") == "snv" else f" ({s.kind})"
+            row = f"| {i} | {s.variant_id}{mark}{kind_suffix} | {s.r2:.2f} |"
             for tid in col_order:
                 ts = s.track_scores.get(tid)
                 if ts and ts.raw_score is not None:
@@ -349,6 +358,7 @@ def prioritize_causal_variants(
     weights: CausalWeights | None = None,
     normalizer: QuantileNormalizer | None = None,
     analysis_request: AnalysisRequest | None = None,
+    snvs_only: bool = False,
 ) -> CausalResult:
     """Score and rank LD variants by composite causal evidence.
 
@@ -369,6 +379,10 @@ def prioritize_causal_variants(
         normalizer: Optional quantile normalizer.
         analysis_request: Optional :class:`AnalysisRequest` with the user's
             prompt; rendered at the top of the report for traceability.
+        snvs_only: When True, skip LDVariants with ``kind != "snv"``
+            (insertions, deletions, MNVs, complex multi-base changes).
+            Default False — score every proxy regardless of variant
+            type. Set True to reproduce the pre-v0.5.5 behavior.
 
     Returns:
         :class:`CausalResult` with variants ranked by composite score.
@@ -384,6 +398,16 @@ def prioritize_causal_variants(
         oracle_name = getattr(oracle, "name", None) or oracle.__class__.__name__.lower()
 
     sentinel_id = lead_variant.get("id", f"{lead_variant['chrom']}:{lead_variant['pos']}")
+
+    if snvs_only:
+        n_before = len(ld_variants)
+        ld_variants = [v for v in ld_variants if getattr(v, "kind", "snv") == "snv"]
+        dropped = n_before - len(ld_variants)
+        if dropped:
+            logger.info(
+                "snvs_only=True dropped %d non-SNV proxies (kept %d)",
+                dropped, len(ld_variants),
+            )
 
     # Score each variant
     raw_scores: list[CausalVariantScore] = []
@@ -446,6 +470,7 @@ def prioritize_causal_variants(
                 alt=ldv.alt,
                 r2=ldv.r2,
                 is_sentinel=ldv.is_sentinel,
+                kind=getattr(ldv, "kind", "snv"),
                 max_effect=0.0,
                 n_layers_affected=0,
                 convergence_score=0.0,
@@ -585,6 +610,7 @@ def _extract_component_scores(
         alt=ldv.alt,
         r2=ldv.r2,
         is_sentinel=ldv.is_sentinel,
+        kind=getattr(ldv, "kind", "snv"),
         max_effect=max_effect,
         n_layers_affected=n_layers,
         convergence_score=convergence,
