@@ -1,9 +1,13 @@
 import json
 import torch
 
-from chorus.oracles.epinformerseq_source.model_usage import load_model, predict_activity
+from chorus.oracles.epinformerseq_source.model_usage import (
+    load_main_model,
+    load_bias_model,
+    predict_activity,
+)
 
-with open("__ARGS_FILE_NAME__") as inp:  # to be formatted by calling script
+with open("__ARGS_FILE_NAME__") as inp:
     args = json.load(inp)
 
 _dev = args['device']
@@ -16,12 +20,14 @@ if _dev is None or _dev == 'auto':
         _dev = 'cpu'
 device = torch.device(_dev)
 
-model = load_model(weights_path=args['model_weights'], device=device)
-model.eval()
+main = load_main_model(args['main_weights'], device=device)
+bias = load_bias_model(args['bias_weights'], device=device)
 
 preds, _ = predict_activity(
-    model,
+    main, bias,
     seq=args['seq'],
+    cell_type=args['cell_type'],
+    assay=args.get('assay', 'Enhancer_H3K27ac_DNase'),
     average_reverse=args.get('reverse_aug', False),
     device=device,
 )

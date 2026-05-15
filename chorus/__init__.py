@@ -194,7 +194,7 @@ def create_oracle(oracle_name: str, use_environment: bool = False, **kwargs):
             from .oracles.alphagenome_pt import AlphaGenomePTOracle
             return AlphaGenomePTOracle(use_environment=True, **kwargs)
         else:
-            valid = "enformer, borzoi, chrombpnet, sei, legnet, epinformerseq, alphagenome, alphagenome_pt"
+            valid = "enformer, borzoi, chrombpnet, sei, legnet, epinformerseq, epinformerseq, alphagenome, alphagenome_pt"
             raise ValueError(
                 f"Unknown oracle: '{oracle_name}'. "
                 f"Valid oracle names: {valid}"

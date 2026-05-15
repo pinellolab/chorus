@@ -1,24 +1,27 @@
-"""EPInformer-seq oracle: 256bp sequence → scalar enhancer activity.
+"""EPInformer-seq v2 oracle: 1024-bp sequence → per-bp DNase + H3K27ac profile.
 
-The model (``enhancer_predictor_256bp``) is the per-cell sequence encoder
-component of EPInformer (Pinello Lab). It takes a one-hot 256-bp DNA
-window and returns a single scalar in
-``log2(0.1 + sqrt(DNase × H3K27ac))`` space.
+Upgrade over the legacy ``epinformerseq`` oracle:
 
-Trained per cell on H3K27ac peak-summit windows (5 × 256 bp at offsets
-{-2, -1, 0, 1, 2} × 156 bp from each ENCODE H3K27ac narrowPeak summit).
-This is the "Enhancer_H3K27ac_DNase" assay — a combined accessibility + active-mark
-signal, not separate H3K27ac/DNase tracks.
+* **CellCondProfileNet** (single multi-cell model, FiLM-conditioned dilated
+  convs) replaces 11 per-cell ``enhancer_predictor_256bp`` checkpoints.
+* **1024-bp** input window (vs 256 bp), trained on per-bp DNase + H3K27ac
+  cut-site counts at the union of DNase and H3K27ac peak summits across
+  11 Roadmap cells (the "Combined" data anchor).
+* **Per-cell frozen BiasNets** (ChromBPNet-style) subtract Tn5/MNase
+  sequence preference in logit space, recovering K562-vs-GM12878
+  specificity that the scalar v1 model collapsed (1.10× → ~6× at KLF1
+  distal/mid enhancers).
 
-Used in chorus for variant effect prediction: REF and ALT 256-bp windows
-are scored separately; the effect = ALT − REF (signed).
+The default predict path returns one scalar = ``sqrt(max(DNase) × max(H3K27ac))``
+across the 1024-bp window (the "Enhancer_H3K27ac_DNase" assay), matching the
+legacy oracle's units. Single-channel assays (``Enhancer_DNase``,
+``Enhancer_H3K27ac``) return the per-bp peak max of that channel only.
 """
 
 from __future__ import annotations
 
 import json
 import logging
-import os
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -30,7 +33,7 @@ from ..core.globals import CHORUS_DOWNLOADS_DIR
 from ..core.interval import GenomeRef, Interval, Sequence
 from ..core.result import OraclePrediction, OraclePredictionTrack
 
-from .epinformerseq_source.epinformerseq_globals import (
+from .epinformerseq_source.globals import (
     EPINFORMERSEQ_AVAILABLE_ASSAYS,
     EPINFORMERSEQ_AVAILABLE_CELLTYPES,
     EPINFORMERSEQ_DEFAULT_ASSAY,
@@ -47,7 +50,12 @@ EPINFORMERSEQ_MODELS_DIR.mkdir(exist_ok=True, parents=True)
 
 
 class EPInformerSeqOracle(OracleBase):
-    """EPInformer-seq oracle for 256-bp enhancer activity prediction."""
+    """EPInformer-seq v2 oracle: profile output + bias-correction.
+
+    Layout under ``~/.chorus/downloads/epinformerseq/``:
+        main.pt                  (single multi-cell CellCondProfileNet)
+        bias/{cell_type}/bias.pt (frozen per-cell BiasNet)
+    """
 
     def __init__(
         self,
@@ -95,22 +103,31 @@ class EPInformerSeqOracle(OracleBase):
         self.average_reverse = average_reverse
         self.reference_fasta = reference_fasta
         self.batch_size = batch_size
-        self._model = None
+        self._main_model = None
+        self._bias_model = None
 
     # ------------------------------------------------------------------
-    # Weights / templates path resolution
+    # Weight path resolution
     # ------------------------------------------------------------------
 
-    def get_model_weights_dir(self) -> Path:
+    def get_root_dir(self) -> Path:
         if self.model_dir is not None:
-            self.download_dir = Path(self.model_dir)
-        path = self.download_dir / self.cell_type
+            return Path(self.model_dir)
+        return self.download_dir
+
+    def get_main_weights_path(self) -> Path:
+        root = self.get_root_dir()
+        path = root / "main.pt"
         if not path.exists():
             self._download_model()
         return path
 
-    def get_model_weights_path(self) -> Path:
-        return self.get_model_weights_dir() / "weights.pt"
+    def get_bias_weights_path(self) -> Path:
+        root = self.get_root_dir()
+        path = root / "bias" / self.cell_type / "bias.pt"
+        if not path.exists():
+            self._download_model()
+        return path
 
     def get_model_dir_path(self) -> Path:
         return Path(__file__).parent / "epinformerseq_source"
@@ -137,13 +154,9 @@ class EPInformerSeqOracle(OracleBase):
         weights: str | None = None,
         cell_type: str | None = None,
     ) -> None:
-        """Load the per-cell weights checkpoint.
+        """Load the shared main model + this cell's bias model.
 
-        ``cell_type`` lets callers (e.g. ``discover_variant_effects``)
-        switch which Roadmap cell line the oracle is pointed at without
-        re-instantiating. Validated against
-        ``EPINFORMERSEQ_AVAILABLE_CELLTYPES``; resets ``assay_id`` and
-        forces a fresh load on the next predict.
+        ``cell_type`` lets callers switch cells without re-instantiating.
         """
         self._check_env_ready()
         if weights is not None:
@@ -156,7 +169,8 @@ class EPInformerSeqOracle(OracleBase):
                 )
             self.cell_type = cell_type
             self.assay_id = f"{self.assay}:{self.cell_type}"
-            self._model = None
+            self._main_model = None
+            self._bias_model = None
             self.loaded = False
             self._model_info = None
         if self.use_environment:
@@ -168,7 +182,8 @@ class EPInformerSeqOracle(OracleBase):
         args = {
             "device": self.device,
             "sequence_length": self.sequence_length,
-            "model_weights": str(self.get_model_weights_path()),
+            "main_weights": str(self.get_main_weights_path()),
+            "bias_weights": str(self.get_bias_weights_path()),
             "cell_type": self.cell_type,
             "assay": self.assay,
         }
@@ -177,26 +192,23 @@ class EPInformerSeqOracle(OracleBase):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as arg_file:
             json.dump(args, arg_file)
             arg_file.flush()
-
             template, arg = self.get_load_template()
             template = template.replace(arg, arg_file.name)
             model_info = self.run_code_in_environment(template, timeout=self.model_load_timeout)
-
             if model_info and model_info.get("loaded"):
                 self.loaded = True
                 self._model_info = model_info
-                logger.info("EPInformer-seq model loaded successfully in environment.")
+                logger.info("EPInformer-seq v2 model loaded successfully in environment.")
             else:
                 raise ModelNotLoadedError(
-                    "Failed to load EPInformer-seq model in chorus-epinformerseq env. "
-                    "Run `chorus health --oracle epinformerseq` to diagnose."
+                    "Failed to load EPInformer-seq v2 model in chorus-epinformerseq env."
                 )
 
     def _load_direct(self):
         try:
             import torch
 
-            from .epinformerseq_source.model_usage import load_model
+            from .epinformerseq_source.model_usage import load_main_model, load_bias_model
 
             if self.device == "auto":
                 if torch.cuda.is_available():
@@ -208,15 +220,15 @@ class EPInformerSeqOracle(OracleBase):
                     self.device = "mps"
                 else:
                     self.device = "cpu"
-                logger.info(f"EPInformer-seq auto-detected device: {self.device}")
+                logger.info(f"EPInformer-seq v2 auto-detected device: {self.device}")
 
             device = torch.device(self.device)
-            model = load_model(str(self.get_model_weights_path()), device=device)
-            self._model = model
+            self._main_model = load_main_model(str(self.get_main_weights_path()), device=device)
+            self._bias_model = load_bias_model(str(self.get_bias_weights_path()), device=device)
             self.loaded = True
-            logger.info("EPInformer-seq model loaded successfully.")
+            logger.info("EPInformer-seq v2 model loaded successfully.")
         except Exception as e:
-            raise ModelNotLoadedError(f"Failed to load EPInformer-seq model: {e}.")
+            raise ModelNotLoadedError(f"Failed to load EPInformer-seq v2 model: {e}.")
 
     # ------------------------------------------------------------------
     # Public API contracts (OracleBase abstract methods)
@@ -236,7 +248,7 @@ class EPInformerSeqOracle(OracleBase):
         if assay_ids is None or (len(assay_ids) == 1 and assay_ids[0] == self.assay_id):
             return
         raise InvalidAssayError(
-            f"Instantiated EPInformer-seq oracle can only predict for assay {self.assay_id}"
+            f"Instantiated EPInformer-seq v2 oracle can only predict for assay {self.assay_id}"
         )
 
     def _get_context_size(self) -> int:
@@ -305,7 +317,10 @@ class EPInformerSeqOracle(OracleBase):
         args = {
             "device": self.device,
             "sequence_length": self.sequence_length,
-            "model_weights": str(self.get_model_weights_path()),
+            "main_weights": str(self.get_main_weights_path()),
+            "bias_weights": str(self.get_bias_weights_path()),
+            "cell_type": self.cell_type,
+            "assay": self.assay,
             "seq": seq,
             "reverse_aug": reverse_aug,
             "batch_size": self.batch_size,
@@ -315,19 +330,22 @@ class EPInformerSeqOracle(OracleBase):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as arg_file:
             json.dump(args, arg_file)
             arg_file.flush()
-
             template, arg = self.get_predict_template()
             template = template.replace(arg, arg_file.name)
             model_predictions = self.run_code_in_environment(template, timeout=self.predict_timeout)
             return np.array(model_predictions["preds"], dtype=np.float32)
 
     def _predict_direct(self, seq: str, reverse_aug: bool = False) -> np.ndarray:
-        if self._model is None:
+        if self._main_model is None or self._bias_model is None:
             raise ModelNotLoadedError()
         from .epinformerseq_source.model_usage import predict_activity
 
         preds, _ = predict_activity(
-            self._model, seq=seq, average_reverse=reverse_aug, device=self.device
+            self._main_model, self._bias_model,
+            seq=seq, cell_type=self.cell_type,
+            assay=self.assay,
+            average_reverse=reverse_aug,
+            device=self.device,
         )
         return preds
 
@@ -337,9 +355,8 @@ class EPInformerSeqOracle(OracleBase):
 
     def fine_tune(self, *args, **kwargs) -> None:
         raise NotImplementedError(
-            "EPInformer-seq fine-tuning is not supported. Train a new "
-            "checkpoint externally with EPInformer's train_seqEncoder.py "
-            "if you need a different cell type."
+            "EPInformer-seq v2 fine-tuning is not supported through this oracle. "
+            "Train a new checkpoint externally with the legnet_profile_v2 pipeline."
         )
 
     def get_status(self) -> Dict[str, Any] | None:
@@ -354,42 +371,47 @@ class EPInformerSeqOracle(OracleBase):
         return status
 
     def get_zenodo_link(self) -> str:
-        # Placeholder. The HF mirror at lucapinello/chorus-epinformerseq is the
-        # primary source; this is a fallback that does not yet exist.
         return ""
 
-    def _try_hf_mirror(self, dest_dir: Path) -> bool:
-        """Fetch one cell's weights.pt from the HF mirror.
+    def _try_hf_mirror(self) -> bool:
+        """Fetch main.pt + bias/{cell}/bias.pt from the HF mirror.
 
-        Returns True on success (file copied to dest_dir / 'weights.pt').
+        Returns True on success.
         """
         try:
             from huggingface_hub import hf_hub_download
         except ImportError:
-            logger.info("huggingface_hub not available; cannot fetch EPInformer-seq weights")
+            logger.info("huggingface_hub not available; cannot fetch EPInformer-seq v2 weights.")
             return False
         try:
-            local = hf_hub_download(
-                repo_id="lucapinello/chorus-epinformerseq",
-                filename=f"{self.cell_type}/weights.pt",
-                repo_type="model",
-            )
+            root = self.get_root_dir()
+            root.mkdir(parents=True, exist_ok=True)
+            (root / "bias" / self.cell_type).mkdir(parents=True, exist_ok=True)
             import shutil as _shutil
 
-            dest_dir.mkdir(parents=True, exist_ok=True)
-            _shutil.copyfile(local, dest_dir / "weights.pt")
-            logger.info(f"Fetched EPInformer-seq {self.cell_type} weights from HF mirror.")
+            main_local = hf_hub_download(
+                repo_id="lucapinello/chorus-epinformerseq-v2",
+                filename="main.pt",
+                repo_type="model",
+            )
+            _shutil.copyfile(main_local, root / "main.pt")
+            bias_local = hf_hub_download(
+                repo_id="lucapinello/chorus-epinformerseq-v2",
+                filename=f"bias/{self.cell_type}/bias.pt",
+                repo_type="model",
+            )
+            _shutil.copyfile(bias_local, root / "bias" / self.cell_type / "bias.pt")
+            logger.info(f"Fetched EPInformer-seq v2 weights from HF mirror.")
             return True
         except Exception as exc:
-            logger.info(f"chorus-epinformerseq HF mirror unavailable ({exc}).")
+            logger.info(f"chorus-epinformerseq-v2 HF mirror unavailable ({exc}).")
             return False
 
     def _download_model(self):
-        cell_dir = self.download_dir / self.cell_type
-        if not self._try_hf_mirror(cell_dir):
+        if not self._try_hf_mirror():
             raise EPInformerSeqError(
-                f"Could not download EPInformer-seq {self.cell_type} weights. "
-                "Either provide a local --model-dir pointing at a directory of "
-                f"per-cell subdirs containing weights.pt, or wait for the HF "
-                "mirror at lucapinello/chorus-epinformerseq to be populated."
+                "Could not download EPInformer-seq v2 weights. "
+                "Either provide a local --model-dir pointing at a directory containing "
+                "main.pt and bias/{cell_type}/bias.pt, or wait for the HF mirror at "
+                "lucapinello/chorus-epinformerseq-v2 to be populated."
             )

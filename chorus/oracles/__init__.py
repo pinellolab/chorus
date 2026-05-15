@@ -24,10 +24,11 @@ ORACLES = {
 def get_oracle(name: str) -> type:
     """
     Get oracle class by name.
-    
+
     Args:
-        name: Oracle name (enformer, borzoi, chrombpnet, sei, legnet, epinformerseq, alphagenome, alphagenome_pt)
-        
+        name: Oracle name (enformer, borzoi, chrombpnet, sei, legnet, epinformerseq,
+            alphagenome, alphagenome_pt)
+
     Returns:
         Oracle class
     """

@@ -1,5 +1,2 @@
-"""Exceptions specific to the EPInformer-seq oracle."""
-
-
 class EPInformerSeqError(Exception):
-    """Generic EPInformer-seq oracle error."""
+    """Raised by the EPInformer-seq v2 oracle for cell-type / weight errors."""

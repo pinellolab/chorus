@@ -1,33 +1,44 @@
-"""Helper functions for loading and running the EPInformer-seq encoder."""
+"""Helper functions for loading and running the EPInformer-seq Combined model.
+
+This oracle uses CellCondProfileNet (multi-cell, FiLM-conditioned dilated convs
+emitting per-bp 2-channel profiles + 2 scalar log10-counts) plus a frozen
+per-cell BiasNet (ChromBPNet-style Tn5/MNase sequence bias subtraction). The
+predict path returns the central enhancer-activity scalar = sqrt(DNase peak ×
+H3K27ac peak) so downstream chorus consumers see the same units as the legacy
+``epinformerseq`` oracle.
+"""
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Tuple
 
 import numpy as np
 import torch
 
-from .model import enhancer_predictor_256bp
+from .model import CellCondProfileNet, BiasNet
+from .globals import (
+    EPINFORMERSEQ_AVAILABLE_CELLTYPES,
+    EPINFORMERSEQ_CELL2IDX,
+    EPINFORMERSEQ_WINDOW,
+)
 
 
-# 256-bp ACGT one-hot. Order matches kipoiseq.transforms.functional.one_hot_dna
-# (used in the EPInformer training pipeline).
+# 1024-bp ACGT one-hot (matches CellCondProfileNet's input length).
 _ACGT = np.frombuffer(b"ACGT", dtype=np.uint8)
 _ALPHABET = {b: i for i, b in enumerate(_ACGT)}
 
 
-def one_hot_dna(seq: str, length: int = 256) -> np.ndarray:
+def one_hot_dna(seq: str, length: int = EPINFORMERSEQ_WINDOW) -> np.ndarray:
     """One-hot encode a DNA string to shape (4, length), float32.
 
-    - Upper-cases input.
-    - Pads/truncates to ``length`` (right-pad with zeros if too short;
-      truncate from the right if too long).
-    - Non-ACGT bases (N, etc.) are encoded as all-zeros (no channel set).
-    - Channel order is A, C, G, T.
+    Upper-cases, right-pads/truncates to length, encodes non-ACGT as all-zeros.
     """
     s = seq.upper().encode("ascii", errors="ignore")
     if len(s) > length:
-        s = s[:length]
+        # Center crop if too long (keeps the variant in the middle of the window).
+        excess = len(s) - length
+        s = s[excess // 2 : excess // 2 + length]
     arr = np.frombuffer(s, dtype=np.uint8)
     out = np.zeros((4, length), dtype=np.float32)
     for i, b in enumerate(arr):
@@ -38,64 +49,112 @@ def one_hot_dna(seq: str, length: int = 256) -> np.ndarray:
 
 
 def one_hot_rc(ohe: np.ndarray) -> np.ndarray:
-    """Reverse-complement of a one-hot (4, L) array. ACGT → TGCA channel flip + reverse."""
+    """Reverse-complement of a one-hot (4, L) array."""
     return ohe[::-1, ::-1].copy()
 
 
-def load_model(weights_path: str, device: str | torch.device = "cpu") -> torch.nn.Module:
-    """Instantiate enhancer_predictor_256bp and load a state-dict checkpoint.
-
-    Checkpoint format (from train_seqEncoder.py:444-448):
-        {"model_state_dict": ..., "model_name": ..., "fold_i": ..., "cell": ...}
-
-    For backwards compatibility we also accept a raw state_dict file.
-    """
-    ckpt = torch.load(weights_path, map_location="cpu", weights_only=False)
-    if isinstance(ckpt, dict) and "model_state_dict" in ckpt:
-        state = ckpt["model_state_dict"]
-    else:
-        state = ckpt
-
-    model = enhancer_predictor_256bp()
+def load_main_model(weights_path: str, device: str | torch.device = "cpu") -> torch.nn.Module:
+    """Load the shared CellCondProfileNet checkpoint (one for all 11 cells)."""
+    state = torch.load(weights_path, map_location="cpu", weights_only=False)
+    if isinstance(state, dict) and "model_state_dict" in state:
+        state = state["model_state_dict"]
+    model = CellCondProfileNet(n_cells=len(EPINFORMERSEQ_AVAILABLE_CELLTYPES))
     model.load_state_dict(state)
     model.eval()
     model.to(device)
     return model
 
 
-def predict_activity(
-    model: torch.nn.Module,
+def load_bias_model(weights_path: str, device: str | torch.device = "cpu") -> torch.nn.Module:
+    """Load one cell's frozen BiasNet checkpoint."""
+    state = torch.load(weights_path, map_location="cpu", weights_only=False)
+    if isinstance(state, dict) and "model_state_dict" in state:
+        state = state["model_state_dict"]
+    model = BiasNet()
+    model.load_state_dict(state)
+    for p in model.parameters():
+        p.requires_grad_(False)
+    model.eval()
+    model.to(device)
+    return model
+
+
+def predict_profile(
+    main: torch.nn.Module,
+    bias: torch.nn.Module,
     seq: str,
+    cell_type: str,
     *,
     average_reverse: bool = True,
     device: str | torch.device = "cpu",
-) -> Tuple[np.ndarray, np.ndarray]:
-    """Predict scalar activity for a 256-bp sequence.
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Predict per-bp DNase + H3K27ac profile for one ``cell_type``.
 
     Returns
     -------
-    preds : np.ndarray, shape (1,)
-        Single scalar prediction in linear activity units (RPM-space):
-        sqrt(DNase_RPM × H3K27ac_RPM), clipped to >= 0.
-
-        The trained model emits log2(0.1 + activity); we un-transform here so
-        downstream consumers see a non-negative scalar that's directly
-        interpretable as enhancer activity.  RC averaging is performed in
-        log2-space (matches training-time symmetry) before the un-transform.
-    bins : np.ndarray, shape (1,)
-        Bin index (always [0] for this single-window oracle); kept for API
-        parity with sliding-window oracles like LegNet's predict_bigseq.
+    dnase : np.ndarray, shape (L,)
+        Per-bp DNase signal (softmax(profile) * 10**log_count).
+    h3k27ac : np.ndarray, shape (L,)
+        Per-bp H3K27ac signal.
+    counts : np.ndarray, shape (2,)
+        Total predicted log10-counts (DNase, H3K27ac).
     """
-    ohe = one_hot_dna(seq, length=256)
-    x = torch.from_numpy(ohe).unsqueeze(0).to(device)  # (1, 4, 256)
+    if cell_type not in EPINFORMERSEQ_CELL2IDX:
+        raise ValueError(f"Unknown cell type {cell_type!r}")
+    cid_int = EPINFORMERSEQ_CELL2IDX[cell_type]
+
+    ohe = one_hot_dna(seq, length=EPINFORMERSEQ_WINDOW)
+    x = torch.from_numpy(ohe).unsqueeze(0).to(device)               # (1, 4, L)
+    cid = torch.tensor([cid_int], dtype=torch.long, device=device)
+
     with torch.inference_mode():
-        pred_log2 = model(x).cpu().numpy().reshape(-1)  # (1,)
+        mp, mc = main(x, cid)                # (1, 2, L), (1, 2)
+        bp, _ = bias(x)                       # (1, 2, L)
+        final = mp + bp                       # logit-space bias correction
+        soft = torch.softmax(final, dim=-1)
+        count = 10.0 ** mc                    # (1, 2)
+        signal = soft * count.unsqueeze(-1)   # (1, 2, L)
         if average_reverse:
             ohe_rc = one_hot_rc(ohe)
             x_rc = torch.from_numpy(ohe_rc).unsqueeze(0).to(device)
-            pred_rc = model(x_rc).cpu().numpy().reshape(-1)
-            pred_log2 = (pred_log2 + pred_rc) / 2.0
-    # Un-transform log2(0.1 + activity) -> linear activity.  Clip tiny
-    # negatives that arise when pred_log2 < log2(0.1) (low-signal regions).
-    pred = np.maximum(np.power(2.0, pred_log2) - 0.1, 0.0)
-    return pred.astype(np.float32), np.array([0], dtype=np.int64)
+            mp_r, mc_r = main(x_rc, cid)
+            bp_r, _ = bias(x_rc)
+            final_r = mp_r + bp_r
+            soft_r = torch.softmax(final_r, dim=-1)
+            count_r = 10.0 ** mc_r
+            signal_r = soft_r * count_r.unsqueeze(-1)
+            signal_r = torch.flip(signal_r, dims=[-1])   # flip back to fwd
+            signal = 0.5 * (signal + signal_r)
+            count  = 0.5 * (count + count_r)
+    sig = signal[0].cpu().numpy()             # (2, L)
+    return sig[0].astype(np.float32), sig[1].astype(np.float32), count[0].cpu().numpy().astype(np.float32)
+
+
+def predict_activity(
+    main: torch.nn.Module,
+    bias: torch.nn.Module,
+    seq: str,
+    cell_type: str,
+    *,
+    assay: str = "Enhancer_H3K27ac_DNase",
+    average_reverse: bool = True,
+    device: str | torch.device = "cpu",
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Predict a single scalar enhancer-activity for one cell.
+
+    For ``assay='Enhancer_H3K27ac_DNase'`` (default) returns the geometric
+    mean of the per-bp DNase and H3K27ac peak signals (sqrt(D * H)). For the
+    single-assay variants (Enhancer_DNase, Enhancer_H3K27ac) returns the per-bp
+    peak max of that channel only.
+    """
+    dnase, h3, counts = predict_profile(
+        main, bias, seq, cell_type, average_reverse=average_reverse, device=device
+    )
+    if assay == "Enhancer_DNase":
+        scalar = float(np.max(dnase))
+    elif assay == "Enhancer_H3K27ac":
+        scalar = float(np.max(h3))
+    else:  # combined / default
+        scalar = float(np.sqrt(np.max(dnase) * np.max(h3) + 1e-12))
+    preds = np.array([scalar], dtype=np.float32)
+    return preds, np.array([0], dtype=np.int64)
