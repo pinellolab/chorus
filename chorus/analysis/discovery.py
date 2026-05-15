@@ -65,6 +65,46 @@ class CellTypeHit:
 RANKING_METRICS = ("alt_x_abs_effect", "abs_effect", "abs_effect_min_ref")
 
 
+def _compute_ranking_score(
+    metric: str,
+    abs_score: float,
+    alt_value: float,
+    ref_value: float,
+    min_ref_value: float = 0.0,
+) -> float:
+    """Compute a ranking score from raw effect + signal magnitudes.
+
+    Centralises the metric definitions so :func:`discover_cell_types`
+    (track-level scout sort) and :func:`discover_variant_effects`
+    (cell-type / layer sort) stay consistent.
+
+    Returns -1.0 for ``abs_effect_min_ref`` when ``ref_value`` is below
+    the threshold — keeps the sort stable while letting the caller
+    optionally filter those out afterwards.
+    """
+    if metric == "alt_x_abs_effect":
+        return alt_value * abs_score
+    if metric == "abs_effect":
+        return abs_score
+    if metric == "abs_effect_min_ref":
+        return abs_score if ref_value >= min_ref_value else -1.0
+    raise ValueError(
+        f"Unknown ranking_metric: {metric!r}. Choose one of {RANKING_METRICS}."
+    )
+
+
+def _is_low_baseline(alt_value: float, abs_score: float) -> bool:
+    """Flag a "high fold-change at near-closed baseline" hit.
+
+    Cell-type-specificity inferences from raw |log2FC| are unreliable
+    when the reference is near zero — small noise becomes a large
+    fold-change. The threshold (alt_value < 5 AND |effect| > 1.5) was
+    chosen by the v0.5.2 collaborator audit; downstream LLM consumers
+    can use it to demote suspicious rows without re-running scoring.
+    """
+    return alt_value < 5.0 and abs_score > 1.5
+
+
 def discover_cell_types(
     oracle,
     variant_position: str,
@@ -234,12 +274,9 @@ def discover_cell_types(
 
     # Compute ranking score per the selected metric, then sort.
     for h in hits:
-        if ranking_metric == "alt_x_abs_effect":
-            h.ranking_score = h.alt_value * h.abs_effect
-        elif ranking_metric == "abs_effect":
-            h.ranking_score = h.abs_effect
-        elif ranking_metric == "abs_effect_min_ref":
-            h.ranking_score = h.abs_effect if h.ref_value >= min_ref_value else -1.0
+        h.ranking_score = _compute_ranking_score(
+            ranking_metric, h.abs_effect, h.alt_value, h.ref_value, min_ref_value,
+        )
 
     hits.sort(key=lambda h: h.ranking_score, reverse=True)
 
@@ -416,16 +453,28 @@ class TrackEffect:
     alt_value: float
     effect_pctile: float | None = None
     activity_pctile: float | None = None
+    # Score used to rank this effect (depends on ranking_metric). Set by
+    # _score_all_tracks; surfaced in layer_rankings output.
+    ranking_score: float = 0.0
+    # True when the ranking is amplified by a near-zero reference baseline
+    # (alt_value < 5 and abs(raw_score) > 1.5) — a downstream filter knob
+    # that lets LLM consumers demote misleading "high fold-change at
+    # closed-baseline" hits.
+    low_baseline_warning: bool = False
 
 
 def _score_all_tracks(
     variant_result: dict,
     oracle_name: str,
     normalizer=None,
+    ranking_metric: str = "alt_x_abs_effect",
+    min_ref_value: float = 0.0,
 ) -> list[TrackEffect]:
     """Score every track in a variant result using modality-specific formulas.
 
-    Returns a flat list of :class:`TrackEffect` sorted by |effect| descending.
+    Returns a flat list of :class:`TrackEffect` sorted by ``ranking_score``
+    descending (computed per ``ranking_metric``; default
+    ``"alt_x_abs_effect"`` matches :func:`discover_cell_types`).
     """
     from .scorers import classify_track_layer, LAYER_CONFIGS, _compute_effect
     from .normalization import QuantileNormalizer, PerTrackNormalizer
@@ -506,7 +555,13 @@ def _score_all_tracks(
 
         effects.append(te)
 
-    effects.sort(key=lambda e: e.abs_score, reverse=True)
+    for te in effects:
+        te.ranking_score = _compute_ranking_score(
+            ranking_metric, te.abs_score, te.alt_value, te.ref_value, min_ref_value,
+        )
+        te.low_baseline_warning = _is_low_baseline(te.alt_value, te.abs_score)
+
+    effects.sort(key=lambda e: e.ranking_score, reverse=True)
     return effects
 
 
@@ -532,7 +587,7 @@ def _rank_and_select(
 
     selected: list[TrackEffect] = []
     for layer, layer_effects in by_layer.items():
-        layer_effects.sort(key=lambda e: e.abs_score, reverse=True)
+        layer_effects.sort(key=lambda e: e.ranking_score, reverse=True)
         # Take top N, but only if they have meaningful effects
         for te in layer_effects[:top_n_per_layer]:
             if te.effect_pctile is not None and te.effect_pctile < min_effect_pctile:
@@ -547,27 +602,38 @@ def _rank_and_select(
 def _rank_cell_types(
     effects: list[TrackEffect],
     top_n: int = 10,
+    ranking_metric: str = "alt_x_abs_effect",
 ) -> list[dict]:
-    """Group effects by cell type and rank by best effect."""
+    """Group effects by cell type and rank by the best track per metric.
+
+    Each ranked entry surfaces ``ref_value`` / ``alt_value`` /
+    ``ranking_score`` / ``low_baseline_warning`` so downstream consumers
+    (LLMs, notebooks) can re-rank or filter without re-scoring.
+    """
     by_ct: dict[str, list[TrackEffect]] = defaultdict(list)
     for te in effects:
         by_ct[te.cell_type].append(te)
 
     ct_ranking = []
     for ct, ct_effects in by_ct.items():
-        best = max(ct_effects, key=lambda e: e.abs_score)
+        best = max(ct_effects, key=lambda e: e.ranking_score)
         ct_ranking.append({
             "cell_type": ct,
             "best_layer": best.layer,
             "best_track": best.description,
             "best_effect": best.raw_score,
             "best_abs_effect": best.abs_score,
+            "best_ref_value": best.ref_value,
+            "best_alt_value": best.alt_value,
+            "ranking_metric": ranking_metric,
+            "ranking_score": best.ranking_score,
+            "low_baseline_warning": best.low_baseline_warning,
             "effect_pctile": best.effect_pctile,
             "n_tracks": len(ct_effects),
             "layers_affected": list({e.layer for e in ct_effects if e.abs_score > 0.01}),
         })
 
-    ct_ranking.sort(key=lambda r: r["best_abs_effect"], reverse=True)
+    ct_ranking.sort(key=lambda r: r["ranking_score"], reverse=True)
     return ct_ranking[:top_n]
 
 
@@ -584,6 +650,8 @@ def discover_variant_effects(
     output_filename: str | None = None,
     igv_raw: bool = False,
     analysis_request: "AnalysisRequest | None" = None,
+    ranking_metric: str = "alt_x_abs_effect",
+    min_ref_value: float = 0.0,
 ) -> dict:
     """Discover which cell types and regulatory layers are most affected.
 
@@ -636,7 +704,10 @@ def discover_variant_effects(
             assay_ids=all_ids,
         )
 
-        all_effects = _score_all_tracks(variant_result, oracle_name, normalizer)
+        all_effects = _score_all_tracks(
+            variant_result, oracle_name, normalizer,
+            ranking_metric=ranking_metric, min_ref_value=min_ref_value,
+        )
         logger.info("  Scored %d tracks", len(all_effects))
 
     elif name in _PER_MODEL_ORACLES:
@@ -678,7 +749,10 @@ def discover_variant_effects(
                     alleles=alleles,
                     assay_ids=None,
                 )
-                effects = _score_all_tracks(result, oracle_name, normalizer)
+                effects = _score_all_tracks(
+                    result, oracle_name, normalizer,
+                    ranking_metric=ranking_metric, min_ref_value=min_ref_value,
+                )
                 all_effects.extend(effects)
 
                 # Keep the last result for report building
@@ -687,7 +761,7 @@ def discover_variant_effects(
             except Exception as exc:
                 logger.warning("  Failed %s: %s", label, str(exc)[:100])
 
-        all_effects.sort(key=lambda e: e.abs_score, reverse=True)
+        all_effects.sort(key=lambda e: e.ranking_score, reverse=True)
         logger.info("  Scored %d tracks across %d models", len(all_effects), len(models))
 
     else:
@@ -701,7 +775,9 @@ def discover_variant_effects(
     selected, layer_rankings = _rank_and_select(
         all_effects, top_n_per_layer=top_n_per_layer,
     )
-    cell_type_ranking = _rank_cell_types(all_effects, top_n=top_n_cell_types)
+    cell_type_ranking = _rank_cell_types(
+        all_effects, top_n=top_n_cell_types, ranking_metric=ranking_metric,
+    )
 
     logger.info("Discovery results:")
     logger.info("  %d tracks selected across %d layers", len(selected), len(layer_rankings))
@@ -758,6 +834,7 @@ def discover_variant_effects(
                 logger.info("Report saved to %s", html_path)
 
     return {
+        "_ranking_metric": ranking_metric,
         "cell_type_ranking": cell_type_ranking,
         "layer_rankings": {
             layer: [
@@ -767,10 +844,14 @@ def discover_variant_effects(
                     "cell_type": te.cell_type,
                     "effect": te.raw_score,
                     "abs_effect": te.abs_score,
+                    "ref_value": te.ref_value,
+                    "alt_value": te.alt_value,
+                    "ranking_score": te.ranking_score,
+                    "low_baseline_warning": te.low_baseline_warning,
                     "effect_pctile": te.effect_pctile,
                     "activity_pctile": te.activity_pctile,
                 }
-                for te in sorted(effects, key=lambda e: e.abs_score, reverse=True)[:top_n_per_layer * 3]
+                for te in sorted(effects, key=lambda e: e.ranking_score, reverse=True)[:top_n_per_layer * 3]
             ]
             for layer, effects in layer_rankings.items()
         },

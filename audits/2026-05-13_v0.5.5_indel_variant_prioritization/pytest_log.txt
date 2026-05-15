@@ -1,0 +1,5 @@
+  /Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages/numpy/core/numeric.py:407: RuntimeWarning: invalid value encountered in cast
+    multiarray.copyto(res, fill_value, casting='unsafe')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+389 passed, 2 skipped, 16 warnings in 799.64s (0:13:19)

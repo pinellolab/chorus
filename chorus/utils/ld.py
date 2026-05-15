@@ -45,7 +45,14 @@ class LDLinkError(Exception):
 
 @dataclass
 class LDVariant:
-    """A variant in linkage disequilibrium with a sentinel."""
+    """A variant in linkage disequilibrium with a sentinel.
+
+    ``ref``/``alt`` are stored after normalization: LDlink ``"-"`` is
+    converted to ``""`` (empty string) for insertions/deletions. The
+    ``kind`` field classifies the variant for downstream filtering
+    (e.g. the ``snvs_only`` switch on ``fetch_ld_variants`` /
+    ``prioritize_causal_variants``).
+    """
 
     variant_id: str
     chrom: str
@@ -56,6 +63,17 @@ class LDVariant:
     dprime: float = 1.0
     distance: int = 0
     is_sentinel: bool = False
+    kind: str = "snv"  # "snv" | "insertion" | "deletion" | "mnv" | "complex"
+
+
+_GENOME_BUILD_ALIASES = {
+    "hg38": "grch38",
+    "GRCh38": "grch38",
+    "grch38": "grch38",
+    "hg19": "grch37",
+    "GRCh37": "grch37",
+    "grch37": "grch37",
+}
 
 
 def fetch_ld_variants(
@@ -64,6 +82,8 @@ def fetch_ld_variants(
     r2_threshold: float = 0.8,
     token: str | None = None,
     timeout: float = 30.0,
+    genome_build: str = "grch38",
+    snvs_only: bool = False,
 ) -> list[LDVariant]:
     """Query LDlink LDproxy API and return LD variants above r2 threshold.
 
@@ -74,12 +94,19 @@ def fetch_ld_variants(
         token: LDlink API token. Register free at
             https://ldlink.nih.gov/?tab=apiaccess
         timeout: Request timeout in seconds.
+        genome_build: Reference build for the LDlink query. Accepts
+            ``"grch38"`` / ``"hg38"`` (default) or ``"grch37"`` / ``"hg19"``.
+        snvs_only: When True, drop any returned LDVariant whose
+            ``kind`` is not ``"snv"`` (i.e. exclude insertions,
+            deletions, MNVs, and complex multi-base changes). Default
+            False — score every proxy regardless of variant type.
 
     Returns:
         List of LDVariant objects, sentinel first.
 
     Raises:
         LDLinkError: If the API is unavailable or token is missing.
+        ValueError: If ``genome_build`` isn't recognised.
     """
     token = _resolve_ldlink_token(token)
     if token is None:
@@ -90,6 +117,13 @@ def fetch_ld_variants(
             "(c) run 'chorus setup all' to be prompted once."
         )
 
+    if genome_build not in _GENOME_BUILD_ALIASES:
+        raise ValueError(
+            f"Unknown genome_build {genome_build!r}. "
+            f"Choose one of {sorted(set(_GENOME_BUILD_ALIASES))}."
+        )
+    resolved_build = _GENOME_BUILD_ALIASES[genome_build]
+
     import requests
 
     url = "https://ldlink.nih.gov/LDlinkRest/ldproxy"
@@ -98,7 +132,7 @@ def fetch_ld_variants(
         "pop": population,
         "r2_d": "r2",
         "token": token,
-        "genome_build": "grch38",
+        "genome_build": resolved_build,
     }
 
     logger.info("Querying LDlink LDproxy for %s in %s...", variant_id, population)
@@ -114,8 +148,86 @@ def fetch_ld_variants(
         raise LDLinkError(f"LDlink API error: {text.strip()}")
 
     variants = parse_ld_response(text, r2_threshold=r2_threshold)
+    if snvs_only:
+        n_before = len(variants)
+        variants = [v for v in variants if v.kind == "snv"]
+        n_dropped = n_before - len(variants)
+        if n_dropped:
+            logger.info("snvs_only filter dropped %d non-SNV proxies", n_dropped)
     logger.info("Found %d variants in LD (r² >= %.2f)", len(variants), r2_threshold)
     return variants
+
+
+def _extract_allele_pairs(
+    alleles_field: str,
+    correlated_field: str | None,
+) -> list[tuple[str, str]]:
+    """Return a list of ``(ref, alt)`` pairs for an LDlink row.
+
+    Three sources are tried in order:
+
+    1. ``Correlated_Alleles`` of shape ``"SENT=PROXY,SENT=PROXY"``
+       (the LDlink LDproxy column showing sentinel↔proxy allele
+       co-segregation). When both pairs have non-empty alleles after
+       normalisation, emit **two** ``(SENT, PROXY)`` records so the
+       prioritization function can score each haplotype-specific
+       transition independently.
+    2. ``Alleles`` of shape ``"(REF/ALT1,ALT2,...)"`` — comma-split the
+       alt half and emit one record per alt.
+    3. ``Alleles`` of shape ``"(REF/ALT)"`` — a single record.
+
+    Empty / ``"-"`` alleles are normalised via
+    :func:`chorus.utils.sequence.normalize_allele` (LDlink uses ``"-"``
+    for indels; chorus internally uses ``""``). Rows that fail to
+    produce any valid (ref, alt) pair return an empty list and the
+    caller should skip them.
+    """
+    from .sequence import normalize_allele
+    from ..core.exceptions import InvalidRegionError
+
+    # 1) Correlated_Alleles fanout
+    if correlated_field and correlated_field.strip() not in ("", "NA", "."):
+        pairs_out: list[tuple[str, str]] = []
+        for entry in correlated_field.split(","):
+            entry = entry.strip()
+            if "=" not in entry:
+                pairs_out = []
+                break
+            sent_raw, prox_raw = entry.split("=", 1)
+            try:
+                sent = normalize_allele(sent_raw)
+                prox = normalize_allele(prox_raw)
+            except InvalidRegionError:
+                pairs_out = []
+                break
+            # Both ref (sentinel allele) and alt (proxy allele) being
+            # empty would mean "no change" — skip.
+            if sent == "" and prox == "":
+                continue
+            pairs_out.append((sent, prox))
+        if pairs_out:
+            return pairs_out
+
+    # 2/3) Alleles column (with comma-split fallback for multi-allelic alt)
+    allele_str = alleles_field.strip().strip("()")
+    if "/" not in allele_str:
+        return []
+    ref_raw, alt_raw = allele_str.split("/", 1)
+    try:
+        ref = normalize_allele(ref_raw)
+    except InvalidRegionError:
+        return []
+
+    pairs_out = []
+    for alt_raw_one in alt_raw.split(","):
+        try:
+            alt = normalize_allele(alt_raw_one)
+        except InvalidRegionError:
+            continue
+        if ref == "" and alt == "":
+            continue
+        pairs_out.append((ref, alt))
+    return pairs_out
 
 
 def parse_ld_response(
@@ -124,6 +236,10 @@ def parse_ld_response(
 ) -> list[LDVariant]:
     """Parse tab-separated LDlink LDproxy response text.
 
+    Indels are returned with empty-string alleles (LDlink's ``"-"`` is
+    normalised). Multi-allelic rows fan out into multiple
+    :class:`LDVariant` entries — see :func:`_extract_allele_pairs`.
+
     Args:
         text: Raw TSV response from LDproxy API.
         r2_threshold: Minimum r² to include.
@@ -131,6 +247,8 @@ def parse_ld_response(
     Returns:
         List of LDVariant objects, sentinel first.
     """
+    from .sequence import classify_variant
+
     lines = text.strip().split("\n")
     if len(lines) < 2:
         return []
@@ -146,6 +264,10 @@ def parse_ld_response(
     dist_col = col_map.get("Distance", col_map.get("distance", 4))
     dprime_col = col_map.get("Dprime", col_map.get("dprime", 5))
     r2_col = col_map.get("R2", col_map.get("r2", 6))
+    correlated_col = col_map.get(
+        "Correlated_Alleles",
+        col_map.get("correlated_alleles", None),
+    )
 
     variants: list[LDVariant] = []
 
@@ -176,11 +298,16 @@ def parse_ld_response(
         if not chrom.startswith("chr"):
             chrom = f"chr{chrom}"
 
-        # Parse alleles: "(G/T)" or "G/T"
-        alleles_str = fields[alleles_col].strip().strip("()")
-        allele_parts = alleles_str.split("/")
-        ref = allele_parts[0] if len(allele_parts) >= 1 else ""
-        alt = allele_parts[1] if len(allele_parts) >= 2 else ""
+        correlated_raw = (
+            fields[correlated_col].strip()
+            if correlated_col is not None and correlated_col < len(fields)
+            else None
+        )
+        allele_pairs = _extract_allele_pairs(
+            fields[alleles_col], correlated_raw,
+        )
+        if not allele_pairs:
+            continue
 
         # Parse other fields
         rs_id = fields[rs_col].strip()
@@ -193,17 +320,19 @@ def parse_ld_response(
         except (ValueError, IndexError):
             distance = 0
 
-        variants.append(LDVariant(
-            variant_id=rs_id if rs_id and rs_id != "." else f"{chrom}:{position}",
-            chrom=chrom,
-            position=position,
-            ref=ref,
-            alt=alt,
-            r2=r2_val,
-            dprime=dprime,
-            distance=distance,
-            is_sentinel=(i == 0),
-        ))
+        for ref, alt in allele_pairs:
+            variants.append(LDVariant(
+                variant_id=rs_id if rs_id and rs_id != "." else f"{chrom}:{position}",
+                chrom=chrom,
+                position=position,
+                ref=ref,
+                alt=alt,
+                r2=r2_val,
+                dprime=dprime,
+                distance=distance,
+                is_sentinel=(i == 0),
+                kind=classify_variant(ref, alt),
+            ))
 
     return variants
 

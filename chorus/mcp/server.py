@@ -959,6 +959,8 @@ def analyze_variant_multilayer(
     gene_name: Optional[str] = None,
     region: Optional[str] = None,
     igv_raw: bool = False,
+    ldlink_token: Optional[str] = None,
+    genome_build: str = "grch38",
     user_prompt: Optional[str] = None,
 ) -> dict:
     """Analyze a variant's regulatory impact across all molecular layers.
@@ -981,7 +983,9 @@ def analyze_variant_multilayer(
 
     Args:
         oracle_name: A loaded oracle name.
-        position: Variant position as "chr1:1050000".
+        position: Variant position as ``"chr1:1050000"`` OR an rsID
+                  like ``"rs12740374"`` (requires LDlink token; resolves
+                  to coords via the LDproxy API).
         ref_allele: Reference allele.
         alt_alleles: Alternate alleles.
         assay_ids: List of assay identifiers covering different layers
@@ -994,6 +998,12 @@ def analyze_variant_multilayer(
         igv_raw: When True, the IGV browser in the HTML report shows raw
                  signal with autoscale instead of the layer-aware rescaled
                  view. Table scores are unaffected.
+        ldlink_token: LDlink API token (only used when ``position`` is an
+                  rsID). Register free at https://ldlink.nih.gov/?tab=apiaccess
+                  or set ``LDLINK_TOKEN``.
+        genome_build: Reference build for the rsID lookup
+                  (``"grch38"`` / ``"hg38"`` default; or ``"grch37"`` / ``"hg19"``).
+                  Only used when ``position`` is an rsID.
         user_prompt: The user's original natural-language question. Claude
                      should forward this verbatim whenever calling from an
                      MCP conversation — it is rendered at the top of the
@@ -1004,6 +1014,13 @@ def analyze_variant_multilayer(
 
     state = _state()
     oracle = state.get_oracle(oracle_name)
+
+    # Resolve an rsID to chr:pos via LDlink before downstream parsing.
+    if position.strip().startswith("rs"):
+        position, _ref_from_ld, _alt_from_ld = _resolve_rsid_to_position(
+            position.strip(), ldlink_token=ldlink_token,
+            genome_build=genome_build,
+        )
 
     if region is None:
         region = _auto_region(oracle, position)
@@ -1057,24 +1074,41 @@ def discover_variant(
     top_n: int = 3,
     igv_raw: bool = False,
     user_prompt: Optional[str] = None,
+    ranking_metric: str = "alt_x_abs_effect",
+    min_ref_value: float = 0.0,
+    ldlink_token: Optional[str] = None,
+    genome_build: str = "grch38",
 ) -> dict:
     """Discover which cell types and regulatory layers are most affected by a variant.
 
     Predicts variant effect across ALL available tracks (thousands for
     Enformer/Borzoi/AlphaGenome, or iterates all models for ChromBPNet/LegNet),
-    ranks by effect magnitude, and returns the top hits with a full report.
+    ranks by ``ranking_metric``, and returns the top hits with a full
+    report.
 
     This is the primary tool for variant interpretation — it tells you WHERE
     the variant has impact without requiring you to pre-select tracks.
 
     Args:
         oracle_name: A loaded oracle name.
-        position: Variant position as "chr1:109274968".
+        position: Variant position as ``"chr1:109274968"`` OR an rsID
+            like ``"rs12740374"`` (requires LDlink token; resolves
+            to coords via the LDproxy API).
         ref_allele: Reference allele (e.g. "G").
         alt_alleles: Alternate alleles (e.g. ["T"]).
         gene_name: Optional gene for expression analysis.
         top_n: Number of top tracks per regulatory layer to show.
         user_prompt: Original user prompt, forwarded into the report header.
+        ranking_metric: How to rank tracks and cell types. Default
+            ``"alt_x_abs_effect"`` (``alt_value × |log2FC|``) avoids
+            inflating closed-baseline tracks where a small absolute
+            change yields a large fold-change. Use ``"abs_effect"`` for
+            the historical raw |log2FC| ranking.
+        min_ref_value: Threshold used by ``"abs_effect_min_ref"``.
+        ldlink_token: LDlink API token (only used when ``position`` is
+            an rsID). Register free at https://ldlink.nih.gov/?tab=apiaccess.
+        genome_build: Reference build for the rsID lookup
+            (``"grch38"`` / ``"hg38"`` default; or ``"grch37"`` / ``"hg19"``).
     """
     from chorus.analysis.analysis_request import AnalysisRequest
     from chorus.analysis.discovery import discover_variant_effects
@@ -1082,6 +1116,12 @@ def discover_variant(
     state = _state()
     oracle = state.get_oracle(oracle_name)
     normalizer = state.get_normalizer(oracle_name)
+
+    if position.strip().startswith("rs"):
+        position, _ref_from_ld, _alt_from_ld = _resolve_rsid_to_position(
+            position.strip(), ldlink_token=ldlink_token,
+            genome_build=genome_build,
+        )
 
     result = discover_variant_effects(
         oracle,
@@ -1093,6 +1133,8 @@ def discover_variant(
         normalizer=normalizer,
         output_path=state.output_dir,
         igv_raw=igv_raw,
+        ranking_metric=ranking_metric,
+        min_ref_value=min_ref_value,
     )
 
     # Serialize: extract report as markdown, remove non-serializable VariantReport
@@ -1128,6 +1170,8 @@ def discover_variant_cell_types(
     user_prompt: Optional[str] = None,
     ranking_metric: str = "alt_x_abs_effect",
     min_ref_value: float = 0.0,
+    ldlink_token: Optional[str] = None,
+    genome_build: str = "grch38",
 ) -> dict:
     """Discovery mode: find which cell types are most affected by a variant.
 
@@ -1148,7 +1192,9 @@ def discover_variant_cell_types(
     Args:
         oracle_name: A loaded oracle name (ideally AlphaGenome for broadest
             cell-type coverage).
-        position: Variant position as "chr1:1050000".
+        position: Variant position as ``"chr1:1050000"`` OR an rsID
+            like ``"rs12740374"`` (requires LDlink token; resolves to
+            coords via the LDproxy API).
         ref_allele: Reference allele.
         alt_alleles: Alternate alleles.
         gene_name: Optional gene to focus expression analysis on.
@@ -1167,6 +1213,10 @@ def discover_variant_cell_types(
             to rank by |log2FC| while excluding closed baselines.
         min_ref_value: Threshold for ``"abs_effect_min_ref"`` (ignored
             otherwise). Default 0 = no filter.
+        ldlink_token: LDlink API token (only used when ``position`` is
+            an rsID).
+        genome_build: Reference build for the rsID lookup
+            (``"grch38"`` / ``"hg38"`` default; or ``"grch37"`` / ``"hg19"``).
 
     Returns:
         Dict with:
@@ -1181,6 +1231,12 @@ def discover_variant_cell_types(
 
     state = _state()
     oracle = state.get_oracle(oracle_name)
+
+    if position.strip().startswith("rs"):
+        position, _ref_from_ld, _alt_from_ld = _resolve_rsid_to_position(
+            position.strip(), ldlink_token=ldlink_token,
+            genome_build=genome_build,
+        )
 
     alleles = [ref_allele] + list(alt_alleles)
     result = discover_and_report(
@@ -1442,6 +1498,9 @@ def fine_map_causal_variant(
     population: str = "CEU",
     r2_threshold: float = 0.8,
     ldlink_token: Optional[str] = None,
+    ldlink_timeout: float = 30.0,
+    genome_build: str = "grch38",
+    snvs_only: bool = False,
     user_prompt: Optional[str] = None,
 ) -> dict:
     """Prioritize causal variants from a GWAS locus using multi-layer regulatory evidence.
@@ -1490,6 +1549,15 @@ def fine_map_causal_variant(
         r2_threshold: Minimum r² for LD variants (default 0.8).
         ldlink_token: LDlink API token. Register free at
             https://ldlink.nih.gov/?tab=apiaccess
+        ldlink_timeout: HTTP timeout in seconds for the LDlink request
+            (default 30). Increase for slow networks or large LD blocks.
+        genome_build: Reference build for the LDlink LD lookup. Accepts
+            ``"grch38"`` / ``"hg38"`` (default) or ``"grch37"`` / ``"hg19"``.
+        snvs_only: When True, restrict scoring to single-nucleotide
+            substitutions (drops insertions, deletions, MNVs, and
+            complex multi-base proxies). Default False — indels and
+            multi-allelic LDlink rows are scored by default as of
+            v0.5.5. Set True to reproduce pre-v0.5.5 behavior.
         user_prompt: Original user prompt, rendered at the top of the report.
     """
     from chorus.analysis.causal import prioritize_causal_variants
@@ -1519,6 +1587,9 @@ def fine_map_causal_variant(
                 population=population,
                 r2_threshold=r2_threshold,
                 token=ldlink_token,
+                timeout=ldlink_timeout,
+                genome_build=genome_build,
+                snvs_only=snvs_only,
             )
         except LDLinkError as exc:
             return {"error": str(exc)}
@@ -1552,6 +1623,7 @@ def fine_map_causal_variant(
         oracle_name=oracle_name,
         normalizer=state.get_normalizer(oracle_name),
         analysis_request=ar,
+        snvs_only=snvs_only,
     )
 
     output = result.to_dict()
@@ -1564,6 +1636,52 @@ def fine_map_causal_variant(
         except Exception:
             pass
     return output
+
+
+def _resolve_rsid_to_position(
+    rsid: str,
+    ldlink_token: Optional[str] = None,
+    timeout: float = 30.0,
+    genome_build: str = "grch38",
+) -> tuple[str, str, str]:
+    """Resolve an rsID to ``(position_str, ref_allele, alt_allele)`` via LDlink.
+
+    Used by ``analyze_variant_multilayer`` / ``discover_variant`` /
+    ``discover_variant_cell_types`` so that callers can pass an rsID
+    where those tools previously required ``chr:pos``. Hits the LDlink
+    LDproxy API with ``r2_threshold=1.1`` so only the sentinel line is
+    returned (cheap one-record lookup, not a full LD proxy fetch).
+
+    Raises ``ValueError`` on missing alleles or LDlink failure with a
+    fix-it pointer.
+    """
+    from chorus.utils.ld import fetch_ld_variants, LDLinkError
+    try:
+        ld = fetch_ld_variants(
+            rsid,
+            r2_threshold=1.1,  # keep only the sentinel row (always returned)
+            token=ldlink_token,
+            timeout=timeout,
+            genome_build=genome_build,
+        )
+    except LDLinkError as exc:
+        raise ValueError(
+            f"Could not resolve {rsid!r} via LDlink: {exc}. "
+            f"Pass coordinates directly as 'chr1:109274968' if LDlink is "
+            f"unavailable, or set LDLINK_TOKEN."
+        ) from exc
+    if not ld:
+        raise ValueError(
+            f"LDlink returned no record for {rsid!r}. Check that the rsID "
+            f"is valid and present in genome_build={genome_build!r}."
+        )
+    v = ld[0]  # sentinel
+    if not v.ref or not v.alt:
+        raise ValueError(
+            f"LDlink returned {rsid!r} at {v.chrom}:{v.pos} but no alleles. "
+            f"Pass coordinates + alleles directly."
+        )
+    return f"{v.chrom}:{v.pos}", v.ref, v.alt
 
 
 def _parse_lead_variant(text: str) -> dict:

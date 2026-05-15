@@ -120,7 +120,18 @@ def _load_cache() -> Optional[List[dict]]:
 
 
 class AlphaGenomeMetadata:
-    """AlphaGenome track metadata manager."""
+    """AlphaGenome track metadata manager.
+
+    .. note::
+       The raw ``_tracks`` list (and ``_track_index_map``) is **internal**:
+       it contains synthetic "padding" placeholder rows whose ``local_index``
+       slots correspond to real positions in AlphaGenome's output array but
+       have ``name == "padding"``. Iterating ``_tracks`` directly and passing
+       those identifiers to ``predict()`` raises ``IndexError`` (local_idx
+       out of bounds for output type). For a clean iterator use
+       :meth:`iter_tracks` or call
+       :meth:`chorus.oracles.AlphaGenomeOracle.get_all_assay_ids`.
+    """
 
     DEFAULT_ASSAY_TYPE = "UNKNOWN"
     DEFAULT_CELL_TYPE = "UNKNOWN"
@@ -129,6 +140,19 @@ class AlphaGenomeMetadata:
         self._tracks: List[dict] = []
         self._track_index_map: Dict[str, int] = {}
         self._load_metadata()
+
+    def iter_tracks(self):
+        """Iterate over real (non-padding) track metadata dicts.
+
+        Padding rows are placeholder entries used internally to keep
+        ``local_index`` aligned with AlphaGenome's output array; they
+        are not predictable assays. Prefer this method over iterating
+        ``_tracks`` directly.
+        """
+        for t in self._tracks:
+            if t.get("name", "").lower() == "padding":
+                continue
+            yield t
 
     def _load_metadata(self) -> None:
         # Try installed package first

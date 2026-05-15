@@ -8,6 +8,7 @@ from .legnet import LegNetOracle
 from .epinformerseq import EPInformerSeqOracle
 from .alphagenome import AlphaGenomeOracle
 from .alphagenome_pt import AlphaGenomePTOracle
+from .bpnet import load_bpnet_model, encode_sequence, predict_bpnet
 
 # Dictionary for easy oracle access
 ORACLES = {
@@ -47,5 +48,8 @@ __all__ = [
     'AlphaGenomeOracle',
     'AlphaGenomePTOracle',
     'ORACLES',
-    'get_oracle'
+    'get_oracle',
+    'load_bpnet_model',
+    'encode_sequence',
+    'predict_bpnet',
 ]

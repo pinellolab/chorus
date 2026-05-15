@@ -14,7 +14,9 @@ from chorus.utils import (
     get_gc_content,
     quantile_normalize,
     minmax_normalize,
-    zscore_normalize
+    zscore_normalize,
+    normalize_allele,
+    classify_variant,
 )
 from chorus.core.exceptions import InvalidRegionError, FileFormatError
 
@@ -68,7 +70,82 @@ class TestSequenceUtils:
         # Mismatch
         with pytest.raises(ValueError):
             apply_variant(ref_seq, 5, "A", "T")  # Position 5 is T, not A
-    
+
+    def test_normalize_allele_table(self):
+        """LDlink ``"-"`` and ``None`` collapse to ``""``; bases uppercase + validated."""
+        assert normalize_allele("-") == ""
+        assert normalize_allele("") == ""
+        assert normalize_allele(None) == ""
+        assert normalize_allele("A") == "A"
+        assert normalize_allele("a") == "A"
+        assert normalize_allele("  CT  ") == "CT"
+        assert normalize_allele("GAAAAAATAAAAA") == "GAAAAAATAAAAA"
+
+        for bad in ("X", "AT?", "-A"):
+            with pytest.raises(InvalidRegionError):
+                normalize_allele(bad)
+
+    def test_classify_variant(self):
+        assert classify_variant("A", "G") == "snv"
+        assert classify_variant("A", "") == "deletion"
+        assert classify_variant("", "CT") == "insertion"
+        assert classify_variant("AT", "GC") == "mnv"
+        assert classify_variant("A", "AT") == "complex"  # VCF-style anchored
+        assert classify_variant("TA", "TAC") == "complex"
+
+    def test_get_centered_window_indels(self):
+        """Indels: alt_seq is `length` bp with the variant at the centre.
+
+        Uses a synthetic single-chrom FASTA so the test stays self-
+        contained and doesn't depend on hg38 being present.
+        """
+        from chorus.utils import get_centered_window
+        import pysam
+
+        # All-A test genome on chr1, 10 kb long.
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".fa", delete=False) as f:
+            f.write(">chr1\n" + "A" * 10000 + "\n")
+            fa = f.name
+        try:
+            pysam.faidx(fa)
+            length = 100
+
+            # SNV (backward compat): ref/alt both 1 bp, equal lengths
+            r, a = get_centered_window(fa, "chr1", 5000, length, "A", "C")
+            assert len(r) == length == len(a)
+            assert a[length // 2] == "C"
+
+            # Pure deletion: ref="A" alt=""
+            r, a = get_centered_window(fa, "chr1", 5000, length, "A", "")
+            assert len(r) == length == len(a)
+            # alt has one fewer A at the centre, but is padded back to length
+            assert r.count("A") == length
+            assert a.count("A") == length  # still all A's since genome is uniform
+
+            # Pure insertion: ref="" alt="GT"
+            r, a = get_centered_window(fa, "chr1", 5000, length, "", "GT")
+            assert len(r) == length == len(a)
+            # The inserted "GT" lives at the centre of alt_seq
+            assert a[length // 2 : length // 2 + 2] == "GT"
+
+            # 4-bp deletion (LDlink dash notation)
+            r, a = get_centered_window(fa, "chr1", 5000, length, "AAAA", "-")
+            assert len(r) == length == len(a)
+            assert r[length // 2 : length // 2 + 4] == "AAAA"
+
+            # VCF-style anchored insertion: ref="A" alt="AGT"
+            r, a = get_centered_window(fa, "chr1", 5000, length, "A", "AGT")
+            assert len(r) == length == len(a)
+            assert a[length // 2 : length // 2 + 3] == "AGT"
+
+            # MNV equal length
+            r, a = get_centered_window(fa, "chr1", 5000, length, "AA", "GT")
+            assert len(r) == length == len(a)
+            assert a[length // 2 : length // 2 + 2] == "GT"
+        finally:
+            os.unlink(fa)
+            os.unlink(fa + ".fai")
+
     def test_parse_vcf(self):
         """Test VCF parsing."""
         # Create temporary VCF file

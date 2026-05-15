@@ -8,7 +8,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="chorus",
-    version="0.5.2",
+    version="0.5.6",
     author="Pinello Lab",
     author_email="lucapinello@gmail.com",
     description="A unified interface for genomic sequence oracles",
@@ -37,6 +37,7 @@ setup(
             "mypy>=0.950",
             "jupyter>=1.0",
             "nbconvert>=6.0",
+            "nbformat>=5.0",
         ],
     },
     entry_points={

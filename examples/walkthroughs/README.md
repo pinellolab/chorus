@@ -13,6 +13,14 @@
 > for three end-to-end Jupyter notebooks that exercise the chorus library
 > directly (wild-type prediction, variant effects, region swap,
 > multi-oracle comparison).
+>
+> **Want to reproduce a specific walkthrough as code?** Each walkthrough
+> directory below also ships a `notebook.ipynb` that runs the same Python
+> API the MCP tool wraps. Execute with
+> `jupyter nbconvert --to notebook --execute --inplace <dir>/notebook.ipynb`
+> from the repo root after `chorus setup all`. Notebooks delegate to
+> per-oracle conda envs via `use_environment=True`, so you only need the
+> base `chorus` kernel.
 
 ## Which tool do I use?
 

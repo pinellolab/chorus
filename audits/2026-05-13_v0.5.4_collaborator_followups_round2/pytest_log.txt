@@ -1,0 +1,30 @@
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88
+  /Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:88: PyparsingDeprecationWarning: 'parseString' deprecated - use 'parse_string'
+    parse = parser.parseString(pattern)
+
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92
+  /Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_fontconfig_pattern.py:92: PyparsingDeprecationWarning: 'resetCache' deprecated - use 'reset_cache'
+    parser.resetCache()
+
+../../.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_mathtext.py:45
+  /Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages/matplotlib/_mathtext.py:45: PyparsingDeprecationWarning: 'enablePackrat' deprecated - use 'enable_packrat'
+    ParserElement.enablePackrat()
+
+tests/test_integration.py::test_pertrack_background_download[sei]
+tests/test_integration.py::test_pertrack_background_download[legnet]
+  /Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages/huggingface_hub/file_download.py:1842: DeprecationWarning: hf_xet.download_files() is deprecated. Use XetSession().new_file_download_group().start_download_file() instead.
+    xet_get(
+
+tests/test_utils.py::TestNormalizationUtils::test_quantile_normalize
+  /Users/lp698/.local/share/mamba/envs/chorus/lib/python3.10/site-packages/numpy/core/numeric.py:407: RuntimeWarning: invalid value encountered in cast
+    multiarray.copyto(res, fill_value, casting='unsafe')
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+379 passed, 2 skipped, 16 warnings in 769.94s (0:12:49)
