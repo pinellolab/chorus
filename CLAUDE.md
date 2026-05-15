@@ -45,8 +45,16 @@ committed example output drifts. Regenerate with:
 python scripts/regenerate_examples.py             # walkthroughs
 python scripts/regenerate_multioracle.py --oracle <name>  # per-oracle
 python scripts/regenerate_multioracle.py --consolidate    # unified IGV
+python scripts/generate_walkthrough_notebooks.py  # per-walkthrough .ipynb (codegen)
 jupyter nbconvert --to notebook --execute --inplace examples/notebooks/*.ipynb
 ```
+
+The `generate_walkthrough_notebooks.py` step is codegen-only (writes
+the `.ipynb` files declared in its `WALKTHROUGHS` list); re-run it
+after editing per-walkthrough args (assay_ids, positions, alleles).
+Executing every walkthrough notebook end-to-end requires GPU + the
+per-oracle envs, so do it manually before a release rather than in
+the regen sweep.
 
 Notebooks must be re-executed on GPU (advanced + comprehensive pull in
 multiple oracles; quickstart is CPU-safe).
