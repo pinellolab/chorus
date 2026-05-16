@@ -88,6 +88,23 @@ parser.add_argument(
     default=None,
     help="Total number of shards. Required when --shard is set.",
 )
+parser.add_argument(
+    "--cells",
+    type=str,
+    default=None,
+    help="Comma-separated cell types to score (e.g. 'K562,GM12878'). "
+    "Filters _enumerate_models() down to a subset. Useful for targeted "
+    "rebuilds; pair with --part merge-incremental to stitch into the "
+    "existing chrombpnet_pertrack.npz.",
+)
+parser.add_argument(
+    "--only-assays",
+    type=str,
+    default=None,
+    help="Comma-separated assays to keep within --assay (e.g. 'DNASE' or "
+    "'DNASE,ATAC'). Applied after --cells. Use to scope a build to "
+    "DNase-only K562/GM12878, etc.",
+)
 args = parser.parse_args()
 
 log_dir = os.path.join(REPO_ROOT, "logs")
@@ -191,6 +208,16 @@ def _enumerate_models(assay_choice: str) -> list[dict]:
     if assay_choice in ("CHIP", "all"):
         for cell_type, tf, _url, _id in iter_unique_bpnet_models():
             specs.append({"assay": "CHIP", "cell_type": cell_type, "TF": tf})
+    if args.cells:
+        wanted = {c.strip() for c in args.cells.split(",") if c.strip()}
+        before = len(specs)
+        specs = [s for s in specs if s["cell_type"] in wanted]
+        logger.info("--cells filter: %s -> %d/%d models", sorted(wanted), len(specs), before)
+    if args.only_assays:
+        wanted_a = {a.strip() for a in args.only_assays.split(",") if a.strip()}
+        before = len(specs)
+        specs = [s for s in specs if s["assay"] in wanted_a]
+        logger.info("--only-assays filter: %s -> %d/%d models", sorted(wanted_a), len(specs), before)
     return specs
 
 

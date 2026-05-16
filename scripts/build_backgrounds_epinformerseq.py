@@ -124,10 +124,12 @@ def load_setup():
     import torch
     import pysam
 
-    from chorus.oracles.epinformerseq_source.epinformerseq_globals import (
+    from chorus.oracles.epinformerseq_source.globals import (
         EPINFORMERSEQ_AVAILABLE_CELLTYPES, EPINFORMERSEQ_WINDOW,
     )
-    from chorus.oracles.epinformerseq_source.model_usage import load_model, predict_activity
+    from chorus.oracles.epinformerseq_source.model_usage import (
+        load_main_model, load_bias_model, predict_activity,
+    )
     from chorus.core.globals import CHORUS_DOWNLOADS_DIR
 
     EPINFORMERSEQ_MODELS_DIR = CHORUS_DOWNLOADS_DIR / "epinformerseq"
@@ -145,6 +147,18 @@ def load_setup():
     ref = pysam.FastaFile(os.path.join(REPO_ROOT, "genomes/hg38.fa"))
     cell_types = list(EPINFORMERSEQ_AVAILABLE_CELLTYPES)
 
+    # v2 layout: 1 shared CellCondProfileNet (main.pt) + 11 per-cell BiasNets
+    # (bias/<cell>/bias.pt). Load main once for the whole build and swap in the
+    # per-cell bias inside load_cell_type_model.
+    main_path = EPINFORMERSEQ_MODELS_DIR / "main.pt"
+    if not main_path.exists():
+        raise FileNotFoundError(
+            f"EPInformer-seq v2 main weights missing: {main_path}. "
+            "Place main.pt + bias/<cell>/bias.pt under downloads/epinformerseq/."
+        )
+    logger.info("Loading shared CellCondProfileNet from %s", main_path)
+    main_model = load_main_model(str(main_path), device=device)
+
     def get_sequence(chrom, pos):
         half = EPINFORMERSEQ_WINDOW // 2
         start, end = pos - half, pos + half
@@ -157,18 +171,23 @@ def load_setup():
         return seq
 
     def load_cell_type_model(cell_type: str):
-        weights_path = EPINFORMERSEQ_MODELS_DIR / cell_type / 'weights.pt'
-        if not weights_path.exists():
-            logger.warning("Weights missing: %s", weights_path)
+        bias_path = EPINFORMERSEQ_MODELS_DIR / "bias" / cell_type / 'bias.pt'
+        if not bias_path.exists():
+            logger.warning("Bias weights missing: %s", bias_path)
             return None
-        return load_model(str(weights_path), device=device)
+        bias = load_bias_model(str(bias_path), device=device)
+        # Bundle the main+bias+cell_type triple — opaque to the call sites.
+        return (main_model, bias, cell_type)
 
-    def predict_one(model, seq: str) -> float:
-        # average_reverse=False to match the LegNet build script default;
-        # the model was trained with rc-average evaluation, but background
-        # CDFs use raw forward-strand for consistency with how ALT/REF
-        # comparisons are computed in chorus.
-        preds, _ = predict_activity(model, seq=seq, average_reverse=False, device=device)
+    def predict_one(bundle, seq: str) -> float:
+        # average_reverse=False matches the legacy v1 build script: background
+        # CDFs are computed on the raw forward strand for consistency with
+        # ALT/REF comparisons in chorus.
+        main, bias, ct = bundle
+        preds, _ = predict_activity(
+            main, bias, seq=seq, cell_type=ct,
+            average_reverse=False, device=device,
+        )
         return float(preds[0])
 
     return cell_types, get_sequence, load_cell_type_model, predict_one, ref, device
