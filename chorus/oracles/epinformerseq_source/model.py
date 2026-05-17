@@ -1,26 +1,30 @@
-"""EPInformer-seq v2: profile output + bias correction + cell conditioning.
+"""EPInformer-seq v2.1: profile output + bias correction + cell conditioning.
+
+Changes from v2:
+  - DilatedResBlock adds an SELayer (channel attention, Hu et al. 2018)
+    between BN and the residual add. Borrowed from LegNet (Penzar et al.
+    2023). Lets the model learn which channels matter on a per-content
+    basis. Complements FiLM, which does cell-conditional channel modulation.
+  - Activation switches ELU -> SiLU (Swish) throughout the main model.
+    SiLU usually edges out ELU by 0.5-1% on regression tasks.
+  - BiasNet kept byte-for-byte identical to v2 (uses _V2DilatedResBlock)
+    so the per-cell v2 bias.pt checkpoints load with no state-dict mismatch.
 
 Architecture:
   - Conv stem (kernel=21) -> 64-channel body
   - 9 dilated residual blocks (kernel=3, dilations 1, 2, 4, ..., 256)
-    receptive field ~ 1024 bp, matches ChromBPNet recipe
+    each with SE + BN + SiLU + residual; receptive field ~ 1024 bp.
   - FiLM modulation from a 32-d cell embedding applied after every block
   - Profile head: per-bp 2-channel logits (DNase, H3K27ac), softmax over position
   - Count head: pooled trunk + cell embedding -> 2 scalar log10-counts
 
-Bias model (separate class, no cell conditioning):
-  - Same backbone but smaller (32-channel body)
-  - Trained on random non-peak regions where signal is dominated by Tn5/MNase
-    sequence preference (not biology). Frozen during main-model training.
-
-Output shapes (input length L, default 1024):
+Output shapes (input length L=1024):
   profile_logits : (B, 2, L)    # softmax over dim=-1 per channel for multinomial NLL
   log_counts     : (B, 2)        # log10(total + 1) per channel
 """
 
 from __future__ import annotations
 
-import math
 from typing import Tuple
 
 import torch
@@ -28,17 +32,43 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class DilatedResBlock(nn.Module):
-    """Dilated 1D conv + BN + ELU with residual skip. Length-preserving."""
+class SELayer(nn.Module):
+    """Squeeze-and-Excitation channel attention (1D variant).
 
-    def __init__(self, ch: int, dilation: int, kernel: int = 3):
+    global-mean pool -> bottleneck MLP -> sigmoid gate -> multiply.
+    """
+
+    def __init__(self, ch: int, reduction: int = 4):
+        super().__init__()
+        hidden = max(ch // reduction, 4)
+        self.fc = nn.Sequential(
+            nn.Linear(ch, hidden),
+            nn.SiLU(),
+            nn.Linear(hidden, ch),
+            nn.Sigmoid(),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        y = x.mean(dim=2)                 # (B, C)
+        y = self.fc(y).unsqueeze(-1)      # (B, C, 1)
+        return x * y
+
+
+class DilatedResBlock(nn.Module):
+    """v2.1: dilated 1D conv + BN + SE-gate + residual + SiLU."""
+
+    def __init__(self, ch: int, dilation: int, kernel: int = 3,
+                 se_reduction: int = 4):
         super().__init__()
         pad = dilation * (kernel - 1) // 2
         self.conv = nn.Conv1d(ch, ch, kernel_size=kernel, padding=pad, dilation=dilation)
         self.bn = nn.BatchNorm1d(ch)
+        self.se = SELayer(ch, reduction=se_reduction)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return F.elu(self.bn(self.conv(x)) + x)
+        h = self.bn(self.conv(x))
+        h = self.se(h)
+        return F.silu(h + x)
 
 
 class FiLM1d(nn.Module):
@@ -66,20 +96,22 @@ class CellCondProfileNet(nn.Module):
                  stem_ch: int = 128,
                  body_ch: int = 64,
                  n_dilated: int = 9,
-                 cell_emb: int = 32):
+                 cell_emb: int = 32,
+                 se_reduction: int = 4):
         super().__init__()
         self.n_cells = n_cells
         self.cell_emb = nn.Embedding(n_cells, cell_emb)
         self.stem = nn.Sequential(
             nn.Conv1d(4, stem_ch, kernel_size=21, padding=10),
-            nn.ELU(),
+            nn.SiLU(),
             nn.Conv1d(stem_ch, body_ch, kernel_size=1),
-            nn.ELU(),
+            nn.SiLU(),
         )
         self.blocks = nn.ModuleList()
         self.films = nn.ModuleList()
         for i in range(n_dilated):
-            self.blocks.append(DilatedResBlock(body_ch, dilation=2 ** i))
+            self.blocks.append(DilatedResBlock(body_ch, dilation=2 ** i,
+                                               se_reduction=se_reduction))
             self.films.append(FiLM1d(cell_emb, body_ch))
         self.profile_head = nn.Conv1d(body_ch, 2, kernel_size=1)
         self.count_head = nn.Sequential(
@@ -101,8 +133,24 @@ class CellCondProfileNet(nn.Module):
         return profile_logits, log_counts
 
 
+class _V2DilatedResBlock(nn.Module):
+    """Original v2 DilatedResBlock -- preserved so v2 BiasNet checkpoints load
+    with no state-dict mismatch.
+    """
+
+    def __init__(self, ch: int, dilation: int, kernel: int = 3):
+        super().__init__()
+        pad = dilation * (kernel - 1) // 2
+        self.conv = nn.Conv1d(ch, ch, kernel_size=kernel, padding=pad, dilation=dilation)
+        self.bn = nn.BatchNorm1d(ch)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return F.elu(self.bn(self.conv(x)) + x)
+
+
 class BiasNet(nn.Module):
-    """Bias model: 1024 bp DNA -> per-bp 2-channel profile + 2 scalar counts.
+    """Bias model -- architecturally identical to v2 so v2 bias.pt loads
+    directly into v2.1.
 
     Trained on random non-peak regions where signal is dominated by Tn5/MNase
     sequence preference. No cell conditioning -- one shared bias model across
@@ -118,7 +166,7 @@ class BiasNet(nn.Module):
             nn.ELU(),
         )
         self.blocks = nn.ModuleList(
-            [DilatedResBlock(body_ch, dilation=2 ** i) for i in range(n_dilated)]
+            [_V2DilatedResBlock(body_ch, dilation=2 ** i) for i in range(n_dilated)]
         )
         self.profile_head = nn.Conv1d(body_ch, 2, kernel_size=1)
         self.count_head = nn.Sequential(
@@ -138,7 +186,7 @@ class BiasNet(nn.Module):
 
 
 # ---------------------------------------------------------------------------
-# Loss functions (ChromBPNet recipe)
+# Loss functions (ChromBPNet recipe) -- identical to v2
 # ---------------------------------------------------------------------------
 
 def multinomial_nll(logits: torch.Tensor, counts: torch.Tensor) -> torch.Tensor:
@@ -149,18 +197,13 @@ def multinomial_nll(logits: torch.Tensor, counts: torch.Tensor) -> torch.Tensor:
 
     Returns scalar mean over batch + channel.
     """
-    logp = F.log_softmax(logits, dim=-1)               # (B, C, L)
-    # NLL = -sum_l counts[l] * log_softmax[l]   normalized by total counts per channel
-    nll = -(counts.float() * logp).sum(dim=-1)          # (B, C)
-    total = counts.float().sum(dim=-1).clamp(min=1.0)   # (B, C)
+    logp = F.log_softmax(logits, dim=-1)
+    nll = -(counts.float() * logp).sum(dim=-1)
+    total = counts.float().sum(dim=-1).clamp(min=1.0)
     return (nll / total).mean()
 
 
 def count_mse(log_pred: torch.Tensor, total_obs: torch.Tensor) -> torch.Tensor:
-    """MSE in log10(1 + counts) space, per channel.
-
-    log_pred  : (B, C)   -- model output (predicted log10 counts)
-    total_obs : (B, C)   -- observed total counts per channel
-    """
+    """MSE in log10(1 + counts) space, per channel."""
     target = torch.log10(total_obs.float() + 1.0)
     return F.mse_loss(log_pred, target)
