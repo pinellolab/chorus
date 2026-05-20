@@ -4,6 +4,74 @@ This directory contains everything required to reproduce, verify, and
 audit the multi-oracle poster panel at
 `poster/rs12740374_SORT1_panel.html`.
 
+---
+
+## TASK FOR THE VERIFICATION AGENT (read this first)
+
+You are running on a **different machine** after pulling this branch.
+Your job is to **recreate the poster figure end-to-end** and confirm
+every number on it matches a fresh prediction. Do not skim. Do not
+accept the committed `_verified_*.json` snapshots as evidence; rerun
+the predictions yourself.
+
+**Hard deliverables** (report these explicitly when you finish):
+
+1. **Recreated figure.** Render `poster/rs12740374_SORT1_panel.html` in
+   a real browser (Chrome / Safari / Firefox; not headless cat).
+   Wait for the iframe to settle (the IGV loads asynchronously and
+   posts its rendered height to the parent within ~5 s). Take a
+   screenshot of the full panel — every card visible, no scrollbar
+   inside the IGV iframe. Save it as
+   `poster/_agent_verification_screenshot.png` and commit it. If you
+   cannot run a browser, render with `chromium --headless --screenshot`
+   or equivalent and explain.
+
+2. **Number-for-number diff** against the panel's hard-coded values.
+   The committed `poster/expected_numbers.json` lists every number on
+   the panel with provenance. After running the verification scripts
+   (see step-by-step below), compare each value. Drift up to
+   +/- 0.02 log2FC is allowed (deterministic fp32 noise). Anything
+   bigger is a regression; flag it.
+
+3. **The three "honest finding" claims** must each be confirmed:
+   (a) the +1.47 CAGE peak is at `region_label = "variant site"`,
+       NOT at SORT1's TSS;
+   (b) AG's predicted SORT1 effect is small (~1.05 to 1.15× in CAGE
+       and RNA-seq across 5 HepG2 RNA-seq tracks, all directionally UP);
+   (c) AG predicts larger downstream effects on CELSR2 (~+0.86) and
+       PSRC1 (~+0.60) than on SORT1.
+   Each claim has a copy-pasteable Python snippet in section
+   "Honest-finding audit" below. Run all three. Report PASS / FAIL with
+   the actual values printed.
+
+4. **Chorus version + CDF background check.** Confirm:
+   - `git log -1 --oneline` includes commit `f7c1c32` (chorus v0.5.6)
+     or a later main-branch commit.
+   - All six CDF `.npz` files under `~/.chorus/backgrounds/` are
+     byte-identical to `huggingface.co/datasets/lucapinello/chorus-backgrounds`.
+     The exact sizes are in `expected_numbers.json` under
+     `backgrounds.verified_byte_identical_to_hf`. If yours differ,
+     report the mismatch; the panel's quantile_score columns depend
+     on these files.
+
+5. **Final report.** Write a one-page audit at
+   `poster/AGENT_VERIFICATION_REPORT.md` covering: (i) PASS / FAIL per
+   table row, (ii) any drift seen, (iii) the screenshot path, (iv) the
+   chorus commit you tested against, (v) anything surprising. Commit
+   the report and the screenshot on this same branch
+   (`poster/cshl-rs12740374-multioracle`); push so the author can see.
+
+**Do NOT** modify the panel, the scripts, or `expected_numbers.json`.
+If you think a number on the panel is wrong, write that in your audit
+report; the author will judge.
+
+**Time budget**: ~15-25 minutes wall-clock once mamba envs are
+warmed up (~3 min AG + ~5 min ChromBPNet ATAC first-time download +
+~30 s ChromBPNet CEBPA + ~10 s LegNet + browser screenshot + diff +
+write-up).
+
+---
+
 The panel shows how three independent chorus oracles
 (**ChromBPNet**, **LegNet**, **AlphaGenome**) score the classic noncoding
 LDL-cholesterol causal variant **rs12740374** (chr1:109,274,968 G>T, hg38)
