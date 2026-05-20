@@ -1,0 +1,105 @@
+{
+  "_doc": "Ground-truth numbers cited in rs12740374_SORT1_panel.html. Generated on chorus v0.5.6 at commit f7c1c32 (2026-05-15). A verifier should rerun the scripts in poster/README.md and confirm each value matches within +/- 0.02 log2FC (CDF normalization is deterministic but model inference may have <1% fp32 drift).",
+  "_chorus_version": "0.5.6",
+  "_chorus_commit": "f7c1c322b83570a09e5db269083a7b5e86d5152d",
+  "_variant": {
+    "rsid": "rs12740374",
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref": "G",
+    "alt": "T",
+    "assembly": "hg38",
+    "gene": "SORT1",
+    "cell_type": "HepG2"
+  },
+
+  "consensus_matrix": {
+    "row_1_chromatin_accessibility": {
+      "chrombpnet_dnase_log2fc": 1.241,
+      "chrombpnet_dnase_quantile": 0.9987,
+      "alphagenome_dnase_log2fc": 1.336,
+      "alphagenome_dnase_quantile": 1.0,
+      "source": "examples/walkthroughs/validation/SORT1_rs12740374_multioracle/example_output.json (canonical, v0.5.6)"
+    },
+    "row_2_tf_binding_cebpa": {
+      "chrombpnet_cebpa_log2fc": 1.992,
+      "chrombpnet_cebpa_ref_sum": 1.266,
+      "chrombpnet_cebpa_alt_sum": 5.038,
+      "chrombpnet_cebpa_fold": 3.97,
+      "chrombpnet_cebpa_model_id": "BP001094",
+      "chrombpnet_cebpa_source_experiment": "ENCSR142IGM",
+      "alphagenome_cebpa_log2fc": 2.777,
+      "alphagenome_cebpa_quantile": 1.0,
+      "source": "poster/verify_chrombpnet_cebpa.py + AG from canonical example_output.json"
+    },
+    "row_3_histone_marks": {
+      "alphagenome_h3k27ac_log2fc": 1.267,
+      "alphagenome_h3k27ac_quantile": 1.0,
+      "source": "examples/walkthroughs/validation/SORT1_rs12740374_multioracle/example_output.json"
+    },
+    "row_4_mpra_element_activity": {
+      "legnet_lentimpra_window_mean_delta": 6.08e-05,
+      "legnet_lentimpra_ref_value": -0.7386637330055237,
+      "legnet_lentimpra_alt_value": -0.7386029362678528,
+      "interpretation": "Silent as expected: the variant is in a distal enhancer, not at a promoter. LegNet is trained on LentiMPRA promoter-fragment activity.",
+      "source": "examples/walkthroughs/validation/SORT1_rs12740374_multioracle/legnet_variant_report.json"
+    },
+    "row_5_erna_at_variant_site": {
+      "alphagenome_cage_strongest_log2fc": 1.466,
+      "alphagenome_cage_strongest_ref": 25.01,
+      "alphagenome_cage_strongest_alt": 70.87,
+      "alphagenome_cage_strongest_region_label": "variant site",
+      "alphagenome_cage_strongest_quantile": 1.0,
+      "note": "This bin sits at the variant position (eRNA from the enhancer), NOT at SORT1's TSS.",
+      "source": "poster/verify_predictions.py --oracle alphagenome (full dump in _verified_alphagenome_full.json, filter region_label='variant site')"
+    },
+    "row_6_sort1_tss_and_rna_seq": {
+      "alphagenome_cage_at_sort1_tss_minus_strand_log2fc": 0.0577,
+      "alphagenome_cage_at_sort1_tss_plus_strand_log2fc": 0.1154,
+      "alphagenome_rna_seq_at_sort1_exons_min_log2fc": 0.0521,
+      "alphagenome_rna_seq_at_sort1_exons_max_log2fc": 0.1363,
+      "alphagenome_rna_seq_at_sort1_exons_n_tracks": 5,
+      "alphagenome_rna_seq_at_sort1_exons_all_directionally_up": true,
+      "fold_range": "1.04x to 1.15x",
+      "source": "poster/verify_predictions.py --oracle alphagenome (filter region_label startswith 'SORT1')"
+    }
+  },
+
+  "downstream_context_other_locus_genes": {
+    "celsr2_rna_seq_max_log2fc": 0.8602,
+    "celsr2_rna_seq_max_fold": 1.82,
+    "psrc1_rna_seq_max_log2fc": 0.6015,
+    "psrc1_rna_seq_max_fold": 1.52,
+    "myb_phl_rna_seq_max_log2fc": 0.3004,
+    "interpretation": "Consistent with rs12740374 being a known eQTL for CELSR2, PSRC1, and SORT1, with CELSR2 and PSRC1 being the closer genes."
+  },
+
+  "alphagenome_track_panel": {
+    "tracks_requested_in_verify_predictions": [
+      "DNASE/EFO:0001187 DNase-seq/.",
+      "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
+      "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
+      "CAGE/hCAGE EFO:0001187/-",
+      "CAGE/hCAGE EFO:0001187/+",
+      "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",
+      "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",
+      "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.",
+      "RNA_SEQ/EFO:0001187 total RNA-seq/+",
+      "RNA_SEQ/EFO:0001187 total RNA-seq/-"
+    ],
+    "_note_on_canonical_vs_verify": "The canonical regenerate_multioracle.py only requests the first 5 tracks (no RNA-seq); we add RNA-seq specifically to answer the question 'does AG predict a SORT1 expression change?'"
+  },
+
+  "backgrounds": {
+    "source": "huggingface.co/datasets/lucapinello/chorus-backgrounds",
+    "local_cache_dir": "~/.chorus/backgrounds/",
+    "verified_byte_identical_to_hf": {
+      "alphagenome_pertrack.npz": 275523684,
+      "chrombpnet_pertrack.npz":   82350909,
+      "legnet_pertrack.npz":         212800,
+      "borzoi_pertrack.npz":      803275951,
+      "enformer_pertrack.npz":    548316718,
+      "sei_pertrack.npz":           2903709
+    }
+  }
+}

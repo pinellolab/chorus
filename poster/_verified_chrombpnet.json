@@ -1,0 +1,33 @@
+{
+  "variant": {
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref": "G",
+    "alt": "T",
+    "id": "rs12740374",
+    "gene": "SORT1"
+  },
+  "runs": [
+    {
+      "assay": "ATAC:HepG2",
+      "tracks": [
+        {
+          "allele": "alt_1",
+          "assay_id": "ATAC:HepG2",
+          "layer": "chromatin_accessibility",
+          "assay_type": "ATAC",
+          "cell_type": "HepG2",
+          "ref_value": 635.6932647087378,
+          "alt_value": 917.4126164680347,
+          "raw_score": 0.5285439581374979,
+          "quantile": 0.9943,
+          "ref_pctile": 0.8404
+        }
+      ]
+    },
+    {
+      "assay": "CHIP:CEBPA:HepG2",
+      "error": "No load method accepted (tf=CEBPA, cell_type=HepG2)"
+    }
+  ]
+}

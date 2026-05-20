@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Chorus poster panel: rs12740374 / SORT1 multi-oracle convergence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Caveat:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #FBF7EF;
+    --card-bg:   #FFFFFF;
+    --ink:       #1A2540;
+    --ink-soft:  #4A5670;
+    --ink-faint: #8A93A8;
+    --rule:      #E5DDC8;
+    --rule-soft: #EFE9D8;
+    --accent:    #E07A38;
+    --accent-bg: #FFF2E5;
+    --good:      #2F8F58;
+    --good-bg:   #E6F4EC;
+    --gold-bg:   #FFF8E0;
+    --info-bg:   #ECF2FB;
+    --mute:      #B7BCC9;
+    --shadow:    0 1px 0 rgba(26,37,64,.04), 0 2px 14px rgba(26,37,64,.05);
+  }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+    font-size: 14.5px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 820px;
+    margin: 24px auto 40px;
+    padding: 0 22px;
+  }
+
+  /* Header strip */
+  .header-strip {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 12px;
+  }
+  .header-strip .kicker {
+    font-family: 'Caveat', cursive;
+    font-size: 38px;
+    line-height: 1;
+    color: var(--ink);
+    border: 1.6px solid var(--accent);
+    background: var(--accent-bg);
+    padding: 6px 18px 10px;
+    border-radius: 8px;
+    transform: rotate(-1deg);
+    white-space: nowrap;
+  }
+  .header-strip .kicker em {
+    font-style: italic;
+    color: #2F7A6E;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    margin: 14px 0;
+  }
+  .card.flush { padding: 0; }
+
+  .card-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--rule);
+    background: linear-gradient(to bottom, #FCFAF3, #FFFFFF);
+    border-radius: 12px 12px 0 0;
+  }
+  .card-head .pill {
+    display: inline-block;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 4px;
+    color: #fff;
+    background: var(--ink);
+  }
+  .card-head h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .card-head .meta {
+    margin-left: auto;
+    color: var(--ink-faint);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Prompt */
+  .prompt {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 14px;
+    align-items: start;
+    padding: 16px 18px;
+    background: #FFFFFF;
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    margin: 14px 0;
+  }
+  .prompt .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--info-bg);
+    color: #3863B0;
+    display: grid; place-items: center;
+    font-weight: 700;
+    font-size: 16px;
+    margin-top: 2px;
+  }
+  .prompt .label {
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+  .prompt .body {
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  .prompt .body strong { font-style: normal; color: var(--ink); }
+
+  /* Headline */
+  .headline {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 20px;
+    background: var(--good-bg);
+    border: 1px solid #BFE0CC;
+    border-left: 5px solid var(--good);
+    border-radius: 10px;
+    margin: 14px 0;
+  }
+  .headline .check {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--good);
+    color: #fff;
+    display: grid; place-items: center;
+    font-weight: 800;
+    font-size: 18px;
+  }
+  .headline .text { color: #18432B; }
+  .headline .text .h {
+    font-weight: 700;
+    font-size: 15px;
+    color: #18432B;
+  }
+  .headline .text .sub {
+    font-size: 13px;
+    color: #3A6450;
+    margin-top: 2px;
+  }
+
+  /* Consensus table */
+  table.matrix {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    font-size: 13.5px;
+  }
+  table.matrix thead th {
+    text-align: left;
+    font-weight: 600;
+    color: #fff;
+    background: var(--ink);
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--ink);
+    font-size: 12.5px;
+    letter-spacing: .02em;
+  }
+  table.matrix thead th.num { text-align: center; width: 130px; }
+  table.matrix thead th.last { text-align: center; width: 110px; }
+  table.matrix tbody td {
+    padding: 12px;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: middle;
+  }
+  table.matrix tbody tr:last-child td { border-bottom: none; }
+  table.matrix tbody tr:nth-child(odd) td { background: #FDFBF5; }
+  table.matrix tbody td.layer { color: var(--ink); }
+  table.matrix tbody td.layer .lname { font-weight: 600; }
+  table.matrix tbody td.layer .unit {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    background: #F0EBDD;
+    border-radius: 3px;
+    vertical-align: 1px;
+  }
+  table.matrix tbody td.num {
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+  td.num .v { font-weight: 700; color: #18432B; font-size: 14px; }
+  td.num .v.neg { color: #8E2A2A; }
+  td.num .pct {
+    display: block;
+    color: var(--ink-faint);
+    font-size: 11px;
+    margin-top: 2px;
+  }
+  td.num .track {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 10.5px;
+    margin-top: 1px;
+  }
+  td.num.empty { color: var(--mute); font-size: 18px; line-height: 1; }
+  td.num.empty .why {
+    display: block;
+    color: var(--ink-faint);
+    font-size: 10px;
+    font-family: 'Inter', sans-serif;
+    margin-top: 4px;
+    line-height: 1.25;
+  }
+  td.agree { text-align: center; }
+  td.agree .tag {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: .01em;
+  }
+  td.agree .tag.match {
+    background: var(--good-bg);
+    color: var(--good);
+    border: 1px solid #BFE0CC;
+  }
+  td.agree .tag.single {
+    background: var(--info-bg);
+    color: #3863B0;
+    border: 1px solid #D5DFF1;
+  }
+  td.agree .tag.soft {
+    background: var(--gold-bg);
+    color: #8A6B14;
+    border: 1px solid #EBDFA8;
+  }
+
+  /* Footnote under matrix */
+  .matrix-foot {
+    padding: 10px 16px;
+    background: #FDFBF5;
+    border-top: 1px solid var(--rule-soft);
+    border-radius: 0 0 12px 12px;
+    color: var(--ink-soft);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .matrix-foot strong { color: var(--ink); }
+
+  /* Mechanism box */
+  .mechanism {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  .mechanism .col { padding: 16px 20px; }
+  .mechanism .col + .col {
+    border-left: 1px solid var(--rule);
+    background: #FDFBF5;
+  }
+  .mechanism h3 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ink-faint);
+    font-weight: 700;
+  }
+  .mechanism ol, .mechanism ul {
+    margin: 0; padding-left: 18px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.55;
+  }
+  .mechanism li { margin: 4px 0; }
+  .mechanism li strong { color: var(--ink); }
+  .mechanism .ref {
+    margin-top: 10px;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+  .mechanism .ref a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px dotted var(--accent);
+  }
+
+  /* Genome browser (real IGV via iframe) */
+  .browser-frame-wrap {
+    padding: 0;
+    background: #FFFFFF;
+    position: relative;
+  }
+  .browser-frame-wrap iframe {
+    display: block;
+    width: 100%;
+    height: 820px; /* fallback: tall enough for all 7 signal tracks + ruler + variant + refgene; JS auto-resizes to exact rendered height */
+    border: 0;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: #fff;
+    overflow: hidden;
+  }
+  .browser-note {
+    padding: 10px 18px 14px;
+    color: var(--ink-soft);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .browser-note strong { color: var(--ink); }
+  .browser-note .legend {
+    margin-top: 8px;
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+  }
+  .browser-note .legend span::before {
+    content: "";
+    display: inline-block;
+    width: 10px; height: 10px;
+    margin-right: 5px;
+    border-radius: 2px;
+    vertical-align: 1px;
+  }
+  .browser-note .legend .l1::before { background: #5A8DD6; }
+  .browser-note .legend .l2::before { background: #D6A85A; }
+  .browser-note .legend .l3::before { background: #B65AD6; }
+
+  @media print {
+    body { background: #fff; }
+    .page { margin: 0; padding: 14px; }
+    .card { box-shadow: none; }
+  }
+</style>
+<script>
+  // Auto-resize the IGV iframe to its real rendered height so no scrollbar appears.
+  window.addEventListener('message', (e) => {
+    if (!e.data || e.data.type !== 'igv-height') return;
+    const f = document.getElementById('igv-frame');
+    if (!f) return;
+    const h = Math.max(420, Math.min(2000, Number(e.data.height) || 0));
+    if (h && Math.abs(f.clientHeight - h) > 4) {
+      f.style.height = h + 'px';
+    }
+  });
+</script>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- HEADER STRIP -->
+  <div class="header-strip">
+    <div class="kicker">Asks the genome what each variant <em>would&nbsp;do!</em></div>
+  </div>
+
+  <!-- PROMPT -->
+  <div class="prompt">
+    <div class="avatar">★</div>
+    <div>
+      <div class="label">Prompt</div>
+      <div class="body">
+        Validate <strong>rs12740374</strong>, the textbook noncoding LDL-cholesterol
+        causal variant at the <strong>SORT1</strong> locus, by scoring it with three
+        independent deep-learning oracles in <strong>HepG2</strong> (liver):
+        <strong>ChromBPNet</strong> for chromatin accessibility,
+        <strong>LegNet</strong> for MPRA element activity, and
+        <strong>AlphaGenome</strong> as a generalist covering TF binding, histone
+        marks, CAGE, and RNA-seq.
+      </div>
+    </div>
+  </div>
+
+  <!-- CONSENSUS MATRIX -->
+  <div class="card flush">
+    <div class="card-head">
+      <span class="pill">Output</span>
+      <h2>Cross-oracle consensus &nbsp;·&nbsp; rs12740374 &nbsp;·&nbsp; SORT1 &nbsp;·&nbsp; HepG2 (G&nbsp;→&nbsp;T)</h2>
+      <span class="meta">chr1:109,274,968</span>
+    </div>
+
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th>Regulatory layer</th>
+          <th class="num">ChromBPNet</th>
+          <th class="num">LegNet</th>
+          <th class="num">AlphaGenome</th>
+          <th class="last">Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr>
+          <td class="layer">
+            <span class="lname">1 · Chromatin accessibility</span>
+            <span class="unit">DNase / ATAC</span>
+          </td>
+          <td class="num">
+            <span class="v">1.00</span>
+            <span class="pct">normalized (≥99<sup>th</sup>)</span>
+            <span class="track">log₂FC +1.24 · DNase : HepG2</span>
+          </td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num">
+            <span class="v">1.00</span>
+            <span class="pct">normalized (≥99<sup>th</sup>)</span>
+            <span class="track">log₂FC +1.34 · DNase : HepG2</span>
+          </td>
+          <td class="agree"><span class="tag match">✓ both ↑</span></td>
+        </tr>
+
+        <tr>
+          <td class="layer">
+            <span class="lname">2 · TF binding (CEBPA)</span>
+            <span class="unit">ChIP-TF</span>
+          </td>
+          <td class="num">
+            <span class="v">+1.99</span>
+            <span class="pct">log₂FC (ref&nbsp;→&nbsp;alt ~3.97×)</span>
+            <span class="track">BPNet ChIP : <strong>CEBPA</strong> : HepG2<br/>(BP001094, ENCSR142IGM)</span>
+          </td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num">
+            <span class="v">1.00</span>
+            <span class="pct">normalized (≥99<sup>th</sup>)</span>
+            <span class="track">log₂FC +2.78 · ChIP : <strong>CEBPA</strong> : HepG2</span>
+          </td>
+          <td class="agree"><span class="tag match">✓ both ↑</span></td>
+        </tr>
+
+        <tr>
+          <td class="layer">
+            <span class="lname">3 · Histone marks</span>
+            <span class="unit">ChIP-Histone</span>
+          </td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num">
+            <span class="v">1.00</span>
+            <span class="pct">normalized (≥99<sup>th</sup>)</span>
+            <span class="track">log₂FC +1.27 · ChIP : H3K27ac : HepG2</span>
+          </td>
+          <td class="agree"><span class="tag single">single ↑</span></td>
+        </tr>
+
+        <tr>
+          <td class="layer">
+            <span class="lname">4 · MPRA element activity</span>
+            <span class="unit">lentiMPRA</span>
+          </td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num">
+            <span class="v">~0.00</span>
+            <span class="pct">window-mean Δ (alt&nbsp;vs&nbsp;ref)</span>
+            <span class="track">LentiMPRA : HepG2<br/>(promoter assay, no SORT1 promoter in window)</span>
+          </td>
+          <td class="num empty">·<span class="why">not scored<br/>(see rows 5 and 6)</span></td>
+          <td class="agree"><span class="tag soft">silent (expected)</span></td>
+        </tr>
+
+        <tr>
+          <td class="layer">
+            <span class="lname">5 · eRNA at variant site</span>
+            <span class="unit">CAGE</span>
+          </td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num">
+            <span class="v">1.00</span>
+            <span class="pct">normalized (≥99<sup>th</sup>)</span>
+            <span class="track">log₂FC +1.47 · CAGE at the enhancer (eRNA)</span>
+          </td>
+          <td class="agree"><span class="tag single">single ↑</span></td>
+        </tr>
+
+        <tr>
+          <td class="layer">
+            <span class="lname">6 · SORT1 TSS / gene output</span>
+            <span class="unit">CAGE&nbsp;+&nbsp;RNA-seq</span>
+          </td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num">
+            <span class="v">1.00</span>
+            <span class="pct">normalized (≥99<sup>th</sup>)</span>
+            <span class="track">CAGE log₂FC +0.06 to +0.12 (1.04 to 1.09×)<br/>RNA-seq log₂FC +0.05 to +0.14 (1.05 to 1.15×)</span>
+          </td>
+          <td class="agree"><span class="tag soft">small ↑</span></td>
+        </tr>
+
+      </tbody>
+    </table>
+
+    <div class="matrix-foot">
+      Each cell shows the <strong>per-track normalized score</strong> (chorus quantile
+      against the genome-wide CDF for that assay, where <strong>1.00 saturates at the
+      top 1 %</strong>) above the raw log₂FC and the winning HepG2 track.
+      <strong>“·”</strong> means that oracle did not produce a score for that layer in
+      this run. <strong>Row&nbsp;5 vs row&nbsp;6 is the honest split</strong>: AlphaGenome
+      sees a <em>strong local</em> CAGE / eRNA gain right at the enhancer site (+1.47),
+      but the projection onto SORT1’s own TSS and exons is <em>much smaller</em>
+      (~1.05 to 1.15× fold-change in both CAGE and RNA-seq; all 5 SORT1 RNA-seq tracks
+      directionally UP). At the same locus AG predicts larger downstream effects on the
+      closer eQTL genes <strong>CELSR2</strong> (RNA-seq log₂FC up to +0.86, ~1.82×) and
+      <strong>PSRC1</strong> (+0.60, ~1.52×), consistent with rs12740374 being a known
+      eQTL for all three genes.
+    </div>
+  </div>
+
+  <!-- HEADLINE ANSWER -->
+  <div class="headline">
+    <div class="check">✓</div>
+    <div class="text">
+      <div class="h">Local regulatory mechanism: all oracles agree with the published ground truth. Downstream SORT1 expression: same direction, smaller magnitude.</div>
+      <div class="sub">
+        5 of 6 layers ↑ &nbsp;·&nbsp; 1 silent-as-expected (LegNet has no SORT1 promoter
+        in window) &nbsp;·&nbsp; CEBPA binding gain independently confirmed by
+        <strong>two oracles</strong> (ChromBPNet log₂FC&nbsp;+1.99, AlphaGenome
+        log₂FC&nbsp;+2.78). SORT1 itself is predicted UP but only by 1.05 to 1.15× in
+        both CAGE and RNA-seq; the closer eQTL genes <em>CELSR2</em> and
+        <em>PSRC1</em> get larger predicted boosts (up to 1.82× and 1.52×).
+      </div>
+    </div>
+  </div>
+
+  <!-- MECHANISM CARD -->
+  <div class="card mechanism">
+    <div class="col">
+      <h3>What the predictions say</h3>
+      <ol>
+        <li>The minor (T) allele <strong>opens chromatin</strong> at the enhancer (DNase, both oracles: ChromBPNet +1.24, AlphaGenome +1.34).</li>
+        <li>It gains a <strong>CEBPA binding</strong> site (ChromBPNet log₂FC +1.99, AlphaGenome +2.78; orthogonal models agree).</li>
+        <li>CEBPA recruits the active enhancer mark <strong>H3K27ac</strong> (+1.27).</li>
+        <li><strong>eRNA at the enhancer</strong> jumps (CAGE +1.47 right at the variant site).</li>
+        <li>Effect on <strong>SORT1’s own TSS</strong> is directionally UP but small (~1.05 to 1.15×); closer eQTL genes CELSR2 and PSRC1 are predicted to rise more.</li>
+      </ol>
+    </div>
+    <div class="col">
+      <h3>Ground truth (Musunuru et&nbsp;al., <em>Nature</em> 2010)</h3>
+      <ul>
+        <li>Minor T allele <strong>creates a C/EBP site</strong> in a hepatocyte enhancer.</li>
+        <li><strong>SORT1 ↑</strong> in liver, leading to reduced VLDL secretion.</li>
+        <li>Plasma <strong>LDL-C ↓</strong>, and <strong>CAD risk ↓</strong>.</li>
+        <li>Direction and identity of the bound TF were validated experimentally.</li>
+      </ul>
+      <div class="ref">
+        Musunuru et&nbsp;al., <em>Nature</em> 466 (2010) ·
+        <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3062476/">PMC3062476</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- BROWSER (real interactive IGV.js, iframed) -->
+  <div class="card flush">
+    <div class="card-head">
+      <span class="pill">Browser</span>
+      <h2>Cross-oracle IGV &nbsp;·&nbsp; every track on a single x-axis</h2>
+      <span class="meta">default chr1:109.15&nbsp;to&nbsp;109.45&nbsp;Mb &nbsp;·&nbsp; zoom out for the full ±500&nbsp;kb window</span>
+    </div>
+    <div class="browser-frame-wrap">
+      <iframe id="igv-frame" src="igv_only.html" scrolling="no"
+              title="Real IGV.js browser with chorus oracle tracks at the SORT1 locus"></iframe>
+    </div>
+    <div class="browser-note">
+      Live IGV.js with the chorus prediction tracks: reference (grey) and alternate
+      (coloured) signal from all three oracles stacked on a single x-axis. Signals are
+      floor-rescaled so <strong>1.0 = genome-wide p99 peak</strong> per track, peak
+      shape preserved, comparable across cell types. The default view is zoomed in on
+      SORT1 for poster readability; use the IGV zoom controls (or the search bar) to
+      pan out to the full AlphaGenome ±500&nbsp;kb prediction window
+      (chr1:108,750,679 to 109,799,256). With <strong>chorus v0.5.6 sliding-window
+      prediction</strong>, ChromBPNet and LegNet now produce signal across the entire
+      window (no more blank flanks). Per-track CDF backgrounds verified byte-identical
+      to <code>huggingface.co/datasets/lucapinello/chorus-backgrounds</code>.
+      <div class="legend">
+        <span class="l1">ChromBPNet · DNase</span>
+        <span class="l2">LegNet · LentiMPRA</span>
+        <span class="l3">AlphaGenome · DNase, ChIP-CEBPA, H3K27ac, CAGE</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "variant": {
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref": "G",
+    "alt": "T",
+    "id": "rs12740374",
+    "gene": "SORT1"
+  },
+  "tracks": [
+    {
+      "allele": "alt_1",
+      "assay_id": "LentiMPRA:HepG2",
+      "layer": "promoter_activity",
+      "assay_type": "LentiMPRA",
+      "cell_type": "HepG2",
+      "ref_value": 0.37228479981422424,
+      "alt_value": 0.6690002083778381,
+      "raw_score": 0.2967154085636139,
+      "quantile": null,
+      "ref_pctile": null
+    }
+  ]
+}

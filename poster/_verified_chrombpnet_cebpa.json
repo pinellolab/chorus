@@ -1,0 +1,34 @@
+{
+  "variant": {
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref": "G",
+    "alt": "T",
+    "id": "rs12740374",
+    "gene": "SORT1"
+  },
+  "tracks": {
+    "raw_keys": [
+      "predictions",
+      "effect_sizes",
+      "variant_info"
+    ],
+    "effect_sizes": {
+      "CHIP:HepG2:CEBPA:+": {
+        "sum": 1.8858359298174037,
+        "max": 0.03789310692809522,
+        "min": -0.0004151334287598729,
+        "n": 2114
+      },
+      "CHIP:HepG2:CEBPA:-": {
+        "sum": 1.885835738004971,
+        "max": 0.03136702184565365,
+        "min": -0.00030690955463796854,
+        "n": 2114
+      }
+    },
+    "log2fc_sum": 1.9920782952263842,
+    "ref_sum": 1.2664705764509563,
+    "alt_sum": 5.038142244273331
+  }
+}

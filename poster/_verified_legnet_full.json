@@ -1,0 +1,57 @@
+{
+  "variant": {
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "T"
+    ]
+  },
+  "oracle": "legnet",
+  "gene_name": "SORT1",
+  "nearby_genes": [
+    "SORT1",
+    "CELSR2"
+  ],
+  "report_title": "Multi-Layer Variant Effect Report",
+  "alleles": {
+    "alt_1": {
+      "scores_by_layer": {
+        "promoter_activity": [
+          {
+            "assay_id": "LentiMPRA:HepG2",
+            "assay_type": "LentiMPRA",
+            "cell_type": "HepG2",
+            "layer": "promoter_activity",
+            "ref_value": 0.37228479981422424,
+            "alt_value": 0.6690002083778381,
+            "raw_score": 0.2967154085636139,
+            "description": "LentiMPRA:HepG2"
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "LentiMPRA:HepG2",
+          "assay_type": "LentiMPRA",
+          "cell_type": "HepG2",
+          "layer": "promoter_activity",
+          "ref_value": 0.37228479981422424,
+          "alt_value": 0.6690002083778381,
+          "raw_score": 0.2967154085636139,
+          "description": "LentiMPRA:HepG2"
+        }
+      ]
+    }
+  },
+  "analysis_request": {
+    "user_prompt": "LegNet verify",
+    "tool_name": "x",
+    "oracle_name": "legnet",
+    "normalizer_name": "(none)",
+    "tracks_requested": "LentiMPRA:HepG2",
+    "cell_types": [],
+    "notes": [],
+    "generated_at": "2026-05-20 02:06 UTC"
+  }
+}
