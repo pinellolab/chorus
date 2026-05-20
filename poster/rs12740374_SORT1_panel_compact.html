@@ -272,7 +272,7 @@
           <td class="num">
             <span class="v">1.00</span>
             <span class="pct">≥99<sup>th</sup></span>
-            <span class="track">log₂FC +1.24</span>
+            <span class="track">ChromBPNet head<br/>log₂FC +1.24</span>
           </td>
           <td class="num empty">·<span class="why">not scored</span></td>
           <td class="num">
@@ -285,13 +285,13 @@
 
         <tr>
           <td class="layer">
-            <span class="lname">2 · TF binding (CEBPA)</span>
+            <span class="lname">2 · TF binding (C/EBPα)</span>
             <span class="unit">ChIP-TF</span>
           </td>
           <td class="num">
             <span class="v">+1.99</span>
             <span class="pct">log₂FC (~3.97×)</span>
-            <span class="track">BPNet ChIP·CEBPA·HepG2<br/>BP001094 / ENCSR142IGM</span>
+            <span class="track">BPNet TF head<br/>BP001094 / ENCSR142IGM</span>
           </td>
           <td class="num empty">·<span class="why">not scored</span></td>
           <td class="num">
@@ -324,12 +324,12 @@
           </td>
           <td class="num empty">·<span class="why">not scored</span></td>
           <td class="num">
-            <span class="v">~0.00</span>
-            <span class="pct">window-mean Δ</span>
-            <span class="track">LentiMPRA·HepG2<br/>(no SORT1 promoter in window)</span>
+            <span class="v">+0.30</span>
+            <span class="pct">at SNP site (~230 bp window)</span>
+            <span class="track">LentiMPRA·HepG2<br/>matches Musunuru luciferase: alt &gt; ref</span>
           </td>
           <td class="num empty">·<span class="why">not scored</span></td>
-          <td class="agree"><span class="tag soft">silent (expected)</span></td>
+          <td class="agree"><span class="tag match">✓ matches paper</span></td>
         </tr>
 
         <tr>
@@ -357,9 +357,9 @@
           <td class="num">
             <span class="v">1.00</span>
             <span class="pct">≥99<sup>th</sup></span>
-            <span class="track">CAGE log₂FC +0.06 to +0.12<br/>RNA-seq +0.05 to +0.14 (all 5 tracks ↑)</span>
+            <span class="track">CAGE log₂FC +0.06 to +0.12<br/>RNA-seq +0.05 to +0.14 (all 5 tracks ↑)<br/>(Musunuru measured ~12× in liver)</span>
           </td>
-          <td class="agree"><span class="tag soft">small ↑</span></td>
+          <td class="agree"><span class="tag soft">direction ✓, magnitude underestimated</span></td>
         </tr>
 
       </tbody>
@@ -371,23 +371,26 @@
     <div class="col">
       <h3>What the predictions say</h3>
       <ol>
-        <li>Minor T allele <strong>opens chromatin</strong> (BPN +1.24, AG +1.34).</li>
-        <li>Gains a <strong>CEBPA</strong> site (BPN +1.99, AG +2.7).</li>
-        <li>Recruits <strong>H3K27ac</strong> (+1.27).</li>
+        <li>Minor T allele <strong>opens chromatin</strong> (ChromBPNet +1.24, AG +1.34).</li>
+        <li>Gains a <strong>C/EBPα binding</strong> site (BPNet TF +1.99, AG +2.7).</li>
+        <li><strong>Gains H3K27ac</strong> active-enhancer mark (+1.27).</li>
         <li><strong>eRNA</strong> at the enhancer (CAGE +1.47).</li>
-        <li>Small but UP at <strong>SORT1’s TSS</strong>; CELSR2 / PSRC1 larger.</li>
+        <li>Single-fragment MPRA at SNP site UP (LegNet +0.30).</li>
+        <li>Small UP at <strong>SORT1</strong> TSS (AG ~1.1×) vs paper's measured ~12×.</li>
       </ol>
     </div>
     <div class="col">
       <h3>Ground truth (Musunuru 2010)</h3>
       <ul>
-        <li>T allele <strong>creates a C/EBP site</strong> in a hepatocyte enhancer.</li>
-        <li><strong>SORT1 ↑</strong> in liver → reduced VLDL secretion.</li>
-        <li>Plasma <strong>LDL-C ↓</strong>, <strong>CAD risk ↓</strong>.</li>
-        <li>Direction and bound TF validated experimentally.</li>
+        <li>Minor T allele <strong>creates a C/EBPα site</strong> in a liver enhancer.</li>
+        <li><strong>SORT1 ↑ ~12×</strong> in minor-allele homozygous human liver.</li>
+        <li><strong>PSRC1 ↑ ~12×</strong>; <em>no significant change for CELSR2</em>.</li>
+        <li>Higher hepatic SORT1 → <strong>57% drop in VLDL secretion</strong>.</li>
+        <li>Plasma <strong>LDL-C ↓</strong> (up to 16 mg/dL); <strong>MI risk ↓ ~40%</strong>.</li>
+        <li>C/EBPα binding validated by ChIP + antibody supershift.</li>
       </ul>
       <div class="ref">
-        <em>Nature</em> 466 (2010) ·
+        <em>Nature</em> 466, 714 (2010) ·
         <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3062476/">PMC3062476</a>
       </div>
     </div>
