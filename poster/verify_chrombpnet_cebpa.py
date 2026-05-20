@@ -88,10 +88,19 @@ def main():
     with open(path, "w") as fh:
         json.dump(out, fh, indent=2, default=str)
     log.info("wrote %s", path)
-    for row in rows:
-        log.info("  raw=%s  q=%s  ref=%s alt=%s  %s",
-                 row.get("raw_score"), row.get("quantile_score"),
-                 row.get("ref_value"), row.get("alt_value"), row.get("assay_id"))
+    # `rows` is a flat dict (log2fc_sum + ref_sum + alt_sum + per-track
+    # effect_sizes dict), not a list. Print the headline numbers + each
+    # per-track summary directly instead of treating dict keys as rows.
+    if rows.get("log2fc_sum") is not None:
+        log.info("  CEBPA log2fc_sum=%+.4f  ref_sum=%.4g  alt_sum=%.4g",
+                 rows["log2fc_sum"], rows["ref_sum"], rows["alt_sum"])
+    for tname, tdict in (rows.get("effect_sizes") or {}).items():
+        if isinstance(tdict, dict):
+            log.info("  %s  sum=%.4g  max=%.4g  min=%.4g  n=%d",
+                     tname, tdict.get("sum", float("nan")),
+                     tdict.get("max", float("nan")),
+                     tdict.get("min", float("nan")),
+                     tdict.get("n", 0))
 
 
 if __name__ == "__main__":

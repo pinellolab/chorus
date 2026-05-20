@@ -165,9 +165,16 @@ def run_chrombpnet():
     log.info("ChromBPNet CHIP:CEBPA:HepG2 ...")
     o2 = ChromBPNetOracle(use_environment=False)
     try:
-        # The TF API may differ; try common method names
+        # ChromBPNet ChIP-seq loader takes ``assay="CHIP", TF=<symbol>``
+        # (uppercase TF kwarg — see chorus/oracles/chrombpnet.py:369-418).
+        # Earlier iterations of this verifier tried lowercase ``tf=`` and
+        # several alias values; that path raised TypeError. Keep the
+        # canonical kwargs first, leave the legacy spellings as fallback
+        # so the script still works on older chorus versions.
         loaded = False
         for meth, kw in [
+            ("load_pretrained_model", dict(assay="CHIP", TF="CEBPA", cell_type="HepG2", fold=0)),
+            ("load_pretrained_TF",  dict(TF="CEBPA", cell_type="HepG2")),
             ("load_pretrained_TF",  dict(tf="CEBPA", cell_type="HepG2")),
             ("load_pretrained_tf",  dict(tf="CEBPA", cell_type="HepG2")),
             ("load_pretrained_model", dict(assay="ChIP-seq", tf="CEBPA", cell_type="HepG2", fold=0)),
