@@ -1,0 +1,100 @@
+{
+  "_doc": "Variant config for the chorus multi-oracle poster panel. Reproduces poster/rs12740374_SORT1_panel_compact.html when rendered with `python poster/generate_panel.py poster/variants/rs12740374.json`. All numbers verified against chorus v0.5.6 (commit f7c1c32); ground truth claims verbatim from Musunuru et al. 2010 (PMC3062476).",
+  "variant": {
+    "rsid": "rs12740374",
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref": "G",
+    "alt": "T",
+    "gene": "SORT1"
+  },
+  "cell_type": "HepG2",
+  "prompt": "Investigate the possible effects of rs12740374 on chromatin accessibility, promoter activity, TF binding, and histone modifications using appropriate models. Aggregate the predictions and provide me with a list of possible consequences.",
+  "rows": [
+    {
+      "layer_name": "1 · Chromatin",
+      "unit": "DNase",
+      "values": {
+        "chrombpnet": {"value": "1.00", "pct": "≥99<sup>th</sup>", "track": "ChromBPNet head<br/>log₂FC +1.24"},
+        "legnet": null,
+        "alphagenome": {"value": "1.00", "pct": "≥99<sup>th</sup>", "track": "log₂FC +1.34"}
+      },
+      "verdict": {"tag": "match", "text": "✓ both ↑"}
+    },
+    {
+      "layer_name": "2 · TF binding (C/EBPα)",
+      "unit": "ChIP-TF",
+      "values": {
+        "chrombpnet": {"value": "+1.99", "pct": "log₂FC (~3.97×)", "track": "BPNet TF head<br/>BP001094 / ENCSR142IGM"},
+        "legnet": null,
+        "alphagenome": {"value": "1.00", "pct": "≥99<sup>th</sup>", "track": "log₂FC +2.7 · CEBPA"}
+      },
+      "verdict": {"tag": "match", "text": "✓ both ↑"}
+    },
+    {
+      "layer_name": "3 · Histone marks",
+      "unit": "H3K27ac",
+      "values": {
+        "chrombpnet": null,
+        "legnet": null,
+        "alphagenome": {"value": "1.00", "pct": "≥99<sup>th</sup>", "track": "log₂FC +1.27"}
+      },
+      "verdict": {"tag": "single", "text": "single ↑"}
+    },
+    {
+      "layer_name": "4 · MPRA activity",
+      "unit": "lentiMPRA",
+      "values": {
+        "chrombpnet": null,
+        "legnet": {"value": "+0.30", "pct": "at SNP site (~230 bp window)", "track": "LentiMPRA·HepG2<br/>matches Musunuru luciferase: alt > ref"},
+        "alphagenome": null
+      },
+      "verdict": {"tag": "match", "text": "✓ matches paper"}
+    },
+    {
+      "layer_name": "5 · eRNA at variant site",
+      "unit": "CAGE",
+      "values": {
+        "chrombpnet": null,
+        "legnet": null,
+        "alphagenome": {"value": "1.00", "pct": "≥99<sup>th</sup>", "track": "log₂FC +1.47 · CAGE at enhancer"}
+      },
+      "verdict": {"tag": "single", "text": "single ↑"}
+    },
+    {
+      "layer_name": "6 · SORT1 TSS / gene output",
+      "unit": "CAGE + RNA-seq",
+      "values": {
+        "chrombpnet": null,
+        "legnet": null,
+        "alphagenome": {"value": "1.00", "pct": "≥99<sup>th</sup>", "track": "CAGE log₂FC +0.06 to +0.12<br/>RNA-seq +0.05 to +0.14 (all 5 tracks ↑)<br/>(Musunuru measured ~12× in liver)"}
+      },
+      "verdict": {"tag": "soft", "text": "direction ✓, magnitude underestimated"}
+    }
+  ],
+  "mechanism": {
+    "predictions": [
+      "Minor T allele <strong>opens chromatin</strong> (ChromBPNet +1.24, AG +1.34).",
+      "Gains a <strong>C/EBPα binding</strong> site (BPNet TF +1.99, AG +2.7).",
+      "<strong>Gains H3K27ac</strong> active-enhancer mark (+1.27).",
+      "<strong>eRNA</strong> at the enhancer (CAGE +1.47).",
+      "Single-fragment MPRA at SNP site UP (LegNet +0.30).",
+      "Small UP at <strong>SORT1</strong> TSS (AG ~1.1×) vs paper's measured ~12×."
+    ]
+  },
+  "ground_truth": {
+    "title": "Ground truth (Musunuru 2010)",
+    "pmc_id": "PMC3062476",
+    "citation_html": "<em>Nature</em> 466, 714 (2010) · <a href=\"https://pmc.ncbi.nlm.nih.gov/articles/PMC3062476/\">PMC3062476</a>",
+    "bullets": [
+      "Minor T allele <strong>creates a C/EBPα site</strong> in a liver enhancer.",
+      "<strong>SORT1 ↑ ~12×</strong> in minor-allele homozygous human liver.",
+      "<strong>PSRC1 ↑ ~12×</strong>; <em>no significant change for CELSR2</em>.",
+      "Higher hepatic SORT1 → <strong>57% drop in VLDL secretion</strong>.",
+      "Plasma <strong>LDL-C ↓</strong> (up to 16 mg/dL); <strong>MI risk ↓ ~40%</strong>.",
+      "C/EBPα binding validated by ChIP + antibody supershift."
+    ]
+  },
+  "igv_src": "igv_only.html",
+  "igv_meta": "SORT1 ±150 kb · zoomable to ±500 kb"
+}

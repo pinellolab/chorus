@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Chorus poster panel: rs12740374 / SORT1</title>
+<title>Chorus poster panel: {{VARIANT_RSID}} / {{VARIANT_GENE}}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -139,8 +139,8 @@
   <div class="card">
     <div class="card-head">
       <span class="pill">Output</span>
-      <h2>Multi-oracle validation &nbsp;·&nbsp; rs12740374 &nbsp;·&nbsp; SORT1</h2>
-      <span class="meta">chr1:109,274,968 G → T &nbsp;·&nbsp; HepG2</span>
+      <h2>Multi-oracle validation &nbsp;·&nbsp; {{VARIANT_RSID}} &nbsp;·&nbsp; {{VARIANT_GENE}}</h2>
+      <span class="meta">{{VARIANT_LOCATION}} {{VARIANT_REF_ALT}} &nbsp;·&nbsp; {{CELL_TYPE}}</span>
     </div>
 
     <table class="matrix">
@@ -155,53 +155,7 @@
       </thead>
       <tbody>
 
-        <tr>
-          <td class="layer"><span class="lname">1 · Chromatin</span><span class="unit">DNase</span></td>
-          <td class="num"><span class="v">1.00</span><span class="pct">≥99<sup>th</sup></span><span class="track">ChromBPNet head<br/>log₂FC +1.24</span></td>
-          <td class="num empty">·<span class="why">not scored</span></td>
-          <td class="num"><span class="v">1.00</span><span class="pct">≥99<sup>th</sup></span><span class="track">log₂FC +1.34</span></td>
-          <td class="agree"><span class="tag match">✓ both ↑</span></td>
-        </tr>
-
-        <tr>
-          <td class="layer"><span class="lname">2 · TF binding (C/EBPα)</span><span class="unit">ChIP-TF</span></td>
-          <td class="num"><span class="v">+1.99</span><span class="pct">log₂FC (~3.97×)</span><span class="track">BPNet TF head<br/>BP001094 / ENCSR142IGM</span></td>
-          <td class="num empty">·<span class="why">not scored</span></td>
-          <td class="num"><span class="v">1.00</span><span class="pct">≥99<sup>th</sup></span><span class="track">log₂FC +2.7 · CEBPA</span></td>
-          <td class="agree"><span class="tag match">✓ both ↑</span></td>
-        </tr>
-
-        <tr>
-          <td class="layer"><span class="lname">3 · Histone marks</span><span class="unit">H3K27ac</span></td>
-          <td class="num empty">·<span class="why">not scored</span></td>
-          <td class="num empty">·<span class="why">not scored</span></td>
-          <td class="num"><span class="v">1.00</span><span class="pct">≥99<sup>th</sup></span><span class="track">log₂FC +1.27</span></td>
-          <td class="agree"><span class="tag single">single ↑</span></td>
-        </tr>
-
-        <tr>
-          <td class="layer"><span class="lname">4 · MPRA activity</span><span class="unit">lentiMPRA</span></td>
-          <td class="num empty">·<span class="why">not scored</span></td>
-          <td class="num"><span class="v">+0.30</span><span class="pct">at SNP site (~230 bp window)</span><span class="track">LentiMPRA·HepG2<br/>matches Musunuru luciferase: alt > ref</span></td>
-          <td class="num empty">·<span class="why">not scored</span></td>
-          <td class="agree"><span class="tag match">✓ matches paper</span></td>
-        </tr>
-
-        <tr>
-          <td class="layer"><span class="lname">5 · eRNA at variant site</span><span class="unit">CAGE</span></td>
-          <td class="num empty">·<span class="why">not scored</span></td>
-          <td class="num empty">·<span class="why">not scored</span></td>
-          <td class="num"><span class="v">1.00</span><span class="pct">≥99<sup>th</sup></span><span class="track">log₂FC +1.47 · CAGE at enhancer</span></td>
-          <td class="agree"><span class="tag single">single ↑</span></td>
-        </tr>
-
-        <tr>
-          <td class="layer"><span class="lname">6 · SORT1 TSS / gene output</span><span class="unit">CAGE + RNA-seq</span></td>
-          <td class="num empty">·<span class="why">not scored</span></td>
-          <td class="num empty">·<span class="why">not scored</span></td>
-          <td class="num"><span class="v">1.00</span><span class="pct">≥99<sup>th</sup></span><span class="track">CAGE log₂FC +0.06 to +0.12<br/>RNA-seq +0.05 to +0.14 (all 5 tracks ↑)<br/>(Musunuru measured ~12× in liver)</span></td>
-          <td class="agree"><span class="tag soft">direction ✓, magnitude underestimated</span></td>
-        </tr>
+        {{ROWS_HTML}}
 
       </tbody>
     </table>
@@ -212,29 +166,10 @@
     <div class="col">
       <h3>What the predictions say</h3>
       <ol>
-        <li>Minor T allele <strong>opens chromatin</strong> (ChromBPNet +1.24, AG +1.34).</li>
-        <li>Gains a <strong>C/EBPα binding</strong> site (BPNet TF +1.99, AG +2.7).</li>
-        <li><strong>Gains H3K27ac</strong> active-enhancer mark (+1.27).</li>
-        <li><strong>eRNA</strong> at the enhancer (CAGE +1.47).</li>
-        <li>Single-fragment MPRA at SNP site UP (LegNet +0.30).</li>
-        <li>Small UP at <strong>SORT1</strong> TSS (AG ~1.1×) vs paper's measured ~12×.</li>
+        {{PREDICTION_BULLETS}}
       </ol>
     </div>
-    
-    <div class="col">
-      <h3>Ground truth (Musunuru 2010)</h3>
-      <ul>
-        <li>Minor T allele <strong>creates a C/EBPα site</strong> in a liver enhancer.</li>
-        <li><strong>SORT1 ↑ ~12×</strong> in minor-allele homozygous human liver.</li>
-        <li><strong>PSRC1 ↑ ~12×</strong>; <em>no significant change for CELSR2</em>.</li>
-        <li>Higher hepatic SORT1 → <strong>57% drop in VLDL secretion</strong>.</li>
-        <li>Plasma <strong>LDL-C ↓</strong> (up to 16 mg/dL); <strong>MI risk ↓ ~40%</strong>.</li>
-        <li>C/EBPα binding validated by ChIP + antibody supershift.</li>
-      </ul>
-      <div class="ref">
-        <em>Nature</em> 466, 714 (2010) · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3062476/">PMC3062476</a>
-      </div>
-    </div>
+    {{GROUND_TRUTH_BLOCK}}
   </div>
 
   <!-- BROWSER -->
@@ -242,10 +177,10 @@
     <div class="card-head">
       <span class="pill">Browser</span>
       <h2>Cross-oracle IGV (one x-axis)</h2>
-      <span class="meta">SORT1 ±150 kb · zoomable to ±500 kb</span>
+      <span class="meta">{{IGV_META}}</span>
     </div>
     <div class="browser-frame-wrap">
-      <iframe id="igv-frame" src="igv_only.html" scrolling="no"
+      <iframe id="igv-frame" src="{{IGV_SRC}}" scrolling="no"
               title="Real IGV.js browser with chorus oracle tracks"></iframe>
     </div>
   </div>
