@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Chorus poster panel: rs2853669 / TERT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #FFFFFF;
+    --card-bg:   #FFFFFF;
+    --ink:       #1A2540;
+    --ink-soft:  #4A5670;
+    --ink-faint: #8A93A8;
+    --rule:      #E5DDC8;
+    --rule-soft: #EFE9D8;
+    --accent:    #E07A38;
+    --accent-bg: #FFF2E5;
+    --good:      #2F8F58;
+    --good-bg:   #E6F4EC;
+    --gold-bg:   #FFF8E0;
+    --info-bg:   #ECF2FB;
+    --mute:      #B7BCC9;
+    --shadow:    0 1px 0 rgba(26,37,64,.04), 0 2px 14px rgba(26,37,64,.05);
+  }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .panel { max-width: 560px; margin: 16px auto; padding: 0 8px; }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    margin: 14px 0;
+    overflow: hidden;
+  }
+
+  .card-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--rule);
+    background: linear-gradient(to bottom, #FCFAF3, #FFFFFF);
+  }
+  .card-head .pill {
+    display: inline-block; font-size: 10.5px; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    padding: 2.5px 7px; border-radius: 3px; color: #fff; background: var(--ink);
+  }
+  .card-head h2 { margin: 0; font-size: 14.5px; font-weight: 700; color: var(--ink); }
+  .card-head .meta {
+    margin-left: auto; color: var(--ink-faint); font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  table.matrix {
+    border-collapse: separate; border-spacing: 0; width: 100%; font-size: 12px;
+  }
+  table.matrix thead th {
+    text-align: left; font-weight: 600; color: #fff; background: var(--ink);
+    padding: 9px 9px; font-size: 11.5px; letter-spacing: .02em;
+  }
+  table.matrix thead th.num { text-align: center; width: 102px; }
+  table.matrix thead th.last { text-align: center; width: 76px; }
+  table.matrix tbody td { padding: 10px 9px; border-bottom: 1px solid var(--rule-soft); vertical-align: middle; }
+  table.matrix tbody tr:last-child td { border-bottom: none; }
+  table.matrix tbody tr:nth-child(odd) td { background: #FDFBF5; }
+  table.matrix tbody td.layer { color: var(--ink); }
+  table.matrix tbody td.layer .lname { font-weight: 600; font-size: 13px; }
+  table.matrix tbody td.layer .unit {
+    display: inline-block; margin-left: 5px; padding: 1px 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--ink-soft); background: #F0EBDD; border-radius: 3px; vertical-align: 1px;
+  }
+  table.matrix tbody td.num { text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  td.num .v { font-weight: 700; color: #18432B; font-size: 13.5px; }
+  td.num .v.neg { color: #8E2A2A; }
+  td.num .pct { display: block; color: var(--ink-faint); font-size: 10px; margin-top: 2px; }
+  td.num .track { display: block; color: var(--ink-soft); font-size: 9.5px; margin-top: 2px; line-height: 1.3; }
+  td.num.empty { color: var(--mute); font-size: 16px; line-height: 1; }
+  td.num.empty .why {
+    display: block; color: var(--ink-faint); font-size: 9.5px;
+    font-family: 'Inter', sans-serif; margin-top: 4px; line-height: 1.25;
+  }
+  td.agree { text-align: center; }
+  td.agree .tag {
+    display: inline-block; padding: 3px 8px; border-radius: 999px;
+    font-size: 10.5px; font-weight: 600; letter-spacing: .01em;
+  }
+  td.agree .tag.match { background: var(--good-bg); color: var(--good); border: 1px solid #BFE0CC; }
+  td.agree .tag.single { background: var(--info-bg); color: #3863B0; border: 1px solid #D5DFF1; }
+  td.agree .tag.soft { background: var(--gold-bg); color: #8A6B14; border: 1px solid #EBDFA8; }
+
+  .mechanism { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .mechanism .col { padding: 14px 16px; }
+  .mechanism .col + .col { border-left: 1px solid var(--rule); background: #FDFBF5; }
+  .mechanism h3 {
+    margin: 0 0 7px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--ink-faint); font-weight: 700;
+  }
+  .mechanism ol, .mechanism ul { margin: 0; padding-left: 16px; font-size: 12px; color: var(--ink-soft); line-height: 1.5; }
+  .mechanism li { margin: 4px 0; }
+  .mechanism li strong { color: var(--ink); }
+  .mechanism .ref { margin-top: 9px; font-size: 10.5px; color: var(--ink-faint); }
+  .mechanism .ref a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent); }
+
+  .browser-frame-wrap iframe {
+    display: block; width: 100%; height: 900px; border: 0;
+    border-top: 1px solid var(--rule); background: #fff; overflow: hidden;
+  }
+
+  @media print { body { background: #fff; } .panel { margin: 0; padding: 8px; } .card { box-shadow: none; } }
+</style>
+<script>
+  window.addEventListener('message', (e) => {
+    if (!e.data || e.data.type !== 'igv-height') return;
+    const f = document.getElementById('igv-frame');
+    if (!f) return;
+    const h = Math.max(500, Math.min(2400, Number(e.data.height) || 0));
+    if (h && Math.abs(f.clientHeight - h) > 4) f.style.height = h + 'px';
+  });
+</script>
+</head>
+<body>
+
+<div class="panel">
+
+  <!-- CONSENSUS MATRIX -->
+  <div class="card">
+    <div class="card-head">
+      <span class="pill">Output</span>
+      <h2>Multi-oracle validation &nbsp;·&nbsp; rs2853669 &nbsp;·&nbsp; TERT</h2>
+      <span class="meta">chr5:1,295,234 A → G &nbsp;·&nbsp; K562</span>
+    </div>
+
+    <table class="matrix">
+      <thead>
+        <tr>
+          <th>Regulatory layer</th>
+          <th class="num">ChromBPNet</th>
+          <th class="num">LegNet</th>
+          <th class="num">AlphaGenome</th>
+          <th class="last">Verdict</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr>
+          <td class="layer"><span class="lname">1 · Chromatin</span><span class="unit">DNase</span></td>
+          <td class="num"><span class="v">−0.006</span><span class="pct">log₂FC (q=0.13)</span><span class="track">ChromBPNet head<br/>DNASE:K562 (essentially flat)</span></td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num"><span class="v">−0.066</span><span class="pct">log₂FC (q=1.0)</span><span class="track">DNASE:K562<br/>small DOWN</span></td>
+          <td class="agree"><span class="tag soft">small ↓, BPNet flat</span></td>
+        </tr>
+
+        <tr>
+          <td class="layer"><span class="lname">2 · TF binding (GABP)</span><span class="unit">ChIP-TF</span></td>
+          <td class="num"><span class="v">+0.046</span><span class="pct">log₂FC (~1.03×)</span><span class="track">BPNet TF head GABPA:K562<br/>BP000563 / ENCSR000BLO (flat)</span></td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num"><span class="v">−0.076</span><span class="pct">log₂FC (q=1.0)</span><span class="track">GABPB1:K562 ChIP −0.076<br/>GABPA-eGFP:K562 ChIP −0.033</span></td>
+          <td class="agree"><span class="tag soft">oracles disagree on sign</span></td>
+        </tr>
+
+        <tr>
+          <td class="layer"><span class="lname">3 · Histone marks</span><span class="unit">H3K27ac</span></td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num"><span class="v">−0.039</span><span class="pct">log₂FC (q=1.0)</span><span class="track">H3K27ac:K562<br/>small DOWN</span></td>
+          <td class="agree"><span class="tag single">single ↓</span></td>
+        </tr>
+
+        <tr>
+          <td class="layer"><span class="lname">4 · MPRA activity</span><span class="unit">lentiMPRA</span></td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num"><span class="v">+0.003</span><span class="pct">at SNP site (~230 bp)</span><span class="track">LentiMPRA:K562<br/>essentially flat</span></td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="agree"><span class="tag soft">silent</span></td>
+        </tr>
+
+        <tr>
+          <td class="layer"><span class="lname">5 · eRNA at variant site</span><span class="unit">CAGE</span></td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num"><span class="v">−0.16</span><span class="pct">log₂FC (q=1.0)</span><span class="track">CAGE @ enhancer/variant site<br/>strongest single AG signal</span></td>
+          <td class="agree"><span class="tag single">single ↓</span></td>
+        </tr>
+
+        <tr>
+          <td class="layer"><span class="lname">6 · TERT TSS / gene output</span><span class="unit">CAGE + RNA-seq</span></td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num empty">·<span class="why">not scored</span></td>
+          <td class="num"><span class="v">−0.04 to −0.16</span><span class="pct">log₂FC (q=1.0)</span><span class="track">CAGE @ TERT TSS −0.04 / −0.16<br/>RNA-seq @ TERT exons −0.026 to −0.029<br/>(4/4 RNA-seq tracks ↓)</span></td>
+          <td class="agree"><span class="tag match">✓ direction matches paper</span></td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MECHANISM + GROUND TRUTH -->
+  <div class="card mechanism">
+    <div class="col">
+      <h3>What the predictions say</h3>
+      <ol>
+        <li>Minor G allele slightly <strong>closes chromatin</strong> per AG DNase (−0.07); ChromBPNet flat.</li>
+        <li>Predicted <strong>GABP binding</strong> change is tiny (~5%); AG sees DOWN, BPNet flat.</li>
+        <li><strong>Loses H3K27ac</strong> mark (AG −0.04, small).</li>
+        <li><strong>eRNA at the SNP site DOWN</strong> (AG CAGE −0.16, the strongest single signal).</li>
+        <li><strong>TERT TSS</strong> CAGE and all 4 RNA-seq tracks directionally DOWN (−0.03 to −0.16).</li>
+        <li>Single-fragment MPRA at SNP site flat (LegNet K562 +0.003).</li>
+      </ol>
+    </div>
+    
+    <div class="col">
+      <h3>Ground truth (Helbig 2017)</h3>
+      <ul>
+        <li>Risk-associated minor C (= +strand G) allele <strong>preferentially binds GABPA</strong> by allele-specific ChIP-qPCR.</li>
+        <li>Risk haplotype <strong>reduces TERT promoter activity</strong> in luciferase assays in Bre80 (normal breast) and MCF-7 cells.</li>
+        <li>GABPA binding validated by ChIP in Bre80 cells (sc-22810-X antibody).</li>
+        <li>Functional dissection across 6 breast-cancer-risk TERT-promoter variants identified rs2853669 as functional.</li>
+        <li>Direction (↓) matches AG K562; magnitude (no fold-change reported, P<0.05) is consistent with the small effects predicted here.</li>
+        <li>Caveat: Helbig used breast cells; K562 chorus tracks are an indirect cell-type proxy.</li>
+      </ul>
+      <div class="ref">
+        Helbig et al., <em>Oncotarget</em> 8 (2017) · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC5620167/">PMC5620167</a> <span style="margin-left:6px;color:#2F8F58">✓ in paperclip</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BROWSER -->
+  <div class="card">
+    <div class="card-head">
+      <span class="pill">Browser</span>
+      <h2>Cross-oracle IGV (one x-axis)</h2>
+      <span class="meta">TERT ±150 kb (canonical IGV from rs12740374 example; rs2853669-specific IGV TBD)</span>
+    </div>
+    <div class="browser-frame-wrap">
+      <iframe id="igv-frame" src="igv_only.html" scrolling="no"
+              title="Real IGV.js browser with chorus oracle tracks"></iframe>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

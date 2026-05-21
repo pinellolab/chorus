@@ -1,0 +1,57 @@
+{
+  "variant": {
+    "chrom": "chr5",
+    "position": 1295234,
+    "ref_allele": "A",
+    "alt_alleles": [
+      "G"
+    ]
+  },
+  "oracle": "legnet",
+  "gene_name": "TERT",
+  "nearby_genes": [
+    "TERT",
+    "ENSG00000300381"
+  ],
+  "report_title": "Multi-Layer Variant Effect Report",
+  "alleles": {
+    "alt_1": {
+      "scores_by_layer": {
+        "promoter_activity": [
+          {
+            "assay_id": "LentiMPRA:K562",
+            "assay_type": "LentiMPRA",
+            "cell_type": "K562",
+            "layer": "promoter_activity",
+            "ref_value": -0.17815932631492615,
+            "alt_value": -0.1752614676952362,
+            "raw_score": 0.0028978586196899414,
+            "description": "LentiMPRA:K562"
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "LentiMPRA:K562",
+          "assay_type": "LentiMPRA",
+          "cell_type": "K562",
+          "layer": "promoter_activity",
+          "ref_value": -0.17815932631492615,
+          "alt_value": -0.1752614676952362,
+          "raw_score": 0.0028978586196899414,
+          "description": "LentiMPRA:K562"
+        }
+      ]
+    }
+  },
+  "analysis_request": {
+    "user_prompt": "rs2853669 LegNet narrow K562",
+    "tool_name": "x",
+    "oracle_name": "legnet",
+    "normalizer_name": "(none)",
+    "tracks_requested": "LentiMPRA:K562",
+    "cell_types": [],
+    "notes": [],
+    "generated_at": "2026-05-21 18:46 UTC"
+  }
+}

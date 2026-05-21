@@ -1,0 +1,73 @@
+{
+  "variant": {
+    "chrom": "chr5",
+    "position": 1295234,
+    "ref_allele": "A",
+    "alt_alleles": [
+      "G"
+    ]
+  },
+  "oracle": "chrombpnet",
+  "gene_name": "TERT",
+  "nearby_genes": [
+    "TERT",
+    "CLPTM1L",
+    "SLC6A18",
+    "SLC6A19",
+    "SLC6A3",
+    "LPCAT1",
+    "SLC12A7",
+    "NKD2",
+    "TRIP13",
+    "BRD9",
+    "ZDHHC11",
+    "MRPL36",
+    "NDUFS6",
+    "ZDHHC11B"
+  ],
+  "report_title": "Multi-Layer Variant Effect Report",
+  "alleles": {
+    "alt_1": {
+      "scores_by_layer": {
+        "chromatin_accessibility": [
+          {
+            "assay_id": "DNASE:K562",
+            "assay_type": "DNASE",
+            "cell_type": "K562",
+            "layer": "chromatin_accessibility",
+            "ref_value": 27.018625298514962,
+            "alt_value": 26.910094525665045,
+            "raw_score": -0.005599162820215938,
+            "description": "DNASE:K562",
+            "quantile_score": 0.132,
+            "ref_signal_percentile": 0.2472
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "DNASE:K562",
+          "assay_type": "DNASE",
+          "cell_type": "K562",
+          "layer": "chromatin_accessibility",
+          "ref_value": 27.018625298514962,
+          "alt_value": 26.910094525665045,
+          "raw_score": -0.005599162820215938,
+          "description": "DNASE:K562",
+          "quantile_score": 0.132,
+          "ref_signal_percentile": 0.2472
+        }
+      ]
+    }
+  },
+  "analysis_request": {
+    "user_prompt": "rs2853669 ChromBPNet DNase K562",
+    "tool_name": "x",
+    "oracle_name": "chrombpnet",
+    "normalizer_name": "chorus per-track v1",
+    "tracks_requested": "DNASE:K562",
+    "cell_types": [],
+    "notes": [],
+    "generated_at": "2026-05-21 18:47 UTC"
+  }
+}
