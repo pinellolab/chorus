@@ -56,6 +56,15 @@ markdown file next to your config (e.g.
 If no paper is available, leave `ground_truth` out of the config; the
 generator will emit a small "no paper cited" placeholder card.
 
+**Paper source flexibility.** The `ground_truth.paper` block accepts
+any combination of `pmc_id`, `pubmed_id`, `doi`, `url`, and
+`paperclip_id`. The generator picks the best canonical link in this
+priority order: `url` ▸ `pmc_id` ▸ `pubmed_id` ▸ `doi`. The clickable
+label shown to the reader is whichever ID you provided. If `paperclip`
+is on PATH, the generator also runs `paperclip lookup` against PMC /
+PubMed / DOI and adds a "✓ in paperclip" tag when the paper is indexed
+locally.
+
 ### 3. Write the config
 
 Copy `poster/variants/rs12740374.json` and edit. The schema:
@@ -96,9 +105,16 @@ Copy `poster/variants/rs12740374.json` and edit. The schema:
   },
 
   "ground_truth": {
-    "title":         "Ground truth (Author Year)",
-    "pmc_id":        "PMC3062476",
-    "citation_html": "<em>Nature</em> 466, 714 (2010) · <a href='...'>PMC3062476</a>",
+    "title": "Ground truth (Author Year)",
+    "paper": {
+      "citation_text": "Author et al., <em>Journal</em> vol, page (year)",
+      /* Provide ONE OR MORE of the following; generator picks the best link: */
+      "pmc_id":        "PMC3062476",          // resolves to pmc.ncbi.nlm.nih.gov/articles/PMC3062476/
+      "pubmed_id":     "20686566",            // resolves to pubmed.ncbi.nlm.nih.gov/20686566/
+      "doi":           "10.1038/nature09266", // resolves to doi.org/...
+      "url":           "https://...",         // any URL, takes precedence as the canonical link
+      "paperclip_id":  "PMC3062476"           // paperclip /papers/<id> directory; falls back to pmc_id
+    },
     "bullets": [
       "Verbatim claim 1 ...",
       "Verbatim claim 2 ..."

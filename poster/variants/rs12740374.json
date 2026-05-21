@@ -84,8 +84,12 @@
   },
   "ground_truth": {
     "title": "Ground truth (Musunuru 2010)",
-    "pmc_id": "PMC3062476",
-    "citation_html": "<em>Nature</em> 466, 714 (2010) · <a href=\"https://pmc.ncbi.nlm.nih.gov/articles/PMC3062476/\">PMC3062476</a>",
+    "paper": {
+      "citation_text": "Musunuru et al., <em>Nature</em> 466, 714 (2010)",
+      "pmc_id": "PMC3062476",
+      "pubmed_id": "20686566",
+      "doi": "10.1038/nature09266"
+    },
     "bullets": [
       "Minor T allele <strong>creates a C/EBPα site</strong> in a liver enhancer.",
       "<strong>SORT1 ↑ ~12×</strong> in minor-allele homozygous human liver.",
