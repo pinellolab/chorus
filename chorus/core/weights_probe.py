@@ -49,6 +49,16 @@ def _probe_legnet() -> Tuple[bool, List[str]]:
     return (True, [])
 
 
+def _probe_epinformerseq() -> Tuple[bool, List[str]]:
+    # Per-cell layout (2026-05-27): one PerCellProfileNet per cell + frozen BiasNet.
+    # Default cell_type=K562 (matches EPInformerSeqOracle.__init__).
+    root = CHORUS_DOWNLOADS_DIR / "epinformerseq"
+    main_pt = root / "per_cell" / "K562" / "main.pt"
+    bias_pt = root / "bias" / "K562" / "bias.pt"
+    missing = [str(p) for p in (main_pt, bias_pt) if not p.exists()]
+    return (len(missing) == 0, missing)
+
+
 def _hf_cache_dir() -> Path:
     """Resolve the HuggingFace hub cache directory.
 
@@ -151,6 +161,7 @@ def _probe_alphagenome_pt() -> Tuple[bool, List[str]]:
 _ARTIFACT_PROBES: Dict[str, Callable[[], Tuple[bool, List[str]]]] = {
     "sei": _probe_sei,
     "legnet": _probe_legnet,
+    "epinformerseq": _probe_epinformerseq,
     # ChromBPNet default path (fold=0, chrombpnet_nobias) downloads to
     # the HF hub cache (~/.cache/huggingface/) via the slim mirror, not
     # to CHORUS_DOWNLOADS_DIR — same as enformer/borzoi.

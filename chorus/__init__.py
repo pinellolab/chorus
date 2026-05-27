@@ -48,6 +48,7 @@ if not os.environ.get('CHORUS_DISABLE_ORACLE_IMPORTS'):
             ChromBPNetOracle,
             SeiOracle,
             LegNetOracle,
+            EPInformerSeqOracle,
             AlphaGenomeOracle,
             AlphaGenomePTOracle,
             get_oracle,
@@ -65,6 +66,7 @@ if not os.environ.get('CHORUS_DISABLE_ORACLE_IMPORTS'):
         ChromBPNetOracle = None
         SeiOracle = None
         LegNetOracle = None
+        EPInformerSeqOracle = None
         AlphaGenomeOracle = None
         AlphaGenomePTOracle = None
         ORACLES = {}
@@ -81,6 +83,7 @@ else:
     ChromBPNetOracle = None
     SeiOracle = None
     LegNetOracle = None
+    EPInformerSeqOracle = None
     AlphaGenomeOracle = None
     AlphaGenomePTOracle = None
     ORACLES = {}
@@ -121,7 +124,7 @@ def create_oracle(oracle_name: str, use_environment: bool = False, **kwargs):
     Create an oracle instance by name.
     
     Args:
-        oracle_name: Name of the oracle (enformer, borzoi, chrombpnet, sei, legnet, alphagenome)
+        oracle_name: Name of the oracle (enformer, borzoi, chrombpnet, sei, legnet, epinformerseq, alphagenome)
         use_environment: If True, use isolated conda environment for the oracle
         **kwargs: Additional arguments passed to oracle constructor, including:
             - model_load_timeout: Timeout for model loading in seconds (default: 600)
@@ -175,6 +178,9 @@ def create_oracle(oracle_name: str, use_environment: bool = False, **kwargs):
         elif oracle_name.lower() == "legnet":
             from .oracles.legnet import LegNetOracle
             return LegNetOracle(use_environment=True, **kwargs)
+        elif oracle_name.lower() == "epinformerseq":
+            from .oracles.epinformerseq import EPInformerSeqOracle
+            return EPInformerSeqOracle(use_environment=True, **kwargs)
         elif oracle_name.lower() == "sei":
             from .oracles.sei import SeiOracle
             return SeiOracle(use_environment=True, **kwargs)
@@ -188,7 +194,7 @@ def create_oracle(oracle_name: str, use_environment: bool = False, **kwargs):
             from .oracles.alphagenome_pt import AlphaGenomePTOracle
             return AlphaGenomePTOracle(use_environment=True, **kwargs)
         else:
-            valid = "enformer, borzoi, chrombpnet, sei, legnet, alphagenome, alphagenome_pt"
+            valid = "enformer, borzoi, chrombpnet, sei, legnet, epinformerseq, alphagenome, alphagenome_pt"
             raise ValueError(
                 f"Unknown oracle: '{oracle_name}'. "
                 f"Valid oracle names: {valid}"
@@ -232,6 +238,7 @@ __all__ = [
     'ChromBPNetOracle',
     'SeiOracle',
     'LegNetOracle',
+    'EPInformerSeqOracle',
     'AlphaGenomeOracle',
     'AlphaGenomePTOracle',
 

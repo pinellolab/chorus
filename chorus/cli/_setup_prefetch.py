@@ -46,6 +46,8 @@ logger = logging.getLogger(__name__)
 # `chorus setup --oracle legnet` with a TypeError (v22 audit finding).
 _DEFAULT_CTOR_KWARGS: Dict[str, Dict[str, object]] = {
     "legnet": {"assay": "LentiMPRA", "cell_type": "HepG2"},
+    # EPInformer-seq: cell_type is on __init__, default checkpoint is K562.
+    "epinformerseq": {"cell_type": "K562"},
 }
 # A LIST of dicts means "load each in sequence" (e.g. for pre-caching
 # multiple ChromBPNet (assay, cell_type) tarballs). A single dict means
