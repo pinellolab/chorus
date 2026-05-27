@@ -1,24 +1,33 @@
-"""Build per-cell baseline background CDFs for EPInformer-seq (per-cell variant).
+"""Build per-cell background CDFs for EPInformer-seq (per-cell variant).
 
 Per-cell = `PerCellProfileNet` (no FiLM, no cell embedding) + frozen per-cell
 `BiasNet`. One model per cell.
 
-This script writes ONLY the per-cell baseline (activity) CDF used to set
-90th-percentile thresholds for locus-level visualization. Variant-effect CDFs
-(`effect_cdfs`) and per-bin CDFs (`perbin_cdfs`) are NOT built here yet — TODO
-for the full normalization stack per NORMALIZATION_GUIDE.md.
+Builds the full ``{oracle}_pertrack.npz`` background bundle for the 11 cells:
+
+* ``effect_cdfs``  — unsigned ``|log2((alt+1)/(ref+1))|`` over ~10 000 random
+  SNPs (one ref/alt activity pair per cell). Used for variant-effect
+  percentile lookup.
+* ``summary_cdfs`` — per-cell activity baseline CDF over ~34 000 positions
+  (15 000 random + ~11 500 cCRE + 3 000 TSS + 5 000 DHS-summit). Used for
+  locus-level 90th-percentile thresholds in visualization.
 
 Output: ``~/.chorus/backgrounds/epinformerseq_pertrack.npz`` with
-``track_ids``, ``summary_cdfs``, ``summary_counts``.
+``track_ids``, ``summary_cdfs``, ``summary_counts``,
+``effect_cdfs``, ``effect_counts``.
 
 Activity derivation: per 1024-bp window, the v2 main + bias produce per-bp
 profile logits + log10(count) per channel. We compute
 ``signal[i,c] = softmax(main+bias)[i,c] * 10**log_count[c]``, then take
-``sqrt(max_DNase * max_H3K27ac)`` over the central 256 bp — matching the
-notebook's per-bp plot units (predicted counts).
+``sqrt(max_DNase * max_H3K27ac)`` over the **central 256 bp** — the same
+slice the oracle uses at inference (``model_usage.predict_activity``), so
+percentile lookups are consistent with the runtime scalar.
 
-Sampling recipe: 15 000 random + ~11.5 k cCRE + 3 000 TSS + 5 000 DHS-summit
-positions (same as v1 builder).
+Stages — pick with ``--part {variants, baselines, merge, all}``:
+  variants : score random SNPs → effect_cdfs interim NPZ
+  baselines: score genome positions → summary_cdfs interim NPZ
+  merge    : combine interims into the final ``{oracle}_pertrack.npz``
+  all      : run all three stages in order (default)
 
 Run in chorus-epinformerseq env:
   mamba run -n chorus-epinformerseq python scripts/build_backgrounds_epinformerseq_v2_percell.py

@@ -47,6 +47,15 @@ def _weights_available():
     return (CHORUS_DOWNLOADS_DIR / "epinformerseq" / "per_cell" / "K562" / "main.pt").exists()
 
 
+def _torch_available():
+    """True iff torch can be imported (chorus-epinformerseq env has it; base does not)."""
+    try:
+        import torch  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
 # ---------------------------------------------------------------------------
 # Static checks
 # ---------------------------------------------------------------------------
@@ -62,10 +71,15 @@ class TestEPInformerSeqRegistry:
     def test_no_stale_cellcondprofilenet_export(self):
         """The joint v2 model was retired; nothing should re-export it.
 
-        Must run in an env that has torch (chorus-epinformerseq); we don't gate
-        on torch availability so the test fails loudly rather than silently
-        skipping when run in the wrong env.
+        ``chorus/oracles/epinformerseq_source/model.py`` does ``import torch``
+        at module scope, so this runtime check needs torch. We import-skip
+        when torch is missing (e.g. base CI env) — the companion
+        ``test_no_stale_cellcondprofilenet_source`` does a static source grep
+        with no torch dependency, so the regression is still caught there.
+        In the chorus-epinformerseq env both tests run and fail loudly on
+        any reappearance of the retired symbols.
         """
+        pytest.importorskip("torch")
         from chorus.oracles.epinformerseq_source import model as model_mod
         assert not hasattr(model_mod, "CellCondProfileNet"), (
             "CellCondProfileNet should be retired in favor of PerCellProfileNet"
@@ -239,14 +253,18 @@ class TestEPInformerSeqCDF:
 # Functional checks (skipped unless prerequisites available)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.skipif(not _weights_available(), reason="per-cell weights not downloaded")
+@pytest.mark.skipif(
+    not (_weights_available() and _torch_available()),
+    reason="per-cell weights and torch (chorus-epinformerseq env) required",
+)
 class TestEPInformerSeqLoad:
     """Load + forward pass on a random 1024-bp sequence (one cell).
 
-    Must run in chorus-epinformerseq env (has torch). We intentionally do NOT
-    skipif on torch availability so the test fails loudly when run in the
-    wrong env. The only skipif is for missing weights — a legitimate "not
-    set up yet" case where we want to skip cleanly.
+    Runs in chorus-epinformerseq env (has torch) when per-cell weights are
+    cached. Skipped cleanly in the base chorus env (no torch) or when
+    weights have not been fetched. Static checks above (registry, globals,
+    source greps) always run, so any regression to the retired joint model
+    is still caught in CI without torch.
     """
 
     def test_load_k562_and_predict_random(self):

@@ -1,4 +1,9 @@
-"""EPInformer-seq per-cell oracle: 1024-bp sequence → per-bp DNase + H3K27ac profile.
+"""EPInformer-seq per-cell oracle: 1024-bp sequence → scalar enhancer activity.
+
+The oracle's public ``predict`` path returns one scalar per region. The
+underlying ``PerCellProfileNet + BiasNet`` does emit a full per-bp 2-channel
+profile internally (see ``model_usage.predict_profile``), but only the
+aggregated scalar is exposed through the chorus track interface.
 
 Architecture:
 
@@ -10,10 +15,13 @@ Architecture:
   and H3K27ac peak summits across 11 Roadmap cells, fold-10 leave-chrom-out
   CV split, per-rep ENCODE BAMs (ENCODE ``recommended=true`` single rep).
 
-The default predict path returns one scalar = ``sqrt(max(DNase) × max(H3K27ac))``
-across the 1024-bp window (the ``Enhancer_H3K27ac_DNase`` assay). Single-channel
-assays (``Enhancer_DNase``, ``Enhancer_H3K27ac``) return the per-bp peak max
-of that channel only.
+Scalar definition (must match the background CDF builder at
+``scripts/build_backgrounds_epinformerseq_v2_percell.py``):
+
+* ``Enhancer_H3K27ac_DNase`` (default): ``sqrt(max(DNase) × max(H3K27ac))``
+  over the **central 256 bp** of the 1024-bp window.
+* ``Enhancer_DNase`` / ``Enhancer_H3K27ac``: per-bp peak max of that single
+  channel over the same central 256-bp slice.
 """
 
 from __future__ import annotations

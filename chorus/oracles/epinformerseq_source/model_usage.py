@@ -145,15 +145,25 @@ def predict_activity(
     mean of the per-bp DNase and H3K27ac peak signals (sqrt(D * H)). For the
     single-assay variants (Enhancer_DNase, Enhancer_H3K27ac) returns the per-bp
     peak max of that channel only.
+
+    The peak max is taken over the central 256 bp of the 1024-bp window
+    (positions 384–639) to match the background CDF builder
+    (scripts/build_backgrounds_epinformerseq_v2_percell.py); using the
+    full window would let off-summit signal drift the percentile lookup.
     """
     dnase, h3, counts = predict_profile(
         main, bias, seq, cell_type, average_reverse=average_reverse, device=device
     )
+    # Central 256 bp slice — must match CENTRAL_START/END in the builder.
+    c_start = (dnase.shape[-1] - 256) // 2
+    c_end   = c_start + 256
+    d_central = dnase[c_start:c_end]
+    h_central = h3[c_start:c_end]
     if assay == "Enhancer_DNase":
-        scalar = float(np.max(dnase))
+        scalar = float(np.max(d_central))
     elif assay == "Enhancer_H3K27ac":
-        scalar = float(np.max(h3))
+        scalar = float(np.max(h_central))
     else:  # combined / default
-        scalar = float(np.sqrt(np.max(dnase) * np.max(h3) + 1e-12))
+        scalar = float(np.sqrt(np.max(d_central) * np.max(h_central) + 1e-12))
     preds = np.array([scalar], dtype=np.float32)
     return preds, np.array([0], dtype=np.int64)

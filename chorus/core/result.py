@@ -587,13 +587,15 @@ class ProCapOraclePredictionTrack(OraclePredictionTrack, name='PRO_CAP'):
                                          color='#e377c2')
 
 class ActivityOraclePredictionTrack(OraclePredictionTrack, name='Enhancer_H3K27ac_DNase'):
-    """Per-cell enhancer activity = sqrt(DNase × H3K27ac) (linear RPM-space).
+    """Per-cell enhancer activity = sqrt(max DNase × max H3K27ac) (linear RPM-space).
 
-    Used by the EPInformer-seq oracle: takes a 256-bp DNA window and
-    returns a single scalar. The model emits log2(0.1 + activity); the
-    chorus loader un-transforms it before returning, so the value
-    exposed on the track is the linear geomean of DNase × H3K27ac
-    accessibility/active-mark signal in RPM units.
+    Used by the EPInformer-seq oracle: takes a 1024-bp DNA window and
+    returns a single scalar = geometric mean of the per-bp peak
+    accessibility/active-mark signal in the central 256 bp (positions
+    384–639), in linear RPM-equivalent units.  No log transform is
+    applied; the per-cell PerCellProfileNet + frozen BiasNet emits the
+    softmax-weighted profile and the count head's exp(log10_count) is
+    already applied before the max+sqrt aggregation.
     """
     coolbox_params: ClassVar[dict] = modify_dict(default_track_visualization_params(),
                                          color='#17becf')

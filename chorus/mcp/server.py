@@ -82,14 +82,19 @@ ORACLE_SPECS = {
     },
     "epinformerseq": {
         "description": (
-            "EPInformer-seq — 256-bp sequence to scalar enhancer activity "
-            "(linear sqrt(DNase × H3K27ac)), one model per cell type."
+            "EPInformer-seq — 1024-bp sequence to scalar enhancer activity "
+            "(linear sqrt(max DNase × max H3K27ac) over the central 256 bp), "
+            "one per-cell PerCellProfileNet + frozen BiasNet per cell type."
         ),
         "framework": "PyTorch",
-        "input_size_bp": 256,
+        "input_size_bp": 1024,
         "output_bins": 1,
         "resolution_bp": None,
-        "assay_types": ["Enhancer_H3K27ac_DNase"],
+        "assay_types": [
+            "Enhancer_H3K27ac_DNase",
+            "Enhancer_DNase",
+            "Enhancer_H3K27ac",
+        ],
     },
     "alphagenome": {
         "description": "AlphaGenome (DeepMind) — 1-bp resolution across 5,731 tracks",

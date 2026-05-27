@@ -2,8 +2,8 @@
 
 One model per cell (no FiLM, no cell embedding). Architecture mirrors
 `legnet_profile_v2/model.py` PerCellProfileNet (per-rep BAM training,
-2026-05-27 sweep, 11 Roadmap cells). Previous joint-cell
-prior joint-cell `CellCondProfileNet` (FiLM + cell_emb) was retired in favor of the
+2026-05-27 sweep, 11 Roadmap cells). The previous joint-cell
+`CellCondProfileNet` (FiLM + cell_emb) was retired in favor of the
 per-cell variant which gives consistently equal or better test-r and
 cleaner cell-specificity at validated enhancers.
 
