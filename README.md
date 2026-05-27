@@ -17,7 +17,7 @@ Four steps. Steps 1 + 2 are copy-paste. Step 3 is a runnable snippet. Step 4 hoo
 **Before you start** — three things you need:
 
 - **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>
-- **~28 GB free disk** — see [Disk usage breakdown](#disk-usage-breakdown) if you want the per-oracle / per-asset numbers
+- **~31 GB free disk** — see [Disk usage breakdown](#disk-usage-breakdown) if you want the per-oracle / per-asset numbers
 - **Linux x86_64 or macOS** (Intel / Apple Silicon)
 
 ### 1. Install (5 minutes)
@@ -118,7 +118,7 @@ _Everything below is optional — the TLDR above is enough to get running. Secti
 
 ### What chorus is
 
-Six state-of-the-art genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Sei, LegNet, AlphaGenome — wired through one API. The same five lines of Python predict variant effects on chromatin accessibility (ChromBPNet, base-pair resolution), TF binding (Enformer, BPNet), 5,731 multi-modal tracks at 1 Mb context (AlphaGenome), or RNA-seq-grade gene expression (Borzoi). Every prediction comes with **effect-percentile and activity-percentile scores** ranked against ~10 k random SNPs and ~30 k genome-wide cCREs, so a `+0.45 log₂FC` becomes `0.962 effect %ile, 0.81 activity %ile` — directly interpretable, not a raw fold-change you have to calibrate yourself.
+Seven state-of-the-art genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Sei, LegNet, EPInformer-seq, AlphaGenome — wired through one API. The same five lines of Python predict variant effects on chromatin accessibility (ChromBPNet, base-pair resolution), TF binding (Enformer, BPNet), 5,731 multi-modal tracks at 1 Mb context (AlphaGenome), or RNA-seq-grade gene expression (Borzoi). Every prediction comes with **effect-percentile and activity-percentile scores** ranked against ~10 k random SNPs and ~30 k genome-wide cCREs, so a `+0.45 log₂FC` becomes `0.962 effect %ile, 0.81 activity %ile` — directly interpretable, not a raw fold-change you have to calibrate yourself.
 
 Each oracle runs in its own conda environment (no TF/PyTorch/JAX dependency hell), every weight + reference + background is pre-mirrored to a chorus-controlled HuggingFace org (no broken-link surprises), and the **22-tool MCP server** lets you ask Claude to run the analysis in plain English. See [Pick an oracle](#pick-an-oracle) for the per-oracle hardware/cost matrix.
 
@@ -159,6 +159,7 @@ Start with one or two oracles and add more with `chorus setup --oracle <name>` l
 | **ChromBPNet** | 4 GB | optional | ~1 s (CPU ok) | base-pair chromatin / motif disruption |
 | **LegNet** | 4 GB | optional | <1 s | MPRA / promoter activity |
 | **Sei** | 4 GB | optional | ~2 s | regulatory sequence-class profiling |
+| **EPInformer-seq** | 2 GB | optional | <1 s | per-cell scalar enhancer activity (sqrt(DNase × H3K27ac), 11 Roadmap cells, 1024-bp window) |
 | **AlphaGenome** | 16 GB | strongly recommended | ~30 s (GPU) / 2–5 min (CPU) | comprehensive multi-layer (5,731 tracks, 1 Mb window) |
 | **AlphaGenome (PyTorch backend)** ⓘ | 16 GB | recommended (esp. Apple Silicon) | ~3.8 s @524 kb on Mac MPS / ~2 s @1 MB on CUDA | alternative backend with the same weights; see [Two AlphaGenome backends](#two-alphagenome-backends) below |
 
@@ -201,16 +202,17 @@ The TLDR's `chorus setup` does everything you need. This section covers the edge
 
 #### Disk usage breakdown
 
-The default `chorus setup` (all 6 oracles, both AlphaGenome backends, hg38, all CDF backgrounds) lands at **~28 GB**:
+The default `chorus setup` (all 7 oracles, both AlphaGenome backends, hg38, all CDF backgrounds) lands at **~31 GB**:
 
 | Bucket | Size |
 |---|---|
-| 6 oracle conda envs (~3 GB each) | ~18 GB |
+| 7 oracle conda envs (~3 GB each; EPInformer-seq env ~2 GB) | ~20 GB |
 | `hg38` reference fasta + index | ~3 GB |
 | Per-oracle CDF backgrounds (`~/.chorus/backgrounds/`) | ~2 GB |
 | AlphaGenome PyTorch backend (`alphagenome_pt`, default-on so Mac users get MPS speed) | ~2.6 GB |
 | ChromBPNet slim HuggingFace mirror — fast-path pre-cache (K562 + HepG2 DNase) | ~50 MB |
-| **Total default** | **~28 GB** |
+| EPInformer-seq per-cell weights (11 main + 11 bias) | ~11 MB |
+| **Total default** | **~31 GB** |
 
 Opting in via `chorus setup --all-chrombpnet` pre-caches every fold-0 bias-corrected ChromBPNet model from the slim mirror (+~1.5 GB, ~5 min). Other ChromBPNet cell types download lazily on first `load_pretrained_model(...)` regardless. If you specifically need the full bias-aware `chrombpnet` variant or fold ≠ 0, chorus falls back to the original ENCODE tarball for that specific model (+~1.8 GB on disk per model). See [Where the oracle weights come from](#where-the-oracle-weights-come-from) for the full mirror map.
 
@@ -253,13 +255,14 @@ Chorus uses isolated conda environments for each oracle to avoid dependency conf
 **Which oracle to start with?** For variant analysis, **AlphaGenome** is the most comprehensive (1 Mb input window, 1 bp prediction resolution, 5,731 tracks) but requires ~16 GB RAM and benefits from a GPU. **Enformer** is a good lightweight alternative that runs comfortably on CPU with ~8 GB RAM (see the table in [examples/walkthroughs/README.md](examples/walkthroughs/README.md#which-oracle-should-i-use) for a full side-by-side comparison).
 
 ```bash
-# Set up each oracle individually (alternative to `chorus setup` which does all 6)
-chorus setup --oracle alphagenome   # JAX-based — default AlphaGenome backend (see AlphaGenome section below for auth)
-chorus setup --oracle enformer      # TensorFlow-based
-chorus setup --oracle borzoi        # PyTorch-based
-chorus setup --oracle chrombpnet    # TensorFlow-based (includes BPNet for TF binding)
-chorus setup --oracle sei           # PyTorch-based
-chorus setup --oracle legnet        # PyTorch-based
+# Set up each oracle individually (alternative to `chorus setup` which does all 7)
+chorus setup --oracle alphagenome    # JAX-based — default AlphaGenome backend (see AlphaGenome section below for auth)
+chorus setup --oracle enformer       # TensorFlow-based
+chorus setup --oracle borzoi         # PyTorch-based
+chorus setup --oracle chrombpnet     # TensorFlow-based (includes BPNet for TF binding)
+chorus setup --oracle sei            # PyTorch-based
+chorus setup --oracle legnet         # PyTorch-based
+chorus setup --oracle epinformerseq  # PyTorch-based (per-cell enhancer activity, 11 Roadmap cells)
 
 # PyTorch backend for AlphaGenome — same model, same weights as the
 # default JAX backend (converted to safetensors). Both AlphaGenome
@@ -348,6 +351,7 @@ Chorus mirrors every oracle's weights to chorus-controlled HuggingFace repos so 
 | ChromBPNet | [`lucapinello/chorus-chrombpnet-slim`](https://huggingface.co/lucapinello/chorus-chrombpnet-slim) | ENCODE per-experiment tarballs | 1.49 GB (786 h5's) |
 | Sei | [`lucapinello/chorus-sei`](https://huggingface.co/lucapinello/chorus-sei) | Zenodo [4906997](https://zenodo.org/record/4906997) | 3.28 GB |
 | LegNet | [`lucapinello/chorus-legnet`](https://huggingface.co/lucapinello/chorus-legnet) | Zenodo [17863550](https://zenodo.org/records/17863550) | 38 MB |
+| EPInformer-seq | [`lucapinello/chorus-epinformerseq-v2`](https://huggingface.co/lucapinello/chorus-epinformerseq-v2) | per-cell PerCellProfileNet + frozen BiasNet trained on per-rep ENCODE BAMs (Pinello Lab) | 11 MB (11 cells × main + bias) |
 
 The chorus mirrors are byte-identical to the originals (verified via md5 / size against upstream metadata where published). License terms applying to the *weights* are unchanged by mirroring — see each mirror's README on HuggingFace for explicit attribution and the upstream model terms.
 
@@ -359,6 +363,7 @@ The chorus mirrors are byte-identical to the originals (verified via md5 / size 
 | ChromBPNet | ~82 MB | 786 (42 ATAC/DNASE + 744 CHIP) |
 | Sei | ~2.8 MB | 40 classes |
 | LegNet | ~210 KB | 3 cell types |
+| EPInformer-seq | ~770 KB | 11 cell types × scalar enhancer activity |
 
 > **The backgrounds dataset is public — no HuggingFace token required.** `HF_TOKEN` is only needed for the gated AlphaGenome model itself (see [Tokens](#tokens) above). Causal prioritization with auto-LD-fetch needs a separate free LDlink token.
 
@@ -366,7 +371,7 @@ To pre-download by hand:
 
 ```python
 from chorus.analysis.normalization import download_pertrack_backgrounds
-for oracle in ["alphagenome", "enformer", "borzoi", "chrombpnet", "sei", "legnet"]:
+for oracle in ["alphagenome", "enformer", "borzoi", "chrombpnet", "sei", "legnet", "epinformerseq"]:
     download_pertrack_backgrounds(oracle)
 ```
 
@@ -538,7 +543,7 @@ Three end-to-end Jupyter notebooks shipped with the repo. Run them in order — 
 | Notebook | Oracles | What you'll build |
 |----------|---------|----------------|
 | `examples/notebooks/single_oracle_quickstart.ipynb` | Enformer | Predictions → region replacement → sequence insertion → variant effect → gene expression → coolbox visualization. The "I get it now" notebook. |
-| `examples/notebooks/comprehensive_oracle_showcase.ipynb` | All 6 | Same variant scored by every oracle side-by-side. Cross-model agreement, sub-region scoring, gene-expression layer integration. |
+| `examples/notebooks/comprehensive_oracle_showcase.ipynb` | All 6 (does not yet include EPInformer-seq) | Same variant scored by every oracle side-by-side. Cross-model agreement, sub-region scoring, gene-expression layer integration. |
 | `examples/notebooks/advanced_multi_oracle_analysis.ipynb` | Enformer + ChromBPNet/BPNet + LegNet | CHIP-seq TF footprinting, strand-specific tracks, the Interval API, effect-percentile normalization, cell-type switching. The graduate-level notebook. |
 
 ### MCP server — chorus, but you talk to Claude
@@ -1249,11 +1254,11 @@ report = build_variant_report(
 )
 ```
 
-Or pre-download all six oracles' backgrounds once:
+Or pre-download all seven oracles' backgrounds once:
 
 ```python
 from chorus.analysis.normalization import download_pertrack_backgrounds
-for o in ["alphagenome", "enformer", "borzoi", "chrombpnet", "sei", "legnet"]:
+for o in ["alphagenome", "enformer", "borzoi", "chrombpnet", "sei", "legnet", "epinformerseq"]:
     download_pertrack_backgrounds(o)
 ```
 
