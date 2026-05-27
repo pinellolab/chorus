@@ -9,6 +9,7 @@ from chorus.oracles import (
     SeiOracle,
     LegNetOracle,
     AlphaGenomeOracle,
+    EPInformerSeqOracle,
     get_oracle
 )
 
@@ -24,6 +25,7 @@ class TestOracleFactory:
         assert get_oracle('sei') == SeiOracle
         assert get_oracle('legnet') == LegNetOracle
         assert get_oracle('alphagenome') == AlphaGenomeOracle
+        assert get_oracle('epinformerseq') == EPInformerSeqOracle
 
         # Test case insensitive
         assert get_oracle('ENFORMER') == EnformerOracle

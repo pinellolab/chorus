@@ -43,6 +43,7 @@ ORACLE_CLASS_MAP = {
     "enformer": "EnformerOracle",
     "sei": "SeiOracle",
     "legnet": "LegNetOracle",
+    "epinformerseq": "EPInformerSeqOracle",
     "alphagenome": "AlphaGenomeOracle",
 }
 
@@ -566,6 +567,7 @@ dependencies = {{
     'sei': ['torch'],
     'chrombpnet': ['tensorflow'],
     'legnet': ['torch'],
+    'epinformerseq': ['torch'],
     'alphagenome': ['jax']
 }}
 

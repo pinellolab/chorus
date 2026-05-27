@@ -238,6 +238,42 @@ tss_activity, gene_expression.
 **Extensibility**: Fixed model — tracks defined by AlphaGenome metadata.
 Requires HuggingFace authentication (`HF_TOKEN`).
 
+---
+
+### EPInformer-seq
+
+| Property | Value |
+|----------|-------|
+| Tracks | 11 (K562, GM12878, HepG2, A549, H1, HeLa, HMEC, HSMM, HUVEC, NHEK, NHLF) |
+| Model | **One model per cell type** — `PerCellProfileNet` + frozen per-cell `BiasNet` (ChromBPNet-style sequence-bias subtraction) |
+| Input length | 1,024 bp (`EPINFORMERSEQ_WINDOW`) |
+| Output | 1 scalar per region: `sqrt(max DNase × max H3K27ac)` over the central 256 bp (composite enhancer activity); also exposes `Enhancer_DNase` and `Enhancer_H3K27ac` single-channel scalars |
+| Build script | `scripts/build_backgrounds_epinformerseq_v2_percell.py` |
+| Conda env | `chorus-epinformerseq` (PyTorch) |
+| NPZ size | ~0.8 MB |
+
+**Layer types used**: `Enhancer_H3K27ac_DNase` (custom — chromatin-accessibility-like, unsigned).
+
+**Effect scoring**: `|log2((alt + 1) / (ref + 1))|` on the scalar
+`sqrt(D × H)` activity. Pseudocount = 1.0. Unsigned (variants are scored by
+the magnitude of their effect on regulatory activity).
+
+**Training**: 11 per-cell PerCellProfileNet checkpoints (no FiLM / no cell
+embedding — one independent model per cell). Trained on per-rep ENCODE BAMs
+(ENCODE `recommended=true` single rep per assay) over the DNase ∪ H3K27ac
+peak summit union, fold-10 leave-chrom-out CV (chr11 + chr21 held out).
+ChromBPNet recipe: multinomial-NLL profile loss + MSE on log10(total + 1)
+count head; per-cell frozen `BiasNet` subtracts Tn5/MNase sequence
+preference in logit space.
+
+**Extensibility**: Add a cell by retraining `PerCellProfileNet` + `BiasNet`
+for it (see `percell_v1_vs_v2/v2_1024bp/{train,train_bias}.py` in the
+research cluster), staging the new ckpts under
+`downloads/epinformerseq/{per_cell,bias}/<cell>/`, and extending
+`EPINFORMERSEQ_AVAILABLE_CELLTYPES` in `chorus/oracles/epinformerseq_source/globals.py`.
+Per-bin CDFs are absent (scalar-output oracle); IGV display falls back to
+`summary_cdfs` via `rescale_for_display`.
+
 ## Layer configuration reference
 
 From `chorus/analysis/scorers.py` — `LAYER_CONFIGS`:

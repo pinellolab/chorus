@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 _MULTI_TRACK_ORACLES = {"enformer", "borzoi", "alphagenome", "sei"}
-_PER_MODEL_ORACLES = {"chrombpnet", "legnet"}
+_PER_MODEL_ORACLES = {"chrombpnet", "legnet", "epinformerseq"}
 
 
 @dataclass
@@ -727,6 +727,11 @@ def discover_variant_effects(
         elif name == "legnet":
             from ..oracles.legnet_source.legnet_globals import LEGNET_AVAILABLE_CELLTYPES
             models = [{"cell_type": ct} for ct in LEGNET_AVAILABLE_CELLTYPES]
+        elif name == "epinformerseq":
+            from ..oracles.epinformerseq_source.globals import (
+                EPINFORMERSEQ_AVAILABLE_CELLTYPES,
+            )
+            models = [{"cell_type": ct} for ct in EPINFORMERSEQ_AVAILABLE_CELLTYPES]
         else:
             models = []
 

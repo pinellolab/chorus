@@ -35,6 +35,7 @@ indicates where a region's signal ranks genome-wide.
 | splicing              | 501 bp sum of splice scores  | Active splice junction           |
 | promoter_activity     | Mean MPRA activity score     | Strong synthetic promoter        |
 | regulatory_classification | Mean Sei class probability | Confident regulatory class call  |
+| enhancer_activity     | sqrt(DNase × H3K27ac) scalar | Strong enhancer in this cell type|
 
 The baselines are built by the ``scripts/build_backgrounds_*.py`` scripts
 using the same window/aggregation as variant scoring, scored at 20K
@@ -151,6 +152,15 @@ LAYER_CONFIGS: dict[str, LayerConfig] = {
         formula="diff",
         signed=True,  # [-1,1] — class shift direction matters
     ),
+    "enhancer_activity": LayerConfig(
+        name="enhancer_activity",
+        description="Scalar enhancer activity (EPInformer-seq sqrt(DNase × H3K27ac))",
+        window_bp=None,           # scalar oracle — score full output
+        aggregation="mean",
+        pseudocount=1.0,          # matches build_backgrounds_epinformerseq_v2_percell.py
+        formula="log2fc",
+        signed=False,             # [0,1] — magnitude of accessibility change
+    ),
 }
 
 
@@ -189,6 +199,14 @@ def classify_track_layer(track) -> str:
         return "gene_expression"
     if assay_type == "LentiMPRA":
         return "promoter_activity"
+    if assay_type in (
+        "Enhancer_H3K27ac_DNase",
+        "Enhancer_DNase",
+        "Enhancer_H3K27ac",
+    ):
+        # EPInformer-seq scalar enhancer-activity tracks. Unsigned log2fc with
+        # pseudocount=1.0, matching the background CDF builder.
+        return "enhancer_activity"
     if assay_type == "SPLICE_SITES":
         return "splicing"
     if assay_type == "sequence-class":
