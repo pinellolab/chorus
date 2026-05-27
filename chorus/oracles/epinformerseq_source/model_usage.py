@@ -1,30 +1,27 @@
-"""Helper functions for loading and running the EPInformer-seq Combined model.
+"""Helper functions for loading and running the EPInformer-seq per-cell model.
 
-This oracle uses CellCondProfileNet (multi-cell, FiLM-conditioned dilated convs
-emitting per-bp 2-channel profiles + 2 scalar log10-counts) plus a frozen
-per-cell BiasNet (ChromBPNet-style Tn5/MNase sequence bias subtraction). The
-predict path returns the central enhancer-activity scalar = sqrt(DNase peak ×
-H3K27ac peak) so downstream chorus consumers see the same units as the legacy
-``epinformerseq`` oracle.
+One ``PerCellProfileNet`` checkpoint per cell + a matching frozen
+``BiasNet`` per cell (ChromBPNet-style Tn5 / MNase sequence-bias
+subtraction). Predict path returns either per-bp 2-channel profiles
+or a scalar enhancer-activity in the units of the legacy oracle
+(``sqrt(max DNase × max H3K27ac)`` over the 1024-bp window).
 """
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Tuple
 
 import numpy as np
 import torch
 
-from .model import CellCondProfileNet, BiasNet
+from .model import PerCellProfileNet, BiasNet
 from .globals import (
     EPINFORMERSEQ_AVAILABLE_CELLTYPES,
-    EPINFORMERSEQ_CELL2IDX,
     EPINFORMERSEQ_WINDOW,
 )
 
 
-# 1024-bp ACGT one-hot (matches CellCondProfileNet's input length).
+# 1024-bp ACGT one-hot (matches PerCellProfileNet's input length).
 _ACGT = np.frombuffer(b"ACGT", dtype=np.uint8)
 _ALPHABET = {b: i for i, b in enumerate(_ACGT)}
 
@@ -54,11 +51,11 @@ def one_hot_rc(ohe: np.ndarray) -> np.ndarray:
 
 
 def load_main_model(weights_path: str, device: str | torch.device = "cpu") -> torch.nn.Module:
-    """Load the shared CellCondProfileNet checkpoint (one for all 11 cells)."""
+    """Load this cell's PerCellProfileNet checkpoint."""
     state = torch.load(weights_path, map_location="cpu", weights_only=False)
     if isinstance(state, dict) and "model_state_dict" in state:
         state = state["model_state_dict"]
-    model = CellCondProfileNet(n_cells=len(EPINFORMERSEQ_AVAILABLE_CELLTYPES))
+    model = PerCellProfileNet()
     model.load_state_dict(state)
     model.eval()
     model.to(device)
@@ -90,6 +87,10 @@ def predict_profile(
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Predict per-bp DNase + H3K27ac profile for one ``cell_type``.
 
+    ``cell_type`` is only used for validation -- the main/bias models passed in
+    are already specific to one cell. Per-cell architecture means no cell_id
+    tensor is fed to the model.
+
     Returns
     -------
     dnase : np.ndarray, shape (L,)
@@ -99,16 +100,14 @@ def predict_profile(
     counts : np.ndarray, shape (2,)
         Total predicted log10-counts (DNase, H3K27ac).
     """
-    if cell_type not in EPINFORMERSEQ_CELL2IDX:
+    if cell_type not in EPINFORMERSEQ_AVAILABLE_CELLTYPES:
         raise ValueError(f"Unknown cell type {cell_type!r}")
-    cid_int = EPINFORMERSEQ_CELL2IDX[cell_type]
 
     ohe = one_hot_dna(seq, length=EPINFORMERSEQ_WINDOW)
     x = torch.from_numpy(ohe).unsqueeze(0).to(device)               # (1, 4, L)
-    cid = torch.tensor([cid_int], dtype=torch.long, device=device)
 
     with torch.inference_mode():
-        mp, mc = main(x, cid)                # (1, 2, L), (1, 2)
+        mp, mc = main(x)                      # (1, 2, L), (1, 2)
         bp, _ = bias(x)                       # (1, 2, L)
         final = mp + bp                       # logit-space bias correction
         soft = torch.softmax(final, dim=-1)
@@ -117,7 +116,7 @@ def predict_profile(
         if average_reverse:
             ohe_rc = one_hot_rc(ohe)
             x_rc = torch.from_numpy(ohe_rc).unsqueeze(0).to(device)
-            mp_r, mc_r = main(x_rc, cid)
+            mp_r, mc_r = main(x_rc)
             bp_r, _ = bias(x_rc)
             final_r = mp_r + bp_r
             soft_r = torch.softmax(final_r, dim=-1)

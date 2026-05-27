@@ -1,14 +1,13 @@
-"""Constants for the EPInformer-seq Combined oracle."""
+"""Constants for the EPInformer-seq per-cell oracle."""
 
-# Native input length of the CellCondProfileNet model.
+# Native input length of the PerCellProfileNet model.
 EPINFORMERSEQ_WINDOW: int = 1024
 
 # Default step for sliding-window inference across larger intervals.
 EPINFORMERSEQ_DEFAULT_STEP: int = 64
 
-# Same 11 Roadmap cells as the legacy EPInformer-seq oracle, jointly trained.
-# Each cell has its own frozen bias model, plus a shared multi-cell main model
-# (CellCondProfileNet) that consumes a 32-d cell embedding via FiLM modulation.
+# 11 Roadmap cells, each with its own PerCellProfileNet main + frozen BiasNet.
+# Models trained on per-rep ENCODE BAMs (recommended single rep per assay).
 EPINFORMERSEQ_AVAILABLE_CELLTYPES = [
     "K562",
     "GM12878",
@@ -22,7 +21,6 @@ EPINFORMERSEQ_AVAILABLE_CELLTYPES = [
     "NHLF",
     "H1",
 ]
-EPINFORMERSEQ_CELL2IDX = {c: i for i, c in enumerate(EPINFORMERSEQ_AVAILABLE_CELLTYPES)}
 
 # Two predicted channels (per-bp profile) + one merged-enhancer summary.
 # - "Enhancer_DNase": per-bp DNase cut-site signal at K562/GM12878/...

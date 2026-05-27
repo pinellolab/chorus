@@ -728,7 +728,7 @@ def discover_variant_effects(
             from ..oracles.legnet_source.legnet_globals import LEGNET_AVAILABLE_CELLTYPES
             models = [{"cell_type": ct} for ct in LEGNET_AVAILABLE_CELLTYPES]
         elif name == "epinformerseq":
-            from ..oracles.epinformerseq_source.epinformerseq_globals import (
+            from ..oracles.epinformerseq_source.globals import (
                 EPINFORMERSEQ_AVAILABLE_CELLTYPES,
             )
             models = [{"cell_type": ct} for ct in EPINFORMERSEQ_AVAILABLE_CELLTYPES]

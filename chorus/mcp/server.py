@@ -428,17 +428,18 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
         }
 
     if oracle_name == "epinformerseq":
-        from chorus.oracles.epinformerseq_source.epinformerseq_globals import (
+        from chorus.oracles.epinformerseq_source.globals import (
             EPINFORMERSEQ_AVAILABLE_CELLTYPES,
         )
         return {
             "oracle": oracle_name,
-            "assay_types": ["Enhancer_H3K27ac_DNase"],
+            "assay_types": ["Enhancer_H3K27ac_DNase", "Enhancer_DNase", "Enhancer_H3K27ac"],
             "cell_types": list(EPINFORMERSEQ_AVAILABLE_CELLTYPES),
             "note": (
-                "EPInformer-seq returns a single scalar per 256-bp window: "
-                "linear sqrt(DNase × H3K27ac) in RPM-space. cell_type is "
-                "set at __init__ time; switch with load_pretrained_model(cell_type=...)."
+                "EPInformer-seq returns a single scalar per 1024-bp window. "
+                "Default assay 'Enhancer_H3K27ac_DNase' is sqrt(max DNase × max H3K27ac) "
+                "from per-cell PerCellProfileNet + frozen BiasNet (ChromBPNet recipe). "
+                "Switch cells with load_pretrained_model(cell_type=...)."
             ),
         }
 

@@ -1,21 +1,19 @@
-"""EPInformer-seq v2 oracle: 1024-bp sequence → per-bp DNase + H3K27ac profile.
+"""EPInformer-seq per-cell oracle: 1024-bp sequence → per-bp DNase + H3K27ac profile.
 
-Upgrade over the legacy ``epinformerseq`` oracle:
+Architecture:
 
-* **CellCondProfileNet** (single multi-cell model, FiLM-conditioned dilated
-  convs) replaces 11 per-cell ``enhancer_predictor_256bp`` checkpoints.
-* **1024-bp** input window (vs 256 bp), trained on per-bp DNase + H3K27ac
-  cut-site counts at the union of DNase and H3K27ac peak summits across
-  11 Roadmap cells (the "Combined" data anchor).
-* **Per-cell frozen BiasNets** (ChromBPNet-style) subtract Tn5/MNase
-  sequence preference in logit space, recovering K562-vs-GM12878
-  specificity that the scalar v1 model collapsed (1.10× → ~6× at KLF1
-  distal/mid enhancers).
+* **PerCellProfileNet** — one model per cell type (no FiLM, no cell embedding).
+  Dilated CNN, 1024-bp window, per-bp 2-channel profile + scalar log10 counts.
+* **Per-cell frozen BiasNet** (ChromBPNet-style) — subtracts Tn5 / MNase
+  sequence preference in logit space, recovering K562-vs-GM12878 specificity.
+* Trained on per-bp DNase + H3K27ac cut-site counts at the union of DNase
+  and H3K27ac peak summits across 11 Roadmap cells, fold-10 leave-chrom-out
+  CV split, per-rep ENCODE BAMs (ENCODE ``recommended=true`` single rep).
 
 The default predict path returns one scalar = ``sqrt(max(DNase) × max(H3K27ac))``
-across the 1024-bp window (the "Enhancer_H3K27ac_DNase" assay), matching the
-legacy oracle's units. Single-channel assays (``Enhancer_DNase``,
-``Enhancer_H3K27ac``) return the per-bp peak max of that channel only.
+across the 1024-bp window (the ``Enhancer_H3K27ac_DNase`` assay). Single-channel
+assays (``Enhancer_DNase``, ``Enhancer_H3K27ac``) return the per-bp peak max
+of that channel only.
 """
 
 from __future__ import annotations
@@ -50,11 +48,11 @@ EPINFORMERSEQ_MODELS_DIR.mkdir(exist_ok=True, parents=True)
 
 
 class EPInformerSeqOracle(OracleBase):
-    """EPInformer-seq v2 oracle: profile output + bias-correction.
+    """EPInformer-seq per-cell oracle: profile output + bias-correction.
 
     Layout under ``~/.chorus/downloads/epinformerseq/``:
-        main.pt                  (single multi-cell CellCondProfileNet)
-        bias/{cell_type}/bias.pt (frozen per-cell BiasNet)
+        per_cell/{cell_type}/main.pt (PerCellProfileNet)
+        bias/{cell_type}/bias.pt     (frozen per-cell BiasNet)
     """
 
     def __init__(
@@ -117,7 +115,7 @@ class EPInformerSeqOracle(OracleBase):
 
     def get_main_weights_path(self) -> Path:
         root = self.get_root_dir()
-        path = root / "main.pt"
+        path = root / "per_cell" / self.cell_type / "main.pt"
         if not path.exists():
             self._download_model()
         return path
@@ -374,34 +372,35 @@ class EPInformerSeqOracle(OracleBase):
         return ""
 
     def _try_hf_mirror(self) -> bool:
-        """Fetch main.pt + bias/{cell}/bias.pt from the HF mirror.
+        """Fetch per_cell/{cell}/main.pt + bias/{cell}/bias.pt from the HF mirror.
 
         Returns True on success.
         """
         try:
             from huggingface_hub import hf_hub_download
         except ImportError:
-            logger.info("huggingface_hub not available; cannot fetch EPInformer-seq v2 weights.")
+            logger.info("huggingface_hub not available; cannot fetch EPInformer-seq per-cell weights.")
             return False
         try:
             root = self.get_root_dir()
             root.mkdir(parents=True, exist_ok=True)
+            (root / "per_cell" / self.cell_type).mkdir(parents=True, exist_ok=True)
             (root / "bias" / self.cell_type).mkdir(parents=True, exist_ok=True)
             import shutil as _shutil
 
             main_local = hf_hub_download(
                 repo_id="lucapinello/chorus-epinformerseq-v2",
-                filename="main.pt",
+                filename=f"per_cell/{self.cell_type}/main.pt",
                 repo_type="model",
             )
-            _shutil.copyfile(main_local, root / "main.pt")
+            _shutil.copyfile(main_local, root / "per_cell" / self.cell_type / "main.pt")
             bias_local = hf_hub_download(
                 repo_id="lucapinello/chorus-epinformerseq-v2",
                 filename=f"bias/{self.cell_type}/bias.pt",
                 repo_type="model",
             )
             _shutil.copyfile(bias_local, root / "bias" / self.cell_type / "bias.pt")
-            logger.info(f"Fetched EPInformer-seq v2 weights from HF mirror.")
+            logger.info(f"Fetched EPInformer-seq per-cell weights for {self.cell_type} from HF mirror.")
             return True
         except Exception as exc:
             logger.info(f"chorus-epinformerseq-v2 HF mirror unavailable ({exc}).")
@@ -410,8 +409,8 @@ class EPInformerSeqOracle(OracleBase):
     def _download_model(self):
         if not self._try_hf_mirror():
             raise EPInformerSeqError(
-                "Could not download EPInformer-seq v2 weights. "
+                "Could not download EPInformer-seq per-cell weights. "
                 "Either provide a local --model-dir pointing at a directory containing "
-                "main.pt and bias/{cell_type}/bias.pt, or wait for the HF mirror at "
-                "lucapinello/chorus-epinformerseq-v2 to be populated."
+                "per_cell/{cell_type}/main.pt and bias/{cell_type}/bias.pt, or wait for "
+                "the HF mirror at lucapinello/chorus-epinformerseq-v2 to be populated."
             )

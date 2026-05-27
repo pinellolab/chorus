@@ -25,7 +25,7 @@ bias = load_bias_model(args['bias_weights'], device=device)
 result = {
     'loaded': True,
     'model_class': str(type(main)),
-    'description': 'EPInformer-seq v2 CellCondProfileNet + per-cell BiasNet loaded successfully',
+    'description': 'EPInformer-seq per-cell PerCellProfileNet + BiasNet loaded successfully',
     'device': _dev,
     'assays': [args['assay']],
     'celltypes': [args['cell_type']],

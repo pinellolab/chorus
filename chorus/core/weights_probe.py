@@ -50,11 +50,13 @@ def _probe_legnet() -> Tuple[bool, List[str]]:
 
 
 def _probe_epinformerseq() -> Tuple[bool, List[str]]:
-    # Matches EPInformerSeqOracle.__init__ default: cell_type=K562.
-    default = CHORUS_DOWNLOADS_DIR / "epinformerseq" / "K562" / "weights.pt"
-    if not default.exists():
-        return (False, [str(default)])
-    return (True, [])
+    # Per-cell layout (2026-05-27): one PerCellProfileNet per cell + frozen BiasNet.
+    # Default cell_type=K562 (matches EPInformerSeqOracle.__init__).
+    root = CHORUS_DOWNLOADS_DIR / "epinformerseq"
+    main_pt = root / "per_cell" / "K562" / "main.pt"
+    bias_pt = root / "bias" / "K562" / "bias.pt"
+    missing = [str(p) for p in (main_pt, bias_pt) if not p.exists()]
+    return (len(missing) == 0, missing)
 
 
 def _hf_cache_dir() -> Path:
