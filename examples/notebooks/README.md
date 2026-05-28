@@ -1,6 +1,6 @@
 # Chorus Notebooks — Python library walkthroughs
 
-Three end-to-end Jupyter notebooks that exercise the Chorus Python API
+End-to-end Jupyter notebooks that exercise the Chorus Python API
 directly (no Claude / MCP required). Each one runs top-to-bottom from a
 fresh kernel and produces plots, numeric outputs, and example HTML
 reports inline.
@@ -16,7 +16,14 @@ reports inline.
 |---|---|---|---|
 | **[single_oracle_quickstart.ipynb](single_oracle_quickstart.ipynb)** | First-time users · bench biologists who can read Python | Load one oracle (Enformer), predict at a locus, score a variant's effect, interpret results with effect percentiles. Includes a gene-expression example. | 15 min |
 | **[advanced_multi_oracle_analysis.ipynb](advanced_multi_oracle_analysis.ipynb)** | Intermediate · want to compare oracles | Score the same variant with multiple oracles (ChromBPNet, Enformer, Borzoi, Sei, LegNet, AlphaGenome), plot cross-oracle track comparisons with gene annotations, understand where each oracle is strong. | 45 min |
-| **[comprehensive_oracle_showcase.ipynb](comprehensive_oracle_showcase.ipynb)** | Power users · need every feature in one place | All six oracles, all prediction modes (wild-type, variant, region swap, sequence insertion, discovery), the full visualization + normalization stack. | 60 min |
+| **[comprehensive_oracle_showcase.ipynb](comprehensive_oracle_showcase.ipynb)** | Power users · need every feature in one place | All six (pre-EPI) oracles, all prediction modes (wild-type, variant, region swap, sequence insertion, discovery), the full visualization + normalization stack. | 60 min |
+
+### Topic-focused notebooks
+
+| Notebook | What it shows |
+|---|---|
+| **[klf1_validated_enhancer_profiles.ipynb](klf1_validated_enhancer_profiles.ipynb)** | Five-oracle (EPInformer-seq, ChromBPNet, Borzoi, Enformer, AlphaGenome) profile comparison at the 3 CRISPR-validated KLF1 enhancers — cell-specificity (K562 vs GM12878), per-bp DNase + H3K27ac tracks, and overlap with the validated CRE windows. |
+| **[epinformerseq_testing.ipynb](epinformerseq_testing.ipynb)** | Smoke test for the EPInformer-seq oracle: loads each per-cell model, runs a 1024-bp prediction, and walks through the assay-id format + variant-effect API. |
 
 ## Prerequisites
 
