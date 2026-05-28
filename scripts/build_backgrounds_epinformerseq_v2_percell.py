@@ -44,12 +44,12 @@ import numpy as np
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, REPO_ROOT)
 
-V2_PERCELL_DIR_DEFAULT = os.path.join(
-    REPO_ROOT, "examples", "notebooks", "_epinformerseq_v2", "per_cell"
-)
-V2_BIAS_DIR_DEFAULT = os.path.join(
-    REPO_ROOT, "examples", "notebooks", "_epinformerseq_v2", "bias"
-)
+# Default to the chorus oracle download cache (populated on first use via the
+# HF mirror lucapinello/chorus-epinformerseq-v2). Override with --percell-root
+# and --bias-root if you want to point at a local training-output tree.
+_CHORUS_PERCELL_ROOT = os.path.expanduser("~/.chorus/downloads/epinformerseq")
+V2_PERCELL_DIR_DEFAULT = os.path.join(_CHORUS_PERCELL_ROOT, "per_cell")
+V2_BIAS_DIR_DEFAULT    = os.path.join(_CHORUS_PERCELL_ROOT, "bias")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--percell-root", default=V2_PERCELL_DIR_DEFAULT,
@@ -245,21 +245,19 @@ def _load_models_and_device():
         device = torch.device("cpu")
     logger.info("Device: %s", device)
 
-    # model.py now lives one level up from the per-cell ckpt dir (under
-    # _epinformerseq_v2/), since the dead per_cell/model.py was removed.
-    model_dir = os.path.dirname(os.path.abspath(args.percell_root))
-    sys.path.insert(0, model_dir)
-    from model import PerCellProfileNet, BiasNet  # type: ignore
+    # Use the canonical chorus model classes — same nn.Module, byte-compatible
+    # with the per-cell state_dicts on HF (lucapinello/chorus-epinformerseq-v2).
+    from chorus.oracles.epinformerseq_source.model import PerCellProfileNet, BiasNet
 
     cells = args.cells
     main_models, bias_models = [], []
     for c in cells:
         main_ckpt = os.path.join(args.percell_root, c, "main.pt")
         bias_ckpt = os.path.join(args.bias_root, c, "bias.pt")
-        if not os.path.exists(main_ckpt):
-            raise FileNotFoundError(main_ckpt)
-        if not os.path.exists(bias_ckpt):
-            raise FileNotFoundError(bias_ckpt)
+        if not os.path.exists(main_ckpt) or not os.path.exists(bias_ckpt):
+            # Populate the chorus oracle cache via the HF mirror if missing.
+            from chorus.oracles import EPInformerSeqOracle
+            EPInformerSeqOracle(cell_type=c, use_environment=False).load_pretrained_model()
         m = PerCellProfileNet()
         m.load_state_dict(torch.load(main_ckpt, map_location="cpu", weights_only=False))
         m.eval().to(device)
