@@ -45,6 +45,7 @@ from .epinformerseq_source.globals import (
     EPINFORMERSEQ_DEFAULT_ASSAY,
     EPINFORMERSEQ_DEFAULT_STEP,
     EPINFORMERSEQ_WINDOW,
+    EPINFORMERSEQ_WIDE_WINDOW,
 )
 from .epinformerseq_source.exceptions import EPInformerSeqError
 
@@ -76,8 +77,19 @@ class EPInformerSeqOracle(OracleBase):
         device: str | None = None,
         average_reverse: bool = False,
         model_dir: str | None = None,
+        variant: str = "standard",
     ):
         self.oracle_name = "epinformerseq"
+        if variant not in ("standard", "widewin"):
+            raise EPInformerSeqError(
+                f"variant {variant!r} not supported; choose 'standard' or 'widewin'"
+            )
+        self.variant = variant
+        # widewin: 2114-bp main input -> central 1024-bp profile (ChromBPNet-style
+        # geometry). standard: 1024-bp in / 1024-bp out (SAME padding).
+        self.in_window = (
+            EPINFORMERSEQ_WIDE_WINDOW if variant == "widewin" else EPINFORMERSEQ_WINDOW
+        )
         if cell_type not in EPINFORMERSEQ_AVAILABLE_CELLTYPES:
             raise EPInformerSeqError(
                 f"Cell type {cell_type!r} not available. Choose from: "
@@ -102,7 +114,8 @@ class EPInformerSeqOracle(OracleBase):
             self.device = "auto"
 
         self.download_dir = EPINFORMERSEQ_MODELS_DIR
-        self.sequence_length = EPINFORMERSEQ_WINDOW
+        # widewin needs a 2114-bp input window; the profile output stays 1024 bp.
+        self.sequence_length = self.in_window
         self.n_targets = 1
         self.bin_size = step_size
         self.model_dir = model_dir
@@ -123,7 +136,10 @@ class EPInformerSeqOracle(OracleBase):
 
     def get_main_weights_path(self) -> Path:
         root = self.get_root_dir()
-        path = root / "per_cell" / self.cell_type / "main.pt"
+        # widewin checkpoints live in a separate subdir so they never clobber the
+        # standard 1024-bp weights; the per-cell BiasNet (coverage) is shared.
+        subdir = "per_cell_widewin" if self.variant == "widewin" else "per_cell"
+        path = root / subdir / self.cell_type / "main.pt"
         if not path.exists():
             self._download_model()
         return path
@@ -192,6 +208,7 @@ class EPInformerSeqOracle(OracleBase):
             "bias_weights": str(self.get_bias_weights_path()),
             "cell_type": self.cell_type,
             "assay": self.assay,
+            "variant": self.variant,
         }
         import tempfile
 
@@ -229,7 +246,9 @@ class EPInformerSeqOracle(OracleBase):
                 logger.info(f"EPInformer-seq v2 auto-detected device: {self.device}")
 
             device = torch.device(self.device)
-            self._main_model = load_main_model(str(self.get_main_weights_path()), device=device)
+            self._main_model = load_main_model(
+                str(self.get_main_weights_path()), device=device, variant=self.variant
+            )
             self._bias_model = load_bias_model(str(self.get_bias_weights_path()), device=device)
             self.loaded = True
             logger.info("EPInformer-seq v2 model loaded successfully.")
@@ -330,6 +349,8 @@ class EPInformerSeqOracle(OracleBase):
             "seq": seq,
             "reverse_aug": reverse_aug,
             "batch_size": self.batch_size,
+            "variant": self.variant,
+            "in_window": self.in_window,
         }
         import tempfile
 
@@ -352,6 +373,7 @@ class EPInformerSeqOracle(OracleBase):
             assay=self.assay,
             average_reverse=reverse_aug,
             device=self.device,
+            in_window=self.in_window,
         )
         return preds
 
@@ -392,16 +414,19 @@ class EPInformerSeqOracle(OracleBase):
         try:
             root = self.get_root_dir()
             root.mkdir(parents=True, exist_ok=True)
-            (root / "per_cell" / self.cell_type).mkdir(parents=True, exist_ok=True)
+            # widewin main checkpoints live in a separate subdir; the per-cell
+            # (coverage) BiasNet is shared across both variants.
+            subdir = "per_cell_widewin" if self.variant == "widewin" else "per_cell"
+            (root / subdir / self.cell_type).mkdir(parents=True, exist_ok=True)
             (root / "bias" / self.cell_type).mkdir(parents=True, exist_ok=True)
             import shutil as _shutil
 
             main_local = hf_hub_download(
                 repo_id="lucapinello/chorus-epinformerseq-v2",
-                filename=f"per_cell/{self.cell_type}/main.pt",
+                filename=f"{subdir}/{self.cell_type}/main.pt",
                 repo_type="model",
             )
-            _shutil.copyfile(main_local, root / "per_cell" / self.cell_type / "main.pt")
+            _shutil.copyfile(main_local, root / subdir / self.cell_type / "main.pt")
             bias_local = hf_hub_download(
                 repo_id="lucapinello/chorus-epinformerseq-v2",
                 filename=f"bias/{self.cell_type}/bias.pt",

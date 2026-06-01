@@ -14,10 +14,11 @@ from typing import Tuple
 import numpy as np
 import torch
 
-from .model import PerCellProfileNet, BiasNet
+from .model import PerCellProfileNet, PerCellProfileNetWide, BiasNet
 from .globals import (
     EPINFORMERSEQ_AVAILABLE_CELLTYPES,
     EPINFORMERSEQ_WINDOW,
+    EPINFORMERSEQ_WIDE_WINDOW,
 )
 
 
@@ -50,12 +51,28 @@ def one_hot_rc(ohe: np.ndarray) -> np.ndarray:
     return ohe[::-1, ::-1].copy()
 
 
-def load_main_model(weights_path: str, device: str | torch.device = "cpu") -> torch.nn.Module:
-    """Load this cell's PerCellProfileNet checkpoint."""
+def load_main_model(
+    weights_path: str,
+    device: str | torch.device = "cpu",
+    *,
+    variant: str = "standard",
+) -> torch.nn.Module:
+    """Load this cell's main checkpoint.
+
+    ``variant='standard'`` -> ``PerCellProfileNet`` (1024-bp in / 1024-bp out).
+    ``variant='widewin'``  -> ``PerCellProfileNetWide`` (2114-bp in / 1024-bp out).
+    """
     state = torch.load(weights_path, map_location="cpu", weights_only=False)
     if isinstance(state, dict) and "model_state_dict" in state:
         state = state["model_state_dict"]
-    model = PerCellProfileNet()
+    if variant == "widewin":
+        model: torch.nn.Module = PerCellProfileNetWide(
+            in_window=EPINFORMERSEQ_WIDE_WINDOW, out_window=EPINFORMERSEQ_WINDOW
+        )
+    elif variant == "standard":
+        model = PerCellProfileNet()
+    else:
+        raise ValueError(f"Unknown variant {variant!r}; expected 'standard' or 'widewin'")
     model.load_state_dict(state)
     model.eval()
     model.to(device)
@@ -84,6 +101,7 @@ def predict_profile(
     *,
     average_reverse: bool = True,
     device: str | torch.device = "cpu",
+    in_window: int = EPINFORMERSEQ_WINDOW,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Predict per-bp DNase + H3K27ac profile for one ``cell_type``.
 
@@ -91,11 +109,17 @@ def predict_profile(
     are already specific to one cell. Per-cell architecture means no cell_id
     tensor is fed to the model.
 
+    ``in_window`` is the main model's input length: ``EPINFORMERSEQ_WINDOW``
+    (1024) for the standard model, ``EPINFORMERSEQ_WIDE_WINDOW`` (2114) for the
+    widewin variant. The profile output is always the central 1024 bp; the
+    BiasNet (1024-bp input) runs on the central 1024 bp of the input, so for the
+    widewin path the main sees the full 2114 bp while the bias sees the centre.
+
     Returns
     -------
-    dnase : np.ndarray, shape (L,)
+    dnase : np.ndarray, shape (1024,)
         Per-bp DNase signal (softmax(profile) * 10**log_count).
-    h3k27ac : np.ndarray, shape (L,)
+    h3k27ac : np.ndarray, shape (1024,)
         Per-bp H3K27ac signal.
     counts : np.ndarray, shape (2,)
         Total predicted log10-counts (DNase, H3K27ac).
@@ -103,29 +127,28 @@ def predict_profile(
     if cell_type not in EPINFORMERSEQ_AVAILABLE_CELLTYPES:
         raise ValueError(f"Unknown cell type {cell_type!r}")
 
-    ohe = one_hot_dna(seq, length=EPINFORMERSEQ_WINDOW)
-    x = torch.from_numpy(ohe).unsqueeze(0).to(device)               # (1, 4, L)
+    out_window = EPINFORMERSEQ_WINDOW
+    pad = (in_window - out_window) // 2
+    ohe = one_hot_dna(seq, length=in_window)               # (4, in_window)
+
+    def _run(ohe_arr: np.ndarray):
+        x_main = torch.from_numpy(ohe_arr).unsqueeze(0).to(device)     # (1, 4, in_window)
+        ohe_c = ohe_arr if pad == 0 else ohe_arr[:, pad:pad + out_window].copy()
+        x_bias = torch.from_numpy(ohe_c).unsqueeze(0).to(device)       # (1, 4, 1024)
+        mp, mc = main(x_main)                 # (1, 2, 1024), (1, 2)
+        bp, _ = bias(x_bias)                  # (1, 2, 1024)
+        soft = torch.softmax(mp + bp, dim=-1)
+        count = 10.0 ** mc                    # (1, 2)
+        return soft * count.unsqueeze(-1), count
 
     with torch.inference_mode():
-        mp, mc = main(x)                      # (1, 2, L), (1, 2)
-        bp, _ = bias(x)                       # (1, 2, L)
-        final = mp + bp                       # logit-space bias correction
-        soft = torch.softmax(final, dim=-1)
-        count = 10.0 ** mc                    # (1, 2)
-        signal = soft * count.unsqueeze(-1)   # (1, 2, L)
+        signal, count = _run(ohe)
         if average_reverse:
-            ohe_rc = one_hot_rc(ohe)
-            x_rc = torch.from_numpy(ohe_rc).unsqueeze(0).to(device)
-            mp_r, mc_r = main(x_rc)
-            bp_r, _ = bias(x_rc)
-            final_r = mp_r + bp_r
-            soft_r = torch.softmax(final_r, dim=-1)
-            count_r = 10.0 ** mc_r
-            signal_r = soft_r * count_r.unsqueeze(-1)
+            signal_r, count_r = _run(one_hot_rc(ohe))
             signal_r = torch.flip(signal_r, dims=[-1])   # flip back to fwd
             signal = 0.5 * (signal + signal_r)
             count  = 0.5 * (count + count_r)
-    sig = signal[0].cpu().numpy()             # (2, L)
+    sig = signal[0].cpu().numpy()             # (2, 1024)
     return sig[0].astype(np.float32), sig[1].astype(np.float32), count[0].cpu().numpy().astype(np.float32)
 
 
@@ -138,6 +161,7 @@ def predict_activity(
     assay: str = "Enhancer_H3K27ac_DNase",
     average_reverse: bool = True,
     device: str | torch.device = "cpu",
+    in_window: int = EPINFORMERSEQ_WINDOW,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Predict a single scalar enhancer-activity for one cell.
 
@@ -152,7 +176,8 @@ def predict_activity(
     full window would let off-summit signal drift the percentile lookup.
     """
     dnase, h3, counts = predict_profile(
-        main, bias, seq, cell_type, average_reverse=average_reverse, device=device
+        main, bias, seq, cell_type, average_reverse=average_reverse,
+        device=device, in_window=in_window,
     )
     # Central 256 bp slice — must match CENTRAL_START/END in the builder.
     c_start = (dnase.shape[-1] - 256) // 2

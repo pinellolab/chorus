@@ -1,7 +1,13 @@
 """Constants for the EPInformer-seq per-cell oracle."""
 
-# Native input length of the PerCellProfileNet model.
+# Native input length of the PerCellProfileNet model (profile output length too;
+# SAME padding => 1024 in / 1024 out).
 EPINFORMERSEQ_WINDOW: int = 1024
+
+# Wide-input variant (PerCellProfileNetWide): 2114-bp input is run through the
+# body, then the central 1024 bp is cropped for the heads -- ChromBPNet-style
+# geometry, so every output base has a full real-sequence receptive field.
+EPINFORMERSEQ_WIDE_WINDOW: int = 2114
 
 # Default step for sliding-window inference across larger intervals.
 EPINFORMERSEQ_DEFAULT_STEP: int = 64

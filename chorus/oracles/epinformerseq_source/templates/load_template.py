@@ -19,7 +19,7 @@ if _dev is None or _dev == 'auto':
         _dev = 'cpu'
 device = torch.device(_dev)
 
-main = load_main_model(args['main_weights'], device=device)
+main = load_main_model(args['main_weights'], device=device, variant=args.get('variant', 'standard'))
 bias = load_bias_model(args['bias_weights'], device=device)
 
 result = {

@@ -20,7 +20,7 @@ if _dev is None or _dev == 'auto':
         _dev = 'cpu'
 device = torch.device(_dev)
 
-main = load_main_model(args['main_weights'], device=device)
+main = load_main_model(args['main_weights'], device=device, variant=args.get('variant', 'standard'))
 bias = load_bias_model(args['bias_weights'], device=device)
 
 preds, _ = predict_activity(
@@ -30,6 +30,7 @@ preds, _ = predict_activity(
     assay=args.get('assay', 'Enhancer_H3K27ac_DNase'),
     average_reverse=args.get('reverse_aug', False),
     device=device,
+    in_window=args.get('in_window', 1024),
 )
 
 result = {
