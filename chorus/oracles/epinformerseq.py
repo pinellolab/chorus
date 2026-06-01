@@ -1,27 +1,28 @@
-"""EPInformer-seq per-cell oracle: 1024-bp sequence → scalar enhancer activity.
+"""EPInformer-seq per-cell oracle: 2114-bp sequence → scalar DNase activity.
 
 The oracle's public ``predict`` path returns one scalar per region. The
-underlying ``PerCellProfileNet + BiasNet`` does emit a full per-bp 2-channel
-profile internally (see ``model_usage.predict_profile``), but only the
-aggregated scalar is exposed through the chorus track interface.
+underlying ``PerCellProfileNetWide + BiasNet`` does emit a full per-bp profile
+internally (see ``model_usage.predict_profile``), but only the aggregated
+scalar is exposed through the chorus track interface.
 
 Architecture:
 
-* **PerCellProfileNet** — one model per cell type (no FiLM, no cell embedding).
-  Dilated CNN, 1024-bp window, per-bp 2-channel profile + scalar log10 counts.
-* **Per-cell frozen BiasNet** (ChromBPNet-style) — subtracts Tn5 / MNase
-  sequence preference in logit space, recovering K562-vs-GM12878 specificity.
-* Trained on per-bp DNase + H3K27ac cut-site counts at the union of DNase
-  and H3K27ac peak summits across 11 Roadmap cells, fold-10 leave-chrom-out
-  CV split, per-rep ENCODE BAMs (ENCODE ``recommended=true`` single rep).
+* **PerCellProfileNetWide** — one model per cell type (no FiLM, no cell
+  embedding). Dilated CNN; a **2114-bp** input is run through the body, then
+  the central **1024 bp** is cropped for the profile + count heads
+  (ChromBPNet-style "valid" geometry, full real-sequence receptive field per
+  output base).
+* **Per-cell frozen BiasNet** (ChromBPNet-style, 1024-bp) — subtracts Tn5 /
+  MNase sequence preference in logit space, recovering cell specificity. It
+  runs on the central 1024 bp of the 2114-bp input.
+* Trained on per-bp **5′ DNase cut-site** counts at DNase peak summits across
+  11 Roadmap cells, fold-10 leave-chrom-out CV split. DNase-only.
 
 Scalar definition (must match the background CDF builder at
 ``scripts/build_backgrounds_epinformerseq_v2_percell.py``):
 
-* ``Enhancer_H3K27ac_DNase`` (default): ``sqrt(max(DNase) × max(H3K27ac))``
-  over the **central 256 bp** of the 1024-bp window.
-* ``Enhancer_DNase`` / ``Enhancer_H3K27ac``: per-bp peak max of that single
-  channel over the same central 256-bp slice.
+* ``Enhancer_DNase`` (the only assay): per-bp peak max of the DNase channel
+  over the **central 256 bp** of the 1024-bp output.
 """
 
 from __future__ import annotations
@@ -44,7 +45,6 @@ from .epinformerseq_source.globals import (
     EPINFORMERSEQ_AVAILABLE_CELLTYPES,
     EPINFORMERSEQ_DEFAULT_ASSAY,
     EPINFORMERSEQ_DEFAULT_STEP,
-    EPINFORMERSEQ_WINDOW,
     EPINFORMERSEQ_WIDE_WINDOW,
 )
 from .epinformerseq_source.exceptions import EPInformerSeqError
@@ -60,8 +60,8 @@ class EPInformerSeqOracle(OracleBase):
     """EPInformer-seq per-cell oracle: profile output + bias-correction.
 
     Layout under ``~/.chorus/downloads/epinformerseq/``:
-        per_cell/{cell_type}/main.pt (PerCellProfileNet)
-        bias/{cell_type}/bias.pt     (frozen per-cell BiasNet)
+        per_cell_widewin/{cell_type}/main.pt (PerCellProfileNetWide)
+        bias/{cell_type}/bias.pt             (frozen per-cell BiasNet)
     """
 
     def __init__(
@@ -77,19 +77,11 @@ class EPInformerSeqOracle(OracleBase):
         device: str | None = None,
         average_reverse: bool = False,
         model_dir: str | None = None,
-        variant: str = "standard",
     ):
         self.oracle_name = "epinformerseq"
-        if variant not in ("standard", "widewin"):
-            raise EPInformerSeqError(
-                f"variant {variant!r} not supported; choose 'standard' or 'widewin'"
-            )
-        self.variant = variant
-        # widewin: 2114-bp main input -> central 1024-bp profile (ChromBPNet-style
-        # geometry). standard: 1024-bp in / 1024-bp out (SAME padding).
-        self.in_window = (
-            EPINFORMERSEQ_WIDE_WINDOW if variant == "widewin" else EPINFORMERSEQ_WINDOW
-        )
+        # Single architecture: PerCellProfileNetWide, 2114-bp input -> central
+        # 1024-bp profile crop (ChromBPNet-style geometry). DNase-only.
+        self.in_window = EPINFORMERSEQ_WIDE_WINDOW
         if cell_type not in EPINFORMERSEQ_AVAILABLE_CELLTYPES:
             raise EPInformerSeqError(
                 f"Cell type {cell_type!r} not available. Choose from: "
@@ -136,10 +128,7 @@ class EPInformerSeqOracle(OracleBase):
 
     def get_main_weights_path(self) -> Path:
         root = self.get_root_dir()
-        # widewin checkpoints live in a separate subdir so they never clobber the
-        # standard 1024-bp weights; the per-cell BiasNet (coverage) is shared.
-        subdir = "per_cell_widewin" if self.variant == "widewin" else "per_cell"
-        path = root / subdir / self.cell_type / "main.pt"
+        path = root / "per_cell_widewin" / self.cell_type / "main.pt"
         if not path.exists():
             self._download_model()
         return path
@@ -208,7 +197,6 @@ class EPInformerSeqOracle(OracleBase):
             "bias_weights": str(self.get_bias_weights_path()),
             "cell_type": self.cell_type,
             "assay": self.assay,
-            "variant": self.variant,
         }
         import tempfile
 
@@ -247,7 +235,7 @@ class EPInformerSeqOracle(OracleBase):
 
             device = torch.device(self.device)
             self._main_model = load_main_model(
-                str(self.get_main_weights_path()), device=device, variant=self.variant
+                str(self.get_main_weights_path()), device=device
             )
             self._bias_model = load_bias_model(str(self.get_bias_weights_path()), device=device)
             self.loaded = True
@@ -349,7 +337,6 @@ class EPInformerSeqOracle(OracleBase):
             "seq": seq,
             "reverse_aug": reverse_aug,
             "batch_size": self.batch_size,
-            "variant": self.variant,
             "in_window": self.in_window,
         }
         import tempfile
@@ -414,19 +401,16 @@ class EPInformerSeqOracle(OracleBase):
         try:
             root = self.get_root_dir()
             root.mkdir(parents=True, exist_ok=True)
-            # widewin main checkpoints live in a separate subdir; the per-cell
-            # (coverage) BiasNet is shared across both variants.
-            subdir = "per_cell_widewin" if self.variant == "widewin" else "per_cell"
-            (root / subdir / self.cell_type).mkdir(parents=True, exist_ok=True)
+            (root / "per_cell_widewin" / self.cell_type).mkdir(parents=True, exist_ok=True)
             (root / "bias" / self.cell_type).mkdir(parents=True, exist_ok=True)
             import shutil as _shutil
 
             main_local = hf_hub_download(
                 repo_id="lucapinello/chorus-epinformerseq-v2",
-                filename=f"{subdir}/{self.cell_type}/main.pt",
+                filename=f"per_cell_widewin/{self.cell_type}/main.pt",
                 repo_type="model",
             )
-            _shutil.copyfile(main_local, root / subdir / self.cell_type / "main.pt")
+            _shutil.copyfile(main_local, root / "per_cell_widewin" / self.cell_type / "main.pt")
             bias_local = hf_hub_download(
                 repo_id="lucapinello/chorus-epinformerseq-v2",
                 filename=f"bias/{self.cell_type}/bias.pt",
@@ -444,6 +428,6 @@ class EPInformerSeqOracle(OracleBase):
             raise EPInformerSeqError(
                 "Could not download EPInformer-seq per-cell weights. "
                 "Either provide a local --model-dir pointing at a directory containing "
-                "per_cell/{cell_type}/main.pt and bias/{cell_type}/bias.pt, or wait for "
-                "the HF mirror at lucapinello/chorus-epinformerseq-v2 to be populated."
+                "per_cell_widewin/{cell_type}/main.pt and bias/{cell_type}/bias.pt, or wait "
+                "for the HF mirror at lucapinello/chorus-epinformerseq-v2 to be populated."
             )

@@ -1,7 +1,7 @@
-"""Build per-cell background CDFs for EPInformer-seq (per-cell variant).
+"""Build per-cell background CDFs for EPInformer-seq.
 
-Per-cell = `PerCellProfileNet` (no FiLM, no cell embedding) + frozen per-cell
-`BiasNet`. One model per cell.
+Per-cell = `PerCellProfileNetWide` (2114->1024, no FiLM, no cell embedding) +
+frozen per-cell `BiasNet`. One model per cell, DNase-only.
 
 Builds the full ``{oracle}_pertrack.npz`` background bundle for the 11 cells:
 
@@ -16,12 +16,12 @@ Output: ``~/.chorus/backgrounds/epinformerseq_pertrack.npz`` with
 ``track_ids``, ``summary_cdfs``, ``summary_counts``,
 ``effect_cdfs``, ``effect_counts``.
 
-Activity derivation: per 1024-bp window, the v2 main + bias produce per-bp
-profile logits + log10(count) per channel. We compute
+Activity derivation: the main (PerCellProfileNetWide, 2114->1024) + bias produce
+per-bp profile logits + log10(count). We compute
 ``signal[i,c] = softmax(main+bias)[i,c] * 10**log_count[c]``, then take
-``sqrt(max_DNase * max_H3K27ac)`` over the **central 256 bp** — the same
-slice the oracle uses at inference (``model_usage.predict_activity``), so
-percentile lookups are consistent with the runtime scalar.
+``max_DNase`` over the **central 256 bp** — the same DNase-only slice the oracle
+uses at inference (``model_usage.predict_activity``), so percentile lookups are
+consistent with the runtime scalar.
 
 Stages — pick with ``--part {variants, baselines, merge, all}``:
   variants : score random SNPs → effect_cdfs interim NPZ
@@ -47,14 +47,14 @@ sys.path.insert(0, REPO_ROOT)
 # Default to the chorus oracle download cache (populated on first use via the
 # HF mirror lucapinello/chorus-epinformerseq-v2). Override with --percell-root
 # and --bias-root if you want to point at a local training-output tree.
-_CHORUS_PERCELL_ROOT = os.path.expanduser("~/.chorus/downloads/epinformerseq")
-V2_PERCELL_DIR_DEFAULT = os.path.join(_CHORUS_PERCELL_ROOT, "per_cell")
+from chorus.core.globals import CHORUS_DOWNLOADS_DIR  # noqa: E402
+_CHORUS_PERCELL_ROOT = str(CHORUS_DOWNLOADS_DIR / "epinformerseq")
+V2_PERCELL_DIR_DEFAULT = os.path.join(_CHORUS_PERCELL_ROOT, "per_cell_widewin")
 V2_BIAS_DIR_DEFAULT    = os.path.join(_CHORUS_PERCELL_ROOT, "bias")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--percell-root", default=V2_PERCELL_DIR_DEFAULT,
-                    help="Dir holding <cell>/main.pt + model.py with "
-                    "PerCellProfileNet + BiasNet classes.")
+                    help="Dir holding <cell>/main.pt (PerCellProfileNetWide).")
 parser.add_argument("--bias-root", default=V2_BIAS_DIR_DEFAULT,
                     help="Dir holding <cell>/bias.pt frozen BiasNets.")
 parser.add_argument("--cells", nargs="+",
@@ -69,34 +69,22 @@ parser.add_argument("--batch-size", type=int, default=64)
 parser.add_argument("--device", type=str, default=None)
 parser.add_argument("--reservoir-size", type=int, default=50_000)
 parser.add_argument("--n-cdf-points", type=int, default=10_000)
-parser.add_argument("--output-name", default=None,
-                    help="Final NPZ name (default depends on --variant).")
-parser.add_argument("--variant", choices=["standard", "widewin"], default="standard",
-                    help="standard = PerCellProfileNet (1024bp, combined "
-                    "sqrt(DNase*H3K27ac)); widewin = PerCellProfileNetWide "
-                    "(2114bp in / 1024 out, DNase-only cut-site).")
+parser.add_argument("--output-name", default="epinformerseq_pertrack.npz",
+                    help="Final NPZ name.")
 parser.add_argument("--part", choices=["variants", "baselines", "merge", "all"], default="all",
                     help="Which CDF(s) to build. 'all' runs variants + baselines + merge.")
 parser.add_argument("--n-variants", type=int, default=10_000,
                     help="Random SNPs for effect_cdfs.")
 args = parser.parse_args()
 
-# ---- variant-derived constants -------------------------------------------
-# widewin: 2114-bp input cropped to a central 1024-bp profile; the model was
-# trained DNase-only (cut-site), so the activity scalar is max DNase over the
-# central 256 bp (NOT the combined sqrt(D*H), which collapses because the
-# H3K27ac channel is a zero placeholder). Separate weight subdir + NPZ names so
-# the standard 1024-bp background is never clobbered.
-_IS_WIDEWIN = args.variant == "widewin"
-IN_WINDOW = 2114 if _IS_WIDEWIN else 1024
-SCALAR_MODE = "dnase" if _IS_WIDEWIN else "combined"
-TRACK_PREFIX = "Enhancer_DNase" if _IS_WIDEWIN else "Enhancer_H3K27ac_DNase"
-INTERIM_TAG = "widewin_" if _IS_WIDEWIN else ""
-if _IS_WIDEWIN and args.percell_root == V2_PERCELL_DIR_DEFAULT:
-    args.percell_root = os.path.join(_CHORUS_PERCELL_ROOT, "per_cell_widewin")
-if args.output_name is None:
-    args.output_name = ("epinformerseq_widewin_pertrack.npz" if _IS_WIDEWIN
-                        else "epinformerseq_pertrack.npz")
+# ---- model constants ------------------------------------------------------
+# EPInformer-seq is PerCellProfileNetWide: a 2114-bp input cropped to a central
+# 1024-bp profile, trained DNase-only (5' cut-sites). The activity scalar is
+# max DNase over the central 256 bp.
+IN_WINDOW = 2114
+SCALAR_MODE = "dnase"
+TRACK_PREFIX = "Enhancer_DNase"
+INTERIM_TAG = ""
 
 log_dir = os.path.join(REPO_ROOT, "logs")
 os.makedirs(log_dir, exist_ok=True)
@@ -270,7 +258,7 @@ def _load_models_and_device():
     # Use the canonical chorus model classes — same nn.Module, byte-compatible
     # with the per-cell state_dicts on HF (lucapinello/chorus-epinformerseq-v2).
     from chorus.oracles.epinformerseq_source.model import (
-        PerCellProfileNet, PerCellProfileNetWide, BiasNet,
+        PerCellProfileNetWide, BiasNet,
     )
 
     cells = args.cells
@@ -281,10 +269,8 @@ def _load_models_and_device():
         if not os.path.exists(main_ckpt) or not os.path.exists(bias_ckpt):
             # Populate the chorus oracle cache via the HF mirror if missing.
             from chorus.oracles import EPInformerSeqOracle
-            EPInformerSeqOracle(cell_type=c, variant=args.variant,
-                                use_environment=False).load_pretrained_model()
-        m = (PerCellProfileNetWide(in_window=IN_WINDOW, out_window=1024)
-             if _IS_WIDEWIN else PerCellProfileNet())
+            EPInformerSeqOracle(cell_type=c, use_environment=False).load_pretrained_model()
+        m = PerCellProfileNetWide(in_window=IN_WINDOW, out_window=1024)
         m.load_state_dict(torch.load(main_ckpt, map_location="cpu", weights_only=False))
         m.eval().to(device)
         b = BiasNet()
@@ -472,14 +458,9 @@ def build_variant_backgrounds():
 
 
 def merge_to_final():
-    """Combine effect + summary interim NPZs into the final pertrack NPZ.
-
-    For ``--variant widewin`` this writes ``epinformerseq_widewin_pertrack.npz``
-    (oracle_name ``epinformerseq_widewin``) so it never clobbers the standard
-    1024-bp combined-scalar background.
-    """
+    """Combine effect + summary interim NPZs into ``epinformerseq_pertrack.npz``."""
     from chorus.analysis.normalization import PerTrackNormalizer
-    out_oracle = "epinformerseq_widewin" if _IS_WIDEWIN else "epinformerseq"
+    out_oracle = "epinformerseq"
     effect_path   = os.path.join(cache_dir, f"epinformerseq_{INTERIM_TAG}effect_cdfs_interim.npz")
     baseline_path = os.path.join(cache_dir, f"epinformerseq_{INTERIM_TAG}baseline_cdfs_interim.npz")
     if not os.path.exists(baseline_path):

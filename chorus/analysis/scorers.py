@@ -199,12 +199,8 @@ def classify_track_layer(track) -> str:
         return "gene_expression"
     if assay_type == "LentiMPRA":
         return "promoter_activity"
-    if assay_type in (
-        "Enhancer_H3K27ac_DNase",
-        "Enhancer_DNase",
-        "Enhancer_H3K27ac",
-    ):
-        # EPInformer-seq scalar enhancer-activity tracks. Unsigned log2fc with
+    if assay_type == "Enhancer_DNase":
+        # EPInformer-seq scalar DNase-activity track. Unsigned log2fc with
         # pseudocount=1.0, matching the background CDF builder.
         return "enhancer_activity"
     if assay_type == "SPLICE_SITES":

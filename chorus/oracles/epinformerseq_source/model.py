@@ -1,11 +1,10 @@
 """EPInformer-seq per-cell: profile output + bias correction.
 
-One model per cell (no FiLM, no cell embedding). Architecture mirrors
-`legnet_profile_v2/model.py` PerCellProfileNet (per-rep BAM training,
-2026-05-27 sweep, 11 Roadmap cells). The previous joint-cell
-`CellCondProfileNet` (FiLM + cell_emb) was retired in favor of the
-per-cell variant which gives consistently equal or better test-r and
-cleaner cell-specificity at validated enhancers.
+One ``PerCellProfileNetWide`` per cell (no FiLM, no cell embedding): a 2114-bp
+input run through a dilated body, central 1024-bp cropped for the heads
+(ChromBPNet-style valid geometry), trained on 5' DNase cut-sites. The previous
+joint-cell `CellCondProfileNet` (FiLM + cell_emb) and the 1024-bp SAME-padded
+`PerCellProfileNet` were both retired in favor of this single architecture.
 
 Architecture:
   - Conv stem (kernel=21) -> 64-channel body
@@ -45,40 +44,6 @@ class DilatedResBlock(nn.Module):
         return F.elu(self.bn(self.conv(x)) + x)
 
 
-class PerCellProfileNet(nn.Module):
-    """Per-cell profile + counts. 1024-bp DNA -> 2-channel profile + 2 scalar counts."""
-
-    def __init__(self,
-                 stem_ch: int = 128,
-                 body_ch: int = 64,
-                 n_dilated: int = 9):
-        super().__init__()
-        self.stem = nn.Sequential(
-            nn.Conv1d(4, stem_ch, kernel_size=21, padding=10),
-            nn.ELU(),
-            nn.Conv1d(stem_ch, body_ch, kernel_size=1),
-            nn.ELU(),
-        )
-        self.blocks = nn.ModuleList(
-            [DilatedResBlock(body_ch, dilation=2 ** i) for i in range(n_dilated)]
-        )
-        self.profile_head = nn.Conv1d(body_ch, 2, kernel_size=1)
-        self.count_head = nn.Sequential(
-            nn.Linear(body_ch, 64),
-            nn.SiLU(),
-            nn.Linear(64, 2),
-        )
-
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        h = self.stem(x)
-        for blk in self.blocks:
-            h = blk(h)
-        profile_logits = self.profile_head(h)                # (B, 2, L)
-        pooled = F.adaptive_avg_pool1d(h, 1).squeeze(-1)     # (B, body_ch)
-        log_counts = self.count_head(pooled)                 # (B, 2)
-        return profile_logits, log_counts
-
-
 class PerCellProfileNetWide(nn.Module):
     """Wide-input per-cell profile + counts.
 
@@ -86,8 +51,8 @@ class PerCellProfileNetWide(nn.Module):
     then the central ``out_window`` columns are cropped before the profile and
     count heads. This gives every output position a full real-sequence receptive
     field (the trimmed flanks supply edge context), matching the ChromBPNet
-    2114->1000 geometry -- in contrast to ``PerCellProfileNet``, whose 1024->1024
-    SAME padding leaves edge positions with zero-padded context.
+    2114->1000 geometry -- rather than feeding the heads SAME-padded edges whose
+    context is partly zero-padding.
 
     Output shapes (in_window=2114, out_window=1024):
       profile_logits : (B, 2, out_window)

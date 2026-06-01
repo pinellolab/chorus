@@ -1,15 +1,15 @@
 """Tests for the EPInformer-seq per-cell oracle.
 
-Per-cell architecture (2026-05-27): one ``PerCellProfileNet`` checkpoint per
-cell (no FiLM, no cell embedding) + frozen per-cell ``BiasNet``. 11 Roadmap
-cells supported, trained on per-rep ENCODE BAMs.
+Per-cell architecture: one ``PerCellProfileNetWide`` checkpoint per cell (2114-bp
+input -> central 1024-bp crop, no FiLM, no cell embedding) + frozen per-cell
+``BiasNet``. 11 Roadmap cells, trained on 5' DNase cut-sites (DNase-only).
 
 Tests are split into:
 
 - **Static checks** (no torch / no weights): registry, globals, layer config,
   CDF schema, weights probe, import sanity.
 - **Functional checks** (require torch + chorus-epinformerseq env): load
-  per-cell model, run a forward pass on a random 1024-bp sequence. Skipped
+  per-cell model, run a forward pass on a random 2114-bp sequence. Skipped
   when prerequisites missing.
 """
 
@@ -33,6 +33,7 @@ from chorus.oracles.epinformerseq_source.globals import (
     EPINFORMERSEQ_DEFAULT_ASSAY,
     EPINFORMERSEQ_DEFAULT_STEP,
     EPINFORMERSEQ_WINDOW,
+    EPINFORMERSEQ_WIDE_WINDOW,
 )
 
 
@@ -44,7 +45,7 @@ EXPECTED_CELLS = {
 
 def _weights_available():
     from chorus.core.globals import CHORUS_DOWNLOADS_DIR
-    return (CHORUS_DOWNLOADS_DIR / "epinformerseq" / "per_cell" / "K562" / "main.pt").exists()
+    return (CHORUS_DOWNLOADS_DIR / "epinformerseq" / "per_cell_widewin" / "K562" / "main.pt").exists()
 
 
 def _torch_available():
@@ -86,7 +87,11 @@ class TestEPInformerSeqRegistry:
         )
         assert not hasattr(model_mod, "FiLM1d"), \
             "FiLM1d belongs to the retired joint model"
-        assert hasattr(model_mod, "PerCellProfileNet")
+        # Single architecture: PerCellProfileNetWide (the 1024-bp PerCellProfileNet
+        # was retired when EPInformer-seq consolidated to the 2114-bp cut-site model).
+        assert hasattr(model_mod, "PerCellProfileNetWide")
+        assert not hasattr(model_mod, "PerCellProfileNet"), \
+            "the 1024-bp PerCellProfileNet was retired in favor of PerCellProfileNetWide"
         assert hasattr(model_mod, "BiasNet")
 
     def test_no_stale_cellcondprofilenet_source(self):
@@ -97,8 +102,10 @@ class TestEPInformerSeqRegistry:
         assert "class CellCondProfileNet" not in src, \
             "CellCondProfileNet class still defined in model.py"
         assert "class FiLM1d" not in src, "FiLM1d class still defined in model.py"
-        assert "class PerCellProfileNet" in src, \
-            "PerCellProfileNet class missing from model.py"
+        assert "class PerCellProfileNetWide" in src, \
+            "PerCellProfileNetWide class missing from model.py"
+        assert "class PerCellProfileNet(" not in src, \
+            "the 1024-bp PerCellProfileNet class should be retired from model.py"
 
     def test_globals_no_cell2idx(self):
         """Per-cell architecture removes the cell→index map."""
@@ -134,13 +141,13 @@ class TestEPInformerSeqGlobals:
         assert len(EPINFORMERSEQ_AVAILABLE_CELLTYPES) == 11
 
     def test_assays(self):
-        assert "Enhancer_H3K27ac_DNase" in EPINFORMERSEQ_AVAILABLE_ASSAYS
-        assert "Enhancer_DNase"          in EPINFORMERSEQ_AVAILABLE_ASSAYS
-        assert "Enhancer_H3K27ac"        in EPINFORMERSEQ_AVAILABLE_ASSAYS
-        assert EPINFORMERSEQ_DEFAULT_ASSAY == "Enhancer_H3K27ac_DNase"
+        # DNase-only model: Enhancer_DNase is the single (default) assay.
+        assert EPINFORMERSEQ_AVAILABLE_ASSAYS == ["Enhancer_DNase"]
+        assert EPINFORMERSEQ_DEFAULT_ASSAY == "Enhancer_DNase"
 
     def test_window_and_step(self):
-        assert EPINFORMERSEQ_WINDOW == 1024
+        assert EPINFORMERSEQ_WINDOW == 1024          # profile/aggregation crop
+        assert EPINFORMERSEQ_WIDE_WINDOW == 2114     # model input
         assert EPINFORMERSEQ_DEFAULT_STEP == 64
 
 
@@ -150,8 +157,8 @@ class TestEPInformerSeqOracleInit:
     def test_default_init(self):
         oracle = EPInformerSeqOracle(use_environment=False)
         assert oracle.cell_type == "K562"
-        assert oracle.assay == "Enhancer_H3K27ac_DNase"
-        assert oracle.sequence_length == 1024
+        assert oracle.assay == "Enhancer_DNase"
+        assert oracle.sequence_length == 2114
         assert oracle.bin_size == 64
         assert oracle.loaded is False
         assert oracle._main_model is None
@@ -165,22 +172,22 @@ class TestEPInformerSeqOracleInit:
     def test_list_methods(self):
         oracle = EPInformerSeqOracle(use_environment=False)
         assays = oracle.list_assay_types()
-        assert "Enhancer_H3K27ac_DNase" in assays
+        assert "Enhancer_DNase" in assays
         cells = oracle.list_cell_types()
         assert "K562" in cells  # default cell
 
     def test_main_weights_path_per_cell(self, tmp_path):
-        """The oracle resolves main.pt under per_cell/<cell>/."""
+        """The oracle resolves main.pt under per_cell_widewin/<cell>/."""
         # Build a fake model_dir with the expected layout
         for cell in ["K562", "GM12878"]:
-            (tmp_path / "per_cell" / cell).mkdir(parents=True)
+            (tmp_path / "per_cell_widewin" / cell).mkdir(parents=True)
             (tmp_path / "bias" / cell).mkdir(parents=True)
-            (tmp_path / "per_cell" / cell / "main.pt").touch()
+            (tmp_path / "per_cell_widewin" / cell / "main.pt").touch()
             (tmp_path / "bias" / cell / "bias.pt").touch()
         oracle = EPInformerSeqOracle(
             cell_type="GM12878", use_environment=False, model_dir=str(tmp_path)
         )
-        assert oracle.get_main_weights_path() == tmp_path / "per_cell" / "GM12878" / "main.pt"
+        assert oracle.get_main_weights_path() == tmp_path / "per_cell_widewin" / "GM12878" / "main.pt"
         assert oracle.get_bias_weights_path() == tmp_path / "bias" / "GM12878" / "bias.pt"
 
 
@@ -194,7 +201,7 @@ class TestEPInformerSeqWeightsProbe:
         # the missing paths must reference per_cell + bias, not the old K562/weights.pt.
         if not ok:
             joined = " ".join(missing)
-            assert "per_cell" in joined, f"probe still uses legacy path: {missing}"
+            assert "per_cell_widewin" in joined, f"probe still uses legacy path: {missing}"
             assert "bias" in joined,     f"probe missing bias path: {missing}"
 
     def test_probe_registered(self):
@@ -222,8 +229,8 @@ class TestEPInformerSeqCDF:
             tracks = [str(t) for t in d["track_ids"]]
         finally:
             d.close()
-        # One track per cell using the default composite assay
-        expected = {f"Enhancer_H3K27ac_DNase:{c}" for c in EXPECTED_CELLS}
+        # One track per cell using the (only) DNase assay
+        expected = {f"Enhancer_DNase:{c}" for c in EXPECTED_CELLS}
         assert set(tracks) == expected, \
             f"unexpected tracks: extra={set(tracks)-expected}, missing={expected-set(tracks)}"
 
@@ -258,7 +265,7 @@ class TestEPInformerSeqCDF:
     reason="per-cell weights and torch (chorus-epinformerseq env) required",
 )
 class TestEPInformerSeqLoad:
-    """Load + forward pass on a random 1024-bp sequence (one cell).
+    """Load + forward pass on a random 2114-bp sequence (one cell).
 
     Runs in chorus-epinformerseq env (has torch) when per-cell weights are
     cached. Skipped cleanly in the base chorus env (no torch) or when
@@ -272,13 +279,13 @@ class TestEPInformerSeqLoad:
         oracle.load_pretrained_model()
         assert oracle.loaded
         # Per-cell architecture has no cell_id in forward
-        assert type(oracle._main_model).__name__ == "PerCellProfileNet"
+        assert type(oracle._main_model).__name__ == "PerCellProfileNetWide"
         assert type(oracle._bias_model).__name__ == "BiasNet"
 
         import random
         random.seed(42)
-        seq = "".join(random.choices("ACGT", k=EPINFORMERSEQ_WINDOW))
-        result = oracle.predict(seq, ["Enhancer_H3K27ac_DNase:K562"])
+        seq = "".join(random.choices("ACGT", k=EPINFORMERSEQ_WIDE_WINDOW))
+        result = oracle.predict(seq, ["Enhancer_DNase:K562"])
         track = next(iter(result.values()))
         val = float(track.values[0])
         assert val > 0, f"K562 random-sequence activity should be > 0: {val}"

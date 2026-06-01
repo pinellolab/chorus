@@ -1,10 +1,9 @@
 """Helper functions for loading and running the EPInformer-seq per-cell model.
 
-One ``PerCellProfileNet`` checkpoint per cell + a matching frozen
-``BiasNet`` per cell (ChromBPNet-style Tn5 / MNase sequence-bias
-subtraction). Predict path returns either per-bp 2-channel profiles
-or a scalar enhancer-activity in the units of the legacy oracle
-(``sqrt(max DNase × max H3K27ac)`` over the 1024-bp window).
+One ``PerCellProfileNetWide`` checkpoint per cell (2114-bp input -> central
+1024-bp crop) + a matching frozen ``BiasNet`` per cell (ChromBPNet-style Tn5 /
+MNase sequence-bias subtraction). Predict path returns either the per-bp profile
+or a scalar DNase activity (``max DNase`` over the central 256 bp).
 """
 
 from __future__ import annotations
@@ -14,7 +13,7 @@ from typing import Tuple
 import numpy as np
 import torch
 
-from .model import PerCellProfileNet, PerCellProfileNetWide, BiasNet
+from .model import PerCellProfileNetWide, BiasNet
 from .globals import (
     EPINFORMERSEQ_AVAILABLE_CELLTYPES,
     EPINFORMERSEQ_WINDOW,
@@ -54,25 +53,14 @@ def one_hot_rc(ohe: np.ndarray) -> np.ndarray:
 def load_main_model(
     weights_path: str,
     device: str | torch.device = "cpu",
-    *,
-    variant: str = "standard",
 ) -> torch.nn.Module:
-    """Load this cell's main checkpoint.
-
-    ``variant='standard'`` -> ``PerCellProfileNet`` (1024-bp in / 1024-bp out).
-    ``variant='widewin'``  -> ``PerCellProfileNetWide`` (2114-bp in / 1024-bp out).
-    """
+    """Load this cell's main checkpoint (``PerCellProfileNetWide``, 2114->1024)."""
     state = torch.load(weights_path, map_location="cpu", weights_only=False)
     if isinstance(state, dict) and "model_state_dict" in state:
         state = state["model_state_dict"]
-    if variant == "widewin":
-        model: torch.nn.Module = PerCellProfileNetWide(
-            in_window=EPINFORMERSEQ_WIDE_WINDOW, out_window=EPINFORMERSEQ_WINDOW
-        )
-    elif variant == "standard":
-        model = PerCellProfileNet()
-    else:
-        raise ValueError(f"Unknown variant {variant!r}; expected 'standard' or 'widewin'")
+    model = PerCellProfileNetWide(
+        in_window=EPINFORMERSEQ_WIDE_WINDOW, out_window=EPINFORMERSEQ_WINDOW
+    )
     model.load_state_dict(state)
     model.eval()
     model.to(device)
@@ -101,7 +89,7 @@ def predict_profile(
     *,
     average_reverse: bool = True,
     device: str | torch.device = "cpu",
-    in_window: int = EPINFORMERSEQ_WINDOW,
+    in_window: int = EPINFORMERSEQ_WIDE_WINDOW,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Predict per-bp DNase + H3K27ac profile for one ``cell_type``.
 
@@ -158,17 +146,15 @@ def predict_activity(
     seq: str,
     cell_type: str,
     *,
-    assay: str = "Enhancer_H3K27ac_DNase",
+    assay: str = "Enhancer_DNase",
     average_reverse: bool = True,
     device: str | torch.device = "cpu",
-    in_window: int = EPINFORMERSEQ_WINDOW,
+    in_window: int = EPINFORMERSEQ_WIDE_WINDOW,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Predict a single scalar enhancer-activity for one cell.
 
-    For ``assay='Enhancer_H3K27ac_DNase'`` (default) returns the geometric
-    mean of the per-bp DNase and H3K27ac peak signals (sqrt(D * H)). For the
-    single-assay variants (Enhancer_DNase, Enhancer_H3K27ac) returns the per-bp
-    peak max of that channel only.
+    ``assay='Enhancer_DNase'`` (default, DNase-only model) returns the per-bp
+    peak max of the DNase channel over the central 256 bp.
 
     The peak max is taken over the central 256 bp of the 1024-bp window
     (positions 384–639) to match the background CDF builder
