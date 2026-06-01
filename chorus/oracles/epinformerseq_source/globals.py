@@ -33,9 +33,14 @@ EPINFORMERSEQ_AVAILABLE_CELLTYPES = [
     "H1",
 ]
 
-# DNase-only model (trained on 5' DNase cut-sites). The scalar is the per-bp
-# peak max of the DNase channel over the central 256 bp of the 1024-bp output.
+# Two real channels: ch0 = DNase (5' cut-sites), ch1 = H3K27ac (coverage). The
+# scalar is the per-bp peak max over the central 256 bp of the 1024-bp output:
+# - "Enhancer_DNase" (default): max DNase
+# - "Enhancer_H3K27ac": max H3K27ac
+# - "Enhancer_H3K27ac_DNase": composite sqrt(max DNase * max H3K27ac)
 EPINFORMERSEQ_DEFAULT_ASSAY: str = "Enhancer_DNase"
 EPINFORMERSEQ_AVAILABLE_ASSAYS = [
     "Enhancer_DNase",
+    "Enhancer_H3K27ac",
+    "Enhancer_H3K27ac_DNase",
 ]

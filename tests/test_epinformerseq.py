@@ -141,8 +141,10 @@ class TestEPInformerSeqGlobals:
         assert len(EPINFORMERSEQ_AVAILABLE_CELLTYPES) == 11
 
     def test_assays(self):
-        # DNase-only model: Enhancer_DNase is the single (default) assay.
-        assert EPINFORMERSEQ_AVAILABLE_ASSAYS == ["Enhancer_DNase"]
+        # 2-channel model: DNase + H3K27ac + composite. DNase is the default.
+        assert set(EPINFORMERSEQ_AVAILABLE_ASSAYS) == {
+            "Enhancer_DNase", "Enhancer_H3K27ac", "Enhancer_H3K27ac_DNase",
+        }
         assert EPINFORMERSEQ_DEFAULT_ASSAY == "Enhancer_DNase"
 
     def test_window_and_step(self):
@@ -229,8 +231,9 @@ class TestEPInformerSeqCDF:
             tracks = [str(t) for t in d["track_ids"]]
         finally:
             d.close()
-        # One track per cell using the (only) DNase assay
-        expected = {f"Enhancer_DNase:{c}" for c in EXPECTED_CELLS}
+        # Three assays per cell (DNase, H3K27ac, composite) => 33 tracks.
+        assays = ["Enhancer_DNase", "Enhancer_H3K27ac", "Enhancer_H3K27ac_DNase"]
+        expected = {f"{a}:{c}" for c in EXPECTED_CELLS for a in assays}
         assert set(tracks) == expected, \
             f"unexpected tracks: extra={set(tracks)-expected}, missing={expected-set(tracks)}"
 
@@ -238,8 +241,8 @@ class TestEPInformerSeqCDF:
         d = np.load(cdf_path, allow_pickle=False)
         try:
             assert "summary_cdfs" in d.files
-            assert d["summary_cdfs"].shape == (11, 10_000), d["summary_cdfs"].shape
-            assert d["summary_counts"].shape == (11,)
+            assert d["summary_cdfs"].shape == (33, 10_000), d["summary_cdfs"].shape
+            assert d["summary_counts"].shape == (33,)
             assert (d["summary_counts"] > 1000).all(), \
                 f"baseline sample counts suspiciously low: {d['summary_counts']}"
         finally:

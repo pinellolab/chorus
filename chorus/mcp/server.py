@@ -82,9 +82,10 @@ ORACLE_SPECS = {
     },
     "epinformerseq": {
         "description": (
-            "EPInformer-seq — 2114-bp sequence to scalar DNase activity "
-            "(linear max DNase over the central 256 bp of the 1024-bp crop), "
-            "one per-cell PerCellProfileNetWide + frozen BiasNet per cell type."
+            "EPInformer-seq — 2114-bp sequence to scalar enhancer activity "
+            "(linear max signal over the central 256 bp of the 1024-bp crop), "
+            "from a 2-channel per-cell PerCellProfileNetWide (ch0 DNase cut-site, "
+            "ch1 H3K27ac coverage) + frozen BiasNet per cell type."
         ),
         "framework": "PyTorch",
         "input_size_bp": 2114,
@@ -92,6 +93,8 @@ ORACLE_SPECS = {
         "resolution_bp": None,
         "assay_types": [
             "Enhancer_DNase",
+            "Enhancer_H3K27ac",
+            "Enhancer_H3K27ac_DNase",
         ],
     },
     "alphagenome": {
@@ -436,13 +439,14 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
         )
         return {
             "oracle": oracle_name,
-            "assay_types": ["Enhancer_DNase"],
+            "assay_types": ["Enhancer_DNase", "Enhancer_H3K27ac", "Enhancer_H3K27ac_DNase"],
             "cell_types": list(EPINFORMERSEQ_AVAILABLE_CELLTYPES),
             "note": (
-                "EPInformer-seq returns a single scalar per 2114-bp window. "
-                "Assay 'Enhancer_DNase' is max DNase over the central 256 bp from "
-                "per-cell PerCellProfileNetWide + frozen BiasNet (DNase cut-site, "
-                "ChromBPNet recipe). Switch cells with load_pretrained_model(cell_type=...)."
+                "EPInformer-seq returns a single scalar per 2114-bp window from a "
+                "2-channel per-cell PerCellProfileNetWide (ch0 DNase cut-site, ch1 "
+                "H3K27ac coverage) + frozen BiasNet. Assays: 'Enhancer_DNase' (default), "
+                "'Enhancer_H3K27ac', 'Enhancer_H3K27ac_DNase' (composite sqrt(D*H)), each "
+                "the max over the central 256 bp. Switch cells with load_pretrained_model(cell_type=...)."
             ),
         }
 

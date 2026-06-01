@@ -15,14 +15,17 @@ Architecture:
 * **Per-cell frozen BiasNet** (ChromBPNet-style, 1024-bp) — subtracts Tn5 /
   MNase sequence preference in logit space, recovering cell specificity. It
   runs on the central 1024 bp of the 2114-bp input.
-* Trained on per-bp **5′ DNase cut-site** counts at DNase peak summits across
-  11 Roadmap cells, fold-10 leave-chrom-out CV split. DNase-only.
+* Trained on two channels at DNase peak summits across 11 Roadmap cells,
+  fold-10 leave-chrom-out CV split: **ch0 = 5′ DNase cut-sites**,
+  **ch1 = H3K27ac coverage**.
 
 Scalar definition (must match the background CDF builder at
-``scripts/build_backgrounds_epinformerseq_v2_percell.py``):
+``scripts/build_backgrounds_epinformerseq_v2_percell.py``), per-bp peak max over
+the **central 256 bp** of the 1024-bp output:
 
-* ``Enhancer_DNase`` (the only assay): per-bp peak max of the DNase channel
-  over the **central 256 bp** of the 1024-bp output.
+* ``Enhancer_DNase`` (default): max DNase.
+* ``Enhancer_H3K27ac``: max H3K27ac.
+* ``Enhancer_H3K27ac_DNase``: composite ``sqrt(max DNase × max H3K27ac)``.
 """
 
 from __future__ import annotations

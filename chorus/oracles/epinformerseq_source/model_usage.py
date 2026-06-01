@@ -153,8 +153,10 @@ def predict_activity(
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Predict a single scalar enhancer-activity for one cell.
 
-    ``assay='Enhancer_DNase'`` (default, DNase-only model) returns the per-bp
-    peak max of the DNase channel over the central 256 bp.
+    ``assay='Enhancer_DNase'`` (default) returns the per-bp peak max of the
+    DNase channel; ``'Enhancer_H3K27ac'`` the H3K27ac channel; and
+    ``'Enhancer_H3K27ac_DNase'`` the composite sqrt(max DNase * max H3K27ac) --
+    all over the central 256 bp.
 
     The peak max is taken over the central 256 bp of the 1024-bp window
     (positions 384–639) to match the background CDF builder

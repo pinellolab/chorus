@@ -79,11 +79,11 @@ args = parser.parse_args()
 
 # ---- model constants ------------------------------------------------------
 # EPInformer-seq is PerCellProfileNetWide: a 2114-bp input cropped to a central
-# 1024-bp profile, trained DNase-only (5' cut-sites). The activity scalar is
-# max DNase over the central 256 bp.
+# 1024-bp profile, 2 channels (ch0 DNase cut-site, ch1 H3K27ac coverage). We
+# build one CDF track per (assay, cell): max DNase, max H3K27ac, and the
+# composite sqrt(maxD*maxH), all over the central 256 bp.
 IN_WINDOW = 2114
-SCALAR_MODE = "dnase"
-TRACK_PREFIX = "Enhancer_DNase"
+ASSAYS = ["Enhancer_DNase", "Enhancer_H3K27ac", "Enhancer_H3K27ac_DNase"]
 INTERIM_TAG = ""
 
 log_dir = os.path.join(REPO_ROOT, "logs")
@@ -286,13 +286,11 @@ def _load_models_and_device():
 
 
 def _score_activity_batch(main_models, bias_models, x):
-    """Score one (B, 4, IN_WINDOW) batch against all 11 cells -> (n_cells, B).
+    """Score one (B, 4, IN_WINDOW) batch -> (n_cells, 3, B) for the 3 assays.
 
-    standard: main + bias both see the full 1024-bp window; scalar is the
-              combined sqrt(max_DNase * max_H3K27ac) over the central 256 bp.
-    widewin:  main sees the full 2114-bp input, the 1024-bp BiasNet sees the
-              central 1024-bp crop; scalar is max_DNase over the central 256 bp
-              (DNase-only — the model has no real H3K27ac channel).
+    Main sees the full 2114-bp input; the 1024-bp BiasNet sees the central
+    1024-bp crop. Per cell we emit three scalars over the central 256 bp:
+    [max DNase, max H3K27ac, sqrt(max DNase * max H3K27ac)] (ASSAYS order).
     """
     import torch
     import torch.nn.functional as F
@@ -302,18 +300,13 @@ def _score_activity_batch(main_models, bias_models, x):
     for m, b in zip(main_models, bias_models):
         mp, mc = m(x)                          # (B,2,1024), (B,2)
         bp, _  = b(x_bias)                      # (B,2,1024)
-        final = mp + bp
-        soft  = F.softmax(final, dim=-1)
-        count = 10.0 ** mc
-        signal = soft * count.unsqueeze(-1)   # (B,2,1024)
-        central = signal[:, :, CENTRAL_START:CENTRAL_END]
-        pmax = central.max(dim=-1).values     # (B,2)
-        if SCALAR_MODE == "dnase":
-            act = pmax[:, 0].clamp(min=0)                                   # DNase-only
-        else:
-            act = torch.sqrt(pmax[:, 0].clamp(min=0) * pmax[:, 1].clamp(min=0))
-        rows.append(act)
-    return torch.stack(rows, dim=0)            # (n_cells, B)
+        soft  = F.softmax(mp + bp, dim=-1)
+        signal = soft * (10.0 ** mc).unsqueeze(-1)   # (B,2,1024)
+        pmax = signal[:, :, CENTRAL_START:CENTRAL_END].max(dim=-1).values  # (B,2)
+        d = pmax[:, 0].clamp(min=0)
+        h = pmax[:, 1].clamp(min=0)
+        rows.append(torch.stack([d, h, torch.sqrt(d * h)], dim=0))  # (3,B)
+    return torch.stack(rows, dim=0)            # (n_cells, 3, B)
 
 
 def build_baseline_backgrounds():
@@ -324,7 +317,9 @@ def build_baseline_backgrounds():
     cells, main_models, bias_models, device = _load_models_and_device()
     seqs = sample_positions()
     n = len(seqs)
-    n_tracks = len(cells)
+    n_assays = len(ASSAYS)
+    n_tracks = len(cells) * n_assays
+    track_ids = [f"{a}:{c}" for c in cells for a in ASSAYS]   # cell-major, assay-minor
     reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size)
 
     t0 = time.time()
@@ -333,11 +328,13 @@ def build_baseline_backgrounds():
             batch = seqs[i0:i0 + args.batch_size]
             oh = np.stack([one_hot(s) for s in batch], axis=0)
             x = torch.from_numpy(oh).to(device)
-            acts = _score_activity_batch(main_models, bias_models, x)  # (n_cells, B)
+            acts = _score_activity_batch(main_models, bias_models, x)  # (n_cells, 3, B)
             acts = acts.float().cpu().numpy()
-            for ct_i in range(n_tracks):
-                for v in acts[ct_i]:
-                    reservoir.add(ct_i, float(v))
+            for ct_i in range(len(cells)):
+                for ai in range(n_assays):
+                    tidx = ct_i * n_assays + ai
+                    for v in acts[ct_i, ai]:
+                        reservoir.add(tidx, float(v))
             if (i0 // args.batch_size) % 50 == 0:
                 logger.info("  baseline batch %d / %d  (elapsed %.1fs)",
                             i0 // args.batch_size, (n - 1) // args.batch_size + 1,
@@ -348,16 +345,14 @@ def build_baseline_backgrounds():
     interim = os.path.join(cache_dir, f"epinformerseq_{INTERIM_TAG}baseline_cdfs_interim.npz")
     np.savez_compressed(
         interim,
-        track_ids=np.array([f"{TRACK_PREFIX}:{c}" for c in cells], dtype="U"),
+        track_ids=np.array(track_ids, dtype="U"),
         summary_cdfs=summary_matrix.astype(np.float32),
         summary_counts=reservoir.counts.copy(),
     )
     logger.info("Saved baseline interim: %s", interim)
-    for i, c in enumerate(cells):
+    for i, tid in enumerate(track_ids):
         thr90 = float(np.quantile(summary_matrix[i], 0.90))
-        thr99 = float(np.quantile(summary_matrix[i], 0.99))
-        logger.info("  %-8s  90th-pct %.3f   99th-pct %.3f   (n=%d)",
-                    c, thr90, thr99, int(reservoir.counts[i]))
+        logger.info("  %-28s  90th-pct %.3f  (n=%d)", tid, thr90, int(reservoir.counts[i]))
 
 
 def build_variant_backgrounds():
@@ -369,7 +364,9 @@ def build_variant_backgrounds():
                 args.n_variants, len(args.cells))
     logger.info("=" * 60)
     cells, main_models, bias_models, device = _load_models_and_device()
-    n_tracks = len(cells)
+    n_assays = len(ASSAYS)
+    n_tracks = len(cells) * n_assays
+    track_ids = [f"{a}:{c}" for c in cells for a in ASSAYS]
 
     ref = pysam.FastaFile(os.path.join(REPO_ROOT, "genomes", "hg38.fa"))
     rng = random.Random(42)
@@ -426,14 +423,16 @@ def build_variant_backgrounds():
             oh_a = np.stack([one_hot(s) for s in ba], axis=0)
             x_ref = torch.from_numpy(oh_r).to(device)
             x_alt = torch.from_numpy(oh_a).to(device)
-            ref_act = _score_activity_batch(main_models, bias_models, x_ref)  # (n_cells, B)
+            ref_act = _score_activity_batch(main_models, bias_models, x_ref)  # (n_cells,3,B)
             alt_act = _score_activity_batch(main_models, bias_models, x_alt)
             # |log2((alt + 1) / (ref + 1))|, unsigned (chromatin convention).
             eff = torch.abs(torch.log2((alt_act + 1.0) / (ref_act + 1.0)))
-            eff = eff.float().cpu().numpy()
-            for ct_i in range(n_tracks):
-                for v in eff[ct_i]:
-                    reservoir.add(ct_i, float(v))
+            eff = eff.float().cpu().numpy()                                   # (n_cells,3,B)
+            for ct_i in range(len(cells)):
+                for ai in range(n_assays):
+                    tidx = ct_i * n_assays + ai
+                    for v in eff[ct_i, ai]:
+                        reservoir.add(tidx, float(v))
             if (i0 // args.batch_size) % 25 == 0:
                 logger.info("  variant batch %d / %d  (elapsed %.1fs)",
                             i0 // args.batch_size, (kept - 1) // args.batch_size + 1,
@@ -444,17 +443,15 @@ def build_variant_backgrounds():
     interim = os.path.join(cache_dir, f"epinformerseq_{INTERIM_TAG}effect_cdfs_interim.npz")
     np.savez_compressed(
         interim,
-        track_ids=np.array([f"{TRACK_PREFIX}:{c}" for c in cells], dtype="U"),
+        track_ids=np.array(track_ids, dtype="U"),
         effect_cdfs=effect_matrix.astype(np.float32),
         effect_counts=reservoir.counts.copy(),
         signed_flags=np.zeros(n_tracks, dtype=bool),  # unsigned |log2fc|
     )
     logger.info("Saved effect interim: %s", interim)
-    for i, c in enumerate(cells):
+    for i, tid in enumerate(track_ids):
         p90 = float(np.quantile(effect_matrix[i], 0.90))
-        p99 = float(np.quantile(effect_matrix[i], 0.99))
-        logger.info("  %-8s  90th-pct |log2fc| %.4f   99th-pct %.4f   (n=%d)",
-                    c, p90, p99, int(reservoir.counts[i]))
+        logger.info("  %-28s  90th-pct |log2fc| %.4f  (n=%d)", tid, p90, int(reservoir.counts[i]))
 
 
 def merge_to_final():
