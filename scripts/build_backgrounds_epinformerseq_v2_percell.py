@@ -69,12 +69,34 @@ parser.add_argument("--batch-size", type=int, default=64)
 parser.add_argument("--device", type=str, default=None)
 parser.add_argument("--reservoir-size", type=int, default=50_000)
 parser.add_argument("--n-cdf-points", type=int, default=10_000)
-parser.add_argument("--output-name", default="epinformerseq_pertrack.npz")
+parser.add_argument("--output-name", default=None,
+                    help="Final NPZ name (default depends on --variant).")
+parser.add_argument("--variant", choices=["standard", "widewin"], default="standard",
+                    help="standard = PerCellProfileNet (1024bp, combined "
+                    "sqrt(DNase*H3K27ac)); widewin = PerCellProfileNetWide "
+                    "(2114bp in / 1024 out, DNase-only cut-site).")
 parser.add_argument("--part", choices=["variants", "baselines", "merge", "all"], default="all",
                     help="Which CDF(s) to build. 'all' runs variants + baselines + merge.")
 parser.add_argument("--n-variants", type=int, default=10_000,
                     help="Random SNPs for effect_cdfs.")
 args = parser.parse_args()
+
+# ---- variant-derived constants -------------------------------------------
+# widewin: 2114-bp input cropped to a central 1024-bp profile; the model was
+# trained DNase-only (cut-site), so the activity scalar is max DNase over the
+# central 256 bp (NOT the combined sqrt(D*H), which collapses because the
+# H3K27ac channel is a zero placeholder). Separate weight subdir + NPZ names so
+# the standard 1024-bp background is never clobbered.
+_IS_WIDEWIN = args.variant == "widewin"
+IN_WINDOW = 2114 if _IS_WIDEWIN else 1024
+SCALAR_MODE = "dnase" if _IS_WIDEWIN else "combined"
+TRACK_PREFIX = "Enhancer_DNase" if _IS_WIDEWIN else "Enhancer_H3K27ac_DNase"
+INTERIM_TAG = "widewin_" if _IS_WIDEWIN else ""
+if _IS_WIDEWIN and args.percell_root == V2_PERCELL_DIR_DEFAULT:
+    args.percell_root = os.path.join(_CHORUS_PERCELL_ROOT, "per_cell_widewin")
+if args.output_name is None:
+    args.output_name = ("epinformerseq_widewin_pertrack.npz" if _IS_WIDEWIN
+                        else "epinformerseq_pertrack.npz")
 
 log_dir = os.path.join(REPO_ROOT, "logs")
 os.makedirs(log_dir, exist_ok=True)
@@ -216,7 +238,7 @@ def sample_positions():
         len(tss_list), len(dhs_positions),
     )
 
-    half = V2_WINDOW // 2
+    half = IN_WINDOW // 2
     seqs = []
     for chrom, pos in all_positions:
         start, end = pos - half, pos + half
@@ -224,7 +246,7 @@ def sample_positions():
         if start < 0 or end > chrom_len:
             continue
         seq = ref.fetch(chrom, start, end).upper()
-        if len(seq) != V2_WINDOW or seq.count("N") > V2_WINDOW * 0.3:
+        if len(seq) != IN_WINDOW or seq.count("N") > IN_WINDOW * 0.3:
             continue
         seqs.append(seq)
     ref.close()
@@ -247,7 +269,9 @@ def _load_models_and_device():
 
     # Use the canonical chorus model classes — same nn.Module, byte-compatible
     # with the per-cell state_dicts on HF (lucapinello/chorus-epinformerseq-v2).
-    from chorus.oracles.epinformerseq_source.model import PerCellProfileNet, BiasNet
+    from chorus.oracles.epinformerseq_source.model import (
+        PerCellProfileNet, PerCellProfileNetWide, BiasNet,
+    )
 
     cells = args.cells
     main_models, bias_models = [], []
@@ -257,8 +281,10 @@ def _load_models_and_device():
         if not os.path.exists(main_ckpt) or not os.path.exists(bias_ckpt):
             # Populate the chorus oracle cache via the HF mirror if missing.
             from chorus.oracles import EPInformerSeqOracle
-            EPInformerSeqOracle(cell_type=c, use_environment=False).load_pretrained_model()
-        m = PerCellProfileNet()
+            EPInformerSeqOracle(cell_type=c, variant=args.variant,
+                                use_environment=False).load_pretrained_model()
+        m = (PerCellProfileNetWide(in_window=IN_WINDOW, out_window=1024)
+             if _IS_WIDEWIN else PerCellProfileNet())
         m.load_state_dict(torch.load(main_ckpt, map_location="cpu", weights_only=False))
         m.eval().to(device)
         b = BiasNet()
@@ -274,20 +300,32 @@ def _load_models_and_device():
 
 
 def _score_activity_batch(main_models, bias_models, x):
-    """Score one (B, 4, 1024) batch against all 11 cells, return (n_cells, B) sqrt(D·H) tensor."""
+    """Score one (B, 4, IN_WINDOW) batch against all 11 cells -> (n_cells, B).
+
+    standard: main + bias both see the full 1024-bp window; scalar is the
+              combined sqrt(max_DNase * max_H3K27ac) over the central 256 bp.
+    widewin:  main sees the full 2114-bp input, the 1024-bp BiasNet sees the
+              central 1024-bp crop; scalar is max_DNase over the central 256 bp
+              (DNase-only — the model has no real H3K27ac channel).
+    """
     import torch
     import torch.nn.functional as F
+    pad = (IN_WINDOW - 1024) // 2
+    x_bias = x if pad == 0 else x[:, :, pad:pad + 1024].contiguous()
     rows = []
     for m, b in zip(main_models, bias_models):
-        mp, mc = m(x)
-        bp, _  = b(x)
+        mp, mc = m(x)                          # (B,2,1024), (B,2)
+        bp, _  = b(x_bias)                      # (B,2,1024)
         final = mp + bp
         soft  = F.softmax(final, dim=-1)
         count = 10.0 ** mc
-        signal = soft * count.unsqueeze(-1)   # (B,2,L)
+        signal = soft * count.unsqueeze(-1)   # (B,2,1024)
         central = signal[:, :, CENTRAL_START:CENTRAL_END]
         pmax = central.max(dim=-1).values     # (B,2)
-        act  = torch.sqrt(pmax[:, 0].clamp(min=0) * pmax[:, 1].clamp(min=0))  # (B,)
+        if SCALAR_MODE == "dnase":
+            act = pmax[:, 0].clamp(min=0)                                   # DNase-only
+        else:
+            act = torch.sqrt(pmax[:, 0].clamp(min=0) * pmax[:, 1].clamp(min=0))
         rows.append(act)
     return torch.stack(rows, dim=0)            # (n_cells, B)
 
@@ -321,10 +359,10 @@ def build_baseline_backgrounds():
     logger.info("Baseline inference done in %.1f min", (time.time() - t0) / 60)
 
     summary_matrix = reservoir.to_cdf_matrix(n_points=args.n_cdf_points)
-    interim = os.path.join(cache_dir, "epinformerseq_baseline_cdfs_interim.npz")
+    interim = os.path.join(cache_dir, f"epinformerseq_{INTERIM_TAG}baseline_cdfs_interim.npz")
     np.savez_compressed(
         interim,
-        track_ids=np.array([f"Enhancer_H3K27ac_DNase:{c}" for c in cells], dtype="U"),
+        track_ids=np.array([f"{TRACK_PREFIX}:{c}" for c in cells], dtype="U"),
         summary_cdfs=summary_matrix.astype(np.float32),
         summary_counts=reservoir.counts.copy(),
     )
@@ -369,19 +407,19 @@ def build_variant_backgrounds():
     logger.info("Generated %d random SNPs", len(snps))
 
     # Build ref + alt sequences as numpy arrays once, then batch through.
-    half = V2_WINDOW // 2
+    half = IN_WINDOW // 2
     ref_seqs, alt_seqs, kept = [], [], 0
     for chrom, pos, ref_base, alt_base in snps:
         start = pos - half
-        end   = start + V2_WINDOW
+        end   = start + IN_WINDOW
         chrom_len = ref.get_reference_length(chrom)
         if start < 0 or end > chrom_len:
             continue
         seq = ref.fetch(chrom, start, end).upper()
-        if len(seq) != V2_WINDOW or seq.count("N") > V2_WINDOW * 0.3:
+        if len(seq) != IN_WINDOW or seq.count("N") > IN_WINDOW * 0.3:
             continue
         # Build alt by replacing the base at the variant position (1-based -> 0-based offset within window).
-        offset = pos - start - 1   # variant base index within [0, V2_WINDOW)
+        offset = pos - start - 1   # variant base index within [0, IN_WINDOW)
         if seq[offset] != ref_base:
             # ref allele mismatch — skip (probably hit a low-complexity region)
             continue
@@ -417,10 +455,10 @@ def build_variant_backgrounds():
     logger.info("Variant inference done in %.1f min", (time.time() - t0) / 60)
 
     effect_matrix = reservoir.to_cdf_matrix(n_points=args.n_cdf_points)
-    interim = os.path.join(cache_dir, "epinformerseq_effect_cdfs_interim.npz")
+    interim = os.path.join(cache_dir, f"epinformerseq_{INTERIM_TAG}effect_cdfs_interim.npz")
     np.savez_compressed(
         interim,
-        track_ids=np.array([f"Enhancer_H3K27ac_DNase:{c}" for c in cells], dtype="U"),
+        track_ids=np.array([f"{TRACK_PREFIX}:{c}" for c in cells], dtype="U"),
         effect_cdfs=effect_matrix.astype(np.float32),
         effect_counts=reservoir.counts.copy(),
         signed_flags=np.zeros(n_tracks, dtype=bool),  # unsigned |log2fc|
@@ -434,10 +472,16 @@ def build_variant_backgrounds():
 
 
 def merge_to_final():
-    """Combine effect + summary interim NPZs into the final epinformerseq_pertrack.npz."""
+    """Combine effect + summary interim NPZs into the final pertrack NPZ.
+
+    For ``--variant widewin`` this writes ``epinformerseq_widewin_pertrack.npz``
+    (oracle_name ``epinformerseq_widewin``) so it never clobbers the standard
+    1024-bp combined-scalar background.
+    """
     from chorus.analysis.normalization import PerTrackNormalizer
-    effect_path   = os.path.join(cache_dir, "epinformerseq_effect_cdfs_interim.npz")
-    baseline_path = os.path.join(cache_dir, "epinformerseq_baseline_cdfs_interim.npz")
+    out_oracle = "epinformerseq_widewin" if _IS_WIDEWIN else "epinformerseq"
+    effect_path   = os.path.join(cache_dir, f"epinformerseq_{INTERIM_TAG}effect_cdfs_interim.npz")
+    baseline_path = os.path.join(cache_dir, f"epinformerseq_{INTERIM_TAG}baseline_cdfs_interim.npz")
     if not os.path.exists(baseline_path):
         logger.error("Missing baseline interim: %s — run --part baselines first.", baseline_path)
         return
@@ -458,7 +502,7 @@ def merge_to_final():
         signed_flags = np.zeros(len(baseline_ids), dtype=bool)
 
     path = PerTrackNormalizer.build_and_save(
-        oracle_name="epinformerseq",
+        oracle_name=out_oracle,
         track_ids=baseline_ids,
         effect_cdfs=effect["effect_cdfs"] if have_effect else None,
         summary_cdfs=baseline["summary_cdfs"],
