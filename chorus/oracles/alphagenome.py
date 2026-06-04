@@ -119,6 +119,31 @@ class AlphaGenomeOracle(OracleBase):
 
             import jax
             import huggingface_hub
+
+            # AlphaGenome fetches its GCS reference tables (gencode GTF /
+            # splice-site / polyA feathers) fresh on every load via urllib —
+            # not cached, and the GCS TLS endpoint intermittently drops the
+            # handshake mid-load (SSL UNEXPECTED_EOF), aborting the whole load.
+            # The failure is at connect time, so retrying urlopen is safe.
+            import ssl as _ssl
+            import time as _time
+            import urllib.error as _urlerr
+            import urllib.request as _urlreq
+
+            _orig_urlopen = _urlreq.urlopen
+
+            def _resilient_urlopen(*a, **k):
+                last = None
+                for _attempt in range(8):
+                    try:
+                        return _orig_urlopen(*a, **k)
+                    except (_ssl.SSLError, _urlerr.URLError, OSError) as exc:
+                        last = exc
+                        _time.sleep(2 * (_attempt + 1))
+                raise last
+
+            _urlreq.urlopen = _resilient_urlopen
+
             from alphagenome_research.model.dna_model import create_from_huggingface
 
             # Ensure HuggingFace auth (required for gated AlphaGenome model)
