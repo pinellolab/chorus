@@ -27,9 +27,10 @@ preds, _ = predict_activity(
     main, bias,
     seq=args['seq'],
     cell_type=args['cell_type'],
-    assay=args.get('assay', 'Enhancer_H3K27ac_DNase'),
+    assay=args.get('assay', 'Enhancer_DNase'),
     average_reverse=args.get('reverse_aug', False),
     device=device,
+    in_window=args.get('in_window', 2114),
 )
 
 result = {
