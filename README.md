@@ -159,7 +159,7 @@ Start with one or two oracles and add more with `chorus setup --oracle <name>` l
 | **ChromBPNet** | 4 GB | optional | ~1 s (CPU ok) | base-pair chromatin / motif disruption |
 | **LegNet** | 4 GB | optional | <1 s | MPRA / promoter activity |
 | **Sei** | 4 GB | optional | ~2 s | regulatory sequence-class profiling |
-| **EPInformer-seq** | 2 GB | optional | <1 s | per-cell scalar enhancer activity (sqrt(DNase × H3K27ac), 11 Roadmap cells, 1024-bp window) |
+| **EPInformer-seq** | 2 GB | optional | <1 s | per-cell 2-channel enhancer activity (DNase cut-sites + H3K27ac, 3 assays, 11 Roadmap cells, 2114-bp window) |
 | **AlphaGenome** | 16 GB | strongly recommended | ~30 s (GPU) / 2–5 min (CPU) | comprehensive multi-layer (5,731 tracks, 1 Mb window) |
 | **AlphaGenome (PyTorch backend)** ⓘ | 16 GB | recommended (esp. Apple Silicon) | ~3.8 s @524 kb on Mac MPS / ~2 s @1 MB on CUDA | alternative backend with the same weights; see [Two AlphaGenome backends](#two-alphagenome-backends) below |
 
@@ -262,7 +262,7 @@ chorus setup --oracle borzoi         # PyTorch-based
 chorus setup --oracle chrombpnet     # TensorFlow-based (includes BPNet for TF binding)
 chorus setup --oracle sei            # PyTorch-based
 chorus setup --oracle legnet         # PyTorch-based
-chorus setup --oracle epinformerseq  # PyTorch-based (per-cell enhancer activity, 11 Roadmap cells)
+chorus setup --oracle epinformerseq  # PyTorch-based (per-cell 2-channel DNase+H3K27ac enhancer activity, 11 Roadmap cells)
 
 # PyTorch backend for AlphaGenome — same model, same weights as the
 # default JAX backend (converted to safetensors). Both AlphaGenome
@@ -351,7 +351,7 @@ Chorus mirrors every oracle's weights to chorus-controlled HuggingFace repos so 
 | ChromBPNet | [`lucapinello/chorus-chrombpnet-slim`](https://huggingface.co/lucapinello/chorus-chrombpnet-slim) | ENCODE per-experiment tarballs | 1.49 GB (786 h5's) |
 | Sei | [`lucapinello/chorus-sei`](https://huggingface.co/lucapinello/chorus-sei) | Zenodo [4906997](https://zenodo.org/record/4906997) | 3.28 GB |
 | LegNet | [`lucapinello/chorus-legnet`](https://huggingface.co/lucapinello/chorus-legnet) | Zenodo [17863550](https://zenodo.org/records/17863550) | 38 MB |
-| EPInformer-seq | [`lucapinello/chorus-epinformerseq-v2`](https://huggingface.co/lucapinello/chorus-epinformerseq-v2) | per-cell PerCellProfileNet + frozen BiasNet trained on per-rep ENCODE BAMs (Pinello Lab) | 11 MB (11 cells × main + bias) |
+| EPInformer-seq | [`lucapinello/chorus-epinformerseq-v2`](https://huggingface.co/lucapinello/chorus-epinformerseq-v2) | per-cell 2-channel PerCellProfileNetWide + frozen BiasNet, trained on Roadmap DNase-summit peaks (ch0 = 5′ DNase cut-sites, ch1 = H3K27ac) (Pinello Lab) | 11 MB (11 cells × main + bias) |
 
 The chorus mirrors are byte-identical to the originals (verified via md5 / size against upstream metadata where published). License terms applying to the *weights* are unchanged by mirroring — see each mirror's README on HuggingFace for explicit attribution and the upstream model terms.
 
@@ -363,7 +363,7 @@ The chorus mirrors are byte-identical to the originals (verified via md5 / size 
 | ChromBPNet | ~82 MB | 786 (42 ATAC/DNASE + 744 CHIP) |
 | Sei | ~2.8 MB | 40 classes |
 | LegNet | ~210 KB | 3 cell types |
-| EPInformer-seq | ~770 KB | 11 cell types × scalar enhancer activity |
+| EPInformer-seq | ~770 KB | 33 tracks (11 cell types × 3 assays: DNase, H3K27ac, composite) |
 
 > **The backgrounds dataset is public — no HuggingFace token required.** `HF_TOKEN` is only needed for the gated AlphaGenome model itself (see [Tokens](#tokens) above). Causal prioritization with auto-LD-fetch needs a separate free LDlink token.
 

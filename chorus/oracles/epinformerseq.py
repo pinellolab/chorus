@@ -17,7 +17,12 @@ Architecture:
   runs on the central 1024 bp of the 2114-bp input.
 * Trained on two channels at DNase peak summits across 11 Roadmap cells,
   fold-10 leave-chrom-out CV split: **ch0 = 5′ DNase cut-sites**,
-  **ch1 = H3K27ac coverage**.
+  **ch1 = H3K27ac signal**. The shipped per-cell weights are the
+  ``roadmap``-dataset retrain (Roadmap DNase-summit peaks + Roadmap-pipeline
+  H3K27ac), which gives the strongest per-cell DNase test-r and a functional
+  H3K27ac channel; an earlier variant trained on ENCODE-IDR peaks with
+  full-coverage H3K27ac was superseded because the coverage target unbalanced
+  the multi-task loss (see audits for the model-selection analysis).
 
 Scalar definition (must match the background CDF builder at
 ``scripts/build_backgrounds_epinformerseq_v2_percell.py``), per-bp peak max over
