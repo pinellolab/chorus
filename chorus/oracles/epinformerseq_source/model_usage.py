@@ -21,7 +21,8 @@ from .globals import (
 )
 
 
-# 1024-bp ACGT one-hot (matches PerCellProfileNet's input length).
+# ACGT one-hot alphabet. PerCellProfileNetWide takes a 2114-bp window
+# (EPINFORMERSEQ_WIDE_WINDOW) and crops the central 1024 bp for its heads.
 _ACGT = np.frombuffer(b"ACGT", dtype=np.uint8)
 _ALPHABET = {b: i for i, b in enumerate(_ACGT)}
 

@@ -397,7 +397,7 @@ class EPInformerSeqOracle(OracleBase):
         return ""
 
     def _try_hf_mirror(self) -> bool:
-        """Fetch per_cell/{cell}/main.pt + bias/{cell}/bias.pt from the HF mirror.
+        """Fetch per_cell_widewin/{cell}/main.pt + bias/{cell}/bias.pt from the HF mirror.
 
         Returns True on success.
         """
