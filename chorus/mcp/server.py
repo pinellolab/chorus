@@ -82,18 +82,19 @@ ORACLE_SPECS = {
     },
     "epinformerseq": {
         "description": (
-            "EPInformer-seq — 1024-bp sequence to scalar enhancer activity "
-            "(linear sqrt(max DNase × max H3K27ac) over the central 256 bp), "
-            "one per-cell PerCellProfileNet + frozen BiasNet per cell type."
+            "EPInformer-seq — 2114-bp sequence to scalar enhancer activity "
+            "(linear max signal over the central 256 bp of the 1024-bp crop), "
+            "from a 2-channel per-cell PerCellProfileNetWide (ch0 DNase cut-site, "
+            "ch1 H3K27ac coverage) + frozen BiasNet per cell type."
         ),
         "framework": "PyTorch",
-        "input_size_bp": 1024,
+        "input_size_bp": 2114,
         "output_bins": 1,
         "resolution_bp": None,
         "assay_types": [
-            "Enhancer_H3K27ac_DNase",
             "Enhancer_DNase",
             "Enhancer_H3K27ac",
+            "Enhancer_H3K27ac_DNase",
         ],
     },
     "alphagenome": {
@@ -438,13 +439,14 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
         )
         return {
             "oracle": oracle_name,
-            "assay_types": ["Enhancer_H3K27ac_DNase", "Enhancer_DNase", "Enhancer_H3K27ac"],
+            "assay_types": ["Enhancer_DNase", "Enhancer_H3K27ac", "Enhancer_H3K27ac_DNase"],
             "cell_types": list(EPINFORMERSEQ_AVAILABLE_CELLTYPES),
             "note": (
-                "EPInformer-seq returns a single scalar per 1024-bp window. "
-                "Default assay 'Enhancer_H3K27ac_DNase' is sqrt(max DNase × max H3K27ac) "
-                "from per-cell PerCellProfileNet + frozen BiasNet (ChromBPNet recipe). "
-                "Switch cells with load_pretrained_model(cell_type=...)."
+                "EPInformer-seq returns a single scalar per 2114-bp window from a "
+                "2-channel per-cell PerCellProfileNetWide (ch0 DNase cut-site, ch1 "
+                "H3K27ac coverage) + frozen BiasNet. Assays: 'Enhancer_DNase' (default), "
+                "'Enhancer_H3K27ac', 'Enhancer_H3K27ac_DNase' (composite sqrt(D*H)), each "
+                "the max over the central 256 bp. Switch cells with load_pretrained_model(cell_type=...)."
             ),
         }
 

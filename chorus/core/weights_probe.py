@@ -50,10 +50,10 @@ def _probe_legnet() -> Tuple[bool, List[str]]:
 
 
 def _probe_epinformerseq() -> Tuple[bool, List[str]]:
-    # Per-cell layout (2026-05-27): one PerCellProfileNet per cell + frozen BiasNet.
+    # Per-cell layout: one PerCellProfileNetWide per cell + frozen BiasNet.
     # Default cell_type=K562 (matches EPInformerSeqOracle.__init__).
     root = CHORUS_DOWNLOADS_DIR / "epinformerseq"
-    main_pt = root / "per_cell" / "K562" / "main.pt"
+    main_pt = root / "per_cell_widewin" / "K562" / "main.pt"
     bias_pt = root / "bias" / "K562" / "bias.pt"
     missing = [str(p) for p in (main_pt, bias_pt) if not p.exists()]
     return (len(missing) == 0, missing)

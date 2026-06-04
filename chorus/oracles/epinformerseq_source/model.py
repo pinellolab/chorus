@@ -1,11 +1,10 @@
 """EPInformer-seq per-cell: profile output + bias correction.
 
-One model per cell (no FiLM, no cell embedding). Architecture mirrors
-`legnet_profile_v2/model.py` PerCellProfileNet (per-rep BAM training,
-2026-05-27 sweep, 11 Roadmap cells). The previous joint-cell
-`CellCondProfileNet` (FiLM + cell_emb) was retired in favor of the
-per-cell variant which gives consistently equal or better test-r and
-cleaner cell-specificity at validated enhancers.
+One ``PerCellProfileNetWide`` per cell (no FiLM, no cell embedding): a 2114-bp
+input run through a dilated body, central 1024-bp cropped for the heads
+(ChromBPNet-style valid geometry), trained on 5' DNase cut-sites. The previous
+joint-cell `CellCondProfileNet` (FiLM + cell_emb) and the 1024-bp SAME-padded
+`PerCellProfileNet` were both retired in favor of this single architecture.
 
 Architecture:
   - Conv stem (kernel=21) -> 64-channel body
@@ -45,14 +44,31 @@ class DilatedResBlock(nn.Module):
         return F.elu(self.bn(self.conv(x)) + x)
 
 
-class PerCellProfileNet(nn.Module):
-    """Per-cell profile + counts. 1024-bp DNA -> 2-channel profile + 2 scalar counts."""
+class PerCellProfileNetWide(nn.Module):
+    """Wide-input per-cell profile + counts.
+
+    A 2114-bp input is run through the (length-preserving, SAME-padded) body,
+    then the central ``out_window`` columns are cropped before the profile and
+    count heads. This gives every output position a full real-sequence receptive
+    field (the trimmed flanks supply edge context), matching the ChromBPNet
+    2114->1000 geometry -- rather than feeding the heads SAME-padded edges whose
+    context is partly zero-padding.
+
+    Output shapes (in_window=2114, out_window=1024):
+      profile_logits : (B, 2, out_window)
+      log_counts     : (B, 2)
+    """
 
     def __init__(self,
                  stem_ch: int = 128,
                  body_ch: int = 64,
-                 n_dilated: int = 9):
+                 n_dilated: int = 9,
+                 in_window: int = 2114,
+                 out_window: int = 1024):
         super().__init__()
+        assert in_window >= out_window
+        self.in_window = in_window
+        self.out_window = out_window
         self.stem = nn.Sequential(
             nn.Conv1d(4, stem_ch, kernel_size=21, padding=10),
             nn.ELU(),
@@ -73,8 +89,11 @@ class PerCellProfileNet(nn.Module):
         h = self.stem(x)
         for blk in self.blocks:
             h = blk(h)
-        profile_logits = self.profile_head(h)                # (B, 2, L)
-        pooled = F.adaptive_avg_pool1d(h, 1).squeeze(-1)     # (B, body_ch)
+        L = h.shape[-1]
+        s = (L - self.out_window) // 2
+        h_crop = h[:, :, s:s + self.out_window]              # (B, body_ch, out_window)
+        profile_logits = self.profile_head(h_crop)           # (B, 2, out_window)
+        pooled = F.adaptive_avg_pool1d(h_crop, 1).squeeze(-1)
         log_counts = self.count_head(pooled)                 # (B, 2)
         return profile_logits, log_counts
 
