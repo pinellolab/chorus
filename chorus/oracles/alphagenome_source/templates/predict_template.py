@@ -38,29 +38,38 @@ else:
 
 # AlphaGenome fetches its GCS reference tables (gencode GTF / splice-site /
 # polyA feathers) fresh on every load via urllib — these are not cached, and
-# the GCS TLS endpoint intermittently drops the handshake mid-load
-# (ssl.SSLEOFError: UNEXPECTED_EOF_WHILE_READING), which aborts the whole load.
-# The failure is at connect time, so retrying urlopen is safe and sufficient.
+# the GCS endpoint intermittently fails mid-load, aborting the whole load:
+#   - ssl.SSLEOFError (UNEXPECTED_EOF) at connect time, and
+#   - http.client.IncompleteRead while reading the body of the large
+#     (~330 MB) gencode GTF feather.
+# Retry at both the urlopen (connect) and pd.read_feather (download+parse)
+# levels; the latter is what covers the mid-stream IncompleteRead.
+import http.client as _http
 import ssl as _ssl
 import time as _time
 import urllib.error as _urlerr
 import urllib.request as _urlreq
+import pandas as _pd
 
-_orig_urlopen = _urlreq.urlopen
+_TRANSIENT = (_ssl.SSLError, _urlerr.URLError, OSError,
+              _http.IncompleteRead, _http.HTTPException)
 
 
-def _resilient_urlopen(*a, **k):
+def _retry(_fn, *a, **k):
     last = None
     for _attempt in range(8):
         try:
-            return _orig_urlopen(*a, **k)
-        except (_ssl.SSLError, _urlerr.URLError, OSError) as exc:
+            return _fn(*a, **k)
+        except _TRANSIENT as exc:
             last = exc
             _time.sleep(2 * (_attempt + 1))
     raise last
 
 
-_urlreq.urlopen = _resilient_urlopen
+_orig_urlopen = _urlreq.urlopen
+_urlreq.urlopen = lambda *a, **k: _retry(_orig_urlopen, *a, **k)
+_orig_read_feather = _pd.read_feather
+_pd.read_feather = lambda *a, **k: _retry(_orig_read_feather, *a, **k)
 
 from alphagenome.models.dna_output import OutputType
 from alphagenome_research.model.dna_model import create_from_huggingface
