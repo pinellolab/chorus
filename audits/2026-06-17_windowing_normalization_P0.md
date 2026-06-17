@@ -1,12 +1,26 @@
 # P0 follow-up — variant-scoring window collapse for fixed-input oracles (+ normalization entanglement)
 
 **Date:** 2026-06-17
-**Status:** **query-side fix IMPLEMENTED** (central region-widening in `predict_variant_effect`;
-ChromBPNet 1 bp region now reproduces +1.374, full suite 407 passed/0 failed). **Background-CDF
-rebuild is the required companion** and is in progress on GPU (ml008) — until the rebuilt CDFs
-are uploaded, the percentile/normalized scores for *affected* oracles are inconsistent with the
-new (correct) query window, so this fix must not be merged before the CDF rebuild lands.
+**Status:** **FIXED (independently mergeable) — NO CDF rebuild needed.** Central region-widening
+in `predict_variant_effect`; ChromBPNet 1 bp region now reproduces +1.374, full suite 407
+passed/0 failed.
 **Severity:** P0 for any *conversational / MCP* variant-effect magnitude on a fixed-input oracle
+
+## No background-CDF rebuild is required (corrected)
+
+An earlier draft of this note claimed the fix needed a companion CDF rebuild. That was wrong.
+The per-oracle background builders (`scripts/build_backgrounds_chrombpnet.py`,
+`scripts/build_backgrounds_borzoi.py`) do **not** score through `predict_variant_effect`; they
+one-hot-encode and call the Keras/PyTorch model **directly** on the **full input window**
+(`INPUT_LENGTH = 2114` for ChromBPNet, `524_288` for Borzoi, centered on each SNP). So the
+published CDFs were always built on the **full window**.
+
+Therefore the windowing bug made *pre-fix queries* (collapsed to a sub-input region) inconsistent
+with the full-window CDFs — the percentiles were already wrong pre-fix. The windowing fix makes
+queries use the full window, which **matches** the existing CDFs, so it corrects **both** the raw
+effect and the percentile with no rebuild. Evidence (ChromBPNet rs12740374/HepG2 DNASE): pre-fix
+collapsed +0.318 → quantile 0.9616 (wrong); post-fix full +1.374 → quantile 0.9995, consistent
+with the committed full-window walkthrough (+1.241 → 0.9987). The fix can be merged on its own.
 
 ## Root cause (confirmed)
 
