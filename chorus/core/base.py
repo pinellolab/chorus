@@ -392,6 +392,22 @@ class OracleBase(ABC):
         region_start_0based = region_start - 1  # 1-based inclusive → 0-based
         var_pos_0based = var_pos - 1            # 1-based → 0-based
 
+        # Widen a sub-input region to the oracle's full input window, centered
+        # on the variant (pulling real genome). Fixed-input oracles (ChromBPNet,
+        # etc.) otherwise return a ``prediction_interval`` whose length differs
+        # from the values array, which breaks the scorer's genomic→array index
+        # mapping and collapses the variant effect ~4× (audit 2026-06-17). The
+        # model always sees a full, real-genome, variant-centered window this
+        # way; AlphaGenome (which strips N-padding internally) is unaffected.
+        # Oracles that expose no integer ``sequence_length`` keep the caller's
+        # region unchanged.
+        _seqlen = getattr(self, "sequence_length", None)
+        if isinstance(_seqlen, int) and _seqlen >= 2 and \
+                (region_end - region_start_0based) < _seqlen:
+            half = _seqlen // 2
+            region_start_0based = max(0, var_pos_0based - half)
+            region_end = region_start_0based + _seqlen
+
         # Parse alleles
         if isinstance(alleles, pd.DataFrame):
             ref_allele = alleles.iloc[0]['ref']

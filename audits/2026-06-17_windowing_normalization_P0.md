@@ -1,8 +1,24 @@
 # P0 follow-up — variant-scoring window collapse for fixed-input oracles (+ normalization entanglement)
 
 **Date:** 2026-06-17
-**Status:** documented; **NOT fixed in the reproducibility PR** (needs a background-CDF rebuild — see §4)
+**Status:** **query-side fix IMPLEMENTED** (central region-widening in `predict_variant_effect`;
+ChromBPNet 1 bp region now reproduces +1.374, full suite 407 passed/0 failed). **Background-CDF
+rebuild is the required companion** and is in progress on GPU (ml008) — until the rebuilt CDFs
+are uploaded, the percentile/normalized scores for *affected* oracles are inconsistent with the
+new (correct) query window, so this fix must not be merged before the CDF rebuild lands.
 **Severity:** P0 for any *conversational / MCP* variant-effect magnitude on a fixed-input oracle
+
+## Root cause (confirmed)
+
+Not N-padding of the input (the input is real genome). For a region smaller than the oracle's
+input window, the returned ``prediction_interval`` spans a different number of bp than the
+values array implies (``prediction_interval_bp / len(values) != bin_size``), so the scorer maps
+the 501 bp window to the wrong array indices and the effect collapses ~4×. ChromBPNet (1 bp
+region): values=2114 but ``prediction_interval``=1000 bp → mismatch → +0.318; full 2114 bp
+region: values=2115, ``prediction_interval``=2115 bp → match → +1.374. Fix = widen the region
+to the oracle's input window centered on the variant in ``predict_variant_effect`` so the
+interval and values always agree. Enformer/AlphaGenome were already consistent (Enformer slices
+its prediction to the output window; AlphaGenome strips N-padding), so the fix is a no-op for them.
 
 ## Summary
 
