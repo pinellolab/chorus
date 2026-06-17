@@ -1073,6 +1073,44 @@ def analyze_variant_multilayer(
 
 @mcp.tool()
 @_safe_tool
+def score_ism(
+    oracle_name: str,
+    center: str,
+    assay_ids: list[str],
+    window: int = 25,
+    genome: Optional[str] = None,
+) -> dict:
+    """In-silico saturation mutagenesis (ISM) around a variant.
+
+    Sweeps every single-base substitution in a ``window``-bp window centred on
+    ``center`` and scores the variant effect on ``assay_ids[0]``, returning a
+    per-position importance profile (the reference base's disruption) suitable
+    for a motif logo. Reveals which bases the oracle actually reads — e.g. a
+    disrupted TF motif. Works with any loaded oracle (AlphaGenome, ChromBPNet,
+    LegNet, Borzoi, EPInformer-seq, ...).
+
+    Args:
+        oracle_name: A loaded oracle name.
+        center: Variant / motif centre as ``"chrom:pos"`` (1-based).
+        assay_ids: Track id(s) to score; the first drives the importance profile.
+        window: Window size in bp (default 25).
+        genome: Reference FASTA path; defaults to the oracle's ``reference_fasta``.
+
+    Returns:
+        Dict with ``ref_seq``, ``positions``, ``scores`` ([W][4] signed log2FC),
+        ``importance`` ([W]), ``assay_id``, ``window`` — render as a motif logo.
+    """
+    from chorus.analysis.saturation import saturation_mutagenesis
+    state = _state()
+    oracle = state.get_oracle(oracle_name)
+    g = genome or getattr(oracle, "reference_fasta", None)
+    return saturation_mutagenesis(
+        oracle, oracle_name, center, assay_ids, genome=g, window=window,
+    )
+
+
+@mcp.tool()
+@_safe_tool
 def discover_variant(
     oracle_name: str,
     position: str,
