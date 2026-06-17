@@ -90,8 +90,16 @@ def get_max_output_size():
 # Per-oracle runners
 # ---------------------------------------------------------------------------
 
-def _build_variant_report(oracle, oracle_name: str, assay_ids=None):
-    """Score the SORT1 variant with the given oracle and return the report."""
+def _build_variant_report(oracle, oracle_name: str, assay_ids=None, region=None):
+    """Score the SORT1 variant with the given oracle and return the report.
+
+    ``region`` overrides the default ±(max_output_size/2) window. Short-input,
+    element-level oracles (e.g. LegNet, 200 bp) must be scored on their own
+    native window centred on the variant; a 1 Mb region would tile them into
+    tens of thousands of windows and average the single-variant effect away.
+    Long-context oracles (ChromBPNet, AlphaGenome) center their scorer on the
+    variant and are unaffected by the wide default.
+    """
     from chorus.analysis.variant_report import build_variant_report
     from chorus.analysis.analysis_request import AnalysisRequest
     from chorus.analysis.normalization import get_normalizer
@@ -107,13 +115,16 @@ def _build_variant_report(oracle, oracle_name: str, assay_ids=None):
     # Provide a small genomic region centred on the variant. Most oracles
     # only look ±half-window-size around the variant position; passing a 2bp
     # region here keeps the API contract satisfied without wasting compute.
-    max_window = get_max_output_size()
-    half_window = max_window // 2
+    if region is not None:
+        region_str = region
+    else:
+        max_window = get_max_output_size()
+        half_window = max_window // 2
 
-    start = VARIANT["position"] - half_window
-    end = VARIANT["position"] + half_window
+        start = VARIANT["position"] - half_window
+        end = VARIANT["position"] + half_window
 
-    region_str = f"{VARIANT['chrom']}:{start}-{end}"
+        region_str = f"{VARIANT['chrom']}:{start}-{end}"
     position_str = f"{VARIANT['chrom']}:{VARIANT['position']}"
     # position_str = f"{VARIANT['chrom']}:{VARIANT['position']}"
     # region_str = f"{VARIANT['chrom']}:{VARIANT['position']}-{VARIANT['position'] + 1}"
@@ -192,7 +203,15 @@ def run_chrombpnet():
     # we're already inside chorus-chrombpnet env via mamba run.
     oracle = ChromBPNetOracle(use_environment=False, reference_fasta=GENOME_REF)
     oracle.load_pretrained_model(assay="DNASE", cell_type="HepG2", fold=0)
-    report = _build_variant_report(oracle, oracle_name="chrombpnet")
+    # Score on ChromBPNet's native 2,114 bp window centred on the variant (the
+    # conversational/Python path). The 1 Mb default tiles the 2,114 bp model
+    # across ~500 windows and averages the effect down (+1.37 -> +0.68); the
+    # wide IGV-display track below is generated separately, so the table value
+    # stays the canonical narrow-window number.
+    seqlen = int(getattr(oracle, "sequence_length", 2114) or 2114)
+    half = seqlen // 2
+    region = f"{VARIANT['chrom']}:{VARIANT['position'] - half}-{VARIANT['position'] + half}"
+    report = _build_variant_report(oracle, oracle_name="chrombpnet", region=region)
 
     # ChromBPNet's intrinsic prediction window is 2114 bp.  At the
     # multi-oracle locus (1 Mb wide because AlphaGenome's output_size is
@@ -238,7 +257,13 @@ def run_legnet():
     from chorus.oracles.legnet import LegNetOracle
     oracle = LegNetOracle(cell_type="HepG2", assay="LentiMPRA")
     oracle.load_pretrained_model()
-    report = _build_variant_report(oracle, oracle_name="legnet")
+    # LegNet is a 200 bp element-level model: score it on its native window
+    # centred on the variant (the conversational/Python path), not the 1 Mb
+    # default that would dilute the single-variant effect to ~0.
+    seqlen = int(getattr(oracle, "sequence_length", 200) or 200)
+    half = seqlen // 2
+    region = f"{VARIANT['chrom']}:{VARIANT['position'] - half}-{VARIANT['position'] + half}"
+    report = _build_variant_report(oracle, oracle_name="legnet", region=region)
     return _save_oracle_artefacts(report, "legnet")
 
 
