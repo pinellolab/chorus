@@ -409,12 +409,42 @@ def prioritize_causal_variants(
                 dropped, len(ld_variants),
             )
 
+    # Orient each variant's ref allele to the genome reference base so the
+    # "reference" prediction uses the true genome sequence rather than a
+    # substituted (possibly wrong) base. LDlink proxy alleles do not reliably
+    # arrive genome-ref-first; without this the effect is alt-vs-wrong-ref and
+    # the ranking is meaningless (audit finding T2). Best-effort, SNV-only.
+    _fasta = None
+    _ref_path = getattr(oracle, "reference_fasta", None)
+    if _ref_path:
+        try:
+            import pyfaidx
+            _fasta = pyfaidx.Fasta(str(_ref_path), rebuild=False)
+        except Exception as exc:  # pragma: no cover - env-dependent
+            logger.warning("Allele orientation disabled (cannot open reference): %s", exc)
+
+    def _orient_to_genome(v):
+        if _fasta is None or len(v.ref) != 1 or len(v.alt) != 1:
+            return
+        try:
+            gbase = str(_fasta[v.chrom][v.position - 1:v.position]).upper()
+        except Exception:
+            return
+        alleles = {v.ref.upper(), v.alt.upper()}
+        if gbase in alleles and gbase != v.ref.upper():
+            other = (alleles - {gbase}).pop()
+            try:
+                v.ref, v.alt = gbase, other
+            except Exception:
+                pass  # frozen dataclass — leave as-is
+
     # Score each variant
     raw_scores: list[CausalVariantScore] = []
     nearby_genes: list[str] = []
     cell_types: set[str] = set()
 
     for i, ldv in enumerate(ld_variants):
+        _orient_to_genome(ldv)
         logger.info(
             "Scoring variant %d/%d: %s (r²=%.2f)",
             i + 1, len(ld_variants), ldv.variant_id, ldv.r2,
@@ -422,7 +452,19 @@ def prioritize_causal_variants(
 
         try:
             position = f"{ldv.chrom}:{ldv.position}"
-            region = f"{ldv.chrom}:{ldv.position}-{ldv.position + 1}"
+            # Score on a region equal to the oracle's input window, centered on
+            # the variant. A 1-bp region gets the variant mapped into an
+            # N-padded output window by some oracles (e.g. ChromBPNet),
+            # collapsing the variant effect (~4x weaker) and the ranking
+            # (audit finding T1). Using the full input window centered on the
+            # variant pulls real genomic context. Fall back to a 1-bp region
+            # when the oracle does not expose an integer input size.
+            _seqlen = getattr(oracle, "sequence_length", None)
+            if isinstance(_seqlen, int) and _seqlen >= 2:
+                _half = _seqlen // 2
+                region = f"{ldv.chrom}:{max(1, ldv.position - _half)}-{ldv.position + _half}"
+            else:
+                region = f"{ldv.chrom}:{ldv.position}-{ldv.position + 1}"
 
             variant_result = oracle.predict_variant_effect(
                 genomic_region=region,

@@ -241,6 +241,36 @@ class AlphaGenomeOracle(OracleBase):
         if not assay_ids:
             assay_ids = self.get_all_assay_ids()
 
+        # Fail-safe memory guard. Scoring every track at a large (1 bp-
+        # resolution, up to 1 Mb) window materialises one array per track of up
+        # to ``output_size`` floats; with all ~5,731 tracks at 1 Mb that is tens
+        # of GB once the result is serialised back from the env subprocess,
+        # which can OOM-kill the host process (observed: it took down the MCP
+        # server). Estimate the allocation conservatively and fail loudly
+        # *before* allocating so one call can't crash the server. The cap is a
+        # fraction of physical RAM (override with CHORUS_AG_MAX_PREDICT_GB).
+        try:
+            _total_gb = (
+                os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
+            ) / 1e9
+        except (ValueError, OSError, AttributeError):
+            _total_gb = 16.0
+        _cap_gb = float(
+            os.environ.get("CHORUS_AG_MAX_PREDICT_GB", f"{0.4 * _total_gb:.1f}")
+        )
+        # ×4 bytes (float32), ×2 for ref+alt headroom in variant scoring.
+        _est_gb = len(assay_ids) * int(self.output_size) * 4 * 2 / 1e9
+        if _est_gb > _cap_gb:
+            raise ValueError(
+                f"AlphaGenome prediction would allocate ~{_est_gb:.0f} GB "
+                f"({len(assay_ids)} tracks × {int(self.output_size):,} bp), "
+                f"above the ~{_cap_gb:.0f} GB safety cap on this host. This is "
+                f"the all-tracks-at-1-Mb pattern that can OOM-kill the process "
+                f"(e.g. the MCP server). Pass a specific `assay_ids` subset "
+                f"(one or a few tracks per layer is plenty), use a smaller "
+                f"window, or raise CHORUS_AG_MAX_PREDICT_GB if you have the RAM."
+            )
+
         # Build query interval
         if isinstance(seq, tuple):
             if self.reference_fasta is None:
