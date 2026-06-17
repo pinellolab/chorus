@@ -34,6 +34,7 @@ from .discovery import (
     discover_variant_effects,
 )
 from .region_swap import analyze_region_swap
+from .saturation import saturation_mutagenesis
 from .integration import simulate_integration
 from .batch_scoring import BatchVariantScore, BatchResult, score_variant_batch
 from .causal import (
@@ -79,6 +80,7 @@ __all__ = [
     "CausalWeights",
     "CausalResult",
     "prioritize_causal_variants",
+    "saturation_mutagenesis",
     "MultiOracleReport",
     "build_variant_backgrounds",
     "build_baseline_backgrounds",
