@@ -11,34 +11,7 @@
   "gene_name": "SORT1",
   "nearby_genes": [
     "SORT1",
-    "PSRC1",
-    "CELSR2",
-    "MYBPHL",
-    "SARS1",
-    "ELAPOR1",
-    "PSMA5",
-    "CFAP276",
-    "TMEM167B",
-    "SYPL2",
-    "TAF13",
-    "ATXN7L2",
-    "CYB561D1",
-    "AMIGO1",
-    "WDR47",
-    "GPR61",
-    "GNAI3",
-    "GNAT2",
-    "AMPD2",
-    "CLCC1",
-    "GPSM2",
-    "AKNAD1",
-    "GSTM4",
-    "GSTM2",
-    "GSTM1",
-    "GSTM3",
-    "GSTM5",
-    "EPS8L3",
-    "STXBP3"
+    "CELSR2"
   ],
   "report_title": "Multi-Layer Variant Effect Report",
   "alleles": {
@@ -50,9 +23,9 @@
             "assay_type": "LentiMPRA",
             "cell_type": "HepG2",
             "layer": "promoter_activity",
-            "ref_value": -0.7386637330055237,
-            "alt_value": -0.7386029362678528,
-            "raw_score": 6.079673767089844e-05,
+            "ref_value": -0.04832424595952034,
+            "alt_value": 0.2506496012210846,
+            "raw_score": 0.29897384718060493,
             "description": "LentiMPRA:HepG2"
           }
         ]
@@ -63,9 +36,9 @@
           "assay_type": "LentiMPRA",
           "cell_type": "HepG2",
           "layer": "promoter_activity",
-          "ref_value": -0.7386637330055237,
-          "alt_value": -0.7386029362678528,
-          "raw_score": 6.079673767089844e-05,
+          "ref_value": -0.04832424595952034,
+          "alt_value": 0.2506496012210846,
+          "raw_score": 0.29897384718060493,
           "description": "LentiMPRA:HepG2"
         }
       ]
@@ -79,6 +52,6 @@
     "tracks_requested": "1 tracks",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-05-09 22:19 UTC"
+    "generated_at": "2026-06-17 15:25 UTC"
   }
 }
