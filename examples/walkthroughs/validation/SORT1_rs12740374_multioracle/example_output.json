@@ -46,7 +46,7 @@
       "oracles": {
         "chrombpnet": null,
         "legnet": {
-          "raw_score": 0.29897384718060493,
+          "raw_score": 0.3470577001571655,
           "assay_id": "LentiMPRA:HepG2",
           "cell_type": "HepG2",
           "quantile_score": null,
@@ -110,6 +110,6 @@
     "tracks_requested": "assay_ids as listed in each per-oracle request",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-06-17 15:29 UTC"
+    "generated_at": "2026-06-17 19:29 UTC"
   }
 }
