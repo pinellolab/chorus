@@ -317,9 +317,16 @@ class EnvironmentManager:
             else:
                 timer = None
 
-            # Stream output live
+            # Stream output live, keeping the tail so a failure has a
+            # diagnosable message. stderr is merged into stdout above, so
+            # ``process.stderr`` is always None here — logging it gave the
+            # useless "Failed to create environment: None" (e.g. when the
+            # nvidia channel timed out building epinformerseq).
+            from collections import deque
+            output_tail: deque[str] = deque(maxlen=25)
             for line in process.stdout:
                 print(line, end="")
+                output_tail.append(line)
 
             process.wait()
             if timer is not None:
@@ -333,7 +340,12 @@ class EnvironmentManager:
                 )
 
             if process.returncode != 0:
-                logger.error(f"Failed to create environment: {process.stderr}")
+                tail = "".join(output_tail).strip() or "(no output captured)"
+                logger.error(
+                    "Failed to create environment %s (mamba exit %s). "
+                    "Last output:\n%s",
+                    env_name, process.returncode, tail,
+                )
                 return False
 
             # Run post-install steps (e.g. pip install --no-deps)

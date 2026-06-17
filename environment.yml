@@ -45,7 +45,13 @@ dependencies:
   # pip-only packages (coolbox >=0.4.0 requires pip; conda version lacks ARM64 support)
   - pip
   - pip:
-    - coolbox>=0.4.0
+    # coolbox 0.4.0 is QUARANTINED on PyPI (no installable files as of 2026-06-16),
+    # which breaks `mamba env create` for everyone. Install from the official
+    # upstream repo, SHA-pinned to the 0.4.0 release tag for reproducibility /
+    # supply-chain safety. Cross-platform (pure pip, requires-python >=3.7).
+    # Revert to `coolbox>=0.4.0` once PyPI un-quarantines the project.
+    # See audits/2026-06-16_macos_arm64_fresh_install_audit.md (finding #1).
+    - coolbox @ git+https://github.com/GangCaoLab/CoolBox.git@651b930dbc59e3aa732f7ecc98e0af09e19e2719
     - oxbow>=0.4.0
     - fastmcp>=3.0
     - huggingface_hub>=0.20.0

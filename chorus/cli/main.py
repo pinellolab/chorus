@@ -494,13 +494,11 @@ def main(argv: Optional[List[str]] = None):
         dest='include_alternative_backends',
         action='store_true',
         help=(
-            "Include alternative (opt-in by default) backends in the "
-            "default `chorus setup` flow. Currently affects only "
-            "alphagenome_pt — the PyTorch backend for AlphaGenome — "
-            "which uses the same weights as the default JAX backend "
-            "but is skipped from the default install to keep size "
-            "bounded (~5 GB env + ~3.4 GB weights extra). Install it "
-            "explicitly with `chorus setup --oracle alphagenome_pt`."
+            "No-op, kept for CLI compatibility. Both AlphaGenome backends "
+            "(JAX `alphagenome` and PyTorch `alphagenome_pt`) already "
+            "install by default in `chorus setup` so Mac users get MPS "
+            "access without an extra step. This flag is reserved for any "
+            "future opt-in backends."
         ),
     )
     setup_parser.set_defaults(func=setup_environments)
