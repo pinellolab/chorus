@@ -185,49 +185,59 @@ def _extract_allele_pairs(
     from .sequence import normalize_allele
     from ..core.exceptions import InvalidRegionError
 
-    # 1) Correlated_Alleles fanout
+    # 1) PRIMARY: the proxy's OWN alleles from the ``Alleles`` column
+    #    ``(REF/ALT[,ALT2,...])``. This is each variant's own ref/alt at its
+    #    own position — what variant-effect scoring needs. (Previously the
+    #    ``Correlated_Alleles`` "SENT=PROXY" pairing was used first, which
+    #    assigned the *sentinel's* allele as the proxy's ref — almost always a
+    #    genome mismatch at the proxy position, silently corrupting every
+    #    proxy's variant effect and the fine-mapping ranking. See the
+    #    2026-06-16 reproduction audit, finding T2. Ref is oriented to the
+    #    genome at scoring time in prioritize_causal_variants.)
+    allele_str = alleles_field.strip().strip("()")
+    if "/" in allele_str:
+        ref_raw, alt_raw = allele_str.split("/", 1)
+        try:
+            ref = normalize_allele(ref_raw)
+        except InvalidRegionError:
+            ref = None
+        if ref is not None:
+            pairs_out = []
+            for alt_raw_one in alt_raw.split(","):
+                try:
+                    alt = normalize_allele(alt_raw_one)
+                except InvalidRegionError:
+                    continue
+                if ref == "" and alt == "":
+                    continue
+                pairs_out.append((ref, alt))
+            if pairs_out:
+                return pairs_out
+
+    # 2) FALLBACK: Correlated_Alleles "SENT=PROXY". Only used when the
+    #    Alleles column is missing/unparseable. We take the PROXY side (right
+    #    of each ``=``) as the variant's alleles — never the sentinel side.
     if correlated_field and correlated_field.strip() not in ("", "NA", "."):
-        pairs_out: list[tuple[str, str]] = []
+        proxy_alleles: list[str] = []
         for entry in correlated_field.split(","):
             entry = entry.strip()
             if "=" not in entry:
-                pairs_out = []
+                proxy_alleles = []
                 break
-            sent_raw, prox_raw = entry.split("=", 1)
+            _sent_raw, prox_raw = entry.split("=", 1)
             try:
-                sent = normalize_allele(sent_raw)
                 prox = normalize_allele(prox_raw)
             except InvalidRegionError:
-                pairs_out = []
+                proxy_alleles = []
                 break
-            # Both ref (sentinel allele) and alt (proxy allele) being
-            # empty would mean "no change" — skip.
-            if sent == "" and prox == "":
-                continue
-            pairs_out.append((sent, prox))
-        if pairs_out:
-            return pairs_out
+            proxy_alleles.append(prox)
+        # Distinct proxy alleles → (allele0, allele1); orientation to the
+        # genome ref happens downstream.
+        uniq = [a for i, a in enumerate(proxy_alleles) if a not in proxy_alleles[:i]]
+        if len(uniq) >= 2 and not (uniq[0] == "" and uniq[1] == ""):
+            return [(uniq[0], uniq[1])]
 
-    # 2/3) Alleles column (with comma-split fallback for multi-allelic alt)
-    allele_str = alleles_field.strip().strip("()")
-    if "/" not in allele_str:
-        return []
-    ref_raw, alt_raw = allele_str.split("/", 1)
-    try:
-        ref = normalize_allele(ref_raw)
-    except InvalidRegionError:
-        return []
-
-    pairs_out = []
-    for alt_raw_one in alt_raw.split(","):
-        try:
-            alt = normalize_allele(alt_raw_one)
-        except InvalidRegionError:
-            continue
-        if ref == "" and alt == "":
-            continue
-        pairs_out.append((ref, alt))
-    return pairs_out
+    return []
 
 
 def parse_ld_response(
