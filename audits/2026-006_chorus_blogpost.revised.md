@@ -242,10 +242,12 @@ Both routes point to ATF4, matching the Sniff preprint's conclusion. The value i
 > `fine_map_causal_variant` with an LDlink token, but it depends on two correctness fixes
 > shipped in the reproducibility PR: (a) LD proxies must be scored on their *own* genome
 > alleles (oriented to the reference), and (b) each variant must be scored on the oracle's
-> full input window. With those, a fresh re-run places **rs9504151 at rank 1** in the
-> ChromBPNet lung-fibroblast (IMR-90) model (effect −0.985 on the alt allele) with zero
-> allele-mismatch warnings. <!-- AlphaGenome fine-map ranking to be appended once the
-> re-run completes. -->
+> full input window. With those, a fresh re-run places **rs9504151 at rank 1 of the
+> 56-proxy credible set in BOTH oracles** — AlphaGenome (lung-fibroblast tracks; composite
+> 0.995, alt-allele effect −1.363) and ChromBPNet lung-fibroblast (IMR-90; composite 0.896,
+> effect −0.985) — with zero allele-mismatch warnings. The r²≈0.93 neighbour rs62384944
+> falls to rank 4 (AlphaGenome) / 5 (ChromBPNet). (LegNet has no lung-fibroblast model, so
+> its ranking is cell-type-mismatched and is not used to adjudicate.)
 
 ---
 
