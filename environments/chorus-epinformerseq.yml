@@ -2,7 +2,6 @@ name: chorus-epinformerseq
 channels:
   - conda-forge
   - bioconda
-  - nvidia
 
 dependencies:
   # Core Python

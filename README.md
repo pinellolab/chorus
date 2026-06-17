@@ -230,6 +230,10 @@ mamba env remove -n chorus -y
 
 Then re-run the Fresh Install steps above.
 
+> **Using the MCP server?** Restart Claude Code (or Claude Desktop) after upgrading.
+> A running MCP server keeps the old code loaded in memory, so newly added oracles
+> or tools won't appear until the client relaunches the `chorus-mcp` process.
+
 #### Uninstalling / starting from scratch
 
 ```bash
