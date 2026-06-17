@@ -276,7 +276,7 @@ def recommend_alphagenome_backend(window_size_bp: int) -> dict:
 @mcp.tool()
 @_safe_tool
 def list_oracles() -> dict:
-    """List all genomic oracles (6 plus an alternative PyTorch backend for AlphaGenome) with their specs, environment install status, and loaded status.
+    """List all genomic oracles (7 plus an alternative PyTorch backend for AlphaGenome) with their specs, environment install status, and loaded status.
 
     No model loading is required — this returns static metadata plus live status.
     """
@@ -1730,7 +1730,7 @@ def getting_started() -> str:
     return (
         "You are using Chorus, a unified interface for genomic deep-learning oracles.\n\n"
         "## Getting Started\n\n"
-        "1. **Discover oracles**: Call `list_oracles()` to see all 6 available oracles "
+        "1. **Discover oracles**: Call `list_oracles()` to see all 7 available oracles "
         "and which ones have their environments installed.\n\n"
         "2. **Choose an oracle**:\n"
         "   - **AlphaGenome** (recommended): 1Mb window, 5,731 tracks, 1bp resolution. Best for variant analysis.\n"
@@ -1738,7 +1738,8 @@ def getting_started() -> str:
         "   - **Borzoi**: 196kb output at 32bp resolution, 7,611 tracks. Good for distal gene expression.\n"
         "   - **ChromBPNet**: 1bp resolution, 1kb window. Best for motif-level TF binding analysis.\n"
         "   - **Sei**: Regulatory element classification (not per-track signal).\n"
-        "   - **LegNet**: MPRA activity prediction for short sequences.\n\n"
+        "   - **LegNet**: MPRA activity prediction for short sequences.\n"
+        "   - **EPInformer-seq**: scalar enhancer activity from 2,114bp sequence (per-cell DNase + H3K27ac).\n\n"
         "3. **Find tracks**: Call `list_tracks(oracle_name, query='...')` to search for "
         "relevant assays (e.g. 'DNASE K562', 'CAGE liver', 'GATA1').\n\n"
         "4. **Load an oracle**: Call `load_oracle(oracle_name)`. This takes 30s-5min. "

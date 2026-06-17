@@ -257,12 +257,13 @@ def run_legnet():
     from chorus.oracles.legnet import LegNetOracle
     oracle = LegNetOracle(cell_type="HepG2", assay="LentiMPRA")
     oracle.load_pretrained_model()
-    # LegNet is a 200 bp element-level model: score it on its native window
-    # centred on the variant (the conversational/Python path), not the 1 Mb
-    # default that would dilute the single-variant effect to ~0.
-    seqlen = int(getattr(oracle, "sequence_length", 200) or 200)
-    half = seqlen // 2
-    region = f"{VARIANT['chrom']}:{VARIANT['position'] - half}-{VARIANT['position'] + half}"
+    # LegNet is a 200 bp element-level model. Mirror the conversational/MCP path
+    # EXACTLY (server._auto_region passes a 1 bp region that base.py auto-widens to
+    # a single 200 bp window centred on the variant). A wider region tiles the
+    # model into several windows and averages the single-variant effect away, so
+    # the table value would not match what a user gets by asking conversationally.
+    pos = VARIANT["position"]
+    region = f"{VARIANT['chrom']}:{pos}-{pos + 1}"
     report = _build_variant_report(oracle, oracle_name="legnet", region=region)
     return _save_oracle_artefacts(report, "legnet")
 
