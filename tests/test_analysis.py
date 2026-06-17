@@ -1456,12 +1456,17 @@ class TestLDUtils:
         assert all(v.position == 100 and v.ref == "A" for v in result)
         assert {v.alt for v in result} == {"G", "T"}
 
-    def test_parse_ld_response_correlated_alleles_fanout(self):
-        """Correlated_Alleles ``T=CT,A=-`` → two LDVariant records.
+    def test_parse_ld_response_uses_each_variants_own_alleles(self):
+        """Each row is scored with its OWN ref/alt (the ``Alleles`` column),
+        not the ``Correlated_Alleles`` sentinel↔proxy pairing.
 
-        Per the v0.5.5 contract: each ``SENT=PROXY`` pair becomes its
-        own variant — ``(ref=SENT, alt=PROXY)`` — so a row with
-        Correlated_Alleles emits two scored variants at the same locus.
+        The earlier "fanout" contract assigned the *sentinel's* allele as a
+        proxy's ref (``ref=SENT, alt=PROXY``). That base does not match the
+        genome at the proxy's position, so chorus substituted a wrong ref and
+        every proxy's variant effect (and the fine-mapping ranking) was
+        computed on incorrect alleles — see the 2026-06-16 reproduction audit,
+        finding T2. Each variant now uses its own alleles; ref is oriented to
+        the genome at scoring time in ``prioritize_causal_variants``.
         """
         from chorus.utils.ld import parse_ld_response
 
@@ -1472,17 +1477,17 @@ class TestLDUtils:
         )
         result = parse_ld_response(tsv, r2_threshold=0.5)
 
-        # sentinel SNV row → 2 records; deletion row → 2 records
-        assert len(result) == 4
+        # One record per variant, using its own Alleles-column ref/alt.
+        assert len(result) == 2
         sentinel_records = [v for v in result if v.is_sentinel]
-        assert len(sentinel_records) == 2
-        assert {(v.ref, v.alt) for v in sentinel_records} == {("T", "A"), ("A", "G")}
+        assert len(sentinel_records) == 1
+        assert (sentinel_records[0].ref, sentinel_records[0].alt) == ("A", "G")
 
         proxy_records = [v for v in result if not v.is_sentinel]
-        assert {(v.ref, v.alt, v.kind) for v in proxy_records} == {
-            ("T", "CT", "complex"),  # insertion of C before T
-            ("A", "", "deletion"),
-        }
+        assert len(proxy_records) == 1
+        assert (proxy_records[0].ref, proxy_records[0].alt, proxy_records[0].kind) == (
+            "CT", "", "deletion",
+        )
 
     def test_fetch_ld_variants_snvs_only_filter(self):
         """The ``snvs_only`` filter on fetch_ld_variants drops non-SNV kinds."""
