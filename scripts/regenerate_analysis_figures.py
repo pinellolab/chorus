@@ -138,9 +138,56 @@ def render_ism_panel(ism_specs, out_png, *, variant_label: str, gene: str,
     print(f"wrote {out_png}  ({n} oracles, window {width})")
 
 
+def render_finemap_table(finemap_json: str, out_png: str, *, lead: str, gene: str,
+                         top_n: int = 6, highlight_neighbour: str | None = None):
+    """Clean Top-N causal-variant table from a prioritize_causal_variants run."""
+    d = json.load(open(finemap_json))
+    rows = d.get("rankings") or d.get("scores") or []
+    rows = rows[:top_n]
+    cols = ["Rank", "Variant", "r² to lead", "Composite", "Max effect"]
+    data = []
+    for i, s in enumerate(rows):
+        vid = s.get("variant_id", "?")
+        star = " ★" if vid == lead else ""
+        data.append([str(i + 1), vid + star, f"{s.get('r2', float('nan')):.2f}",
+                     f"{s.get('composite', float('nan')):.3f}", f"{s.get('max_effect', float('nan')):+.3f}"])
+    fig, ax = plt.subplots(figsize=(7.2, 0.5 + 0.42 * (len(data) + 1)), dpi=200)
+    ax.axis("off")
+    tbl = ax.table(cellText=data, colLabels=cols, cellLoc="left", loc="center")
+    tbl.auto_set_font_size(False); tbl.set_fontsize(11); tbl.scale(1, 1.5)
+    for j in range(len(cols)):
+        c = tbl[0, j]; c.set_facecolor("#2B5FA0"); c.set_text_props(color="white", fontweight="bold")
+    for i in range(len(data)):
+        vid = rows[i].get("variant_id")
+        for j in range(len(cols)):
+            cell = tbl[i + 1, j]
+            cell.set_edgecolor("#E3E7EE")
+            if vid == lead:
+                cell.set_facecolor("#E9F7EF")
+                if j == 1:
+                    cell.set_text_props(fontweight="bold", color="#1a8a52")
+            elif highlight_neighbour and vid == highlight_neighbour:
+                cell.set_facecolor("#FBF3E4")
+    ax.set_title(f"Causal-variant prioritisation — {lead} credible set ({gene})\n"
+                 f"AlphaGenome lung-fibroblast tracks, {d.get('n_variants', len(rows))} CEU proxies",
+                 fontsize=12, fontweight="bold", color=INK, pad=12)
+    note = f"{lead} ranks #1"
+    if highlight_neighbour:
+        hn = next((i + 1 for i, s in enumerate(d.get("rankings", [])) if s.get("variant_id") == highlight_neighbour), None)
+        if hn:
+            note += f"; the high-LD neighbour {highlight_neighbour} (r²≈{next(s['r2'] for s in d['rankings'] if s.get('variant_id')==highlight_neighbour):.2f}) is demoted to rank {hn} by functional evidence"
+    fig.text(0.5, 0.02, note, ha="center", fontsize=9.5, color=MUTED, style="italic")
+    fig.tight_layout(rect=(0, 0.05, 1, 1))
+    fig.savefig(out_png, bbox_inches="tight", facecolor="white")
+    print(f"wrote {out_png}  (#1 {rows[0].get('variant_id')} composite {rows[0].get('composite'):.3f})")
+
+
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
-    if cmd == "ism":
+    if cmd == "finemap":
+        render_finemap_table(sys.argv[2], sys.argv[3], lead="rs9504151", gene="CDYL",
+                             highlight_neighbour="rs62384944")
+    elif cmd == "ism":
         # args: ism <out.png> label1=path1 label2=path2 ...
         specs = [(a.split("=", 1)[0], a.split("=", 1)[1]) for a in sys.argv[3:]]
         render_ism_panel(specs, sys.argv[2], variant_label="rs9504151", gene="CDYL")
