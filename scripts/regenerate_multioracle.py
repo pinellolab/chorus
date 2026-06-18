@@ -253,18 +253,137 @@ def run_chrombpnet():
     return _save_oracle_artefacts(report, "chrombpnet")
 
 
+def _legnet_sliding_prediction(oracle, chrom, wide_start, wide_end, seq):
+    """Tile LegNet's 200 bp window across a wide locus for IGV display.
+
+    LegNet is a 200 bp element-level model, but ``predict_bigseq`` already
+    slides that window across an arbitrarily long sequence (one MPRA-activity
+    scalar per window).  We tile it non-overlapping (step = window = 200 bp)
+    across the full ``seq`` (the ref- or alt-substituted sequence spanning
+    ``chrom:wide_start-wide_end``), then expand each window's scalar across
+    its 200 bp span to build a 1 bp-resolution ``values`` array covering the
+    whole interval.  This mirrors ``ChromBPNet.predict_sliding`` (same
+    ``prediction_interval`` == query interval, base-pair resolution, full
+    locus coverage), so the LegNet IGV track spans the locus like every other
+    oracle instead of a single 200 bp blip.  Used for IGV display only — the
+    variant-effect table value is built separately from the native 200 bp
+    window in ``_build_variant_report`` and is left untouched.
+    """
+    import numpy as np
+    from chorus.core.interval import Interval, GenomeRef
+    from chorus.core.result import OraclePrediction, OraclePredictionTrack
+    from chorus.oracles.legnet_source.model_usage import predict_bigseq
+
+    win = int(oracle.sequence_length)  # 200 bp
+    step = win                         # non-overlapping tiling
+    Q = wide_end - wide_start
+
+    # predict_bigseq's dataset adds the MPRA flanks then pads short windows to
+    # window_size; the final (partial) window would otherwise be a different
+    # padded length than full windows and break batch collation.  Right-pad the
+    # sequence with N up to an exact multiple of win so every window is full.
+    pad = (-len(seq)) % win
+    seq_padded = seq + ("N" * pad)
+
+    # One scalar per non-overlapping 200 bp window across the full sequence.
+    preds, offsets = predict_bigseq(
+        oracle._model, seq=seq_padded, step=step, window_size=win,
+        reverse_aug=oracle.average_reverse,
+        left_flank=oracle.left_flank, right_flank=oracle.right_flank,
+        batch_size=max(64, int(oracle.batch_size)),
+    )
+    preds = np.asarray(preds, dtype=np.float64).reshape(-1)
+
+    # Expand each window's scalar across its 200 bp span -> 1 bp resolution
+    # values over the whole interval (window k covers query [k*step, k*step+win)).
+    values = np.zeros(Q, dtype=np.float64)
+    for k, val in enumerate(preds):
+        s = k * step
+        if s >= Q:
+            break
+        e = min(s + win, Q)
+        values[s:e] = val
+
+    query_interval = Interval.make(GenomeRef(
+        chrom=chrom, start=wide_start, end=wide_end, fasta=GENOME_REF,
+    ))
+    track = OraclePredictionTrack.create(
+        source_model="legnet",
+        assay_id=oracle.assay_id,
+        track_id=oracle.assay_id,
+        assay_type=oracle.assay,
+        cell_type=oracle.cell_type,
+        query_interval=query_interval,
+        prediction_interval=query_interval,
+        input_interval=query_interval,
+        resolution=1,                       # base-pair resolution, like ChromBPNet
+        values=values,
+        metadata=None,
+        preferred_aggregation="mean",
+        preferred_interpolation="linear_divided",
+        preferred_scoring_strategy="mean",
+    )
+    final = OraclePrediction()
+    final.add(oracle.assay_id, track)
+    return final
+
+
 def run_legnet():
     from chorus.oracles.legnet import LegNetOracle
-    oracle = LegNetOracle(cell_type="HepG2", assay="LentiMPRA")
+    from chorus.core.interval import Interval, GenomeRef
+    # use_environment=False so _legnet_sliding_prediction can call
+    # predict_bigseq on oracle._model directly; we're already inside the
+    # chorus-legnet env via mamba run.
+    oracle = LegNetOracle(
+        cell_type="HepG2", assay="LentiMPRA",
+        use_environment=False, reference_fasta=GENOME_REF,
+    )
     oracle.load_pretrained_model()
     # LegNet is a 200 bp element-level model. Mirror the conversational/MCP path
-    # EXACTLY (server._auto_region passes a 1 bp region that base.py auto-widens to
-    # a single 200 bp window centred on the variant). A wider region tiles the
-    # model into several windows and averages the single-variant effect away, so
-    # the table value would not match what a user gets by asking conversationally.
+    # EXACTLY for the TABLE VALUE (server._auto_region passes a 1 bp region that
+    # base.py auto-widens to a single 200 bp window centred on the variant). A
+    # wider region tiles the model into several windows and averages the
+    # single-variant effect away, so the table value would not match what a user
+    # gets by asking conversationally.
     pos = VARIANT["position"]
     region = f"{VARIANT['chrom']}:{pos}-{pos + 1}"
     report = _build_variant_report(oracle, oracle_name="legnet", region=region)
+
+    # IGV-display track: tile LegNet's 200 bp window across a wide locus so the
+    # track spans the region (like ChromBPNet) instead of a single 200 bp blip.
+    # Variant scoring (table values, percentiles) is unchanged — that was
+    # computed above from the native 200 bp window.  We only swap the
+    # IGV-display ``_predictions`` for ref/alt with the wide-locus versions.
+    HALF = 524288  # ±~512 kb (covers the 1 Mb AlphaGenome window) — matches ChromBPNet
+    chrom = VARIANT["chrom"]
+    wide_start = max(0, pos - HALF)
+    wide_end = pos + HALF
+
+    logger.info(
+        "Tiling legnet across %s:%d-%d (%.0f kb) for IGV display ...",
+        chrom, wide_start, wide_end, (wide_end - wide_start) / 1000,
+    )
+    ref_iv = Interval.make(GenomeRef(
+        chrom=chrom, start=wide_start, end=wide_end, fasta=GENOME_REF,
+    ))
+    real_pos = (pos - 1) - wide_start  # 0-based variant index within the interval
+    alt_iv = ref_iv.replace(seq=VARIANT["alt"], start=real_pos, end=real_pos + 1)
+    ref_seq = ref_iv.sequence
+    alt_seq = alt_iv.sequence
+
+    ref_pred = _legnet_sliding_prediction(oracle, chrom, wide_start, wide_end, ref_seq)
+    alt_pred = _legnet_sliding_prediction(oracle, chrom, wide_start, wide_end, alt_seq)
+
+    if report._predictions is None:
+        report._predictions = {}
+    report._predictions["reference"] = ref_pred
+    alt_key = next(
+        (k for k in (report._predictions.keys() if report._predictions else [])
+         if k != "reference"),
+        "alt_1",
+    )
+    report._predictions[alt_key] = alt_pred
+
     return _save_oracle_artefacts(report, "legnet")
 
 
@@ -278,7 +397,9 @@ ALPHAGENOME_TRACKS = [
     # variants — use those identifiers verbatim.
     "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
     "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
-    "CAGE/hCAGE EFO:0001187/-",
+    # CAGE: request a single strand only. Both strands resolve to the same
+    # display label ("CAGE:HepG2") in the unified IGV, so listing both
+    # produced a duplicate AlphaGenome CAGE track in the multi-oracle browser.
     "CAGE/hCAGE EFO:0001187/+",
 ]
 
@@ -304,6 +425,39 @@ def run_alphagenome():
 # ---------------------------------------------------------------------------
 # Consolidator
 # ---------------------------------------------------------------------------
+
+def _dedup_duplicate_display_tracks(report) -> None:
+    """Drop prediction tracks that collapse to a duplicate IGV display label.
+
+    AlphaGenome's CAGE +/- strands have distinct track_ids but resolve to the
+    same unified-IGV label ("CAGE:HepG2"), which would render two identical
+    "alphagenome · CAGE:HepG2" bands in the multi-oracle browser.  Keep the
+    first track for each display label and drop the rest, in-place, across all
+    allele keys.  No-op for a freshly regenerated AlphaGenome artefact (the
+    track list now requests a single CAGE strand), but keeps an existing
+    two-strand pickle from re-introducing the duplicate band on consolidation.
+    """
+    from chorus.analysis.variant_report import _track_description
+
+    preds = getattr(report, "_predictions", None)
+    if not preds:
+        return
+    # Decide which track_ids to keep using the first allele's track set; apply
+    # the same keep-set to every allele so ref/alt stay aligned.
+    first_pred = next(iter(preds.values()))
+    seen_labels: set[str] = set()
+    keep_ids: list[str] = []
+    for aid in first_pred.keys():
+        label = _track_description(first_pred[aid]) or aid
+        if label in seen_labels:
+            logger.info("  dedup: dropping duplicate display track %r (%s)",
+                        aid, label)
+            continue
+        seen_labels.add(label)
+        keep_ids.append(aid)
+    for allele_key, pred in preds.items():
+        preds[allele_key] = pred.subset(keep_ids)
+
 
 def consolidate():
     """Assemble the multi-oracle HTML from per-oracle artefacts in OUT_DIR.
@@ -332,7 +486,10 @@ def consolidate():
         jp = os.path.join(OUT_DIR, f"{oracle_name}_variant_report.json")
         if os.path.isfile(pkl):
             with open(pkl, "rb") as fh:
-                reports.append(pickle.load(fh))
+                rep = pickle.load(fh)
+            if oracle_name == "alphagenome":
+                _dedup_duplicate_display_tracks(rep)
+            reports.append(rep)
             ordered_oracles.append(oracle_name)
             logger.info("  loaded %s from pickle (with predictions)", oracle_name)
         elif os.path.isfile(jp):
