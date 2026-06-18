@@ -1104,7 +1104,12 @@ def build_variant_report(
             # = 4 bins). DNase/ATAC/CAGE/PROCAP at 1 bp/bin and AG histone
             # at 2001 bp / 128 bp = 15 bins are both safe.
             low_bins = False
-            from .scorers import LAYER_CONFIGS
+            # NB: LAYER_CONFIGS is imported at module scope (top of file). A
+            # function-local re-import here would make Python treat LAYER_CONFIGS
+            # as a local for the whole function, raising UnboundLocalError at its
+            # earlier use (the per-gene TSS block) — which crashes
+            # fine_map_causal_variant / analyze_variant_multilayer on any CAGE
+            # track with a nearby gene.
             cfg = LAYER_CONFIGS.get(layer)
             if cfg is not None and cfg.window_bp is not None:
                 res = getattr(ref_track, "resolution", 1) or 1
