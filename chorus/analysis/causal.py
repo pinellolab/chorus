@@ -6,6 +6,7 @@ rewards convergent multi-layer evidence.
 """
 
 import base64
+import contextlib
 import io
 import logging
 import math
@@ -471,133 +472,144 @@ def prioritize_causal_variants(
     nearby_genes: list[str] = []
     cell_types: set[str] = set()
 
-    for i, ldv in enumerate(ld_variants):
-        _orient_to_genome(ldv)
-        logger.info(
-            "Scoring variant %d/%d: %s (r²=%.2f)",
-            i + 1, len(ld_variants), ldv.variant_id, ldv.r2,
-        )
-
-        try:
-            position = f"{ldv.chrom}:{ldv.position}"
-            region = _scoring_region(oracle, ldv.chrom, ldv.position)
-
-            variant_result = oracle.predict_variant_effect(
-                genomic_region=region,
-                variant_position=position,
-                alleles=[ldv.ref, ldv.alt],
-                assay_ids=assay_ids,
+    # Amortise model-load across every forward pass in this fine-map.
+    # AlphaGenome (use_environment=True) spawns + reloads the model per
+    # forward pass otherwise; predict_session() keeps ONE worker alive for
+    # the whole loop AND the top-N rebuild below (byte-identical scores).
+    # Other oracles have no predict_session -> nullcontext (a no-op).
+    session = (
+        oracle.predict_session()
+        if hasattr(oracle, "predict_session")
+        else contextlib.nullcontext()
+    )
+    with session:
+        for i, ldv in enumerate(ld_variants):
+            _orient_to_genome(ldv)
+            logger.info(
+                "Scoring variant %d/%d: %s (r²=%.2f)",
+                i + 1, len(ld_variants), ldv.variant_id, ldv.r2,
             )
 
-            # Score with the lightweight report path: identical per-track
-            # allele_scores, but skips the per-variant IGV signal-array
-            # assembly that the ranking never reads. Full reports (with IGV)
-            # are rebuilt below only for the top `report_top_n` variants.
-            # We deliberately do NOT cache the per-variant ``variant_result``:
-            # each AlphaGenome prediction is ~5000 tracks × ~8k bins × alleles,
-            # so retaining all proxies' predictions would cost tens of GB. The
-            # top-N pass re-predicts those few variants instead (a handful of
-            # forward passes) to rebuild full reports with IGV tracks.
-            report = build_variant_report(
-                variant_result,
-                oracle_name=oracle_name,
-                gene_name=gene_name,
-                normalizer=normalizer,
-                lightweight=True,
-            )
-
-            # Capture nearby genes from first report
-            if not nearby_genes and report.nearby_genes:
-                nearby_genes = report.nearby_genes
-            # Record ONLY the cell type of each variant's strongest-effect
-            # track — collecting all 600+ cell types scored per variant
-            # would make the rendered report unreadable.
-            _best_abs = 0.0
-            _best_ct = ""
-            for allele_scores in report.allele_scores.values():
-                for ts in allele_scores:
-                    if ts.raw_score is None:
-                        continue
-                    if abs(ts.raw_score) > _best_abs:
-                        _best_abs = abs(ts.raw_score)
-                        _best_ct = ts.cell_type or ""
-            if _best_ct:
-                cell_types.add(_best_ct)
-
-            # Extract per-layer scores
-            cs = _extract_component_scores(ldv, report, weights)
-            raw_scores.append(cs)
-
-        except Exception as exc:
-            logger.error("Failed to score %s: %s", ldv.variant_id, exc, exc_info=True)
-            raw_scores.append(CausalVariantScore(
-                variant_id=ldv.variant_id,
-                chrom=ldv.chrom,
-                position=ldv.position,
-                ref=ldv.ref,
-                alt=ldv.alt,
-                r2=ldv.r2,
-                is_sentinel=ldv.is_sentinel,
-                kind=getattr(ldv, "kind", "snv"),
-                max_effect=0.0,
-                n_layers_affected=0,
-                convergence_score=0.0,
-                ref_activity=0.0,
-                composite=0.0,
-                top_layer="error",
-                top_track=str(exc),
-            ))
-
-    # Compute composite scores with min-max normalization
-    _compute_composites(raw_scores, weights)
-
-    # Sort by composite descending
-    raw_scores.sort(key=lambda s: s.composite, reverse=True)
-
-    # Build the FULL report (with IGV signal tracks) only for the top
-    # `report_top_n` variants — the scoring loop above used the lightweight
-    # path (identical per-track scores, no IGV payload) so the IGV browser
-    # in the HTML report would otherwise have no signal tracks at all. We
-    # re-predict each of those few variants (one forward pass each) and
-    # rebuild a full report, attaching it to ``_variant_report``. Only
-    # variants that scored non-zero in ≥1 track are eligible (a variant with
-    # all-zero effects has nothing to plot); fewer than `report_top_n` are
-    # built when fewer qualify. Per-track scores are NOT recomputed into the
-    # ranking — the lightweight scores already drove it — so the ranking is
-    # unaffected by this pass.
-    if report_top_n > 0:
-        n_built = 0
-        for cs in raw_scores:
-            if n_built >= report_top_n:
-                break
-            # Skip error rows and variants with no scorable effect.
-            nonzero = any(
-                ts.raw_score is not None and ts.raw_score != 0.0
-                for ts in cs.track_scores.values()
-            )
-            if not nonzero:
-                continue
             try:
-                full_vr = oracle.predict_variant_effect(
-                    genomic_region=_scoring_region(oracle, cs.chrom, cs.position),
-                    variant_position=f"{cs.chrom}:{cs.position}",
-                    alleles=[cs.ref, cs.alt],
+                position = f"{ldv.chrom}:{ldv.position}"
+                region = _scoring_region(oracle, ldv.chrom, ldv.position)
+
+                variant_result = oracle.predict_variant_effect(
+                    genomic_region=region,
+                    variant_position=position,
+                    alleles=[ldv.ref, ldv.alt],
                     assay_ids=assay_ids,
                 )
-                full_report = build_variant_report(
-                    full_vr,
+
+                # Score with the lightweight report path: identical per-track
+                # allele_scores, but skips the per-variant IGV signal-array
+                # assembly that the ranking never reads. Full reports (with IGV)
+                # are rebuilt below only for the top `report_top_n` variants.
+                # We deliberately do NOT cache the per-variant ``variant_result``:
+                # each AlphaGenome prediction is ~5000 tracks × ~8k bins × alleles,
+                # so retaining all proxies' predictions would cost tens of GB. The
+                # top-N pass re-predicts those few variants instead (a handful of
+                # forward passes) to rebuild full reports with IGV tracks.
+                report = build_variant_report(
+                    variant_result,
                     oracle_name=oracle_name,
                     gene_name=gene_name,
                     normalizer=normalizer,
-                    lightweight=False,
+                    lightweight=True,
                 )
-                cs._variant_report = full_report
-                n_built += 1
-            except Exception as exc:  # pragma: no cover - best-effort IGV
-                logger.warning(
-                    "Could not build full report for top variant %s: %s",
-                    cs.variant_id, exc,
+
+                # Capture nearby genes from first report
+                if not nearby_genes and report.nearby_genes:
+                    nearby_genes = report.nearby_genes
+                # Record ONLY the cell type of each variant's strongest-effect
+                # track — collecting all 600+ cell types scored per variant
+                # would make the rendered report unreadable.
+                _best_abs = 0.0
+                _best_ct = ""
+                for allele_scores in report.allele_scores.values():
+                    for ts in allele_scores:
+                        if ts.raw_score is None:
+                            continue
+                        if abs(ts.raw_score) > _best_abs:
+                            _best_abs = abs(ts.raw_score)
+                            _best_ct = ts.cell_type or ""
+                if _best_ct:
+                    cell_types.add(_best_ct)
+
+                # Extract per-layer scores
+                cs = _extract_component_scores(ldv, report, weights)
+                raw_scores.append(cs)
+
+            except Exception as exc:
+                logger.error("Failed to score %s: %s", ldv.variant_id, exc, exc_info=True)
+                raw_scores.append(CausalVariantScore(
+                    variant_id=ldv.variant_id,
+                    chrom=ldv.chrom,
+                    position=ldv.position,
+                    ref=ldv.ref,
+                    alt=ldv.alt,
+                    r2=ldv.r2,
+                    is_sentinel=ldv.is_sentinel,
+                    kind=getattr(ldv, "kind", "snv"),
+                    max_effect=0.0,
+                    n_layers_affected=0,
+                    convergence_score=0.0,
+                    ref_activity=0.0,
+                    composite=0.0,
+                    top_layer="error",
+                    top_track=str(exc),
+                ))
+
+        # Compute composite scores with min-max normalization
+        _compute_composites(raw_scores, weights)
+
+        # Sort by composite descending
+        raw_scores.sort(key=lambda s: s.composite, reverse=True)
+
+        # Build the FULL report (with IGV signal tracks) only for the top
+        # `report_top_n` variants — the scoring loop above used the lightweight
+        # path (identical per-track scores, no IGV payload) so the IGV browser
+        # in the HTML report would otherwise have no signal tracks at all. We
+        # re-predict each of those few variants (one forward pass each) and
+        # rebuild a full report, attaching it to ``_variant_report``. Only
+        # variants that scored non-zero in ≥1 track are eligible (a variant with
+        # all-zero effects has nothing to plot); fewer than `report_top_n` are
+        # built when fewer qualify. Per-track scores are NOT recomputed into the
+        # ranking — the lightweight scores already drove it — so the ranking is
+        # unaffected by this pass.
+        if report_top_n > 0:
+            n_built = 0
+            for cs in raw_scores:
+                if n_built >= report_top_n:
+                    break
+                # Skip error rows and variants with no scorable effect.
+                nonzero = any(
+                    ts.raw_score is not None and ts.raw_score != 0.0
+                    for ts in cs.track_scores.values()
                 )
+                if not nonzero:
+                    continue
+                try:
+                    full_vr = oracle.predict_variant_effect(
+                        genomic_region=_scoring_region(oracle, cs.chrom, cs.position),
+                        variant_position=f"{cs.chrom}:{cs.position}",
+                        alleles=[cs.ref, cs.alt],
+                        assay_ids=assay_ids,
+                    )
+                    full_report = build_variant_report(
+                        full_vr,
+                        oracle_name=oracle_name,
+                        gene_name=gene_name,
+                        normalizer=normalizer,
+                        lightweight=False,
+                    )
+                    cs._variant_report = full_report
+                    n_built += 1
+                except Exception as exc:  # pragma: no cover - best-effort IGV
+                    logger.warning(
+                        "Could not build full report for top variant %s: %s",
+                        cs.variant_id, exc,
+                    )
 
     # Ensure every CausalResult carries provenance metadata
     if analysis_request is None:
