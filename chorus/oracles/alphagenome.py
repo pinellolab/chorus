@@ -7,6 +7,7 @@ from ..core.interval import Interval, GenomeRef, Sequence
 from ..core.exceptions import ModelNotLoadedError
 
 from typing import List, Tuple, Union, Optional, Dict, Any
+import contextlib
 import os
 import logging
 import json
@@ -58,6 +59,11 @@ class AlphaGenomeOracle(OracleBase):
         # Model state
         self._model = None
         self._track_dict = None
+        # Optional persistent prediction worker (use_environment only).
+        # When set via ``predict_session()``, _predict_in_environment
+        # routes through it instead of spawning a fresh subprocess per
+        # forward pass (load-once, serve-many). None == legacy path.
+        self._predict_worker = None
 
         # Reference genome
         self.reference_fasta = reference_fasta
@@ -87,6 +93,13 @@ class AlphaGenomeOracle(OracleBase):
         path = os.path.join(self.get_templates_dir(), "predict_template.py")
         with open(path) as inp:
             return inp.read(), "__ARGS_FILE_NAME__"
+
+    def get_predict_worker_template(self) -> Tuple[str, str]:
+        path = os.path.join(
+            self.get_templates_dir(), "predict_worker_template.py"
+        )
+        with open(path) as inp:
+            return inp.read(), "__INIT_ARGS_FILE__"
 
     # ------------------------------------------------------------------
     # Model loading
@@ -348,6 +361,12 @@ class AlphaGenomeOracle(OracleBase):
     def _predict_in_environment(
         self, seq: str, assay_ids: List[str]
     ) -> dict:
+        # Fast path: if a persistent worker session is active, serve the
+        # forward pass through it (model already loaded). Returns the same
+        # {"values": [...], "resolutions": [...]} dict as the spawn path.
+        worker = getattr(self, "_predict_worker", None)
+        if worker is not None:
+            return worker.predict(seq, assay_ids)
         args = {
             "device": self.device,
             "fold": self.fold,
@@ -372,6 +391,38 @@ class AlphaGenomeOracle(OracleBase):
         finally:
             os.unlink(arg_file.name)
         return result
+
+    @contextlib.contextmanager
+    def predict_session(self):
+        """Context manager that keeps a single AlphaGenome model loaded
+        across many forward passes.
+
+        Inside the ``with`` block, every ``_predict_in_environment`` call
+        is served by ONE long-lived ``chorus-alphagenome`` subprocess that
+        loaded the model (and fetched the ~330 MB GCS reference tables)
+        exactly once — instead of spawning a fresh subprocess (and
+        reloading everything) per call. Scores are byte-identical; this is
+        purely an amortisation of the model-load cost across a batch (e.g.
+        the per-variant scoring loop of a credible-set fine-map).
+
+        No-ops in two cases, yielding ``self`` unchanged:
+          * ``use_environment=False`` — the in-process model is already
+            loaded once and reused; there is no subprocess to amortise.
+          * a session is already active — reentrant; the existing worker
+            keeps serving (no second worker is spawned, and the inner
+            block does NOT tear the outer one down).
+        """
+        if not self.use_environment or self._predict_worker is not None:
+            # In-process (already fast) or reentrant — nothing to set up.
+            yield self
+            return
+        worker = AlphaGenomePredictWorker(self)
+        self._predict_worker = worker
+        try:
+            yield self
+        finally:
+            self._predict_worker = None
+            worker.close()
 
     def _predict_direct(self, seq: str, assay_ids: List[str]) -> dict:
         from .alphagenome_source.alphagenome_metadata import (
@@ -586,3 +637,286 @@ class AlphaGenomeOracle(OracleBase):
         if self.use_environment:
             status["environment_info"] = self.get_environment_info()
         return status
+
+
+class AlphaGenomePredictWorker:
+    """Long-lived ``chorus-alphagenome`` subprocess that loads the AlphaGenome
+    model once and serves many forward passes over stdin/stdout.
+
+    Replaces the spawn-a-subprocess-per-forward-pass cost of
+    :meth:`AlphaGenomeOracle._predict_in_environment` for batch workloads
+    (notably credible-set fine-mapping). Driven via
+    :meth:`AlphaGenomeOracle.predict_session`. Per-track ``values`` are
+    byte-identical to the per-call path: the worker template reuses the exact
+    per-assay extraction code from ``predict_template.py``.
+
+    Only short control lines (``READY`` / ``OK <path>`` / ``ERR ...``) cross
+    the stdout pipe; request args and result payloads travel through temp
+    files, so large ndarray payloads never risk a pipe-buffer deadlock.
+    """
+
+    # Generous: cold model load + GCS table fetch can take minutes.
+    DEFAULT_READY_TIMEOUT = 1800
+
+    def __init__(self, oracle: "AlphaGenomeOracle", ready_timeout: Optional[int] = None):
+        import subprocess
+        import tempfile
+
+        self._oracle = oracle
+        self._proc = None
+        self._closed = False
+        self._stderr_tail: List[str] = []
+
+        ready_timeout = ready_timeout or self.DEFAULT_READY_TIMEOUT
+
+        runner = oracle._env_runner
+        if runner is None:
+            raise RuntimeError(
+                "AlphaGenomePredictWorker requires use_environment=True "
+                "(no environment runner attached)."
+            )
+        env_manager = runner.env_manager
+        oracle_name = oracle.oracle_name
+
+        if not env_manager.environment_exists(oracle_name):
+            raise RuntimeError(
+                f"Environment for {oracle_name} does not exist. Run setup first."
+            )
+
+        python_exe = env_manager.get_python_executable(oracle_name)
+        if not python_exe:
+            raise RuntimeError(
+                f"Could not find Python executable for {oracle_name}"
+            )
+
+        # Init args (device/fold/length) written once to a temp JSON the
+        # worker reads at startup. Mirrors the per-call template's args file.
+        init_args = {
+            "device": oracle.device,
+            "fold": oracle.fold,
+            "length": oracle.sequence_length,
+        }
+        fd_init, self._init_args_path = tempfile.mkstemp(
+            suffix=".json", prefix="ag_worker_init_"
+        )
+        with os.fdopen(fd_init, "w") as fh:
+            json.dump(init_args, fh)
+
+        # Build worker code: substitute the init-args path, then prepend the
+        # chorus sys.path insert EXACTLY like the runner's wrappers do so the
+        # subprocess can import the chorus package.
+        template, placeholder = oracle.get_predict_worker_template()
+        code = template.replace(placeholder, self._init_args_path)
+
+        import chorus as _chorus
+        chorus_path = os.path.dirname(os.path.dirname(_chorus.__file__))
+        code = (
+            "import sys\n"
+            f"sys.path.insert(0, {chorus_path!r})\n"
+            + code
+        )
+
+        env = runner._prepare_env(oracle_name)
+
+        try:
+            self._proc = subprocess.Popen(
+                [python_exe, "-u", "-c", code],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                env=env,
+            )
+        except Exception:
+            self._cleanup_init_file()
+            raise
+
+        # Drain stderr on a background thread so the worker never blocks on a
+        # full stderr pipe during the (chatty) model load, and so we always
+        # have a tail to surface on failure.
+        import threading
+
+        # Optional: tee drained stderr to a file for debugging /
+        # verification (e.g. confirming the model loads exactly once).
+        # Off unless CHORUS_AG_WORKER_STDERR_LOG is set; no score impact.
+        stderr_log = os.environ.get("CHORUS_AG_WORKER_STDERR_LOG")
+
+        def _drain_stderr(proc, sink):
+            log_fh = None
+            if stderr_log:
+                try:
+                    log_fh = open(stderr_log, "a")
+                except OSError:
+                    log_fh = None
+            try:
+                for line in proc.stderr:
+                    sink.append(line.rstrip("\n"))
+                    if len(sink) > 200:
+                        del sink[:-200]
+                    if log_fh is not None:
+                        log_fh.write(line)
+                        log_fh.flush()
+            except Exception:
+                pass
+            finally:
+                if log_fh is not None:
+                    try:
+                        log_fh.close()
+                    except Exception:
+                        pass
+
+        self._stderr_thread = threading.Thread(
+            target=_drain_stderr, args=(self._proc, self._stderr_tail), daemon=True
+        )
+        self._stderr_thread.start()
+
+        try:
+            self._await_ready(ready_timeout)
+        except Exception:
+            self.close()
+            raise
+
+    # ------------------------------------------------------------------
+    def _stderr_tail_str(self, n: int = 40) -> str:
+        return "\n".join(self._stderr_tail[-n:])
+
+    def _await_ready(self, timeout: int) -> None:
+        """Block until the worker prints READY, or raise with stderr tail."""
+        import threading
+
+        result: Dict[str, Any] = {}
+
+        def _reader():
+            try:
+                result["line"] = self._proc.stdout.readline()
+            except Exception as exc:  # pragma: no cover - defensive
+                result["exc"] = exc
+
+        t = threading.Thread(target=_reader, daemon=True)
+        t.start()
+        t.join(timeout)
+        if t.is_alive():
+            self.close()
+            raise RuntimeError(
+                f"AlphaGenome worker did not become READY within {timeout}s. "
+                f"Stderr tail:\n{self._stderr_tail_str()}"
+            )
+        if "exc" in result:
+            raise RuntimeError(
+                f"AlphaGenome worker failed while starting: {result['exc']}\n"
+                f"Stderr tail:\n{self._stderr_tail_str()}"
+            )
+        line = (result.get("line") or "").strip()
+        if line != "READY":
+            rc = self._proc.poll()
+            raise RuntimeError(
+                f"AlphaGenome worker did not signal READY "
+                f"(got {line!r}, returncode={rc}). "
+                f"Stderr tail:\n{self._stderr_tail_str()}"
+            )
+
+    # ------------------------------------------------------------------
+    def predict(self, seq: str, assay_ids: List[str]) -> dict:
+        """Run one forward pass through the worker; returns the same dict shape
+        as :meth:`AlphaGenomeOracle._predict_in_environment` (the spawn path).
+        """
+        import pickle
+        import tempfile
+
+        if self._closed or self._proc is None:
+            raise RuntimeError("AlphaGenome worker is closed.")
+        if self._proc.poll() is not None:
+            raise RuntimeError(
+                f"AlphaGenome worker process has exited "
+                f"(returncode={self._proc.returncode}). "
+                f"Stderr tail:\n{self._stderr_tail_str()}"
+            )
+
+        fd, req_path = tempfile.mkstemp(suffix=".json", prefix="ag_worker_req_")
+        with os.fdopen(fd, "w") as fh:
+            json.dump({"sequence": seq, "assay_ids": assay_ids}, fh)
+
+        result_path = None
+        try:
+            self._proc.stdin.write(req_path + "\n")
+            self._proc.stdin.flush()
+
+            line = self._proc.stdout.readline()
+            if line == "":
+                rc = self._proc.poll()
+                raise RuntimeError(
+                    f"AlphaGenome worker closed its output "
+                    f"(returncode={rc}). Stderr tail:\n{self._stderr_tail_str()}"
+                )
+            line = line.rstrip("\n")
+            if line.startswith("OK "):
+                result_path = line[3:]
+                with open(result_path, "rb") as fh:
+                    return pickle.load(fh)
+            if line.startswith("ERR "):
+                raise RuntimeError(
+                    f"AlphaGenome worker request failed: {line[4:]}"
+                )
+            raise RuntimeError(
+                f"Unexpected control line from AlphaGenome worker: {line!r}. "
+                f"Stderr tail:\n{self._stderr_tail_str()}"
+            )
+        finally:
+            for p in (req_path, result_path):
+                if p and os.path.exists(p):
+                    try:
+                        os.unlink(p)
+                    except OSError:
+                        pass
+
+    # ------------------------------------------------------------------
+    def close(self) -> None:
+        """Stop the worker. Idempotent and best-effort."""
+        if self._closed:
+            return
+        self._closed = True
+        proc = self._proc
+        if proc is not None:
+            try:
+                if proc.poll() is None:
+                    try:
+                        proc.stdin.write("__STOP__\n")
+                        proc.stdin.flush()
+                    except (BrokenPipeError, ValueError, OSError):
+                        pass
+                    try:
+                        proc.wait(timeout=15)
+                    except Exception:
+                        proc.terminate()
+                        try:
+                            proc.wait(timeout=5)
+                        except Exception:
+                            proc.kill()
+            finally:
+                for stream in (proc.stdin, proc.stdout, proc.stderr):
+                    try:
+                        if stream is not None:
+                            stream.close()
+                    except Exception:
+                        pass
+        self._cleanup_init_file()
+
+    def _cleanup_init_file(self) -> None:
+        path = getattr(self, "_init_args_path", None)
+        if path and os.path.exists(path):
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
+
+    def __enter__(self) -> "AlphaGenomePredictWorker":
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self.close()
+
+    def __del__(self):  # pragma: no cover - GC safety net
+        try:
+            self.close()
+        except Exception:
+            pass
