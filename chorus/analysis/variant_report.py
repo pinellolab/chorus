@@ -861,6 +861,7 @@ def build_variant_report(
     normalizer: PerTrackNormalizer | QuantileNormalizer | None = None,
     igv_raw: bool = False,
     analysis_request: AnalysisRequest | None = None,
+    lightweight: bool = False,
 ) -> VariantReport:
     """Build a multi-layer variant report from oracle predictions.
 
@@ -887,6 +888,16 @@ def build_variant_report(
         igv_raw: When ``True``, the IGV browser shows raw signal values
             with per-track autoscale instead of the layer-aware
             floor-rescale view.  Table scores still use the normalizer.
+        lightweight: When ``True``, build only the per-track ``allele_scores``
+            needed for ranking / composite scoring and SKIP the
+            display-only IGV ``_predictions`` assembly (filtering and
+            stashing per-track signal arrays for the browser). The
+            ``allele_scores`` produced are **byte-for-byte identical** to
+            the default path — only the discarded ``_predictions`` payload
+            differs. Used by :func:`prioritize_causal_variants` so that
+            scoring dozens of LD proxies doesn't pay the per-variant IGV
+            assembly cost for reports that are immediately discarded. The
+            default ``False`` preserves the full single-variant report.
 
     Returns:
         A :class:`VariantReport` with per-track, per-layer scores.
@@ -976,6 +987,11 @@ def build_variant_report(
                 all_gene_exons[gn] = edf[["chrom", "start", "end"]].to_dict("records")
         except Exception:
             pass
+        # Per-gene TSS positions are only consumed by the per-gene CAGE-TSS
+        # display loop, which the lightweight path skips — so don't pay the
+        # TSS lookup there either.
+        if lightweight:
+            continue
         try:
             from chorus.utils.annotations import get_gene_tss as _get_tss
             tdf = _get_tss(gn)
@@ -1056,7 +1072,21 @@ def build_variant_report(
                 _apply_normalization(ts, normalizer, oracle_name, layer, assay_id=assay_id)
                 scores.append(ts)
 
-                # 2) Per-gene TSS rows (pick the most active TSS per gene)
+                # 2) Per-gene TSS rows (pick the most active TSS per gene).
+                # These are DISPLAY-ONLY rows: the composite / ranking reads
+                # the per-layer max-|effect| track, and the local variant-site
+                # row (#1 above) carries the variant's actual perturbation —
+                # a single SNP barely moves a distant gene's TSS signal, so a
+                # per-gene TSS row never out-scores the variant-site row for
+                # the tss_activity layer. They exist purely to enrich the HTML
+                # table ("which gene's promoter is most active here"). The
+                # nested loop (≈600 CAGE tracks × dozens of genes × TSSs ×
+                # 2 alleles) is the dominant CPU-bound, GPU-idle cost per
+                # variant, so the lightweight scoring path (causal fine-mapping)
+                # skips it entirely — leaving the tss_activity layer score, and
+                # therefore the ranking, unchanged.
+                if lightweight:
+                    continue
                 cage_cfg = LAYER_CONFIGS["tss_activity"]
                 half_w = (cage_cfg.window_bp or 501) // 2
                 from .scorers import _compute_effect
@@ -1170,13 +1200,17 @@ def build_variant_report(
     # actually got scored (appear in allele_scores) before attaching.
     # This makes IGV available for region_swap / integration flows, which
     # request a handful of assay_ids but hand in the full oracle bundle.
+    #
+    # Skip entirely in lightweight mode: the caller (causal fine-mapping)
+    # discards everything but allele_scores, so this filtering + per-track
+    # array stashing is pure overhead there. allele_scores is unchanged.
     scored_assay_ids: set[str] = set()
     for scores in allele_scores.values():
         for ts in scores:
             if ts.assay_id:
                 scored_assay_ids.add(ts.assay_id)
     _IGV_TRACK_LIMIT = 50
-    if scored_assay_ids:
+    if scored_assay_ids and not lightweight:
         from ..core.result import OraclePrediction
 
         # When more than _IGV_TRACK_LIMIT tracks were scored, picking the
