@@ -113,9 +113,23 @@ output = model.predict_sequence(
     ontology_terms=None,
 )
 
-# Extract per-assay predictions
+# Extract per-assay predictions.
+#
+# Two efficiency fixes here (both byte-identical to the prior behaviour;
+# the parent re-wraps each entry with np.array(..., dtype=np.float32)):
+#   1. Convert each OutputType's full (bins × tracks) array to NumPy ONCE
+#      and cache it. The old code called np.asarray(track_data.values) per
+#      assay — i.e. re-materialising the same large JAX array thousands of
+#      times (≈ O(assays × bins × tracks)), which dominated the in-env
+#      forward pass while the GPU sat idle.
+#   2. Keep each track's signal as a float32 NumPy array instead of
+#      .tolist(). The result dict is returned to the parent via pickle,
+#      and pickling ndarrays (raw buffers) is far cheaper than pickling
+#      ~5000 Python float lists; the parent then builds the same float32
+#      arrays it did before.
 collected = []
 resolutions = []
+_ot_cache = {}
 for aid in assay_ids:
     idx = metadata.get_track_by_identifier(aid)
     if idx is None:
@@ -126,23 +140,26 @@ for aid in assay_ids:
     ot_name = info["output_type"]
     local_idx = info["local_index"]
 
-    ot_enum = OutputType[ot_name]
-    track_data = output.get(ot_enum)
+    values = _ot_cache.get(ot_name)
+    if values is None:
+        ot_enum = OutputType[ot_name]
+        track_data = output.get(ot_enum)
+        if track_data is None:
+            raise ValueError(
+                f"No prediction data for output type {ot_name} (assay {aid})"
+            )
+        values = np.asarray(track_data.values)  # (positional_bins, num_tracks)
+        _ot_cache[ot_name] = values
 
-    if track_data is None:
-        raise ValueError(
-            f"No prediction data for output type {ot_name} (assay {aid})"
-        )
-
-    values = np.asarray(track_data.values)
-    # values shape: (positional_bins, num_tracks)
     if local_idx >= values.shape[1]:
         raise ValueError(
             f"local_idx {local_idx} out of bounds for output type {ot_name} "
             f"with {values.shape[1]} tracks (assay {aid})"
         )
-    track_values = values[:, local_idx]
-    collected.append(track_values.tolist())
+    # np.ascontiguousarray so the pickled buffer is a compact 1-D float32
+    # array rather than a strided view into the big 2-D output.
+    track_values = np.ascontiguousarray(values[:, local_idx], dtype=np.float32)
+    collected.append(track_values)
     resolutions.append(info["resolution"])
 
 result = {
