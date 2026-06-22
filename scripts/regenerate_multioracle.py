@@ -398,9 +398,12 @@ ALPHAGENOME_TRACKS = [
     "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
     "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
     # CAGE: request a single strand only. Both strands resolve to the same
-    # display label ("CAGE:HepG2") in the unified IGV, so listing both
-    # produced a duplicate AlphaGenome CAGE track in the multi-oracle browser.
-    "CAGE/hCAGE EFO:0001187/+",
+    # display label ("CAGE:HepG2") in the unified IGV, so listing both produced
+    # a duplicate AlphaGenome CAGE track in the multi-oracle browser. We keep the
+    # MINUS strand: it is the value cited in the article (+1.52 log2FC; the +
+    # strand gives +1.22) and the biologically relevant strand for the
+    # SORT1/CELSR2/PSRC1 locus (transcribed on the minus strand).
+    "CAGE/hCAGE EFO:0001187/-",
 ]
 
 
