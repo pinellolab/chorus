@@ -25,15 +25,24 @@ from chorus.mcp.serializers import (
 logger = logging.getLogger(__name__)
 
 _INSTRUCTIONS = (
-    "Unified interface for 6 genomic deep-learning oracles "
-    "(Enformer, Borzoi, ChromBPNet, Sei, LegNet, AlphaGenome). AlphaGenome "
+    "Unified interface for 7 genomic deep-learning oracles "
+    "(Enformer, Borzoi, ChromBPNet, Sei, LegNet, EPInformer-seq, AlphaGenome). "
+    "AlphaGenome "
     "ships with two interchangeable backends — `alphagenome` (JAX, default) "
     "and `alphagenome_pt` (PyTorch, opt-in alternative) — that share the "
     "same model and weights and produce equivalent outputs (1–2 % per-track "
     "fp32 noise). "
     "Discover tracks, load models, make predictions, and analyse variant effects. "
     "Use `recommend_alphagenome_backend` to choose between the JAX and "
-    "PyTorch AlphaGenome backends for a given window size."
+    "PyTorch AlphaGenome backends for a given window size. "
+    "SCORE EACH VARIANT ONCE: every oracle returns ALL of its tracks (every cell "
+    "type, assay, and TF) from a SINGLE forward pass, so one call to "
+    "`predict_variant_effect`, `analyze_variant_multilayer`, or `discover_variant` "
+    "already covers every track — never loop a scoring tool once per track or per "
+    "cell type (that re-runs the model needlessly and can turn minutes into hours). "
+    "To score MANY variants (a GWAS credible set, fine-mapping, or a VCF), use the "
+    "dedicated multi-variant tools — `fine_map_causal_variant`, `score_variant_batch`, "
+    "and `discover_variant_cell_types` — which score each variant exactly once."
 )
 
 mcp = FastMCP("Chorus Genomics", instructions=_INSTRUCTIONS)
@@ -615,6 +624,12 @@ def predict_variant_effect(
 
     Compares predictions for reference vs alternate alleles and returns
     per-allele effect sizes with summary statistics.
+
+    One forward pass scores the variant across every track in ``assay_ids``
+    (or ALL of the oracle's tracks when ``assay_ids`` is omitted), so request
+    the full set in a single call — never loop this tool once per track or per
+    cell type. To score many variants, use ``score_variant_batch`` or
+    ``fine_map_causal_variant`` (each scores a variant exactly once).
 
     Args:
         oracle_name: A loaded oracle name.
