@@ -109,8 +109,14 @@ with torch.no_grad():
         heads=heads if heads else None,
     )
 
+# Same two efficiency fixes as the JAX template: convert each head's
+# tensor to NumPy ONCE (cache by (head, resolution)) instead of per assay,
+# and keep each track as a float32 ndarray rather than .tolist() so the
+# pickled result is a compact buffer. Output is byte-identical — the parent
+# re-wraps each entry with np.array(..., dtype=np.float32).
 collected = []
 resolutions = []
+_arr_cache = {}
 for aid in assay_ids:
     idx = metadata.get_track_by_identifier(aid)
     info = metadata.get_track_info(idx)
@@ -131,7 +137,12 @@ for aid in assay_ids:
         tensor = head_out[res]
     else:
         tensor = head_out
-    arr = tensor.detach().cpu().numpy()
+
+    cache_key = (pt_key, res)
+    arr = _arr_cache.get(cache_key)
+    if arr is None:
+        arr = tensor.detach().cpu().numpy()
+        _arr_cache[cache_key] = arr
     # Expected shape: (batch=1, spatial, num_tracks)
     if arr.ndim == 3:
         track_values = arr[0, :, local_idx]
@@ -141,7 +152,7 @@ for aid in assay_ids:
         raise ValueError(
             f"Unexpected output array shape {arr.shape} for {ot_name}"
         )
-    collected.append(track_values.astype(np.float32).tolist())
+    collected.append(np.ascontiguousarray(track_values, dtype=np.float32))
     resolutions.append(int(res))
 
 result = {

@@ -348,6 +348,23 @@ class CausalResult:
 # Scoring logic
 # ---------------------------------------------------------------------------
 
+def _scoring_region(oracle, chrom: str, position: int) -> str:
+    """Region string equal to the oracle's input window, centered on the variant.
+
+    A 1-bp region gets the variant mapped into an N-padded output window by
+    some oracles (e.g. ChromBPNet), collapsing the variant effect (~4x weaker)
+    and the ranking (audit finding T1). Using the full input window centered on
+    the variant pulls real genomic context. Fall back to a 1-bp region when the
+    oracle does not expose an integer input size. Shared by the scoring loop
+    and the top-N full-report pass so both predict on the identical window.
+    """
+    _seqlen = getattr(oracle, "sequence_length", None)
+    if isinstance(_seqlen, int) and _seqlen >= 2:
+        _half = _seqlen // 2
+        return f"{chrom}:{max(1, position - _half)}-{position + _half}"
+    return f"{chrom}:{position}-{position + 1}"
+
+
 def prioritize_causal_variants(
     oracle,
     lead_variant: dict,
@@ -359,6 +376,7 @@ def prioritize_causal_variants(
     normalizer: QuantileNormalizer | None = None,
     analysis_request: AnalysisRequest | None = None,
     snvs_only: bool = False,
+    report_top_n: int = 3,
 ) -> CausalResult:
     """Score and rank LD variants by composite causal evidence.
 
@@ -383,6 +401,16 @@ def prioritize_causal_variants(
             (insertions, deletions, MNVs, complex multi-base changes).
             Default False — score every proxy regardless of variant
             type. Set True to reproduce the pre-v0.5.5 behavior.
+        report_top_n: Number of top-ranked variants for which a FULL
+            :class:`VariantReport` (with IGV signal tracks) is built and
+            attached to ``CausalVariantScore._variant_report``. Scoring
+            every proxy uses the lightweight report path (identical
+            per-track scores, no IGV assembly); only the final top-N get
+            the full report so the IGV browser still renders for the most
+            likely-causal variants. Default 3. Set to 0 to skip full
+            reports entirely (e.g. when only the ranking is needed); only
+            variants that score non-zero in ≥1 track are eligible, so
+            fewer than ``report_top_n`` may be built.
 
     Returns:
         :class:`CausalResult` with variants ranked by composite score.
@@ -452,19 +480,7 @@ def prioritize_causal_variants(
 
         try:
             position = f"{ldv.chrom}:{ldv.position}"
-            # Score on a region equal to the oracle's input window, centered on
-            # the variant. A 1-bp region gets the variant mapped into an
-            # N-padded output window by some oracles (e.g. ChromBPNet),
-            # collapsing the variant effect (~4x weaker) and the ranking
-            # (audit finding T1). Using the full input window centered on the
-            # variant pulls real genomic context. Fall back to a 1-bp region
-            # when the oracle does not expose an integer input size.
-            _seqlen = getattr(oracle, "sequence_length", None)
-            if isinstance(_seqlen, int) and _seqlen >= 2:
-                _half = _seqlen // 2
-                region = f"{ldv.chrom}:{max(1, ldv.position - _half)}-{ldv.position + _half}"
-            else:
-                region = f"{ldv.chrom}:{ldv.position}-{ldv.position + 1}"
+            region = _scoring_region(oracle, ldv.chrom, ldv.position)
 
             variant_result = oracle.predict_variant_effect(
                 genomic_region=region,
@@ -473,11 +489,21 @@ def prioritize_causal_variants(
                 assay_ids=assay_ids,
             )
 
+            # Score with the lightweight report path: identical per-track
+            # allele_scores, but skips the per-variant IGV signal-array
+            # assembly that the ranking never reads. Full reports (with IGV)
+            # are rebuilt below only for the top `report_top_n` variants.
+            # We deliberately do NOT cache the per-variant ``variant_result``:
+            # each AlphaGenome prediction is ~5000 tracks × ~8k bins × alleles,
+            # so retaining all proxies' predictions would cost tens of GB. The
+            # top-N pass re-predicts those few variants instead (a handful of
+            # forward passes) to rebuild full reports with IGV tracks.
             report = build_variant_report(
                 variant_result,
                 oracle_name=oracle_name,
                 gene_name=gene_name,
                 normalizer=normalizer,
+                lightweight=True,
             )
 
             # Capture nearby genes from first report
@@ -527,6 +553,51 @@ def prioritize_causal_variants(
 
     # Sort by composite descending
     raw_scores.sort(key=lambda s: s.composite, reverse=True)
+
+    # Build the FULL report (with IGV signal tracks) only for the top
+    # `report_top_n` variants — the scoring loop above used the lightweight
+    # path (identical per-track scores, no IGV payload) so the IGV browser
+    # in the HTML report would otherwise have no signal tracks at all. We
+    # re-predict each of those few variants (one forward pass each) and
+    # rebuild a full report, attaching it to ``_variant_report``. Only
+    # variants that scored non-zero in ≥1 track are eligible (a variant with
+    # all-zero effects has nothing to plot); fewer than `report_top_n` are
+    # built when fewer qualify. Per-track scores are NOT recomputed into the
+    # ranking — the lightweight scores already drove it — so the ranking is
+    # unaffected by this pass.
+    if report_top_n > 0:
+        n_built = 0
+        for cs in raw_scores:
+            if n_built >= report_top_n:
+                break
+            # Skip error rows and variants with no scorable effect.
+            nonzero = any(
+                ts.raw_score is not None and ts.raw_score != 0.0
+                for ts in cs.track_scores.values()
+            )
+            if not nonzero:
+                continue
+            try:
+                full_vr = oracle.predict_variant_effect(
+                    genomic_region=_scoring_region(oracle, cs.chrom, cs.position),
+                    variant_position=f"{cs.chrom}:{cs.position}",
+                    alleles=[cs.ref, cs.alt],
+                    assay_ids=assay_ids,
+                )
+                full_report = build_variant_report(
+                    full_vr,
+                    oracle_name=oracle_name,
+                    gene_name=gene_name,
+                    normalizer=normalizer,
+                    lightweight=False,
+                )
+                cs._variant_report = full_report
+                n_built += 1
+            except Exception as exc:  # pragma: no cover - best-effort IGV
+                logger.warning(
+                    "Could not build full report for top variant %s: %s",
+                    cs.variant_id, exc,
+                )
 
     # Ensure every CausalResult carries provenance metadata
     if analysis_request is None:

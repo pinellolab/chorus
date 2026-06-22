@@ -424,8 +424,18 @@ class AlphaGenomeOracle(OracleBase):
                 raise ValueError(
                     f"No prediction data for output type {ot_name} (assay {aid})"
                 )
+            # Keep the per-track signal as a NumPy array rather than
+            # materializing it to a Python list. ``predict()`` immediately
+            # re-wraps each entry with ``np.array(..., dtype=np.float32)``,
+            # so the previous ``.tolist()`` round-trip (numpy → list → numpy)
+            # was pure overhead — and at ~5000 tracks × ~8k bins it dominated
+            # the in-process forward pass (~161 s/allele, GPU idle). Returning
+            # the array directly yields a byte-identical float32 ``values``
+            # buffer downstream while skipping that conversion. The subprocess
+            # path (``_predict_in_environment``) still returns JSON lists; both
+            # are consumed identically by ``predict()``.
             values = np.asarray(track_data.values)[:, local_idx]
-            collected.append(values.tolist())
+            collected.append(values)
             resolutions.append(info["resolution"])
 
         return {"values": collected, "resolutions": resolutions}

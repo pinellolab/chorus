@@ -436,7 +436,13 @@ class AlphaGenomePTOracle(OracleBase):
                 raise ValueError(
                     f"Unexpected output array shape {arr.shape} for {ot_name}"
                 )
-            collected.append(track_values.astype(np.float32).tolist())
+            # Return the float32 array directly instead of ``.tolist()``.
+            # ``predict()`` re-wraps each entry with ``np.array(..., float32)``,
+            # so the list round-trip was pure overhead (~5000 tracks × ~8k
+            # bins). Output is byte-identical; this only removes the
+            # numpy → list → numpy conversion. The subprocess path still
+            # returns JSON lists and is consumed the same way.
+            collected.append(track_values.astype(np.float32))
             resolutions.append(int(res))
 
         return {"values": collected, "resolutions": resolutions}

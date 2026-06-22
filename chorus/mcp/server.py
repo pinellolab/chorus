@@ -1563,6 +1563,7 @@ def fine_map_causal_variant(
     genome_build: str = "grch38",
     snvs_only: bool = False,
     user_prompt: Optional[str] = None,
+    report_top_n: int = 3,
 ) -> dict:
     """Prioritize causal variants from a GWAS locus using multi-layer regulatory evidence.
 
@@ -1620,6 +1621,11 @@ def fine_map_causal_variant(
             multi-allelic LDlink rows are scored by default as of
             v0.5.5. Set True to reproduce pre-v0.5.5 behavior.
         user_prompt: Original user prompt, rendered at the top of the report.
+        report_top_n: Number of top-ranked variants to render full IGV signal
+            tracks for in the HTML report (default 3). Every variant is
+            scored with the same per-track logic; this only controls how many
+            of the top hits get the (more expensive) interactive browser
+            tracks. Set to 0 to skip the IGV signal tracks entirely.
     """
     from chorus.analysis.causal import prioritize_causal_variants
     from chorus.utils.ld import (
@@ -1685,6 +1691,7 @@ def fine_map_causal_variant(
         normalizer=state.get_normalizer(oracle_name),
         analysis_request=ar,
         snvs_only=snvs_only,
+        report_top_n=report_top_n,
     )
 
     output = result.to_dict()
