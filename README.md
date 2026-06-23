@@ -1141,6 +1141,7 @@ Chorus integrates several groundbreaking models:
 - ChromBPNet / BPNet (Agarwal et al., 2021)
 - Sei (Chen et al., 2022)
 - LegNet (Penzar et al., 2023)
+- EPInformer-seq (Lin et al., *Nature Communications*, 2026)
 - AlphaGenome (Google DeepMind, 2026)
 
 For visualization tasks we extensively use [coolbox package](https://github.com/GangCaoLab/CoolBox)
@@ -1218,6 +1219,7 @@ The per-bin CDFs are used by the unified `chorus.analysis._igv_report.rescale_fo
 | ChromBPNet | 786 (42 ATAC/DNASE + 744 CHIP) | 10,000 | 31,500 | 82 MB |
 | Sei | 40 classes | 10,000 | 31,500 | 2.8 MB |
 | LegNet | 3 cell types | 10,000 | 31,500 | 210 KB |
+| EPInformer-seq | 33 (11 cells × 3 assays: DNase, H3K27ac, composite) | 9,608 | 34,002 | 2.3 MB |
 
 Effect and activity reservoirs are converted to 10,000-point CDFs (sorted sample arrays) — so a percentile lookup is a single O(log n) bisect.
 
