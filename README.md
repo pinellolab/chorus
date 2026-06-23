@@ -367,7 +367,7 @@ The chorus mirrors are byte-identical to the originals (verified via md5 / size 
 | ChromBPNet | ~82 MB | 786 (42 ATAC/DNASE + 744 CHIP) |
 | Sei | ~2.8 MB | 40 classes |
 | LegNet | ~210 KB | 3 cell types |
-| EPInformer-seq | ~770 KB | 33 tracks (11 cell types × 3 assays: DNase, H3K27ac, composite) |
+| EPInformer-seq | ~2.3 MB | 33 tracks (11 cell types × 3 assays: DNase, H3K27ac, composite) |
 
 > **The backgrounds dataset is public — no HuggingFace token required.** `HF_TOKEN` is only needed for the gated AlphaGenome model itself (see [Tokens](#tokens) above). Causal prioritization with auto-LD-fetch needs a separate free LDlink token.
 
