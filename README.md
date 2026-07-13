@@ -103,9 +103,9 @@ That's it. No more boilerplate, no juggling oracle APIs — chorus exposes **22 
 
 ### What to read next
 
-- [Notebooks](#notebooks) — three end-to-end tutorials you can follow start-to-finish (start here)
-- [Worked application examples](#worked-application-examples) — driven by natural-language prompts; the *what can chorus do?* tour
-- [MCP server](#mcp-server) — full Claude Code + Claude Desktop setup with all 22 tools
+- [Notebooks](#notebooks--three-sittings-zero-to-confident) — three end-to-end tutorials you can follow start-to-finish (start here)
+- [Worked application examples](#worked-application-examples--seven-things-you-can-do-today) — driven by natural-language prompts; the *what can chorus do?* tour
+- [MCP server](#mcp-server--chorus-but-you-talk-to-claude) — full Claude Code + Claude Desktop setup with all 22 tools
 - [Python API](#python-api) — 9 runnable recipes (region replacement, gene expression, sub-region scoring, variant-to-gene, …)
 - [Pick an oracle](#pick-an-oracle) — hardware matrix, which one to start with
 - [Troubleshooting](#troubleshooting)
