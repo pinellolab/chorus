@@ -118,7 +118,7 @@ _Everything below is optional — the TLDR above is enough to get running. Secti
 
 ### What chorus is
 
-**Conversational genomics.** The idea behind Chorus: you should be able to ask the genome what a variant does in plain language, and have an AI agent run and cross-check the right sequence-to-function models to answer — not a chatbot that looks up what is already known about a variant, but an agent that *predicts* what it does. Computation, replaced by conversation.
+**Conversational genomics.** The idea behind Chorus: ask in plain language what DNA does — and what happens when you change it — while an AI agent orchestrates the right sequence-to-function models to predict, compare, and explain the answer. An agent that *predicts* function from sequence, not a chatbot that looks up what is already known. Computation, replaced by conversation.
 
 Seven state-of-the-art genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Sei, LegNet, EPInformer-seq, AlphaGenome — wired through one API. The same five lines of Python predict variant effects on chromatin accessibility (ChromBPNet, base-pair resolution), TF binding (Enformer, BPNet), 5,731 multi-modal tracks at 1 Mb context (AlphaGenome), or RNA-seq-grade gene expression (Borzoi). Every prediction comes with **effect-percentile and activity-percentile scores** ranked against ~10 k random SNPs and ~30 k genome-wide cCREs, so a `+0.45 log₂FC` becomes `0.962 effect %ile, 0.81 activity %ile` — directly interpretable, not a raw fold-change you have to calibrate yourself.
 
@@ -128,7 +128,7 @@ Each oracle runs in its own conda environment (no TF/PyTorch/JAX dependency hell
 
 | Term | Meaning |
 |------|---------|
-| **Conversational genomics** | Interpreting genetic variants by asking in plain language while an AI agent runs and cross-checks the right sequence-to-function oracles — computation replaced by conversation. |
+| **Conversational genomics** | Asking in plain language what DNA does, and what happens when you change it, while an AI agent orchestrates the right sequence-to-function oracles to predict, compare, and explain the answer. |
 | **Oracle** | A deep learning model that predicts regulatory activity from DNA sequence (e.g. Enformer, AlphaGenome) |
 | **Track** | A single experimental measurement predicted by an oracle (e.g. DNase-seq in K562 cells) |
 | **assay_id** | The unique identifier for a track, used in API calls (e.g. `"ENCFF413AHU"` or `"DNASE/EFO:0001187 DNase-seq/."`) |
