@@ -4,7 +4,7 @@
 
 *Accessible Sequence to Function Analyses: Predict how a genetic variant changes gene regulation — chromatin accessibility, transcription factor binding, histone marks, gene expression — across thousands of cell types.* 
 
-*One API over six state-of-the-art deep-learning models; ask in natural language via Claude or call it from Python!*
+*One API over seven state-of-the-art deep-learning models; ask in natural language via Claude or call it from Python!*
 
 </div>
 
@@ -118,14 +118,17 @@ _Everything below is optional — the TLDR above is enough to get running. Secti
 
 ### What chorus is
 
+**Conversational genomics.** The idea behind Chorus: you should be able to ask the genome what a variant does in plain language, and have an AI agent run and cross-check the right sequence-to-function models to answer — not a chatbot that looks up what is already known about a variant, but an agent that *predicts* what it does. Computation, replaced by conversation.
+
 Seven state-of-the-art genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Sei, LegNet, EPInformer-seq, AlphaGenome — wired through one API. The same five lines of Python predict variant effects on chromatin accessibility (ChromBPNet, base-pair resolution), TF binding (Enformer, BPNet), 5,731 multi-modal tracks at 1 Mb context (AlphaGenome), or RNA-seq-grade gene expression (Borzoi). Every prediction comes with **effect-percentile and activity-percentile scores** ranked against ~10 k random SNPs and ~30 k genome-wide cCREs, so a `+0.45 log₂FC` becomes `0.962 effect %ile, 0.81 activity %ile` — directly interpretable, not a raw fold-change you have to calibrate yourself.
 
-Each oracle runs in its own conda environment (no TF/PyTorch/JAX dependency hell), every weight + reference + background is pre-mirrored to a chorus-controlled HuggingFace org (no broken-link surprises), and the **22-tool MCP server** lets you ask Claude to run the analysis in plain English. See [Pick an oracle](#pick-an-oracle) for the per-oracle hardware/cost matrix.
+Each oracle runs in its own conda environment (no TF/PyTorch/JAX dependency hell), every weight + reference + background is pre-mirrored to a chorus-controlled HuggingFace org (no broken-link surprises), and the **24-tool MCP server** lets you ask Claude to run the analysis in plain English. See [Pick an oracle](#pick-an-oracle) for the per-oracle hardware/cost matrix.
 
 ### Key terms
 
 | Term | Meaning |
 |------|---------|
+| **Conversational genomics** | Interpreting genetic variants by asking in plain language while an AI agent runs and cross-checks the right sequence-to-function oracles — computation replaced by conversation. |
 | **Oracle** | A deep learning model that predicts regulatory activity from DNA sequence (e.g. Enformer, AlphaGenome) |
 | **Track** | A single experimental measurement predicted by an oracle (e.g. DNase-seq in K562 cells) |
 | **assay_id** | The unique identifier for a track, used in API calls (e.g. `"ENCFF413AHU"` or `"DNASE/EFO:0001187 DNase-seq/."`) |
@@ -554,7 +557,7 @@ Three end-to-end Jupyter notebooks shipped with the repo. Run them in order — 
 
 ### MCP server — chorus, but you talk to Claude
 
-Chorus's MCP (Model Context Protocol) server is what makes the lunch-break tour Step 4 work. Claude (or any MCP-aware client) loads oracles, predicts variant effects, scores regions, and writes full HTML/MD reports — all from natural-language prompts. Step 4 above gave you the one-liner; this section has every config detail (Claude Code, Claude Desktop, manual testing, the full 22-tool catalogue).
+Chorus's MCP (Model Context Protocol) server is what makes the lunch-break tour Step 4 work. Claude (or any MCP-aware client) loads oracles, predicts variant effects, scores regions, and writes full HTML/MD reports — all from natural-language prompts. Step 4 above gave you the one-liner; this section has every config detail (Claude Code, Claude Desktop, manual testing, the full 24-tool catalogue).
 
 #### Setup for Claude Code
 
