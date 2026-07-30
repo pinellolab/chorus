@@ -4,7 +4,7 @@
 
 *Accessible Sequence to Function Analyses: Predict how a genetic variant changes gene regulation — chromatin accessibility, transcription factor binding, histone marks, gene expression — across thousands of cell types.* 
 
-*One API over seven state-of-the-art deep-learning models; ask in natural language via Claude or call it from Python!*
+*One API over eight state-of-the-art deep-learning models; ask in natural language via Claude or call it from Python!*
 
 </div>
 
@@ -17,7 +17,7 @@ Four steps. Steps 1 + 2 are copy-paste. Step 3 is a runnable snippet. Step 4 hoo
 **Before you start** — three things you need:
 
 - **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>
-- **~31 GB free disk** — see [Disk usage breakdown](#disk-usage-breakdown) if you want the per-oracle / per-asset numbers
+- **~38 GB free disk** — see [Disk usage breakdown](#disk-usage-breakdown) if you want the per-oracle / per-asset numbers
 - **Linux x86_64 or macOS** (Intel / Apple Silicon)
 
 ### 1. Install (5 minutes)
@@ -120,7 +120,7 @@ _Everything below is optional — the TLDR above is enough to get running. Secti
 
 **Conversational genomics.** The idea behind Chorus: ask in plain language what DNA does — and what happens when you change it — while an AI agent orchestrates the right sequence-to-function models to predict, compare, and explain the answer. An agent that *predicts* function from sequence, not a chatbot that looks up what is already known. Computation, replaced by conversation.
 
-Seven state-of-the-art genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Sei, LegNet, EPInformer-seq, AlphaGenome — wired through one API. The same five lines of Python predict variant effects on chromatin accessibility (ChromBPNet, base-pair resolution), TF binding (Enformer, BPNet), 5,731 multi-modal tracks at 1 Mb context (AlphaGenome), or RNA-seq-grade gene expression (Borzoi). Every prediction comes with **effect-percentile and activity-percentile scores** ranked against ~10 k random SNPs and ~30 k genome-wide cCREs, so a `+0.45 log₂FC` becomes `0.962 effect %ile, 0.81 activity %ile` — directly interpretable, not a raw fold-change you have to calibrate yourself.
+Eight state-of-the-art genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Cherimoya/CATv1, Sei, LegNet, EPInformer-seq, AlphaGenome — wired through one API. The same five lines of Python predict variant effects on chromatin accessibility (ChromBPNet, base-pair resolution), TF binding (Enformer, BPNet), 5,731 multi-modal tracks at 1 Mb context (AlphaGenome), or RNA-seq-grade gene expression (Borzoi). Every prediction comes with **effect-percentile and activity-percentile scores** ranked against ~10 k random SNPs and ~30 k genome-wide cCREs, so a `+0.45 log₂FC` becomes `0.962 effect %ile, 0.81 activity %ile` — directly interpretable, not a raw fold-change you have to calibrate yourself.
 
 Each oracle runs in its own conda environment (no TF/PyTorch/JAX dependency hell), every weight + reference + background is pre-mirrored to a chorus-controlled HuggingFace org (no broken-link surprises), and the **24-tool MCP server** lets you ask Claude to run the analysis in plain English. See [Pick an oracle](#pick-an-oracle) for the per-oracle hardware/cost matrix.
 
@@ -160,6 +160,7 @@ Start with one or two oracles and add more with `chorus setup --oracle <name>` l
 | **Enformer** | 8 GB | optional | ~10 s (GPU) / ~1 min (CPU) | lightweight multi-track, CPU-friendly starter |
 | **Borzoi** | 12 GB | recommended | ~30 s (GPU) | distal gene-expression effects, longer context |
 | **ChromBPNet** | 4 GB | optional | ~1 s (CPU ok) | base-pair chromatin / motif disruption |
+| **Cherimoya / CATv1** | 4 GB | recommended | <1 s (GPU) | base-pair chromatin accessibility across 1,518 ENCODE DNase/ATAC experiments — the widest biosample coverage in chorus |
 | **LegNet** | 4 GB | optional | <1 s | MPRA / promoter activity |
 | **Sei** | 4 GB | optional | ~2 s | regulatory sequence-class profiling |
 | **EPInformer-seq** | 2 GB | optional | <1 s | per-cell 2-channel enhancer activity (DNase cut-sites + H3K27ac, 3 assays, 11 Roadmap cells, 2114-bp window) |
@@ -205,7 +206,7 @@ The TLDR's `chorus setup` does everything you need. This section covers the edge
 
 #### Disk usage breakdown
 
-The default `chorus setup` (all 7 oracles, both AlphaGenome backends, hg38, all CDF backgrounds) lands at **~31 GB**:
+The default `chorus setup` (all 8 oracles, both AlphaGenome backends, hg38, all CDF backgrounds) lands at **~38 GB**:
 
 | Bucket | Size |
 |---|---|
@@ -214,8 +215,10 @@ The default `chorus setup` (all 7 oracles, both AlphaGenome backends, hg38, all 
 | Per-oracle CDF backgrounds (`~/.chorus/backgrounds/`) | ~2 GB |
 | AlphaGenome PyTorch backend (`alphagenome_pt`, default-on so Mac users get MPS speed) | ~2.6 GB |
 | ChromBPNet slim HuggingFace mirror — fast-path pre-cache (K562 + HepG2 DNase) | ~50 MB |
+| Cherimoya env (PyTorch + CUDA + triton) | ~7 GB |
+| Cherimoya fast-path weights (DNase + ATAC K562/HepG2) | ~10 MB |
 | EPInformer-seq per-cell weights (11 main + 11 bias) | ~11 MB |
-| **Total default** | **~31 GB** |
+| **Total default** | **~38 GB** |
 
 Opting in via `chorus setup --all-chrombpnet` pre-caches every fold-0 bias-corrected ChromBPNet model from the slim mirror (+~1.5 GB, ~5 min). Other ChromBPNet cell types download lazily on first `load_pretrained_model(...)` regardless. If you specifically need the full bias-aware `chrombpnet` variant or fold ≠ 0, chorus falls back to the original ENCODE tarball for that specific model (+~1.8 GB on disk per model). See [Where the oracle weights come from](#where-the-oracle-weights-come-from) for the full mirror map.
 
@@ -356,6 +359,7 @@ Chorus mirrors every oracle's weights to chorus-controlled HuggingFace repos so 
 | Enformer | [`lucapinello/chorus-enformer`](https://huggingface.co/lucapinello/chorus-enformer) | TFHub `deepmind/enformer/1` (now redirects to Kaggle) | 961 MB |
 | Borzoi | [`lucapinello/chorus-borzoi`](https://huggingface.co/lucapinello/chorus-borzoi) | [`johahi/borzoi-replicate-{0..3}`](https://huggingface.co/johahi/borzoi-replicate-0) | ~6 GB (4 folds) |
 | ChromBPNet | [`lucapinello/chorus-chrombpnet-slim`](https://huggingface.co/lucapinello/chorus-chrombpnet-slim) | ENCODE per-experiment tarballs | 1.49 GB (786 h5's) |
+| Cherimoya | [`programmable-genomics/CATv1`](https://huggingface.co/programmable-genomics/CATv1) | *is* the primary source (CC-BY-4.0) | ~3.8 GB (1,518 fold-0 checkpoints; ~2.5 MB each, fetched lazily) |
 | Sei | [`lucapinello/chorus-sei`](https://huggingface.co/lucapinello/chorus-sei) | Zenodo [4906997](https://zenodo.org/record/4906997) | 3.28 GB |
 | LegNet | [`lucapinello/chorus-legnet`](https://huggingface.co/lucapinello/chorus-legnet) | Zenodo [17863550](https://zenodo.org/records/17863550) | 38 MB |
 | EPInformer-seq | [`lucapinello/chorus-epinformerseq-v2`](https://huggingface.co/lucapinello/chorus-epinformerseq-v2) | per-cell 2-channel PerCellProfileNetWide + frozen BiasNet, trained on Roadmap DNase-summit peaks (ch0 = 5′ DNase cut-sites, ch1 = H3K27ac) (Pinello Lab) | 11 MB (11 cells × main + bias) |
@@ -368,6 +372,7 @@ The chorus mirrors are byte-identical to the originals (verified via md5 / size 
 | Enformer | ~520 MB | 5,313 |
 | Borzoi | ~770 MB | 7,611 |
 | ChromBPNet | ~82 MB | 786 (42 ATAC/DNASE + 744 CHIP) |
+| Cherimoya | ~154 MB | 1,518 (369 ATAC + 1,149 DNASE) |
 | Sei | ~2.8 MB | 40 classes |
 | LegNet | ~210 KB | 3 cell types |
 | EPInformer-seq | ~2.3 MB | 33 tracks (11 cell types × 3 assays: DNase, H3K27ac, composite) |
@@ -429,7 +434,7 @@ print(k562_tracks[['identifier', 'description']].head())
 tracks = ['ENCFF413AHU', 'CNhs11250']  # DNase:K562, CAGE:K562
 ```
 
-> **Tip:** Each oracle has different track naming. Enformer and Borzoi use ENCODE identifiers (e.g. `ENCFF413AHU`). ChromBPNet uses assay + cell type. AlphaGenome uses `{OutputType}/{TrackName}/{Strand}`. See the [Model-specific details](#model-specific-details) section for each oracle's track format.
+> **Tip:** Each oracle has different track naming. Enformer and Borzoi use ENCODE identifiers (e.g. `ENCFF413AHU`). ChromBPNet uses assay + cell type. Cherimoya uses assay + ENCODE experiment accession (e.g. `DNASE:ENCSR000EOT`). AlphaGenome uses `{OutputType}/{TrackName}/{Strand}`. See the [Model-specific details](#model-specific-details) section for each oracle's track format.
 
 #### 1. Wild-type prediction
 
@@ -654,6 +659,7 @@ Every analysis tool accepts an optional `user_prompt` parameter and writes it in
 Key features:
 - **Auto-centering**: `region` is optional in variant tools — auto-sized for each oracle's output window
 - **ChromBPNet/BPNet params**: `load_oracle("chrombpnet", assay="CHIP", cell_type="K562", TF="GATA1")`
+- **Cherimoya params**: `load_oracle("cherimoya", assay="DNASE", cell_type="K562")` picks that biosample's default experiment; `load_oracle("cherimoya", assay="ATAC", encode_id="ENCSR483RKN")` pins a specific one. `(assay, cell_type)` is ambiguous across much of the atlas — K562 alone has four ATAC experiments — so search with `list_tracks("cherimoya", query="K562")` and pass the `experiment_accession` you want
 - **TSS warnings**: `predict_variant_effect_on_gene` warns when the target gene TSS is outside the output window
 - **Mixed-resolution**: AlphaGenome's 1bp DNASE + 128bp histone tracks score correctly in a single call
 
