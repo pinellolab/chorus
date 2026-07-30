@@ -1,0 +1,63 @@
+name: chorus-cherimoya
+channels:
+  - conda-forge
+  - bioconda
+
+# Isolated environment for the Cherimoya / CATv1 oracle.
+#
+# The conda section mirrors chorus-chrombpnet.yml rather than
+# chorus-legnet.yml: chorus itself is installed into oracle environments
+# with `pip install -e . --no-deps` (see
+# EnvironmentManager.install_chorus_primitive), so this file has to satisfy
+# chorus' own import-time dependencies -- Bio, pysam, pandas, scipy,
+# matplotlib, seaborn, requests -- not just Cherimoya's.
+# `EnvironmentManager.environment_is_healthy` probes `python -c "import
+# chorus"` inside the env, so a missing one of those shows up as a
+# spurious "broken environment, auto-rebuilding".
+dependencies:
+  # Core Python
+  - python=3.10
+
+  # Essential scientific computing
+  - numpy>=1.21.0
+  - pandas>=1.3.0
+  - scipy>=1.7.0
+
+  # Core bioinformatics
+  - pysam>=0.19.0
+  - biopython>=1.79
+  - pyfaidx>=0.7.0
+
+  # Utilities
+  - tqdm>=4.62.0
+  - h5py>=3.6.0
+  - requests
+  - pyyaml>=6.0
+
+  # Visualization (imported at chorus package import time)
+  - matplotlib>=3.5.0
+  - seaborn>=0.11.0
+
+  # Fetches CATv1 checkpoints from programmable-genomics/CATv1
+  - huggingface_hub>=0.20.0
+
+  - pip
+  - pip:
+      # Cherimoya is installed from PyPI rather than via conda-forge
+      # pytorch-gpu, and deliberately not pinned to `cuda-version=11.8`
+      # the way chorus-legnet.yml is:
+      #
+      #   * cherimoya requires torch>=2.9 (it routes projection weights
+      #     through torch.optim.Muon, which landed in 2.9), and
+      #     triton>=3.5.1, which is CUDA 12.x era. An 11.8 pin cannot
+      #     satisfy either.
+      #   * letting pip resolve torch brings the matching bundled
+      #     nvidia-* CUDA 12 libraries, so the env is self-contained and
+      #     no separate cuda-version pin is needed.
+      #
+      # Pinned exactly, not floated. Cherimoya's own README warns that
+      # checkpoint compatibility can break between versions, and the
+      # per-track background CDFs are only valid for the loader that
+      # produced them -- so the version that reads CATv1 is part of the
+      # reproducibility contract, not an implementation detail.
+      - cherimoya==0.2.0
