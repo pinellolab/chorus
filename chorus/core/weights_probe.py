@@ -166,6 +166,10 @@ _ARTIFACT_PROBES: Dict[str, Callable[[], Tuple[bool, List[str]]]] = {
     # the HF hub cache (~/.cache/huggingface/) via the slim mirror, not
     # to CHORUS_DOWNLOADS_DIR — same as enformer/borzoi.
     "chrombpnet": _probe_library_cached,
+    # CATv1 checkpoints are fetched per-experiment with hf_hub_download,
+    # so they land in the HF hub cache rather than CHORUS_DOWNLOADS_DIR —
+    # same situation as chrombpnet/enformer/borzoi.
+    "cherimoya": _probe_library_cached,
     "alphagenome": _probe_alphagenome,
     "alphagenome_pt": _probe_alphagenome_pt,
     "enformer": _probe_library_cached,

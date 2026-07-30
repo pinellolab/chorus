@@ -24,7 +24,7 @@ _BG_DIR = Path.home() / ".chorus" / "backgrounds"
 # but for the status table we still want a row showing the alias is
 # active so users don't think the alphagenome_pt env is missing data.
 _KNOWN_ORACLES = [
-    "enformer", "borzoi", "chrombpnet", "sei", "legnet",
+    "enformer", "borzoi", "chrombpnet", "cherimoya", "sei", "legnet",
     "epinformerseq", "alphagenome", "alphagenome_pt",
 ]
 

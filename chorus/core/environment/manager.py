@@ -580,6 +580,7 @@ class EnvironmentManager:
             'sei': ['torch'],
             'borzoi': ['torch'],
             'chrombpnet': ['tensorflow'],
+            'cherimoya': ['torch', 'cherimoya'],
             'legnet': ['torch'],
             'epinformerseq': ['torch'],
             'alphagenome': ['jax'],
