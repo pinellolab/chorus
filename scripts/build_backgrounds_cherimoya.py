@@ -83,6 +83,14 @@ parser.add_argument(
          "~1e-2 on the profile logits, so a silent fallback would make "
          "some CDF rows incomparable with the rest.",
 )
+parser.add_argument(
+    "--gpu", type=int, default=None,
+    help="Pin CUDA_VISIBLE_DEVICES to this device index. Present because "
+         "`chorus backgrounds build --oracle cherimoya --gpu N` passes it "
+         "through, and every other build script accepts it -- without it that "
+         "CLI path fails with 'unrecognized arguments'. Leave unset when "
+         "sharding, where CUDA_VISIBLE_DEVICES is set per worker instead.",
+)
 parser.add_argument("--fold", type=int, default=0,
                     help="CATv1 fold. 0 matches ChromBPNet's default and CDFs.")
 parser.add_argument("--no-dhs", dest="dhs", action="store_false",
@@ -114,6 +122,11 @@ parser.add_argument("--sequences-on-cpu", action="store_true",
                          "device memory. Slower, but needed if the accelerator "
                          "cannot hold ~2 GB of one-hot.")
 args = parser.parse_args()
+
+# Must happen before torch is imported anywhere, which is why it sits here
+# rather than inside build().
+if args.gpu is not None:
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
 log_dir = os.path.join(REPO_ROOT, "logs")
 os.makedirs(log_dir, exist_ok=True)

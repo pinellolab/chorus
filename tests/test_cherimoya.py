@@ -627,3 +627,31 @@ def test_builder_replicates_chrombpnet_seeds():
                  "random.seed(789)", "random.Random(111)", "seed=567",
                  "random.Random(12345)", "RandomState(999)"):
         assert seed in source, f"missing ChromBPNet seed: {seed}"
+
+
+def test_builder_accepts_the_flags_the_cli_passes():
+    """`chorus backgrounds build` hands the script a fixed flag set.
+
+    cli/_backgrounds.py builds `mamba run -n <env> python <script> --part both
+    [--only-missing] [--gpu N]`. A build script that does not accept those
+    dies with 'unrecognized arguments', so the documented CLI path fails even
+    though the script works when invoked directly. Regression for --gpu.
+    """
+    source = _builder_source()
+    for flag in ('"--part"', '"--gpu"', '"--only-missing"'):
+        assert flag in source, f"builder must accept {flag} for the CLI path"
+
+
+def test_builder_gpu_flag_is_applied_before_torch_import():
+    """--gpu has to set CUDA_VISIBLE_DEVICES at argparse time.
+
+    Setting it after torch initialises CUDA has no effect, so the pinning
+    would silently do nothing.
+    """
+    source = _builder_source()
+    env_line = source.index('os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)')
+    build_def = source.index("def build(")
+    assert env_line < build_def, (
+        "CUDA_VISIBLE_DEVICES must be set at module scope, before torch is "
+        "imported inside build()"
+    )
