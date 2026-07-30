@@ -566,3 +566,64 @@ def test_mcp_docstrings_mention_cherimoya():
 
     for tool in (list_tracks, load_oracle):
         assert "cherimoya" in tool.__doc__.lower()
+
+
+# ── background builder ───────────────────────────────────────────────
+
+def _builder_source():
+    from pathlib import Path
+    path = (Path(__file__).resolve().parents[1] / "scripts"
+            / "build_backgrounds_cherimoya.py")
+    assert path.exists(), "background builder script is missing"
+    return path.read_text()
+
+
+def test_builder_exists_and_parses():
+    import ast
+    ast.parse(_builder_source())
+
+
+def test_builder_defaults_to_dhs_on():
+    """DHS sampling must stay ON by default.
+
+    The published ChromBPNet CDFs contain the DHS components
+    (effect_counts=18672, summary_counts=34004). Building without them
+    yields 9609/29004, which is silently non-comparable to every other
+    oracle -- the exact failure the shared sampling exists to prevent.
+    """
+    source = _builder_source()
+    assert "parser.set_defaults(dhs=True)" in source
+    assert '"--no-dhs"' in source
+    # An `action="store_true"` --dhs flag would mean off-by-default again.
+    assert '"--dhs", dest="dhs", action="store_true"' not in source
+
+
+def test_builder_reuses_the_shared_scoring_transform():
+    """The builder must not reimplement the count transform.
+
+    A CDF is only meaningful if the value it was built from is computed the
+    way the query path computes it; importing the same helpers is what
+    makes that structural rather than a convention.
+    """
+    source = _builder_source()
+    assert "from chorus.oracles.cherimoya_source.scoring import" in source
+    for symbol in ("expected_counts_profile", "score_window_sum", "compute_effect"):
+        assert symbol in source
+    # And it must cross-check its fast device-side path against them.
+    assert "assert_allclose" in source
+
+
+def test_builder_pins_the_device():
+    """Auto-detect could silently fall back to CPU, which disagrees with
+    the Triton path by ~1e-2 and would corrupt individual CDF rows."""
+    source = _builder_source()
+    assert '"--device", default="cuda"' in source
+
+
+def test_builder_replicates_chrombpnet_seeds():
+    """Comparability depends on identical sampling, not merely similar."""
+    source = _builder_source()
+    for seed in ("random.seed(42)", "seed=43", "random.seed(44)", "seed=456",
+                 "random.seed(789)", "random.Random(111)", "seed=567",
+                 "random.Random(12345)", "RandomState(999)"):
+        assert seed in source, f"missing ChromBPNet seed: {seed}"
