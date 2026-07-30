@@ -73,6 +73,14 @@ ORACLE_SPECS = {
         "resolution_bp": 1,
         "assay_types": ["ATAC", "DNASE", "CHIP"],
     },
+    "cherimoya": {
+        "description": "Cherimoya / CATv1 — base-resolution chromatin accessibility across 1,518 ENCODE experiments",
+        "framework": "PyTorch",
+        "input_size_bp": 2_114,
+        "output_bins": 1_000,
+        "resolution_bp": 1,
+        "assay_types": ["ATAC", "DNASE"],
+    },
     "sei": {
         "description": "Sei — sequence-level regulatory element classification",
         "framework": "PyTorch",
@@ -321,7 +329,7 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
     Does not require the oracle to be loaded — uses metadata classes.
 
     Args:
-        oracle_name: Oracle name (enformer, borzoi, chrombpnet, sei, legnet, epinformerseq, alphagenome).
+        oracle_name: Oracle name (enformer, borzoi, chrombpnet, cherimoya, sei, legnet, epinformerseq, alphagenome).
         query: Optional search string to filter tracks (e.g. "K562", "DNASE"). Use the returned 'identifier' field as the assay_id for predictions.
     """
     oracle_name = oracle_name.lower()
@@ -368,6 +376,43 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
             "assay_types": meta.list_assay_types(),
             "cell_types": meta.list_cell_types(),
             "note": "Use query parameter to search tracks (e.g. query='K562' or query='DNASE:K562'). Use the 'identifier' field as assay_id for predictions.",
+        }
+
+    if oracle_name == "cherimoya":
+        # 1,518 tracks — search-first, like borzoi/enformer above, rather
+        # than enumerating. Track ids are ASSAY:ENCSR (the ENCODE
+        # experiment accession), because (assay, biosample) is ambiguous
+        # for 1,188 of the 1,518 experiments.
+        from chorus.oracles.cherimoya_source.catv1_metadata import get_metadata
+        meta = get_metadata()
+        if query:
+            df = meta.search_tracks(query)
+            columns = [
+                "track_id", "experiment_accession", "assay", "biosample",
+                "biosample_classification", "biosample_summary",
+                "profile_pearson", "count_pearson",
+            ]
+            results = df[columns].to_dict(orient="records")
+            return {
+                "oracle": oracle_name,
+                "query": query,
+                "num_results": len(results),
+                "tracks": results[:200],
+            }
+        return {
+            "oracle": oracle_name,
+            "assay_types": meta.list_assay_types(),
+            "cell_types": meta.list_cell_types(),
+            "num_tracks": len(meta.tracks_df),
+            "track_summary": meta.get_track_summary(),
+            "note": (
+                "1,518 tracks — use the query parameter to search by "
+                "biosample, assay, or ENCODE accession (e.g. query='K562', "
+                "query='T cell', query='ENCSR000EOT'). Use the returned "
+                "'track_id' (ASSAY:ENCSR) for predictions, or pass "
+                "assay= and cell_type= to load_oracle to get that "
+                "biosample's default experiment."
+            ),
         }
 
     if oracle_name == "chrombpnet":
@@ -530,19 +575,26 @@ def load_oracle(
     TF: Optional[str] = None,
     fold: Optional[int] = None,
     model_type: Optional[str] = None,
+    encode_id: Optional[str] = None,
 ) -> dict:
     """Load a genomic oracle and its pretrained model (cached for reuse).
 
     This can take 30 seconds to several minutes depending on the model.
 
     Args:
-        oracle_name: Oracle name (enformer, borzoi, chrombpnet, sei, legnet, epinformerseq, alphagenome).
+        oracle_name: Oracle name (enformer, borzoi, chrombpnet, cherimoya, sei, legnet, epinformerseq, alphagenome).
         device: Device to use — "cpu", "cuda", "cuda:0", etc. None = auto-detect.
-        assay: (ChromBPNet only) Assay type — "ATAC", "DNASE", or "CHIP".
-        cell_type: (ChromBPNet/LegNet) Cell type — e.g. "K562", "HepG2".
+        assay: (ChromBPNet/Cherimoya) Assay type — "ATAC", "DNASE", or (ChromBPNet only) "CHIP".
+        cell_type: (ChromBPNet/Cherimoya/LegNet) Cell type — e.g. "K562", "HepG2".
         TF: (ChromBPNet CHIP only) Transcription factor — e.g. "GATA1", "CTCF".
-        fold: (ChromBPNet ATAC/DNASE only) Cross-validation fold 0-4 (default 0).
+        fold: (ChromBPNet/Cherimoya) Cross-validation fold 0-4 (default 0).
         model_type: (ChromBPNet only) Model variant — "chrombpnet", "bias_scaled", "chrombpnet_nobias".
+        encode_id: (Cherimoya only) ENCODE experiment accession, e.g. "ENCSR000EOT".
+            Pins one specific CATv1 experiment. Use this with the
+            'experiment_accession' returned by list_tracks: (assay, cell_type)
+            is ambiguous for most biosamples — K562 alone has 4 ATAC
+            experiments — and resolves to a committed default, so passing
+            cell_type only is not enough to reach a specific track.
     """
     kwargs: dict = {}
     if assay:
@@ -555,6 +607,8 @@ def load_oracle(
         kwargs["fold"] = fold
     if model_type:
         kwargs["model_type"] = model_type
+    if encode_id:
+        kwargs["encode_id"] = encode_id
     return _state().load_oracle(oracle_name, device=device, **kwargs)
 
 

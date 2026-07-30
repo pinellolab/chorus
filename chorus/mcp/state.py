@@ -71,24 +71,26 @@ class OracleStateManager:
 
         # Separate constructor kwargs from load-time kwargs (assay/cell_type
         # are only used by load_pretrained_model, not the oracle constructor).
-        _load_only_keys = {"assay", "cell_type", "TF", "fold", "model_type"}
+        # `encode_id` (Cherimoya) selects a specific CATv1 ENCODE
+        # experiment. Listed here rather than only in the loop below --
+        # this set and that loop must stay in sync, and a key missing from
+        # *this* one silently lands in the constructor and raises
+        # `TypeError: __init__() got an unexpected keyword argument`.
+        _LOAD_ONLY_KEYS = ("assay", "cell_type", "TF", "fold", "model_type", "encode_id")
+
         oracle_kwargs: dict = {}
         if device:
             oracle_kwargs["device"] = device
         if self._reference_fasta:
             oracle_kwargs["reference_fasta"] = self._reference_fasta
         oracle_kwargs.update(
-            {k: v for k, v in kwargs.items() if k not in _load_only_keys}
+            {k: v for k, v in kwargs.items() if k not in _LOAD_ONLY_KEYS}
         )
 
         t0 = time.time()
         oracle = create_oracle(name, use_environment=True, **oracle_kwargs)
 
-        # Pass load-time kwargs (assay, cell_type, TF, fold, model_type)
-        load_kwargs: dict = {}
-        for key in ("assay", "cell_type", "TF", "fold", "model_type"):
-            if key in kwargs:
-                load_kwargs[key] = kwargs[key]
+        load_kwargs = {k: kwargs[k] for k in _LOAD_ONLY_KEYS if k in kwargs}
         oracle.load_pretrained_model(**load_kwargs)
 
         elapsed = time.time() - t0

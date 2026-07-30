@@ -309,9 +309,9 @@ except ImportError:
 class TestServerTools:
     def test_list_oracles_returns_expected_set(self):
         from chorus.mcp.server import ORACLE_SPECS
-        # 7 production oracles + 1 opt-in PyTorch backend for AlphaGenome.
+        # 8 production oracles + 1 opt-in PyTorch backend for AlphaGenome.
         expected = {
-            "enformer", "borzoi", "chrombpnet", "sei", "legnet",
+            "enformer", "borzoi", "chrombpnet", "cherimoya", "sei", "legnet",
             "epinformerseq",
             "alphagenome", "alphagenome_pt",
         }

@@ -175,6 +175,83 @@ re-score all 786 tracks.
 
 ---
 
+### Cherimoya / CATv1
+
+| Property | Value |
+|----------|-------|
+| Tracks | 1,518 (369 ATAC + 1,149 DNASE) |
+| Model | One model per ENCODE experiment, fold 0 |
+| Input length | 2,114 bp |
+| Output length | 1,000 bp at 1-bp resolution |
+| Build script | `scripts/build_backgrounds_cherimoya.py` |
+| Conda env | `chorus-cherimoya` (PyTorch) |
+| NPZ size | ~154 MB |
+
+**Track ids are `ASSAY:ENCSR`** — e.g. `DNASE:ENCSR000EOT` — not
+`ASSAY:cell_type`. `(assay, biosample)` collapses the 1,518 experiments
+into 492 pairs, and 162 of those hold more than one experiment (up to 83),
+so 1,188 of the 1,518 would be unaddressable under a biosample-keyed
+scheme. `cherimoya_source/catv1_defaults.py` maps each pair to one
+committed default for the `load_pretrained_model(assay=, cell_type=)`
+convenience path; `encode_id=` reaches any of the rest.
+
+**Layer types used**: chromatin_accessibility (unsigned, `[0, 1]`).
+
+**Effect scoring**: log2 fold-change of the 501-bp window sum at 1-bp
+resolution, pseudocount 1.0 — identical to ChromBPNet.
+
+**Count-head transform**: Cherimoya's count head is trained against
+`log(count + 1)`, so counts are recovered with `expm1`, not `exp`. Both
+the oracle and this builder import that transform from
+`cherimoya_source/scoring.py`, so a CDF and a query-time score cannot be
+computed differently. Note this differs from the ChromBPNet code path,
+which uses `np.exp` (`oracles/chrombpnet.py:579`, `:800`,
+`scripts/build_backgrounds_chrombpnet.py:348`) despite ChromBPNet sharing
+the same `log(1 + count)` target — a latent `+1`-count bias there.
+
+**Sampling**: reproduces the published ChromBPNet sample counts exactly —
+`effect_counts=18672` (9,609 random SNPs + 9,063 DHS-proximal) and
+`summary_counts=34004` (15,000 random + 11,500 cCRE + 3,000 TSS, of which
+29,004 usable, + 5,000 DHS summits). That match is the check that the
+shared variant and region sets really are shared. `--no-dhs` drops the DHS
+components for ablation and writes to a separate file; it is not
+comparable to the other oracles.
+
+**Small negative values**: the `summary` and `perbin` CDFs contain 195
+slightly negative entries out of 15.18 M (≤5 of 10,000 points per track,
+minimum −0.38 counts), always at the extreme low tail — a near-dead window
+can give `log(count + 1) < 0` and hence `expm1 < 0`. Left unclamped so the
+builder and `oracle.predict()` agree. The `effect` CDF has none.
+
+**Provenance**: every NPZ carries a `build_config` JSON blob recording the
+sampling configuration, fold, device and `cherimoya` version.
+
+**Sharded build**: `--shard N --shard-of M` per GPU. The full atlas takes
+**11 minutes on 8 GPUs** (190 tracks/shard, ~3.5 s/track):
+
+```bash
+for GPU in 0 1 2 3 4 5 6 7; do
+  CUDA_VISIBLE_DEVICES=$GPU python scripts/build_backgrounds_cherimoya.py \
+      --part both --device cuda --shard $GPU --shard-of 8 &
+done
+wait
+python scripts/build_backgrounds_cherimoya.py --part merge-shards --shard 0 --shard-of 8
+```
+
+`effect` and `summary` CDFs are identical regardless of shard layout (both
+sample counts sit under the 50,000 reservoir capacity, so no replacement
+fires). `perbin` collects 1,088,128 samples per track, so replacement does
+fire and the surviving subsample depends on a track's position within its
+shard — reproducible for a fixed shard layout, and a random subsample of
+the same profile either way.
+
+**Validate before scaling**: `--chrombpnet-matched` restricts the build to
+the nine ENCODE experiments ChromBPNet also covers, which is the
+cross-oracle comparison set (CATv1's `annotation_accession` column joins
+each experiment to its ENCODE ChromBPNet annotation).
+
+---
+
 ### Sei
 
 | Property | Value |

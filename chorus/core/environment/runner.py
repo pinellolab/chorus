@@ -39,6 +39,7 @@ def _find_mamba() -> str:
 
 ORACLE_CLASS_MAP = {
     "chrombpnet": "ChromBPNetOracle",
+    "cherimoya": "CherimoyaOracle",
     "borzoi": "BorzoiOracle",
     "enformer": "EnformerOracle",
     "sei": "SeiOracle",

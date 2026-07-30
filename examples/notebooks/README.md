@@ -16,6 +16,7 @@ reports inline.
 |---|---|---|---|
 | **[single_oracle_quickstart.ipynb](single_oracle_quickstart.ipynb)** | First-time users · bench biologists who can read Python | Load one oracle (Enformer), predict at a locus, score a variant's effect, interpret results with effect percentiles. Includes a gene-expression example. | 15 min |
 | **[advanced_multi_oracle_analysis.ipynb](advanced_multi_oracle_analysis.ipynb)** | Intermediate · want to compare oracles | Score the same variant with multiple oracles (ChromBPNet, Enformer, Borzoi, Sei, LegNet, AlphaGenome), plot cross-oracle track comparisons with gene annotations, understand where each oracle is strong. | 45 min |
+| **[cherimoya_quickstart.ipynb](cherimoya_quickstart.ipynb)** | Anyone who needs a specific cell type or tissue | Cherimoya/CATv1 across 1,518 ENCODE DNase/ATAC experiments: search the atlas, pick the right experiment when a biosample has several, predict, score a variant, and compare accessibility across biosamples with activity percentiles. | 20 min |
 | **[comprehensive_oracle_showcase.ipynb](comprehensive_oracle_showcase.ipynb)** | Power users · need every feature in one place | All six (pre-EPI) oracles, all prediction modes (wild-type, variant, region swap, sequence insertion, discovery), the full visualization + normalization stack. | 60 min |
 
 ### Topic-focused notebooks
@@ -52,6 +53,7 @@ kernel from the Kernel menu.
 ## Scaling up
 
 - `single_oracle_quickstart` runs fully on CPU with 8 GB RAM (Enformer).
+- `cherimoya_quickstart` needs a CUDA GPU (the `chorus-cherimoya` env is Linux/CUDA).
 - `advanced_multi_oracle_analysis` needs **all six oracle envs**
   installed (see the matrix in
   [`../../README.md#setting-up-oracle-environments`](../../README.md#setting-up-oracle-environments)).
