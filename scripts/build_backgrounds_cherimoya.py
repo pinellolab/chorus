@@ -117,13 +117,32 @@ args = parser.parse_args()
 
 log_dir = os.path.join(REPO_ROOT, "logs")
 os.makedirs(log_dir, exist_ok=True)
+# force=True is required, not cosmetic. Importing chorus pulls in
+# chorus/oracles/chrombpnet.py, which calls logging.basicConfig() at module
+# scope; that installs a root handler before this line runs, and
+# basicConfig is a silent no-op when the root logger already has handlers.
+# Without force=True this configuration is discarded, every message goes to
+# the inherited stdout handler instead of the log file, and `conda run`
+# buffers stdout until exit -- so an 85-minute build produces no visible
+# progress at all and no on-disk record.
+
+# The shard tag is part of the log filename, not just the interim NPZ
+# names: with `mode="w"` every concurrent shard would otherwise truncate
+# and interleave into one file, leaving a multi-GPU build with no usable
+# record of which worker did what. (`build_backgrounds_chrombpnet.py` names
+# its log by `--part` alone and has the same problem for sharded runs.)
+_log_tag = args.part
+if args.shard is not None and args.shard_of is not None:
+    _log_tag += f".shard{args.shard}of{args.shard_of}"
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler(f"{log_dir}/bg_cherimoya_{args.part}.log", mode="w"),
-        logging.StreamHandler(),
+        logging.FileHandler(f"{log_dir}/bg_cherimoya_{_log_tag}.log", mode="w"),
+        logging.StreamHandler(sys.stdout),
     ],
+    force=True,
 )
 logger = logging.getLogger(__name__)
 
@@ -539,6 +558,7 @@ def build(do_variants: bool, do_baselines: bool):
     oracle = CherimoyaOracle(use_environment=False, device=device)
 
     track_ids = [s["track_id"] for s in specs]
+    loop_start = time.time()
     for idx, spec in enumerate(specs):
         t0 = time.time()
         logger.info("=" * 60)
@@ -574,6 +594,18 @@ def build(do_variants: bool, do_baselines: bool):
                     int(effect_res.counts[idx]) if do_variants else 0,
                     int(summary_res.counts[idx]) if do_baselines else 0,
                     int(perbin_res.counts[idx]) if do_baselines else 0)
+
+        # Progress + ETA every 50 tracks. A 1,518-track build otherwise
+        # gives no way to tell "slow" from "wedged" until it ends.
+        if (idx + 1) % 50 == 0 or idx + 1 == n_tracks:
+            done = idx + 1
+            elapsed = time.time() - loop_start
+            rate = elapsed / done
+            logger.info(
+                "PROGRESS %d/%d (%.1f%%) | %.1f min elapsed | %.2f s/track | "
+                "ETA %.1f min", done, n_tracks, 100 * done / n_tracks,
+                elapsed / 60, rate, rate * (n_tracks - done) / 60,
+            )
 
     # ── interim files ──
     suffix = _interim_suffix()
