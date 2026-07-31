@@ -2374,8 +2374,16 @@ class TestPerTrackNormalizer:
         assert cfg3["ymin"] == float(vals.min())
         assert cfg3["ymax"] == float(vals.max())
 
-    def test_get_denominator_padding_vs_compaction(self):
-        """Denominator uses count when < CDF width (padding case)."""
+    def test_get_denominator_is_always_the_grid_width(self):
+        """Denominator is the CDF grid width, whatever the sample count.
+
+        This test previously asserted the opposite for the ``count < width``
+        case, on the premise that a short CDF is *padded* so only the first
+        ``count`` entries are real. It is interpolated, not padded
+        (``ReservoirSampler.to_cdf_matrix``), and ``rank`` comes from
+        ``searchsorted`` over the full row — so dividing by the count mixed
+        two populations and inflated every percentile by ``width / count``.
+        """
         from chorus.analysis.normalization import PerTrackNormalizer
 
         tmpdir = tempfile.mkdtemp()
@@ -2397,10 +2405,14 @@ class TestPerTrackNormalizer:
         norm = PerTrackNormalizer(cache_dir=tmpdir)
         entry = norm._ensure_loaded("test")
 
-        # T0: count=50 < width=100 → use count
-        assert norm._get_denominator(entry, "effect_cdfs", 0) == 50
-        # T1: count=200 > width=100 → use width
+        # T0: count=50 interpolated onto the 100-point grid → still width
+        assert norm._get_denominator(entry, "effect_cdfs", 0) == 100
+        # T1: count=200 subsampled down to the grid → width
         assert norm._get_denominator(entry, "effect_cdfs", 1) == 100
+        # The consequence that matters: the middle of the grid is the median
+        # for both, rather than T0 saturating at 1.0.
+        mid = float(entry["effect_cdfs"][0][49])
+        assert norm.effect_percentile("test", "T0", mid) == pytest.approx(0.5, abs=0.02)
 
     def test_get_pertrack_normalizer_factory(self):
         """get_pertrack_normalizer returns None when no file exists."""
