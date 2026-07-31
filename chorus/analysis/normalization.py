@@ -27,6 +27,7 @@ Background distributions are cached to ``~/.chorus/backgrounds/`` for reuse.
 """
 
 import logging
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -1010,7 +1011,11 @@ def get_pertrack_normalizer(
     return None
 
 
-_HF_REPO = "lucapinello/chorus-backgrounds"
+# Dataset repo holding the per-track background CDFs. Override with the
+# CHORUS_BACKGROUNDS_REPO environment variable so contributors can self-host
+# their own backgrounds (e.g. while developing a new oracle) before they are
+# mirrored into the canonical repo. Default is unchanged.
+_HF_REPO = os.environ.get("CHORUS_BACKGROUNDS_REPO", "lucapinello/chorus-backgrounds")
 
 
 def download_pertrack_backgrounds(
