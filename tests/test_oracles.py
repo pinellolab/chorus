@@ -47,7 +47,29 @@ class TestEnformerOracle:
         assert oracle.sequence_length == 393216
         assert oracle.center_length == 196608
         assert not oracle.loaded
-    
+
+    def test_get_assay_indices_resolves_cnhs_identifiers(self):
+        """CNhs (FANTOM CAGE) identifiers must resolve to their real track
+        index, not silently fall back to track 0.
+
+        Regression: _get_assay_indices only ran identifier lookup for ids
+        starting with 'ENCFF', so all 638 CNhs CAGE identifiers went through
+        description search (which never matches an identifier) and resolved to
+        track 0 -- the wrong signal. Exercises the direct
+        (use_environment=False) path, which had no other fast-suite coverage.
+        """
+        from chorus.oracles.enformer_source.enformer_metadata import get_metadata
+        oracle = EnformerOracle(use_environment=False)
+        meta = get_metadata()
+
+        cnhs = next(k for k in meta._track_index_map if str(k).startswith("CNhs"))
+        encff = next(k for k in meta._track_index_map if str(k).startswith("ENCFF"))
+
+        idx = oracle._get_assay_indices([cnhs, encff])
+        assert idx[0] == meta.get_track_by_identifier(cnhs)
+        assert idx[1] == meta.get_track_by_identifier(encff)
+        assert idx[0] != 0  # not the silent track-0 fallback
+
     def test_list_assays(self):
         """Test listing available assays."""
         oracle = EnformerOracle()
