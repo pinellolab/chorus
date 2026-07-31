@@ -339,14 +339,33 @@ def predict_profiles_batch(model, seqs):
         predictions = model([ohe_batch, *bias_inputs], training=False)
     probabilities = predictions[0].numpy()
     counts = predictions[1].numpy()
-    # BPNet CHIP models output (B, L, 2) for two strands — sum before scoring
-    if probabilities.ndim == 3:
-        probabilities = probabilities.sum(axis=-1)   # (B, L, 2) → (B, L)
     if counts.ndim == 2 and counts.shape[1] > 1:
         counts = counts.sum(axis=-1, keepdims=True)  # (B, 2) → (B, 1)
-    norm_prob = probabilities - np.mean(probabilities, axis=1, keepdims=True)
-    softmax_probs = np.exp(norm_prob) / np.sum(np.exp(norm_prob), axis=1, keepdims=True)
-    profiles = softmax_probs * np.expm1(counts[:, 0:1])
+    if probabilities.ndim == 2:
+        probabilities = probabilities[..., None]      # (B, L) → (B, L, 1)
+
+    # Softmax JOINTLY over all strands, so the strands together sum to
+    # expm1(counts) — identical to the oracle's
+    # ChromBPNetOracle._transform_chip_strands, which is the whole point:
+    # a CDF is only meaningful if it was built from the same quantity
+    # predict() returns.
+    #
+    # This previously summed the two strands' LOGITS and took a single
+    # softmax, which is a geometric-mean-like blend of the strand profiles
+    # and corresponds to no observable the oracle emits; its 501 bp window
+    # sum drifted 0.98-1.30x versus the per-strand values across five test
+    # loci, i.e. sequence-dependently, so the mismatch could not be undone
+    # by rescaling.
+    n_seq, length, n_strands = probabilities.shape
+    flat = probabilities.reshape(n_seq, length * n_strands)
+    norm_prob = flat - np.mean(flat, axis=1, keepdims=True)
+    joint = np.exp(norm_prob) / np.sum(np.exp(norm_prob), axis=1, keepdims=True)
+    # exp(C) - n_strands, not expm1: the count target is a per-track log1p
+    # pooled across a task's tracks with logsumexp, i.e. log(n_tracks + total).
+    # Reduces to expm1 for the single-track ATAC/DNASE models. See
+    # ChromBPNetOracle._counts_from_log.
+    totals = np.expm1(counts[:, 0:1]) if n_strands == 1 else np.exp(counts[:, 0:1]) - n_strands
+    profiles = (joint * totals).reshape(n_seq, length, n_strands)
     return profiles
 
 
@@ -547,11 +566,15 @@ def build_all_models(do_variants: bool, do_baselines: bool):
                 try:
                     ref_profiles = predict_profiles_batch(model, ref_batch)
                     alt_profiles = predict_profiles_batch(model, alt_batch)
+                    # profiles are (B, L, n_strands); score each strand and
+                    # pool them into this model's single CDF row, because the
+                    # normalizer maps both `…:+` and `…:-` onto that one row.
                     for rp, ap in zip(ref_profiles, alt_profiles):
-                        ref_val = score_window_sum(rp)
-                        alt_val = score_window_sum(ap)
-                        score = abs(compute_effect(ref_val, alt_val))
-                        effect_reservoir.add(model_idx, score)
+                        for strand in range(rp.shape[-1]):
+                            ref_val = score_window_sum(rp[:, strand])
+                            alt_val = score_window_sum(ap[:, strand])
+                            score = abs(compute_effect(ref_val, alt_val))
+                            effect_reservoir.add(model_idx, score)
                 except Exception as exc:
                     logger.warning("Variant batch failed: %s", str(exc)[:100])
 
@@ -573,12 +596,17 @@ def build_all_models(do_variants: bool, do_baselines: bool):
                 try:
                     profiles = predict_profiles_batch(model, batch)
                     for prof in profiles:
-                        # Summary: window sum
-                        signal = score_window_sum(prof)
-                        summary_reservoir.add(model_idx, signal)
-                        # Perbin: random bins from full output
+                        # prof is (L, n_strands). One bin draw per position,
+                        # reused across strands, so rng_bins is consumed at
+                        # the same rate as for the single-strand models.
                         bin_sample = rng_bins.choice(OUTPUT_LENGTH, PERBIN_BINS_PER_POSITION, replace=False)
-                        perbin_reservoir.add_batch(model_idx, prof[bin_sample].astype(np.float64))
+                        for strand in range(prof.shape[-1]):
+                            p = prof[:, strand]
+                            # Summary: window sum
+                            signal = score_window_sum(p)
+                            summary_reservoir.add(model_idx, signal)
+                            # Perbin: random bins from full output
+                            perbin_reservoir.add_batch(model_idx, p[bin_sample].astype(np.float64))
                 except Exception as exc:
                     logger.warning("Baseline batch failed: %s", str(exc)[:100])
 
