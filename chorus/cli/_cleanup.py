@@ -11,9 +11,11 @@ from ..core.weights_probe import SETUP_MARKER_NAME
 
 _BACKGROUNDS_DIR = Path.home() / ".chorus" / "backgrounds"
 
+# Keep in sync with chorus.oracles.ORACLES (hardcoded here so cleanup stays
+# lightweight and does not import the oracle classes / heavy deps).
 _ALL_ORACLES = [
-    "enformer", "borzoi", "chrombpnet", "sei", "legnet",
-    "alphagenome", "alphagenome_pt",
+    "enformer", "borzoi", "chrombpnet", "cherimoya", "sei", "legnet",
+    "epinformerseq", "alphagenome", "alphagenome_pt",
 ]
 
 
