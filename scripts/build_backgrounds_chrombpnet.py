@@ -324,7 +324,8 @@ def predict_profiles_batch(model, seqs):
     checking ``len(model.inputs)``.
 
     Returns (B, OUTPUT_LENGTH) profile array with predicted counts
-    folded in (softmax × exp(counts)).
+    folded in (softmax × expm1(counts) — the count head predicts
+    log(count + 1)).
     """
     ohe_batch = np.stack([one_hot_encode(s) for s in seqs])
     if len(model.inputs) == 1:
@@ -345,7 +346,7 @@ def predict_profiles_batch(model, seqs):
         counts = counts.sum(axis=-1, keepdims=True)  # (B, 2) → (B, 1)
     norm_prob = probabilities - np.mean(probabilities, axis=1, keepdims=True)
     softmax_probs = np.exp(norm_prob) / np.sum(np.exp(norm_prob), axis=1, keepdims=True)
-    profiles = softmax_probs * np.exp(counts[:, 0:1])
+    profiles = softmax_probs * np.expm1(counts[:, 0:1])
     return profiles
 
 
