@@ -204,10 +204,13 @@ resolution, pseudocount 1.0 — identical to ChromBPNet.
 `log(count + 1)`, so counts are recovered with `expm1`, not `exp`. Both
 the oracle and this builder import that transform from
 `cherimoya_source/scoring.py`, so a CDF and a query-time score cannot be
-computed differently. Note this differs from the ChromBPNet code path,
-which uses `np.exp` (`oracles/chrombpnet.py:579`, `:800`,
-`scripts/build_backgrounds_chrombpnet.py:348`) despite ChromBPNet sharing
-the same `log(1 + count)` target — a latent `+1`-count bias there.
+computed differently. ChromBPNet shares the same `log(1 + count)` target
+and now matches: it inverted its count head with `np.exp` until
+2026-07-31, a latent `+1`-count bias, corrected at
+`oracles/chrombpnet.py:579`, `:802` and
+`scripts/build_backgrounds_chrombpnet.py:348`. `chrombpnet_pertrack.npz`
+was rebuilt against the corrected transform at the same time, so its CDFs
+and `oracle.predict()` still agree.
 
 **Sampling**: reproduces the published ChromBPNet sample counts exactly —
 `effect_counts=18672` (9,609 random SNPs + 9,063 DHS-proximal) and
