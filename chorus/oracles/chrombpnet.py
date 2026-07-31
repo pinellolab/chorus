@@ -578,6 +578,12 @@ class ChromBPNetOracle(OracleBase):
 
         predictions = softmax_probs * (np.expand_dims(np.expm1(counts)[:, 0], axis=1)) # (B, 1000)
 
+        return self._insert_into_output(predictions, seq_len)
+
+    def _insert_into_output(self, predictions: np.array, seq_len: int) -> np.array:
+        """Flatten a (B, output_length) profile and place it in a seq_len track."""
+        out = np.zeros(seq_len)
+
         # Stack into 1D array
         predictions = predictions.reshape(-1, 1).squeeze()
 
@@ -587,10 +593,104 @@ class ChromBPNetOracle(OracleBase):
         # Define insertion boundaries
         end_insertion_out = min(start_insertion + len(predictions), seq_len)
         end_insertion_pred = min(len(predictions), (end_insertion_out - start_insertion))
-        
+
         out[start_insertion:end_insertion_out] = predictions[:end_insertion_pred]
 
         return out
+
+    @staticmethod
+    def _counts_from_log(counts: np.array, n_tracks: int) -> np.array:
+        """Invert the pooled log-count target BPNet/ChromBPNet was trained on.
+
+        bpnet-refactor's generator stores a **per-track** ``log1p`` target —
+        ``np.log(np.sum(profile_predictions, axis=1) + 1)`` over an array shaped
+        ``(batch, positions, tracks)``, so the sum is over positions — and the
+        count loss then pools a task's tracks with ``reduce_logsumexp``
+        (``chrombpnet_source/templates/BPNet/custommodel.py:57``). The trained
+        target is therefore
+
+            C = log( sum_t (1 + c_t) ) = log(n_tracks + c_total)
+
+        so the inverse is ``exp(C) - n_tracks``.
+
+        For the 42 single-track ATAC/DNASE ChromBPNet models ``n_tracks == 1``
+        and this *is* ``expm1(C)`` — bit-identical, and ``expm1`` is kept for
+        those because it is more accurate for small C. For the 744 two-track
+        BPNet CHIP models ``expm1`` leaves exactly **one read** of inflation
+        (median 1.78x on background 501 bp window sums, up to 4.17x at quiet
+        sites), which this removes.
+
+        Note upstream's own ``bpnet/cli/predict.py`` uses a bare ``exp(C)``,
+        i.e. it is off by ``+n_tracks`` in the other direction; the target
+        construction above is the authority, not that CLI.
+        """
+        if n_tracks == 1:
+            return np.expm1(counts)
+        return np.exp(counts) - n_tracks
+
+    def _zero_bias_inputs(self, batch_size: int) -> list:
+        """Zero-filled bias inputs matching the model's *declared* shapes.
+
+        BPNet/CHIP models take ``(sequence, profile_bias, count_bias)``. The
+        count bias is declared ``(None, 2)`` and is reduced inside the model
+        by ``main_logsumexp_counts_bias_0`` before being concatenated with the
+        count head and passed through ``logcounts_predictions``.
+
+        Hardcoding ``(N, 1)`` for it — which Keras silently broadcasts rather
+        than rejecting — makes that logsumexp return ``log(1) = 0`` instead of
+        ``log(2) = 0.6931``, shifting every predicted log-count down by a
+        constant ``w * log(2) = 0.5885`` (``w = 0.849035``, the Dense weight
+        on that term; verified to all printed digits against the measured
+        shift). In count space that is **1.80x too low at a peak and up to
+        3.04x too low at a quiet site**. The background builder derives these
+        shapes from ``model.inputs`` and was therefore unaffected, so the
+        oracle and its CDFs disagreed on CHIP activity. Deriving the shapes
+        here is what keeps them in agreement.
+        """
+        return [
+            np.zeros(
+                [batch_size] + [d if d is not None else 1 for d in inp.shape[1:]],
+                dtype="float32",
+            )
+            for inp in self.model.inputs[1:]
+        ]
+
+    def _transform_chip_strands(
+        self, probabilities: np.array, counts: np.array, seq_len: int
+    ) -> tuple[np.array, np.array]:
+        """Split a BPNet two-strand profile into + / - expected-count tracks.
+
+        The softmax is taken **jointly over both strands** (all 2 x
+        output_length logits at once) rather than per strand, so the two
+        emitted tracks sum to ``expm1(counts)`` instead of each carrying the
+        full mass.
+
+        This matters because the count head is trained on
+        ``log(1 + batch_cts.sum(-1))`` — ``counts`` is already the total
+        across *both* strands. Softmaxing each strand separately and scaling
+        each by the full total (what this did until 2026-07-31) made the two
+        tracks together claim ``2 x`` the counts the model predicted;
+        measured at exactly 2.00x on BPNet CHIP:K562:REST across five loci.
+
+        Summing the two strands' logits before a single softmax — what the
+        background builder used to do — is a third, different quantity again
+        (a geometric-mean-like blend of the strand profiles, corresponding to
+        no observable); its 501 bp window sum drifted 0.98-1.30x versus this
+        convention across the same five loci, i.e. sequence-dependently, so
+        the two could not be reconciled by rescaling.
+        """
+        n_strands = probabilities.shape[-1]
+        flat = probabilities.reshape(probabilities.shape[0], -1)  # (B, L*strands)
+        norm = flat - np.mean(flat, axis=1, keepdims=True)
+        joint = np.exp(norm) / np.sum(np.exp(norm), axis=1, keepdims=True)
+        totals = self._counts_from_log(counts, n_strands)
+        scaled = joint * np.expand_dims(totals[:, 0], axis=1)
+        scaled = scaled.reshape(probabilities.shape[0], -1, n_strands)
+
+        return (
+            self._insert_into_output(scaled[..., 0], seq_len),
+            self._insert_into_output(scaled[..., 1], seq_len),
+        )
     
     def _predict(self, seq: str | Tuple[str, int, int] | Interval, assay_ids: List[str] = None) -> OraclePrediction:
         """Run ChromBPNet prediction in the appropriate environment.
@@ -655,9 +755,10 @@ class ChromBPNetOracle(OracleBase):
 
         predictions_list = []
         if self.assay == "CHIP":
-            # You have plus and minus strand predictions
-            plus = self._transform_predictions_to_tracks(probabilities[..., 0], counts, seq_len)
-            minus = self._transform_predictions_to_tracks(probabilities[..., 1], counts, seq_len)
+            # Two-strand profile: softmax JOINTLY across both strands so the
+            # + and - tracks sum to expm1(counts) rather than each carrying
+            # the full mass. See _transform_chip_strands.
+            plus, minus = self._transform_chip_strands(probabilities, counts, seq_len)
 
             # Append to the list
             predictions_list.append(plus)
@@ -783,10 +884,8 @@ class ChromBPNetOracle(OracleBase):
             ohe_tf = tf.constant(ohe, dtype=tf.float32)
 
             if self.assay == "CHIP":
-                profile_bias = np.zeros((B, OUT, 2), dtype=np.float32)
-                count_bias = np.zeros((B, 1), dtype=np.float32)
                 preds = self.model.predict_on_batch(
-                    [ohe_tf, profile_bias, count_bias]
+                    [ohe_tf, *self._zero_bias_inputs(B)]
                 )
             else:
                 preds = self.model.predict_on_batch(ohe_tf)
@@ -796,7 +895,30 @@ class ChromBPNetOracle(OracleBase):
             for b in range(B):
                 p = probs[b]
                 if p.ndim == 2:
-                    p = p.sum(axis=-1)
+                    # CHIP two-strand profile. Softmax JOINTLY over both
+                    # strands (matching _transform_chip_strands and the CDF
+                    # builder) and then sum the strands, so this sliding track
+                    # is the per-position both-strand total and integrates to
+                    # expm1(counts). Summing the *logits* first — what this did
+                    # until 2026-07-31 — is a different quantity again, and left
+                    # predict_sliding disagreeing with _predict for CHIP.
+                    n_tracks = p.shape[-1]
+                    flat = p.reshape(-1)
+                    norm_p = flat - np.mean(flat)
+                    sm = np.exp(norm_p) / np.sum(np.exp(norm_p))
+                    total = self._counts_from_log(
+                        np.asarray([[counts[b][0]]]), n_tracks
+                    )[0, 0]
+                    # Emit the PLUS strand, matching the ':+' track_id this
+                    # method reports (see below) and therefore the pooled
+                    # per-strand CDF row it is looked up against. Summing the
+                    # strands here would put a both-strand total behind a ':+'
+                    # id — 1.53-2.93x the value _predict returns for the same
+                    # id at the same locus. The minus strand is not offered by
+                    # the sliding path.
+                    profile = (sm * total).reshape(p.shape)[..., 0]
+                    all_profiles.append(profile)
+                    continue
                 norm_p = p - np.mean(p)
                 sm = np.exp(norm_p) / np.sum(np.exp(norm_p))
                 profile = sm * np.expm1(counts[b][0])
@@ -911,18 +1033,12 @@ class ChromBPNetOracle(OracleBase):
 
         # Extract predictions
         if self.assay == "CHIP":
-            # JASPAR models require bias profile and counts
-            profile_bias = (
-                np.zeros((num_windows, self.output_length, 2), dtype="float32") if not trimmed
-                else np.zeros((1, self.output_length, 2), dtype="float32")
-            )
-            count_bias = (
-                np.zeros((num_windows, 1), dtype="float32") if not trimmed
-                else np.zeros((1, 1), dtype="float32")
-            )
+            # JASPAR models require bias profile and counts. Shapes are derived
+            # from the model, never hardcoded — see _zero_bias_inputs.
+            batch_size = 1 if trimmed else num_windows
             result = self.model.predict_on_batch(
-                [one_hot_batch, profile_bias, count_bias]
-            ) 
+                [one_hot_batch, *self._zero_bias_inputs(batch_size)]
+            )
         else:
             result = self.model.predict_on_batch(one_hot_batch)
 
