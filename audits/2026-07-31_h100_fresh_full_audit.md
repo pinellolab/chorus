@@ -173,9 +173,53 @@ documents exactly this for Cherimoya and deliberately leaves it
 unclamped so the builder and `oracle.predict()` agree. ChromBPNet now
 inherits the same property and the guide has been updated to say so.
 
-The 744 CHIP rows are still building on GPUs 5/6 (~0.6 min/model,
-65/372 per shard at the time of writing, ETA ≈ 05:50). Remaining steps
-are recorded in "Handed off" below.
+**The full 786-track rebuild is complete and passes every acceptance
+check.** Both CHIP shards finished 372/372 at 05:17 / 05:20 (~0.6
+min/model on one H100 each); `--part merge-shards` reported
+`786 tracks (42 existing + 744 new from 2 shards)` — i.e. the
+append-and-dedup trap described below did **not** fire.
+
+Rebuilt file: **83.0 MB**, sha256
+`cf30e17fc3558448be6710968e43c444678ab4e22472fd63e112e4b8df767972`
+(shipped was `526beb2c…`, 82.35 MB).
+
+| check | result |
+|---|---|
+| sha256 differs from shipped | **yes** — rebuilt rows were not silently dropped |
+| track_id set + **order** vs shipped | **identical**, 786 = 22 ATAC + 20 DNASE + 744 CHIP |
+| `effect/summary/perbin_counts` | **18672 / 34004 / 1088128**, uniform across all 786 |
+| all three CDFs | `(786, 10000)`, finite, **every row monotone**, no all-zero rows |
+| `signed_flags` | all False, matches shipped |
+| p50 ≤ p95 ≤ p99 | holds for all 786 in all three CDFs |
+| `effect_cdfs` negatives | **0**, matching shipped |
+
+Identical row *order* is the useful signal: it confirms the original
+shard layout was reproduced, so the perbin bin draws come from the same
+`RandomState(999)` stream positions and `expm1` really is the only
+intended change.
+
+**How much the bug actually mattered, by family.** The ATAC/DNASE half
+alone understates it badly:
+
+| family | median old/new (summary CDF, old>1) | implied median true count |
+|---|---|---|
+| ATAC/DNASE (42 rows) | 1.0122 | 82.2 |
+| **CHIP/BPNet (744 rows)** | **1.3049** | **3.3** |
+
+So 744 of the 786 tracks were carrying a **~30 % median count
+inflation**, not ~1 %. BPNet's typical 501 bp window holds only ~3
+reads, so a spurious `+1` count is proportionally huge — exactly the
+regime `cherimoya_source/scoring.py` warned about ("up to 100 % at a
+low-activity site, which is precisely the regime the activity CDFs are
+built from"). The effect CDF barely moves (mean −9.8e-04, median
+−6.3e-04) and per-track old-vs-new row correlation stays ≥ 0.973, so
+percentile **rankings** are essentially preserved while the **raw
+counts** are corrected — which is the intended outcome.
+
+The 1.26 M negative entries in the summary/perbin CDFs are correct, not a
+defect (see the `expm1 < 0` note above); the effect CDF still has none.
+
+Not yet uploaded — see "Handed off" below.
 
 ### `AUDIT_CHECKLIST.md` — worked end to end
 
