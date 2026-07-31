@@ -442,20 +442,34 @@ class PerTrackNormalizer:
     # ------------------------------------------------------------------
 
     def _get_denominator(self, entry: dict, cdf_key: str, idx: int) -> int:
-        """Get the correct denominator for percentile calculation.
+        """Denominator for a percentile: always the CDF grid width.
 
-        When sample counts are stored AND smaller than the CDF width,
-        use the actual sample count to avoid artificial compression from
-        padding short CDFs.  When the sample count is larger (reservoir
-        sampling compacted many samples into the CDF), use the CDF width
-        since the CDF is a proper subsample.
+        ``rank`` comes from ``np.searchsorted`` over the stored row, so it
+        lives on ``[0, cdf_width]`` and the denominator has to be measured
+        against the *same* population — the grid — or the ratio is not a
+        quantile at all.
+
+        This used to return ``counts[idx]`` whenever the sample count was
+        below the grid width, on the theory that short CDFs are padded and
+        only the first ``counts[idx]`` entries are real. They are not
+        padded: ``ReservoirSampler.to_cdf_matrix`` **interpolates** a short
+        sample onto the full grid (``np.interp(target_q, source_q, arr)``)
+        and subsamples a long one (``arr[np.linspace(...)]``), so all
+        ``cdf_width`` entries are meaningful quantile estimates either way.
+
+        Mixing the two populations inflated every percentile by
+        ``cdf_width / counts[idx]`` and clamped the top
+        ``1 - counts[idx]/cdf_width`` of the range to 1.0. It hit the effect
+        CDF of every oracle except ChromBPNet and Cherimoya (whose 18,672
+        samples exceed the grid), and it was severe for AlphaGenome, whose
+        ``effect_counts`` are ~1,700-1,900 against a 10,000-point grid: a
+        value at the *median* of its own background reported the 100th
+        percentile, and 80.9 % of the range pinned to 1.0.
+
+        ``counts`` remains the right thing to consult for "was anything
+        sampled at all" — see :meth:`_has_samples`.
         """
-        cdf_width = entry[cdf_key].shape[1]
-        counts_key = cdf_key.replace("_cdfs", "_counts")
-        counts = entry.get(counts_key)
-        if counts is not None and 0 < counts[idx] < cdf_width:
-            return int(counts[idx])
-        return cdf_width
+        return int(entry[cdf_key].shape[1])
 
     def _has_samples(self, entry: dict, cdf_key: str, idx: int) -> bool:
         """True iff the track has at least one background sample stored.
