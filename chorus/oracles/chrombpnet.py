@@ -751,12 +751,14 @@ class ChromBPNetOracle(OracleBase):
 
         target_len = max(needed_len, self.sequence_length)
         left_pad = side_pad
-        right_pad = target_len - Q - left_pad
-        if query_interval.reference.extendible:
-            stage1 = query_interval.extend(Q + left_pad, how="left")
-            input_interval = stage1.extend(target_len, how="right")
-        else:
-            input_interval = query_interval.extend(target_len, how="both")
+        # Extend left by exactly left_pad, then right to target_len. Two
+        # directional steps (rather than a single extend(how="both")) keep the
+        # left offset exactly side_pad in BOTH the extendible and non-extendible
+        # (bare-string) cases, which the stitch offset below assumes. A single
+        # how="both" splits padding evenly and mis-registers bare-string queries
+        # wider than the input window by ((target_len - Q) // 2 - side_pad) bases.
+        stage1 = query_interval.extend(Q + left_pad, how="left")
+        input_interval = stage1.extend(target_len, how="right")
         full_seq = input_interval.sequence
 
         import tensorflow as tf
