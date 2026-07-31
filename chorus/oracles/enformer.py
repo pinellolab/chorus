@@ -409,26 +409,28 @@ class EnformerOracle(OracleBase):
         indices = []
 
         for assay_id in assay_ids:
-            # Check if it's an ENCODE identifier (starts with ENCFF)
-            if assay_id.startswith('ENCFF'):
-                idx = metadata.get_track_by_identifier(assay_id)
-                if idx is not None:
-                    indices.append(idx)
-                else:
-                    logger.warning(f"Identifier '{assay_id}' not found in metadata")
-                    indices.append(0)
+            # Try an exact identifier match first. The metadata index map is
+            # keyed by EVERY track identifier, not just ENCODE ones: ENCFF*
+            # (ENCODE), CNhs* (the 638 FANTOM CAGE tracks), and others. Gating
+            # this on an 'ENCFF' prefix routed all non-ENCFF identifiers into
+            # the description search below, which never matches an identifier,
+            # so every CNhs CAGE id silently resolved to track 0 (wrong signal).
+            idx = metadata.get_track_by_identifier(assay_id)
+            if idx is not None:
+                indices.append(idx)
+                continue
+
+            # Not a known identifier — treat it as a description query.
+            matches = metadata.get_tracks_by_description(assay_id)
+            if matches:
+                # Use the first match and warn if multiple
+                if len(matches) > 1:
+                    logger.info(f"Multiple tracks found for '{assay_id}': {[m[1] for m in matches]}")
+                    logger.info(f"Using first match: {matches[0][1]} (index {matches[0][0]})")
+                indices.append(matches[0][0])
             else:
-                # Search by description
-                matches = metadata.get_tracks_by_description(assay_id)
-                if matches:
-                    # Use the first match and warn if multiple
-                    if len(matches) > 1:
-                        logger.info(f"Multiple tracks found for '{assay_id}': {[m[1] for m in matches]}")
-                        logger.info(f"Using first match: {matches[0][1]} (index {matches[0][0]})")
-                    indices.append(matches[0][0])
-                else:
-                    logger.warning(f"No tracks found for '{assay_id}'")
-                    indices.append(0)
+                logger.warning(f"No track found for '{assay_id}'; falling back to track 0")
+                indices.append(0)
 
         return indices
     
