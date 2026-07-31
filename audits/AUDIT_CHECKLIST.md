@@ -16,15 +16,15 @@ Runbook convention: items that can be mechanised are called out with the exact c
 - [ ] Re-running `chorus setup --oracle X` on an existing env is idempotent (no double-install, no permission errors). **P2**
 - [ ] `chorus genome download hg38` downloads to the expected path and the resulting FASTA is indexed (`.fai` present). **P0**
 - [ ] `download_gencode(version='v48', annotation_type='basic')` pulls and caches the GTF. **P1**
-- [ ] The cache paths are user-overridable via env vars where documented (`CHORUS_DOWNLOAD_DIR`, `CHORUS_NO_TIMEOUT`, `CHORUS_DEVICE`). **P2**
-- [ ] `~/.chorus/backgrounds/` auto-downloads per-track NPZs on first use from `huggingface.co/datasets/lucapinello/chorus-backgrounds` (Sei + LegNet especially, which are not pre-built locally). **P1**
+- [ ] The cache paths are user-overridable via env vars where documented (`CHORUS_NO_TIMEOUT`, `CHORUS_DEVICE`, `CHORUS_BACKGROUNDS_REPO`). Note there is **no** download-dir override: `CHORUS_ROOT` is derived from the package location and `annotations/`, `downloads/`, `genomes/` are created under it unconditionally (`chorus/core/globals.py`). **P2**
+- [ ] `~/.chorus/backgrounds/` auto-downloads per-track NPZs on first use from `huggingface.co/datasets/lucapinello/chorus-backgrounds` 8 NPZs ship: alphagenome, borzoi, cherimoya, chrombpnet, enformer, epinformerseq, legnet, sei. **P1**
 
 ## 2. HuggingFace authentication (AlphaGenome gate)
 
 - [ ] `HF_TOKEN` env var path works — AlphaGenome loads without raising. **P0**
 - [ ] `huggingface-cli login` path works — AlphaGenome loads. **P1**
 - [ ] No-token, no-login path raises a **single clear error** that names `HF_TOKEN`, the exact gated repo URL (`huggingface.co/google/alphagenome-all-folds`), and the `huggingface-cli login` alternative. **P0**
-  - Covered by `tests/test_error_recovery.py::TestAuthFailurePaths::test_alphagenome_missing_hf_token_error`.
+  - Covered by `tests/test_error_recovery.py::TestAuthFailurePaths::test_alphagenome_missing_hf_token_error_is_actionable`.
 - [ ] The repo URL in **all** three code paths matches what the README tells users to accept:
   - `chorus/oracles/alphagenome.py` (direct load)
   - `chorus/oracles/alphagenome_source/templates/load_template.py` (env-runner load)
@@ -42,7 +42,9 @@ Expect `macos_arm64 False`, `linux_x86_64_cuda True`, or `linux_x86_64 False` pe
 
 **Per-oracle probe** (run on the release host):
 ```
-for env in chorus-enformer chorus-borzoi chorus-chrombpnet chorus-sei chorus-legnet chorus-alphagenome; do
+for env in chorus-enformer chorus-borzoi chorus-chrombpnet chorus-cherimoya \
+           chorus-epinformerseq chorus-sei chorus-legnet \
+           chorus-alphagenome chorus-alphagenome_pt; do
   mamba run -n "$env" python -c '
 try: import torch; print("torch cuda:", torch.cuda.is_available(), "mps:", torch.backends.mps.is_available())
 except ImportError: pass
@@ -55,10 +57,12 @@ done
 ```
 
 - [ ] Enformer & ChromBPNet envs detect a GPU device on Linux/CUDA (and Metal on macOS). **P0**
+  - ⚠ The bare probe above reports **CPU-only** for both TF envs even on a healthy CUDA host: their CUDA libs live in `nvidia-*-cu11` pip wheels that only `EnvironmentRunner._prepare_env` puts on `LD_LIBRARY_PATH`. Route the probe through chorus (or export `LD_LIBRARY_PATH` yourself) or you cannot distinguish "no GPU support" from "GPU only on the runner path".
 - [ ] Borzoi, Sei, LegNet (PyTorch) return `cuda: True` on Linux, `mps: True` on macOS. **P0**
 - [ ] AlphaGenome (JAX) prints a non-empty device list. **P0**
 - [ ] No oracle pins to `cuda:0` in code — should default to `'cuda'` so `CUDA_VISIBLE_DEVICES` is respected. Confirm via
   `grep -rn "cuda:0'" chorus/oracles/ chorus/oracles/*/templates/` returns only docstring examples, not live defaults. **P1**
+- [ ] Passing `device='cuda:N'` must not *replace* an outer `CUDA_VISIBLE_DEVICES` mask. The TF and Cherimoya templates assign `os.environ['CUDA_VISIBLE_DEVICES'] = device.split(':')[1]`, so a bare ordinal overrides the scheduler's mask and lands on a GPU the caller was not granted. **P1**
 - [ ] `CHORUS_DEVICE=cpu` forces CPU even if a GPU is visible. **P2**
 
 ## 4. Per-track CDF / normalization
@@ -66,7 +70,8 @@ done
 ```python
 import numpy as np
 from chorus.analysis.normalization import get_normalizer
-for name in ['enformer', 'borzoi', 'chrombpnet', 'sei', 'legnet', 'alphagenome']:
+for name in ['alphagenome', 'borzoi', 'cherimoya', 'chrombpnet',
+             'enformer', 'epinformerseq', 'legnet', 'sei']:
     nz = get_normalizer(name)
     entry = nz._loaded[name]
     ecdf, scdf = entry.get('effect_cdfs'), entry.get('summary_cdfs')
@@ -76,39 +81,49 @@ for name in ['enformer', 'borzoi', 'chrombpnet', 'sei', 'legnet', 'alphagenome']
         assert scdf[i, int(.5*n_pts)] <= scdf[i, int(.95*n_pts)] + 1e-9 <= scdf[i, int(.99*n_pts)] + 2e-9
 ```
 
-- [ ] All 6 oracles load via `get_normalizer(oracle_name)` without `None`. **P0**
+- [ ] All 8 oracles with shipped backgrounds load via `get_normalizer(oracle_name)` without `None`. **P0**
 - [ ] Every `effect_cdfs` row is **monotonically non-decreasing** (sorted). **P0**
 - [ ] Every `summary_cdfs` row satisfies `p50 ≤ p95 ≤ p99`. **P0**
 - [ ] `signed_flags` matches the oracle's nature:
-  - enformer/chrombpnet: 0% signed
-  - borzoi: ~20% signed (RNA strands)
+  - enformer / chrombpnet / cherimoya / epinformerseq: 0% signed
+  - borzoi: ~20% signed (RNA strands) — measured 20.3%
   - sei: 100% signed
   - legnet: 100% signed (MPRA = Δ)
-  - alphagenome: ~13% signed
-- [ ] Track counts match published specs: 5,313 / 7,611 / 24 / 40 / 3 / 5,168. **P1**
-- [ ] `perbin_cdfs` present for Enformer/Borzoi/ChromBPNet/AlphaGenome (scalar oracles Sei + LegNet omit it by design). **P1**
+  - alphagenome: ~13% signed — measured 12.9%
+- [ ] Track counts match published specs, measured from the NPZs: enformer 5,313 / borzoi 7,611 / **chrombpnet 786** (42 ATAC-DNASE + 744 CHIP) / sei 40 / legnet 3 / alphagenome 5,168 / cherimoya 1,518 / epinformerseq 33. **P1**
+- [ ] `perbin_cdfs` present for Enformer / Borzoi / ChromBPNet / AlphaGenome / **Cherimoya**; the scalar-output oracles Sei, LegNet and **EPInformer-seq** omit it by design. **P1**
 - [ ] Cache dir `~/.chorus/backgrounds/` is the canonical location (no per-project duplication). **P2**
+- [ ] **ChromBPNet count inversion is `expm1`, not `exp`, on both sides.** The count head predicts `log(1 + count)`; the oracle and the CDF builder must agree or every ChromBPNet percentile is silently wrong. Regression: `tests/test_chrombpnet_counts.py` (incl. the builder↔oracle consistency assertion). **P0**
+- [ ] The `summary`/`perbin` CDFs of ChromBPNet and Cherimoya legitimately contain a few small **negative** entries (a near-dead window gives `log(count+1) < 0`, so `expm1 < 0`); they are left unclamped so builder and `predict()` agree. Do not "fix" them. The `effect` CDFs have none. **P1**
 
 ## 5. Python API sanity
 
-- [ ] `chorus.create_oracle('<name>', use_environment=False)` succeeds for all 6 names; invalid name gives `ValueError` that names the valid options. **P0**
-- [ ] `create_oracle(...).sequence_length` matches the README hardware matrix: Enformer 393,216, Borzoi 524,288, ChromBPNet 2,114, Sei 4,096, LegNet 200, AlphaGenome 1,048,576. **P0**
+- [ ] `chorus.create_oracle('<name>', use_environment=False)` succeeds for all **9** registered names (alphagenome, alphagenome_pt, borzoi, cherimoya, chrombpnet, enformer, epinformerseq, legnet, sei); invalid name gives `ValueError` that names the valid options. **P0**
+- [ ] `create_oracle(...).sequence_length` matches the README hardware matrix: Enformer 393,216, Borzoi 524,288, ChromBPNet 2,114, Cherimoya 2,114, EPInformer-seq 2,114, Sei 4,096, LegNet 200, AlphaGenome 1,048,576, AlphaGenome-PT 1,048,576. **P0**
 - [ ] `oracle.predict(...)` without a model raises `ModelNotLoadedError` with a helpful message. **P1**
 - [ ] `oracle.predict(('chrZZ', 1, 100000), [...])` on a bad chromosome raises a clear error (not a low-level KeyError). **P1**
-- [ ] `predict_variant_effect` does **not** warn `Provided reference allele … does not match the genome at this position` for correctly-provided dbSNP/UCSC 1-based alleles. Regression test: `tests/test_prediction_methods.py::test_variant_position_is_1_based`. **P0**
+- [ ] `predict_variant_effect` does **not** warn `Provided reference allele … does not match the genome at this position` for correctly-provided dbSNP/UCSC 1-based alleles. Regression test: `tests/test_prediction_methods.py::TestPredictionMethods::test_variant_position_is_1_based`. **P0**
 - [ ] `predict_variant_effect` **does** still warn when the user's ref allele genuinely differs from the genome base. **P0**
+- [ ] **The direct path is exercised, not just the env path.** `use_environment=False` is the `create_oracle` default, yet it had no fast-suite coverage — which is why the Enformer track-routing and Borzoi interval/`.numpy()` P0s (#115, #116) survived green CI. Every oracle needs at least one direct-path predict test. **P0**
 - [ ] `extract_sequence('chr1:109274968-109274968')` returns `'G'` (rs12740374 SORT1), `'T'` for rs1421085 (FTO chr16:53767042), etc. Tie notebook examples to real dbSNP coordinates. **P1**
-- [ ] `oracle.fine_tune(...)` on Sei/LegNet raises `NotImplementedError` with a message pointing at AlphaGenome/Borzoi for on-the-fly track adaptation. **P2**
+- [ ] `oracle.fine_tune(...)` raises `NotImplementedError`. Note **no** oracle implements it — `borzoi.py` and `alphagenome.py` both say "Fine-tuning is not yet implemented" — so a message pointing the user at AlphaGenome/Borzoi is itself misleading and should be reworded. **P2**
 
 ## 6. Notebooks — cell-by-cell fresh execution
 
+The notebooks declare kernelspec `chorus`, which **`chorus setup` does not
+register** — without this first step every `nbconvert` invocation below dies
+with `NoSuchKernel` (see `examples/notebooks/README.md:45`):
+
 ```
+mamba run -n chorus python -m ipykernel install --user --name chorus \
+  --display-name "Python 3 (chorus)"
+
 mamba run -n chorus jupyter nbconvert --to notebook --execute \
   examples/notebooks/single_oracle_quickstart.ipynb \
   --output /tmp/fresh.ipynb --ExecutePreprocessor.timeout=600
 ```
 
-For each of `single_oracle_quickstart.ipynb`, `comprehensive_oracle_showcase.ipynb`, `advanced_multi_oracle_analysis.ipynb`:
+`examples/notebooks/` now ships **6** notebooks (the three below plus `cherimoya_quickstart`, `epinformerseq_testing`, `klf1_validated_enhancer_profiles`), and `examples/walkthroughs/` ships 13 more `notebook.ipynb`. At minimum, for each of `single_oracle_quickstart.ipynb`, `comprehensive_oracle_showcase.ipynb`, `advanced_multi_oracle_analysis.ipynb`:
 
 - [ ] Fresh execution exit code 0 — **every cell completes**. **P0**
 - [ ] **Zero errors** and **zero WARNING** lines in any cell output. **P1**
@@ -119,6 +134,12 @@ For each of `single_oracle_quickstart.ipynb`, `comprehensive_oracle_showcase.ipy
 - [ ] Notebooks are committed with cleared metadata that doesn't leak the author's kernel path. **P2**
 
 ## 7. Shipped HTML reports — visual rendering + content
+
+`selenium` and a Chrome/chromedriver binary are **not** declared in
+`environment.yml` or any `environments/*.yml`, so this method does not work on
+a documented install — install them explicitly first, or fall back to the
+structural checks below (well-formed document, vendored `igv.min.js` present,
+parsed IGV config carries real features).
 
 ```python
 # Render with full JS (selenium) so IGV actually loads — headless Chrome alone gives a placeholder.
@@ -140,20 +161,21 @@ For each `examples/walkthroughs/**/*.html`:
 
 - [ ] Renders at 1600×4500 without JS errors in the browser console. **P0**
 - [ ] IGV browser block shows real signal tracks (not just the placeholder text). **P0**
-- [ ] Glossary block present with log2FC/lnFC/Δ formula legend. **P1**
-- [ ] Every per-layer table has: Track · Cell Type · Ref · Alt · Effect [formula badge] · Ref%ile · Activity%ile · Interpretation. **P1**
+- [ ] The **"How to read this report"** block is present with the log2FC/lnFC/Δ formula legend (rendered by `chorus/analysis/_report_glossary.py::render_how_to_read`; there is no element literally named "Glossary"). It intentionally lists only the formulas for layers present, so `lnFC` is absent from reports with no RNA layer. **P1**
+- [ ] Every per-layer table has: Track · Cell Type · Ref · Alt · Effect [formula badge] · **Effect %ile** · Activity %ile · Interpretation. (The column is `Effect %ile`; a literal grep for `Ref %ile` returns nothing — the reference-signal percentile is `Activity %ile`.) **P1**
 - [ ] Formula badges match layer: log2FC on chromatin/TF/histone/TSS, lnFC on RNA-seq/CAGE gene expression, Δ (alt−ref) on MPRA. **P0**
 - [ ] Cell-type column doesn't duplicate text already in the track label (e.g. `CHIP:CEBPA:HepG2 · HepG2` is a known regression). **P1**
-- [ ] Consensus matrix (multi-oracle reports only) uses single-voter `n=1` labels correctly. **P1**
-- [ ] "How to read this report" collapsible defines every numeric column. **P2**
+- [ ] The cross-oracle consensus section (multi-oracle reports only; the `h2` is "Cross-oracle consensus", not "Consensus matrix") uses single-voter `n=1` labels correctly. **P1**
+- [ ] "How to read this report" defines every numeric column. It is an always-expanded `<section>`, **not** a collapsible — `grep -c '<details'` returns 0 in every shipped report — and it does not define the plain Ref / Alt value columns. Either implement the collapsible or drop the word. **P2**
 - [ ] 👁 The Interpretation badge ("Strong opening", "Moderate binding gain", etc.) is consistent with the sign and magnitude of the effect and the assay convention.
 - [ ] Every `README.md` number in the same walkthrough dir is within ±0.006 of the `example_output.md` it's derived from. **P1**
+- [ ] **Report size is pushable.** `rs12740374_SORT1_legnet_report.html` and the consolidated multi-oracle report embed locus-wide 1-bp IGV arrays; with LegNet tiled per #99 they reach 137 MB / 145 MB, above GitHub's 100 MiB file limit, so the artefact cannot be committed at all. Check `find examples -name '*.html' -size +50M` is empty before regenerating. **P0**
 
 ## 8. MCP server
 
 - [ ] `chorus-mcp` subprocess starts cleanly on stdio.
-- [ ] `list_oracles` returns exactly 6 oracles with spec fields matching the Python API (`sequence_length`, assay types, resolution). **P0**
-- [ ] Exactly 22 tools registered via FastMCP (`mcp._list_tools()`). **P1**
+- [ ] `list_oracles` returns exactly **9** oracles with spec fields matching the Python API (`sequence_length`, assay types, resolution). **P0**
+- [ ] Exactly **24** tools registered via FastMCP (`await mcp._list_tools()`). The 22 historically documented plus `recommend_alphagenome_backend` and `score_ism`. **P1**
 - [ ] MCP tool count matches what walkthrough READMEs & `docs/MCP_WALKTHROUGH.md` advertise.
 - [ ] System-prompt instructions in `chorus/mcp/server.py` are in sync with real specs (track counts, assay names, recommended oracle per task). **P1**
 - [ ] `analyze_variant_multilayer` end-to-end: spawn `chorus-mcp`, connect with `fastmcp.Client`, run rs12740374 against AlphaGenome HepG2 tracks, assert the returned dict shape matches what walkthroughs document. (Integration-marked; run on release host.) **P1**
@@ -166,9 +188,9 @@ Trigger and inspect each:
 - [ ] `create_oracle('fakeOracle')` → names the valid options.
 - [ ] `predict(...)` pre-load → `ModelNotLoadedError` with the fix hint.
 - [ ] Missing reference_fasta → names the kwarg and `chorus genome download hg38`.
-- [ ] Missing oracle env → logs `Run chorus setup --oracle <name>` hint and downgrades to `use_environment=False` (graceful degradation — **not** a crash). Regression: `tests/test_error_recovery.py::test_missing_oracle_env_falls_back_gracefully`.
+- [ ] Missing oracle env → logs `Run chorus setup --oracle <name>` hint and downgrades to `use_environment=False` (graceful degradation — **not** a crash). Regression: `tests/test_error_recovery.py::TestEnvironmentFailurePaths::test_missing_oracle_env_falls_back_gracefully`.
 - [ ] HF token missing (AlphaGenome) → names `HF_TOKEN`, the exact gated repo URL, and the `huggingface-cli login` alternative.
-- [ ] Network drop during `download_pertrack_backgrounds` → returns 0 and logs a warning, does not raise. Regression: `tests/test_error_recovery.py::test_hf_hub_download_failure_returns_zero`.
+- [ ] Network drop during `download_pertrack_backgrounds` → returns 0 and logs a warning, does not raise. Regression: `tests/test_error_recovery.py::TestDownloadFailurePaths::test_hf_hub_download_failure_returns_zero_and_does_not_crash`.
 
 ## 10. Consistency of claims across the repo
 
@@ -180,7 +202,7 @@ grep -rn '7,612' scripts/ examples/ --include='*.md'
 grep -rn 'LegNet.*230 bp\|input_size_bp.*230' chorus/ scripts/ --include='*.py' --include='*.md'
 ```
 
-- [ ] Canonical numbers: **AlphaGenome 5,731** / **Enformer 5,313** / **Borzoi 7,611** / **Sei 21,907** (total) but 40 CDF-backed classes / **LegNet 200 bp input, 3 CDFs** / **ChromBPNet 24 CDFs per-model**. No doc may disagree. **P1**
+- [ ] Canonical numbers: **AlphaGenome 5,731 model tracks** but **5,168 CDF-backed** (both figures are correct — always say which) / **Enformer 5,313** / **Borzoi 7,611** / **Sei 21,907** total but 40 CDF-backed classes / **LegNet 200 bp input, 3 CDFs** / **ChromBPNet 786 per-track CDFs** (42 ATAC-DNASE + 744 CHIP; the old "24 per-model" predates the per-track scheme) / **Cherimoya 1,518** / **EPInformer-seq 33**. No doc may disagree. **P1**
 - [ ] Formula conventions documented **once** and cited by every report/notebook: `log2FC` (default), `lnFC` (gene expression), `Δ (alt−ref)` (MPRA). **P1**
 - [ ] Directory naming: live docs only reference `examples/walkthroughs/` and `examples/notebooks/`. The old `examples/applications/` path must only appear in `audits/` historical snapshots. **P0**
 - [ ] README "Hardware matrix per oracle" section is in sync with `chorus/mcp/server.py::ORACLE_SPECS`. **P1**
@@ -188,19 +210,26 @@ grep -rn 'LegNet.*230 bp\|input_size_bp.*230' chorus/ scripts/ --include='*.py' 
 
 ## 11. Test suite
 
+The marker filter is required: `pytest.ini` sets no `addopts` and there is no
+`conftest.py`, so without it the "fast" suite also collects the 15
+`integration` tests and hits HuggingFace/ENCODE. This matches what CI runs
+(`.github/workflows/tests.yml`).
+
 ```
-mamba run -n chorus python -m pytest tests/ --ignore=tests/test_smoke_predict.py -q
+mamba run -n chorus python -m pytest tests/ -m "not integration" -q
 ```
 
-- [ ] Fast suite ≥ 334 pass, ≤ 1 skip, 0 error (smoke test skipped by design).
+- [ ] Fast suite **≥ 477 pass, ≤ 4 skip, 0 error**. The 4 skips are import/weights-gated by design (alphagenome_pytorch absent, torch absent in the base env for epinformerseq, per-cell epinformerseq weights). `≤ 1 skip` is no longer reachable. Note `test_smoke_predict.py` **errors** rather than skips when the oracle envs are not built — run `chorus setup` before reading anything into it.
 - [ ] `pytest -m integration` on a release host: SEI/LegNet CDF download, ChromBPNet fresh model download, MCP E2E all pass.
-- [ ] CI workflow at `.github/workflows/tests.yml` runs green on the PR.
+- [ ] CI workflow at `.github/workflows/tests.yml` runs green on the PR. Its header comment still says "303-test" — stale, update it with the count above.
 - [ ] Coverage of new code paths: any new oracle / normalizer / tool needs its own test.
 
 ## 12. Reproducibility
 
-- [ ] Regen scripts in `scripts/` produce outputs byte-identical (or within ±0.006) to committed walkthroughs when given the same inputs. **P1**
+- [ ] Regen scripts in `scripts/` reproduce the committed walkthroughs **identically modulo the `generated_at` / `Generated:` timestamp** (or within ±0.006 numerically). Byte-identity is unattainable by construction: both `regenerate_multioracle.py` and `regenerate_examples.py` stamp a fresh UTC time. **P1**
 - [ ] `scripts/regenerate_multioracle.py --consolidate` is idempotent and picks up fresh per-oracle JSONs. **P1**
+  - ⚠ Each per-oracle run must happen **inside that oracle's env** (`mamba run -n chorus-chrombpnet …`), not the base env — the script builds its oracle with `use_environment=False`. Only `--consolidate` runs anywhere.
+  - ⚠ `*_variant_report.pkl` is gitignored. Without all three present, `--consolidate` silently degrades to "loaded %s from JSON only (no IGV predictions)" and drops that oracle's IGV tracks from the shipped report. Count the tracks before and after. **P1**
 - [ ] Reference-genome + annotation files can be reproduced by re-running the documented `chorus genome download` / `download_gencode` calls. **P2**
 
 ## 13. Scientific determinism
@@ -214,7 +243,8 @@ r2 = oracle.predict(('chr1', 1_000_000, 1_100_000), ['<track>'])
 assert np.allclose(r1['<track>'].values, r2['<track>'].values, atol=1e-6)
 ```
 
-- [ ] Same-machine back-to-back: identical predictions for all 6 oracles. **P1**
+- [ ] Same-machine back-to-back: identical predictions. Verified bitwise for borzoi, cherimoya, chrombpnet, enformer, epinformerseq, legnet, sei. **P1**
+- [ ] ⚠ **AlphaGenome (JAX) is NOT deterministic run-to-run** on Linux/CUDA: two consecutive identical calls differed on all 64 raw values in the SORT1 multi-oracle report (e.g. `ref_value` 2573.0 → 2568.0, `raw_score` 1.33149 → 1.32977, ~0.1–0.4%). `quantile_score` was stable in all 58 cases. So any committed AlphaGenome artefact is not byte-reproducible, and this gate must exempt it or compare percentiles rather than raw values. **P1**
 - [ ] Across machines: drift stays within the ±0.006 CPU non-determinism band documented in the walkthrough examples. **P2**
 
 ## 14. Genomics edge cases
@@ -222,8 +252,8 @@ assert np.allclose(r1['<track>'].values, r2['<track>'].values, atol=1e-6)
 Each is a common user scenario, not a theoretical corner:
 
 - [ ] **Variant near a chromosome end** (< half window from telomere). Oracle should pad / clamp gracefully, not crash. **P1**
-- [ ] **Soft-masked (lowercase) FASTA bases** — `extract_sequence` already returns them lowercase; the ref-allele check at `core/base.py:325` uses `.upper()`. Confirm still true after any refactor. **P1**
-- [ ] **Multi-allelic site** (`alleles=['A','C','G','T']`) — report renders 3 alt columns, not a single alt. **P1**
+- [ ] **Soft-masked (lowercase) FASTA bases** — `extract_sequence` **upper-cases** its output (`chorus/utils/sequence.py:135` ends `return sequence.upper()`), and the ref-allele comparison that uses `.upper()` is at **`core/base.py:460`** (`:325` is now inside an unrelated `ValueError`). Either way a variant in a soft-masked region must not produce a spurious mismatch warning. **P1**
+- [ ] **Multi-allelic site** (`alleles=['A','C','G','T']`) — the report renders one `### Allele: alt_N` **section** per alt (three tables), not three columns, and `effect_sizes` carries `alt_1..alt_3` with distinct values. **P1**
 - [ ] **Non-SNV** (simple insertion / deletion): if not supported, `predict_variant_effect` should error **before** running the model, not after — and the message should say indels are unsupported. **P1**
 - [ ] **Non-canonical chromosomes** (chrM, chrY): either predict or fail cleanly with a message that names the chromosome. **P2**
 
@@ -232,7 +262,7 @@ Each is a common user scenario, not a theoretical corner:
 Many scientific compute environments cut outbound internet after setup. Once install + CDFs + genome are cached:
 
 - [ ] `oracle.predict(...)` works with `HF_TOKEN` unset and no network, for the non-gated oracles. **P1**
-- [ ] `oracle.analyze_gene_expression('GATA1')` works against the locally-cached GTF. **P1**
+- [ ] `oracle.analyze_gene_expression(predictions, 'GATA1')` works against the locally-cached GTF. (The signature takes the `OraclePrediction` first — `analyze_gene_expression('GATA1')` alone raises `TypeError`; see `core/base.py:591`.) **P1**
 - [ ] Report HTML renders in a browser with no outbound network — `grep -rn 'cdn\|googleapis\|cdnjs\|unpkg\|jsdelivr' examples/walkthroughs/**/*.html` should return only bundled-resource references. We already vendor IGV via `chorus/analysis/static/igv.min.js`. **P1**
 
 ## 16. Logging hygiene
@@ -240,7 +270,7 @@ Many scientific compute environments cut outbound internet after setup. Once ins
 `HF_TOKEN` and other secrets should never land in logs, notebook outputs, or HTML reports.
 
 - [ ] `grep -rn 'hf_[a-zA-Z0-9]\{20,\}' examples/ audits/ docs/ chorus/` returns nothing — no real tokens committed. **P0**
-- [ ] Committed notebook outputs and test fixtures don't contain `HF_TOKEN=hf_…` or AWS-style keys. Known benign: per-machine absolute paths (e.g. `/srv/local/<user>/…`) in shipped notebook outputs — documented as cosmetic in v16. **P1**
+- [ ] Committed notebook outputs and test fixtures don't contain `HF_TOKEN=hf_…` or AWS-style keys. Known benign: per-machine absolute paths in shipped notebook outputs — documented as cosmetic in v16. Both forms occur: `/srv/local/<user>/…` (advanced_multi_oracle, comprehensive_showcase) and macOS `/Users/<user>/…`. Re-executing a notebook simply swaps in the current host's paths. **P1**
 
 ## 17. Dependency supply chain
 
