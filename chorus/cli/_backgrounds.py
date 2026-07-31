@@ -2,7 +2,7 @@
 
 Usage:
     chorus backgrounds status [--oracle NAME]
-    chorus backgrounds build  --oracle NAME [--track ID] [--only-missing] [--gpu N]
+    chorus backgrounds build  --oracle NAME [--only-missing] [--gpu N]
     chorus backgrounds add-tracks --oracle NAME --npz PATH
 """
 
@@ -73,8 +73,14 @@ def backgrounds_build(args):
     # Determine the conda env
     env_name = f"chorus-{oracle}" if oracle != "base" else "chorus"
 
+    # Discover the conda/mamba/micromamba executable the same way the rest of
+    # chorus does, rather than assuming a literal `mamba` on PATH (a conda- or
+    # micromamba-only install has no `mamba` binary and would fail otherwise).
+    from chorus.core.environment.manager import EnvironmentManager
+    conda_exe = EnvironmentManager().conda_exe
+
     # Build the command as a list (avoid shell quoting issues)
-    cmd_parts = ["mamba", "run", "-n", env_name, "python", str(script), "--part", "both"]
+    cmd_parts = [conda_exe, "run", "-n", env_name, "python", str(script), "--part", "both"]
     if args.only_missing:
         cmd_parts.append("--only-missing")
     if args.gpu is not None:
