@@ -149,6 +149,34 @@ class TestBorzoiOracle:
         assert min_len == 1000
         assert max_len == oracle.sequence_length
 
+    def test_prediction_interval_matches_output_span_for_large_query(self):
+        """prediction_interval must span exactly n_output_bins * bin_size and
+        stay centered on the query, even when the query is WIDER than the
+        output span.
+
+        Regression: prediction_interval was query_interval.extend(output_span),
+        and Interval.extend no-ops when the target is smaller than the query --
+        so a query wider than the ~196 kb output left prediction_interval up to
+        2.67x too wide, desyncing values from coordinates and making
+        score_variant_effect return None. Exercises the direct
+        (use_environment=False) path, which had no fast-suite coverage.
+        """
+        from chorus.oracles.borzoi_source.borzoi_metadata import get_metadata
+        oracle = BorzoiOracle(use_environment=False)
+        aid = next(iter(get_metadata()._track_index_map))
+        n_bins = oracle.target_length  # 6144
+
+        # Stand in for the model: (n_bins, n_assays), no weights needed.
+        oracle._predict_direct = lambda seq, assay_ids: np.zeros(
+            (n_bins, len(assay_ids)), dtype=np.float32)
+
+        # Query WIDER than the 196,608 bp output span -- the case extend() broke.
+        pred = oracle._predict("A" * 400_000, [aid])
+        track = pred[aid]
+        assert len(track.values) == n_bins
+        assert len(track.prediction_interval) == n_bins * oracle.bin_size  # 196608
+        assert len(track.prediction_interval) != 400_000  # not the no-op'd width
+
 
 class TestChromBPNetOracle:
     """Test ChromBPNet oracle implementation."""

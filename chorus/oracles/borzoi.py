@@ -214,8 +214,6 @@ class BorzoiOracle(OracleBase):
             raise ValueError(f"Unsupported sequence type: {type(seq)}")
 
         input_interval = query_interval.extend(self.sequence_length)
-        prediction_interval = query_interval.extend(self.output_size)
-        
         full_seq = input_interval.sequence
 
         if self.use_environment:
@@ -224,6 +222,18 @@ class BorzoiOracle(OracleBase):
         else:
             # Use direct prediction
             predictions = self._predict_direct(full_seq, assay_ids)
+
+        # The prediction covers the central n_out_bp of the model input window,
+        # centered on the query. Crop that span out of input_interval rather
+        # than query_interval.extend(n_out_bp): extend only grows, so it no-ops
+        # when the query is wider than the output span, which left
+        # prediction_interval up to 2.67x too wide (a ~524 kb query vs the
+        # ~196 kb output) and desynced values from coordinates, making
+        # score_variant_effect return None. predictions is (n_bins, n_assays),
+        # so its row count is the ground truth for the output width.
+        n_out_bp = predictions.shape[0] * self.bin_size
+        trim = (len(input_interval) - n_out_bp) // 2
+        prediction_interval = input_interval.slice(trim, trim + n_out_bp)
         
         # for now we have all predictions
 
@@ -299,7 +309,10 @@ class BorzoiOracle(OracleBase):
         # Get indices for requested assays
         assay_indices = self._get_assay_indices(assay_ids)
         
-        return pred[:, assay_indices].numpy()
+        # perform_prediction already returns a numpy array (helpers.py does
+        # .cpu().numpy()), so calling .numpy() again crashed direct mode with
+        # AttributeError. Slice and return as-is.
+        return np.asarray(pred[:, assay_indices])
     
     def list_assay_types(self) -> List[str]:
         """Return all unique assay types from Borzoi metadata."""
