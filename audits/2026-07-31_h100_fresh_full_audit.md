@@ -20,7 +20,9 @@ usable in this environment.
 
 ### Install — Miniforge had to be bootstrapped first
 
-The README's install section assumes `mamba` exists. On this box nothing
+`README.md:19` correctly lists **Miniforge as prerequisite #1** ("Before
+you start — three things you need"), so this was a bare-machine gap, not
+a documentation gap. On this box nothing
 did: no `mamba`, `conda`, `micromamba`, `python` (only `/usr/bin/python3`),
 and no `hf`/`huggingface-cli`. Installed Miniforge3 to
 `/home/nvidia/miniforge3` (mamba 2.5.0, conda 26.3.2) and pointed
@@ -33,12 +35,14 @@ mamba env create -f environment.yml          # clean, incl. the pinned coolbox g
 mamba run -n chorus python -m pip install -e .   # chorus 0.5.6
 ```
 
-`chorus list` → **7 of 9 installed**, `chorus health` → all 7 Healthy:
+`chorus list` → **9 of 9 installed**, `chorus health` → **all 9 Healthy**.
 
-| oracle | env | status |
-|---|---|---|
-| borzoi, cherimoya, chrombpnet, enformer, epinformerseq, legnet, sei | `chorus-<name>` | ✓ Installed / Healthy |
-| alphagenome, alphagenome_pt | — | ✗ **not installed — HF token** |
+The AlphaGenome pair went in last, once a write-scoped HF token was
+available: `chorus setup --oracle alphagenome` and `--oracle
+alphagenome_pt` both reported `✓ … ready` with
+`✓ HuggingFace auth ok (user: lucapinello, already logged in)`, i.e. the
+gated `google/alphagenome-all-folds` terms are accepted on that account.
+The other seven were provisioned before the token arrived, one at a time.
 
 Note the "9 oracles vs 8 models" question resolves cleanly: 9 rows
 because AlphaGenome ships two backends (JAX + PyTorch); Cherimoya is the
@@ -68,24 +72,32 @@ deliberately-mismatched checkpoint).
 
 ### Tests
 
+Final state, with all 9 oracles installed:
+
 | suite | result |
 |---|---|
-| `pytest -m "not integration"` | **474 passed, 4 skipped, 1 error** |
+| `pytest -m "not integration"` | **475 passed, 4 skipped, 0 errors** |
 | `tests/test_cherimoya_integration.py -m integration` | **9 passed, 1 skipped** |
 | `tests/test_integration.py` + `test_error_recovery.py -m integration` | **3 passed, 1 skipped** |
-| `tests/test_alphagenome_backends_equivalence.py` | **blocked** (no AlphaGenome env) |
+| `tests/test_alphagenome_backends_equivalence.py -m integration` | **1 passed** (JAX ↔ PyTorch agree at SORT1) |
+| `test_mcp_e2e_list_oracles_and_analyze_variant -m integration` | **1 passed** (287 s) |
 
-The one fast-suite error is `TestSmokeAlphagenome::test_predict` —
-needs `chorus-alphagenome`, which cannot be built without the token. The
-two integration skips are both the same root cause:
-`test_mcp_e2e_list_oracles_and_analyze_variant` skips on
-`HF_TOKEN not set — AlphaGenome is gated` (`test_integration.py:173`).
+Nothing is red. The 4 fast-suite skips are import/weights-gated by
+design. The one Cherimoya skip needs a deliberately-mismatched
+checkpoint; the one `test_integration.py` skip was the MCP e2e test
+before it had a token, and it passes now.
 
-Before the oracle envs existed the same fast suite gave 457 passed with
-6 errors in `test_smoke_predict.py`; those 6 are purely an
-envs-not-built artefact, so **run `chorus setup` before reading anything
-into a smoke-test failure**. 474 = 457 + 5 smoke tests that now pass + 9
-new tests added by PR #113, minus skip reshuffling.
+Two artefacts of *sequence* worth recording so the next auditor does not
+misread them:
+
+- Before the oracle envs existed the same fast suite gave **457 passed
+  with 6 errors** in `test_smoke_predict.py`. Those 6 are purely an
+  envs-not-built artefact — **run `chorus setup` before reading anything
+  into a smoke-test failure**.
+- Before the HF token existed it gave **474 passed / 1 error**, the error
+  being `TestSmokeAlphagenome::test_predict`. 475 = 457 + 6 smoke tests
+  that pass once the envs exist + 9 new tests from PR #113, net of skip
+  reshuffling.
 
 ### ChromBPNet `exp` → `expm1` (PR #113)
 
@@ -325,9 +337,14 @@ registered but 22 advertised everywhere, with `score_ism` undocumented
 (`server.py:1939`); the system prompt says "7 oracles" and never
 mentions Cherimoya (`server.py:28`).
 
-**P1 — notebooks are unrunnable as documented**: every notebook declares
-kernelspec `chorus`, which no setup step registers, so the documented
-`nbconvert` command fails with `NoSuchKernel` (16 notebooks repo-wide).
+**P2 (downgraded) — the kernelspec prerequisite is documented, just not
+where the checklist looks**: every notebook declares kernelspec
+`chorus`, and `nbconvert` fails with `NoSuchKernel` until it is
+registered — but `examples/notebooks/README.md:45` does document
+`python -m ipykernel install --user --name chorus`. So this is
+`AUDIT_CHECKLIST.md` §6 omitting a documented prerequisite, not a
+product defect. Worth folding the step into `chorus setup` (or into the
+checklist command) so 16 notebooks aren't gated on a README line.
 
 **P1 — edge cases**: `predict_variant_effect` crashes for any variant
 within half a model window of a chromosome **end**
@@ -407,26 +424,55 @@ silently vanish rather than erroring. Any rebuild must gate on
 `counts == 18672/34004/1088128` for all 786 rows — a green exit code
 means nothing.
 
-### P1 — `chorus setup` hard-gates all 9 oracles on the AlphaGenome token
+### NOT a defect — the `chorus setup` token gate is documented and intentional
 
-`_setup_all.py:71-82` resolves the HF token before any env build and
-halts with "Nothing was downloaded" if it fails. The intent is good (do
-not burn 10+ GB then fail), but 7 of the 9 oracles need no credential at
-all, so a tokenless user gets **zero** oracles from the documented
-command. Per-oracle `chorus setup --oracle <name>` bypasses it, which is
-how this box was provisioned. Worth a `--skip-gated` or an
-"install what we can" path.
+Recorded here because an earlier draft of this report had it as a P1.
+`README.md:312` states the behaviour and the rationale explicitly:
+"`chorus setup` (bare or `--oracle all`) **halts** the whole flow if no
+working token can be resolved, so the other 5 oracles aren't built for
+nothing." `README.md:40` front-loads the HF token in "Before you start"
+alongside Miniforge and the disk requirement. So the correct action on a
+fresh box is **get the token first**; provisioning the non-gated oracles
+one at a time, as was done here, is a workaround for not having it, not a
+product fix. The only genuine nit is that ":312 says "other 5 oracles",
+which is stale — it is 7 non-gated oracles now.
 
-### P1 — concurrent per-oracle setup collides on GPU 0 and on hg38
+Remaining design question, offered as an opinion rather than a finding:
+7 of the 9 oracles need no credential, so a `--skip-gated` path would let
+a tokenless user get something rather than nothing.
 
-The weight-prefetch step actually loads each model, and TensorFlow claims
-the whole device: with 7 setups running, GPU 0 sat at 79,551/81,559 MiB
-and enformer/sei/epinformerseq failed with
+### NOT a defect — concurrent per-oracle setup collides on GPU 0
+
+Also demoted from P1. Nothing in the docs suggests running several
+`chorus setup --oracle …` invocations simultaneously; that pattern was
+invented here to compress wall-clock, and the collision is its
+consequence. For the record, because the failure mode is opaque enough to
+mislead the next person: the prefetch step really loads each model, and
+TensorFlow claims the whole device, so with 7 setups running GPU 0 sat at
+79,551/81,559 MiB and enformer/sei/epinformerseq died with
 `Dst tensor is not initialized` / `Could not create cudnn handle`. All
-three succeeded immediately when pinned to distinct GPUs with
-`CUDA_VISIBLE_DEVICES`. Separately, they race on the shared
+three succeeded immediately once pinned to distinct GPUs with
+`CUDA_VISIBLE_DEVICES` — which `README.md:170` and `:202` already document
+as the way to pin a GPU. They also race on the shared
 `genomes/hg38.fa` download (legnet failed once, succeeded on retry).
-Either serialise the prefetch or document the pinning.
+A one-line note that setup is not safe to parallelise would save the next
+person the confusion.
+
+### NOT a defect — the MCP e2e failure was a documented trap
+
+`test_mcp_e2e_list_oracles_and_analyze_variant` initially failed with
+`Environment validation failed for alphagenome: Python executable not
+found`, because `mamba list -n chorus-alphagenome --json` exited 1 inside
+the spawned server. Cause: the test falls back to
+`MAMBA_ROOT_PREFIX=~/.local/share/mamba` when the variable is unset, and
+on this box that root exists but is **empty** — the envs live under
+`~/miniforge3`. `README.md:1004-1011` documents exactly this ("Two mamba
+installs ⇒ `chorus health` reports phantom failures") **and gives the
+fix**: `export MAMBA_ROOT_PREFIX=$HOME/miniforge3`. With that set the test
+**passes** (287 s). Not following documented troubleshooting was the
+error here. The one thing worth changing is in the test, not the product:
+its fallback default should be derived from the running mamba's root
+rather than hardcoded to `~/.local/share/mamba`.
 
 ### P1 — `--setup-timeout` is silently ignored by bare `chorus setup`
 
@@ -510,12 +556,21 @@ this box:
    tentatively to Lorenzo and says to confirm with Luca first; no
    competing PR exists (latest was #112), but the merge decision is not
    mine to make.
-2. **HuggingFace write token unusable in this environment**, which blocks
-   (a) `chorus-alphagenome` + `chorus-alphagenome_pt`, (b) the
-   `AlphaGenome` smoke/MCP/backend-equivalence tests, and (c) **the
-   upload of the rebuilt NPZ**. Everything else was routed around it —
-   the backgrounds dataset repo is public and needed no credential.
-3. **Finish the rebuild** (CHIP shards ETA ≈ 05:50), then, in this order:
+2. **HuggingFace auth — resolved.** A write-scoped token
+   (`Token is valid (permission: write)`, `user=lucapinello`) was supplied
+   partway through, which unblocked the AlphaGenome pair and every
+   AlphaGenome-dependent test. Two operational notes for next time: `hf`
+   ships only inside the `chorus` env, so it is not on the system PATH
+   until you symlink it (done here into `~/.local/bin`); and the
+   subcommand is **`hf auth login`** — plain `hf login` is not a command
+   in `hf` 1.26 and fails with `No such command 'login'`.
+3. **The NPZ upload is deliberately still pending**, gated on PR #113
+   merging. Order matters: if the `expm1`-built CDFs go live while `main`
+   still inverts with `np.exp`, the oracle and the CDFs disagree and CHIP
+   activity percentiles are inflated by ~30 % — strictly worse than the
+   status quo, because the bug's *self-consistency* is exactly what kept
+   it harmless. Merge first, upload immediately after.
+4. **Finish the rebuild** — done; for the record the sequence was:
 
    ```bash
    # 1. append the 744 CHIP rows onto the 42-row base -> 786
