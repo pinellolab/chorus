@@ -20,20 +20,18 @@ the count head.  Cherimoya's count head is trained against
 100% at a low-activity site, which is precisely the regime the activity
 CDFs are built from.
 
-Note that ChromBPNet uses the *same* ``log(1 + count)`` parameterization
+ChromBPNet uses the *same* ``log(1 + count)`` parameterization
 (``chrombpnet/training/data_generators/batchgen_generator.py`` feeds
-``np.log(1+batch_cts.sum(-1, keepdims=True))`` as the count target), yet
-chorus recovers its counts with ``np.exp`` in three places:
-``oracles/chrombpnet.py:579``, ``oracles/chrombpnet.py:800``, and
-``scripts/build_backgrounds_chrombpnet.py:348``.  So this is not a
-difference in the models — it is a latent ``+1``-count bug on the
-ChromBPNet side.  It is self-consistent there (oracle and CDF builder
-make the same error, so ChromBPNet's percentiles are internally valid),
-which is why it has gone unnoticed.  Cherimoya does the correct thing
-rather than reproducing the bug for symmetry: percentiles are rank-based
-and the discrepancy is a near-monotonic per-sequence rescaling, so
-cross-oracle comparability is unaffected, and matching a bug would only
-have to be undone when it is fixed — invalidating our CDFs.
+``np.log(1+batch_cts.sum(-1, keepdims=True))`` as the count target), and
+recovered its counts with ``np.exp`` until 2026-07-31 — a latent
+``+1``-count bug, not a difference in the models.  It was self-consistent
+there (oracle and CDF builder made the same error, so ChromBPNet's
+percentiles stayed internally valid), which is why it went unnoticed.
+Cherimoya did the correct thing rather than reproducing the bug for
+symmetry, on the grounds that matching a bug would only have to be undone
+when it was fixed — invalidating our CDFs.  It since was: see
+``tests/test_chrombpnet_counts.py`` and the ``chrombpnet_pertrack.npz``
+rebuild that followed.
 """
 
 import math

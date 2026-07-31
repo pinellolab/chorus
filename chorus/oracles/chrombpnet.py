@@ -576,7 +576,7 @@ class ChromBPNetOracle(OracleBase):
         norm_prob = probabilities - np.mean(probabilities, axis=1, keepdims=True)
         softmax_probs = np.exp(norm_prob) / np.sum(np.exp(norm_prob), axis=1, keepdims=True)
 
-        predictions = softmax_probs * (np.expand_dims(np.exp(counts)[:, 0], axis=1)) # (B, 1000)
+        predictions = softmax_probs * (np.expand_dims(np.expm1(counts)[:, 0], axis=1)) # (B, 1000)
 
         # Stack into 1D array
         predictions = predictions.reshape(-1, 1).squeeze()
@@ -799,7 +799,7 @@ class ChromBPNetOracle(OracleBase):
                     p = p.sum(axis=-1)
                 norm_p = p - np.mean(p)
                 sm = np.exp(norm_p) / np.sum(np.exp(norm_p))
-                profile = sm * np.exp(counts[b][0])
+                profile = sm * np.expm1(counts[b][0])
                 all_profiles.append(profile)
 
         # Stitch central outputs.  Window k's central output covers the

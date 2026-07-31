@@ -1225,7 +1225,7 @@ The per-bin CDFs are used by the unified `chorus.analysis._igv_report.rescale_fo
 | AlphaGenome | 5,168 | 10,000 | 31,500 | 260 MB |
 | Enformer | 5,313 | 10,000 | 31,500 | 520 MB |
 | Borzoi | 7,611 | 10,000 | 31,500 | 770 MB |
-| ChromBPNet | 786 (42 ATAC/DNASE + 744 CHIP) | 10,000 | 31,500 | 82 MB |
+| ChromBPNet | 786 (42 ATAC/DNASE + 744 CHIP) | 18,672 | 34,004 | 82 MB |
 | Sei | 40 classes | 10,000 | 31,500 | 2.8 MB |
 | LegNet | 3 cell types | 10,000 | 31,500 | 210 KB |
 | EPInformer-seq | 33 (11 cells × 3 assays: DNase, H3K27ac, composite) | 9,608 | 34,002 | 2.3 MB |

@@ -223,8 +223,8 @@ def test_expected_counts_uses_expm1_not_exp():
     """The single most consequential line in the integration.
 
     Cherimoya's count head is trained against log(count + 1), so the
-    inverse is expm1.  ChromBPNet's builder uses exp(); porting that
-    verbatim would inflate every value.
+    inverse is expm1.  ChromBPNet's builder used exp() until 2026-07-31;
+    porting that verbatim would have inflated every value.
     """
     logits = numpy.zeros((1, 1, 4))                  # uniform -> 0.25 each
     log_counts = numpy.array([[numpy.log(101.0)]])   # log(100 + 1)

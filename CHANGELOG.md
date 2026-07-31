@@ -6,6 +6,10 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **ChromBPNet recovers counts with `expm1`, not `exp`.** ChromBPNet's count head is trained against `log(1 + count)` (upstream `batchgen_generator.py` feeds `np.log(1+batch_cts.sum(-1, keepdims=True))` as the target), but chorus inverted it with `np.exp`, so every recovered count was high by exactly +1 — negligible at a peak (~0.1 % at 1,000 counts) but up to 100 % at a low-activity site, which is precisely the regime the activity CDFs are built from. Corrected at the three count-inversion sites: `oracles/chrombpnet.py:579` (`_transform_predictions_to_tracks`), `oracles/chrombpnet.py:802` (`predict_sliding`), and `scripts/build_backgrounds_chrombpnet.py:348` (`predict_profiles_batch`). The profile softmax `np.exp` calls at `:577`, `:801` and `:347` are a different transform and are unchanged. The bug was self-consistent — oracle and CDF builder made the same error — so ChromBPNet percentiles were internally valid, which is why it went unnoticed; raw counts and cross-oracle comparability were not. Cherimoya already did this correctly (`cherimoya_source/scoring.py`) and is unaffected. New regression suite `tests/test_chrombpnet_counts.py` covers all three sites, including an oracle/builder consistency check so the two cannot drift apart again.
+
 ## [0.4.0] — 2026-04-30
 
 ### Added
