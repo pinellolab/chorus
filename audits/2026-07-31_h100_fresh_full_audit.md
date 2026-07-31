@@ -488,15 +488,41 @@ this box:
 
    Reference copy of the pre-rebuild file for before/after work:
    `/ephemeral/chorus_rebuild_ref/chrombpnet_pertrack.SHIPPED.npz`.
-4. **Phase 6 regeneration is larger than "regenerate affected examples"**
-   and needs scoping: 22 files under `examples/` reference ChromBPNet;
-   two shipped notebook cells still contain the bug itself
-   (`klf1_validated_enhancer_profiles.ipynb:684`, `:797`) and need
-   editing plus GPU re-execution; there are four regeneration entry
-   points, not two; no `*_variant_report.pkl` is committed so
-   `regenerate_multioracle.py --consolidate` degrades to "JSON only (no
-   IGV predictions)" unless all three oracles re-run — and AlphaGenome
-   is not installed here. Also
-   `examples/walkthroughs/variant_analysis/SORT1_chrombpnet/example_output.md`
-   is **already** stale from the 2026-06-17 windowing fix; do not
-   attribute that drift to `expm1`.
+4. **Phase 6 regeneration — concrete inventory.** 33 files under
+   `examples/` reference ChromBPNet. They split cleanly by what blocks
+   them, so the ChromBPNet-only half can proceed as soon as the NPZ is
+   final:
+
+   *Unblocked once `chrombpnet_pertrack.npz` is uploaded* — every
+   artefact here is ChromBPNet-scored and its numbers move:
+
+   - `walkthroughs/variant_analysis/SORT1_chrombpnet/` —
+     `example_output.json`, `example_output.md`,
+     `rs12740374_SORT1_chrombpnet_report.html`, `notebook.ipynb`
+   - `notebooks/klf1_validated_enhancer_profiles.ipynb` — the two cells
+     that did their own `np.exp` inversion are fixed in #113, but the
+     committed **outputs** are still bug-computed and need GPU
+     re-execution
+   - `validation/SORT1_rs12740374_multioracle/chrombpnet_variant_report.json`
+     and `rs12740374_SORT1_chrombpnet_report.html`
+
+   *Blocked on AlphaGenome* — `regenerate_multioracle.py` iterates
+   `('chrombpnet', 'legnet', 'alphagenome')`, so the consolidated
+   artefacts cannot be faithfully rebuilt until `chorus-alphagenome`
+   exists: `validation/SORT1_rs12740374_multioracle/example_output.{json,md}`,
+   `rs12740374_SORT1_multioracle_report.html`,
+   `alphagenome_variant_report.json`,
+   `rs12740374_SORT1_alphagenome_report.html`. Compounding this, **no
+   `*_variant_report.pkl` is committed anywhere**, so `--consolidate`
+   falls back to "loaded %s from JSON only (no IGV predictions)" unless
+   all three oracles are actually re-run.
+
+   *Also note*: there are **four** regeneration entry points, not the two
+   in `CLAUDE.md` (`regenerate_examples.py`,
+   `regenerate_multioracle.py`, `regenerate_remaining_examples.py`,
+   `rerender_examples.py`), plus `generate_walkthrough_notebooks.py`
+   (codegen) and `screenshot_report.py`. And
+   `walkthroughs/variant_analysis/SORT1_chrombpnet/example_output.md`
+   is **already** stale from the 2026-06-17 windowing fix (+0.318 vs
+   +1.374 in the regenerated multioracle report) — do not attribute that
+   drift to `expm1`.
