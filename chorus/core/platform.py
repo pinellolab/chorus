@@ -245,6 +245,50 @@ PLATFORM_ADAPTATIONS: Dict[str, Dict[str, EnvironmentAdaptation]] = {
             ],
         ),
     },
+    "cherimoya": {
+        "macos_arm64": EnvironmentAdaptation(
+            # cherimoya==0.2.0 hard-requires triton>=3.5.1, which ships no
+            # macOS wheel. Cherimoya's Triton kernels are import-guarded
+            # (HAS_TRITON) with a pure-PyTorch CPU fallback, so on Apple
+            # Silicon we install cherimoya itself with --no-deps and supply
+            # its runtime deps explicitly (minus triton). It runs CPU-only:
+            # the model has no MPS/Metal path.
+            #
+            # torch comes from conda-forge, not pip, so it shares conda's
+            # libomp instead of bundling a second copy — the same approach
+            # borzoi/sei/legnet take. A pip torch wheel bundles its own
+            # libomp.dylib and `import torch` then aborts with the macOS
+            # "OMP: Error #15 ... already initialized" duplicate-runtime crash.
+            # conda-forge ships pytorch>=2.9 for osx-arm64 (torch>=2.9 is
+            # required: cherimoya routes weights through torch.optim.Muon,
+            # new in 2.9).
+            conda_add=["pytorch>=2.9"],
+            pip_replace={
+                "cherimoya": None,  # installed post-create with --no-deps
+            },
+            pip_add=[
+                "tangermeme>=0.2.3",
+                "bpnet-lite>=1.0.0",
+            ],
+            post_install=[
+                PostInstallStep(
+                    packages=["cherimoya==0.2.0"],
+                    flags=["--no-deps"],
+                    description=(
+                        "cherimoya installed with --no-deps: its triton>=3.5.1 "
+                        "pin has no macOS wheel. The Triton import is guarded "
+                        "(HAS_TRITON=False) and the pure-PyTorch CPU path runs."
+                    ),
+                ),
+            ],
+            notes=[
+                "Apple Silicon: Cherimoya runs CPU-only (no MPS/Metal path in the model)",
+                "triton removed (no macOS wheel); cherimoya installed with --no-deps",
+                "torch from conda-forge (shares conda libomp, avoids OMP Error #15)",
+                "tangermeme, bpnet-lite added as pip runtime deps",
+            ],
+        ),
+    },
     "alphagenome": {
         "macos_arm64": EnvironmentAdaptation(
             pip_replace={
