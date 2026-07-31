@@ -127,9 +127,25 @@ def predict_bpnet(
 
     Returns:
         ``{"profile": np.ndarray (1, output_length, 2),
-           "counts":  np.ndarray (1, 1)}`` — the raw BPNet head
-        outputs. To get a usable per-base signal, combine these via
-        ``softmax(profile) * exp(counts)``.
+           "counts":  np.ndarray (1, 1)}`` — the raw BPNet head outputs.
+
+        To get a usable per-base signal, take a **single softmax over both
+        strands jointly** (all ``2 * output_length`` logits at once) and scale
+        by ``exp(counts) - 2``::
+
+            logits = profile.reshape(1, -1)
+            logits = logits - logits.mean(axis=1, keepdims=True)
+            probs = np.exp(logits) / np.exp(logits).sum(axis=1, keepdims=True)
+            per_bp = (probs * (np.exp(counts) - 2)).reshape(profile.shape)
+            plus, minus = per_bp[..., 0], per_bp[..., 1]
+
+        Not ``softmax(profile) * exp(counts)`` per strand: the profile
+        multinomial was trained over the flattened both-strand vector, the
+        count target is a per-track ``log1p`` pooled across strands with
+        ``logsumexp`` (so it equals ``log(2 + total)``), and scaling each
+        strand by the full total double-counts. See
+        :meth:`chorus.oracles.chrombpnet.ChromBPNetOracle._counts_from_log`
+        and ``_transform_chip_strands``.
     """
     one_hot = encode_sequence(sequence)
     if one_hot.shape[0] != sequence_length:
@@ -140,10 +156,19 @@ def predict_bpnet(
         )
 
     one_hot_batch = one_hot[np.newaxis]
-    profile_bias = np.zeros((1, output_length, 2), dtype=np.float32)
-    count_bias = np.zeros((1, 1), dtype=np.float32)
+    # Derive the bias shapes from the model. The count bias is declared
+    # (None, 2) and is logsumexp-reduced inside the model, so a hardcoded
+    # (1, 1) — which Keras silently broadcasts rather than rejecting — makes
+    # that term log(1)=0 instead of log(2), shifting every predicted log-count
+    # down by a constant 0.5885 (counts 1.8x too low at a peak, up to 3x at a
+    # quiet site).
+    bias_inputs = [
+        np.zeros(
+            [1] + [d if d is not None else 1 for d in inp.shape[1:]],
+            dtype=np.float32,
+        )
+        for inp in model.inputs[1:]
+    ]
 
-    profile, counts = model.predict_on_batch(
-        [one_hot_batch, profile_bias, count_bias]
-    )
+    profile, counts = model.predict_on_batch([one_hot_batch, *bias_inputs])
     return {"profile": np.asarray(profile), "counts": np.asarray(counts)}

@@ -83,17 +83,21 @@ else:
 
 # Extract predictions
 if args["is_CHIP"]:
-    # JASPAR models require bias profile and counts
-    profile_bias = (
-        np.zeros((num_windows, args["output_length"], 2), dtype="float32") if not trimmed
-        else np.zeros((1, args["output_length"], 2), dtype="float32")
-    )
-    count_bias = (
-        np.zeros((num_windows, 1), dtype="float32") if not trimmed
-        else np.zeros((1, 1), dtype="float32")
-    )
-    result = model.predict_on_batch(
-        [one_hot_batch, profile_bias, count_bias]
-    ) 
+    # JASPAR models require bias profile and counts. Derive the shapes from the
+    # model rather than hardcoding them: the count bias is declared (None, 2)
+    # and is reduced by a logsumexp inside the model, so a hardcoded (N, 1) —
+    # which Keras silently broadcasts instead of rejecting — makes that
+    # logsumexp return log(1)=0 rather than log(2), shifting every predicted
+    # log-count down by a constant 0.5885 (counts 1.8x too low at a peak, up to
+    # 3x at a quiet site). See ChromBPNetOracle._zero_bias_inputs.
+    batch_size = 1 if trimmed else num_windows
+    bias_inputs = [
+        np.zeros(
+            [batch_size] + [d if d is not None else 1 for d in inp.shape[1:]],
+            dtype="float32",
+        )
+        for inp in model.inputs[1:]
+    ]
+    result = model.predict_on_batch([one_hot_batch, *bias_inputs]) 
 else:
     result = model.predict_on_batch(one_hot_batch)
