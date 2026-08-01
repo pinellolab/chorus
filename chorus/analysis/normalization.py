@@ -510,9 +510,7 @@ class PerTrackNormalizer:
         cdf_matrix = entry.get(cdf_key)
         if cdf_matrix is None:
             return None
-        idx = entry["track_index"].get(track_id)
-        if idx is None and track_id.endswith((":+", ":-")):
-            idx = entry["track_index"].get(track_id.rsplit(":", 1)[0])
+        idx = self._resolve_row(track_id, entry)
         if idx is None:
             return None
         if not self._has_samples(entry, cdf_key, idx):
@@ -540,9 +538,7 @@ class PerTrackNormalizer:
         cdf_matrix = entry.get(cdf_key)
         if cdf_matrix is None:
             return None
-        idx = entry["track_index"].get(track_id)
-        if idx is None and track_id.endswith((":+", ":-")):
-            idx = entry["track_index"].get(track_id.rsplit(":", 1)[0])
+        idx = self._resolve_row(track_id, entry)
         if idx is None:
             return None
         if not self._has_samples(entry, cdf_key, idx):
@@ -627,6 +623,27 @@ class PerTrackNormalizer:
         logger.warning(f"No valid CDF found for '{track_id}' (index {idx})")
         return None
     
+    def _resolve_row(self, track_id: str, entry: dict) -> int | None:
+        """Row index for *track_id*, using the one shared matcher.
+
+        Every path that reads a CDF row — percentile lookups and display
+        rescaling alike — must resolve an id the same way, or the two halves
+        of a report end up describing different background rows.
+
+        This used to be an inline exact-match-plus-strand-strip duplicated in
+        `_lookup` and `_lookup_batch`, while `_match_track_id` (which handles
+        strictly more cases, including LegNet's ``"LentiMPRA:HepG2"`` against a
+        row keyed ``"HepG2"``) was reached only from the display helpers. The
+        result was an oracle whose three shipped CDF rows were unreachable from
+        `effect_percentile`, rendering an em dash that looked deliberate. See
+        https://github.com/pinellolab/chorus/issues/126 and
+        tests/test_normalization_track_ids.py.
+        """
+        matched = self._match_track_id(track_id, entry["track_index"])
+        if matched is None:
+            return None
+        return entry["track_index"].get(matched)
+
     def _match_track_id(self, track_id: str, track_index: dict) -> str | None:
         """Find *track_id* in *track_index*, trying common alternative formats.
 
