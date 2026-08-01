@@ -73,7 +73,17 @@ def test_reservoir_matches_each_builders_copy(path):
     """
     theirs_cls = _extract_class(path, "ReservoirSampler")
     if theirs_cls is None:
-        pytest.skip("no ReservoirSampler in this builder")
+        # Already migrated. Assert the positive fact instead of skipping —
+        # otherwise this suite's coverage silently drains to zero as builders
+        # move over, which is exactly the failure it exists to prevent. The
+        # behaviour it used to check is pinned permanently by
+        # test_reservoir_reproduces_the_pre_migration_golden_values.
+        src = Path(path).read_text()
+        assert "from chorus.analysis.background_sampling import" in src, (
+            f"{Path(path).name} defines no ReservoirSampler and does not import "
+            f"the shared one — it can no longer build a background"
+        )
+        return
 
     n_tracks, capacity, n_values = 3, 50, 500
     rng = random.Random(99)
@@ -274,3 +284,34 @@ def test_window_slice_is_centred_and_clamped():
     # Resolution divides the window into bins.
     assert len(get_window_slice(values, 128, 32)) == 4
     assert score_window_sum(np.ones(100), 10, 1) == 10.0
+
+# ---------------------------------------------------------------------------
+# Behaviour pinned independently of any builder
+# ---------------------------------------------------------------------------
+
+# Captured from scripts/build_backgrounds_chrombpnet.py's ReservoirSampler on
+# 2026-08-01, immediately BEFORE that copy was deleted in favour of the shared
+# one. All eight copies were verified equivalent at that point, so this pins the
+# behaviour of every one of them — and it keeps pinning it after the last local
+# copy is gone, when the per-builder comparison above can no longer run.
+#
+# If this fails, the shared sampler's numerics changed and every shipped
+# background is now built differently from the one on HuggingFace.
+_GOLDEN_COUNTS = [150, 150]
+_GOLDEN_ROW0 = [-2.1194405304, -1.0730839128, -0.5751627779, -0.0290851046,
+                0.2823866706, 0.55812738, 0.8596487096, 2.127888199]
+_GOLDEN_ROW1 = [-1.5809989587, -0.4820365656, -0.2704519158, -0.0620424954,
+                0.0824314726, 0.3977631856, 0.6204653462, 1.4678675458]
+
+
+def test_reservoir_reproduces_the_pre_migration_golden_values():
+    """The shared sampler must match the copies it replaced, forever."""
+    rs = ReservoirSampler(2, capacity=25)
+    rng = random.Random(4242)
+    for i in range(300):
+        rs.add(i % 2, rng.gauss(0, 1))
+
+    assert rs.get_counts().tolist() == _GOLDEN_COUNTS
+    m = rs.to_cdf_matrix(n_points=8)
+    np.testing.assert_allclose(m[0], _GOLDEN_ROW0, rtol=0, atol=1e-9)
+    np.testing.assert_allclose(m[1], _GOLDEN_ROW1, rtol=0, atol=1e-9)
