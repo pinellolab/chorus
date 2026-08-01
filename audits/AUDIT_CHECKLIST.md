@@ -90,7 +90,7 @@ for name in ['alphagenome', 'borzoi', 'cherimoya', 'chrombpnet',
   - sei: 100% signed
   - legnet: 100% signed (MPRA = Δ)
   - alphagenome: ~13% signed — measured 12.9%
-- [ ] Track counts match published specs, measured from the NPZs: enformer 5,313 / borzoi 7,611 / **chrombpnet 786** (42 ATAC-DNASE + 744 CHIP) / sei 40 / legnet 3 / alphagenome 5,168 / cherimoya 1,518 / epinformerseq 33. **P1**
+- [ ] Track counts match published specs, measured from the NPZs: enformer 5,313 / borzoi 7,611 / **chrombpnet 753** (9 human ATAC-DNASE + 744 CHIP) / sei 40 / legnet 3 / alphagenome 5,168 / cherimoya 1,518 / epinformerseq 33. **P1**
 - [ ] `perbin_cdfs` present for Enformer / Borzoi / ChromBPNet / AlphaGenome / **Cherimoya**; the scalar-output oracles Sei, LegNet and **EPInformer-seq** omit it by design. **P1**
 - [ ] Cache dir `~/.chorus/backgrounds/` is the canonical location (no per-project duplication). **P2**
 - [ ] **ChromBPNet count inversion is `expm1`, not `exp`, on both sides.** The count head predicts `log(1 + count)`; the oracle and the CDF builder must agree or every ChromBPNet percentile is silently wrong. Regression: `tests/test_chrombpnet_counts.py` (incl. the builder↔oracle consistency assertion). **P0**
@@ -202,7 +202,7 @@ grep -rn '7,612' scripts/ examples/ --include='*.md'
 grep -rn 'LegNet.*230 bp\|input_size_bp.*230' chorus/ scripts/ --include='*.py' --include='*.md'
 ```
 
-- [ ] Canonical numbers: **AlphaGenome 5,731 model tracks** but **5,168 CDF-backed** (both figures are correct — always say which) / **Enformer 5,313** / **Borzoi 7,611** / **Sei 21,907** total but 40 CDF-backed classes / **LegNet 200 bp input, 3 CDFs** / **ChromBPNet 786 per-track CDFs** (42 ATAC-DNASE + 744 CHIP; the old "24 per-model" predates the per-track scheme) / **Cherimoya 1,518** / **EPInformer-seq 33**. No doc may disagree. **P1**
+- [ ] Canonical numbers: **AlphaGenome 5,731 model tracks** but **5,168 CDF-backed** (both figures are correct — always say which) / **Enformer 5,313** / **Borzoi 7,611** / **Sei 21,907** total but 40 CDF-backed classes / **LegNet 200 bp input, 3 CDFs** / **ChromBPNet 753 per-track CDFs** (9 human ATAC-DNASE + 744 CHIP; the 33 mouse mm10 models were dropped 2026-08-01 because their backgrounds were built on hg38 — the old "786" and "24 per-model" both predate that) / **Cherimoya 1,518** / **EPInformer-seq 33**. No doc may disagree. **P1**
 - [ ] Formula conventions documented **once** and cited by every report/notebook: `log2FC` (default), `lnFC` (gene expression), `Δ (alt−ref)` (MPRA). **P1**
 - [ ] Directory naming: live docs only reference `examples/walkthroughs/` and `examples/notebooks/`. The old `examples/applications/` path must only appear in `audits/` historical snapshots. **P0**
 - [ ] README "Hardware matrix per oracle" section is in sync with `chorus/mcp/server.py::ORACLE_SPECS`. **P1**
