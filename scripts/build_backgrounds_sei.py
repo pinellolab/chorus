@@ -23,6 +23,8 @@ from collections import defaultdict
 import numpy as np
 
 import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')); sys.path.insert(0, REPO_ROOT)
+
+from chorus.analysis.background_sampling import ReservoirSampler  # noqa: E402
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
 parser = argparse.ArgumentParser()
@@ -53,50 +55,10 @@ INPUT_LENGTH = 4096
 
 
 # ── Reservoir sampler ─────────────────────────────────────────────
-class ReservoirSampler:
-    def __init__(self, n_tracks: int, capacity: int = 50_000):
-        self.n_tracks = n_tracks
-        self.capacity = capacity
-        self.data = [[] for _ in range(n_tracks)]
-        self.counts = np.zeros(n_tracks, dtype=np.int64)
-        self._rng = random.Random(12345)
-
-    def add(self, track_idx: int, value: float):
-        n = self.counts[track_idx]
-        if n < self.capacity:
-            self.data[track_idx].append(value)
-        else:
-            j = self._rng.randint(0, n)
-            if j < self.capacity:
-                self.data[track_idx][j] = value
-        self.counts[track_idx] += 1
-
-    def get_sorted(self, track_idx: int) -> np.ndarray:
-        arr = np.array(self.data[track_idx], dtype=np.float64)
-        arr.sort()
-        return arr
-
-    def to_cdf_matrix(self, n_points: int = 10_000) -> np.ndarray:
-        matrix = np.zeros((self.n_tracks, n_points), dtype=np.float64)
-        target_q = np.linspace(0, 1, n_points)
-        for i in range(self.n_tracks):
-            arr = self.get_sorted(i)
-            n = len(arr)
-            if n == 0:
-                continue
-            if n >= n_points:
-                indices = np.linspace(0, n - 1, n_points, dtype=int)
-                matrix[i] = arr[indices]
-            else:
-                source_q = np.arange(n) / n
-                matrix[i] = np.interp(target_q, source_q, arr)
-        return matrix
-
-    def get_counts(self) -> np.ndarray:
-        return self.counts.copy()
-
-    def total_samples(self) -> int:
-        return int(self.counts.sum())
+# ReservoirSampler now comes from chorus.analysis.background_sampling
+# (imported above). The local copy was proved byte-identical to the shared one
+# before removal, and the behaviour is pinned permanently by the golden values
+# in tests/test_background_sampling.py. See #125.
 
 
 def load_model_and_setup():

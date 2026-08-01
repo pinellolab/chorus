@@ -621,12 +621,32 @@ def test_builder_pins_the_device():
 
 
 def test_builder_replicates_chrombpnet_seeds():
-    """Comparability depends on identical sampling, not merely similar."""
+    """Comparability depends on identical sampling, not merely similar.
+
+    The position/allele seeds are still literals in the builder. The RESERVOIR
+    seed moved: it used to be a `random.Random(12345)` literal here, and now
+    lives once in `chorus.analysis.background_sampling.DEFAULT_SEED`, which both
+    this builder and ChromBPNet's get by importing `ReservoirSampler` (#125).
+    Asserting the shared import is a stronger guarantee than grepping for the
+    literal — the two builders can no longer drift apart at all — so this checks
+    the import plus the shared default, rather than a string that is now absent
+    by design.
+    """
     source = _builder_source()
     for seed in ("random.seed(42)", "seed=43", "random.seed(44)", "seed=456",
                  "random.seed(789)", "random.Random(111)", "seed=567",
-                 "random.Random(12345)", "RandomState(999)"):
+                 "RandomState(999)"):
         assert seed in source, f"missing ChromBPNet seed: {seed}"
+
+    assert "from chorus.analysis.background_sampling import" in source, (
+        "builder must get its reservoir from the shared module so its seed "
+        "cannot drift from ChromBPNet's"
+    )
+    from chorus.analysis.background_sampling import DEFAULT_SEED
+    assert DEFAULT_SEED == 12345, (
+        "the shared reservoir seed changed; every oracle's background would now "
+        "be sampled differently from the ones on HuggingFace"
+    )
 
 
 def test_builder_accepts_the_flags_the_cli_passes():
