@@ -2,8 +2,15 @@
 =============================================================================
 REVIEWER-CORRECTED DRAFT — Chorus blog post 2026-006
 Revised 2026-06-17 by an independent reproduction review.
+Revised again 2026-08-01: every factual claim re-checked against the code.
 Full reproduction evidence: audits/2026-06-16_blogpost_reproduction_report.md
 Windowing/normalization follow-up: audits/2026-06-17_windowing_normalization_P0.md
+2026-08-01 verification: audits/2026-08-01_example_refresh_and_mouse_removal.md
+
+NOTE FOR WHOEVER PUBLISHES: the *published* post at
+genomicsxai.github.io/blogs/2026-010/ diverged from this file — it shipped the
+pre-review Enformer window (196,608 bp) while picking up the post-review tool
+count. Reconcile against THIS file, not the published text.
 
 CHANGELOG (what changed vs the submitted draft, and why):
 1. MCP "22 tools" → "23 tools" (added recommend_alphagenome_backend). Verified: the
@@ -27,6 +34,52 @@ CHANGELOG (what changed vs the submitted draft, and why):
 8. Analysis A ChromBPNet "+1.24" kept (correct full-input-window value; fresh = +1.37),
    with a reproducibility note: the *conversational* MCP path currently under-reports it
    (+0.32) due to a windowing bug (P0 follow-up); an explicit-window recipe reproduces it.
+
+2026-08-01 CORRECTIONS (second review, every claim re-measured against code):
+9.  "seven oracles" → eight models / nine registered oracle names. Cherimoya
+    (CATv1) landed 2026-07-30 and was missing from the table entirely; added,
+    with its 1,518 ENCODE experiments. `alphagenome_pt` made it eight back on
+    2026-04-29, so "seven" had been stale since April.
+10. MCP tool count 23 → 24. `score_ism` landed 2026-06-17, after this draft's
+    first revision. Verified two ways: `grep -c "^@mcp.tool()"` and a runtime
+    `list_tools()`. (Three other in-repo docs still say 22 — separate fix.)
+11. AlphaGenome resolution qualified. Only 2,915 of 5,731 tracks are 1 bp; all
+    2,816 CHIP tracks are 128 bp. Also noted that 5,168 of the 5,731 have
+    percentile backgrounds — both numbers are correct and AUDIT_CHECKLIST.md:205
+    requires always saying which.
+12. Sei "21,907 chromatin profiles" qualified: the classifier head is that wide,
+    but chorus aggregates to 40 scoreable sequence classes, and
+    `list_tracks("sei")` returns no track list at all. 40/21,907 = 0.18%.
+13. Background description corrected. It is NOT "thousands of random variants"
+    uniformly, and it is NOT gnomAD (no code samples gnomAD, despite
+    docs/NORMALIZATION_GUIDE.md:389). Per-track effect samples are 1,697–1,909
+    for AlphaGenome, ~9,600 for Enformer/Borzoi/Sei/LegNet, 18,672 for
+    ChromBPNet/Cherimoya — and they are random genomic *positions given random
+    alternate alleles*, not catalogued variants.
+14. Display axis: 1.0 is the per-bin p99, but the axis runs to 3.0 (a hard clip
+    at 3x p99), so the earlier phrasing implied 1.0 was the ceiling.
+15. ANALYSIS A REPRODUCIBILITY NOTE REWRITTEN (supersedes item 8 above). The
+    published post attributes the +1.24 vs +1.37 gap to "approximately 10%
+    relative drift ... floating-point arithmetic differences across GPU/CPU
+    runs". That is measurably wrong:
+      - ChromBPNet is BIT-EXACTLY reproducible. Three identical runs of
+        DNASE:HepG2 at chr1:109274968 all gave effect = +1.375621, absolute
+        spread 0.000000e+00. There is no float noise to attribute anything to.
+        (AlphaGenome/JAX *is* nondeterministic — but this claim is about
+        ChromBPNet/TensorFlow, and the two do not transfer.)
+      - The exp → expm1 count-head correction accounts for only -0.12%, and in
+        the opposite direction: measured +1.373940 (exp) vs +1.375621 (expm1)
+        from a single model run with only that transform swapped. It exactly
+        explains the audit's +1.374 becoming today's +1.3756, and nothing more.
+      - The 1 bp auto-region bug accounts for +0.318 vs +1.376 (4.33x), which
+        is a different comparison entirely. Verified by running at 4ad7be7:
+        +0.317674, reproducing the audit's recorded +0.32.
+    So: +1.24 is the ORIGINAL ARTICLE's figure and could not be reproduced;
+    +1.374 is what the 2026-06-16 audit reproduced with a variant-centered full
+    window; +1.375621 is today's deterministic value. The ~11% gap predates the
+    audit and its provenance is unknown — most likely a different window or
+    chorus version in the original run. Say that, rather than blaming float
+    noise, which also wrongly implies the number cannot be trusted.
 
 REMAINING REVIEWER TODO before publishing:
 - Append the AlphaGenome fine-map ranking number (re-run in progress at time of writing).
@@ -116,19 +169,20 @@ Three concepts carry the design:
 - **Interval.** A unified handle on genomic coordinates and the reference sequence, with an edit history. An interval tracks the substitutions, insertions, and deletions you apply alongside the predictions they produce, which is what makes in silico perturbation reproducible rather than a pile of ad hoc FASTA files.
 - **Track.** A named genomic signal (DNase, ATAC, ChIP, CAGE, RNA-seq, and so on). Track identifiers differ across oracles, so Chorus provides metadata search to find the right ones.
 
-These seven oracles span a wide range of context windows and resolutions, which is exactly why having them under one roof is useful: you can pick the right tool for the layer you care about without rewriting your analysis.
+These eight models span a wide range of context windows and resolutions, which is exactly why having them under one roof is useful: you can pick the right tool for the layer you care about without rewriting your analysis.
 
 | Oracle | Input window | Resolution | What it is good at |
 |---|---|---|---|
 | **ChromBPNet / BPNet** | 2,114 bp | 1 bp | Chromatin accessibility (ChromBPNet) and TF binding (BPNet) at base-pair resolution |
 | **LegNet** | 200 bp | element-level | MPRA / reporter activity of short regulatory elements |
 | **EPInformer-seq** | 2,114 bp | element-level | Compact per-cell enhancer activity (DNase cut-sites + H3K27ac) across 11 Roadmap cell types |
-| **Sei** | 4,096 bp | region-level | Regulatory effect across 21,907 chromatin profiles |
+| **Sei** | 4,096 bp | region-level | Regulatory effect across 21,907 chromatin profiles, aggregated to 40 scoreable sequence classes |
+| **Cherimoya (CATv1)** | 2,114 bp | 1 bp | Accessibility across 1,518 ENCODE experiments (ATAC + DNase), one checkpoint per experiment |
 | **Enformer** | 393,216 bp | 128 bp | Expression (CAGE), accessibility, histone marks across long context |
 | **Borzoi** | 524,288 bp | 32 bp | Enformer-style outputs plus RNA-seq coverage |
-| **AlphaGenome** | 1,048,576 bp | 1 bp | Generalist: ATAC, DNase, CAGE, RNA-seq, splicing, PRO-CAP, and ChIP for histones and TFs (5,731 tracks) |
+| **AlphaGenome** | 1,048,576 bp | 1 bp for most modalities, 128 bp for ChIP | Generalist: ATAC, DNase, CAGE, RNA-seq, splicing, PRO-CAP, and ChIP for histones and TFs (5,731 tracks, of which 5,168 have percentile backgrounds) |
 
-There is one more piece that makes cross-model work honest. Raw model outputs are not comparable: a "+1.3" from one track means something different from a "+1.3" from another. Chorus scores every prediction against a per-track genome-wide background (built from thousands of random variants and genomic sites), turning a raw log2 fold-change into two interpretable numbers: an **effect percentile** (how unusual this variant's effect is relative to random SNPs) and an **activity percentile** (how active the site is to begin with). For the genome-browser view, the same backgrounds rescale every track onto one shared display axis, where 1.0 marks roughly the top one percent of bins genome-wide and 0 sits at a per-layer activity floor. After this normalisation, effects and signals become comparable across cell types, variants, tracks, and oracles, and the browser can show every oracle's reference and alternate signal on a single axis.
+There is one more piece that makes cross-model work honest. Raw model outputs are not comparable: a "+1.3" from one track means something different from a "+1.3" from another. Chorus scores every prediction against a per-track genome-wide background (built from random genomic positions given random alternate alleles — 1,697–1,909 per AlphaGenome track, ~9,600 for Enformer/Borzoi/Sei/LegNet, 18,672 for ChromBPNet and Cherimoya), turning a raw log2 fold-change into two interpretable numbers: an **effect percentile** (how unusual this variant's effect is relative to random SNPs) and an **activity percentile** (how active the site is to begin with). For the genome-browser view, the same backgrounds rescale every track onto one shared display axis, where 1.0 marks roughly the top one percent of bins genome-wide (the axis itself runs to 3.0, i.e. 3× that threshold) and 0 sits at a per-layer activity floor. After this normalisation, effects and signals become comparable across cell types, variants, tracks, and oracles, and the browser can show every oracle's reference and alternate signal on a single axis.
 
 ---
 
@@ -136,7 +190,7 @@ There is one more piece that makes cross-model work honest. Raw model outputs ar
 
 The part that changes how these models get used is the conversational layer. Chorus ships an [MCP](https://modelcontextprotocol.io/) (Model Context Protocol) server that exposes every capability as a tool an AI agent can call. Once it is connected, you can ask the genome what a variant would do in plain language, and the agent picks the oracle, selects tracks, runs the prediction, and explains the result.
 
-The server exposes 23 tools, grouped by what they do. The low-level set handles discovery (`list_oracles`, `list_tracks`, `list_genomes`, `get_genes_in_region`, `get_gene_tss`), oracle lifecycle (`load_oracle`, `unload_oracle`, `oracle_status`), raw prediction (`predict`, `predict_variant_effect`, `predict_region_replacement`, `predict_region_insertion`), scoring primitives (`score_prediction_region`, `score_variant_effect_at_region`, `predict_variant_effect_on_gene`), and a backend helper (`recommend_alphagenome_backend`, which suggests the JAX vs PyTorch AlphaGenome backend for a given window size).
+The server exposes 24 tools, grouped by what they do. The low-level set handles discovery (`list_oracles`, `list_tracks`, `list_genomes`, `get_genes_in_region`, `get_gene_tss`), oracle lifecycle (`load_oracle`, `unload_oracle`, `oracle_status`), raw prediction (`predict`, `predict_variant_effect`, `predict_region_replacement`, `predict_region_insertion`), scoring primitives (`score_prediction_region`, `score_variant_effect_at_region`, `predict_variant_effect_on_gene`), a backend helper (`recommend_alphagenome_backend`, which suggests the JAX vs PyTorch AlphaGenome backend for a given window size), and in-silico saturation mutagenesis (`score_ism`).
 
 On top of those sit the high-level analysis tools that power the worked examples below, the ones most users actually call:
 
@@ -300,7 +354,7 @@ chorus genome download hg38
 chorus health --timeout 300
 ```
 
-The per-oracle commands above install only what you need for these examples. If you would rather grab everything in one shot, a bare `chorus setup` (no flags) builds all seven oracle environments, downloads their weights and backgrounds, and pulls hg38 in a single unattended run.
+The per-oracle commands above install only what you need for these examples. If you would rather grab everything in one shot, a bare `chorus setup` (no flags) builds all nine oracle environments, downloads their weights and backgrounds, and pulls hg38 in a single unattended run.
 
 > AlphaGenome weights live in a gated HuggingFace repository. Accept the license at the `google/alphagenome-all-folds` model page, then `export HF_TOKEN="hf_..."` before first use. The `fine_map_causal_variant` tool additionally needs a free `LDLINK_TOKEN` (or you can pass LD variants manually).
 

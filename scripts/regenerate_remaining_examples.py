@@ -28,7 +28,7 @@ sys.path.insert(0, REPO_ROOT)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--gpu", type=int, default=1)
-parser.add_argument("--only", choices=["discovery", "causal", "region_swap", "integration", "batch", "tert_chr5", "all", "skip_discovery"], default="all")
+parser.add_argument("--only", choices=["discovery", "causal", "region_swap", "integration", "batch", "tert_chr5", "cdyl", "all", "skip_discovery"], default="all")
 args = parser.parse_args()
 
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", str(args.gpu))
@@ -203,6 +203,123 @@ def regen_discovery(oracle, norm):
             for r in all_rows:
                 w.writerow(r)
     logger.info("  ✓ discovery: %d cell types, %d reports", len(hits), len(reports))
+
+
+def _load_ld_fixture(path):
+    """Read a committed LDlink response into LDVariant objects.
+
+    Committing the response is what lets an example regenerate with no LDlink
+    token and no network — the SORT1_locus example achieves the same thing by
+    inlining its 11 proxies as literals. rs9504151 has 56, so a data file is
+    the readable form, and it carries the exact query parameters in its header.
+    """
+    import csv
+    from chorus.utils.ld import LDVariant
+
+    out = []
+    with open(path) as fh:
+        rows = [ln for ln in fh if not ln.startswith("#")]
+    for r in csv.DictReader(rows, delimiter="\t"):
+        v = LDVariant(
+            variant_id=r["variant_id"], chrom=r["chrom"],
+            position=int(r["position"]), ref=r["ref"], alt=r["alt"],
+            r2=float(r["r2"]),
+        )
+        if r.get("dprime") not in (None, "", "None"):
+            v.dprime = float(r["dprime"])
+        if r.get("distance") not in (None, "", "None"):
+            v.distance = int(r["distance"])
+        v.is_sentinel = str(r.get("is_sentinel", "")).lower() == "true"
+        out.append(v)
+    return out
+
+
+def regen_cdyl_finemap(oracle, norm):
+    """causal_prioritization/CDYL_rs9504151 — the blog's Analysis B, made reproducible.
+
+    Every quantitative Analysis-B number in the published post traced to a
+    single markdown table in audits/2026-06-16_blogpost_reproduction_report.md,
+    describing a GPU run whose inputs and outputs were never saved: only 9
+    rsIDs appear anywhere in the repo, not the 56-variant proxy set, and the
+    AlphaGenome track list behind "rank #1, composite 0.995" was never
+    recorded at all. This example commits both, so the claim is checkable.
+    """
+    from chorus.analysis.analysis_request import AnalysisRequest
+    from chorus.analysis.causal import prioritize_causal_variants
+
+    out_dir = f"{BASE}/causal_prioritization/CDYL_rs9504151"
+    logger.info("=== CAUSAL: CDYL/rs9504151 fine-mapping (56 variants) ===")
+
+    ld_variants = _load_ld_fixture(f"{out_dir}/ld_proxies.tsv")
+    with open(f"{out_dir}/assay_ids.txt") as fh:
+        assay_ids = [ln.strip() for ln in fh
+                     if ln.strip() and not ln.startswith("#")]
+    logger.info("  %d LD variants, %d lung-fibroblast tracks",
+                len(ld_variants), len(assay_ids))
+
+    sentinel = next(v for v in ld_variants if v.is_sentinel)
+
+    ar = AnalysisRequest(
+        user_prompt=(
+            "Fine-map the FEV1/FVC lung-function association at rs9504151 "
+            "(CDYL locus). Sentinel plus 55 LD proxies at r2>=0.8 (CEU, SNVs "
+            "only). Score each variant across AlphaGenome lung-fibroblast "
+            "tracks and rank by composite causal evidence."
+        ),
+        tool_name="fine_map_causal_variant",
+        oracle_name="alphagenome",
+        tracks_requested=f"{len(assay_ids)} lung-fibroblast (CL:0002553) tracks",
+    )
+
+    result = prioritize_causal_variants(
+        oracle,
+        lead_variant={"id": sentinel.variant_id, "chrom": sentinel.chrom,
+                      "pos": sentinel.position, "ref": sentinel.ref,
+                      "alt": sentinel.alt},
+        ld_variants=ld_variants,
+        assay_ids=assay_ids,
+        gene_name="CDYL",
+        oracle_name="alphagenome",
+        normalizer=norm,
+        analysis_request=ar,
+    )
+
+    os.makedirs(out_dir, exist_ok=True)
+    with open(f"{out_dir}/example_output.md", "w") as fh:
+        fh.write(result.to_markdown())
+    with open(f"{out_dir}/example_output.json", "w") as fh:
+        json.dump(result.to_dict(), fh, indent=2, default=str)
+    try:
+        result.to_dataframe().to_csv(
+            f"{out_dir}/example_output.tsv", sep="\t", index=False)
+    except Exception as exc:
+        logger.warning("  tsv write failed: %s", exc)
+    # No committed HTML for this example, deliberately. Measured at 25.70 MB,
+    # above the 20 MiB ceiling that tests/test_committed_examples.py enforces
+    # on tracked artefacts. The #129 feature budget is PER TRACK (4,000), and
+    # nothing caps a report total — so 21 lung-fibroblast tracks x 2 alleles
+    # is ~42x a single-track panel and legitimately blows the file limit. The
+    # JSON/MD/TSV carry every number the example is for; the IGV panel is the
+    # only casualty. Write it locally for inspection if you want it:
+    #
+    #   result.to_html(output_path=f"{out_dir}/rs9504151_CDYL_locus_causal_report.html")
+    #
+    # and see the report-level-budget follow-up before committing one.
+    if os.environ.get("CHORUS_WRITE_LARGE_HTML"):
+        html_path = f"{out_dir}/rs9504151_CDYL_locus_causal_report.html"
+        result.to_html(output_path=html_path)
+        logger.info("  ✓ HTML: %s (%.0f KB) — NOT for committing",
+                    os.path.basename(html_path),
+                    os.path.getsize(html_path) / 1024)
+    else:
+        logger.info("  (HTML skipped — exceeds the 20 MiB artefact ceiling; "
+                    "set CHORUS_WRITE_LARGE_HTML=1 to write it locally)")
+
+    top = result.rankings[:3] if hasattr(result, "rankings") else []
+    for i, r in enumerate(top, 1):
+        logger.info("  rank %d: %s composite=%.4f", i,
+                    getattr(r, "variant_id", "?"), getattr(r, "composite", 0.0))
+    return result
 
 
 def regen_causal(oracle, norm):
@@ -514,12 +631,15 @@ def main():
         tasks.append(("causal", regen_causal))
     elif args.only == "tert_chr5":
         tasks.append(("tert_chr5", regen_tert_chr5))
+    elif args.only == "cdyl":
+        tasks.append(("cdyl", regen_cdyl_finemap))
     elif args.only == "skip_discovery":
         tasks.extend([
             ("region_swap", regen_region_swap),
             ("integration", regen_integration),
             ("batch", regen_batch),
             ("causal", regen_causal),
+            ("cdyl", regen_cdyl_finemap),
             ("tert_chr5", regen_tert_chr5),
         ])
     else:  # all
@@ -529,6 +649,7 @@ def main():
             ("integration", regen_integration),
             ("batch", regen_batch),
             ("causal", regen_causal),
+            ("cdyl", regen_cdyl_finemap),
             ("tert_chr5", regen_tert_chr5),
         ])
 
