@@ -543,6 +543,30 @@ def consolidate():
     with open(json_path, "w") as fh:
         json.dump(moracle.to_dict(), fh, indent=2, default=str)
 
+    # example_output.tsv — every other walkthrough ships one, and this was the
+    # only directory of 13 without it, because this script wrote the JSON and
+    # md but never a TSV. `rerender_examples.py` refreshes a TSV only when one
+    # already exists, so the gap could not heal itself.
+    #
+    # MultiOracleReport has no to_dataframe() of its own (only to_dict), so
+    # project the per-oracle VariantReports that built it and prefix an
+    # `oracle` column. Same schema as the single-oracle TSVs plus that column,
+    # so the two are directly comparable.
+    tsv_path = os.path.join(OUT_DIR, "example_output.tsv")
+    try:
+        import pandas
+        frames = []
+        for oracle_name, rep in zip(ordered_oracles, reports):
+            df = rep.to_dataframe()
+            df.insert(0, "oracle", oracle_name)
+            frames.append(df)
+        pandas.concat(frames, ignore_index=True).to_csv(
+            tsv_path, sep="\t", index=False,
+        )
+        logger.info("  ✓ wrote %s", os.path.basename(tsv_path))
+    except Exception as exc:
+        logger.warning("  TSV failed: %s", exc)
+
     logger.info("  ✓ wrote %s", os.path.basename(html_path))
     logger.info("  ✓ wrote %s", os.path.basename(md_path))
     logger.info("  ✓ wrote %s", os.path.basename(json_path))
