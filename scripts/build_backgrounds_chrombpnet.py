@@ -24,6 +24,12 @@ from collections import defaultdict
 import numpy as np
 
 import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')); sys.path.insert(0, REPO_ROOT)
+
+from chorus.analysis.background_sampling import (  # noqa: E402
+    ReservoirSampler,
+    compute_effect as _shared_compute_effect,
+    one_hot_encode,
+)
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
 parser = argparse.ArgumentParser()
@@ -132,57 +138,10 @@ os.makedirs(cache_dir, exist_ok=True)
 
 
 # ── Reservoir sampler (same as Borzoi/Enformer) ──────────────────
-class ReservoirSampler:
-    def __init__(self, n_tracks: int, capacity: int = 50_000):
-        self.n_tracks = n_tracks
-        self.capacity = capacity
-        self.data = [[] for _ in range(n_tracks)]
-        self.counts = np.zeros(n_tracks, dtype=np.int64)
-        self._rng = random.Random(12345)
-
-    def add(self, track_idx: int, value: float):
-        n = self.counts[track_idx]
-        if n < self.capacity:
-            self.data[track_idx].append(value)
-        else:
-            j = self._rng.randint(0, n)
-            if j < self.capacity:
-                self.data[track_idx][j] = value
-        self.counts[track_idx] += 1
-
-    def add_batch(self, track_idx: int, values):
-        for v in values:
-            self.add(track_idx, float(v))
-
-    def get_sorted(self, track_idx: int) -> np.ndarray:
-        arr = np.array(self.data[track_idx], dtype=np.float64)
-        arr.sort()
-        return arr
-
-    def to_cdf_matrix(self, n_points: int = 10_000) -> np.ndarray:
-        matrix = np.zeros((self.n_tracks, n_points), dtype=np.float64)
-        target_q = np.linspace(0, 1, n_points)
-        for i in range(self.n_tracks):
-            arr = self.get_sorted(i)
-            n = len(arr)
-            if n == 0:
-                continue
-            if n >= n_points:
-                indices = np.linspace(0, n - 1, n_points, dtype=int)
-                matrix[i] = arr[indices]
-            else:
-                source_q = np.arange(n) / n
-                matrix[i] = np.interp(target_q, source_q, arr)
-        return matrix
-
-    def get_counts(self) -> np.ndarray:
-        return self.counts.copy()
-
-    def total_samples(self) -> int:
-        return int(self.counts.sum())
-
-    def tracks_with_data(self) -> int:
-        return int((self.counts > 0).sum())
+# ReservoirSampler now comes from chorus.analysis.background_sampling
+# (imported above) — see #125. The local copy was proved byte-identical
+# before removal; the behaviour is pinned permanently by
+# tests/test_background_sampling.py's golden values.
 
 
 def _track_id_for(spec: dict) -> str:
@@ -294,16 +253,15 @@ def load_models_and_setup():
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
-def one_hot_encode(seq):
-    mapping = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
-    one_hot = np.zeros((len(seq), 4), dtype=np.float32)
-    for i, base in enumerate(seq):
-        if base in mapping:
-            one_hot[i, mapping[base]] = 1.0
-    return one_hot
-
-
 def get_sequence(ref, chrom, pos):
+    """NOT migrated to the shared helper, deliberately.
+
+    This takes a **pysam** handle (``ref.fetch`` / ``ref.get_reference_length``)
+    while ``background_sampling.get_sequence`` takes a pyfaidx-style object and
+    slices it. The two also derive their span differently. Unifying them would
+    change which positions are accepted as background samples, so it needs its
+    own verified step rather than riding along here. See #125.
+    """
     half = INPUT_LENGTH // 2
     start, end = pos - half, pos + half
     chrom_len = ref.get_reference_length(chrom)
@@ -370,6 +328,14 @@ def predict_profiles_batch(model, seqs):
 
 
 def score_window_sum(profile):
+    """NOT migrated to the shared helper, deliberately.
+
+    This window is ``2 * (WINDOW_BP // 2) + 1`` bins — ODD and inclusive of the
+    centre — whereas ``background_sampling.score_window_sum`` takes
+    ``window_bp // resolution`` bins. For WINDOW_BP=1000 that is 1001 vs 1000,
+    so swapping them would shift every ChromBPNet activity value and move the
+    shipped summary CDFs. Reconciling the off-by-one is its own change. See #125.
+    """
     center = OUTPUT_LENGTH // 2
     hw = WINDOW_BP // 2
     ws = max(0, center - hw)
@@ -378,7 +344,8 @@ def score_window_sum(profile):
 
 
 def compute_effect(ref_val, alt_val):
-    return math.log2((alt_val + PSEUDOCOUNT) / (ref_val + PSEUDOCOUNT))
+    """Thin wrapper so the module keeps its 2-arg call signature."""
+    return _shared_compute_effect(ref_val, alt_val, pseudocount=PSEUDOCOUNT)
 
 
 # ══════════════════════════════════════════════════════════════════
