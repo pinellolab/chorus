@@ -358,7 +358,7 @@ Chorus mirrors every oracle's weights to chorus-controlled HuggingFace repos so 
 | AlphaGenome (PyTorch) | not mirrored — upstream port | [`gtca/alphagenome_pytorch`](https://huggingface.co/gtca/alphagenome_pytorch) | — |
 | Enformer | [`lucapinello/chorus-enformer`](https://huggingface.co/lucapinello/chorus-enformer) | TFHub `deepmind/enformer/1` (now redirects to Kaggle) | 961 MB |
 | Borzoi | [`lucapinello/chorus-borzoi`](https://huggingface.co/lucapinello/chorus-borzoi) | [`johahi/borzoi-replicate-{0..3}`](https://huggingface.co/johahi/borzoi-replicate-0) | ~6 GB (4 folds) |
-| ChromBPNet | [`lucapinello/chorus-chrombpnet-slim`](https://huggingface.co/lucapinello/chorus-chrombpnet-slim) | ENCODE per-experiment tarballs | 1.49 GB (786 h5's) |
+| ChromBPNet | [`lucapinello/chorus-chrombpnet-slim`](https://huggingface.co/lucapinello/chorus-chrombpnet-slim) | ENCODE per-experiment tarballs | 1.49 GB (786 h5's; chorus fetches only the 9 human ATAC/DNase models — the 33 mm10 models are still hosted but no longer offered, see 2026-08-01) |
 | Cherimoya | [`programmable-genomics/CATv1`](https://huggingface.co/programmable-genomics/CATv1) | *is* the primary source (CC-BY-4.0) | ~3.8 GB (1,518 fold-0 checkpoints; ~2.5 MB each, fetched lazily) |
 | Sei | [`lucapinello/chorus-sei`](https://huggingface.co/lucapinello/chorus-sei) | Zenodo [4906997](https://zenodo.org/record/4906997) | 3.28 GB |
 | LegNet | [`lucapinello/chorus-legnet`](https://huggingface.co/lucapinello/chorus-legnet) | Zenodo [17863550](https://zenodo.org/records/17863550) | 38 MB |
@@ -371,7 +371,7 @@ The chorus mirrors are byte-identical to the originals (verified via md5 / size 
 | AlphaGenome | ~260 MB | 5,168 |
 | Enformer | ~520 MB | 5,313 |
 | Borzoi | ~770 MB | 7,611 |
-| ChromBPNet | ~82 MB | 786 (42 ATAC/DNASE + 744 CHIP) |
+| ChromBPNet | ~80 MB | 753 (9 ATAC/DNASE + 744 CHIP) |
 | Cherimoya | ~154 MB | 1,518 (369 ATAC + 1,149 DNASE) |
 | Sei | ~2.8 MB | 40 classes |
 | LegNet | ~210 KB | 3 cell types |
@@ -1225,7 +1225,7 @@ The per-bin CDFs are used by the unified `chorus.analysis._igv_report.rescale_fo
 | AlphaGenome | 5,168 | 10,000 | 31,500 | 260 MB |
 | Enformer | 5,313 | 10,000 | 31,500 | 520 MB |
 | Borzoi | 7,611 | 10,000 | 31,500 | 770 MB |
-| ChromBPNet | 786 (42 ATAC/DNASE + 744 CHIP) | 18,672 | 34,004 | 82 MB |
+| ChromBPNet | 753 (9 ATAC/DNASE + 744 CHIP) | 18,672 | 34,004 | 80 MB |
 | Sei | 40 classes | 10,000 | 31,500 | 2.8 MB |
 | LegNet | 3 cell types | 10,000 | 31,500 | 210 KB |
 | EPInformer-seq | 33 (11 cells × 3 assays: DNase, H3K27ac, composite) | 9,608 | 34,002 | 2.3 MB |
