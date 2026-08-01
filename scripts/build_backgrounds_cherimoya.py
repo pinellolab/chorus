@@ -69,6 +69,8 @@ from chorus.oracles.cherimoya_source.scoring import (  # noqa: E402
     score_window_sum,
 )
 
+from chorus.analysis.background_sampling import ReservoirSampler  # noqa: E402
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--part",
@@ -196,50 +198,10 @@ def _build_config() -> dict:
 
 # ── Reservoir sampler (identical to the other builders) ──────────────
 
-class ReservoirSampler:
-    def __init__(self, n_tracks: int, capacity: int = 50_000):
-        self.n_tracks = n_tracks
-        self.capacity = capacity
-        self.data = [[] for _ in range(n_tracks)]
-        self.counts = numpy.zeros(n_tracks, dtype=numpy.int64)
-        self._rng = random.Random(12345)
-
-    def add(self, track_idx: int, value: float):
-        n = self.counts[track_idx]
-        if n < self.capacity:
-            self.data[track_idx].append(value)
-        else:
-            j = self._rng.randint(0, n)
-            if j < self.capacity:
-                self.data[track_idx][j] = value
-        self.counts[track_idx] += 1
-
-    def add_batch(self, track_idx: int, values):
-        for v in values:
-            self.add(track_idx, float(v))
-
-    def get_sorted(self, track_idx: int) -> numpy.ndarray:
-        arr = numpy.array(self.data[track_idx], dtype=numpy.float64)
-        arr.sort()
-        return arr
-
-    def to_cdf_matrix(self, n_points: int = 10_000) -> numpy.ndarray:
-        matrix = numpy.zeros((self.n_tracks, n_points), dtype=numpy.float64)
-        target_q = numpy.linspace(0, 1, n_points)
-        for i in range(self.n_tracks):
-            arr = self.get_sorted(i)
-            n = len(arr)
-            if n == 0:
-                continue
-            if n >= n_points:
-                idx = numpy.linspace(0, n - 1, n_points, dtype=int)
-                matrix[i] = arr[idx]
-            else:
-                matrix[i] = numpy.interp(target_q, numpy.arange(n) / n, arr)
-        return matrix
-
-    def get_counts(self) -> numpy.ndarray:
-        return self.counts.copy()
+# ReservoirSampler now comes from chorus.analysis.background_sampling
+# (imported above). The local copy was proved byte-identical to the shared one
+# before removal, and the behaviour is pinned permanently by the golden values
+# in tests/test_background_sampling.py. See #125.
 
 
 # ── Position sampling: byte-for-byte the ChromBPNet procedure ────────

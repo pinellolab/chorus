@@ -48,6 +48,8 @@ sys.path.insert(0, REPO_ROOT)
 # HF mirror lucapinello/chorus-epinformerseq-v2). Override with --percell-root
 # and --bias-root if you want to point at a local training-output tree.
 from chorus.core.globals import CHORUS_DOWNLOADS_DIR  # noqa: E402
+
+from chorus.analysis.background_sampling import ReservoirSampler  # noqa: E402
 _CHORUS_PERCELL_ROOT = str(CHORUS_DOWNLOADS_DIR / "epinformerseq")
 V2_PERCELL_DIR_DEFAULT = os.path.join(_CHORUS_PERCELL_ROOT, "per_cell_widewin")
 V2_BIAS_DIR_DEFAULT    = os.path.join(_CHORUS_PERCELL_ROOT, "bias")
@@ -107,44 +109,10 @@ CENTRAL_START = (V2_WINDOW - CENTRAL) // 2     # 384
 CENTRAL_END   = CENTRAL_START + CENTRAL        # 640
 
 
-class ReservoirSampler:
-    def __init__(self, n_tracks, capacity=50_000):
-        self.n_tracks = n_tracks
-        self.capacity = capacity
-        self.data = [[] for _ in range(n_tracks)]
-        self.counts = np.zeros(n_tracks, dtype=np.int64)
-        self._rng = random.Random(12345)
-
-    def add(self, track_idx, value):
-        n = self.counts[track_idx]
-        if n < self.capacity:
-            self.data[track_idx].append(value)
-        else:
-            j = self._rng.randint(0, n)
-            if j < self.capacity:
-                self.data[track_idx][j] = value
-        self.counts[track_idx] += 1
-
-    def get_sorted(self, track_idx):
-        arr = np.array(self.data[track_idx], dtype=np.float64)
-        arr.sort()
-        return arr
-
-    def to_cdf_matrix(self, n_points=10_000):
-        matrix = np.zeros((self.n_tracks, n_points), dtype=np.float64)
-        target_q = np.linspace(0, 1, n_points)
-        for i in range(self.n_tracks):
-            arr = self.get_sorted(i)
-            n = len(arr)
-            if n == 0:
-                continue
-            if n >= n_points:
-                indices = np.linspace(0, n - 1, n_points, dtype=int)
-                matrix[i] = arr[indices]
-            else:
-                source_q = np.arange(n) / n
-                matrix[i] = np.interp(target_q, source_q, arr)
-        return matrix
+# ReservoirSampler now comes from chorus.analysis.background_sampling
+# (imported above). The local copy was proved byte-identical to the shared one
+# before removal, and the behaviour is pinned permanently by the golden values
+# in tests/test_background_sampling.py. See #125.
 
 
 def one_hot(seq):
