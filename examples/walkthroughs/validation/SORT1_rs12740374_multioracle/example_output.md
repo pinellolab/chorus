@@ -3,7 +3,7 @@
 - **Variant:** chr1:109,274,968 G>T
 - **Gene:** SORT1
 - **Oracles:** chrombpnet, legnet, alphagenome
-- **Generated:** 2026-08-01 14:47 UTC
+- **Generated:** 2026-08-01 18:59 UTC
 
 ## Cross-oracle consensus
 

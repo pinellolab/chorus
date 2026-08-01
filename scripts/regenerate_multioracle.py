@@ -294,15 +294,30 @@ def _legnet_sliding_prediction(oracle, chrom, wide_start, wide_end, seq):
     )
     preds = np.asarray(preds, dtype=np.float64).reshape(-1)
 
-    # Expand each window's scalar across its 200 bp span -> 1 bp resolution
-    # values over the whole interval (window k covers query [k*step, k*step+win)).
-    values = np.zeros(Q, dtype=np.float64)
-    for k, val in enumerate(preds):
-        s = k * step
-        if s >= Q:
-            break
-        e = min(s + win, Q)
-        values[s:e] = val
+    # Emit one value per tiled window at ``step`` resolution, NOT one value per
+    # base pair.
+    #
+    # This used to expand each window's scalar across its 200 bp span into a
+    # length-Q array and declare ``resolution=1`` ("base-pair resolution, like
+    # ChromBPNet"). That was false: LegNet produces one MPRA-activity scalar per
+    # non-overlapping 200 bp window, so a 1 bp array repeats every genuine value
+    # 200x. Over a 1,048,576 bp locus that is 5,243 real numbers rendered as
+    # 1,048,576 IGV features — 99.5% redundant, and it is what made
+    # rs12740374_SORT1_legnet_report.html 131 MB and impossible to commit at all
+    # (issue #129, above GitHub's hard 100 MiB limit).
+    #
+    # Reporting the true resolution is lossless — the information was always
+    # 200 bp — and it removes the redundancy at the source rather than relying
+    # on a downstream feature cap to mop it up. Note the cap in
+    # _calculate_track_bin_size worked *because* it ignores this field; a
+    # binning rule that trusted ``resolution`` would have read the fabricated 1
+    # and reinstated the 131 MB report.
+    #
+    # Trailing partial window: predict_bigseq was fed a sequence right-padded to
+    # a multiple of ``win``, so preds covers ceil(Q/step) windows. Keep only
+    # those whose start falls inside the query.
+    n_windows = (Q + step - 1) // step
+    values = np.asarray(preds[:n_windows], dtype=np.float64)
 
     query_interval = Interval.make(GenomeRef(
         chrom=chrom, start=wide_start, end=wide_end, fasta=GENOME_REF,
@@ -316,7 +331,7 @@ def _legnet_sliding_prediction(oracle, chrom, wide_start, wide_end, seq):
         query_interval=query_interval,
         prediction_interval=query_interval,
         input_interval=query_interval,
-        resolution=1,                       # base-pair resolution, like ChromBPNet
+        resolution=step,                    # one scalar per tiled 200 bp window
         values=values,
         metadata=None,
         preferred_aggregation="mean",

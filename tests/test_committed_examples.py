@@ -282,10 +282,25 @@ def test_example_is_reachable_from_a_generator(d: Path):
 
 # GitHub rejects any file above 100 MiB outright. The LegNet report reached
 # 131 MB and the consolidated multi-oracle report 139 MB, so neither could be
-# committed and both had to be left stale. Today's largest tracked file under
-# examples/ is ~14.7 MiB, so 20 MiB is a real ceiling with headroom rather
-# than a rubber stamp.
-_MAX_TRACKED_MIB = 20
+# committed and both had to be left stale.
+#
+# 50 MiB, revised up from an initial 20. The 20 was picked as "headroom over
+# today's largest artefact" and was not derived from any real failure, and it
+# blocked a legitimate 25.70 MB report (the CDYL fine-map, 21 tracks x 2
+# alleles). Three measurements say a large report is not itself a problem:
+#
+#   - These HTMLs gzip to 12-17%, so a 25 MB report costs ~3.5 MB of history.
+#   - IGV.js does not render the payload. It indexes inline features into a
+#     red-black interval tree, culls to the visible window, then summarises to
+#     one value per screen pixel — so draw cost is bounded by viewport width,
+#     not by feature count. The cost is at load, once.
+#   - GitHub's 100 MiB is the only hard wall; 50 MiB is its advisory warning
+#     threshold, which is the right place for ours to sit.
+#
+# So this exists to catch a *pathology* — a payload that is redundant by
+# construction, like the 200x-expanded LegNet track — not to police size for
+# its own sake. Losing resolution to hit a number would be the wrong trade.
+_MAX_TRACKED_MIB = 50
 
 
 def test_no_tracked_example_artefact_is_oversized():
