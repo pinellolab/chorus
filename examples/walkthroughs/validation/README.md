@@ -44,8 +44,39 @@ liver-specific enhancer.
 **Result**: All layers show concordant activation — this is the strongest
 validation case.
 
-Tracks used: DNASE, CEBPA ChIP, CEBPB ChIP, H3K27ac, CAGE+/-, RNA+/-
-(all HepG2, matching the paper's liver analysis).
+Tracks used: DNASE, ATAC, CEBPA/CEBPB/CEBPG/CEBPD ChIP, H3K27ac, CAGE+/-,
+RNA+/- (all HepG2, matching the paper's liver analysis) — 11 tracks, 123
+scored rows across the prediction window.
+
+This list was previously aspirational: it already claimed `RNA+/-`, but the
+example scored neither RNA strand, and it covered only two of the four C/EBP
+family members. The track set was widened on 2026-08-01 so the claim is true,
+and so this example is no longer a byte-for-byte duplicate of
+[`variant_analysis/SORT1_rs12740374`](../variant_analysis/SORT1_rs12740374/),
+which scores the same variant with the narrower set.
+
+The whole C/EBP family responds, which is the point of the validation:
+
+| Track | Effect (log2FC) | Effect %ile |
+|---|---|---|
+| CHIP:CEBPB:HepG2 | +3.044 | ≥99th |
+| CHIP:CEBPA:HepG2 | +2.764 | ≥99th |
+| CHIP:CEBPG:HepG2 | +2.269 | ≥99th |
+| CHIP:CEBPD:HepG2 | +1.818 | ≥99th |
+| DNASE:HepG2 | +1.332 | ≥99th |
+| CHIP:H3K27ac:HepG2 | +1.258 | ≥99th |
+| ATAC:HepG2 | +0.732 | ≥99th |
+| RNA:HepG2 (best of 58 rows) | +0.718 | ≥99th |
+
+`+0.718` on RNA is a **1.65-fold** predicted increase — real, and well short
+of the >12-fold difference in measured SORT1 mRNA between genotypes. A
+single-variant model predicting the local regulatory change is not predicting
+the full downstream expression difference, and the gap is expected rather than
+a failure. Note also that AlphaGenome's RNA-seq effect background sits almost
+entirely below `|log2FC| = 0.1`, so the RNA **percentile** carries very little
+information here even though the effect itself is meaningful — read the log2FC
+column, not the percentile. See
+[#83](https://github.com/pinellolab/chorus/issues/83).
 
 ### [TERT_chr5_1295046/](TERT_chr5_1295046/)
 **Paper Fig.4**: chr5:1295046 T>G in melanocytes.

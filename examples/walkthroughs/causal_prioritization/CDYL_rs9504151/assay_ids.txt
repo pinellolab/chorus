@@ -1,0 +1,29 @@
+# AlphaGenome lung-fibroblast tracks (CL:0002553), the trait-relevant
+# cell type for the FEV1/FVC association at rs9504151.
+#
+# Committed because audits/2026-06-16_blogpost_reproduction_report.md
+# recorded 'AlphaGenome rank #1, composite 0.995, alt effect -1.363'
+# for this locus but never recorded WHICH tracks produced it, which
+# made that number unreproducible as written.
+# 21 tracks, all 21 CL:0002553 entries in the catalogue.
+CAGE/hCAGE CL:0002553/+
+CAGE/hCAGE CL:0002553/-
+CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.
+CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27ac/.
+CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.
+CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K36me3/.
+CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K4me2/.
+CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K4me3/.
+CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K79me2/.
+CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K9ac/.
+CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.
+DNASE/CL:0002553 DNase-seq/.
+RNA_SEQ/CL:0002553 polyA plus RNA-seq/+
+RNA_SEQ/CL:0002553 polyA plus RNA-seq/-
+RNA_SEQ/CL:0002553 polyA plus RNA-seq/.
+RNA_SEQ/CL:0002553 total RNA-seq/+
+RNA_SEQ/CL:0002553 total RNA-seq/-
+SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/+
+SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/-
+SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/+
+SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-

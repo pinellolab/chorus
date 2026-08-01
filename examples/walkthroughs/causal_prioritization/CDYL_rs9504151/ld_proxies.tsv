@@ -1,0 +1,66 @@
+# LDlink LDproxy response for rs9504151, committed so this example
+# regenerates without an LDlink token — the same reason SORT1_locus
+# inlines its 11 proxies. Fetched 2026-08-01 with:
+#   fetch_ld_variants('rs9504151', population='CEU',
+#                     r2_threshold=0.8, genome_build='grch38',
+#                     snvs_only=True)
+# 56 rows = 1 sentinel + 55 proxies, r2 0.8020-1.0000, 27 at r2=1.0.
+# snvs_only=False returns 64 — this resolves the 54-vs-56 discrepancy
+# that audits/2026-06-16_blogpost_reproduction_report.md left open.
+variant_id	chrom	position	ref	alt	r2	dprime	distance	is_sentinel	kind
+rs9504151	chr6	4577675	T	A	1.0	1.0	0	True	snv
+rs6913171	chr6	4577170	G	A	1.0	1.0	-505	False	snv
+rs9502199	chr6	4578205	T	C	1.0	1.0	530	False	snv
+rs4960004	chr6	4579464	C	T	1.0	1.0	1789	False	snv
+rs58341597	chr6	4579914	C	T	1.0	1.0	2239	False	snv
+rs11751457	chr6	4580233	A	G	1.0	1.0	2558	False	snv
+rs659315	chr6	4574305	C	G	1.0	1.0	-3370	False	snv
+rs9504152	chr6	4581088	T	C	1.0	1.0	3413	False	snv
+rs658325	chr6	4574069	T	C	1.0	1.0	-3606	False	snv
+rs57391531	chr6	4571780	C	T	1.0	1.0	-5895	False	snv
+rs60318324	chr6	4571425	T	C	1.0	1.0	-6250	False	snv
+rs385236	chr6	4571257	T	A	1.0	1.0	-6418	False	snv
+rs1628826	chr6	4570505	A	C	1.0	1.0	-7170	False	snv
+rs390126	chr6	4570286	C	T	1.0	1.0	-7389	False	snv
+rs9504154	chr6	4585315	G	A	1.0	1.0	7640	False	snv
+rs453768	chr6	4569984	G	A	1.0	1.0	-7691	False	snv
+rs424137	chr6	4569529	T	G	1.0	1.0	-8146	False	snv
+rs1125950	chr6	4569414	C	G	1.0	1.0	-8261	False	snv
+rs9502202	chr6	4586703	T	C	1.0	1.0	9028	False	snv
+rs9504156	chr6	4587892	G	A	1.0	1.0	10217	False	snv
+rs4959306	chr6	4588555	T	G	1.0	1.0	10880	False	snv
+rs2235724	chr6	4588559	G	A	1.0	1.0	10884	False	snv
+rs17138527	chr6	4588613	G	A	1.0	1.0	10938	False	snv
+rs59168279	chr6	4588726	A	T	1.0	1.0	11051	False	snv
+rs2235727	chr6	4589224	T	G	1.0	1.0	11549	False	snv
+rs17138534	chr6	4589395	A	G	1.0	1.0	11720	False	snv
+rs17138543	chr6	4589729	T	C	1.0	1.0	12054	False	snv
+rs56832024	chr6	4590313	C	T	0.936	1.0	12638	False	snv
+rs9504159	chr6	4592851	T	C	0.9324	1.0	15176	False	snv
+rs378901	chr6	4558348	G	A	0.9324	1.0	-19327	False	snv
+rs390617	chr6	4556479	A	G	0.9324	1.0	-21196	False	snv
+rs438021	chr6	4556342	A	G	0.9324	1.0	-21333	False	snv
+rs382186	chr6	4555735	T	C	0.9324	1.0	-21940	False	snv
+rs62384944	chr6	4601262	A	T	0.9324	1.0	23587	False	snv
+rs420580	chr6	4553327	C	T	0.9324	1.0	-24348	False	snv
+rs410662	chr6	4551873	T	C	0.9324	1.0	-25802	False	snv
+rs400405	chr6	4550484	T	C	0.9324	1.0	-27191	False	snv
+rs7747007	chr6	4549815	A	T	0.9324	1.0	-27860	False	snv
+rs56979277	chr6	4613824	G	T	0.8791	1.0	36149	False	snv
+rs4960006	chr6	4593588	C	T	0.8686	0.932	15913	False	snv
+rs111367957	chr6	4595052	G	A	0.8686	0.932	17377	False	snv
+rs113803252	chr6	4595137	G	A	0.8686	0.932	17462	False	snv
+rs58294172	chr6	4595548	C	T	0.8686	0.932	17873	False	snv
+rs57189168	chr6	4558976	T	C	0.8686	0.932	-18699	False	snv
+rs403448	chr6	4550338	T	C	0.8686	0.932	-27337	False	snv
+rs386522231	chr6	4598588	G	T	0.8655	1.0	20913	False	snv
+rs9504163	chr6	4599685	G	A	0.8655	1.0	22010	False	snv
+rs60654575	chr6	4600160	G	A	0.8655	1.0	22485	False	snv
+rs742574	chr6	4608300	A	G	0.8282	1.0	30625	False	snv
+rs9504168	chr6	4609337	A	G	0.8282	1.0	31662	False	snv
+rs9504169	chr6	4609534	T	G	0.8282	1.0	31859	False	snv
+rs58678488	chr6	4612314	A	C	0.8282	1.0	34639	False	snv
+rs4960009	chr6	4602216	C	T	0.8124	0.9316	24541	False	snv
+rs57354107	chr6	4602934	C	T	0.8124	0.9316	25259	False	snv
+rs9502206	chr6	4595800	G	C	0.802	0.9275	18125	False	snv
+rs4330567	chr6	4597406	C	T	0.802	0.9275	19731	False	snv
