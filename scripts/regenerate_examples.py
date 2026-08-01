@@ -53,6 +53,27 @@ HEPG2_TRACKS = [
     "CAGE/hCAGE EFO:0001187/-",                              # CAGE -
 ]
 
+# The CEBP validation example gets a wider HepG2 set than the plain
+# variant_analysis one. Two reasons:
+#
+#   1. examples/walkthroughs/validation/README.md claimed this example used
+#      "DNASE, CEBPA ChIP, CEBPB ChIP, H3K27ac, CAGE+/-, RNA+/-" — the RNA
+#      strands were never actually scored, so the README was false. Adding
+#      them makes it true rather than quietly editing the claim away.
+#   2. It gives the example a purpose distinct from
+#      variant_analysis/SORT1_rs12740374, which it otherwise duplicates
+#      exactly — same position, alleles, gene and track list.
+#
+# The two extra C/EBP family members complete the family the AlphaGenome
+# paper's liver analysis discusses (CEBPA/B/G/D), so the reported binding
+# gain can be read across the family rather than two of its members.
+HEPG2_CEBP_VALIDATION_TRACKS = HEPG2_TRACKS + [
+    "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPG genetically modified (insertion) using CRISPR targeting H. sapiens CEBPG/.",  # CEBPG
+    "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPD genetically modified (insertion) using CRISPR targeting H. sapiens CEBPD/.",  # CEBPD
+    "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+",               # RNA +
+    "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-",               # RNA -
+]
+
 K562_TRACKS = [
     "DNASE/EFO:0002067 DNase-seq/.",                         # DNASE
     "CHIP_TF/EFO:0002067 TF ChIP-seq GATA1/.",              # GATA1
@@ -146,10 +167,10 @@ ALPHAGENOME_EXAMPLES = [
         "position": "chr1:109274968",
         "ref": "G", "alt": "T",
         "gene": "SORT1",
-        "assay_ids": HEPG2_TRACKS,
+        "assay_ids": HEPG2_CEBP_VALIDATION_TRACKS,
         "cell_type": "HepG2",
         "html_name": "rs12740374_SORT1_CEBP_validation_report.html",
-        "user_prompt": "Validate AlphaGenome paper finding: rs12740374 (chr1:109274968 G>T) should show CEBPA/CEBPB binding gain in HepG2. Using forced HepG2 tracks.",
+        "user_prompt": "Validate AlphaGenome paper finding: rs12740374 (chr1:109274968 G>T) should show C/EBP-family binding gain in HepG2. Score DNASE, ATAC, CEBPA/CEBPB/CEBPG/CEBPD ChIP, H3K27ac, CAGE and RNA-seq on both strands, using forced HepG2 tracks.",
     },
 ]
 
