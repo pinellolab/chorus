@@ -103,6 +103,7 @@ def save_variant_report(report, out_dir: str, html_name: str) -> None:
 
 def regen_discovery(oracle, norm):
     """discovery/SORT1_cell_type_screen — screen all cell types for rs12740374."""
+    from chorus.analysis.analysis_request import AnalysisRequest
     from chorus.analysis.discovery import discover_and_report
 
     out_dir = f"{BASE}/discovery/SORT1_cell_type_screen"
@@ -165,11 +166,22 @@ def regen_discovery(oracle, norm):
     with open(f"{out_dir}/example_output.md", "w") as fh:
         fh.write("\n".join(md_lines))
 
-    # Combined JSON
+    # Combined JSON. This is a hand-assembled document rather than a
+    # `Report.to_dict()`, so it carried no `analysis_request` and therefore no
+    # `generated_at` — it was the only committed example of 13 with no
+    # provenance stamp, which is exactly the field a staleness check needs to
+    # read. Stamp it the same way every other example is stamped.
     combined = {
         "variant": {"chrom": "chr1", "position": 109274968, "ref": "G", "alt": "T", "id": "rs12740374"},
         "oracle": "alphagenome",
         "gene": "SORT1",
+        "analysis_request": AnalysisRequest(
+            user_prompt=user_prompt,
+            tool_name="discover_and_report",
+            oracle_name="alphagenome",
+            normalizer_name="per-track background CDFs",
+            tracks_requested="all DNASE/ATAC scout tracks, then all tracks in the top cell types",
+        ).to_dict(),
         "cell_type_ranking": hits,
         "reports": {ct: rpt.to_dict() for ct, rpt in reports.items()},
     }
