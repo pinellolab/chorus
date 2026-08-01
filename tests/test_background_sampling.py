@@ -125,8 +125,17 @@ def test_add_batch_matches_where_a_builder_has_one(path):
     shared 3-line one.
     """
     theirs_cls = _extract_class(path, "ReservoirSampler")
-    if theirs_cls is None or not hasattr(theirs_cls, "add_batch"):
-        pytest.skip("no add_batch in this builder")
+    if theirs_cls is None:
+        # Migrated — assert the import rather than skipping, for the same
+        # reason as the test above: otherwise coverage drains silently to zero
+        # as builders move across.
+        assert "from chorus.analysis.background_sampling import" in Path(path).read_text(), (
+            f"{Path(path).name} has no local ReservoirSampler and does not "
+            f"import the shared one"
+        )
+        return
+    if not hasattr(theirs_cls, "add_batch"):
+        pytest.skip("this builder's sampler has no add_batch")
 
     capacity, n_values = 40, 400
     rng = random.Random(7)

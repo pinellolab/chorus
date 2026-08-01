@@ -27,6 +27,8 @@ from collections import defaultdict
 import numpy as np
 
 import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')); sys.path.insert(0, REPO_ROOT)
+
+from chorus.analysis.background_sampling import ReservoirSampler  # noqa: E402
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
 parser = argparse.ArgumentParser()
@@ -85,83 +87,10 @@ os.makedirs(cache_dir, exist_ok=True)
 
 # ── Reservoir sampler ─────────────────────────────────────────────
 
-class ReservoirSampler:
-    """Fixed-capacity reservoir sampler per track.
-
-    Collects up to ``capacity`` values per track using reservoir sampling
-    so memory stays bounded regardless of how many positions are scored.
-    """
-
-    def __init__(self, n_tracks: int, capacity: int = 50_000):
-        self.n_tracks = n_tracks
-        self.capacity = capacity
-        # Pre-allocate reservoirs for each track
-        self.data = [[] for _ in range(n_tracks)]
-        self.counts = np.zeros(n_tracks, dtype=np.int64)
-        self._rng = random.Random(12345)
-
-    def add(self, track_idx: int, value: float):
-        """Add a single value for a track."""
-        n = self.counts[track_idx]
-        if n < self.capacity:
-            self.data[track_idx].append(value)
-        else:
-            j = self._rng.randint(0, n)
-            if j < self.capacity:
-                self.data[track_idx][j] = value
-        self.counts[track_idx] += 1
-
-    def add_batch(self, track_idx: int, values):
-        """Add multiple values for a track."""
-        for v in values:
-            self.add(track_idx, float(v))
-
-    def get_sorted(self, track_idx: int) -> np.ndarray:
-        """Return sorted values for a track."""
-        arr = np.array(self.data[track_idx], dtype=np.float64)
-        arr.sort()
-        return arr
-
-    def to_cdf_matrix(self, n_points: int = 10_000) -> np.ndarray:
-        """Build (n_tracks, n_points) CDF matrix from all reservoirs.
-
-        Each row is subsampled to exactly *n_points* evenly-spaced
-        percentile positions from the track's sorted scores.
-
-        Tracks with fewer than *n_points* samples are upsampled via
-        linear interpolation to fill the full CDF, preserving correct
-        percentile resolution (``rank / n_actual_samples``) rather than
-        padding with max values that would create a flat tail.
-
-        Tracks with no data get all-zero rows.
-        """
-        matrix = np.zeros((self.n_tracks, n_points), dtype=np.float64)
-        target_quantiles = np.linspace(0, 1, n_points)
-        for i in range(self.n_tracks):
-            arr = self.get_sorted(i)
-            n = len(arr)
-            if n == 0:
-                continue
-            if n >= n_points:
-                # Subsample: pick evenly-spaced indices
-                indices = np.linspace(0, n - 1, n_points, dtype=int)
-                matrix[i] = arr[indices]
-            else:
-                # Interpolate: map target quantiles to source positions
-                # Source quantiles: rank / n for each of the n samples
-                source_quantiles = np.arange(n) / n
-                matrix[i] = np.interp(target_quantiles, source_quantiles, arr)
-        return matrix
-
-    def get_counts(self) -> np.ndarray:
-        """Return per-track actual sample counts."""
-        return self.counts.copy()
-
-    def total_samples(self) -> int:
-        return int(self.counts.sum())
-
-    def tracks_with_data(self) -> int:
-        return int((self.counts > 0).sum())
+# ReservoirSampler now comes from chorus.analysis.background_sampling
+# (imported above). The local copy was proved byte-identical to the shared one
+# before removal, and the behaviour is pinned permanently by the golden values
+# in tests/test_background_sampling.py. See #125.
 
 
 # ══════════════════════════════════════════════════════════════════
