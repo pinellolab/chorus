@@ -189,7 +189,7 @@ def test_chip_strand_split_conserves_counts_across_the_range(count):
 
 
 def test_single_track_inverse_is_unchanged_expm1():
-    """The 42 ATAC/DNASE rows must not move: exp(C) - 1 IS expm1(C).
+    """The ATAC/DNASE rows must not move: exp(C) - 1 IS expm1(C).
 
     Keeping expm1 for n_tracks == 1 is both bit-identical and more accurate
     for small C, so PR #113's fix and the shipped ATAC/DNASE CDF rows stay
