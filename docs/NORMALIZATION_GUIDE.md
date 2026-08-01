@@ -132,7 +132,7 @@ defined by Borzoi metadata.
 
 | Property | Value |
 |----------|-------|
-| Tracks | 786 (42 ChromBPNet ATAC/DNASE + 744 BPNet/CHIP) |
+| Tracks | 753 (9 human ChromBPNet ATAC/DNASE + 744 BPNet/CHIP) |
 | Model | One model per track (ENCODE ChromBPNet + JASPAR BPNet) |
 | Input length | 2,114 bp (both ChromBPNet and BPNet) |
 | Output length | 1,000 bp at 1-bp resolution |
@@ -171,7 +171,7 @@ bash scripts/run_bpnet_cdf_build.sh  # 6-GPU parallel build
 
 For a single custom track (BYOM walkthrough below), use
 `--only-missing` instead — the 6-GPU script is overkill and would
-re-score all 786 tracks.
+re-score all 753 tracks.
 
 ---
 
@@ -463,7 +463,7 @@ The CDF needs ~10K random SNPs (effect rows) and ~30K baseline positions
 (summary + perbin rows) through your model. Rough wall-clock per model:
 ~22 min for ChromBPNet on Apple M3 Ultra Metal, ~5 min on a CUDA A100;
 BPNet (smaller architecture) is ~2× faster either way. The
-[full sharded build](#sharded-build) of all 786 ChromBPNet+BPNet
+[full sharded build](#sharded-build) of all 753 ChromBPNet+BPNet
 models takes about 6 hours on a single GPU.
 
 **Recommended path — bypass the build script and call its scoring
@@ -548,7 +548,7 @@ print(f"Appended {n_added} new tracks → {path}")
 
 ```bash
 chorus backgrounds status --oracle chrombpnet
-# Track count should be one higher (e.g. 786 → 787) and your new
+# Track count should be one higher (e.g. 753 → 754) and your new
 # `ATAC:my_cell_line` row should appear.
 ```
 
@@ -786,7 +786,7 @@ visible discreteness in the percentile output.
 
 #### Reservoir sampling in practice
 
-For long runs (e.g. 1 M perbin samples × 786 tracks), build the CDF
+For long runs (e.g. 1 M perbin samples × 753 tracks), build the CDF
 incrementally using the `ReservoirSampler` pattern from
 `scripts/build_backgrounds_chrombpnet.py:ReservoirSampler` —
 fixed-capacity uniform sampling so memory stays bounded. The sampler
@@ -1091,8 +1091,8 @@ Example output:
 ```
   enformer         5313 tracks  522.9 MB  2026-04-24 23:53  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
   borzoi           7611 tracks  766.1 MB  2026-04-24 23:43  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
-  chrombpnet        786 tracks   78.6 MB  2026-04-26 15:04  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
-                         ATAC/DNASE: 42  CHIP: 744
+  chrombpnet        753 tracks   79.5 MB  2026-08-01 02:53  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
+                         ATAC/DNASE: 9  CHIP: 744
   sei                40 tracks    2.8 MB  2026-04-25 00:29  CDFs: effect_cdfs, summary_cdfs
   legnet              3 tracks    0.2 MB  2026-04-24 23:54  CDFs: effect_cdfs, summary_cdfs
   alphagenome       5168 tracks  262.8 MB  2026-04-24 23:32  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs

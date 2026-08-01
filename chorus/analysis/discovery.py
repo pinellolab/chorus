@@ -717,9 +717,10 @@ def discover_variant_effects(
 
         if name == "chrombpnet":
             from ..oracles.chrombpnet_source.chrombpnet_globals import iter_unique_models
-            # Dedupe by ENCFF — the registry has aliases (`"limb"` and
-            # `"limb_E12.5"` point to the same model); without dedup
-            # discover_variant_effects would load the same weights twice.
+            # Dedupe by ENCFF. The registry is one-alias-per-model since the
+            # mouse atlas was dropped (2026-08-01), so this is currently a
+            # no-op — but it stays because the helper is the registry's
+            # contract, not an incidental optimisation.
             models = [
                 {"assay": assay, "cell_type": cell_type}
                 for assay, cell_type, _encff in iter_unique_models()

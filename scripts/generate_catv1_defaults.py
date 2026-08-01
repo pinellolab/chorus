@@ -50,8 +50,11 @@ OUT_PATH = SOURCE_DIR / "catv1_defaults.py"
 # chorus/oracles/chrombpnet_source/chrombpnet_globals.py.  Verified: all
 # nine resolve to exactly one CATv1 row via `annotation_accession`.
 #
-# ChromBPNet also ships mouse models (neural_tube, limb_E12.5, ...).
-# CATv1 is GRCh38-only, so those have no counterpart and are omitted.
+# ChromBPNet used to also ship mouse models (neural_tube, limb_E12.5,
+# ...) which CATv1, being GRCh38-only, had no counterpart for. Those were
+# removed from the registry on 2026-08-01 for the same reason — chorus is
+# hg38-only — so this set is now the whole registry rather than a subset
+# of it. The 9 entries below are unchanged.
 CHROMBPNET_HUMAN_ANNOTATIONS = {
     ("ATAC", "K562"): "ENCSR467RSV",
     ("ATAC", "HepG2"): "ENCSR380YGX",
