@@ -63,6 +63,23 @@ K562_TRACKS = [
 ]
 
 
+def _write_tsv(report, out_dir):
+    """Write ``example_output.tsv`` beside the JSON.
+
+    Called from every regeneration path. It used to be inline in the
+    AlphaGenome path only, so the Enformer and ChromBPNet paths rewrote
+    ``example_output.json`` while leaving the ``.tsv`` in the same directory
+    untouched — the two then disagreed about which tracks were even scored.
+    Shared here so a new path cannot forget it.
+    """
+    try:
+        report.to_dataframe().to_csv(
+            f'{out_dir}/example_output.tsv', sep='\t', index=False,
+        )
+    except Exception as exc:
+        logger.warning("  TSV failed: %s", exc)
+
+
 ALPHAGENOME_EXAMPLES = [
     # variant_analysis — each uses specific cell-type tracks
     {
@@ -77,43 +94,63 @@ ALPHAGENOME_EXAMPLES = [
         "html_name": "rs12740374_SORT1_alphagenome_report.html",
         "user_prompt": "Analyze rs12740374 (chr1:109274968 G>T) in HepG2 liver cells using DNASE, CEBPA/CEBPB ChIP, H3K27ac, and CAGE tracks. Gene is SORT1.",
     },
-    # {
-    #     "name": "BCL11A rs1427407 (K562 erythroid)",
-    #     "dir": f"{BASE}/variant_analysis/BCL11A_rs1427407",
-    #     "type": "variant",
-    #     "position": "chr2:60490908",
-    #     "ref": "G", "alt": "T",
-    #     "gene": "BCL11A",
-    #     "assay_ids": K562_TRACKS,
-    #     "cell_type": "K562",
-    #     "html_name": "rs1427407_BCL11A_alphagenome_report.html",
-    #     "user_prompt": "Analyze rs1427407 (chr2:60490908 G>T) in K562 erythroid cells using DNASE, GATA1/TAL1 ChIP, H3K27ac, and CAGE tracks. Gene is BCL11A.",
-    # },
-    # {
-    #     "name": "FTO rs1421085 (HepG2 — nearest liver/metabolic)",
-    #     "dir": f"{BASE}/variant_analysis/FTO_rs1421085",
-    #     "type": "variant",
-    #     "position": "chr16:53767042",
-    #     "ref": "T", "alt": "C",
-    #     "gene": "FTO",
-    #     "assay_ids": HEPG2_TRACKS,
-    #     "cell_type": "HepG2",
-    #     "html_name": "rs1421085_FTO_alphagenome_report.html",
-    #     "user_prompt": "Analyze rs1421085 (chr16:53767042 T>C) in HepG2 cells. Gene is FTO. Using HepG2 as the nearest available metabolic cell type.",
-    # },
-    # # validation — forced HepG2 CEBP tracks to match the paper
-    # {
-    #     "name": "SORT1 with CEBP (validation)",
-    #     "dir": f"{BASE}/validation/SORT1_rs12740374_with_CEBP",
-    #     "type": "variant",
-    #     "position": "chr1:109274968",
-    #     "ref": "G", "alt": "T",
-    #     "gene": "SORT1",
-    #     "assay_ids": HEPG2_TRACKS,
-    #     "cell_type": "HepG2",
-    #     "html_name": "rs12740374_SORT1_CEBP_validation_report.html",
-    #     "user_prompt": "Validate AlphaGenome paper finding: rs12740374 (chr1:109274968 G>T) should show CEBPA/CEBPB binding gain in HepG2. Using forced HepG2 tracks.",
-    # },
+    # Re-enabled 2026-08-01. These three were commented out in 96649ee with no
+    # stated reason (unlike the ENFORMER_EXAMPLES note below, which explains
+    # itself), but their outputs still ship AND are advertised as live
+    # documentation: examples/walkthroughs/README.md:108 promises "Four worked
+    # examples: SORT1 (HepG2 liver), BCL11A (K562 erythroid), FTO (metabolic),
+    # TERT promoter (K562)", and README.md:149 links
+    # validation/SORT1_rs12740374_with_CEBP as the answer to "Replicate a
+    # published regulatory variant finding". Each also ships a reproduction
+    # notebook.ipynb. Being un-regenerable, their committed numbers were frozen
+    # at 2026-04-21 and so predated both the #92 windowing fix and the #119
+    # percentile-denominator fix. All 13 track identifiers below were verified
+    # present in alphagenome_tracks.json before re-enabling.
+    {
+        "name": "BCL11A rs1427407 (K562 erythroid)",
+        "dir": f"{BASE}/variant_analysis/BCL11A_rs1427407",
+        "type": "variant",
+        "position": "chr2:60490908",
+        # hg38 has T at chr2:60490908 (context AAACA[T]TTCCC), so the
+        # hg38-oriented spec is T>G. This used to read ref="G", alt="T" —
+        # the literature's ancestral orientation — which made chorus warn
+        # ("Provided reference allele 'G' does not match the genome ...
+        # Chorus will substitute") and then score a SYNTHETIC non-reference
+        # sequence as ref while treating the real reference base as alt. The
+        # warning was emitted on every run and never acted on. Corrected
+        # 2026-08-01; every effect sign flips relative to earlier outputs.
+        "ref": "T", "alt": "G",
+        "gene": "BCL11A",
+        "assay_ids": K562_TRACKS,
+        "cell_type": "K562",
+        "html_name": "rs1427407_BCL11A_alphagenome_report.html",
+        "user_prompt": "Analyze rs1427407 (chr2:60490908 T>G) in K562 erythroid cells using DNASE, GATA1/TAL1 ChIP, H3K27ac, and CAGE tracks. Gene is BCL11A.",
+    },
+    {
+        "name": "FTO rs1421085 (HepG2 — nearest liver/metabolic)",
+        "dir": f"{BASE}/variant_analysis/FTO_rs1421085",
+        "type": "variant",
+        "position": "chr16:53767042",
+        "ref": "T", "alt": "C",
+        "gene": "FTO",
+        "assay_ids": HEPG2_TRACKS,
+        "cell_type": "HepG2",
+        "html_name": "rs1421085_FTO_alphagenome_report.html",
+        "user_prompt": "Analyze rs1421085 (chr16:53767042 T>C) in HepG2 cells. Gene is FTO. Using HepG2 as the nearest available metabolic cell type.",
+    },
+    # validation — forced HepG2 CEBP tracks to match the paper
+    {
+        "name": "SORT1 with CEBP (validation)",
+        "dir": f"{BASE}/validation/SORT1_rs12740374_with_CEBP",
+        "type": "variant",
+        "position": "chr1:109274968",
+        "ref": "G", "alt": "T",
+        "gene": "SORT1",
+        "assay_ids": HEPG2_TRACKS,
+        "cell_type": "HepG2",
+        "html_name": "rs12740374_SORT1_CEBP_validation_report.html",
+        "user_prompt": "Validate AlphaGenome paper finding: rs12740374 (chr1:109274968 G>T) should show CEBPA/CEBPB binding gain in HepG2. Using forced HepG2 tracks.",
+    },
 ]
 
 ENFORMER_EXAMPLES = [
@@ -202,12 +239,7 @@ def regenerate_variant_alphagenome(oracle, norm, example):
     with open(f'{out_dir}/example_output.json', 'w') as f:
         json.dump(d, f, indent=2, default=str)
 
-    # Save TSV
-    try:
-        df = report.to_dataframe()
-        df.to_csv(f'{out_dir}/example_output.tsv', sep='\t', index=False)
-    except Exception as exc:
-        logger.warning("  TSV failed: %s", exc)
+    _write_tsv(report, out_dir)
 
     # Save HTML
     target = f'{out_dir}/{example["html_name"]}'
@@ -269,6 +301,10 @@ def regenerate_enformer_discovery(oracle, norm, example, igv_raw=False):
         d = report.to_dict()
         with open(f'{out_dir}/example_output.json', 'w') as f:
             json.dump(d, f, indent=2, default=str)
+        # The TSV ships and is documented (README.md:61), but this branch used
+        # to skip it while rewriting the JSON beside it — so the two drifted
+        # apart and the committed TSV kept April's tracks. See 2026-08-01.
+        _write_tsv(report, out_dir)
 
     logger.info("  ✓ HTML: %s", example["html_name"])
     logger.info("  ✓ Done")
@@ -312,6 +348,7 @@ def regenerate_chrombpnet(oracle, norm, example):
     d = report.to_dict()
     with open(f'{out_dir}/example_output.json', 'w') as f:
         json.dump(d, f, indent=2, default=str)
+    _write_tsv(report, out_dir)
 
     html_path = report.to_html(output_path=f'{out_dir}/{example["html_name"]}')
     logger.info("  ✓ HTML: %s", html_path)

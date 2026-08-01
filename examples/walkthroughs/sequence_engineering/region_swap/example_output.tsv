@@ -1,5 +1,5 @@
 allele	layer	assay_id	assay_type	cell_type	description	ref_value	alt_value	raw_score	quantile_score	ref_signal_percentile	note
-replacement	chromatin_accessibility	DNASE/EFO:0002067 DNase-seq/.	DNASE	K562		215.2778778076172	21.09941864013672	-3.2908057825125963	1.0	0.9005	
-replacement	histone_marks	CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.	CHIP	K562		4974.0	1950.5	-1.3501130628794218	1.0	0.9873	
-replacement	histone_marks	CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K4me3/.	CHIP	K562		2165.0	1055.25	-1.0360819015514182	1.0	0.8954	
-replacement	tss_activity	CAGE/hCAGE EFO:0002067/+	CAGE	K562	variant site	26.454437255859375	15.470718383789062	-0.7371358593560341	1.0	1.0	
+replacement	chromatin_accessibility	DNASE/EFO:0002067 DNase-seq/.	DNASE	K562		217.73841857910156	21.20684814453125	-3.3001300850151045	1.0	0.9006	
+replacement	histone_marks	CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.	CHIP	K562		4904.0	1927.5	-1.3467739904778393	1.0	0.9864	
+replacement	histone_marks	CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K4me3/.	CHIP	K562		2117.5	1048.0	-1.0140284507866226	0.9987	0.8949	
+replacement	tss_activity	CAGE/hCAGE EFO:0002067/+	CAGE	K562	variant site	26.020172119140625	15.516708374023438	-0.710110664961436	0.9987	0.9251	

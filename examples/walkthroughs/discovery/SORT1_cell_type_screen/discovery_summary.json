@@ -1,35 +1,35 @@
 [
   {
     "cell_type": "HepG2",
-    "effect": 1.3961915200507815,
-    "abs_effect": 1.3961915200507815,
-    "ref_value": 595.932373046875,
-    "alt_value": 1570.160888671875,
+    "effect": 1.3307977543704286,
+    "abs_effect": 1.3307977543704286,
+    "ref_value": 661.6862182617188,
+    "alt_value": 1665.932373046875,
     "ranking_metric": "alt_x_abs_effect",
-    "ranking_score": 2192.245317879071,
+    "ranking_score": 2217.0190609837805,
     "best_track": "DNASE:HepG2",
     "n_tracks": 562
   },
   {
     "cell_type": "MCF 10A",
-    "effect": 1.5195499993884147,
-    "abs_effect": 1.5195499993884147,
-    "ref_value": 295.93707275390625,
-    "alt_value": 850.3233642578125,
+    "effect": 1.4366098718468747,
+    "abs_effect": 1.4366098718468747,
+    "ref_value": 338.2292175292969,
+    "alt_value": 917.2393798828125,
     "ranking_metric": "alt_x_abs_effect",
-    "ranking_score": 1292.1088676379138,
+    "ranking_score": 1317.7151479863542,
     "best_track": "DNASE:MCF 10A",
     "n_tracks": 6
   },
   {
-    "cell_type": "left lobe of liver",
-    "effect": 1.8402840603565316,
-    "abs_effect": 1.8402840603565316,
-    "ref_value": 184.88961791992188,
-    "alt_value": 664.634521484375,
+    "cell_type": "amniotic epithelial cell",
+    "effect": 2.8981886312334364,
+    "abs_effect": 2.8981886312334364,
+    "ref_value": 53.01323699951172,
+    "alt_value": 401.6631774902344,
     "ranking_metric": "alt_x_abs_effect",
-    "ranking_score": 1223.116315850386,
-    "best_track": "DNASE:left lobe of liver",
-    "n_tracks": 6
+    "ranking_score": 1164.0956545872953,
+    "best_track": "DNASE:amniotic epithelial cell",
+    "n_tracks": 3
   }
 ]
