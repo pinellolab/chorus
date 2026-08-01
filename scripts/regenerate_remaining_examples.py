@@ -294,13 +294,26 @@ def regen_cdyl_finemap(oracle, norm):
             f"{out_dir}/example_output.tsv", sep="\t", index=False)
     except Exception as exc:
         logger.warning("  tsv write failed: %s", exc)
-    try:
+    # No committed HTML for this example, deliberately. Measured at 25.70 MB,
+    # above the 20 MiB ceiling that tests/test_committed_examples.py enforces
+    # on tracked artefacts. The #129 feature budget is PER TRACK (4,000), and
+    # nothing caps a report total — so 21 lung-fibroblast tracks x 2 alleles
+    # is ~42x a single-track panel and legitimately blows the file limit. The
+    # JSON/MD/TSV carry every number the example is for; the IGV panel is the
+    # only casualty. Write it locally for inspection if you want it:
+    #
+    #   result.to_html(output_path=f"{out_dir}/rs9504151_CDYL_locus_causal_report.html")
+    #
+    # and see the report-level-budget follow-up before committing one.
+    if os.environ.get("CHORUS_WRITE_LARGE_HTML"):
         html_path = f"{out_dir}/rs9504151_CDYL_locus_causal_report.html"
         result.to_html(output_path=html_path)
-        logger.info("  ✓ HTML: %s (%.0f KB)", os.path.basename(html_path),
+        logger.info("  ✓ HTML: %s (%.0f KB) — NOT for committing",
+                    os.path.basename(html_path),
                     os.path.getsize(html_path) / 1024)
-    except Exception as exc:
-        logger.warning("  html write failed: %s", exc)
+    else:
+        logger.info("  (HTML skipped — exceeds the 20 MiB artefact ceiling; "
+                    "set CHORUS_WRITE_LARGE_HTML=1 to write it locally)")
 
     top = result.rankings[:3] if hasattr(result, "rankings") else []
     for i, r in enumerate(top, 1):

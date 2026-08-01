@@ -1,0 +1,5024 @@
+{
+  "sentinel": "rs9504151",
+  "oracle": "alphagenome",
+  "gene_name": "CDYL",
+  "population": "",
+  "cell_types": [
+    "fibroblast of lung",
+    "lung fibroblast"
+  ],
+  "n_variants": 56,
+  "weights": {
+    "max_effect": 0.35,
+    "n_layers": 0.25,
+    "convergence": 0.2,
+    "ref_activity": 0.2
+  },
+  "top_candidate": {
+    "variant_id": "rs9504151",
+    "composite": 0.9912417005620879,
+    "max_effect": -1.3620281242288657,
+    "n_layers_affected": 3,
+    "convergence": 1.0,
+    "top_layer": "chromatin_accessibility"
+  },
+  "rankings": [
+    {
+      "variant_id": "rs9504151",
+      "chrom": "chr6",
+      "position": 4577675,
+      "ref": "T",
+      "alt": "A",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": true,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.9912,
+      "max_effect": -1.362,
+      "n_layers_affected": 3,
+      "convergence": 1.0,
+      "ref_activity": 2016.956,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": -0.1218,
+        "histone_marks": -1.1772,
+        "tf_binding": -0.0087,
+        "chromatin_accessibility": -1.362,
+        "gene_expression": -0.0074,
+        "splicing": -0.0003
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 4.837638854980469,
+          "alt_value": 4.3649749755859375,
+          "raw_score": -0.1218,
+          "quantile_score": 0.9897,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 5224.5,
+          "alt_value": 2309.75,
+          "raw_score": -1.1772,
+          "quantile_score": 1.0,
+          "description": "CHIP:H3K27ac:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 499.0,
+          "alt_value": 496.0,
+          "raw_score": -0.0087,
+          "quantile_score": 0.3376,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 671.6666870117188,
+          "alt_value": 260.6908874511719,
+          "raw_score": -1.362,
+          "quantile_score": 0.9966,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.020988614938687533,
+          "alt_value": 0.020826628936144214,
+          "raw_score": -0.0074,
+          "quantile_score": -1.0,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.001477118581533432,
+          "alt_value": 0.0012619979679584503,
+          "raw_score": -0.0003,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs658325",
+      "chrom": "chr6",
+      "position": 4574069,
+      "ref": "T",
+      "alt": "C",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.6864,
+      "max_effect": -1.1095,
+      "n_layers_affected": 2,
+      "convergence": 1.0,
+      "ref_activity": 779.3893,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": -0.04,
+        "histone_marks": -0.2034,
+        "tf_binding": -0.0272,
+        "chromatin_accessibility": -1.1095,
+        "gene_expression": -0.0058,
+        "splicing": -0.0002
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 3.315296173095703,
+          "alt_value": 3.197307586669922,
+          "raw_score": -0.04,
+          "quantile_score": 0.9133,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K4me2/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 927.79248046875,
+          "alt_value": 805.6328125,
+          "raw_score": -0.2034,
+          "quantile_score": 0.9708,
+          "description": "CHIP:H3K4me2:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 507.0,
+          "alt_value": 497.5,
+          "raw_score": -0.0272,
+          "quantile_score": 0.6507,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 168.39649963378906,
+          "alt_value": 77.50788879394531,
+          "raw_score": -1.1095,
+          "quantile_score": 0.9951,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.19399205446243287,
+          "alt_value": 0.19287338852882385,
+          "raw_score": -0.0058,
+          "quantile_score": -0.9982,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0019228681921958923,
+          "alt_value": 0.0018117055296897888,
+          "raw_score": -0.0002,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs386522231",
+      "chrom": "chr6",
+      "position": 4598588,
+      "ref": "G",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 0.8655,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.6521,
+      "max_effect": -1.0351,
+      "n_layers_affected": 2,
+      "convergence": 1.0,
+      "ref_activity": 660.1963,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0471,
+        "histone_marks": -0.2481,
+        "tf_binding": -0.036,
+        "chromatin_accessibility": -1.0351,
+        "gene_expression": -0.0054,
+        "splicing": 0.0001
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 1.9981861114501953,
+          "alt_value": 2.097658157348633,
+          "raw_score": 0.0471,
+          "quantile_score": 0.9354,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K4me2/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 598.0,
+          "alt_value": 503.375,
+          "raw_score": -0.2481,
+          "quantile_score": 0.9783,
+          "description": "CHIP:H3K4me2:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 364.0,
+          "alt_value": 355.0,
+          "raw_score": -0.036,
+          "quantile_score": 0.7266,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 8.204635620117188,
+          "alt_value": 3.4916648864746094,
+          "raw_score": -1.0351,
+          "quantile_score": 0.9949,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.02061114487393449,
+          "alt_value": 0.020495127401469897,
+          "raw_score": -0.0054,
+          "quantile_score": -0.9988,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0006829928606748581,
+          "alt_value": 0.000752672553062439,
+          "raw_score": 0.0001,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs62384944",
+      "chrom": "chr6",
+      "position": 4601262,
+      "ref": "A",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 0.9324,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.441,
+      "max_effect": 0.293,
+      "n_layers_affected": 1,
+      "convergence": 1.0,
+      "ref_activity": 1168.458,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0186,
+        "histone_marks": 0.0582,
+        "tf_binding": 0.032,
+        "chromatin_accessibility": 0.293,
+        "gene_expression": 0.0085,
+        "splicing": 0.0001
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 2.694319725036621,
+          "alt_value": 2.6470813751220703,
+          "raw_score": -0.0186,
+          "quantile_score": 0.7083,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1955.5,
+          "alt_value": 2036.0,
+          "raw_score": 0.0582,
+          "quantile_score": 0.8941,
+          "description": "CHIP:H3K27ac:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 489.5,
+          "alt_value": 500.5,
+          "raw_score": 0.032,
+          "quantile_score": 0.6888,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 61.621673583984375,
+          "alt_value": 75.72223663330078,
+          "raw_score": 0.293,
+          "quantile_score": 0.9718,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.16035873701588976,
+          "alt_value": 0.16172906290739775,
+          "raw_score": 0.0085,
+          "quantile_score": 0.9976,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0014346279203891754,
+          "alt_value": 0.0014761574566364288,
+          "raw_score": 0.0001,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs9504169",
+      "chrom": "chr6",
+      "position": 4609534,
+      "ref": "T",
+      "alt": "G",
+      "kind": "snv",
+      "r2": 0.8282,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.4206,
+      "max_effect": -0.1012,
+      "n_layers_affected": 1,
+      "convergence": 1.0,
+      "ref_activity": 1400.1895,
+      "top_layer": "histone_marks",
+      "top_track": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0199,
+        "histone_marks": -0.1012,
+        "tf_binding": 0.0017,
+        "chromatin_accessibility": -0.0194,
+        "gene_expression": -0.0075,
+        "splicing": -0.0001
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 1.6471812725067139,
+          "alt_value": 1.6839938163757324,
+          "raw_score": 0.0199,
+          "quantile_score": 0.7321,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1604.75,
+          "alt_value": 1496.0,
+          "raw_score": -0.1012,
+          "quantile_score": 0.9613,
+          "description": "CHIP:H3K27me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 417.5,
+          "alt_value": 418.0,
+          "raw_score": 0.0017,
+          "quantile_score": 0.0663,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 5.017620086669922,
+          "alt_value": 4.937199592590332,
+          "raw_score": -0.0194,
+          "quantile_score": 0.541,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.19056786275986168,
+          "alt_value": 0.189134967720343,
+          "raw_score": -0.0075,
+          "quantile_score": -0.9988,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0010580234229564667,
+          "alt_value": 0.0010110195726156235,
+          "raw_score": -0.0001,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs57189168",
+      "chrom": "chr6",
+      "position": 4558976,
+      "ref": "T",
+      "alt": "C",
+      "kind": "snv",
+      "r2": 0.8686,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.4144,
+      "max_effect": 0.2945,
+      "n_layers_affected": 1,
+      "convergence": 1.0,
+      "ref_activity": 954.9928,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/+",
+      "per_layer_scores": {
+        "tss_activity": 0.2945,
+        "histone_marks": -0.0047,
+        "tf_binding": -0.009,
+        "chromatin_accessibility": 0.0088,
+        "gene_expression": 0.0081,
+        "splicing": 0.0001
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 4.0823516845703125,
+          "alt_value": 5.233173370361328,
+          "raw_score": 0.2945,
+          "quantile_score": 0.9988,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2894.75,
+          "alt_value": 2885.25,
+          "raw_score": -0.0047,
+          "quantile_score": 0.1819,
+          "description": "CHIP:H3K27me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 400.0,
+          "alt_value": 397.5,
+          "raw_score": -0.009,
+          "quantile_score": 0.3457,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 5.9035491943359375,
+          "alt_value": 5.945751190185547,
+          "raw_score": 0.0088,
+          "quantile_score": 0.302,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/.",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.03145674903256198,
+          "alt_value": 0.03172066515415079,
+          "raw_score": 0.0081,
+          "quantile_score": 0.9966,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0013220012187957764,
+          "alt_value": 0.001416824758052826,
+          "raw_score": 0.0001,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs60654575",
+      "chrom": "chr6",
+      "position": 4600160,
+      "ref": "G",
+      "alt": "A",
+      "kind": "snv",
+      "r2": 0.8655,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.3957,
+      "max_effect": 0.1507,
+      "n_layers_affected": 1,
+      "convergence": 1.0,
+      "ref_activity": 1101.8832,
+      "top_layer": "histone_marks",
+      "top_track": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27ac/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0323,
+        "histone_marks": 0.1507,
+        "tf_binding": -0.0109,
+        "chromatin_accessibility": 0.0012,
+        "gene_expression": -0.0026,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 1.9873161315917969,
+          "alt_value": 2.0549583435058594,
+          "raw_score": 0.0323,
+          "quantile_score": 0.8764,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1695.0,
+          "alt_value": 1881.75,
+          "raw_score": 0.1507,
+          "quantile_score": 0.9742,
+          "description": "CHIP:H3K27ac:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 396.0,
+          "alt_value": 393.0,
+          "raw_score": -0.0109,
+          "quantile_score": 0.3997,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 695.38671875,
+          "alt_value": 695.9603881835938,
+          "raw_score": 0.0012,
+          "quantile_score": 0.0408,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 4.876071453094482,
+          "alt_value": 4.863554954528809,
+          "raw_score": -0.0026,
+          "quantile_score": -0.9916,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0005436521023511887,
+          "alt_value": 0.0005612168461084366,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs17138534",
+      "chrom": "chr6",
+      "position": 4589395,
+      "ref": "A",
+      "alt": "G",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.3951,
+      "max_effect": -0.2353,
+      "n_layers_affected": 1,
+      "convergence": 1.0,
+      "ref_activity": 923.7153,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0146,
+        "histone_marks": 0.0191,
+        "tf_binding": -0.0195,
+        "chromatin_accessibility": -0.2353,
+        "gene_expression": -0.0051,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 4.2959747314453125,
+          "alt_value": 4.349971771240234,
+          "raw_score": 0.0146,
+          "quantile_score": 0.6191,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1500.25,
+          "alt_value": 1520.25,
+          "raw_score": 0.0191,
+          "quantile_score": 0.3828,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 445.5,
+          "alt_value": 439.5,
+          "raw_score": -0.0195,
+          "quantile_score": 0.5553,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 13.374752044677734,
+          "alt_value": 11.211250305175781,
+          "raw_score": -0.2353,
+          "quantile_score": 0.962,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.14785313606262207,
+          "alt_value": 0.14709317684173584,
+          "raw_score": -0.0051,
+          "quantile_score": -0.9988,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0010471697896718979,
+          "alt_value": 0.0010380931198596954,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs420580",
+      "chrom": "chr6",
+      "position": 4553327,
+      "ref": "C",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 0.9324,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.3636,
+      "max_effect": 0.1129,
+      "n_layers_affected": 1,
+      "convergence": 1.0,
+      "ref_activity": 924.718,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": -0.019,
+        "histone_marks": 0.0132,
+        "tf_binding": -0.0139,
+        "chromatin_accessibility": 0.1129,
+        "gene_expression": 0.0048,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 2.9775619506835938,
+          "alt_value": 2.925609588623047,
+          "raw_score": -0.019,
+          "quantile_score": 0.7163,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 583.25,
+          "alt_value": 588.625,
+          "raw_score": 0.0132,
+          "quantile_score": 0.4935,
+          "description": "CHIP:H3K27ac:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 469.5,
+          "alt_value": 465.0,
+          "raw_score": -0.0139,
+          "quantile_score": 0.4616,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 31.58671760559082,
+          "alt_value": 34.238197326660156,
+          "raw_score": 0.1129,
+          "quantile_score": 0.9153,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.15037798881530762,
+          "alt_value": 0.1511014699935913,
+          "raw_score": 0.0048,
+          "quantile_score": 0.9954,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0005444791167974472,
+          "alt_value": 0.0005503371357917786,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs60318324",
+      "chrom": "chr6",
+      "position": 4571425,
+      "ref": "T",
+      "alt": "C",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.3598,
+      "max_effect": 0.2477,
+      "n_layers_affected": 1,
+      "convergence": 1.0,
+      "ref_activity": 618.1309,
+      "top_layer": "tf_binding",
+      "top_track": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0191,
+        "histone_marks": 0.0068,
+        "tf_binding": 0.2477,
+        "chromatin_accessibility": 0.0174,
+        "gene_expression": -0.0087,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 1.2906503677368164,
+          "alt_value": 1.3211002349853516,
+          "raw_score": 0.0191,
+          "quantile_score": 0.7175,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 896.5,
+          "alt_value": 900.75,
+          "raw_score": 0.0068,
+          "quantile_score": 0.1525,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 91.75,
+          "alt_value": 109.125,
+          "raw_score": 0.2477,
+          "quantile_score": 0.9831,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 5.365776062011719,
+          "alt_value": 5.442962646484375,
+          "raw_score": 0.0174,
+          "quantile_score": 0.5007,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.019070360395643447,
+          "alt_value": 0.018897129429711237,
+          "raw_score": -0.0087,
+          "quantile_score": -0.9994,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0009671784937381744,
+          "alt_value": 0.0009877607226371765,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs58341597",
+      "chrom": "chr6",
+      "position": 4579914,
+      "ref": "C",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.3557,
+      "max_effect": -0.1877,
+      "n_layers_affected": 1,
+      "convergence": 1.0,
+      "ref_activity": 709.1213,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0035,
+        "histone_marks": -0.0187,
+        "tf_binding": -0.0227,
+        "chromatin_accessibility": -0.1877,
+        "gene_expression": -0.0041,
+        "splicing": -0.0001
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 1.153930902481079,
+          "alt_value": 1.159143328666687,
+          "raw_score": 0.0035,
+          "quantile_score": 0.2066,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1219.9375,
+          "alt_value": 1204.1875,
+          "raw_score": -0.0187,
+          "quantile_score": 0.3805,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 319.3125,
+          "alt_value": 314.3125,
+          "raw_score": -0.0227,
+          "quantile_score": 0.5918,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 5.935166358947754,
+          "alt_value": 5.08921480178833,
+          "raw_score": -0.1877,
+          "quantile_score": 0.9504,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.14878857870482737,
+          "alt_value": 0.14818180347275403,
+          "raw_score": -0.0041,
+          "quantile_score": -0.9976,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0015736669301986694,
+          "alt_value": 0.0015166476368904114,
+          "raw_score": -0.0001,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs6913171",
+      "chrom": "chr6",
+      "position": 4577170,
+      "ref": "G",
+      "alt": "A",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.2089,
+      "max_effect": 0.0433,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 2086.3557,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0277,
+        "histone_marks": 0.0269,
+        "tf_binding": -0.0108,
+        "chromatin_accessibility": 0.0433,
+        "gene_expression": 0.0037,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 1.3441474437713623,
+          "alt_value": 1.3895577192306519,
+          "raw_score": 0.0277,
+          "quantile_score": 0.8358,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 5609.5,
+          "alt_value": 5715.0,
+          "raw_score": 0.0269,
+          "quantile_score": 0.7201,
+          "description": "CHIP:H3K27ac:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 469.5,
+          "alt_value": 466.0,
+          "raw_score": -0.0108,
+          "quantile_score": 0.3936,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 13.326047897338867,
+          "alt_value": 13.762861251831055,
+          "raw_score": 0.0433,
+          "quantile_score": 0.7724,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.8957976181473997,
+          "alt_value": 0.8990838987131914,
+          "raw_score": 0.0037,
+          "quantile_score": 0.9944,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0009350888431072235,
+          "alt_value": 0.0009329468011856079,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs9502199",
+      "chrom": "chr6",
+      "position": 4578205,
+      "ref": "T",
+      "alt": "C",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.1735,
+      "max_effect": 0.0421,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1808.3254,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0174,
+        "histone_marks": 0.0102,
+        "tf_binding": 0.0256,
+        "chromatin_accessibility": 0.0421,
+        "gene_expression": -0.0036,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 4.367519378662109,
+          "alt_value": 4.303043365478516,
+          "raw_score": -0.0174,
+          "quantile_score": 0.6885,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 986.25,
+          "alt_value": 993.25,
+          "raw_score": 0.0102,
+          "quantile_score": 0.3664,
+          "description": "CHIP:H3K27me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 418.5,
+          "alt_value": 426.0,
+          "raw_score": 0.0256,
+          "quantile_score": 0.6344,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 12.178221702575684,
+          "alt_value": 12.568490028381348,
+          "raw_score": 0.0421,
+          "quantile_score": 0.7659,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.04267860928343402,
+          "alt_value": 0.04251971406241258,
+          "raw_score": -0.0036,
+          "quantile_score": -0.9978,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0012021921575069427,
+          "alt_value": 0.0011975541710853577,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs742574",
+      "chrom": "chr6",
+      "position": 4608300,
+      "ref": "A",
+      "alt": "G",
+      "kind": "snv",
+      "r2": 0.8282,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.1705,
+      "max_effect": -0.0386,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1791.8595,
+      "top_layer": "histone_marks",
+      "top_track": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0104,
+        "histone_marks": -0.0386,
+        "tf_binding": 0.0159,
+        "chromatin_accessibility": 0.0355,
+        "gene_expression": -0.0088,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 2.462911605834961,
+          "alt_value": 2.4381027221679688,
+          "raw_score": -0.0104,
+          "quantile_score": 0.4975,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2781.0,
+          "alt_value": 2707.5,
+          "raw_score": -0.0386,
+          "quantile_score": 0.6486,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 359.0,
+          "alt_value": 363.0,
+          "raw_score": 0.0159,
+          "quantile_score": 0.5013,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 21.548362731933594,
+          "alt_value": 22.109573364257812,
+          "raw_score": 0.0355,
+          "quantile_score": 0.7245,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.039116859436035156,
+          "alt_value": 0.03876447677612305,
+          "raw_score": -0.0088,
+          "quantile_score": -0.9994,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0008571147918701172,
+          "alt_value": 0.000875614583492279,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs58678488",
+      "chrom": "chr6",
+      "position": 4612314,
+      "ref": "A",
+      "alt": "C",
+      "kind": "snv",
+      "r2": 0.8282,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.1577,
+      "max_effect": -0.0872,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1590.6115,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0555,
+        "histone_marks": 0.0175,
+        "tf_binding": 0.0152,
+        "chromatin_accessibility": -0.0872,
+        "gene_expression": 0.0064,
+        "splicing": 0.001
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 2.1097354888916016,
+          "alt_value": 2.231642246246338,
+          "raw_score": 0.0555,
+          "quantile_score": 0.9518,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2328.5,
+          "alt_value": 2357.0,
+          "raw_score": 0.0175,
+          "quantile_score": 0.5422,
+          "description": "CHIP:H3K27me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 472.0,
+          "alt_value": 477.0,
+          "raw_score": 0.0152,
+          "quantile_score": 0.4886,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 38.31608581542969,
+          "alt_value": 36.00945281982422,
+          "raw_score": -0.0872,
+          "quantile_score": 0.8921,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.17320226722707352,
+          "alt_value": 0.17431356587136784,
+          "raw_score": 0.0064,
+          "quantile_score": 0.9964,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0027265846729278564,
+          "alt_value": 0.0034381262958049774,
+          "raw_score": 0.001,
+          "quantile_score": 0.9841,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs9504152",
+      "chrom": "chr6",
+      "position": 4581088,
+      "ref": "T",
+      "alt": "C",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.1571,
+      "max_effect": -0.0119,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1740.7493,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/-",
+      "per_layer_scores": {
+        "tss_activity": -0.0119,
+        "histone_marks": 0.0052,
+        "tf_binding": 0.0,
+        "chromatin_accessibility": 0.0099,
+        "gene_expression": -0.0039,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 1.1370497941970825,
+          "alt_value": 1.1194634437561035,
+          "raw_score": -0.0119,
+          "quantile_score": 0.5474,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 5318.625,
+          "alt_value": 5338.0,
+          "raw_score": 0.0052,
+          "quantile_score": 0.2008,
+          "description": "CHIP:H3K27ac:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 248.75,
+          "alt_value": 248.75,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 6.33747673034668,
+          "alt_value": 6.387937545776367,
+          "raw_score": 0.0099,
+          "quantile_score": 0.33,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.08044616381327312,
+          "alt_value": 0.08013146122296651,
+          "raw_score": -0.0039,
+          "quantile_score": -0.9978,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0012799426913261414,
+          "alt_value": 0.001275341957807541,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs57354107",
+      "chrom": "chr6",
+      "position": 4602934,
+      "ref": "C",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 0.8124,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.1164,
+      "max_effect": 0.0289,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1383.0331,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/-",
+      "per_layer_scores": {
+        "tss_activity": 0.0289,
+        "histone_marks": 0.0081,
+        "tf_binding": 0.006,
+        "chromatin_accessibility": 0.0114,
+        "gene_expression": -0.0038,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 3.717580795288086,
+          "alt_value": 3.813077926635742,
+          "raw_score": 0.0289,
+          "quantile_score": 0.8461,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K4me2/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2211.25,
+          "alt_value": 2223.75,
+          "raw_score": 0.0081,
+          "quantile_score": 0.252,
+          "description": "CHIP:H3K4me2:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 477.5,
+          "alt_value": 479.5,
+          "raw_score": 0.006,
+          "quantile_score": 0.2543,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 16.297462463378906,
+          "alt_value": 16.43429183959961,
+          "raw_score": 0.0114,
+          "quantile_score": 0.3617,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.01696125666300456,
+          "alt_value": 0.01689283053080241,
+          "raw_score": -0.0038,
+          "quantile_score": -0.9974,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0010983757674694061,
+          "alt_value": 0.0010797642171382904,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs9504168",
+      "chrom": "chr6",
+      "position": 4609337,
+      "ref": "A",
+      "alt": "G",
+      "kind": "snv",
+      "r2": 0.8282,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.1154,
+      "max_effect": 0.0596,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1312.3259,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/-",
+      "per_layer_scores": {
+        "tss_activity": 0.0596,
+        "histone_marks": -0.0326,
+        "tf_binding": 0.0318,
+        "chromatin_accessibility": -0.043,
+        "gene_expression": 0.0049,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 2.2215442657470703,
+          "alt_value": 2.3574209213256836,
+          "raw_score": 0.0596,
+          "quantile_score": 0.9568,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K4me2/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1810.0,
+          "alt_value": 1769.5,
+          "raw_score": -0.0326,
+          "quantile_score": 0.6921,
+          "description": "CHIP:H3K4me2:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 391.5,
+          "alt_value": 400.25,
+          "raw_score": 0.0318,
+          "quantile_score": 0.6874,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 7.620830535888672,
+          "alt_value": 7.3674163818359375,
+          "raw_score": -0.043,
+          "quantile_score": 0.7711,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.28794435370299554,
+          "alt_value": 0.28936590833796394,
+          "raw_score": 0.0049,
+          "quantile_score": 0.9962,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/+",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0011882707476615906,
+          "alt_value": 0.0012101270258426666,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs56979277",
+      "chrom": "chr6",
+      "position": 4613824,
+      "ref": "G",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 0.8791,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.109,
+      "max_effect": 0.0367,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1308.8156,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/+",
+      "per_layer_scores": {
+        "tss_activity": 0.0367,
+        "histone_marks": -0.0045,
+        "tf_binding": 0.003,
+        "chromatin_accessibility": -0.0015,
+        "gene_expression": -0.0075,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 4.206962585449219,
+          "alt_value": 4.341281890869141,
+          "raw_score": 0.0367,
+          "quantile_score": 0.8968,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K79me2/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 319.5,
+          "alt_value": 318.5,
+          "raw_score": -0.0045,
+          "quantile_score": 0.1501,
+          "description": "CHIP:H3K79me2:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 481.5,
+          "alt_value": 482.5,
+          "raw_score": 0.003,
+          "quantile_score": 0.1405,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 8.965194702148438,
+          "alt_value": 8.955142974853516,
+          "raw_score": -0.0015,
+          "quantile_score": 0.053,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.18099624073753753,
+          "alt_value": 0.17964007664057943,
+          "raw_score": -0.0075,
+          "quantile_score": -0.9988,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0010847598314285278,
+          "alt_value": 0.0010900422930717468,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs9502202",
+      "chrom": "chr6",
+      "position": 4586703,
+      "ref": "T",
+      "alt": "C",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.096,
+      "max_effect": -0.0929,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1090.3753,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0253,
+        "histone_marks": 0.0098,
+        "tf_binding": -0.0472,
+        "chromatin_accessibility": -0.0929,
+        "gene_expression": -0.0036,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 2.927640914916992,
+          "alt_value": 2.9970550537109375,
+          "raw_score": 0.0253,
+          "quantile_score": 0.8083,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2061.0,
+          "alt_value": 2075.0,
+          "raw_score": 0.0098,
+          "quantile_score": 0.2111,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 558.0,
+          "alt_value": 540.0,
+          "raw_score": -0.0472,
+          "quantile_score": 0.7981,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 63.81523132324219,
+          "alt_value": 59.77375793457031,
+          "raw_score": -0.0929,
+          "quantile_score": 0.8976,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.025245985637108486,
+          "alt_value": 0.02515245642926958,
+          "raw_score": -0.0036,
+          "quantile_score": -0.9978,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0013568438589572906,
+          "alt_value": 0.001364007592201233,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs4960009",
+      "chrom": "chr6",
+      "position": 4602216,
+      "ref": "C",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 0.8124,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.0826,
+      "max_effect": 0.0429,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1086.2232,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/-",
+      "per_layer_scores": {
+        "tss_activity": 0.0429,
+        "histone_marks": 0.0168,
+        "tf_binding": 0.0158,
+        "chromatin_accessibility": 0.033,
+        "gene_expression": -0.0076,
+        "splicing": 0.0001
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 3.624357223510742,
+          "alt_value": 3.7640857696533203,
+          "raw_score": 0.0429,
+          "quantile_score": 0.9227,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K4me2/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1129.25,
+          "alt_value": 1142.5,
+          "raw_score": 0.0168,
+          "quantile_score": 0.4452,
+          "description": "CHIP:H3K4me2:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 408.5,
+          "alt_value": 413.0,
+          "raw_score": 0.0158,
+          "quantile_score": 0.4982,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 6.508882522583008,
+          "alt_value": 6.682773590087891,
+          "raw_score": 0.033,
+          "quantile_score": 0.6993,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.1568888633305,
+          "alt_value": 0.15568858379912046,
+          "raw_score": -0.0076,
+          "quantile_score": -0.9988,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.001657724380493164,
+          "alt_value": 0.0017243027687072754,
+          "raw_score": 0.0001,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs410662",
+      "chrom": "chr6",
+      "position": 4551873,
+      "ref": "T",
+      "alt": "C",
+      "kind": "snv",
+      "r2": 0.9324,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.079,
+      "max_effect": -0.0507,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 1042.5856,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0124,
+        "histone_marks": -0.0079,
+        "tf_binding": -0.013,
+        "chromatin_accessibility": -0.0507,
+        "gene_expression": 0.0107,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 2.1241989135742188,
+          "alt_value": 2.0974388122558594,
+          "raw_score": -0.0124,
+          "quantile_score": 0.5593,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K4me2/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 595.625,
+          "alt_value": 592.375,
+          "raw_score": -0.0079,
+          "quantile_score": 0.2471,
+          "description": "CHIP:H3K4me2:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 445.5,
+          "alt_value": 441.5,
+          "raw_score": -0.013,
+          "quantile_score": 0.4378,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 6.770545959472656,
+          "alt_value": 6.502414703369141,
+          "raw_score": -0.0507,
+          "quantile_score": 0.81,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.16855233628302813,
+          "alt_value": 0.17037130944016907,
+          "raw_score": 0.0107,
+          "quantile_score": 0.998,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/+",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0006315112113952637,
+          "alt_value": 0.0006515849381685257,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs9504163",
+      "chrom": "chr6",
+      "position": 4599685,
+      "ref": "G",
+      "alt": "A",
+      "kind": "snv",
+      "r2": 0.8655,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0703,
+      "max_effect": -0.0569,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 960.0708,
+      "top_layer": "tf_binding",
+      "top_track": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+      "per_layer_scores": {
+        "tss_activity": -0.004,
+        "histone_marks": -0.0137,
+        "tf_binding": -0.0569,
+        "chromatin_accessibility": -0.0098,
+        "gene_expression": -0.011,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 0.8858192563056946,
+          "alt_value": 0.8805966377258301,
+          "raw_score": -0.004,
+          "quantile_score": 0.2321,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K79me2/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 341.6875,
+          "alt_value": 338.4375,
+          "raw_score": -0.0137,
+          "quantile_score": 0.4069,
+          "description": "CHIP:H3K79me2:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 309.25,
+          "alt_value": 297.25,
+          "raw_score": -0.0569,
+          "quantile_score": 0.8372,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 14.699884414672852,
+          "alt_value": 14.593184471130371,
+          "raw_score": -0.0098,
+          "quantile_score": 0.3285,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.1540614478290081,
+          "alt_value": 0.15236350976758534,
+          "raw_score": -0.011,
+          "quantile_score": -0.9988,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0007347501814365387,
+          "alt_value": 0.0007377471774816513,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs2235724",
+      "chrom": "chr6",
+      "position": 4588559,
+      "ref": "G",
+      "alt": "A",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.067,
+      "max_effect": 0.071,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 905.0897,
+      "top_layer": "histone_marks",
+      "top_track": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0353,
+        "histone_marks": 0.071,
+        "tf_binding": 0.008,
+        "chromatin_accessibility": 0.0093,
+        "gene_expression": 0.0083,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 8.784324645996094,
+          "alt_value": 9.026962280273438,
+          "raw_score": 0.0353,
+          "quantile_score": 0.8909,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2368.5,
+          "alt_value": 2488.0,
+          "raw_score": 0.071,
+          "quantile_score": 0.9332,
+          "description": "CHIP:H3K27me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 446.5,
+          "alt_value": 449.0,
+          "raw_score": 0.008,
+          "quantile_score": 0.3176,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 5.745128631591797,
+          "alt_value": 5.788784027099609,
+          "raw_score": 0.0093,
+          "quantile_score": 0.3136,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.16846245434135199,
+          "alt_value": 0.16987757788350186,
+          "raw_score": 0.0083,
+          "quantile_score": 0.9976,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0012762472033500671,
+          "alt_value": 0.00128830224275589,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs9504154",
+      "chrom": "chr6",
+      "position": 4585315,
+      "ref": "G",
+      "alt": "A",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0667,
+      "max_effect": -0.0395,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 967.6769,
+      "top_layer": "histone_marks",
+      "top_track": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K4me2/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0182,
+        "histone_marks": -0.0395,
+        "tf_binding": -0.029,
+        "chromatin_accessibility": -0.0382,
+        "gene_expression": -0.0047,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 4.720493316650391,
+          "alt_value": 4.648887634277344,
+          "raw_score": -0.0182,
+          "quantile_score": 0.7007,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K4me2/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 976.25,
+          "alt_value": 949.875,
+          "raw_score": -0.0395,
+          "quantile_score": 0.7527,
+          "description": "CHIP:H3K4me2:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 502.0,
+          "alt_value": 492.0,
+          "raw_score": -0.029,
+          "quantile_score": 0.6647,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 6.46678352355957,
+          "alt_value": 6.271665573120117,
+          "raw_score": -0.0382,
+          "quantile_score": 0.7444,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.2839242306848367,
+          "alt_value": 0.28257576872905094,
+          "raw_score": -0.0047,
+          "quantile_score": -0.9988,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0005825459957122803,
+          "alt_value": 0.0005710069090127945,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs9504156",
+      "chrom": "chr6",
+      "position": 4587892,
+      "ref": "G",
+      "alt": "A",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.0626,
+      "max_effect": -0.0191,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 976.7004,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/-",
+      "per_layer_scores": {
+        "tss_activity": -0.0191,
+        "histone_marks": -0.0058,
+        "tf_binding": -0.0157,
+        "chromatin_accessibility": 0.011,
+        "gene_expression": 0.0084,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 3.2403182983398438,
+          "alt_value": 3.184406280517578,
+          "raw_score": -0.0191,
+          "quantile_score": 0.7193,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1668.5,
+          "alt_value": 1661.75,
+          "raw_score": -0.0058,
+          "quantile_score": 0.1308,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 460.0,
+          "alt_value": 455.0,
+          "raw_score": -0.0157,
+          "quantile_score": 0.4973,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 4.428434371948242,
+          "alt_value": 4.470039367675781,
+          "raw_score": 0.011,
+          "quantile_score": 0.3556,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.15859326720237732,
+          "alt_value": 0.15994712114334106,
+          "raw_score": 0.0084,
+          "quantile_score": 0.9976,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0009951069951057434,
+          "alt_value": 0.0009821578860282898,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs659315",
+      "chrom": "chr6",
+      "position": 4574305,
+      "ref": "C",
+      "alt": "G",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0625,
+      "max_effect": 0.053,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 906.7076,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0283,
+        "histone_marks": -0.0297,
+        "tf_binding": 0.0026,
+        "chromatin_accessibility": 0.053,
+        "gene_expression": 0.0036,
+        "splicing": -0.0001
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 2.937601089477539,
+          "alt_value": 2.861185073852539,
+          "raw_score": -0.0283,
+          "quantile_score": 0.8437,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K4me2/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1105.30078125,
+          "alt_value": 1082.73828125,
+          "raw_score": -0.0297,
+          "quantile_score": 0.6624,
+          "description": "CHIP:H3K4me2:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 559.0,
+          "alt_value": 560.0,
+          "raw_score": 0.0026,
+          "quantile_score": 0.1291,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 181.11813354492188,
+          "alt_value": 187.9282989501953,
+          "raw_score": 0.053,
+          "quantile_score": 0.8189,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.1701141240903073,
+          "alt_value": 0.17073723109852937,
+          "raw_score": 0.0036,
+          "quantile_score": 0.9924,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.001941874623298645,
+          "alt_value": 0.0018948987126350403,
+          "raw_score": -0.0001,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs2235727",
+      "chrom": "chr6",
+      "position": 4589224,
+      "ref": "T",
+      "alt": "G",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0586,
+      "max_effect": 0.0376,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 907.36,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0189,
+        "histone_marks": -0.006,
+        "tf_binding": -0.0029,
+        "chromatin_accessibility": 0.0376,
+        "gene_expression": -0.0106,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 3.5909156799316406,
+          "alt_value": 3.53125,
+          "raw_score": -0.0189,
+          "quantile_score": 0.7233,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2532.75,
+          "alt_value": 2522.25,
+          "raw_score": -0.006,
+          "quantile_score": 0.2256,
+          "description": "CHIP:H3K27me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 370.75,
+          "alt_value": 370.0,
+          "raw_score": -0.0029,
+          "quantile_score": 0.1382,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 8.67721939086914,
+          "alt_value": 8.93304443359375,
+          "raw_score": 0.0376,
+          "quantile_score": 0.7407,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.2004893630122145,
+          "alt_value": 0.1983626867747969,
+          "raw_score": -0.0106,
+          "quantile_score": -0.9988,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0009145252406597137,
+          "alt_value": 0.0009221397340297699,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs59168279",
+      "chrom": "chr6",
+      "position": 4588726,
+      "ref": "A",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0575,
+      "max_effect": -0.0385,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 896.5625,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0145,
+        "histone_marks": -0.0031,
+        "tf_binding": -0.0017,
+        "chromatin_accessibility": -0.0385,
+        "gene_expression": -0.0041,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 7.5398101806640625,
+          "alt_value": 7.6258087158203125,
+          "raw_score": 0.0145,
+          "quantile_score": 0.6162,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K79me2/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 323.75,
+          "alt_value": 323.0625,
+          "raw_score": -0.0031,
+          "quantile_score": 0.1033,
+          "description": "CHIP:H3K79me2:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 431.5,
+          "alt_value": 431.0,
+          "raw_score": -0.0017,
+          "quantile_score": 0.0642,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 6.437297821044922,
+          "alt_value": 6.241260528564453,
+          "raw_score": -0.0385,
+          "quantile_score": 0.7451,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.19673284039729172,
+          "alt_value": 0.1959324741943015,
+          "raw_score": -0.0041,
+          "quantile_score": -0.9976,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0010956786572933197,
+          "alt_value": 0.0010899193584918976,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs17138527",
+      "chrom": "chr6",
+      "position": 4588613,
+      "ref": "G",
+      "alt": "A",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.056,
+      "max_effect": 0.0287,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 904.9863,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0093,
+        "histone_marks": 0.0111,
+        "tf_binding": 0.0112,
+        "chromatin_accessibility": 0.0287,
+        "gene_expression": -0.0083,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 3.435148239135742,
+          "alt_value": 3.406614303588867,
+          "raw_score": -0.0093,
+          "quantile_score": 0.4595,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1454.75,
+          "alt_value": 1466.0,
+          "raw_score": 0.0111,
+          "quantile_score": 0.2369,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 448.0,
+          "alt_value": 451.5,
+          "raw_score": 0.0112,
+          "quantile_score": 0.4026,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 6.001697540283203,
+          "alt_value": 6.142158508300781,
+          "raw_score": 0.0287,
+          "quantile_score": 0.6547,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0788076122601827,
+          "alt_value": 0.07814614640341865,
+          "raw_score": -0.0083,
+          "quantile_score": -0.9994,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0011918768286705017,
+          "alt_value": 0.001171056181192398,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs4959306",
+      "chrom": "chr6",
+      "position": 4588555,
+      "ref": "T",
+      "alt": "G",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0558,
+      "max_effect": 0.0302,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 900.4626,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0122,
+        "histone_marks": -0.0091,
+        "tf_binding": -0.0032,
+        "chromatin_accessibility": 0.0302,
+        "gene_expression": 0.0055,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 8.7080078125,
+          "alt_value": 8.626548767089844,
+          "raw_score": -0.0122,
+          "quantile_score": 0.5647,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2345.25,
+          "alt_value": 2330.5,
+          "raw_score": -0.0091,
+          "quantile_score": 0.3291,
+          "description": "CHIP:H3K27me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 446.0,
+          "alt_value": 445.0,
+          "raw_score": -0.0032,
+          "quantile_score": 0.1478,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 5.788608551025391,
+          "alt_value": 5.932239532470703,
+          "raw_score": 0.0302,
+          "quantile_score": 0.6731,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.09561618169148763,
+          "alt_value": 0.09614780214097765,
+          "raw_score": 0.0055,
+          "quantile_score": 0.9976,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0011144764721393585,
+          "alt_value": 0.00110732764005661,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs378901",
+      "chrom": "chr6",
+      "position": 4558348,
+      "ref": "G",
+      "alt": "A",
+      "kind": "snv",
+      "r2": 0.9324,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.054,
+      "max_effect": -0.0165,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 914.2393,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/-",
+      "per_layer_scores": {
+        "tss_activity": -0.0165,
+        "histone_marks": -0.0088,
+        "tf_binding": 0.0102,
+        "chromatin_accessibility": 0.0143,
+        "gene_expression": -0.007,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 8.228309631347656,
+          "alt_value": 8.123477935791016,
+          "raw_score": -0.0165,
+          "quantile_score": 0.6691,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1333.125,
+          "alt_value": 1325.0,
+          "raw_score": -0.0088,
+          "quantile_score": 0.1918,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 494.5,
+          "alt_value": 498.0,
+          "raw_score": 0.0102,
+          "quantile_score": 0.3758,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 6.716556549072266,
+          "alt_value": 6.7931671142578125,
+          "raw_score": 0.0143,
+          "quantile_score": 0.4338,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.14772027134895324,
+          "alt_value": 0.14668813943862916,
+          "raw_score": -0.007,
+          "quantile_score": -0.9986,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/+",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0006415806710720062,
+          "alt_value": 0.0006293617188930511,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs56832024",
+      "chrom": "chr6",
+      "position": 4590313,
+      "ref": "C",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 0.936,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.0529,
+      "max_effect": -0.0196,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 899.3605,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/+",
+      "per_layer_scores": {
+        "tss_activity": -0.0196,
+        "histone_marks": -0.0048,
+        "tf_binding": 0.0089,
+        "chromatin_accessibility": 0.0026,
+        "gene_expression": 0.0028,
+        "splicing": 0.0001
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 3.8135643005371094,
+          "alt_value": 3.748556137084961,
+          "raw_score": -0.0196,
+          "quantile_score": 0.7352,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K4me2/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 488.25,
+          "alt_value": 486.625,
+          "raw_score": -0.0048,
+          "quantile_score": 0.1434,
+          "description": "CHIP:H3K4me2:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 484.0,
+          "alt_value": 487.0,
+          "raw_score": 0.0089,
+          "quantile_score": 0.3423,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 5.244087219238281,
+          "alt_value": 5.255382537841797,
+          "raw_score": 0.0026,
+          "quantile_score": 0.0962,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.2785026298628913,
+          "alt_value": 0.2792844871679942,
+          "raw_score": 0.0028,
+          "quantile_score": 0.9858,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.000932004302740097,
+          "alt_value": 0.0009863469749689102,
+          "raw_score": 0.0001,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs9504159",
+      "chrom": "chr6",
+      "position": 4592851,
+      "ref": "T",
+      "alt": "C",
+      "kind": "snv",
+      "r2": 0.9324,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.0521,
+      "max_effect": -0.0234,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 885.0082,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/-",
+      "per_layer_scores": {
+        "tss_activity": -0.0234,
+        "histone_marks": 0.0035,
+        "tf_binding": 0.0051,
+        "chromatin_accessibility": 0.0047,
+        "gene_expression": -0.0044,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 3.3096580505371094,
+          "alt_value": 3.2402610778808594,
+          "raw_score": -0.0234,
+          "quantile_score": 0.7895,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K36me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1039.75,
+          "alt_value": 1042.25,
+          "raw_score": 0.0035,
+          "quantile_score": 0.13,
+          "description": "CHIP:H3K36me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 426.0,
+          "alt_value": 427.5,
+          "raw_score": 0.0051,
+          "quantile_score": 0.2205,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 5.136556625366211,
+          "alt_value": 5.1564178466796875,
+          "raw_score": 0.0047,
+          "quantile_score": 0.1722,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.17687513828277587,
+          "alt_value": 0.1760888457298279,
+          "raw_score": -0.0044,
+          "quantile_score": -0.9978,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.000897921621799469,
+          "alt_value": 0.0009198784828186035,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs17138543",
+      "chrom": "chr6",
+      "position": 4589729,
+      "ref": "T",
+      "alt": "C",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0514,
+      "max_effect": 0.021,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 884.6513,
+      "top_layer": "histone_marks",
+      "top_track": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0153,
+        "histone_marks": 0.021,
+        "tf_binding": -0.0092,
+        "chromatin_accessibility": 0.0029,
+        "gene_expression": 0.0041,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 6.086212158203125,
+          "alt_value": 6.161552429199219,
+          "raw_score": 0.0153,
+          "quantile_score": 0.6395,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1430.625,
+          "alt_value": 1451.625,
+          "raw_score": 0.021,
+          "quantile_score": 0.4114,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 469.0,
+          "alt_value": 466.0,
+          "raw_score": -0.0092,
+          "quantile_score": 0.3531,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 12.267902374267578,
+          "alt_value": 12.294776916503906,
+          "raw_score": 0.0029,
+          "quantile_score": 0.1086,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.16079372763633729,
+          "alt_value": 0.16145135164260865,
+          "raw_score": 0.0041,
+          "quantile_score": 0.9944,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0010065734386444092,
+          "alt_value": 0.001017596572637558,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs4960006",
+      "chrom": "chr6",
+      "position": 4593588,
+      "ref": "C",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 0.8686,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0487,
+      "max_effect": -0.0273,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 849.721,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0075,
+        "histone_marks": -0.0074,
+        "tf_binding": -0.0051,
+        "chromatin_accessibility": -0.0273,
+        "gene_expression": -0.0145,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 2.3393516540527344,
+          "alt_value": 2.3566551208496094,
+          "raw_score": 0.0075,
+          "quantile_score": 0.3889,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1464.25,
+          "alt_value": 1456.75,
+          "raw_score": -0.0074,
+          "quantile_score": 0.1623,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 425.5,
+          "alt_value": 424.0,
+          "raw_score": -0.0051,
+          "quantile_score": 0.2211,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 4.614398956298828,
+          "alt_value": 4.509304046630859,
+          "raw_score": -0.0273,
+          "quantile_score": 0.6372,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.15052509307861328,
+          "alt_value": 0.14834094047546387,
+          "raw_score": -0.0145,
+          "quantile_score": -1.0,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0010252296924591064,
+          "alt_value": 0.0010178536176681519,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs4960004",
+      "chrom": "chr6",
+      "position": 4579464,
+      "ref": "C",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.044,
+      "max_effect": -0.0822,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 700.3053,
+      "top_layer": "tf_binding",
+      "top_track": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0148,
+        "histone_marks": 0.0217,
+        "tf_binding": -0.0822,
+        "chromatin_accessibility": 0.027,
+        "gene_expression": -0.005,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 1.4305418729782104,
+          "alt_value": 1.4058057069778442,
+          "raw_score": -0.0148,
+          "quantile_score": 0.6227,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K4me2/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 662.96875,
+          "alt_value": 673.046875,
+          "raw_score": 0.0217,
+          "quantile_score": 0.5419,
+          "description": "CHIP:H3K4me2:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 256.25,
+          "alt_value": 242.0,
+          "raw_score": -0.0822,
+          "quantile_score": 0.9073,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 3.122913360595703,
+          "alt_value": 3.2007222175598145,
+          "raw_score": 0.027,
+          "quantile_score": 0.6331,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.24843209899134105,
+          "alt_value": 0.24718226368228594,
+          "raw_score": -0.005,
+          "quantile_score": -0.9988,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.001260124146938324,
+          "alt_value": 0.0012401863932609558,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs11751457",
+      "chrom": "chr6",
+      "position": 4580233,
+      "ref": "A",
+      "alt": "G",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0433,
+      "max_effect": -0.0683,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 722.9548,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0166,
+        "histone_marks": -0.0279,
+        "tf_binding": -0.0013,
+        "chromatin_accessibility": -0.0683,
+        "gene_expression": 0.0044,
+        "splicing": -0.0001
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 2.3943653106689453,
+          "alt_value": 2.4335741996765137,
+          "raw_score": 0.0166,
+          "quantile_score": 0.6735,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 874.84375,
+          "alt_value": 858.0625,
+          "raw_score": -0.0279,
+          "quantile_score": 0.7176,
+          "description": "CHIP:H3K27me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 204.25,
+          "alt_value": 204.0625,
+          "raw_score": -0.0013,
+          "quantile_score": 0.0527,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 9.905887603759766,
+          "alt_value": 9.401580810546875,
+          "raw_score": -0.0683,
+          "quantile_score": 0.863,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.16831475496292114,
+          "alt_value": 0.16905656456947327,
+          "raw_score": 0.0044,
+          "quantile_score": 0.9952,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0016379617154598236,
+          "alt_value": 0.001581050455570221,
+          "raw_score": -0.0001,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs382186",
+      "chrom": "chr6",
+      "position": 4555735,
+      "ref": "T",
+      "alt": "C",
+      "kind": "snv",
+      "r2": 0.9324,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.0423,
+      "max_effect": -0.0272,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 799.1553,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/-",
+      "per_layer_scores": {
+        "tss_activity": -0.0272,
+        "histone_marks": -0.006,
+        "tf_binding": 0.0,
+        "chromatin_accessibility": -0.0055,
+        "gene_expression": 0.0035,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 3.1227946281433105,
+          "alt_value": 3.0458145141601562,
+          "raw_score": -0.0272,
+          "quantile_score": 0.8304,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2306.0,
+          "alt_value": 2296.5,
+          "raw_score": -0.006,
+          "quantile_score": 0.2249,
+          "description": "CHIP:H3K27me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 391.0,
+          "alt_value": 391.0,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 3.085447311401367,
+          "alt_value": 3.0700321197509766,
+          "raw_score": -0.0055,
+          "quantile_score": 0.2009,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.27433115823401344,
+          "alt_value": 0.27530015673902297,
+          "raw_score": 0.0035,
+          "quantile_score": 0.994,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0010043606162071228,
+          "alt_value": 0.0010016076266765594,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs400405",
+      "chrom": "chr6",
+      "position": 4550484,
+      "ref": "T",
+      "alt": "C",
+      "kind": "snv",
+      "r2": 0.9324,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.0421,
+      "max_effect": 0.0205,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 811.3186,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/+",
+      "per_layer_scores": {
+        "tss_activity": 0.0205,
+        "histone_marks": 0.0044,
+        "tf_binding": -0.008,
+        "chromatin_accessibility": 0.0027,
+        "gene_expression": 0.0053,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 2.6765661239624023,
+          "alt_value": 2.7291603088378906,
+          "raw_score": 0.0205,
+          "quantile_score": 0.7499,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1136.5,
+          "alt_value": 1140.0,
+          "raw_score": 0.0044,
+          "quantile_score": 0.1046,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 358.5,
+          "alt_value": 356.5,
+          "raw_score": -0.008,
+          "quantile_score": 0.3177,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 5.617195129394531,
+          "alt_value": 5.6297454833984375,
+          "raw_score": 0.0027,
+          "quantile_score": 0.1016,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.033879618677828044,
+          "alt_value": 0.034065923343102135,
+          "raw_score": 0.0053,
+          "quantile_score": 0.9952,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0010922327637672424,
+          "alt_value": 0.0011090710759162903,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs390617",
+      "chrom": "chr6",
+      "position": 4556479,
+      "ref": "A",
+      "alt": "G",
+      "kind": "snv",
+      "r2": 0.9324,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0409,
+      "max_effect": 0.0142,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 815.1333,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0015,
+        "histone_marks": 0.0062,
+        "tf_binding": -0.0021,
+        "chromatin_accessibility": 0.0142,
+        "gene_expression": -0.0052,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 0.9989175796508789,
+          "alt_value": 0.9968752861022949,
+          "raw_score": -0.0015,
+          "quantile_score": 0.0944,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1312.5,
+          "alt_value": 1318.125,
+          "raw_score": 0.0062,
+          "quantile_score": 0.139,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 343.5,
+          "alt_value": 343.0,
+          "raw_score": -0.0021,
+          "quantile_score": 0.0949,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 3.106010913848877,
+          "alt_value": 3.146698474884033,
+          "raw_score": 0.0142,
+          "quantile_score": 0.4331,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.045632546146710716,
+          "alt_value": 0.04538840759131643,
+          "raw_score": -0.0052,
+          "quantile_score": -0.9986,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0012451112270355225,
+          "alt_value": 0.001257963478565216,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs438021",
+      "chrom": "chr6",
+      "position": 4556342,
+      "ref": "A",
+      "alt": "G",
+      "kind": "snv",
+      "r2": 0.9324,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0403,
+      "max_effect": 0.0189,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 800.7297,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0109,
+        "histone_marks": 0.0088,
+        "tf_binding": 0.0158,
+        "chromatin_accessibility": 0.0189,
+        "gene_expression": -0.0043,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 2.8871750831604004,
+          "alt_value": 2.916759967803955,
+          "raw_score": 0.0109,
+          "quantile_score": 0.5163,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2520.0,
+          "alt_value": 2535.5,
+          "raw_score": 0.0088,
+          "quantile_score": 0.3225,
+          "description": "CHIP:H3K27me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 362.5,
+          "alt_value": 366.5,
+          "raw_score": 0.0158,
+          "quantile_score": 0.4986,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 3.3484058380126953,
+          "alt_value": 3.4057540893554688,
+          "raw_score": 0.0189,
+          "quantile_score": 0.5306,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.17563800215721131,
+          "alt_value": 0.17488136887550354,
+          "raw_score": -0.0043,
+          "quantile_score": -0.9976,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0011797696352005005,
+          "alt_value": 0.00116744264960289,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs403448",
+      "chrom": "chr6",
+      "position": 4550338,
+      "ref": "T",
+      "alt": "C",
+      "kind": "snv",
+      "r2": 0.8686,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0351,
+      "max_effect": 0.0209,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 755.3997,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0065,
+        "histone_marks": 0.0064,
+        "tf_binding": -0.0101,
+        "chromatin_accessibility": 0.0209,
+        "gene_expression": 0.0061,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 1.7182302474975586,
+          "alt_value": 1.705946922302246,
+          "raw_score": -0.0065,
+          "quantile_score": 0.3511,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2153.53125,
+          "alt_value": 2163.09375,
+          "raw_score": 0.0064,
+          "quantile_score": 0.2396,
+          "description": "CHIP:H3K27me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 358.5,
+          "alt_value": 356.0,
+          "raw_score": -0.0101,
+          "quantile_score": 0.3735,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 9.933094024658203,
+          "alt_value": 10.092514038085938,
+          "raw_score": 0.0209,
+          "quantile_score": 0.5616,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.22734581785542624,
+          "alt_value": 0.22873797054801667,
+          "raw_score": 0.0061,
+          "quantile_score": 0.9956,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/+",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0006467681378126144,
+          "alt_value": 0.0006629228591918945,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs1125950",
+      "chrom": "chr6",
+      "position": 4569414,
+      "ref": "C",
+      "alt": "G",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.026,
+      "max_effect": 0.024,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 676.6399,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/-",
+      "per_layer_scores": {
+        "tss_activity": 0.024,
+        "histone_marks": 0.0082,
+        "tf_binding": 0.0048,
+        "chromatin_accessibility": 0.0005,
+        "gene_expression": -0.0067,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 2.2912511825561523,
+          "alt_value": 2.3464536666870117,
+          "raw_score": 0.024,
+          "quantile_score": 0.7995,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1111.0,
+          "alt_value": 1117.375,
+          "raw_score": 0.0082,
+          "quantile_score": 0.1782,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 74.6875,
+          "alt_value": 74.9375,
+          "raw_score": 0.0048,
+          "quantile_score": 0.2077,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 3.790365219116211,
+          "alt_value": 3.79213809967041,
+          "raw_score": 0.0005,
+          "quantile_score": null,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.7936289387030734,
+          "alt_value": 0.7883335931433572,
+          "raw_score": -0.0067,
+          "quantile_score": -0.9992,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0012054257094860077,
+          "alt_value": 0.0012150108814239502,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs390126",
+      "chrom": "chr6",
+      "position": 4570286,
+      "ref": "C",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0247,
+      "max_effect": 0.0517,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 609.7799,
+      "top_layer": "tf_binding",
+      "top_track": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0053,
+        "histone_marks": 0.0227,
+        "tf_binding": 0.0517,
+        "chromatin_accessibility": 0.0392,
+        "gene_expression": -0.0068,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 1.0653324127197266,
+          "alt_value": 1.0729460716247559,
+          "raw_score": 0.0053,
+          "quantile_score": 0.2974,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 929.5,
+          "alt_value": 944.25,
+          "raw_score": 0.0227,
+          "quantile_score": 0.4376,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 328.0,
+          "alt_value": 340.0,
+          "raw_score": 0.0517,
+          "quantile_score": 0.8164,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2.5189781188964844,
+          "alt_value": 2.6159849166870117,
+          "raw_score": 0.0392,
+          "quantile_score": 0.7484,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.05473782137657205,
+          "alt_value": 0.05436177536224326,
+          "raw_score": -0.0068,
+          "quantile_score": -0.999,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0014705546200275421,
+          "alt_value": 0.001486562192440033,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs1628826",
+      "chrom": "chr6",
+      "position": 4570505,
+      "ref": "A",
+      "alt": "C",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0236,
+      "max_effect": 0.04,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 625.4317,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": 0.0131,
+        "histone_marks": 0.0175,
+        "tf_binding": 0.0395,
+        "chromatin_accessibility": 0.04,
+        "gene_expression": 0.0064,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 1.131630301475525,
+          "alt_value": 1.151116132736206,
+          "raw_score": 0.0131,
+          "quantile_score": 0.5786,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1083.5,
+          "alt_value": 1096.75,
+          "raw_score": 0.0175,
+          "quantile_score": 0.5409,
+          "description": "CHIP:H3K27me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 251.5,
+          "alt_value": 258.5,
+          "raw_score": 0.0395,
+          "quantile_score": 0.7497,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 3.3850531578063965,
+          "alt_value": 3.508380889892578,
+          "raw_score": 0.04,
+          "quantile_score": 0.7524,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.040433876423372164,
+          "alt_value": 0.04069938821097215,
+          "raw_score": 0.0064,
+          "quantile_score": 0.9958,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.001298464834690094,
+          "alt_value": 0.0013236477971076965,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs57391531",
+      "chrom": "chr6",
+      "position": 4571780,
+      "ref": "C",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.023,
+      "max_effect": -0.0841,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 529.7139,
+      "top_layer": "tf_binding",
+      "top_track": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0256,
+        "histone_marks": -0.006,
+        "tf_binding": -0.0841,
+        "chromatin_accessibility": -0.0121,
+        "gene_expression": 0.0051,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 1.664902687072754,
+          "alt_value": 1.6179771423339844,
+          "raw_score": -0.0256,
+          "quantile_score": 0.8194,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 909.375,
+          "alt_value": 905.625,
+          "raw_score": -0.006,
+          "quantile_score": 0.225,
+          "description": "CHIP:H3K27me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 93.875,
+          "alt_value": 88.5,
+          "raw_score": -0.0841,
+          "quantile_score": 0.9085,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2.995816230773926,
+          "alt_value": 2.9624528884887695,
+          "raw_score": -0.0121,
+          "quantile_score": 0.3792,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.032459476962685585,
+          "alt_value": 0.03263041935861111,
+          "raw_score": 0.0051,
+          "quantile_score": 0.9946,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0009358450770378113,
+          "alt_value": 0.0009407773613929749,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs453768",
+      "chrom": "chr6",
+      "position": 4569984,
+      "ref": "G",
+      "alt": "A",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.022,
+      "max_effect": 0.0298,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 633.7204,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0042,
+        "histone_marks": 0.0167,
+        "tf_binding": -0.0011,
+        "chromatin_accessibility": 0.0298,
+        "gene_expression": 0.0038,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 0.7559819221496582,
+          "alt_value": 0.7508541345596313,
+          "raw_score": -0.0042,
+          "quantile_score": 0.243,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27ac/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 547.875,
+          "alt_value": 554.25,
+          "raw_score": 0.0167,
+          "quantile_score": 0.5679,
+          "description": "CHIP:H3K27ac:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 321.5,
+          "alt_value": 321.25,
+          "raw_score": -0.0011,
+          "quantile_score": 0.0493,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2.546010971069336,
+          "alt_value": 2.6199746131896973,
+          "raw_score": 0.0298,
+          "quantile_score": 0.6675,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 3.280790328979492,
+          "alt_value": 3.2931442260742188,
+          "raw_score": 0.0038,
+          "quantile_score": 0.9936,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0009847059845924377,
+          "alt_value": 0.0009759142994880676,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs424137",
+      "chrom": "chr6",
+      "position": 4569529,
+      "ref": "T",
+      "alt": "G",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.021,
+      "max_effect": 0.009,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 667.6043,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/-",
+      "per_layer_scores": {
+        "tss_activity": 0.009,
+        "histone_marks": 0.0052,
+        "tf_binding": 0.0007,
+        "chromatin_accessibility": 0.0062,
+        "gene_expression": 0.0039,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 1.7046356201171875,
+          "alt_value": 1.7215876579284668,
+          "raw_score": 0.009,
+          "quantile_score": 0.4502,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1110.0,
+          "alt_value": 1114.0,
+          "raw_score": 0.0052,
+          "quantile_score": 0.1183,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 133.6875,
+          "alt_value": 133.75,
+          "raw_score": 0.0007,
+          "quantile_score": null,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 3.094935417175293,
+          "alt_value": 3.1124935150146484,
+          "raw_score": 0.0062,
+          "quantile_score": 0.2277,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.00834687081967584,
+          "alt_value": 0.008383011755843958,
+          "raw_score": 0.0039,
+          "quantile_score": 0.9932,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0004404820501804352,
+          "alt_value": 0.0004489738494157791,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs7747007",
+      "chrom": "chr6",
+      "position": 4549815,
+      "ref": "A",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 0.9324,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0203,
+      "max_effect": 0.015,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 649.802,
+      "top_layer": "histone_marks",
+      "top_track": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0095,
+        "histone_marks": 0.015,
+        "tf_binding": 0.002,
+        "chromatin_accessibility": 0.0019,
+        "gene_expression": 0.0061,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 2.3351898193359375,
+          "alt_value": 2.313344955444336,
+          "raw_score": -0.0095,
+          "quantile_score": 0.4686,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 982.8125,
+          "alt_value": 993.125,
+          "raw_score": 0.015,
+          "quantile_score": 0.3207,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 359.5,
+          "alt_value": 360.0,
+          "raw_score": 0.002,
+          "quantile_score": 0.0875,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 5.569250106811523,
+          "alt_value": 5.577905654907227,
+          "raw_score": 0.0019,
+          "quantile_score": 0.0749,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.1954697999689314,
+          "alt_value": 0.19667068692959017,
+          "raw_score": 0.0061,
+          "quantile_score": 0.9962,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/+",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0006845481693744659,
+          "alt_value": 0.0006791092455387115,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs4330567",
+      "chrom": "chr6",
+      "position": 4597406,
+      "ref": "C",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 0.802,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0199,
+      "max_effect": -0.0623,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 550.4227,
+      "top_layer": "tf_binding",
+      "top_track": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0245,
+        "histone_marks": -0.0182,
+        "tf_binding": -0.0623,
+        "chromatin_accessibility": -0.0231,
+        "gene_expression": 0.005,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 0.31257426738739014,
+          "alt_value": 0.29050183296203613,
+          "raw_score": -0.0245,
+          "quantile_score": 0.8068,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1016.0,
+          "alt_value": 1003.25,
+          "raw_score": -0.0182,
+          "quantile_score": 0.3683,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 256.5,
+          "alt_value": 245.625,
+          "raw_score": -0.0623,
+          "quantile_score": 0.8591,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2.242067337036133,
+          "alt_value": 2.1905486583709717,
+          "raw_score": -0.0231,
+          "quantile_score": 0.5874,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.2273877626284957,
+          "alt_value": 0.22853836634506783,
+          "raw_score": 0.005,
+          "quantile_score": 0.9956,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0006643589586019516,
+          "alt_value": 0.0006432272493839264,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs113803252",
+      "chrom": "chr6",
+      "position": 4595137,
+      "ref": "G",
+      "alt": "A",
+      "kind": "snv",
+      "r2": 0.8686,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.0196,
+      "max_effect": -0.0347,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 604.1208,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/-",
+      "per_layer_scores": {
+        "tss_activity": -0.0347,
+        "histone_marks": 0.0051,
+        "tf_binding": -0.0211,
+        "chromatin_accessibility": 0.0028,
+        "gene_expression": -0.0042,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 0.3402799367904663,
+          "alt_value": 0.3084089756011963,
+          "raw_score": -0.0347,
+          "quantile_score": 0.8875,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K27me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1348.25,
+          "alt_value": 1353.0,
+          "raw_score": 0.0051,
+          "quantile_score": 0.1917,
+          "description": "CHIP:H3K27me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 274.75,
+          "alt_value": 270.75,
+          "raw_score": -0.0211,
+          "quantile_score": 0.5706,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2.1807494163513184,
+          "alt_value": 2.187014102935791,
+          "raw_score": 0.0028,
+          "quantile_score": 0.1054,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0012974534183740616,
+          "alt_value": 0.0012878868728876114,
+          "raw_score": -0.0042,
+          "quantile_score": -0.9982,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0006867628544569016,
+          "alt_value": 0.0006582383066415787,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs385236",
+      "chrom": "chr6",
+      "position": 4571257,
+      "ref": "T",
+      "alt": "A",
+      "kind": "snv",
+      "r2": 1.0,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0191,
+      "max_effect": -0.0159,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 638.6207,
+      "top_layer": "chromatin_accessibility",
+      "top_track": "DNASE/CL:0002553 DNase-seq/.",
+      "per_layer_scores": {
+        "tss_activity": -0.006,
+        "histone_marks": 0.0088,
+        "tf_binding": 0.004,
+        "chromatin_accessibility": -0.0159,
+        "gene_expression": 0.0038,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 1.3268117904663086,
+          "alt_value": 1.3172025680541992,
+          "raw_score": -0.006,
+          "quantile_score": 0.327,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 941.5,
+          "alt_value": 947.25,
+          "raw_score": 0.0088,
+          "quantile_score": 0.1908,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 89.25,
+          "alt_value": 89.5,
+          "raw_score": 0.004,
+          "quantile_score": 0.1733,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 5.836021423339844,
+          "alt_value": 5.760873794555664,
+          "raw_score": -0.0159,
+          "quantile_score": 0.4646,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/-",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.05308905026564995,
+          "alt_value": 0.05329547574122747,
+          "raw_score": 0.0038,
+          "quantile_score": 0.9936,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0009637884795665741,
+          "alt_value": 0.0009663477540016174,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs111367957",
+      "chrom": "chr6",
+      "position": 4595052,
+      "ref": "G",
+      "alt": "A",
+      "kind": "snv",
+      "r2": 0.8686,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.017,
+      "max_effect": -0.0177,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 618.7233,
+      "top_layer": "tf_binding",
+      "top_track": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+      "per_layer_scores": {
+        "tss_activity": -0.0113,
+        "histone_marks": -0.0029,
+        "tf_binding": -0.0177,
+        "chromatin_accessibility": 0.0009,
+        "gene_expression": 0.0069,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/-",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 0.3362652659416199,
+          "alt_value": 0.32582420110702515,
+          "raw_score": -0.0113,
+          "quantile_score": 0.5248,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K4me3/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 403.875,
+          "alt_value": 403.0625,
+          "raw_score": -0.0029,
+          "quantile_score": 0.1242,
+          "description": "CHIP:H3K4me3:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 306.0,
+          "alt_value": 302.25,
+          "raw_score": -0.0177,
+          "quantile_score": 0.5258,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 2.7593774795532227,
+          "alt_value": 2.7616100311279297,
+          "raw_score": 0.0009,
+          "quantile_score": null,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 polyA plus RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.052604883909225464,
+          "alt_value": 0.05297383666038513,
+          "raw_score": 0.0069,
+          "quantile_score": 0.9968,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0006185863167047501,
+          "alt_value": 0.0006088875234127045,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs9502206",
+      "chrom": "chr6",
+      "position": 4595800,
+      "ref": "G",
+      "alt": "C",
+      "kind": "snv",
+      "r2": 0.802,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "lung fibroblast",
+      "composite": 0.0153,
+      "max_effect": 0.0681,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 501.5811,
+      "top_layer": "tss_activity",
+      "top_track": "CAGE/hCAGE CL:0002553/+",
+      "per_layer_scores": {
+        "tss_activity": 0.0681,
+        "histone_marks": 0.0205,
+        "tf_binding": 0.0286,
+        "chromatin_accessibility": 0.0329,
+        "gene_expression": -0.0053,
+        "splicing": 0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 0.799669623374939,
+          "alt_value": 0.886634349822998,
+          "raw_score": 0.0681,
+          "quantile_score": 0.9703,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H3K4me2/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 287.75,
+          "alt_value": 291.875,
+          "raw_score": 0.0205,
+          "quantile_score": 0.5207,
+          "description": "CHIP:H3K4me2:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 261.0,
+          "alt_value": 266.25,
+          "raw_score": 0.0286,
+          "quantile_score": 0.6608,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1.5424011945724487,
+          "alt_value": 1.6010487079620361,
+          "raw_score": 0.0329,
+          "quantile_score": 0.6983,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.16268301010131836,
+          "alt_value": 0.16181540489196777,
+          "raw_score": -0.0053,
+          "quantile_score": -0.999,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/-",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.0007791966199874878,
+          "alt_value": 0.0007977988570928574,
+          "raw_score": 0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    },
+    {
+      "variant_id": "rs58294172",
+      "chrom": "chr6",
+      "position": 4595548,
+      "ref": "C",
+      "alt": "T",
+      "kind": "snv",
+      "r2": 0.8686,
+      "is_sentinel": false,
+      "gene_name": "CDYL",
+      "cell_type": "fibroblast of lung",
+      "composite": 0.0066,
+      "max_effect": 0.0171,
+      "n_layers_affected": 0,
+      "convergence": 0.0,
+      "ref_activity": 537.1803,
+      "top_layer": "tf_binding",
+      "top_track": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+      "per_layer_scores": {
+        "tss_activity": 0.003,
+        "histone_marks": -0.0097,
+        "tf_binding": 0.0171,
+        "chromatin_accessibility": 0.0005,
+        "gene_expression": -0.0058,
+        "splicing": -0.0
+      },
+      "per_layer_top_track": {
+        "tss_activity": {
+          "assay_id": "CAGE/hCAGE CL:0002553/+",
+          "assay_type": "CAGE",
+          "cell_type": "lung fibroblast",
+          "ref_value": 0.5589598417282104,
+          "alt_value": 0.56223464012146,
+          "raw_score": 0.003,
+          "quantile_score": 0.1815,
+          "description": "CAGE:lung fibroblast"
+        },
+        "histone_marks": {
+          "assay_id": "CHIP_HISTONE/CL:0002553 Histone ChIP-seq H2AFZ/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 909.875,
+          "alt_value": 903.75,
+          "raw_score": -0.0097,
+          "quantile_score": 0.2106,
+          "description": "CHIP:H2AFZ:fibroblast of lung"
+        },
+        "tf_binding": {
+          "assay_id": "CHIP_TF/CL:0002553 TF ChIP-seq CTCF/.",
+          "assay_type": "CHIP",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 229.5,
+          "alt_value": 232.25,
+          "raw_score": 0.0171,
+          "quantile_score": 0.5163,
+          "description": "CHIP:CTCF:fibroblast of lung"
+        },
+        "chromatin_accessibility": {
+          "assay_id": "DNASE/CL:0002553 DNase-seq/.",
+          "assay_type": "DNASE",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 1.5918548107147217,
+          "alt_value": 1.5927233695983887,
+          "raw_score": 0.0005,
+          "quantile_score": null,
+          "description": "DNASE:fibroblast of lung"
+        },
+        "gene_expression": {
+          "assay_id": "RNA_SEQ/CL:0002553 total RNA-seq/+",
+          "assay_type": "RNA",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.2951414073920912,
+          "alt_value": 0.29343974797262085,
+          "raw_score": -0.0058,
+          "quantile_score": -0.999,
+          "description": "RNA:fibroblast of lung"
+        },
+        "splicing": {
+          "assay_id": "SPLICE_SITE_USAGE/usage_CL:0002553 total RNA-seq/+",
+          "assay_type": "SPLICE_SITES",
+          "cell_type": "fibroblast of lung",
+          "ref_value": 0.00038280151784420013,
+          "alt_value": 0.0003730356693267822,
+          "raw_score": -0.0,
+          "quantile_score": null,
+          "description": "SPLICE_SITES:fibroblast of lung"
+        }
+      }
+    }
+  ],
+  "analysis_request": {
+    "user_prompt": "Fine-map the FEV1/FVC lung-function association at rs9504151 (CDYL locus). Sentinel plus 55 LD proxies at r2>=0.8 (CEU, SNVs only). Score each variant across AlphaGenome lung-fibroblast tracks and rank by composite causal evidence.",
+    "tool_name": "fine_map_causal_variant",
+    "oracle_name": "alphagenome",
+    "normalizer_name": "per-track background CDFs",
+    "tracks_requested": "21 lung-fibroblast (CL:0002553) tracks",
+    "cell_types": [
+      "fibroblast of lung",
+      "lung fibroblast"
+    ],
+    "notes": [],
+    "generated_at": "2026-08-01 17:54 UTC"
+  }
+}
