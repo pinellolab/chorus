@@ -16,10 +16,10 @@ GWAS fine-mapping, or ClinVar triage.
 > exome. Here are the positions:
 >
 > chr1:109274968 G>T (rs12740374)
-> chr1:109275684 C>T (rs629301)
-> chr1:109272715 A>G (rs12037222)
-> chr1:109278590 G>A (rs2228603)
-> chr1:109271200 T>C (rs7528419)
+> chr1:109275684 G>T (rs1626484)
+> chr1:109275216 T>C (rs660240)
+> chr1:109279175 G>A (rs4970836)
+> chr1:109274570 A>G (rs7528419)
 >
 > Score all of them in HepG2 liver cells and rank by effect size.
 > Which ones are most likely to be functional?
@@ -56,10 +56,10 @@ score_variant_batch(
     oracle_name="alphagenome",
     variants=[
         {"chrom": "chr1", "pos": 109274968, "ref": "G", "alt": "T", "id": "rs12740374"},
-        {"chrom": "chr1", "pos": 109275684, "ref": "C", "alt": "T", "id": "rs629301"},
-        {"chrom": "chr1", "pos": 109272715, "ref": "A", "alt": "G", "id": "rs12037222"},
-        {"chrom": "chr1", "pos": 109278590, "ref": "G", "alt": "A", "id": "rs2228603"},
-        {"chrom": "chr1", "pos": 109271200, "ref": "T", "alt": "C", "id": "rs7528419"},
+        {"chrom": "chr1", "pos": 109275684, "ref": "G", "alt": "T", "id": "rs1626484"},
+        {"chrom": "chr1", "pos": 109275216, "ref": "T", "alt": "C", "id": "rs660240"},
+        {"chrom": "chr1", "pos": 109279175, "ref": "G", "alt": "A", "id": "rs4970836"},
+        {"chrom": "chr1", "pos": 109274570, "ref": "A", "alt": "G", "id": "rs7528419"},
     ],
     # AlphaGenome track identifiers — find these via
     # `oracle.metadata.search_tracks("HepG2")` or
@@ -93,7 +93,7 @@ variants = [{"chrom": r.CHROM, "pos": r.POS, "ref": r.REF, "alt": r.ALT, "id": r
 # Or manually:
 variants = [
     {"chrom": "chr1", "pos": 109274968, "ref": "G", "alt": "T", "id": "rs12740374"},
-    {"chrom": "chr1", "pos": 109275684, "ref": "C", "alt": "T", "id": "rs629301"},
+    {"chrom": "chr1", "pos": 109275684, "ref": "G", "alt": "T", "id": "rs1626484"},
     # ...
 ]
 
@@ -120,11 +120,11 @@ d = result.to_dict()                        # JSON for pipelines
 ```
 | Variant | ID | DNASE:HepG2 Ref | DNASE:HepG2 Alt | DNASE:HepG2 log2FC | DNASE:HepG2 Effect %ile | CHIP:CEBPA:HepG2 Ref | CHIP:CEBPA:HepG2 Alt | CHIP:CEBPA:HepG2 log2FC | CHIP:CEBPA:HepG2 Effect %ile | …
 |---------|-----|------------------|------------------|---------------------|--------------------------|-----------------------|-----------------------|--------------------------|-------------------------------|---
-| chr1:109274968 G>T | rs12740374 | 512 | 699 | +0.449 | ≥99th | 2.1e+03 | 2.73e+03 | +0.377 | ≥99th | … |
-| chr1:109279175 G>A | rs4970836 | 8.21 | 7.96 | -0.039 | ≥99th | 201 | 198 | -0.027 | ≥99th | … |
-| chr1:109275216 T>C | rs660240 | 397 | 417 | +0.071 | ≥99th | 1.28e+03 | 1.3e+03 | +0.028 | ≥99th | … |
-| chr1:109275684 G>T | rs1626484 | 69.5 | 69.5 | +0.000 | — | 540 | 541 | +0.003 | 0.71 | … |
-| chr1:109274570 A>G | rs7528419 | 118 | 119 | +0.008 | ≥99th | 954 | 960 | +0.008 | ≥99th | … |
+| chr1:109274968 G>T | rs12740374 | 662 | 1.67e+03 | +1.330 | ≥99th | 2.57e+03 | 1.75e+04 | +2.764 | ≥99th | … |
+| chr1:109274570 A>G | rs7528419 | 137 | 132 | -0.053 | 0.90 | 1.01e+03 | 1.02e+03 | +0.009 | 0.39 | … |
+| chr1:109275684 G>T | rs1626484 | 73.8 | 71 | -0.056 | 0.91 | 560 | 556 | -0.010 | 0.46 | … |
+| chr1:109279175 G>A | rs4970836 | 7.99 | 7.84 | -0.024 | 0.73 | 194 | 193 | -0.007 | 0.35 | … |
+| chr1:109275216 T>C | rs660240 | 407 | 408 | +0.004 | 0.18 | 1.31e+03 | 1.31e+03 | +0.007 | 0.32 | … |
 ```
 
 The full table shows **4 columns per track** (Ref, Alt, log2FC, Effect %ile)
@@ -134,14 +134,24 @@ so you can see both absolute allele predictions and the derived effect at a glan
 - **Ref**: Reference-allele prediction (raw signal)
 - **Alt**: Alternate-allele prediction (raw signal)
 - **log2FC**: Log2 fold-change alt/ref (the effect size)
-- **Effect %ile**: log2FC magnitude ranked against ~10K random SNPs (`≥99th` for the saturated top bucket)
-  — high values mean the variant is in an already-active regulatory region
+- **Effect %ile**: the log2FC magnitude ranked against this track's own
+  effect background — for AlphaGenome, **1,697–1,909** random genomic
+  positions each given a random alternate allele. `≥99th` is the
+  saturated top bucket. This says the effect is *unusual for a random
+  mutation*; it says nothing about whether the region is active — that is
+  the separate **Activity %ile** column. Treat it as a weak signal on its
+  own: 95.1% of `DNASE:HepG2`'s background falls below `|log2FC| = 0.1`
+  (median 0.0126), so a small effect can still land high. See
+  [#83](https://github.com/pinellolab/chorus/issues/83).
 
-**Interpretation**: rs12740374 is the clear top hit — 97th percentile
-effect on a region that is already in the 91st percentile of genome-wide
-chromatin accessibility, consistent with disrupting an active enhancer.
-rs629301 shows a moderate TSS effect. The remaining variants have smaller
-effects consistent with being in linkage disequilibrium but not causal.
+**Interpretation**: rs12740374 is the clear top hit, and it is the effect
+sizes that make the case, not the percentiles — `+1.330` log2FC on
+`DNASE:HepG2` and `+2.764` on `CEBPA` (a ~6.8-fold binding gain),
+`≥99th` on every track. The four LD proxies all sit at `|log2FC| < 0.06`
+and spread across `0.18`–`0.91`, which is what a non-causal neighbour
+should look like. That spread is the point of the table: read the log2FC
+column first, and use the percentile only to ask whether that magnitude
+is unusual for the track.
 
 ### Output files
 

@@ -24,7 +24,7 @@ results in biological terms.
 
 ### For a geneticist
 
-> I have a GWAS hit at chr2:60490908 (G>T) associated with fetal
+> I have a GWAS hit at chr2:60490908 (T>G) associated with fetal
 > hemoglobin levels. The nearest gene is BCL11A. Analyze this variant
 > in erythroid cells — I need to know which regulatory layer is disrupted
 > and whether it's consistent with the known enhancer mechanism.
@@ -46,7 +46,7 @@ results in biological terms.
 
 ### For an MD / clinical researcher
 
-> A patient has a VUS at chr2:60490908 G>T (rs1427407) in the BCL11A
+> A patient has a VUS at chr2:60490908 T>G (rs1427407) in the BCL11A
 > erythroid enhancer. Can you show which regulatory layer is affected
 > in K562 cells — chromatin accessibility, GATA1/TAL1 binding, histone
 > marks, or BCL11A expression? I need to understand the mechanism to
@@ -210,7 +210,10 @@ Key findings: Strong chromatin opening (+0.447 log2FC, quantile 0.86),
 strong TSS activity increase, moderate gene expression change.
 
 ### [BCL11A_rs1427407/](BCL11A_rs1427407/)
-**rs1427407** (chr2:60490908 G>T) — GWAS variant for fetal hemoglobin.
+**rs1427407** (chr2:60490908 T>G) — GWAS variant for fetal hemoglobin.
+Written `G>T` in the literature, which is the *ancestral* orientation;
+hg38 carries `T` at this position, so chorus scores it as `T>G` and the
+effect signs are reported relative to the hg38 reference.
 Disrupts a GATA1/TAL1 motif in the erythroid enhancer. Therapeutic target
 of Casgevy (first FDA-approved CRISPR therapy for sickle cell disease).
 

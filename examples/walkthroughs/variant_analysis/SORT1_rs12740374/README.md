@@ -28,19 +28,42 @@ CAGE, and RNA using AlphaGenome.
 
 The AlphaGenome analysis reproduces the published biology:
 
-| Track | Effect (log2FC) | Effect %ile | Interpretation |
-|-------|----------------|------------|----------------|
-| DNASE:HepG2 | +0.449 | ≥99th | Strong chromatin opening |
-| CHIP:CEBPA:HepG2 | +0.376 | ≥99th | Strong TF binding gain |
-| CHIP:CEBPB:HepG2 | +0.274 | ≥99th | Moderate TF binding gain |
-| CHIP:H3K27ac:HepG2 | +0.178 | ≥99th | Moderate enhancer activation |
-| CAGE:HepG2 (variant site) | +0.253 | ≥99th | Moderate transcription increase |
+| Track | Effect (log2FC) | Effect %ile | Activity %ile | Interpretation |
+|-------|----------------|------------|---------------|----------------|
+| CHIP:CEBPB:HepG2 | +3.046 | ≥99th | 0.977 | Very strong TF binding gain |
+| CHIP:CEBPA:HepG2 | +2.763 | ≥99th | 0.991 | Very strong TF binding gain |
+| CAGE:HepG2 (variant site) | +1.509 | ≥99th | 0.916 | Very strong transcription increase |
+| DNASE:HepG2 | +1.332 | ≥99th | 0.973 | Very strong chromatin opening |
+| CHIP:H3K27ac:HepG2 | +1.257 | ≥99th | 0.999 | Very strong enhancer activation |
+| ATAC:HepG2 | +0.730 | ≥99th | 0.935 | Very strong chromatin opening |
 
-> **Why all `≥99th`?** Each effect percentile is computed against
-> ~10,000 random SNPs; Chorus collapses the top bucket to `≥99th`
-> rather than rendering a spurious `99.3rd` / `99.7th` / `99.9th`
-> gradient in a CDF tail that doesn't have enough samples to
-> meaningfully distinguish them.
+> **Why all `≥99th`?** Two separate reasons, and only the first is a
+> display choice.
+>
+> Chorus collapses the top bucket to `≥99th` rather than rendering a
+> `99.3rd` / `99.7th` / `99.9th` gradient it cannot support. **But for
+> this variant the percentile is not doing the work — the effects
+> themselves are large.** A `+3.05` log2FC on CEBPB is an 8-fold
+> binding gain; the `≥99th` is a consequence, not the evidence.
+>
+> Read the **Effect** column first and the percentile second. The
+> percentile is a weak discriminator on this oracle: AlphaGenome's
+> per-track effect background is built from **1,697–1,909** random
+> genomic positions with a random alternate allele (**not** ~10,000
+> common SNPs, and not gnomAD — no code samples gnomAD). For
+> `DNASE:HepG2`, **95.1%** of that background falls below
+> `|log2FC| = 0.1`, with a median of `0.0126`. So almost *any*
+> non-trivial effect clears the 99th percentile, and a high percentile
+> beside a small effect means very little. Tracking as
+> [#83](https://github.com/pinellolab/chorus/issues/83).
+>
+> Earlier revisions of this file reported `+0.449` for `DNASE:HepG2`
+> and explained the uniform `≥99th` as purely a display choice against
+> "~10,000 random SNPs". Both were wrong: the effects were suppressed
+> by a variant-window bug (fixed in
+> [#92](https://github.com/pinellolab/chorus/pull/92)) and the
+> percentiles were inflated by a denominator bug (fixed in
+> [#119](https://github.com/pinellolab/chorus/pull/119)).
 
 ## Output files
 

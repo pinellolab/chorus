@@ -104,6 +104,18 @@ def _rehydrate_variant_report(json_path: Path) -> int:
 
     report.to_html(output_path=out_path)
     logger.info("  rerendered %s", out_path.relative_to(REPO_ROOT))
+
+    # The TSV is a pure projection of the same report object, so refresh it
+    # from the same rehydration rather than leaving it to drift. Only rewrite
+    # one that already ships — this script must not invent new artefacts.
+    tsv_path = json_path.parent / "example_output.tsv"
+    if tsv_path.exists():
+        try:
+            report.to_dataframe().to_csv(tsv_path, sep="\t", index=False)
+            logger.info("  rerendered %s", tsv_path.relative_to(REPO_ROOT))
+        except Exception as exc:
+            logger.warning("  TSV failed for %s: %s", tsv_path.name, exc)
+
     return 1
 
 
