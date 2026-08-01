@@ -26,7 +26,9 @@
             "ref_value": 0.37093088030815125,
             "alt_value": 0.7175189852714539,
             "raw_score": 0.3465881049633026,
-            "description": "LentiMPRA:HepG2"
+            "description": "LentiMPRA:HepG2",
+            "quantile_score": 0.9934000000000001,
+            "ref_signal_percentile": 0.9154
           }
         ]
       },
@@ -39,7 +41,9 @@
           "ref_value": 0.37093088030815125,
           "alt_value": 0.7175189852714539,
           "raw_score": 0.3465881049633026,
-          "description": "LentiMPRA:HepG2"
+          "description": "LentiMPRA:HepG2",
+          "quantile_score": 0.9934000000000001,
+          "ref_signal_percentile": 0.9154
         }
       ]
     }
@@ -52,6 +56,6 @@
     "tracks_requested": "1 tracks",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-01 03:23 UTC"
+    "generated_at": "2026-08-01 14:36 UTC"
   }
 }
