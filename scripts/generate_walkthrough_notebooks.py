@@ -176,7 +176,8 @@ WALKTHROUGHS: list[dict[str, Any]] = [
         "dir": "examples/walkthroughs/variant_analysis/BCL11A_rs1427407",
         "mcp_tool": "analyze_variant_multilayer",
         "oracle": "alphagenome",
-        "position": "chr2:60490908", "ref": "G", "alt": "T",
+        # hg38 has T here; see the note in scripts/regenerate_examples.py.
+        "position": "chr2:60490908", "ref": "T", "alt": "G",
         "gene": "BCL11A",
         "assay_ids": _AG_BCL11A,
         "html": "rs1427407_BCL11A_alphagenome_report.html",
