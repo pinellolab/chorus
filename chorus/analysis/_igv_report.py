@@ -139,6 +139,15 @@ _DEFAULT_FLOOR_PCTILE = 0.95
 _DISPLAY_MAX = 3.0
 _HIGH_RES_ORACLES = ["chrombpnet", "legnet"] # for visualization mean vs max pooling
 
+# Hard ceiling on the JSON features one IGV track may emit, enforced in
+# _calculate_track_bin_size for every oracle. IGV cannot usefully draw more
+# than a few thousand features across a browser window, and the shipped HTML
+# embeds them inline — so an unbounded track is both useless and unpublishable.
+# 4,000 sits just above the widest legitimate need (borzoi 3,277 at 524 kb,
+# alphagenome 3,005 at 1 Mb) with headroom, and far enough below GitHub's
+# 100 MiB file limit that no realistic report can approach it. See issue #129.
+_MAX_FEATURES_PER_TRACK = 4_000
+
 
 def rescale_for_display(
     values,
@@ -306,15 +315,31 @@ def _calculate_track_bin_size(
     # ChromBPNet"; the original code path returned "mean" — taking the
     # description as ground truth.)
     if source_oracle == "chrombpnet":
-        bin_size = 20
-        return bin_size, "max"
+        bin_size, aggregation = 20, "max"
     elif source_oracle == "legnet":
-        return resolution, "max"
-    
-    # Fallback: return 3_000 features per bin
-    num_features = 3_000
-    bin_size = window_bp // num_features
-    return bin_size, "mean"
+        bin_size, aggregation = resolution, "max"
+    else:
+        bin_size, aggregation = window_bp // 3_000, "mean"
+
+    # Then bound it, for every oracle including the two above.
+    #
+    # A preferred bin size is a rendering choice; the budget is a hard limit.
+    # Returning bare `resolution` (LegNet) makes
+    # `bins_per = max(1, bin_size // resolution)` equal 1 in
+    # `_downsample_to_features` — one JSON feature per input bin, no
+    # downsampling at all. That is how the LegNet report reached 131 MB from
+    # 1.29 MB and became impossible to commit (GitHub rejects above 100 MiB).
+    # ChromBPNet's fixed 20 bp has the same shape of problem on a wide window
+    # (10,000 features at 200 kb), it just never got large enough to notice.
+    #
+    # The cap only binds when the window is wide: at ChromBPNet's real 2,114 bp
+    # input the floor is 1 bp, so its deliberate 20 bp survives untouched.
+    # Aggregation is never changed — widening a bin must not silently turn
+    # max-pooling into mean-pooling.
+    # See issue #129 and tests/test_igv_feature_budget.py.
+    min_bin_for_budget = -(-window_bp // _MAX_FEATURES_PER_TRACK)  # ceil div
+    bin_size = max(bin_size, min_bin_for_budget, resolution)
+    return bin_size, aggregation
 
 def build_igv_html(
     ref_pred,
