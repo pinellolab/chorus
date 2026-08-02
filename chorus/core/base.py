@@ -8,6 +8,7 @@ import re
 import os
 import logging
 from ..core.interval import Interval, GenomeRef
+from ..core.exceptions import ReferenceAlleleMismatchError
 
 from ..core.track import Track
 from ..core.exceptions import (
@@ -24,10 +25,20 @@ logger = logging.getLogger(__name__)
 class OracleBase(ABC):
     """Abstract base class for all oracle implementations."""
     
-    def __init__(self, use_environment: bool = True, 
+    def __init__(self, use_environment: bool = True,
                  model_load_timeout: Optional[int] = 600,
                  predict_timeout: Optional[int] = 300,
-                 device: Optional[str] = None):
+                 device: Optional[str] = None,
+                 strict_ref: Optional[bool] = None):
+        # Raise rather than warn-and-substitute when the supplied reference
+        # allele disagrees with the genome (#128). Defaults to True: a warning
+        # that fires on every run of a wrong example is not a safety net, as the
+        # BCL11A ref="G"/hg38-T example demonstrated over several months.
+        # CHORUS_ALLOW_REF_MISMATCH=1 flips the default for callers who
+        # deliberately score synthetic references.
+        if strict_ref is None:
+            strict_ref = os.environ.get("CHORUS_ALLOW_REF_MISMATCH") != "1"
+        self.strict_ref = strict_ref
         self.model = None
         self.loaded = False
         self._assay_types = []
@@ -462,6 +473,22 @@ class OracleBase(ABC):
         # Case-insensitive compare; pyfaidx returns lowercase for
         # softmasked regions, callers always pass uppercase.
         if ref_len > 0 and ref_genome_seq != ref_allele:
+            # Substituting here scores a SYNTHETIC, non-reference sequence and
+            # reports it as if nothing were wrong. A committed BCL11A example
+            # carried ref="G" where hg38 has T and shipped for months with this
+            # warning firing every run — nobody reads a warning that always fires.
+            # So it raises by default now (#128).
+            if self.strict_ref:
+                raise ReferenceAlleleMismatchError(
+                    f"reference allele {ref_allele!r} does not match "
+                    f"{region_chrom}:{var_pos}, where the genome has "
+                    f"{ref_genome_seq!r}. Check the coordinates and the genome "
+                    f"build. Scoring this anyway would substitute your allele "
+                    f"into the sequence and measure a variant against a "
+                    f"reference that does not exist. To do that deliberately, "
+                    f"pass strict_ref=False or set "
+                    f"CHORUS_ALLOW_REF_MISMATCH=1."
+                )
             logger.warning(
                 "Provided reference allele %r does not match the genome at "
                 "%s:%d (genome=%r). Chorus will substitute the provided "
