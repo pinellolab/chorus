@@ -175,6 +175,174 @@ def test_builders_delegate_to_the_shared_span(builder):
         f"{builder} still computes its own half-width"
 
 
+def _make_track(resolution: int, n_bins: int = 4096, pred_start: int = 1_000_000):
+    """A minimal real OraclePredictionTrack with distinguishable per-bin values."""
+    import numpy as np
+
+    from chorus.core.interval import GenomeRef, Interval
+    from chorus.core.result import OraclePredictionTrack
+
+    values = np.arange(n_bins, dtype=np.float64)
+    # ``fasta`` is required by GenomeRef but never read: score_region, pos2bin and
+    # score_centered_window touch only chrom/start/end.
+    ref = GenomeRef(
+        chrom="chr1", start=pred_start, end=pred_start + n_bins * resolution,
+        fasta="/nonexistent.fa",
+    )
+    interval = Interval.make(ref) if hasattr(Interval, "make") else Interval(reference=ref)
+    return OraclePredictionTrack(
+        source_model="test",
+        assay_id="TEST:track",
+        assay_type="DNASE",
+        cell_type="TEST",
+        query_interval=interval,
+        prediction_interval=interval,
+        input_interval=interval,
+        resolution=resolution,
+        values=values,
+    )
+
+
+# ---------------------------------------------------------------------------
+# The query switch: unchanged at resolution 1, corrected above it
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("window", [501, 2001])
+def test_resolution_1_query_is_bit_identical_before_and_after(window):
+    """Why ChromBPNet's committed numbers do not move.
+
+    ``score_region`` and ``score_centered_window`` must agree exactly at 1 bp for
+    an odd window, so the switch is a no-op for every ``resolution=1`` oracle.
+    """
+    track = _make_track(1)
+    pos = track.prediction_interval.reference.start + 2048
+    half = window // 2
+    before = track.score_region("chr1", pos - half, pos + half + 1, "sum")
+    after = track.score_centered_window("chr1", pos, window, "sum")
+    assert before == after
+
+
+@pytest.mark.parametrize("res,window", [(128, 501), (128, 2001), (32, 501)])
+def test_coarse_resolution_query_changes_and_now_matches_the_builder(res, window):
+    """At coarse resolution the old query summed a wider span than the null."""
+    track = _make_track(res)
+    pos = track.prediction_interval.reference.start + 2048 * res + res // 3
+    half = window // 2
+    before = track.score_region("chr1", pos - half, pos + half + 1, "sum")
+    after = track.score_centered_window("chr1", pos, window, "sum")
+    assert before != after
+
+    expected_bins = centered_bin_span(4096, window, res)
+    n = expected_bins[1] - expected_bins[0]
+    # the new value sums exactly the builder's number of bins
+    centre = track.pos2bin("chr1", pos)
+    lo = centre - window // (2 * res)
+    assert after == float(sum(range(lo, lo + n)))
+
+
+def test_the_query_is_now_deterministic_across_sub_bin_offsets():
+    """The defect this closes: identical settings used to give different spans."""
+    res, window = 128, 501
+    track = _make_track(res)
+    base = track.prediction_interval.reference.start + 2048 * res
+    old = {track.score_region("chr1", base + o - window // 2,
+                              base + o + window // 2 + 1, "sum")
+           for o in range(0, res, 16)}
+    new = {track.score_centered_window("chr1", base + o, window, "sum")
+           for o in range(0, res, 16)}
+    assert len(old) > 1, "old query should vary with sub-bin offset"
+    assert len(new) == 1, f"new query must be offset-invariant, got {sorted(new)}"
+
+
+def test_centred_window_returns_none_outside_the_prediction():
+    track = _make_track(128)
+    assert track.score_centered_window("chr1", 1, 501, "sum") is None
+    assert track.score_centered_window("chr2", 1_000_000 + 500, 501, "sum") is None
+
+
+def test_centre_bin_override_is_what_the_query_needs():
+    """A prediction clamped at a contig edge is not centred on the variant.
+
+    The builders can assume centre == n_bins // 2 because they centre each
+    sampled sequence on the variant themselves. The query cannot.
+    """
+    # centre 500, half 250 -> [250, 751); clamped at the left when centre is 100
+    assert centered_bin_span(1000, 501, 1) == (250, 751)
+    assert centered_bin_span(1000, 501, 1, centre_bin=100) == (0, 351)
+
+
+@pytest.mark.integration
+def test_committed_examples_are_stale_until_the_regen_sweep():
+    """Makes the staleness of shipped examples *visible* rather than silent.
+
+    Switching the query to the builders' span moves **258 of 1,090** windowed rows
+    across the committed examples (23.7 %):
+
+    ======================================  =============  =======
+    example                                 windowed rows  changed
+    ======================================  =============  =======
+    SORT1_enformer                                    168      168
+    SORT1_cell_type_screen                            288       44
+    TERT_chr5_1295046                                 114       12
+    SORT1_rs12740374_with_CEBP                        130       10
+    BCL11A_rs1427407 / FTO_rs1421085                   58       12
+    SORT1_rs12740374 / region_swap / others           ...        ...
+    SORT1_chrombpnet                                    2        0
+    batch_scoring                                      30        0
+    ======================================  =============  =======
+
+    ChromBPNet and batch_scoring are untouched because they are ``resolution=1``,
+    which is the same reason the bug hid for months.
+
+    Regenerating per number-moving PR costs GPU and gets overwritten by the next
+    one, so the plan regenerates **once**, after the rebuilds. Until then the
+    committed examples do not match what the code produces — and nothing else in
+    the suite notices, which is the gap this test closes. Expected to report
+    staleness until that sweep runs; ``integration``-marked so it never blocks CI.
+    """
+    import glob
+    import json
+    import os
+    import subprocess
+    from datetime import datetime, timezone
+
+    # git commit time, NOT mtime: on a fresh clone every file carries checkout
+    # time, so an mtime comparison would call every example stale everywhere.
+    try:
+        iso = subprocess.run(
+            ["git", "log", "-1", "--format=%cI", "--", "chorus/analysis/scorers.py"],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pytest.skip("git unavailable")
+    if not iso:
+        pytest.skip("no git history for scorers.py (shallow clone?)")
+    src_mtime = datetime.fromisoformat(iso).astimezone(timezone.utc)
+
+    stale = []
+    for path in sorted(glob.glob("examples/**/example_output.json", recursive=True)):
+        with open(path) as fh:
+            data = json.load(fh)
+        stamp = (data.get("analysis_request") or {}).get("generated_at")
+        if not stamp:
+            stale.append((os.path.basename(os.path.dirname(path)), "no generated_at"))
+            continue
+        try:
+            gen = datetime.strptime(stamp, "%Y-%m-%d %H:%M UTC").replace(
+                tzinfo=timezone.utc)
+        except ValueError:
+            stale.append((os.path.basename(os.path.dirname(path)), f"unparsable {stamp!r}"))
+            continue
+        if gen < src_mtime:
+            stale.append((os.path.basename(os.path.dirname(path)), stamp))
+
+    assert not stale, (
+        "examples predate the current scorers.py and need the regen sweep:\n  "
+        + "\n  ".join(f"{name}: {why}" for name, why in stale)
+    )
+
+
 def test_shared_span_reproduces_the_old_builder_arithmetic_exactly():
     """Adopting the shared function must not move a single shipped background.
 

@@ -180,6 +180,58 @@ class OraclePredictionTrack:
         else:
             raise ValueError(f"Unknown scoring strategy: {scoring_strategy}")
 
+    def score_centered_window(
+        self, chrom: str, position: int, window_bp: int,
+        scoring_strategy: str = "sum",
+    ) -> float | None:
+        """Score a ``window_bp`` window centred on ``position``, in bin space.
+
+        Use this rather than :meth:`score_region` for the fixed-width layer
+        windows (501 bp, 2001 bp, ...). The two are not equivalent, and
+        ``score_region`` is the wrong tool for a *centred* window twice over
+        (#144 instance 2):
+
+        * it converts the window to genomic coordinates and then floor/ceil-expands
+          them back to bins, so the bin count depends on where ``position`` falls
+          *within* its bin — **4 or 5** bins for the same ``window_bp=501`` at
+          128 bp resolution, **16 or 17** at 2001. Two variants scored with
+          identical settings were summed over different spans, so no background
+          could match: the numerator's own definition moved.
+        * that span is also wider than the one every builder used to build the
+          null (3 bins at 501 bp / 128 bp resolution, not 4-5), so the percentile
+          compared a wider statistic against a narrower reference.
+
+        This delegates to :func:`~chorus.analysis.background_sampling.centered_bin_span`,
+        the single definition shared with the builders, so the two agree by
+        construction. At ``resolution=1`` it returns exactly the same bins as
+        before for odd windows, which is why ChromBPNet's numbers do not move.
+
+        Returns ``None`` when the position lies outside the prediction.
+        """
+        from chorus.analysis.background_sampling import centered_bin_span
+
+        centre_bin = self.pos2bin(chrom, position)
+        if centre_bin is None:
+            return None
+
+        n_bins = len(self.values)
+        start_bin, end_bin = centered_bin_span(
+            n_bins, window_bp, self.resolution, centre_bin=centre_bin,
+        )
+        if start_bin >= end_bin:
+            return None
+
+        region_values = self.values[start_bin:end_bin]
+        if scoring_strategy == "mean":
+            return float(np.mean(region_values))
+        if scoring_strategy == "max":
+            return float(np.max(region_values))
+        if scoring_strategy == "sum":
+            return float(np.sum(region_values))
+        if scoring_strategy == "median":
+            return float(np.median(region_values))
+        raise ValueError(f"Unknown scoring strategy: {scoring_strategy}")
+
     def pos2bin(self, chrom: str, position: int) -> int | None:
         if chrom != self.prediction_interval.reference.chrom:
             return None

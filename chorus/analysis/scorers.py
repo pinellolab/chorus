@@ -327,16 +327,25 @@ def score_track_effect(
         alt_value = alt_total / n_exons
 
     elif layer_config.window_bp is not None:
-        # Window-based scoring
-        half = layer_config.window_bp // 2
-        start = variant_pos - half
-        end = variant_pos + half + 1
-
-        ref_value = ref_track.score_region(
-            variant_chrom, start, end, layer_config.aggregation,
+        # Window-based scoring, in bin space against the SAME definition of
+        # "centred window" the builders use (#144 instance 2).
+        #
+        # This used to build genomic coordinates and hand them to score_region,
+        # which floor/ceil-expanded them back to bins. Two defects followed:
+        # the span depended on where the variant fell within its bin (4 OR 5 bins
+        # for window_bp=501 at 128 bp resolution), so identical settings summed
+        # different spans; and that span was wider than the null's (3 bins), so
+        # the percentile compared a wider statistic against a narrower reference.
+        #
+        # At resolution=1 this returns exactly the same bins as before for odd
+        # windows, so ChromBPNet's numbers are unchanged.
+        ref_value = ref_track.score_centered_window(
+            variant_chrom, variant_pos, layer_config.window_bp,
+            layer_config.aggregation,
         )
-        alt_value = alt_track.score_region(
-            variant_chrom, start, end, layer_config.aggregation,
+        alt_value = alt_track.score_centered_window(
+            variant_chrom, variant_pos, layer_config.window_bp,
+            layer_config.aggregation,
         )
         if ref_value is None or alt_value is None:
             return None

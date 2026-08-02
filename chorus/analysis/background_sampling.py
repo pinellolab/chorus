@@ -384,7 +384,7 @@ def compute_effect(
 
 
 def centered_bin_span(
-    n_bins: int, window_bp: int, resolution: int,
+    n_bins: int, window_bp: int, resolution: int, centre_bin: int | None = None,
 ) -> tuple[int, int]:
     """``(start, end)`` bins for a ``window_bp`` window centred in ``n_bins``.
 
@@ -415,10 +415,16 @@ def centered_bin_span(
 
     At ``resolution=1`` this returns exactly ``window_bp`` bins for odd windows,
     which is why ChromBPNet — the most audited oracle — could never show the bug.
+
+    ``centre_bin`` defaults to the middle of the array, which is what the builders
+    want: they centre each sampled sequence on the variant, so the middle bin *is*
+    the variant's bin. The query path must pass the variant's bin explicitly,
+    because a prediction clamped at a contig edge is not centred on the variant
+    and the middle bin would then be the wrong one.
     """
     if window_bp is None:
         return 0, n_bins
-    centre = n_bins // 2
+    centre = n_bins // 2 if centre_bin is None else centre_bin
     half = window_bp // (2 * resolution)
     start = max(0, centre - half)
     end = min(n_bins, centre + half + 1)
