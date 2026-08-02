@@ -168,6 +168,130 @@ class ReservoirSampler:
         return int((self.counts > 0).sum())
 
 
+def expected_first_max_index(n_samples: int, n_points: int) -> int:
+    """Grid index where a row built by :meth:`to_cdf_matrix` first hits its max.
+
+    Derived from the two branches, not guessed:
+
+    * ``n_samples >= n_points`` — the row is ``arr[linspace(0, n-1, n_points)]``,
+      so the largest sample lands in the last slot: ``n_points - 1``.
+    * ``n_samples < n_points`` — the row is
+      ``np.interp(linspace(0, 1, n_points), arange(n)/n, arr)``. Note
+      ``arange(n)/n`` stops at ``(n-1)/n``, **not** at 1.0, so ``np.interp``
+      clamps every target beyond that to ``arr[-1]``. The first clamped target is
+      the smallest ``k`` with ``k/(n_points-1) >= (n-1)/n``.
+
+    The clamp means a short row legitimately ends in a *plateau* of repeated
+    maxima ``n_points - expected_first_max_index`` long — 6 slots for
+    AlphaGenome's 1,909 samples, 100 for a 100-sample row. Trailing duplicates
+    are therefore normal and are **not** evidence of padding; a plateau longer
+    than the clamp region is.
+    """
+    if n_samples >= n_points:
+        return n_points - 1
+    return math.ceil((n_points - 1) * (n_samples - 1) / n_samples)
+
+
+def cdf_grid_violations(
+    matrix: np.ndarray,
+    counts: np.ndarray,
+    *,
+    label: str = "cdf",
+    max_report: int = 5,
+) -> list[str]:
+    """Rows that cannot have been produced by ``to_cdf_matrix`` at this width.
+
+    Exists because the shipped ``enformer_pertrack.npz`` was **not** reproducible
+    from repo code and nothing noticed. Its ``effect_cdfs`` were gridded at 9,606
+    points — ``max(effect_counts)`` — then padded to 10,000 by repeating each
+    row's maximum 395 times. Since ``_get_denominator`` correctly returns the grid
+    *width* (10,000, #119), every enformer effect percentile was scaled by
+    ~0.9606 and no effect could land in ``(0.9605, 1.0)``: the top 4 % of the
+    scale was unreachable for all 5,313 tracks.
+
+    ``to_cdf_matrix`` interpolates short rows onto the *full* grid and cannot
+    produce that shape, and ``build_and_save`` only resampled when
+    ``shape[1] > n_points`` — so a too-narrow matrix was stored verbatim, with no
+    assert and no warning. This is the missing assert.
+
+    Two independent checks, both validated against all eight shipped backgrounds
+    (19,393 short rows): each flags every one of enformer's 5,313 effect rows and
+    nothing else.
+
+    1. **Plateau length.** For a short row it must equal the clamp region exactly.
+       Measured excess is 0 for every legitimate row and 393 for enformer.
+       Skipped for ``n >= n_points``, where ties in the data can extend the tail
+       legitimately — AlphaGenome's row 2,452 has its top two H3K4me1 windows
+       tied at exactly 2480.0, which is real saturation, not corruption.
+    2. **Distinct-vs-count.** Interpolating ``n`` samples onto a wider grid
+       generates intermediate values, so the distinct count lands *away* from
+       ``n`` — above it when intermediates appear, below when ties collapse
+       (AlphaGenome reaches 0.418 x the grid width legitimately, so a "distinct
+       must be near the width" threshold would false-positive). Landing exactly
+       on ``n`` means the grid *was* ``n``.
+    """
+    problems: list[str] = []
+    if matrix is None or matrix.size == 0:
+        return problems
+    n_points = int(matrix.shape[1])
+
+    for i in range(matrix.shape[0]):
+        if len(problems) >= max_report:
+            problems.append(f"{label}: ... further rows suppressed")
+            break
+        n = int(counts[i])
+        if n <= 0:
+            continue
+        row = np.asarray(matrix[i], dtype=np.float64)
+
+        if not np.all(np.diff(row) >= -1e-6):
+            problems.append(
+                f"{label} row {i}: not non-decreasing (a CDF row is sorted values)"
+            )
+            continue
+        if n >= n_points:
+            continue
+        if np.unique(row).size <= 1:
+            # A constant row carries no grid geometry — it looks the same at
+            # every width, so there is nothing here to validate. Legitimately
+            # produced by a single sample (interp of one point is flat) or by a
+            # track whose every prediction is identical. Both checks below would
+            # false-positive: n == 1 makes distinct == count, and an all-equal
+            # long row makes the plateau the whole grid. Degenerate backgrounds
+            # are _has_samples' and the scale-degeneracy census's business.
+            continue
+
+        differs = np.nonzero(row != row[-1])[0]
+        plateau = n_points if differs.size == 0 else n_points - int(differs[-1]) - 1
+        expected_plateau = n_points - expected_first_max_index(n, n_points)
+        # One-sided on purpose. The clamp region is a LOWER bound on the repeated
+        # maxima interpolation produces, so:
+        #   plateau > expected  =>  extra copies of the max were appended (padding)
+        #   plateau < expected  =>  the row simply was not built by np.interp —
+        #                           a hand-built or synthetic fixture, which is
+        #                           legitimate and must not be rejected.
+        # Measured on all eight shipped backgrounds: excess is exactly 0 for every
+        # legitimate row and +393 for every enformer effect row, so one-sided
+        # loses no detection power.
+        if plateau > expected_plateau:
+            problems.append(
+                f"{label} row {i}: trailing plateau is {plateau} slots but the "
+                f"interpolation clamp for {n} samples on a {n_points}-point grid "
+                f"is only {expected_plateau} — {plateau - expected_plateau} extra "
+                f"copies of the maximum look appended, which rescales every "
+                f"percentile in this row"
+            )
+            continue
+
+        if np.unique(row).size == n:
+            problems.append(
+                f"{label} row {i}: exactly {n} distinct values on a "
+                f"{n_points}-point grid — interpolation would not land on the "
+                f"sample count, so this row was gridded at width {n}"
+            )
+    return problems
+
+
 def get_sequence(
     fasta,
     chrom: str,

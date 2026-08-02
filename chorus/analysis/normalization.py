@@ -33,6 +33,8 @@ from typing import Optional
 
 import numpy as np
 
+from chorus.analysis.background_sampling import cdf_grid_violations
+
 logger = logging.getLogger(__name__)
 
 
@@ -843,10 +845,10 @@ class PerTrackNormalizer:
             "track_ids": np.array(track_ids, dtype="U"),
         }
 
-        for name, matrix in [
-            ("effect_cdfs", effect_cdfs),
-            ("summary_cdfs", summary_cdfs),
-            ("perbin_cdfs", perbin_cdfs),
+        for name, matrix, counts in [
+            ("effect_cdfs", effect_cdfs, effect_counts),
+            ("summary_cdfs", summary_cdfs, summary_counts),
+            ("perbin_cdfs", perbin_cdfs, perbin_counts),
         ]:
             if matrix is not None:
                 assert matrix.shape[0] == n_tracks, (
@@ -856,6 +858,29 @@ class PerTrackNormalizer:
                 if matrix.shape[1] > n_points:
                     indices = np.linspace(0, matrix.shape[1] - 1, n_points, dtype=int)
                     matrix = matrix[:, indices]
+                # A width below n_points is not itself a defect: _get_denominator
+                # reads shape[1], so a 100-wide matrix stored at 100 is entirely
+                # self-consistent. Worth a note only because it means the caller's
+                # requested grid and its actual grid diverged. Enformer's defect
+                # was the opposite shape — gridded at 9,606 and *padded* to 10,000,
+                # so shape[1] == n_points and no width check could have caught it.
+                # The geometry check below is what catches padding.
+                if matrix.shape[1] < n_points:
+                    logger.warning(
+                        "%s: %s is %d columns wide but n_points=%d; percentiles "
+                        "will be computed against the stored width (%d)",
+                        oracle_name, name, matrix.shape[1], n_points, matrix.shape[1],
+                    )
+                if counts is not None:
+                    problems = cdf_grid_violations(
+                        matrix, np.asarray(counts), label=f"{oracle_name}.{name}"
+                    )
+                    if problems:
+                        raise ValueError(
+                            "refusing to write a CDF matrix that could not have "
+                            "been produced by ReservoirSampler.to_cdf_matrix:\n  "
+                            + "\n  ".join(problems)
+                        )
                 arrays[name] = matrix.astype(np.float32)
 
         if signed_flags is not None:

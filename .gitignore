@@ -11,7 +11,10 @@ __pycache__/
 build/
 develop-eggs/
 dist/
-downloads/
+# no trailing slash: these are symlinks to /data on the H100 box
+# (bulk data moved off a full root fs), and 'name/' matches a
+# directory but not a symlink to one.
+downloads
 eggs/
 .eggs/
 lib/
@@ -144,7 +147,10 @@ scripts/internal/
 examples/walkthroughs/validation/SORT1_rs12740374_multioracle/*.pkl
 
 # DHS vocabulary download (90 MB, fetched via gdown when needed)
-annotations/
+# no trailing slash: these are symlinks to /data on the H100 box
+# (bulk data moved off a full root fs), and 'name/' matches a
+# directory but not a symlink to one.
+annotations
 
 # Local screenshot sweeps (regenerate via headless Chrome on demand)
 screenshots/
