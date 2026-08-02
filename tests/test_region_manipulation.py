@@ -22,9 +22,9 @@ from chorus.core.exceptions import (
 class MockOracle(OracleBase):
     """Mock oracle for testing region manipulation methods."""
 
-    def __init__(self, reference_fasta=None):
+    def __init__(self, reference_fasta=None, strict_ref=None):
         self.oracle_name = "test"
-        super().__init__(use_environment=False)
+        super().__init__(use_environment=False, strict_ref=strict_ref)
         self.loaded = True
         self._context_size = 393216
         self._output_size = 114688
