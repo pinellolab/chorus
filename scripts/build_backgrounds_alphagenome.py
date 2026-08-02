@@ -164,7 +164,11 @@ class ReservoirSampler:
         return int((self.counts > 0).sum())
 
 
-from chorus.analysis.background_sampling import centered_bin_span  # noqa: E402
+from chorus.analysis.background_sampling import (  # noqa: E402
+    StagedSamples,
+    centered_bin_span,
+    report_sampling_uniformity,
+)
 from chorus.analysis.scorers import classify_chip_layer  # noqa: E402
 
 
@@ -411,6 +415,9 @@ def build_variant_backgrounds():
     snps = snps[:args.n_variants]
     logger.info("Generated %d SNPs", len(snps))
 
+    # Why a position was dropped, reported at the end. A silent drop is how
+    # enformer shipped effect_counts spanning 9600-9606 (#123).
+    drop_reasons = defaultdict(int)
     t0 = time.time()
     for i, snp in enumerate(snps):
         if (i + 1) % 5 == 0 or i == 0:
@@ -428,6 +435,10 @@ def build_variant_backgrounds():
         offset = INPUT_LENGTH // 2 - 1
         seq_alt = seq_ref[:offset] + snp["alt"] + seq_ref[offset + 1:]
 
+        # Stage, then commit only if every track scored. This try used to wrap the
+        # per-track loop too, so a mid-loop failure credited earlier tracks and not
+        # later ones — the defect visible in enformer's 9600-9606 counts (#123).
+        staged = StagedSamples()
         try:
             ref_output = predict_sequence(model, seq_ref, output_types_needed)
             alt_output = predict_sequence(model, seq_alt, output_types_needed)
@@ -465,10 +476,15 @@ def build_variant_backgrounds():
                     score = compute_effect(ref_v, alt_v, t['formula'], t['pseudocount'])
                     if not t['signed']:
                         score = abs(score)
-                    effect_reservoir.add(t_i, score)
+                    staged.add(t_i, score)
         except Exception as exc:
-            logger.warning("Failed variant %d: %s", i, str(exc)[:200])
+            drop_reasons[type(exc).__name__] += 1
+            logger.warning("Dropped variant %d entirely: %s: %s",
+                           i, type(exc).__name__, str(exc)[:200])
+        else:
+            staged.commit(effect_reservoir)
 
+    report_sampling_uniformity(effect_reservoir, drop_reasons, "effect", logger)
     elapsed_v = time.time() - t0
     logger.info("Variants done in %.1f hrs: %s samples",
                 elapsed_v / 3600, f"{effect_reservoir.total_samples():,}")
@@ -594,6 +610,9 @@ def build_baseline_backgrounds():
     random.shuffle(tagged_positions)
     logger.info("Total positions: %d", len(tagged_positions))
 
+    # Why a position was dropped, reported at the end. A silent drop is how
+    # enformer shipped effect_counts spanning 9600-9606 (#123).
+    drop_reasons = defaultdict(int)
     t0 = time.time()
     for i, (chrom, pos, pos_type) in enumerate(tagged_positions):
         if (i + 1) % 5 == 0 or i == 0:
@@ -610,6 +629,9 @@ def build_baseline_backgrounds():
         if seq is None:
             continue
 
+        # Staged for the same reason (#123). Slot 0 is summary, slot 1 perbin;
+        # both commit or neither does.
+        staged = StagedSamples()
         try:
             output = predict_sequence(model, seq, output_types_needed)
 
@@ -658,7 +680,7 @@ def build_baseline_backgrounds():
 
                         # Summary: mean over exon bins
                         signal = float(np.mean(vals[eb]))
-                        summary_reservoir.add(t_i, signal)
+                        staged.add(t_i, signal, reservoir=0)
 
                         # Perbin: sample from exon bins
                         if len(eb) > PERBIN_BINS_PER_POSITION:
@@ -671,7 +693,7 @@ def build_baseline_backgrounds():
                             ebs = random_bins_cache[cache_key]
                         else:
                             ebs = eb
-                        perbin_reservoir.add_batch(t_i, vals[ebs])
+                        staged.add_batch(t_i, vals[ebs], reservoir=1)
                     else:
                         # Summary: window-sum (skip CAGE at cCREs)
                         if not (is_cage and pos_type == 'ccre'):
@@ -680,13 +702,19 @@ def build_baseline_backgrounds():
                                 window_slice_cache[wkey] = get_window_slice(t, n_bins)
                             ws, we = window_slice_cache[wkey]
                             signal = float(np.sum(vals[ws:we]))
-                            summary_reservoir.add(t_i, signal)
+                            staged.add(t_i, signal, reservoir=0)
 
                         # Perbin: random bins from full output
-                        perbin_reservoir.add_batch(t_i, vals[rand_sample])
+                        staged.add_batch(t_i, vals[rand_sample], reservoir=1)
         except Exception as exc:
-            logger.warning("Failed %s:%d: %s", chrom, pos, str(exc)[:200])
+            drop_reasons[type(exc).__name__] += 1
+            logger.warning("Dropped %s:%d entirely: %s: %s",
+                           chrom, pos, type(exc).__name__, str(exc)[:200])
+        else:
+            staged.commit(summary_reservoir, perbin_reservoir)
 
+    report_sampling_uniformity(summary_reservoir, drop_reasons, "summary", logger)
+    report_sampling_uniformity(perbin_reservoir, drop_reasons, "perbin", logger)
     elapsed_b = time.time() - t0
     logger.info("Baselines done in %.1f hrs", elapsed_b / 3600)
 
