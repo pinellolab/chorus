@@ -133,14 +133,20 @@ class OraclePredictionTrack:
         else:
             raise ValueError(f"Unknown scoring strategy: {scoring_strategy}")
 
-    def score_region(self, chrom: str, start: int, end: int,
-                     scoring_strategy: str | None = None) -> float | None:
-        """Score prediction values within a genomic sub-region.
+    def region_bin_span(self, chrom: str, start: int,
+                        end: int) -> tuple[int, int] | None:
+        """Bins a genomic region maps to, or ``None`` if it does not overlap.
 
-        Converts genomic coords to bin indices, slices the values array,
-        and applies the scoring strategy (mean/max/sum/median).
+        Extracted so :meth:`score_region` and :meth:`region_bin_count` cannot
+        disagree about *which* bins a region covers. Duplicating this arithmetic
+        is the mistake catalogued in #144, and the RNA denominator fix needs the
+        count of exactly the bins that were summed.
 
-        Returns None if the region does not overlap the prediction window.
+        Note the asymmetry, which is deliberate and load-bearing: the start floors
+        and the end ceils, so a region is never under-covered. That is correct for
+        an arbitrary genomic interval such as an exon. It is *not* the right rule
+        for a fixed-width centred window — see
+        :meth:`score_centered_window` and #144 instance 2.
         """
         if chrom != self.prediction_interval.reference.chrom:
             return None
@@ -163,6 +169,32 @@ class OraclePredictionTrack:
 
         if start_bin >= end_bin:
             return None
+        return start_bin, end_bin
+
+    def region_bin_count(self, chrom: str, start: int, end: int) -> int | None:
+        """How many bins :meth:`score_region` would sum for this region.
+
+        The denominator the RNA statistic needs: AlphaGenome's gene-mask LFC
+        divides by ``gene_mask.sum()`` — the extent of the mask — and doing that
+        in *bins* rather than bases is what makes the same code correct at every
+        resolution. See ``chorus/analysis/scorers.py``'s gene_expression branch.
+        """
+        span = self.region_bin_span(chrom, start, end)
+        return None if span is None else span[1] - span[0]
+
+    def score_region(self, chrom: str, start: int, end: int,
+                     scoring_strategy: str | None = None) -> float | None:
+        """Score prediction values within a genomic sub-region.
+
+        Converts genomic coords to bin indices, slices the values array,
+        and applies the scoring strategy (mean/max/sum/median).
+
+        Returns None if the region does not overlap the prediction window.
+        """
+        span = self.region_bin_span(chrom, start, end)
+        if span is None:
+            return None
+        start_bin, end_bin = span
 
         region_values = self.values[start_bin:end_bin]
 
