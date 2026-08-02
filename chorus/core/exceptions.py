@@ -39,6 +39,24 @@ class InvalidRegionError(ChorusError, ValueError):
     pass
 
 
+class ReferenceAlleleMismatchError(ChorusError, ValueError):
+    """The supplied reference allele is not what the genome has at that position.
+
+    Almost always wrong coordinates or the wrong genome build. Chorus used to
+    only *warn* and then substitute the supplied allele into the prediction
+    interval, which means it scored a **synthetic, non-reference sequence** and
+    reported the result as if nothing were amiss.
+
+    That is not hypothetical: a committed BCL11A example carried ``ref="G"``
+    where hg38 has ``T`` and shipped that way for months, with the warning firing
+    on every single run. 1 of 4 examples checked was wrong.
+
+    Inherits ``ValueError`` as well, matching ``InvalidRegionError``, so callers
+    with an ``except ValueError`` contract keep working.
+    """
+    pass
+
+
 class FileFormatError(ChorusError):
     """Raised when a file format is invalid or unsupported."""
     pass

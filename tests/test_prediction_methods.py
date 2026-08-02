@@ -19,9 +19,9 @@ class MockOracle(OracleBase):
     Returns deterministic OraclePrediction objects from _predict().
     """
 
-    def __init__(self, reference_fasta=None):
+    def __init__(self, reference_fasta=None, strict_ref=None):
         self.oracle_name = "test"
-        super().__init__(use_environment=False)
+        super().__init__(use_environment=False, strict_ref=strict_ref)
         self.loaded = True
         self._context_size = 393216
         self._output_size = 114688
@@ -237,17 +237,35 @@ class TestPredictionMethods:
             f"Messages: {[r.getMessage() for r in matching]}"
         )
 
-        # And with the WRONG ref — warning MUST fire (proves the check still works).
-        caplog.clear()
-        with caplog.at_level(logging.WARNING, logger="chorus.core.base"):
+        # And with the WRONG ref the check must still fire — but it now RAISES
+        # rather than warning (#128). Substituting the user's allele scores a
+        # synthetic non-reference sequence, which is how a BCL11A example shipped
+        # with ref="G" against hg38's T for months while warning on every run.
+        import pytest
+
+        from chorus.core.exceptions import ReferenceAlleleMismatchError
+
+        with pytest.raises(ReferenceAlleleMismatchError, match="does not match"):
             oracle.predict_variant_effect(
                 genomic_region="chr1:50000-150000",
                 variant_position="chr1:100000",
                 alleles=["T", "A"],  # genome has G, user says T → mismatch
                 assay_ids=["DNase:K562"],
             )
+
+        # strict_ref=False keeps the old warn-and-substitute path for callers who
+        # want it deliberately.
+        lax = MockOracle(reference_fasta=str(fa), strict_ref=False)
+        caplog.clear()
+        with caplog.at_level(logging.WARNING, logger="chorus.core.base"):
+            lax.predict_variant_effect(
+                genomic_region="chr1:50000-150000",
+                variant_position="chr1:100000",
+                alleles=["T", "A"],
+                assay_ids=["DNase:K562"],
+            )
         matching = [r for r in caplog.records if "does not match the genome" in r.getMessage()]
-        assert matching, "Warning should fire when user's ref really doesn't match genome"
+        assert matching, "strict_ref=False must still warn before substituting"
 
         shutil.rmtree(tmp)
 
