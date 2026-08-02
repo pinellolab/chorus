@@ -383,6 +383,122 @@ def compute_effect(
     )
 
 
+def sampling_uniformity(counts) -> dict:
+    """Did every track see the same set of sampled positions?
+
+    Distinguishes the two reasons a builder's ``*_counts`` can vary, which look
+    identical if you only check "are they all equal":
+
+    * **legitimate** — different sampling paths. Enformer skips CAGE at cCRE
+      positions, so its ``summary_counts`` has two well-separated clusters by
+      design; alphagenome's effect counts are 1697 (RNA) vs 1909, borzoi's 6563
+      vs 9609, chrombpnet's 18672 vs 37344. None of those pairs is adjacent.
+    * **partial credit** — a per-track loop that died part-way through, leaving
+      the tracks visited before the exception incremented and the rest not. That
+      produces a *tight run of consecutive integers*, and shipped
+      ``enformer_pertrack.npz`` has exactly that: 7 values, 9600-9606 (#123).
+
+    So ``adjacent_pairs`` is the diagnostic, not ``n_distinct``. Returns a summary
+    dict; callers decide whether to warn or fail.
+    """
+    arr = np.asarray(counts)
+    live = arr[arr > 0]
+    if live.size == 0:
+        return {"n_tracks": 0, "n_distinct": 0, "adjacent_pairs": 0,
+                "min": 0, "max": 0, "suspect": False}
+    uniq = np.unique(live)
+    adjacent = int((np.diff(uniq) == 1).sum()) if uniq.size > 1 else 0
+    return {
+        "n_tracks": int(live.size),
+        "n_distinct": int(uniq.size),
+        "adjacent_pairs": adjacent,
+        "min": int(uniq.min()),
+        "max": int(uniq.max()),
+        # a run of consecutive integers is the partial-credit fingerprint
+        "suspect": adjacent > 0,
+    }
+
+
+def report_sampling_uniformity(reservoir, drop_reasons, label, logger) -> dict:
+    """Log dropped positions and whether every track saw the same position set.
+
+    Shared rather than copied into each builder: a silent drop is precisely how
+    enformer shipped ``effect_counts`` spanning 9600-9606 with nothing saying so
+    (#123), and four copies of the check would be a fresh instance of #144.
+
+    Escalates to ``logger.error`` only on the partial-credit fingerprint, so the
+    legitimate multi-cluster spreads (enformer skips CAGE at cCREs; alphagenome
+    RNA samples a different path) stay quiet.
+    """
+    if drop_reasons:
+        logger.warning("%s: dropped %d position(s) entirely: %s", label,
+                       sum(drop_reasons.values()), dict(drop_reasons))
+    stats = sampling_uniformity(reservoir.get_counts())
+    logger.info("%s counts: %d distinct over %d tracks, range %d-%d",
+                label, stats["n_distinct"], stats["n_tracks"],
+                stats["min"], stats["max"])
+    if stats["suspect"]:
+        logger.error(
+            "%s counts contain %d consecutive-integer pair(s) — the partial-credit "
+            "fingerprint (#123). Tracks are NOT ranked against the same position "
+            "set; investigate before publishing.", label, stats["adjacent_pairs"],
+        )
+    return stats
+
+
+class StagedSamples:
+    """Per-position samples held back until the whole position succeeds.
+
+    Reservoir adds must be **all-or-nothing per sampled position**, or tracks end
+    up ranked against *different variant sets* (#123).
+
+    Every builder wrapped its per-track loop and its model calls in one
+    ``try/except``, so an exception raised part-way through the loop left the
+    tracks visited before it incremented and the rest not. The damage is visible
+    in the shipped ``enformer_pertrack.npz``: ``effect_counts`` takes **7**
+    values, 9600-9606 — a tight run of consecutive integers, which is the
+    fingerprint. Contrast the legitimate spreads elsewhere, which are
+    well-separated clusters from genuinely different sampling paths (alphagenome
+    1697 vs 1909, borzoi 6563 vs 9609, chrombpnet 18672 vs 37344) and never
+    adjacent.
+
+    The pattern is latent at **11 sites across 6 builders**; only enformer's data
+    shows it actually firing. Usage::
+
+        staged = StagedSamples()
+        try:
+            for t in track_info:
+                staged.add(t['idx'], score)          # nothing committed yet
+                staged.add_batch(t['idx'], values)
+        except Exception:
+            ...                                       # staged is simply dropped
+        else:
+            staged.commit(effect_res, perbin_res)     # all tracks, or none
+    """
+
+    __slots__ = ("_singles", "_batches")
+
+    def __init__(self) -> None:
+        self._singles: list[tuple[int, int, float]] = []
+        self._batches: list[tuple[int, int, np.ndarray]] = []
+
+    def add(self, track_idx: int, value: float, reservoir: int = 0) -> None:
+        self._singles.append((reservoir, track_idx, float(value)))
+
+    def add_batch(self, track_idx: int, values, reservoir: int = 0) -> None:
+        self._batches.append((reservoir, track_idx, np.asarray(values)))
+
+    def __len__(self) -> int:
+        return len(self._singles) + len(self._batches)
+
+    def commit(self, *reservoirs) -> None:
+        """Flush every staged sample. Call only once the position fully succeeded."""
+        for slot, track_idx, value in self._singles:
+            reservoirs[slot].add(track_idx, value)
+        for slot, track_idx, values in self._batches:
+            reservoirs[slot].add_batch(track_idx, values)
+
+
 def centered_bin_span(
     n_bins: int, window_bp: int, resolution: int, centre_bin: int | None = None,
 ) -> tuple[int, int]:

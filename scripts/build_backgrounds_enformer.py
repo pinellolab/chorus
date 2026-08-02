@@ -30,8 +30,11 @@ import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '
 
 from chorus.analysis.background_sampling import (  # noqa: E402
     ReservoirSampler,
+    StagedSamples,
     centered_bin_span,
+    report_sampling_uniformity,
 )
+
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
 parser = argparse.ArgumentParser()
@@ -262,6 +265,9 @@ def build_variant_backgrounds():
     snps = snps[:args.n_variants]
     logger.info("Generated %d random SNPs", len(snps))
 
+    # Why a position can be dropped, reported at the end. A silent drop is
+    # how enformer shipped effect_counts spanning 9600-9606 (#123).
+    drop_reasons = defaultdict(int)
     t0 = time.time()
     for i, snp in enumerate(snps):
         if (i + 1) % 50 == 0 or i == 0:
@@ -278,6 +284,11 @@ def build_variant_backgrounds():
         offset = INPUT_LENGTH // 2 - 1
         seq_alt = seq_ref[:offset] + snp["alt"] + seq_ref[offset + 1:]
 
+        # Stage, then commit only if EVERY track scored. This try previously
+        # wrapped the per-track loop as well, so a failure part-way through left
+        # earlier tracks incremented and later ones not — which is why shipped
+        # effect_counts run 9600-9606 instead of being one number (#123).
+        staged = StagedSamples()
         try:
             ref_pred = predict_all(seq_ref)
             alt_pred = predict_all(seq_alt)
@@ -291,9 +302,13 @@ def build_variant_backgrounds():
                 # Store absolute value for unsigned layers, raw for signed
                 if not t['signed']:
                     score = abs(score)
-                effect_reservoir.add(idx, score)
+                staged.add(idx, score)
         except Exception as exc:
-            logger.warning("Failed variant %d: %s", i, str(exc)[:150])
+            drop_reasons[type(exc).__name__] += 1
+            logger.warning("Dropped variant %d entirely: %s: %s",
+                           i, type(exc).__name__, str(exc)[:150])
+        else:
+            staged.commit(effect_reservoir)
 
     elapsed_v = time.time() - t0
     logger.info(
@@ -302,6 +317,7 @@ def build_variant_backgrounds():
         f"{effect_reservoir.total_samples():,}",
         effect_reservoir.tracks_with_data(),
     )
+    report_sampling_uniformity(effect_reservoir, drop_reasons, "effect", logger)
 
     # Save intermediate reservoir
     effect_matrix = effect_reservoir.to_cdf_matrix(n_points=args.n_cdf_points)
@@ -429,6 +445,9 @@ def build_baseline_backgrounds():
     logger.info("Total: %d positions — %s", len(tagged_positions),
                 ", ".join(f"{k}={v}" for k, v in sorted(n_by_type.items())))
 
+    # Why a position can be dropped, reported at the end. A silent drop is
+    # how enformer shipped effect_counts spanning 9600-9606 (#123).
+    drop_reasons = defaultdict(int)
     t0 = time.time()
     for i, (chrom, pos, pos_type) in enumerate(tagged_positions):
         if (i + 1) % 100 == 0 or i == 0:
@@ -448,6 +467,10 @@ def build_baseline_backgrounds():
         if seq is None:
             continue
 
+        # Staged for the same reason as the variant loop above (#123): a mid-loop
+        # failure must not leave some tracks sampled at this position and others
+        # not. Slot 0 is the summary reservoir, slot 1 the perbin one.
+        staged = StagedSamples()
         try:
             pred = predict_all(seq)
 
@@ -464,16 +487,21 @@ def build_baseline_backgrounds():
                 # CAGE signal is biologically irrelevant)
                 if not (is_cage and pos_type == 'ccre'):
                     signal = float(np.sum(pred[ws:we, idx]))
-                    summary_reservoir.add(idx, signal)
+                    staged.add(idx, signal, reservoir=0)
 
                 # ── Perbin CDF: random bins from full output window ──
                 # NO track-type routing — every track sees every position.
                 # The perbin CDF must represent the full genome-wide
                 # per-bin distribution (mostly low/zero with occasional
                 # peaks) so the IGV browser shows peaks clearly.
-                perbin_reservoir.add_batch(idx, pred[bin_sample, idx].astype(np.float64))
+                staged.add_batch(idx, pred[bin_sample, idx].astype(np.float64),
+                                 reservoir=1)
         except Exception as exc:
-            logger.warning("Failed %s:%d: %s", chrom, pos, str(exc)[:150])
+            drop_reasons[type(exc).__name__] += 1
+            logger.warning("Dropped %s:%d entirely: %s: %s",
+                           chrom, pos, type(exc).__name__, str(exc)[:150])
+        else:
+            staged.commit(summary_reservoir, perbin_reservoir)
 
     elapsed_b = time.time() - t0
     logger.info(
@@ -482,6 +510,8 @@ def build_baseline_backgrounds():
         f"{summary_reservoir.total_samples():,}",
         f"{perbin_reservoir.total_samples():,}",
     )
+    report_sampling_uniformity(summary_reservoir, drop_reasons, "summary", logger)
+    report_sampling_uniformity(perbin_reservoir, drop_reasons, "perbin", logger)
 
     # Save intermediate reservoirs
     track_ids = [t['identifier'] for t in track_info]
