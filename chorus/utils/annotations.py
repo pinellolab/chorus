@@ -847,3 +847,100 @@ def sample_dhs_positions(
         (df.iloc[i]["seqname"], int(df.iloc[i]["summit"]))
         for i in chosen
     ]
+
+# ---------------------------------------------------------------------------
+# Per-gene exon index, shared by the builders and the query path (#144 inst. 3)
+# ---------------------------------------------------------------------------
+
+def build_gene_exon_index(
+    annotation: str = 'gencode_v48_basic',
+) -> dict:
+    """Per-**gene** merged exon unions, keyed by chromosome and sorted by start.
+
+    The background builders had no structure like this. ``load_exon_index`` in
+    ``scripts/build_backgrounds_alphagenome.py`` merged exons across **every gene
+    on the chromosome**, which discards gene identity — so the builder aggregated
+    RNA signal over every protein-coding exon in its ~1 Mb window (median
+    24,325 exonic bp) while the query aggregates over **one gene's** exons
+    (median 3,328 bp). Different quantities, so the percentile ranked a
+    gene-scoped statistic against a genome-scoped null. #144 instance 3.
+
+    Built from :func:`get_gene_exons` per gene, so the mask a builder scores is
+    the *same object* the query scores rather than a lookalike — that equivalence
+    is asserted in ``tests/test_gene_exon_index.py`` rather than assumed.
+
+    Returns ``{chrom: [(gene_start, gene_end, gene_name, [(exon_start, exon_end), ...]), ...]}``
+    with genes sorted by ``gene_start`` so :func:`genes_overlapping` can bisect.
+    """
+    manager = get_annotation_manager()
+    gtf_path = manager.get_annotation_path(annotation)
+    if not gtf_path:
+        raise ValueError(f"Could not find annotation: {annotation}")
+
+    exons = manager._get_exons_df(gtf_path)
+    genes = manager._get_genes_df(gtf_path)
+    pc_names = set(genes[genes['gene_type'] == 'protein_coding']['gene_name'])
+    pc_exons = exons[exons['gene_name'].isin(pc_names)]
+
+    index: dict = {}
+    for (chrom, gene_name), group in pc_exons.groupby(['chrom', 'gene_name']):
+        intervals = sorted(zip(group['start'].tolist(), group['end'].tolist()))
+        merged = [list(intervals[0])]
+        for s, e in intervals[1:]:
+            if s <= merged[-1][1]:
+                merged[-1][1] = max(merged[-1][1], e)
+            else:
+                merged.append([s, e])
+        spans = [(int(s), int(e)) for s, e in merged]
+        index.setdefault(chrom, []).append(
+            (spans[0][0], spans[-1][1], str(gene_name), spans)
+        )
+    for chrom in index:
+        index[chrom].sort(key=lambda g: g[0])
+    return index
+
+
+def genes_overlapping(index: dict, chrom: str, start: int, end: int) -> list:
+    """Genes whose span overlaps ``[start, end)``.
+
+    **OVERLAP, not containment** — matching what the query's ``_find_nearby_genes``
+    does, deliberately. AlphaGenome's own ``GeneQueryType`` is
+    ``INTERVAL_CONTAINED``, but 68 protein-coding genes can never be contained in
+    a 1,048,576 bp window (RBFOX1 spans 2.47 Mb; also CNTNAP2, PTPRD, DMD,
+    CSMD1), and ``variant_report.py`` force-inserts a user-named gene even when
+    it is absent from the window. A containment rule in the builder would
+    therefore build a null over a gene population the query does not use.
+    """
+    out = []
+    for g_start, g_end, name, spans in index.get(chrom, []):
+        if g_start >= end:
+            break
+        if g_end <= start:
+            continue
+        out.append((g_start, g_end, name, spans))
+    return out
+
+
+def exon_bins_for_gene(
+    spans: list, pred_start: int, pred_end: int, n_bins: int, resolution: int,
+) -> "np.ndarray":
+    """Bin indices covered by one gene's exon union, clipped to the prediction.
+
+    Clipping is why the count has to be measured rather than derived from the
+    gene's annotated length: a gene straddling the window edge contributes only
+    the bins actually predicted, and those are the only ones that may be summed.
+    """
+    import numpy as _np
+
+    bins = set()
+    for es, ee in spans:
+        if es >= pred_end:
+            break
+        if ee <= pred_start:
+            continue
+        s = max(es, pred_start)
+        e = min(ee, pred_end)
+        b0 = (s - pred_start) // resolution
+        b1 = (e - pred_start + resolution - 1) // resolution
+        bins.update(range(max(0, b0), min(n_bins, b1)))
+    return _np.array(sorted(bins), dtype=_np.int64)
