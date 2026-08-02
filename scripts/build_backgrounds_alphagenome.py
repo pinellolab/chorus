@@ -70,11 +70,10 @@ LAYER_FROM_CHORUS_TYPE = {
     'SPLICE_SITES': ('splicing',                501,  'log2fc', 1.0,   False),
 }
 
-HISTONE_PATTERNS = frozenset({
-    "H2AFZ", "H2AZ", "H3K4ME1", "H3K4ME2", "H3K4ME3",
-    "H3K9AC", "H3K9ME1", "H3K9ME2", "H3K9ME3", "H3K14AC",
-    "H3K27AC", "H3K27ME3", "H3K36ME3", "H3K79ME2", "H4K20ME1",
-})
+# HISTONE_PATTERNS used to be duplicated here, a fifth copy of a list that
+# already lived in chorus/analysis/scorers.py. It is gone: classify_chip_layer is
+# now imported from there, and for AlphaGenome it never needs the patterns at all
+# because the CHIP_HISTONE/CHIP_TF identifier prefix is authoritative. See #144.
 
 
 # ── Reservoir sampler ────────────────────────────────────────────
@@ -165,12 +164,7 @@ class ReservoirSampler:
         return int((self.counts > 0).sum())
 
 
-def classify_chip_layer(description: str) -> str:
-    upper = description.upper()
-    for p in HISTONE_PATTERNS:
-        if p in upper:
-            return 'histone_marks'
-    return 'tf_binding'
+from chorus.analysis.scorers import classify_chip_layer  # noqa: E402
 
 
 def compute_effect(ref_val, alt_val, formula, pseudocount):
@@ -246,7 +240,12 @@ def load_model_and_track_info():
         if spec is None:
             continue
         if spec[0] is None:
-            layer = classify_chip_layer(desc)
+            # `aid`, not `desc`. This one argument IS #122: AlphaGenome's
+            # description reads "CHIP:<cell type>" and carries no mark name, so
+            # classifying from it made 0 of 2,733 CHIP tracks histone and built
+            # every one at 501 bp — while the query path read the identifier and
+            # scored 1,075 of them at 2001 bp against that 501 bp null.
+            layer = classify_chip_layer(aid, desc)
             window = 2001 if layer == 'histone_marks' else 501
             formula = 'log2fc'
             pseudocount = 1.0
