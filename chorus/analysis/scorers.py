@@ -307,9 +307,36 @@ def score_track_effect(
     if layer_name == "gene_expression":
         if gene_exons is None:
             return None
+        # Mean over the exon MASK, i.e. divided by the number of bins actually
+        # summed — not by the number of exon intervals.
+        #
+        # AlphaGenome's reference implementation
+        # (alphagenome_research/model/variant_scoring/gene_mask.py:53-56) is
+        #     ln(sum(pred * mask) / gene_mask.sum() + 1e-3)  difference,
+        # where the divisor is the EXTENT of the mask. chorus divided by
+        # len(gene_exons) instead — the interval count — which on real genes is
+        # 251-1,736x too small (median 347x: CELSR2 34 exons / 10,981 bp,
+        # BCL11A 8 / 13,884). Because the 1e-3 pseudocount is fixed it does not
+        # cancel in the log ratio, so the too-small denominator left the effect
+        # UNDER-damped: chorus overstated RNA effects rather than understating
+        # them. Instance 4 of #144.
+        #
+        # Counting BINS rather than exonic BASES is what makes this correct at
+        # every resolution, and it is not interchangeable:
+        #   * at AlphaGenome's resolution 1 a bin IS a base, so this equals
+        #     gene_mask.sum() exactly — the reference formula, unchanged;
+        #   * at Borzoi's 32 bp it matches that builder's own
+        #     np.mean(pred[rna_exon_bins]) units, so Borzoi's 1,543 RNA
+        #     background rows stay valid. A bases denominator would replace
+        #     today's overstatement with a fresh 32x understatement;
+        #   * it counts what was actually summed, so exons clipped by the
+        #     prediction window and bin-phase over-counting are handled rather
+        #     than silently mis-weighted.
+        # scorers.py reads no other resolution-dependent quantity, so this is the
+        # one place the distinction bites.
         ref_total = 0.0
         alt_total = 0.0
-        n_exons = 0
+        n_bins = 0
         for exon in gene_exons:
             ref_s = ref_track.score_region(
                 exon["chrom"], exon["start"], exon["end"], "sum",
@@ -317,14 +344,17 @@ def score_track_effect(
             alt_s = alt_track.score_region(
                 exon["chrom"], exon["start"], exon["end"], "sum",
             )
-            if ref_s is not None and alt_s is not None:
+            bins = ref_track.region_bin_count(
+                exon["chrom"], exon["start"], exon["end"],
+            )
+            if ref_s is not None and alt_s is not None and bins:
                 ref_total += ref_s
                 alt_total += alt_s
-                n_exons += 1
-        if n_exons == 0:
+                n_bins += bins
+        if n_bins == 0:
             return None
-        ref_value = ref_total / n_exons
-        alt_value = alt_total / n_exons
+        ref_value = ref_total / n_bins
+        alt_value = alt_total / n_bins
 
     elif layer_config.window_bp is not None:
         # Window-based scoring, in bin space against the SAME definition of
