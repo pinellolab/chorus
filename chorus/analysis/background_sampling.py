@@ -383,6 +383,48 @@ def compute_effect(
     )
 
 
+def centered_bin_span(
+    n_bins: int, window_bp: int, resolution: int,
+) -> tuple[int, int]:
+    """``(start, end)`` bins for a ``window_bp`` window centred in ``n_bins``.
+
+    **The single definition of "centred window", for the builders and the query
+    path alike.** They had two, and the query's was not even self-consistent
+    (instance 2 of #144):
+
+    * every binned builder used ``hw = window_bp // (2 * resolution)`` then
+      ``[centre - hw, centre + hw + 1)`` — odd, centred, deterministic;
+    * the query turned the window into genomic coordinates and floor/ceil-expanded
+      them (``core/result.py``), so the bin count depended on where the variant
+      fell *within* its bin: **4 or 5** bins for enformer at ``window_bp=501``,
+      **16 or 17** at 2001, **63 or 64** for borzoi at 2001.
+
+    That second point is the sharper defect. Two variants scored with identical
+    settings were summed over different spans, so no background could match the
+    numerator — the numerator's own definition moved.
+
+    This keeps the builders' arithmetic **exactly**, so adopting it moves no
+    shipped background. It is also the better convention on its own merits:
+    deterministic, and symmetric about the variant, which is what "centred" should
+    mean.
+
+    Note that ``window_bp`` is not always representable: 501 bp at 128 bp
+    resolution is 3.9 bins, so *no* convention delivers 501 bp there — this one
+    sums 3 bins (384 bp). The honest response is to record the effective span in
+    provenance (#124) rather than let the query claim a width the null never used.
+
+    At ``resolution=1`` this returns exactly ``window_bp`` bins for odd windows,
+    which is why ChromBPNet — the most audited oracle — could never show the bug.
+    """
+    if window_bp is None:
+        return 0, n_bins
+    centre = n_bins // 2
+    half = window_bp // (2 * resolution)
+    start = max(0, centre - half)
+    end = min(n_bins, centre + half + 1)
+    return start, end
+
+
 def get_window_slice(values: np.ndarray, window_bp: int, resolution: int) -> np.ndarray:
     """Centre slice of ``window_bp`` from a prediction array.
 

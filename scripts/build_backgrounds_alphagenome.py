@@ -164,6 +164,7 @@ class ReservoirSampler:
         return int((self.counts > 0).sum())
 
 
+from chorus.analysis.background_sampling import centered_bin_span  # noqa: E402
 from chorus.analysis.scorers import classify_chip_layer  # noqa: E402
 
 
@@ -291,14 +292,15 @@ def predict_sequence(model, sequence: str, output_types_needed):
 
 
 def get_window_slice(track, n_bins):
-    if track['window'] is None:
-        return 0, n_bins
-    res = track['resolution']
-    center_bin = n_bins // 2
-    hw = track['window'] // (2 * res)
-    ws = max(0, center_bin - hw)
-    we = min(n_bins, center_bin + hw + 1)
-    return ws, we
+    """Central scoring window slice.
+
+    Delegates to the shared definition (#144, instance 2). Byte-identical to the
+    arithmetic that used to live here. Note this oracle spans both regimes: at
+    resolution 1 it returns exactly ``window`` bins, while its 128 bp CHIP tracks
+    get 3 bins at window=501 and 15 at 2001 — pinned by
+    tests/test_window_span_parity.py.
+    """
+    return centered_bin_span(n_bins, track['window'], track['resolution'])
 
 
 # ── Exon-precise RNA sampling ──
