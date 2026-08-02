@@ -130,6 +130,16 @@ class AlphaGenomeOracle(OracleBase):
             if force_cpu:
                 os.environ["JAX_PLATFORMS"] = "cpu"
 
+            # Same reason, same timing: XLA reads its flags at import. Without
+            # this, two processes scoring the same sequence disagree by ~1e-2
+            # relative — the size of the CAGE effects we report, which is why
+            # 92% of CAGE rows were unrankable (#127). Within one process
+            # AlphaGenome is already bit-exact, so this buys cross-process
+            # reproducibility only, at ~0.6s per forward pass.
+            from ..core.determinism import pin_deterministic_xla_flags
+
+            pin_deterministic_xla_flags()
+
             import jax
             import huggingface_hub
 
