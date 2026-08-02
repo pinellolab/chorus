@@ -31,7 +31,9 @@ import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '
 
 from chorus.analysis.background_sampling import (  # noqa: E402
     ReservoirSampler,
+    StagedSamples,
     centered_bin_span,
+    report_sampling_uniformity,
 )
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
@@ -344,6 +346,9 @@ def build_variant_backgrounds():
     # (track_info is already sorted by 'idx', and we pre-built it above)
     info_idx_by_track_idx = {t['idx']: i for i, t in enumerate(track_info)}
 
+    # Why a position was dropped, reported at the end. A silent drop is how
+    # enformer shipped effect_counts spanning 9600-9606 (#123).
+    drop_reasons = defaultdict(int)
     t0 = time.time()
     for i, snp in enumerate(snps):
         if (i + 1) % 50 == 0 or i == 0:
@@ -360,6 +365,10 @@ def build_variant_backgrounds():
         offset = INPUT_LENGTH // 2 - 1
         seq_alt = seq_ref[:offset] + snp["alt"] + seq_ref[offset + 1:]
 
+        # Stage, then commit only if every track scored. This try used to wrap the
+        # per-track loop too, so a mid-loop failure credited earlier tracks and not
+        # later ones — the defect visible in enformer's 9600-9606 counts (#123).
+        staged = StagedSamples()
         try:
             ref_pred = predict_all(seq_ref)
             alt_pred = predict_all(seq_alt)
@@ -388,11 +397,16 @@ def build_variant_backgrounds():
                 score = compute_effect(ref_val, alt_val, t['formula'], t['pseudocount'])
                 if not t['signed']:
                     score = abs(score)
-                effect_reservoir.add(t_i, score)
+                staged.add(t_i, score)
         except Exception as exc:
-            logger.warning("Failed variant %d: %s", i, str(exc)[:150])
+            drop_reasons[type(exc).__name__] += 1
+            logger.warning("Dropped variant %d entirely: %s: %s",
+                           i, type(exc).__name__, str(exc)[:150])
+        else:
+            staged.commit(effect_reservoir)
 
     elapsed_v = time.time() - t0
+    report_sampling_uniformity(effect_reservoir, drop_reasons, "effect", logger)
     logger.info(
         "Variant scoring complete in %.1f hours: %s total samples across %d tracks",
         elapsed_v / 3600,
@@ -526,6 +540,9 @@ def build_baseline_backgrounds():
 
     info_idx_by_track_idx = {t['idx']: i for i, t in enumerate(track_info)}
 
+    # Why a position was dropped, reported at the end. A silent drop is how
+    # enformer shipped effect_counts spanning 9600-9606 (#123).
+    drop_reasons = defaultdict(int)
     t0 = time.time()
     for i, (chrom, pos, pos_type) in enumerate(tagged_positions):
         if (i + 1) % 100 == 0 or i == 0:
@@ -545,6 +562,9 @@ def build_baseline_backgrounds():
         if seq is None:
             continue
 
+        # Staged for the same reason as the variant loop (#123). Slot 0 is the
+        # summary reservoir, slot 1 the perbin one; both commit or neither does.
+        staged = StagedSamples()
         try:
             pred = predict_all(seq)
 
@@ -578,25 +598,33 @@ def build_baseline_backgrounds():
                     # RNA: mean over all exon bins in window
                     if len(rna_exon_bins) > 0:
                         signal = float(np.mean(pred[rna_exon_bins, idx]))
-                        summary_reservoir.add(t_i, signal)
+                        staged.add(t_i, signal, reservoir=0)
                 else:
                     # CAGE skips cCRE positions for summary
                     if not (is_cage and pos_type == 'ccre'):
                         ws, we = get_window_slice(t, output_bins)
                         signal = float(np.sum(pred[ws:we, idx]))
-                        summary_reservoir.add(t_i, signal)
+                        staged.add(t_i, signal, reservoir=0)
 
                 # ── Perbin CDF ──
                 if is_rna:
                     # RNA: only exon bins
                     if rna_bin_sample is not None and len(rna_bin_sample) > 0:
-                        perbin_reservoir.add_batch(t_i, pred[rna_bin_sample, idx].astype(np.float64))
+                        staged.add_batch(t_i, pred[rna_bin_sample, idx].astype(np.float64),
+                                         reservoir=1)
                 else:
-                    perbin_reservoir.add_batch(t_i, pred[bin_sample, idx].astype(np.float64))
+                    staged.add_batch(t_i, pred[bin_sample, idx].astype(np.float64),
+                                     reservoir=1)
         except Exception as exc:
-            logger.warning("Failed %s:%d: %s", chrom, pos, str(exc)[:150])
+            drop_reasons[type(exc).__name__] += 1
+            logger.warning("Dropped %s:%d entirely: %s: %s",
+                           chrom, pos, type(exc).__name__, str(exc)[:150])
+        else:
+            staged.commit(summary_reservoir, perbin_reservoir)
 
     elapsed_b = time.time() - t0
+    report_sampling_uniformity(summary_reservoir, drop_reasons, "summary", logger)
+    report_sampling_uniformity(perbin_reservoir, drop_reasons, "perbin", logger)
     logger.info(
         "Baseline complete in %.1f hours: %s summary + %s perbin samples",
         elapsed_b / 3600,

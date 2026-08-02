@@ -207,28 +207,51 @@ def _try_blocks_wrapping_reservoir_loops(path: str) -> list[int]:
     return hits
 
 
-def test_enformer_no_longer_credits_tracks_partially():
-    """The oracle whose shipped data shows the bug."""
-    path = "scripts/build_backgrounds_enformer.py"
+@pytest.mark.parametrize("oracle", ["enformer", "borzoi", "alphagenome"])
+def test_the_rebuild_set_no_longer_credits_tracks_partially(oracle):
+    """The three oracles being rebuilt must all be safe *before* the rebuild.
+
+    A transient failure during a fresh build would otherwise recreate #123 in
+    brand-new data — the single outcome the rebuild exists to prevent. Enformer is
+    also the one whose shipped data already shows the bug (9600-9606).
+    """
+    path = f"scripts/build_backgrounds_{oracle}.py"
     assert _try_blocks_wrapping_reservoir_loops(path) == [], (
-        "a try block still wraps a per-track loop that writes straight to a "
-        "reservoir; stage the samples and commit after the loop"
+        f"{oracle}: a try block still wraps a per-track loop that writes straight "
+        "to a reservoir; stage the samples and commit after the loop"
     )
     src = Path(path).read_text()
-    assert "StagedSamples()" in src
-    assert "staged.commit(" in src
-    assert "report_sampling_uniformity(" in src
+    assert "StagedSamples()" in src, f"{oracle} must stage"
+    assert "staged.commit(" in src, f"{oracle} must commit explicitly"
+    assert "report_sampling_uniformity(" in src, f"{oracle} must report uniformity"
+    assert "drop_reasons" in src, f"{oracle} must count drop reasons"
+
+
+@pytest.mark.parametrize("oracle", ["enformer", "borzoi", "alphagenome"])
+def test_rebuild_set_declares_drop_reasons_in_every_scope(oracle):
+    """A ``drop_reasons`` reference with no assignment is a NameError on the first
+    exception — i.e. exactly when it matters. Caught this way once already."""
+    tree = ast.parse(Path(f"scripts/build_backgrounds_{oracle}.py").read_text())
+    for fn in [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]:
+        uses = [n for n in ast.walk(fn)
+                if isinstance(n, ast.Name) and n.id == "drop_reasons"]
+        assigns = [n for n in ast.walk(fn) if isinstance(n, ast.Assign)
+                   and any(isinstance(t, ast.Name) and t.id == "drop_reasons"
+                           for t in n.targets)]
+        assert not (uses and not assigns), (
+            f"{oracle}::{fn.name}() uses drop_reasons without assigning it"
+        )
 
 
 @pytest.mark.xfail(
-    reason="latent at 9 more sites across alphagenome, borzoi, chrombpnet, sei "
-           "and cherimoya; fixed before the rebuild, since a transient failure "
-           "there would recreate #123 in fresh data",
+    reason="still latent at 5 sites in chrombpnet (2), sei (2) and cherimoya (1). "
+           "None is in the rebuild set, so none can produce fresh bad data; "
+           "converted in a follow-up",
     strict=True,
 )
 def test_every_builder_stages_its_samples():
     offenders = {
-        p: _try_blocks_wrapping_reservoir_loops(p)
+        p.name: _try_blocks_wrapping_reservoir_loops(str(p))
         for p in sorted(Path("scripts").glob("build_backgrounds_*.py"))
         if _try_blocks_wrapping_reservoir_loops(str(p))
     }
