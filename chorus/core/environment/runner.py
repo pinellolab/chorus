@@ -86,6 +86,22 @@ class EnvironmentRunner:
            (add their lib dirs to LD_LIBRARY_PATH).
         """
         env = os.environ.copy()
+
+        # 0. Cross-process reproducibility for the JAX oracles. XLA reads its
+        # flags at import, and a subprocess cannot be fixed after the fact, so
+        # the flag has to be in the env we hand it. Measured: without it two
+        # processes scoring one identical sequence disagree by ~1e-2 relative —
+        # the same magnitude as the CAGE effects chorus reports, which is why
+        # 92% of CAGE rows were unrankable (#127). Set before the early return
+        # below so an oracle with no registered env still gets it. Harmless for
+        # the TensorFlow and PyTorch oracles, which ignore XLA_FLAGS.
+        from ...core.determinism import DETERMINISTIC_XLA_FLAGS
+
+        if os.environ.get("CHORUS_NONDETERMINISTIC") != "1":
+            existing = env.get("XLA_FLAGS", "")
+            if "xla_gpu_deterministic_ops" not in existing:
+                env["XLA_FLAGS"] = f"{existing} {DETERMINISTIC_XLA_FLAGS}".strip()
+
         env_info = self.env_manager.get_environment_info(oracle)
         if not env_info:
             return env
