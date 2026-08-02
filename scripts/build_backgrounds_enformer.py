@@ -28,7 +28,10 @@ import numpy as np
 
 import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')); sys.path.insert(0, REPO_ROOT)
 
-from chorus.analysis.background_sampling import ReservoirSampler  # noqa: E402
+from chorus.analysis.background_sampling import (  # noqa: E402
+    ReservoirSampler,
+    centered_bin_span,
+)
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
 parser = argparse.ArgumentParser()
@@ -214,12 +217,14 @@ def compute_effect(ref_val, alt_val, formula, pseudocount):
 
 
 def get_window_slice(track):
-    """Return (start_bin, end_bin) for the central window of a track."""
-    center_bin = OUTPUT_BINS // 2
-    hw = track['window'] // (2 * BIN_SIZE)
-    ws = max(0, center_bin - hw)
-    we = min(OUTPUT_BINS, center_bin + hw + 1)
-    return ws, we
+    """Return (start_bin, end_bin) for the central window of a track.
+
+    Delegates to the shared definition so the builder and the query path cannot
+    drift apart again (#144, instance 2). Byte-identical to the arithmetic that
+    used to live here, and pinned by tests/test_window_span_parity.py: 3 bins at
+    window=501, 15 at 2001, for this oracle's 128 bp bins.
+    """
+    return centered_bin_span(OUTPUT_BINS, track['window'], BIN_SIZE)
 
 
 # ══════════════════════════════════════════════════════════════════
