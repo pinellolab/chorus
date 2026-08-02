@@ -168,12 +168,53 @@ LAYER_CONFIGS: dict[str, LayerConfig] = {
 # Track → layer classification
 # ---------------------------------------------------------------------------
 
+def classify_chip_layer(assay_id: str, description: str = "") -> str:
+    """Is this CHIP track a histone mark or a TF? ``histone_marks`` decides the
+    2001 bp window, ``tf_binding`` the 501 bp one.
+
+    **The single implementation, called by both the query path and
+    ``scripts/build_backgrounds_alphagenome.py``.** They each had their own, and
+    the two read different fields, which is #122: the builder passed
+    AlphaGenome's ``description`` — which reads ``"CHIP:<cell type>"`` and carries
+    **no mark name** — so 0 of 2,733 CHIP tracks were built as histone, while the
+    query read ``assay_id``, which does carry the mark, and scored 1,075 of them
+    at 2001 bp against a 501 bp null.
+
+    Two rules, in order:
+
+    1. **AlphaGenome's own output-type prefix, when present.** It already states
+       the distinction, so nothing needs inferring. This is also strictly more
+       correct than pattern matching: the prefix classifies all **1,116**
+       CHIP_HISTONE tracks, where the 15-mark ``_HISTONE_PATTERNS`` list matches
+       only 1,075 and misses **41** acetylation marks (H2AK5ac, H2BK5ac,
+       H2BK12ac, H2BK120ac, H3K18ac, ...). It wrongly matches 0 CHIP_TF tracks,
+       so the fallback is safe where the prefix is absent.
+    2. **Mark-name patterns**, for the oracles whose identifiers carry no prefix
+       (enformer, borzoi, chrombpnet). Unchanged behaviour for them —
+       deliberately, since widening ``_HISTONE_PATTERNS`` would move ~105
+       enformer and ~105 borzoi tracks from 501 to 2001 bp and stale two more
+       backgrounds. That is filed separately, not smuggled in here.
+
+    Defaults to ``tf_binding``, the narrower window, when nothing is decidable.
+    """
+    if assay_id.startswith("CHIP_HISTONE/"):
+        return "histone_marks"
+    if assay_id.startswith("CHIP_TF/"):
+        return "tf_binding"
+
+    upper_text = f"{assay_id} {description}".upper()
+    for pattern in _HISTONE_PATTERNS:
+        if pattern.upper() in upper_text:
+            return "histone_marks"
+    return "tf_binding"
+
+
 def classify_track_layer(track) -> str:
     """Classify a prediction track into a regulatory layer.
 
     Uses the track's ``assay_type`` and ``assay_id`` to determine which
     layer it belongs to.  CHIP tracks are split into *tf_binding* vs
-    *histone_marks* based on identifier patterns.
+    *histone_marks* by :func:`classify_chip_layer`.
     """
     assay_type = getattr(track, "assay_type", "")
     assay_id = getattr(track, "assay_id", "")
@@ -181,18 +222,11 @@ def classify_track_layer(track) -> str:
     if assay_type in ("DNASE", "ATAC"):
         return "chromatin_accessibility"
     if assay_type == "CHIP":
-        # Check assay_id, description, and metadata for histone patterns
-        search_text = assay_id
+        description = ""
         metadata = getattr(track, "metadata", None)
         if metadata and isinstance(metadata, dict):
-            desc = metadata.get("description", "")
-            if desc:
-                search_text = f"{assay_id} {desc}"
-        upper_text = search_text.upper()
-        for pattern in _HISTONE_PATTERNS:
-            if pattern.upper() in upper_text:
-                return "histone_marks"
-        return "tf_binding"
+            description = metadata.get("description", "") or ""
+        return classify_chip_layer(assay_id, description)
     if assay_type in ("CAGE", "PRO_CAP"):
         return "tss_activity"
     if assay_type == "RNA":
