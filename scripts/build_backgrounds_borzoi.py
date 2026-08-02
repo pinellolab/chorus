@@ -29,7 +29,10 @@ import numpy as np
 
 import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')); sys.path.insert(0, REPO_ROOT)
 
-from chorus.analysis.background_sampling import ReservoirSampler  # noqa: E402
+from chorus.analysis.background_sampling import (  # noqa: E402
+    ReservoirSampler,
+    centered_bin_span,
+)
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
 parser = argparse.ArgumentParser()
@@ -220,14 +223,15 @@ def compute_effect(ref_val, alt_val, formula, pseudocount):
 
 
 def get_window_slice(track, output_bins):
-    """Central scoring window slice for non-RNA tracks."""
-    if track['window'] is None:
-        return 0, output_bins
-    center_bin = output_bins // 2
-    hw = track['window'] // (2 * BIN_SIZE)
-    ws = max(0, center_bin - hw)
-    we = min(output_bins, center_bin + hw + 1)
-    return ws, we
+    """Central scoring window slice for non-RNA tracks.
+
+    Delegates to the shared definition (#144, instance 2). Byte-identical to the
+    arithmetic that used to live here, including the ``window is None``
+    passthrough that RNA tracks rely on. Pinned by
+    tests/test_window_span_parity.py: 15 bins at window=501, 63 at 2001, for this
+    oracle's 32 bp bins.
+    """
+    return centered_bin_span(output_bins, track['window'], BIN_SIZE)
 
 
 # ══════════════════════════════════════════════════════════════════
