@@ -33,6 +33,7 @@ import pytest
 
 from chorus.analysis.background_sampling import (
     ReservoirSampler,
+    cdf_grid_file_violations,
     cdf_grid_violations,
     expected_first_max_index,
 )
@@ -116,7 +117,7 @@ def test_guard_catches_the_enformer_padding_shape():
 
     problems = cdf_grid_violations(padded, np.array([n]))
     assert problems, "padded row must be rejected"
-    assert "plateau" in problems[0]
+    assert "distinct" in problems[0]
 
 
 def test_guard_catches_a_non_monotonic_row():
@@ -257,3 +258,70 @@ def test_shipped_backgrounds_have_reproducible_grids(oracle, path):
                 data[key], data[count_key], label=f"{oracle}.{key}"
             )
     assert not problems, "\n".join(problems)
+
+
+# ---------------------------------------------------------------------------
+# Ties at the maximum: the false positive a real rebuild exposed
+# ---------------------------------------------------------------------------
+
+
+def _row_with_tied_maximum(n_samples: int, n_tied: int, n_points: int = 10_000):
+    """A genuine to_cdf_matrix row whose top ``n_tied`` samples are equal.
+
+    Real: a fresh Borzoi build produced 10 of these and Enformer 152. Borzoi row
+    3011's top effect value 0.689308 recurs 9 times because several sampled
+    variants hit the same clipped ceiling.
+    """
+    sampler = ReservoirSampler(n_tracks=1, capacity=n_samples)
+    rng = np.random.default_rng(3)
+    values = np.sort(rng.exponential(1.0, n_samples))
+    values[-n_tied:] = values[-n_tied]          # tie the top
+    for v in values:
+        sampler.add(0, float(v))
+    return sampler.to_cdf_matrix(n_points=n_points)
+
+
+@pytest.mark.parametrize("n_tied", [2, 5, 9, 40])
+def test_ties_at_the_maximum_are_not_padding(n_tied):
+    """The regression. A per-row plateau check flagged all of these.
+
+    np.interp holds a tied value from the q-position of the first tied sample
+    onward, so ties lengthen the trailing run of maxima exactly as padding does.
+    The distinguishing fact is WHERE the first maximum sits: a tied row keeps it
+    near the interpolation clamp, while padding puts it at n-1.
+    """
+    matrix = _row_with_tied_maximum(5_949, n_tied)
+    counts = np.array([5_949])
+    # The per-row check is what must be tie-immune. The file-level one deliberately
+    # refuses to judge a single row — see test_file_level_check_needs_enough_rows.
+    assert cdf_grid_violations(matrix, counts) == []
+
+
+def test_the_file_level_check_still_catches_padding():
+    """Padding shifts EVERY row, which is why the median is the right statistic."""
+    n = 9_606
+    narrow, _ = _build_row(n, n_points=n)
+    rows = np.repeat(narrow, 40, axis=0)
+    padded = np.concatenate(
+        [rows, np.repeat(rows[:, -1:], N_POINTS - n, axis=1)], axis=1)
+    problems = cdf_grid_file_violations(padded, np.full(40, n))
+    assert problems and "earlier than" in problems[0]
+
+
+def test_a_few_tied_rows_among_many_healthy_ones_stay_quiet():
+    """The median tolerates a minority of tied rows; padding is unanimous."""
+    healthy = np.concatenate([_build_row(5_949, n_points=10_000)[0] for _ in range(30)], axis=0)
+    tied = np.concatenate([_row_with_tied_maximum(5_949, 9) for _ in range(5)], axis=0)
+    matrix = np.concatenate([healthy, tied], axis=0)
+    counts = np.full(35, 5_949)
+    assert cdf_grid_file_violations(matrix, counts) == []
+
+
+def test_file_level_check_needs_enough_rows_to_conclude():
+    """One tied row is indistinguishable from one padded row.
+
+    Only unanimity across a matrix separates them, so the check abstains below 8
+    rows rather than guessing. Real backgrounds carry thousands.
+    """
+    tied = _row_with_tied_maximum(5_949, 9)
+    assert cdf_grid_file_violations(tied, np.array([5_949])) == []

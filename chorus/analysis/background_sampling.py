@@ -261,28 +261,25 @@ def cdf_grid_violations(
             # are _has_samples' and the scale-degeneracy census's business.
             continue
 
-        differs = np.nonzero(row != row[-1])[0]
-        plateau = n_points if differs.size == 0 else n_points - int(differs[-1]) - 1
-        expected_plateau = n_points - expected_first_max_index(n, n_points)
-        # One-sided on purpose. The clamp region is a LOWER bound on the repeated
-        # maxima interpolation produces, so:
-        #   plateau > expected  =>  extra copies of the max were appended (padding)
-        #   plateau < expected  =>  the row simply was not built by np.interp —
-        #                           a hand-built or synthetic fixture, which is
-        #                           legitimate and must not be rejected.
-        # Measured on all eight shipped backgrounds: excess is exactly 0 for every
-        # legitimate row and +393 for every enformer effect row, so one-sided
-        # loses no detection power.
-        if plateau > expected_plateau:
-            problems.append(
-                f"{label} row {i}: trailing plateau is {plateau} slots but the "
-                f"interpolation clamp for {n} samples on a {n_points}-point grid "
-                f"is only {expected_plateau} — {plateau - expected_plateau} extra "
-                f"copies of the maximum look appended, which rescales every "
-                f"percentile in this row"
-            )
-            continue
-
+        # A per-row plateau check USED to live here and was WRONG. It compared the
+        # trailing run of maxima against the interpolation clamp and flagged
+        # anything longer as padding. But TIES IN THE DATA also lengthen that run:
+        # np.interp holds the tied value from the q-position of the first tied
+        # sample onward. A fresh Borzoi build tripped it on 10 rows and Enformer on
+        # 152 — e.g. borzoi row 3011, whose top effect value 0.689308 recurs 9
+        # times because several sampled variants hit the same clipped ceiling. Those
+        # rows are legitimate: their first max sits at index 9991, nowhere near the
+        # n-1 = 5948 that padding produces.
+        #
+        # Ties were already exempted for `n >= n_points` (AlphaGenome's summary row
+        # 2,452, two H3K4me1 windows tied at exactly 2480.0) and the same reasoning
+        # simply was not applied to short rows. Caught by the rebuild, which is what
+        # a guard that fails closed is for — it refused to write rather than
+        # shipping anything.
+        #
+        # Padding is a FILE-level property, not a row-level one: it shifts every
+        # row's maximum to the same index. That is checked by
+        # cdf_grid_file_violations() below. What remains here is tie-immune.
         if np.unique(row).size == n:
             problems.append(
                 f"{label} row {i}: exactly {n} distinct values on a "
@@ -444,6 +441,69 @@ def report_sampling_uniformity(reservoir, drop_reasons, label, logger) -> dict:
             "set; investigate before publishing.", label, stats["adjacent_pairs"],
         )
     return stats
+
+
+def cdf_grid_file_violations(
+    matrix: np.ndarray, counts: np.ndarray, *, label: str = "cdf",
+) -> list[str]:
+    """Whole-matrix check for a padded grid, which no per-row check can do safely.
+
+    Padding shifts **every** row's maximum to the same index — the narrow grid's
+    width minus one — because the whole matrix was gridded at that width and then
+    extended. Interpolation instead puts each row's first maximum at
+    :func:`expected_first_max_index`, which varies with that row's sample count.
+
+    So the signal is the **median** of ``expected - actual`` across rows. Measured:
+
+    ======================================  ==================
+    file                                    median deviation
+    ======================================  ==================
+    every legitimate shipped background                      0
+    a fresh Borzoi / Enformer build                          0
+    ``enformer_pertrack.npz`` before repair                **393**
+    ======================================  ==================
+
+    A median is the right statistic precisely because ties in the data shift a
+    *handful* of rows (10 in a fresh Borzoi build, 152 in Enformer) while padding
+    shifts all of them. The per-row plateau check this replaces could not tell
+    those apart and rejected a valid rebuild.
+    """
+    problems: list[str] = []
+    if matrix is None or matrix.size == 0:
+        return problems
+    n_points = int(matrix.shape[1])
+
+    deviations = []
+    for i in range(matrix.shape[0]):
+        n = int(counts[i])
+        if not (0 < n < n_points):
+            continue
+        row = np.asarray(matrix[i], dtype=np.float64)
+        if np.unique(row).size <= 1:
+            continue
+        deviations.append(
+            expected_first_max_index(n, n_points) - int(np.argmax(row))
+        )
+    # A median over a couple of rows is not evidence of anything: a single row with
+    # tied maxima deviates exactly as a padded one does, and only the fact that
+    # padding is UNANIMOUS across a matrix separates them. Real backgrounds have
+    # thousands of rows; refuse to draw a conclusion from fewer than 8.
+    if len(deviations) < 8:
+        return problems
+
+    median = float(np.median(deviations))
+    # 1 absorbs float32 rounding at the top of a row; real padding is in the
+    # hundreds, so the gap between signal and tolerance is three orders of
+    # magnitude.
+    if median > 1:
+        problems.append(
+            f"{label}: every row's maximum sits {median:.0f} slots earlier than "
+            f"interpolation would place it, which is what gridding the matrix at a "
+            f"narrower width and padding it out looks like. Percentiles in this "
+            f"matrix are rescaled by roughly "
+            f"{1 - median / n_points:.4f}."
+        )
+    return problems
 
 
 class StagedSamples:
