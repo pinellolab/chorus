@@ -33,7 +33,10 @@ from typing import Optional
 
 import numpy as np
 
-from chorus.analysis.background_sampling import cdf_grid_violations
+from chorus.analysis.background_sampling import (
+    cdf_grid_file_violations,
+    cdf_grid_violations,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -893,6 +896,9 @@ class PerTrackNormalizer:
                     )
                 if counts is not None:
                     problems = cdf_grid_violations(
+                        matrix, np.asarray(counts), label=f"{oracle_name}.{name}"
+                    )
+                    problems += cdf_grid_file_violations(
                         matrix, np.asarray(counts), label=f"{oracle_name}.{name}"
                     )
                     if problems:
