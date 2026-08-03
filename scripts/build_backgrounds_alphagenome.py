@@ -170,6 +170,11 @@ from chorus.analysis.background_sampling import (  # noqa: E402
     report_sampling_uniformity,
 )
 from chorus.analysis.scorers import classify_chip_layer  # noqa: E402
+from chorus.utils.annotations import (  # noqa: E402
+    build_gene_exon_index,
+    exon_bins_for_gene,
+    genes_overlapping,
+)
 
 
 def compute_effect(ref_val, alt_val, formula, pseudocount):
@@ -308,46 +313,13 @@ def get_window_slice(track, n_bins):
 
 
 # ── Exon-precise RNA sampling ──
-def load_exon_index():
-    from chorus.utils.annotations import get_annotation_manager
-    ann_manager = get_annotation_manager()
-    gtf_path = ann_manager.get_annotation_path('gencode_v48_basic')
-    exon_df = ann_manager._get_exons_df(gtf_path)
-    gene_df = ann_manager._get_genes_df(gtf_path)
-    pc_gene_names = set(gene_df[gene_df['gene_type'] == 'protein_coding']['gene_name'])
-    pc_exons = exon_df[exon_df['gene_name'].isin(pc_gene_names)]
-    by_chrom = defaultdict(list)
-    for chrom, group in pc_exons.groupby('chrom'):
-        intervals = sorted(zip(group['start'].tolist(), group['end'].tolist()))
-        merged = []
-        for s, e in intervals:
-            if merged and s <= merged[-1][1]:
-                merged[-1] = (merged[-1][0], max(e, merged[-1][1]))
-            else:
-                merged.append((s, e))
-        by_chrom[chrom] = merged
-    total = sum(len(v) for v in by_chrom.values())
-    logger.info("Loaded %d merged exons", total)
-    return by_chrom
+# load_exon_index()/exon_bin_indices() lived here and merged exons across
+# EVERY protein-coding gene on the chromosome, discarding gene identity.
+# Replaced by chorus.utils.annotations.build_gene_exon_index +
+# exon_bins_for_gene, which keep genes separate and are built from the
+# query's own get_gene_exons() so the masks cannot drift (#144 inst. 3).
 
 
-def exon_bin_indices(exon_index, chrom, pred_start, pred_end, n_bins, resolution):
-    exons = exon_index.get(chrom, [])
-    if not exons:
-        return np.array([], dtype=np.int64)
-    bin_set = set()
-    for es, ee in exons:
-        if es >= pred_end:
-            break
-        if ee <= pred_start:
-            continue
-        start = max(es, pred_start)
-        end = min(ee, pred_end)
-        bs = max(0, (start - pred_start) // resolution)
-        be = min(n_bins, ((end - pred_start) + resolution - 1) // resolution)
-        for b in range(bs, be):
-            bin_set.add(b)
-    return np.array(sorted(bin_set), dtype=np.int64)
 
 
 def get_sequence(ref, chrom, pos, length=INPUT_LENGTH):
@@ -376,7 +348,7 @@ def build_variant_backgrounds():
     logger.info("=" * 60)
 
     effect_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size)
-    exon_index = load_exon_index()
+    gene_exon_index = build_gene_exon_index()
 
     # Determine which output types we need
     needed_ot_names = set(t['output_type'] for t in track_info)
@@ -435,6 +407,11 @@ def build_variant_backgrounds():
         offset = INPUT_LENGTH // 2 - 1
         seq_alt = seq_ref[:offset] + snp["alt"] + seq_ref[offset + 1:]
 
+        # Genes for the RNA fan-out, resolved ONCE per position rather than per
+        # track: the mask depends only on the window, and there are 667 RNA
+        # tracks against ~29 genes at a locus like SORT1.
+        genes_here = genes_overlapping(gene_exon_index, chrom, pred_start, pred_end)
+
         # Stage, then commit only if every track scored. This try used to wrap the
         # per-track loop too, so a mid-loop failure credited earlier tracks and not
         # later ones — the defect visible in enformer's 9600-9606 counts (#123).
@@ -463,15 +440,38 @@ def build_variant_backgrounds():
                     res = t['resolution']
 
                     if t['layer'] == 'gene_expression':
-                        eb = exon_bin_indices(exon_index, chrom, pred_start, pred_end, n_bins, res)
-                        if len(eb) == 0:
-                            continue
-                        ref_v = float(np.mean(ref_vals[eb]))
-                        alt_v = float(np.mean(alt_vals[eb]))
-                    else:
-                        ws, we = get_window_slice(t, n_bins)
-                        ref_v = float(np.sum(ref_vals[ws:we]))
-                        alt_v = float(np.sum(alt_vals[ws:we]))
+                        # One sample per (GENE, track), matching what the query
+                        # emits: variant_report loops over every PC gene near the
+                        # variant and reports an RNA row for each. Pooling all
+                        # exons in the window instead — which is what this did —
+                        # aggregated 128,663 bins against the query's per-gene
+                        # median of 4,123, a 31x mismatch (#144 instance 3).
+                        #
+                        # The mask comes from build_gene_exon_index(), which is
+                        # built from the query's own get_gene_exons(), so the two
+                        # cannot drift; parity is asserted in
+                        # tests/test_gene_exon_index.py.
+                        for _g0, _g1, _gname, spans in genes_here:
+                            eb = exon_bins_for_gene(
+                                spans, pred_start, pred_end, n_bins, res,
+                            )
+                            if len(eb) == 0:
+                                continue
+                            # mean over the mask, in bins — the same denominator
+                            # the query now uses (#149)
+                            ref_v = float(np.mean(ref_vals[eb]))
+                            alt_v = float(np.mean(alt_vals[eb]))
+                            score = compute_effect(
+                                ref_v, alt_v, t['formula'], t['pseudocount'],
+                            )
+                            if not t['signed']:
+                                score = abs(score)
+                            staged.add(t_i, score)
+                        continue
+
+                    ws, we = get_window_slice(t, n_bins)
+                    ref_v = float(np.sum(ref_vals[ws:we]))
+                    alt_v = float(np.sum(alt_vals[ws:we]))
 
                     score = compute_effect(ref_v, alt_v, t['formula'], t['pseudocount'])
                     if not t['signed']:
@@ -520,7 +520,7 @@ def build_baseline_backgrounds():
     summary_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size)
     perbin_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size)
     rng_bins = np.random.RandomState(999)
-    exon_index = load_exon_index()
+    gene_exon_index = build_gene_exon_index()
 
     needed_ot_names = set(t['output_type'] for t in track_info)
     output_types_needed = [
@@ -629,6 +629,10 @@ def build_baseline_backgrounds():
         if seq is None:
             continue
 
+        # Genes for the RNA fan-out, resolved once per position (the mask depends
+        # only on the window, and there are 667 RNA tracks against ~29 genes).
+        genes_here = genes_overlapping(gene_exon_index, chrom, pred_start, pred_end)
+
         # Staged for the same reason (#123). Slot 0 is summary, slot 1 perbin;
         # both commit or neither does.
         staged = StagedSamples()
@@ -638,7 +642,7 @@ def build_baseline_backgrounds():
             # Cache per-position auxiliary arrays so we don't recompute
             # them per track (this is the optimization that turns the
             # baseline build from ~36s/position to ~5s/position).
-            exon_bins_cache = {}     # resolution -> exon bin indices
+            exon_bins_cache = {}     # (resolution, gene) -> exon bin indices
             window_slice_cache = {}  # (window_bp, resolution, n_bins) -> (ws, we)
             random_bins_cache = {}   # n_bins -> random bin index array
 
@@ -670,29 +674,49 @@ def build_baseline_backgrounds():
 
                     # Compute exon bins ONCE per resolution (not per track)
                     if is_rna:
-                        if res not in exon_bins_cache:
-                            exon_bins_cache[res] = exon_bin_indices(
-                                exon_index, chrom, pred_start, pred_end, n_bins, res,
-                            )
-                        eb = exon_bins_cache[res]
-                        if len(eb) == 0:
-                            continue
-
-                        # Summary: mean over exon bins
-                        signal = float(np.mean(vals[eb]))
-                        staged.add(t_i, signal, reservoir=0)
-
-                        # Perbin: sample from exon bins
-                        if len(eb) > PERBIN_BINS_PER_POSITION:
-                            # Subsample once per resolution
-                            cache_key = ('rna_subsample', res)
-                            if cache_key not in random_bins_cache:
-                                random_bins_cache[cache_key] = rng_bins.choice(
-                                    eb, PERBIN_BINS_PER_POSITION, replace=False,
+                        # One summary sample per (GENE, track), matching the query,
+                        # which emits an RNA row per gene near the variant. Pooling
+                        # every exon in the window aggregated 128,663 bins against
+                        # the query's per-gene median of 4,123 — a 31x mismatch
+                        # (#144 instance 3).
+                        for _g0, _g1, gname, spans in genes_here:
+                            ck = (res, gname)
+                            if ck not in exon_bins_cache:
+                                exon_bins_cache[ck] = exon_bins_for_gene(
+                                    spans, pred_start, pred_end, n_bins, res,
                                 )
-                            ebs = random_bins_cache[cache_key]
+                            eb = exon_bins_cache[ck]
+                            if len(eb) == 0:
+                                continue
+                            staged.add(t_i, float(np.mean(vals[eb])), reservoir=0)
+
+                        # Perbin stays POOLED across genes on purpose: it feeds the
+                        # IGV browser's per-bin colour scale, which is a
+                        # genome-wide "how big is this bin" distribution and has no
+                        # gene scoping. Only the summary/effect statistics are
+                        # compared against a gene-scoped numerator.
+                        pooled_key = ('rna_pooled', res)
+                        if pooled_key not in exon_bins_cache:
+                            allb = set()
+                            for _a, _b, _c, spans in genes_here:
+                                allb.update(exon_bins_for_gene(
+                                    spans, pred_start, pred_end, n_bins, res,
+                                ).tolist())
+                            exon_bins_cache[pooled_key] = np.array(
+                                sorted(allb), dtype=np.int64,
+                            )
+                        pooled = exon_bins_cache[pooled_key]
+                        if len(pooled) == 0:
+                            continue
+                        if len(pooled) > PERBIN_BINS_PER_POSITION:
+                            sk = ('rna_subsample', res)
+                            if sk not in random_bins_cache:
+                                random_bins_cache[sk] = rng_bins.choice(
+                                    pooled, PERBIN_BINS_PER_POSITION, replace=False,
+                                )
+                            ebs = random_bins_cache[sk]
                         else:
-                            ebs = eb
+                            ebs = pooled
                         staged.add_batch(t_i, vals[ebs], reservoir=1)
                     else:
                         # Summary: window-sum (skip CAGE at cCREs)
