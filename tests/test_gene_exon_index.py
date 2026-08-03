@@ -204,3 +204,71 @@ def test_per_gene_mask_is_far_smaller_than_the_pooled_one(index):
     assert 3_500 < median < 4_800, median
     assert len(pooled) > 120_000, len(pooled)
     assert len(pooled) / median > 20, "pooled/per-gene ratio collapsed — check the index"
+
+
+# ---------------------------------------------------------------------------
+# Builder / query parity on the RNA statistic itself (#144 instance 3)
+# ---------------------------------------------------------------------------
+
+
+def test_builder_rna_statistic_equals_the_query_statistic(index):
+    """The builder's per-gene mean must equal what score_track_effect computes.
+
+    This is the actual contract #144 instance 3 broke. The builder aggregated over
+    every exon in the window; the query aggregates over one gene's exons. Both
+    sides now derive the mask from the same index and divide by the bins actually
+    summed, so a uniform track must give the same number either way.
+    """
+    from chorus.analysis.scorers import LAYER_CONFIGS, score_track_effect
+    from chorus.core.interval import GenomeRef, Interval
+    from chorus.core.result import OraclePredictionTrack
+
+    pred_start = SORT1_POS - PRED_BP // 2
+    genes = {g[2]: g[3] for g in genes_overlapping(index, "chr1", pred_start,
+                                                   pred_start + PRED_BP)}
+    spans = genes["SORT1"]
+
+    ref_level, alt_level = 0.5, 2.0
+    ref_bins = exon_bins_for_gene(spans, pred_start, pred_start + PRED_BP, PRED_BP, 1)
+    assert len(ref_bins) > 0
+
+    # what the BUILDER now computes: mean over the gene's mask, in bins
+    builder_ref = float(np.full(len(ref_bins), ref_level).mean())
+    builder_alt = float(np.full(len(ref_bins), alt_level).mean())
+
+    # what the QUERY computes, through the real scorer
+    def track(level):
+        ref = GenomeRef(chrom="chr1", start=pred_start,
+                        end=pred_start + PRED_BP, fasta="/nonexistent.fa")
+        iv = Interval.make(ref) if hasattr(Interval, "make") else Interval(reference=ref)
+        return OraclePredictionTrack(
+            source_model="test", assay_id="RNA_SEQ/test", assay_type="RNA",
+            cell_type="TEST", query_interval=iv, prediction_interval=iv,
+            input_interval=iv, resolution=1,
+            values=np.full(PRED_BP, level, dtype=np.float64),
+        )
+
+    exons = [{"chrom": "chr1", "start": s, "end": e} for s, e in spans]
+    out = score_track_effect(
+        track(ref_level), track(alt_level), "chr1", SORT1_POS,
+        layer_config=LAYER_CONFIGS["gene_expression"], gene_exons=exons,
+    )
+    assert out is not None
+    assert out["ref_value"] == pytest.approx(builder_ref)
+    assert out["alt_value"] == pytest.approx(builder_alt)
+
+
+def test_builder_no_longer_pools_exons_across_genes():
+    """Source assertion: the chromosome-merged index must be gone for good.
+
+    Keeping it around would leave two ways to build the RNA mask, which is how
+    the builder and query diverged in the first place.
+    """
+    from pathlib import Path
+
+    src = Path("scripts/build_backgrounds_alphagenome.py").read_text()
+    assert "def load_exon_index" not in src
+    assert "def exon_bin_indices" not in src
+    assert "build_gene_exon_index()" in src
+    assert "exon_bins_for_gene(" in src
+    assert "genes_overlapping(" in src
