@@ -1,4 +1,4 @@
-# Resume notes — chorus, 2026-08-01
+# Resume notes — chorus, updated 2026-08-03 (rebuild in flight)
 
 Working notes for picking this up mid-stream. Deliberately weighted toward the
 things a conversation summary loses: **retracted claims, environment traps,
@@ -75,6 +75,72 @@ failing with "Invalid user token".
 nothing serialises them and parallel setup used to collide.
 
 ---
+
+## 2b. 2026-08-03 overnight session — the rebuild is RUNNING
+
+**Six GPU jobs launched ~03:00, all under `XLA_FLAGS=--xla_gpu_deterministic_ops=true`.**
+Do not kill them; do not `git checkout` a branch that changes
+`scripts/build_backgrounds_*.py` in the worktree they were launched from (they have
+already imported, but the `--part merge` step is a NEW process and must see current
+code).
+
+| job | GPU | progress at 03:30 | ETA |
+|---|---|---|---|
+| alphagenome variants (6,000 pos) | 0 | 385/5949 | ~539 min |
+| alphagenome baselines (10,500) | 1 | 1410/10500 | ~243 min |
+| borzoi variants | 2 | 2100/5949 | ~39 min |
+| borzoi baselines (31,500) | 3 | 2800/31500 | ~219 min |
+| enformer variants | 4 | 1950/5949 | ~43 min |
+| enformer baselines (31,500) | 5 | 2700/31500 | ~223 min |
+
+AlphaGenome variants is the long pole (~9 h → done ~12:10). Logs: alphagenome writes
+`logs/bg_alphagenome_{part}.log`; **borzoi and enformer append `_gpu{N}` to the
+filename**, and the live stream is `/data/chorus_data/rebuild_{oracle}_{part}.log`.
+
+**AFTER they finish, `--part merge` still has to run** — that is what writes the
+final NPZ. It has not been run and the numbers have NOT been validated. Nothing has
+been published to HuggingFace; the published files are still the old ones.
+
+### What changed in the builders, and why the counts will look different
+
+* effect positions are now **gene-anchored**, not uniform (#83). Measured: median
+  distance to nearest TSS 102,333 bp → **9,430 bp**; within 1 kb 1.4 % → **21.3 %**;
+  within 100 bp of a splice junction 2.3 % → **37.4 %**.
+* RNA emits one sample per **(gene, track)**, not one per track over a
+  chromosome-pooled mask (#144 inst. 3). At SORT1 the old mask was **128,663 bins**
+  against a per-gene median of **4,123** — a 31x mismatch.
+* So `effect_counts` will show **two separated clusters** (non-RNA vs RNA). That is
+  correct. A **consecutive run** like enformer's old 9600-9606 is the bug (#123).
+  Enformer's smoke run now gives `1 distinct, range 9-9`; borzoi `2 distinct, 9-44`.
+
+### Corrections made to my own earlier claims
+
+* **"Borzoi's track_ids are opaque FANTOM accessions with no other way to tell CAGE
+  from RNA" — WRONG.** Luca corrected this. All **7,611/7,611** resolve against the
+  vendored `borzoi_source/borzoi_metadata.py` (`description` carries `CAGE:`/`RNA:`).
+  So #124 never gated the Borzoi rebuild. Provenance is still worth having, for a
+  weaker reason: the join binds a row to whatever version of that file is on disk.
+* **"the 1 Mb window contains a gene" was the wrong metric** for justifying the
+  region set — 94 % vs 85 % barely discriminates. Distance from the *variant* to the
+  anchor is what matters, since CAGE is scored in a 501 bp window centred on it.
+* AlphaGenome is **bit-exact within one process** with no flags. #127 was
+  per-process compilation; two processes on the *same* GPU diverged as much as on
+  different ones. `--xla_gpu_deterministic_ops=true` fixes it for +0.6 s/pass;
+  `--xla_gpu_autotune_level=0` also works but costs **180x** and is not used.
+
+### Still open before publishing
+
+1. run `--part merge` for all three oracles;
+2. verify: no consecutive-integer runs in any `*_counts`; grid invariant passes
+   (`tests/test_background_grid_integrity.py -m integration`);
+3. regen the 13 walkthroughs — this turns the **integration-marked staleness guard**
+   in `tests/test_window_span_parity.py` green. It is currently RED on purpose:
+   258 of 1,090 windowed example rows moved (#148) and examples have not been
+   regenerated;
+4. CHANGELOG with a per-change attribution column, then three HF revisions.
+
+**Luca authorised the HF upload after the rebuild**, but the before/after numbers
+have not been shown to him yet — do that first.
 
 ## 3. State as of now
 
