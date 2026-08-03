@@ -207,3 +207,45 @@ def test_junction_stratum_lands_near_a_junction(sampled, anchors):
     _, junctions = anchors
     d = [_nearest(junctions, c, p) for c, p, s in sampled if s == "junction"]
     assert np.median(d) <= 100
+
+
+# ---------------------------------------------------------------------------
+# The builders must all be on it (source assertions, the #144 pattern)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("oracle", ["alphagenome", "borzoi", "enformer"])
+def test_rebuild_set_samples_gene_anchored_positions(oracle):
+    """All three oracles being rebuilt, or the fix reaches only one background."""
+    from pathlib import Path
+
+    src = Path(f"scripts/build_backgrounds_{oracle}.py").read_text()
+    assert "sample_gene_anchored_positions(" in src, f"{oracle} still samples its own way"
+    # the old uniform draw must be gone from CODE (comments may reference it)
+    code = "\n".join(l for l in src.splitlines() if not l.lstrip().startswith("#"))
+    assert "randint(5_000_000" not in code, f"{oracle} still draws uniformly"
+
+
+@pytest.mark.parametrize("oracle", ["alphagenome", "borzoi"])
+def test_rna_oracles_scope_the_mask_per_gene(oracle):
+    """Enformer is excluded on purpose: it has no gene_expression layer at all
+    (its LAYER_SPEC has no RNA key), so there is no mask to scope."""
+    from pathlib import Path
+
+    src = Path(f"scripts/build_backgrounds_{oracle}.py").read_text()
+    assert "build_gene_exon_index()" in src
+    assert "exon_bins_for_gene(" in src
+    assert "genes_overlapping(" in src
+    # the chromosome-pooled helpers must be gone, not merely unused
+    assert "def load_exon_index" not in src
+    assert "def exon_bins_for_window" not in src
+
+
+def test_enformer_really_has_no_rna_layer():
+    """Justifies the exclusion above rather than asserting it by assumption."""
+    from pathlib import Path
+
+    src = Path("scripts/build_backgrounds_enformer.py").read_text()
+    spec = src[src.index("LAYER_SPEC = {"):]
+    spec = spec[:spec.index("}")]
+    assert "'RNA'" not in spec and '"RNA"' not in spec

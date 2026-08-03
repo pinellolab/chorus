@@ -28,6 +28,10 @@ import numpy as np
 
 import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')); sys.path.insert(0, REPO_ROOT)
 
+from chorus.utils.annotations import (  # noqa: E402
+    load_chrom_sizes,
+    sample_gene_anchored_positions,
+)
 from chorus.analysis.background_sampling import (  # noqa: E402
     ReservoirSampler,
     StagedSamples,
@@ -244,26 +248,33 @@ def build_variant_backgrounds():
 
     effect_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size)
 
-    # Generate random SNPs
+    # Gene-anchored SNPs, not uniformly random ones.
+    #
+    # This was `random.randint(5_000_000, max_pos)`, which put the median sampled
+    # position 102,333 bp from the nearest TSS and only 1.4 % within 1 kb. CAGE is
+    # a localised peak at a TSS, so almost every sample carried no CAGE signal and
+    # the null collapsed toward zero — every real effect then read >= 99th
+    # percentile (#83). The gene-anchored set moves the median to 9,430 bp, with
+    # 21.3 % within 1 kb of a TSS and 37.4 % within 100 bp of a splice junction.
+    # 15 % stays uniform on purpose, to keep the null's lower body populated.
     random.seed(42)
-    chroms = [f"chr{i}" for i in range(1, 23)]
-    snps_per_chrom = args.n_variants // len(chroms) + 1
+    sampled = sample_gene_anchored_positions(
+        args.n_variants,
+        chrom_sizes=load_chrom_sizes(os.path.join(REPO_ROOT, 'genomes/hg38.fa.fai')),
+        seed=42,
+    )
     snps = []
-    for chrom in chroms:
-        chrom_len = ref.get_reference_length(chrom)
-        max_pos = min(chrom_len - 5_000_000, 200_000_000)
-        for _ in range(snps_per_chrom):
-            if len(snps) >= args.n_variants:
-                break
-            pos = random.randint(5_000_000, max_pos)
-            ref_base = ref.fetch(chrom, pos - 1, pos).upper()
-            if ref_base not in "ACGT":
-                continue
-            snps.append({"chrom": chrom, "pos": pos, "ref": ref_base,
-                         "alt": random.choice([b for b in "ACGT" if b != ref_base])})
-    random.shuffle(snps)
-    snps = snps[:args.n_variants]
-    logger.info("Generated %d random SNPs", len(snps))
+    strata_counts = defaultdict(int)
+    for chrom, pos, stratum in sampled:
+        ref_base = ref.fetch(chrom, pos - 1, pos).upper()
+        if ref_base not in "ACGT":
+            continue  # N or soft-masked; the tally records the shortfall
+        snps.append({"chrom": chrom, "pos": pos, "ref": ref_base,
+                     "alt": random.choice([b for b in "ACGT" if b != ref_base]),
+                     "stratum": stratum})
+        strata_counts[stratum] += 1
+    logger.info("Generated %d gene-anchored SNPs from %d sampled positions: %s",
+                len(snps), len(sampled), dict(strata_counts))
 
     # Why a position can be dropped, reported at the end. A silent drop is
     # how enformer shipped effect_counts spanning 9600-9606 (#123).
