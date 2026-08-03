@@ -944,3 +944,137 @@ def exon_bins_for_gene(
         b1 = (e - pred_start + resolution - 1) // resolution
         bins.update(range(max(0, b0), min(n_bins, b1)))
     return _np.array(sorted(bins), dtype=_np.int64)
+
+
+# ---------------------------------------------------------------------------
+# Gene-anchored effect region set (#83, and the reason CAGE/RNA are degenerate)
+# ---------------------------------------------------------------------------
+
+# The stratum mixture. THIS IS A JUDGMENT CALL, not derived from anything, and it
+# is exposed as parameters so it can be retuned without touching code.
+#
+# What it fixes: the effect nulls are currently drawn from ~1,900-2,000
+# UNIFORMLY RANDOM genomic positions (build_backgrounds_alphagenome.py's
+# `random.randint(5_000_000, max_pos)`). For a TSS-peaked assay like CAGE, or an
+# exon-scoped one like RNA, a random position carries almost no signal, so the
+# null collapses toward zero and every real effect reads >= 99th percentile.
+# AlphaGenome RNA's effect null tops out at 0.0417 — anything >= 0.05 saturates
+# at exactly 1.0000.
+#
+# Why 15% stays uniformly random, and why that fraction is load-bearing: without
+# a near-zero mass the null loses its lower body, and small real effects would
+# get artificially LOW percentiles — the exact mirror of today's failure. The
+# random stratum is not filler.
+#
+# Why NOT an eQTL/GWAS-derived position set: "variants somebody chose to test" is
+# a worse reference class than "variants near genes", because the selection is
+# correlated with effect size. That would bias the null toward large effects and
+# make everything look unremarkable.
+DEFAULT_REGION_STRATA = {
+    "tss_near": 0.20,    # within +/- 1 kb of a protein-coding TSS
+    "tss_far": 0.20,     # 1-10 kb from a TSS
+    "junction": 0.33,    # +/- 100 bp of an annotated exon/intron boundary
+    "gene_body": 0.12,   # elsewhere inside a protein-coding gene
+    "random": 0.15,      # uniform, to keep the null's lower body populated
+}
+
+
+def load_chrom_sizes(fai_path: Union[str, Path]) -> dict:
+    """Chromosome lengths from a ``.fai``, so sampling cannot run off a contig."""
+    sizes = {}
+    with open(fai_path) as fh:
+        for line in fh:
+            parts = line.split("\t")
+            if len(parts) >= 2:
+                sizes[parts[0]] = int(parts[1])
+    return sizes
+
+
+def sample_gene_anchored_positions(
+    n: int,
+    *,
+    chrom_sizes: dict,
+    annotation: str = 'gencode_v48_basic',
+    strata: Optional[dict] = None,
+    seed: int = 12345,
+    tss_near_bp: int = 1_000,
+    tss_far_bp: Tuple[int, int] = (1_000, 10_000),
+    junction_bp: int = 100,
+    margin_bp: int = 5_000_000,
+) -> List[Tuple[str, int, str]]:
+    """``[(chrom, pos, stratum), ...]`` for building an effect background.
+
+    Anchored on gene structure rather than drawn uniformly, because a uniformly
+    random position carries no CAGE signal and sits in no exon — which is why
+    those layers' nulls are degenerate today (see ``DEFAULT_REGION_STRATA`` for
+    the full reasoning and the exact fractions).
+
+    Every position is tagged with its stratum so the builder can record the
+    composition in provenance; a background whose reference class cannot be
+    recovered from the file is a background nobody can re-derive (#124).
+
+    ``margin_bp`` keeps positions away from contig ends so a 1 Mb prediction
+    window always fits, matching the existing builders' guard.
+    """
+    import random as _random
+
+    strata = dict(strata or DEFAULT_REGION_STRATA)
+    total = sum(strata.values())
+    if abs(total - 1.0) > 1e-6:
+        raise ValueError(f"strata must sum to 1.0, got {total}")
+
+    manager = get_annotation_manager()
+    gtf_path = manager.get_annotation_path(annotation)
+    if not gtf_path:
+        raise ValueError(f"Could not find annotation: {annotation}")
+
+    genes = manager._get_genes_df(gtf_path)
+    pc = genes[genes['gene_type'] == 'protein_coding']
+    exons = manager._get_exons_df(gtf_path)
+    pc_exons = exons[exons['gene_name'].isin(set(pc['gene_name']))]
+
+    usable = {c: L for c, L in chrom_sizes.items()
+              if L > 2 * margin_bp and c in set(pc['chrom'])}
+
+    # TSS is strand-aware: start for +, end for -. Getting this backwards would
+    # anchor CAGE on transcript 3' ends, where there is no promoter signal.
+    tss = [(r.chrom, int(r.start) if r.strand == '+' else int(r.end))
+           for r in pc.itertuples() if r.chrom in usable]
+    # Exon boundaries are splice junctions; both edges of every exon count.
+    junctions = [(r.chrom, int(r.start)) for r in pc_exons.itertuples()
+                 if r.chrom in usable]
+    junctions += [(r.chrom, int(r.end)) for r in pc_exons.itertuples()
+                  if r.chrom in usable]
+    bodies = [(r.chrom, int(r.start), int(r.end)) for r in pc.itertuples()
+              if r.chrom in usable]
+    chrom_list = sorted(usable)
+
+    rng = _random.Random(seed)
+
+    def _clamp(chrom, pos):
+        return min(max(pos, margin_bp), usable[chrom] - margin_bp)
+
+    out: List[Tuple[str, int, str]] = []
+    for name, frac in strata.items():
+        k = int(round(n * frac))
+        for _ in range(k):
+            if name == "tss_near" and tss:
+                c, p = rng.choice(tss)
+                p += rng.randint(-tss_near_bp, tss_near_bp)
+            elif name == "tss_far" and tss:
+                c, p = rng.choice(tss)
+                off = rng.randint(*tss_far_bp)
+                p += off if rng.random() < 0.5 else -off
+            elif name == "junction" and junctions:
+                c, p = rng.choice(junctions)
+                p += rng.randint(-junction_bp, junction_bp)
+            elif name == "gene_body" and bodies:
+                c, s, e = rng.choice(bodies)
+                p = rng.randint(s, e) if e > s else s
+            else:
+                c = rng.choice(chrom_list)
+                p = rng.randint(margin_bp, usable[c] - margin_bp)
+            out.append((c, _clamp(c, p), name))
+
+    rng.shuffle(out)
+    return out
