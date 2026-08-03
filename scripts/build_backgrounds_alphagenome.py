@@ -171,9 +171,9 @@ from chorus.analysis.background_sampling import (  # noqa: E402
 )
 from chorus.analysis.scorers import classify_chip_layer  # noqa: E402
 from chorus.utils.annotations import (  # noqa: E402
-    build_gene_exon_index,
+    build_transcript_exon_index,
     exon_bins_for_gene,
-    genes_overlapping,
+    genes_with_tss_in_window,
     load_chrom_sizes,
     sample_gene_anchored_positions,
 )
@@ -317,7 +317,7 @@ def get_window_slice(track, n_bins):
 # ── Exon-precise RNA sampling ──
 # load_exon_index()/exon_bin_indices() lived here and merged exons across
 # EVERY protein-coding gene on the chromosome, discarding gene identity.
-# Replaced by chorus.utils.annotations.build_gene_exon_index +
+# Replaced by chorus.utils.annotations.build_transcript_exon_index +
 # exon_bins_for_gene, which keep genes separate and are built from the
 # query's own get_gene_exons() so the masks cannot drift (#144 inst. 3).
 
@@ -350,7 +350,13 @@ def build_variant_backgrounds():
     logger.info("=" * 60)
 
     effect_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size)
-    gene_exon_index = build_gene_exon_index()
+    # AlphaGenome selects genes by TSS-in-window, then unions the exons of ONLY
+    # those transcripts (gene_mask_extractor.py:326, 357-371). Protein-coding only
+    # is a DELIBERATE divergence: AlphaGenome applies no gene-type filter, but
+    # chorus's query does (variant_report.py:825), and a null over lncRNAs and
+    # pseudogenes would be a different population from the numerator. Recorded in
+    # provenance rather than left implicit.
+    gene_exon_index = build_transcript_exon_index()
 
     # Determine which output types we need
     needed_ot_names = set(t['output_type'] for t in track_info)
@@ -426,7 +432,8 @@ def build_variant_backgrounds():
         # Genes for the RNA fan-out, resolved ONCE per position rather than per
         # track: the mask depends only on the window, and there are 667 RNA
         # tracks against ~29 genes at a locus like SORT1.
-        genes_here = genes_overlapping(gene_exon_index, chrom, pred_start, pred_end)
+        genes_here = genes_with_tss_in_window(
+            gene_exon_index, chrom, pred_start, pred_end)
 
         # Stage, then commit only if every track scored. This try used to wrap the
         # per-track loop too, so a mid-loop failure credited earlier tracks and not
@@ -463,11 +470,11 @@ def build_variant_backgrounds():
                         # aggregated 128,663 bins against the query's per-gene
                         # median of 4,123, a 31x mismatch (#144 instance 3).
                         #
-                        # The mask comes from build_gene_exon_index(), which is
+                        # The mask comes from build_transcript_exon_index(), which is
                         # built from the query's own get_gene_exons(), so the two
                         # cannot drift; parity is asserted in
                         # tests/test_gene_exon_index.py.
-                        for _g0, _g1, _gname, spans in genes_here:
+                        for _gname, spans in genes_here:
                             eb = exon_bins_for_gene(
                                 spans, pred_start, pred_end, n_bins, res,
                             )
@@ -536,7 +543,13 @@ def build_baseline_backgrounds():
     summary_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size)
     perbin_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size)
     rng_bins = np.random.RandomState(999)
-    gene_exon_index = build_gene_exon_index()
+    # AlphaGenome selects genes by TSS-in-window, then unions the exons of ONLY
+    # those transcripts (gene_mask_extractor.py:326, 357-371). Protein-coding only
+    # is a DELIBERATE divergence: AlphaGenome applies no gene-type filter, but
+    # chorus's query does (variant_report.py:825), and a null over lncRNAs and
+    # pseudogenes would be a different population from the numerator. Recorded in
+    # provenance rather than left implicit.
+    gene_exon_index = build_transcript_exon_index()
 
     needed_ot_names = set(t['output_type'] for t in track_info)
     output_types_needed = [
@@ -647,7 +660,8 @@ def build_baseline_backgrounds():
 
         # Genes for the RNA fan-out, resolved once per position (the mask depends
         # only on the window, and there are 667 RNA tracks against ~29 genes).
-        genes_here = genes_overlapping(gene_exon_index, chrom, pred_start, pred_end)
+        genes_here = genes_with_tss_in_window(
+            gene_exon_index, chrom, pred_start, pred_end)
 
         # Staged for the same reason (#123). Slot 0 is summary, slot 1 perbin;
         # both commit or neither does.
@@ -695,7 +709,7 @@ def build_baseline_backgrounds():
                         # every exon in the window aggregated 128,663 bins against
                         # the query's per-gene median of 4,123 — a 31x mismatch
                         # (#144 instance 3).
-                        for _g0, _g1, gname, spans in genes_here:
+                        for gname, spans in genes_here:
                             ck = (res, gname)
                             if ck not in exon_bins_cache:
                                 exon_bins_cache[ck] = exon_bins_for_gene(
@@ -714,7 +728,7 @@ def build_baseline_backgrounds():
                         pooled_key = ('rna_pooled', res)
                         if pooled_key not in exon_bins_cache:
                             allb = set()
-                            for _a, _b, _c, spans in genes_here:
+                            for _gname2, spans in genes_here:
                                 allb.update(exon_bins_for_gene(
                                     spans, pred_start, pred_end, n_bins, res,
                                 ).tolist())
