@@ -810,6 +810,8 @@ class PerTrackNormalizer:
         perbin_counts: np.ndarray | None = None,
         cache_dir: str | None = None,
         n_points: int = 10_000,
+        provenance: dict | None = None,
+        per_row: dict | None = None,
     ) -> Path:
         """Save per-track CDF matrices to a compressed ``.npz`` file.
 
@@ -831,9 +833,27 @@ class PerTrackNormalizer:
                 for per-bin CDFs.
             cache_dir: Output directory.  Defaults to ``~/.chorus/backgrounds/``.
             n_points: Number of CDF points per track (default 10,000).
+            provenance: File-level facts about how this background was built —
+                genome, formula, pseudocount, region-set composition, XLA flags,
+                builder git sha, FASTA sha256, schema version. Stored as a JSON
+                string under ``build_config``.
+            per_row: ``{name: array}`` with ``len(array) == n_tracks``, for facts
+                that vary by track: ``layer``, ``window_bp``, ``resolution``.
+                Length is validated, because a per-row array of the wrong length
+                silently mis-attributes every row after the first mismatch.
 
         Returns:
             Path to the saved ``.npz`` file.
+
+        Note:
+            Provenance exists because a background is otherwise only interpretable
+            by joining it against whatever metadata happens to be on disk at read
+            time. Borzoi's ``track_ids`` are opaque FANTOM accessions
+            (``CNhs10608+``), so its CAGE and RNA rows are identifiable *today*
+            only via ``borzoi_metadata.py`` — and if that file ever gains, drops or
+            reorders tracks, previously-built rows get silently reinterpreted. That
+            is the #144 failure mode applied to metadata instead of arithmetic
+            (#124).
         """
         if cache_dir is None:
             cache_dir = str(Path.home() / ".chorus" / "backgrounds")
@@ -895,6 +915,27 @@ class PerTrackNormalizer:
             if counts is not None:
                 arrays[name] = np.array(counts, dtype=np.int64)
 
+        # Per-row provenance. Length is validated rather than trusted: an array of
+        # the wrong length would silently mis-attribute every row past the first
+        # mismatch, which is worse than having no provenance at all.
+        for name, values in (per_row or {}).items():
+            if name in arrays:
+                raise ValueError(f"per_row key {name!r} collides with a CDF array")
+            arr = np.asarray(values)
+            if arr.shape[0] != n_tracks:
+                raise ValueError(
+                    f"per_row[{name!r}] has {arr.shape[0]} entries but there are "
+                    f"{n_tracks} tracks; a length mismatch mis-attributes rows"
+                )
+            arrays[name] = arr
+
+        if provenance:
+            import json as _json
+
+            arrays["build_config"] = np.array(
+                _json.dumps(provenance, sort_keys=True, default=str), dtype="U",
+            )
+
         path = out_dir / PerTrackNormalizer.npz_filename(oracle_name)
         np.savez_compressed(str(path), **arrays)
         size_mb = path.stat().st_size / (1024 * 1024)
@@ -916,6 +957,8 @@ class PerTrackNormalizer:
         new_summary_counts: np.ndarray | None = None,
         new_perbin_counts: np.ndarray | None = None,
         cache_dir: str | None = None,
+        new_provenance: dict | None = None,
+        new_per_row: dict | None = None,
     ) -> tuple[Path, int]:
         """Append new tracks to an existing per-track NPZ file.
 
@@ -959,23 +1002,96 @@ class PerTrackNormalizer:
             """Concatenate existing rows with new rows (filtered by keep_idx)."""
             if new_matrix is None:
                 return existing.get(existing_key)
-            new_rows = new_matrix[keep_idx]
+            new_rows = np.asarray(new_matrix)[keep_idx]
             old = existing.get(existing_key)
             if old is not None:
                 return np.concatenate([old, new_rows], axis=0)
             return new_rows
 
         def _concat_1d(existing_key, new_arr):
-            """Concatenate 1-D arrays (flags, counts)."""
+            """Concatenate 1-D arrays (flags, counts).
+
+            ``asarray`` because ``build_and_save`` accepts plain lists for these —
+            ``[100, 100]`` is a perfectly ordinary way to pass counts — but fancy
+            indexing with ``keep_idx`` needs an ndarray. Without it, a caller who
+            builds fresh and a caller who appends have different accepted types
+            for the same argument.
+            """
             if new_arr is None:
                 return existing.get(existing_key)
-            new_vals = new_arr[keep_idx]
+            new_vals = np.asarray(new_arr)[keep_idx]
             old = existing.get(existing_key)
             if old is not None:
                 return np.concatenate([old, new_vals])
             return new_vals
 
         merged_ids = list(existing.get("track_ids", [])) + added_ids
+
+        # Carry through any key outside the canonical eight, instead of dropping it.
+        #
+        # This is #124's actual defect: `existing` is loaded with EVERY key, but only
+        # the canonical eight were forwarded, so a per-row `layer` or a file-level
+        # `build_config` vanished on the first merge. Cherimoya works around it by
+        # re-stamping build_config after every append — the only NPZ of nine that
+        # has one.
+        #
+        # A per-row array is one whose first axis matches the existing row count; it
+        # must be CONCATENATED. Passing it through unchanged would leave an
+        # (n_old,) array against (n_old + n_new) rows, silently mis-attributing
+        # every added row — worse than dropping it. Anything else is file-level and
+        # passes through.
+        CANONICAL = {
+            "track_ids", "effect_cdfs", "summary_cdfs", "perbin_cdfs",
+            "signed_flags", "effect_counts", "summary_counts", "perbin_counts",
+        }
+        n_existing = len(existing.get("track_ids", []))
+        extra_per_row: dict = {}
+        extra_file: dict = {}
+        for key, value in existing.items():
+            if key in CANONICAL:
+                continue
+            arr = np.asarray(value)
+            if arr.ndim >= 1 and arr.shape and arr.shape[0] == n_existing and n_existing:
+                extra_per_row[key] = arr
+            else:
+                extra_file[key] = value
+
+        merged_per_row: dict = {}
+        for key, old_arr in extra_per_row.items():
+            new_arr = (new_per_row or {}).get(key)
+            if new_arr is None:
+                logger.warning(
+                    "append_tracks('%s'): per-row key %r exists on disk but was not "
+                    "supplied for the %d new tracks; dropping it rather than "
+                    "mis-aligning existing rows.",
+                    oracle_name, key, len(added_ids),
+                )
+                continue
+            merged_per_row[key] = np.concatenate(
+                [old_arr, np.asarray(new_arr)[keep_idx]],
+            )
+        # keys supplied for the new tracks that the file did not have yet
+        for key, new_arr in (new_per_row or {}).items():
+            if key in merged_per_row or key in CANONICAL:
+                continue
+            if n_existing:
+                logger.warning(
+                    "append_tracks('%s'): per-row key %r supplied for new tracks but "
+                    "absent for the %d existing ones; skipping.",
+                    oracle_name, key, n_existing,
+                )
+                continue
+            merged_per_row[key] = np.asarray(new_arr)[keep_idx]
+
+        provenance = new_provenance
+        if provenance is None and "build_config" in extra_file:
+            import json as _json
+
+            try:
+                provenance = _json.loads(str(extra_file["build_config"]))
+            except (ValueError, TypeError):
+                provenance = None
+        extra_file.pop("build_config", None)
 
         path = PerTrackNormalizer.build_and_save(
             oracle_name=oracle_name,
@@ -988,6 +1104,8 @@ class PerTrackNormalizer:
             summary_counts=_concat_1d("summary_counts", new_summary_counts),
             perbin_counts=_concat_1d("perbin_counts", new_perbin_counts),
             cache_dir=cache_dir,
+            provenance=provenance,
+            per_row=merged_per_row or None,
         )
         logger.info(
             "append_tracks('%s'): added %d new tracks (%d total).",
