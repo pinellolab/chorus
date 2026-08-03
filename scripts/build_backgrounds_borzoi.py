@@ -29,6 +29,13 @@ import numpy as np
 
 import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')); sys.path.insert(0, REPO_ROOT)
 
+from chorus.utils.annotations import (  # noqa: E402
+    build_gene_exon_index,
+    exon_bins_for_gene,
+    genes_overlapping,
+    load_chrom_sizes,
+    sample_gene_anchored_positions,
+)
 from chorus.analysis.background_sampling import (  # noqa: E402
     ReservoirSampler,
     StagedSamples,
@@ -240,68 +247,13 @@ def get_window_slice(track, output_bins):
 # Exon-precise RNA helpers
 # ══════════════════════════════════════════════════════════════════
 
-def load_exon_index():
-    """Load merged protein-coding exons keyed by chromosome.
-
-    Returns dict: chrom -> sorted list of (start, end) intervals.
-    """
-    from chorus.utils.annotations import get_annotation_manager
-    ann_manager = get_annotation_manager()
-    gtf_path = ann_manager.get_annotation_path('gencode_v48_basic')
-
-    exon_df = ann_manager._get_exons_df(gtf_path)
-    gene_df = ann_manager._get_genes_df(gtf_path)
-    pc_gene_names = set(gene_df[gene_df['gene_type'] == 'protein_coding']['gene_name'])
-    pc_exons = exon_df[exon_df['gene_name'].isin(pc_gene_names)]
-
-    # Per-chromosome merged exons
-    by_chrom = defaultdict(list)
-    for chrom, group in pc_exons.groupby('chrom'):
-        intervals = sorted(zip(group['start'].tolist(), group['end'].tolist()))
-        merged = []
-        for s, e in intervals:
-            if merged and s <= merged[-1][1]:
-                merged[-1] = (merged[-1][0], max(e, merged[-1][1]))
-            else:
-                merged.append((s, e))
-        by_chrom[chrom] = merged
-
-    total_exons = sum(len(v) for v in by_chrom.values())
-    logger.info("Loaded %d merged protein-coding exons across %d chromosomes",
-                total_exons, len(by_chrom))
-    return by_chrom
+# load_exon_index()/exon_bins_for_window() lived here and merged exons across
+# EVERY protein-coding gene on the chromosome, discarding gene identity.
+# Replaced by chorus.utils.annotations.build_gene_exon_index +
+# exon_bins_for_gene, built from the query's own get_gene_exons() so the
+# masks cannot drift (#144 instance 3).
 
 
-def exon_bins_for_window(exon_index, chrom, pred_start, pred_end, output_bins):
-    """Return bin indices that overlap exons within [pred_start, pred_end).
-
-    Args:
-        exon_index: chrom -> sorted [(s, e), ...]
-        chrom: chromosome
-        pred_start: window start (genomic)
-        pred_end: window end (genomic)
-        output_bins: total bins in the output window
-
-    Returns:
-        Sorted numpy array of bin indices that overlap any exon.
-    """
-    exons = exon_index.get(chrom, [])
-    if not exons:
-        return np.array([], dtype=np.int64)
-    bin_set = set()
-    for es, ee in exons:
-        if es >= pred_end:
-            break
-        if ee <= pred_start:
-            continue
-        # Overlap
-        start = max(es, pred_start)
-        end = min(ee, pred_end)
-        bs = max(0, (start - pred_start) // BIN_SIZE)
-        be = min(output_bins, ((end - pred_start) + BIN_SIZE - 1) // BIN_SIZE)
-        for b in range(bs, be):
-            bin_set.add(b)
-    return np.array(sorted(bin_set), dtype=np.int64)
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -319,28 +271,35 @@ def build_variant_backgrounds():
     effect_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size)
 
     # Load exon index for RNA tracks
-    exon_index = load_exon_index()
+    gene_exon_index = build_gene_exon_index()
 
-    # Generate random SNPs
+    # Gene-anchored SNPs, not uniformly random ones.
+    #
+    # This was `random.randint(5_000_000, max_pos)`, which put the median sampled
+    # position 102,333 bp from the nearest TSS and only 1.4 % within 1 kb. CAGE is
+    # a localised peak at a TSS, so almost every sample carried no CAGE signal and
+    # the null collapsed toward zero — every real effect then read >= 99th
+    # percentile (#83). The gene-anchored set moves the median to 9,430 bp, with
+    # 21.3 % within 1 kb of a TSS and 37.4 % within 100 bp of a splice junction.
+    # 15 % stays uniform on purpose, to keep the null's lower body populated.
     random.seed(42)
-    chroms = [f"chr{i}" for i in range(1, 23)]
-    snps_per_chrom = args.n_variants // len(chroms) + 1
+    sampled = sample_gene_anchored_positions(
+        args.n_variants,
+        chrom_sizes=load_chrom_sizes(os.path.join(REPO_ROOT, 'genomes/hg38.fa.fai')),
+        seed=42,
+    )
     snps = []
-    for chrom in chroms:
-        chrom_len = ref.get_reference_length(chrom)
-        max_pos = min(chrom_len - 5_000_000, 200_000_000)
-        for _ in range(snps_per_chrom):
-            if len(snps) >= args.n_variants:
-                break
-            pos = random.randint(5_000_000, max_pos)
-            ref_base = ref.fetch(chrom, pos - 1, pos).upper()
-            if ref_base not in "ACGT":
-                continue
-            snps.append({"chrom": chrom, "pos": pos, "ref": ref_base,
-                         "alt": random.choice([b for b in "ACGT" if b != ref_base])})
-    random.shuffle(snps)
-    snps = snps[:args.n_variants]
-    logger.info("Generated %d random SNPs", len(snps))
+    strata_counts = defaultdict(int)
+    for chrom, pos, stratum in sampled:
+        ref_base = ref.fetch(chrom, pos - 1, pos).upper()
+        if ref_base not in "ACGT":
+            continue  # N or soft-masked; the tally records the shortfall
+        snps.append({"chrom": chrom, "pos": pos, "ref": ref_base,
+                     "alt": random.choice([b for b in "ACGT" if b != ref_base]),
+                     "stratum": stratum})
+        strata_counts[stratum] += 1
+    logger.info("Generated %d gene-anchored SNPs from %d sampled positions: %s",
+                len(snps), len(sampled), dict(strata_counts))
 
     # Use track index in track_info as the row index for the reservoir
     # (track_info is already sorted by 'idx', and we pre-built it above)
@@ -376,23 +335,41 @@ def build_variant_backgrounds():
             pred_start = snp["pos"] - INPUT_LENGTH // 2
             pred_end = snp["pos"] + INPUT_LENGTH // 2
 
-            # Pre-compute exon bins for this position (for RNA tracks)
-            rna_exon_bins = exon_bins_for_window(
-                exon_index, snp["chrom"], pred_start, pred_end, output_bins,
+            # Genes for the RNA fan-out, once per position rather than per track.
+            genes_here = genes_overlapping(
+                gene_exon_index, snp["chrom"], pred_start, pred_end,
             )
+            gene_bins_cache = {}
 
             for t_i, t in enumerate(track_info):
                 idx = t['idx']
                 if t['layer'] == 'gene_expression':
-                    # RNA-seq: mean over exon bins (genome-wide null)
-                    if len(rna_exon_bins) == 0:
-                        continue
-                    ref_val = float(np.mean(ref_pred[rna_exon_bins, idx]))
-                    alt_val = float(np.mean(alt_pred[rna_exon_bins, idx]))
-                else:
-                    ws, we = get_window_slice(t, output_bins)
-                    ref_val = float(np.sum(ref_pred[ws:we, idx]))
-                    alt_val = float(np.sum(alt_pred[ws:we, idx]))
+                    # One sample per (GENE, track), matching the query. Pooling
+                    # every exon in the window instead ranked a gene-scoped
+                    # numerator against a genome-scoped null (#144 instance 3).
+                    for _g0, _g1, gname, spans in genes_here:
+                        if gname not in gene_bins_cache:
+                            gene_bins_cache[gname] = exon_bins_for_gene(
+                                spans, pred_start, pred_end, output_bins, BIN_SIZE,
+                            )
+                        eb = gene_bins_cache[gname]
+                        if len(eb) == 0:
+                            continue
+                        # mean over the mask in BINS — matches the query's
+                        # denominator at this oracle's 32 bp resolution (#149)
+                        ref_val = float(np.mean(ref_pred[eb, idx]))
+                        alt_val = float(np.mean(alt_pred[eb, idx]))
+                        score = compute_effect(
+                            ref_val, alt_val, t['formula'], t['pseudocount'],
+                        )
+                        if not t['signed']:
+                            score = abs(score)
+                        staged.add(t_i, score)
+                    continue
+
+                ws, we = get_window_slice(t, output_bins)
+                ref_val = float(np.sum(ref_pred[ws:we, idx]))
+                alt_val = float(np.sum(alt_pred[ws:we, idx]))
 
                 score = compute_effect(ref_val, alt_val, t['formula'], t['pseudocount'])
                 if not t['signed']:
@@ -462,7 +439,7 @@ def build_baseline_backgrounds():
                 n_tracks - len(cage_track_indices) - len(rna_track_indices))
 
     # Load exon index for RNA-seq precise sampling
-    exon_index = load_exon_index()
+    gene_exon_index = build_gene_exon_index()
 
     # ── Position set 1: Random genomic ──
     n_random = 15_000
@@ -574,10 +551,22 @@ def build_baseline_backgrounds():
             # Random bin sample for non-RNA perbin
             bin_sample = rng_bins.choice(output_bins, PERBIN_BINS_PER_POSITION, replace=False)
 
-            # Exon bins for RNA perbin (precise sampling)
-            rna_exon_bins = exon_bins_for_window(
-                exon_index, chrom, pred_start, pred_end, output_bins,
+            # Genes for the per-gene summary fan-out, plus a POOLED union used
+            # only for perbin. perbin feeds the IGV colour scale, a genome-wide
+            # "how large is this bin" distribution with no gene scoping — only the
+            # summary/effect statistics face a gene-scoped numerator.
+            genes_here = genes_overlapping(
+                gene_exon_index, chrom, pred_start, pred_end,
             )
+            gene_bins_cache = {}
+            pooled = set()
+            for _g0, _g1, gname, spans in genes_here:
+                gb = exon_bins_for_gene(
+                    spans, pred_start, pred_end, output_bins, BIN_SIZE,
+                )
+                gene_bins_cache[gname] = gb
+                pooled.update(gb.tolist())
+            rna_exon_bins = np.array(sorted(pooled), dtype=np.int64)
             # Subsample exon bins to keep similar order of magnitude
             rna_bin_sample = None
             if len(rna_exon_bins) > 0:
@@ -595,10 +584,13 @@ def build_baseline_backgrounds():
 
                 # ── Summary CDF ──
                 if is_rna:
-                    # RNA: mean over all exon bins in window
-                    if len(rna_exon_bins) > 0:
-                        signal = float(np.mean(pred[rna_exon_bins, idx]))
-                        staged.add(t_i, signal, reservoir=0)
+                    # One summary sample per (GENE, track), matching the query
+                    # (#144 instance 3).
+                    for _g0, _g1, gname, _spans in genes_here:
+                        eb = gene_bins_cache[gname]
+                        if len(eb) == 0:
+                            continue
+                        staged.add(t_i, float(np.mean(pred[eb, idx])), reservoir=0)
                 else:
                     # CAGE skips cCRE positions for summary
                     if not (is_cage and pos_type == 'ccre'):
