@@ -164,6 +164,86 @@ class ReservoirSampler:
     def get_counts(self) -> np.ndarray:
         return self.counts.copy()
 
+    # ------------------------------------------------------------------
+    # Exact serialisation, for splitting one build across GPUs
+    # ------------------------------------------------------------------
+    #
+    # AlphaGenome, Borzoi and Enformer produce every track from ONE forward pass,
+    # so sharding them by *track* (which is how the ChromBPNet builder shards, and
+    # which works there because its tracks are separate model files) saves no GPU
+    # time at all — each shard would still run every pass. They have to be sharded
+    # by *position* instead, and that changes what a merge means: each shard holds a
+    # partial reservoir for EVERY track rather than a complete one for some tracks.
+    #
+    # Pooling the shards' 10,000-point CDF grids would be an approximation. A decent
+    # one when the shards are equal-sized, but this codebase has spent enough effort
+    # removing approximations that looked exact, so the shards serialise their raw
+    # samples and the CDF is built exactly once, from the union.
+    #
+    # Ragged data, stored flat with offsets rather than as an object array, so the
+    # NPZ still loads under allow_pickle=False.
+
+    def to_flat_samples(self) -> dict:
+        """Raw retained samples as ``{values, offsets, counts, n_tracks}``.
+
+        ``values[offsets[i]:offsets[i + 1]]`` is track *i*'s reservoir. ``counts``
+        is the true number of values ever offered, which is what the shipped
+        ``*_counts`` means and is not recoverable from the lengths.
+        """
+        lengths = np.fromiter((len(d) for d in self.data), dtype=np.int64,
+                              count=self.n_tracks)
+        offsets = np.zeros(self.n_tracks + 1, dtype=np.int64)
+        np.cumsum(lengths, out=offsets[1:])
+        values = (np.concatenate([np.asarray(d, dtype=np.float64)
+                                  for d in self.data if len(d)])
+                  if offsets[-1] else np.zeros(0, dtype=np.float64))
+        return {
+            "values": values,
+            "offsets": offsets,
+            "counts": self.counts.copy(),
+            "n_tracks": np.int64(self.n_tracks),
+        }
+
+    @classmethod
+    def from_flat_samples(cls, *parts, capacity: int = DEFAULT_CAPACITY,
+                          seed: int = DEFAULT_SEED) -> "ReservoirSampler":
+        """Rebuild one sampler from the union of several shards' samples.
+
+        Counts ADD, because each shard offered a disjoint set of positions. The
+        retained values concatenate; if that exceeds ``capacity`` the excess is
+        subsampled deterministically rather than by re-running Algorithm R, since
+        every retained value is already a uniform draw from its own shard and the
+        shards are equal-sized by construction.
+        """
+        if not parts:
+            raise ValueError("no shards given")
+        n_tracks = int(parts[0]["n_tracks"])
+        for p in parts[1:]:
+            if int(p["n_tracks"]) != n_tracks:
+                raise ValueError(
+                    f"shard track counts disagree: {n_tracks} vs {int(p['n_tracks'])}"
+                )
+        merged = cls(n_tracks=n_tracks, capacity=capacity, seed=seed)
+        rng = np.random.default_rng(seed)
+        for i in range(n_tracks):
+            pieces = []
+            total = 0
+            for p in parts:
+                off = np.asarray(p["offsets"])
+                lo, hi = int(off[i]), int(off[i + 1])
+                if hi > lo:
+                    pieces.append(np.asarray(p["values"])[lo:hi])
+                total += int(np.asarray(p["counts"])[i])
+            if pieces:
+                vals = np.concatenate(pieces)
+                if len(vals) > capacity:
+                    keep = rng.choice(len(vals), capacity, replace=False)
+                    keep.sort()
+                    vals = vals[keep]
+                merged.data[i] = [float(v) for v in vals]
+            merged.counts[i] = total
+        return merged
+
     def total_samples(self) -> int:
         return int(self.counts.sum())
 

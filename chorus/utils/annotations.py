@@ -1080,6 +1080,89 @@ def sample_gene_anchored_positions(
     return out
 
 
+# Per-layer effect region sets. A percentile answers "how unusual is this effect
+# against a reference population of variants", and the right population depends on
+# what the assay measures.
+#
+# Measured 2026-08-04 over every committed walkthrough row, comparing each raw
+# effect against its own track's null maximum on the gene-anchored null:
+#
+#     oracle        layer                      rows   above null max
+#     enformer      chromatin_accessibility      12       50.0 %
+#     alphagenome   histone_marks                10       30.0 %
+#     enformer      tf_binding                   12       25.0 %
+#     alphagenome   gene_expression             100        7.0 %
+#     alphagenome   tss_activity                263        8.0 %
+#     enformer      tss_activity                 48        0.0 %
+#
+# The *peak* layers saturate and the rest do not, and the reason is structural: most
+# gene-anchored positions are not inside a peak, and a variant in closed chromatin
+# cannot move an accessibility or ChIP signal much. So the null's upper tail is too
+# short — at SORT1, enformer accessibility effects are 1.14-1.45x its null maximum,
+# which is exactly why they pin at 1.0000 and stop discriminating.
+#
+# CAGE needs nothing. That was measured too, and the result was the opposite of what
+# was expected: sweeping the variant's distance from an annotated TSS gives a
+# monotone curve in that one parameter (eQTL percentile p50 0.323 at the TSS itself,
+# 0.411 at +/-500 bp, 0.526 at 1 kb, 0.604 at 2 kb, 0.654 at 5 kb, 0.729 at 10 kb),
+# and the shipped gene-anchored mixture sits at 0.659 — i.e. it already behaves like
+# a "+/-5 kb of a TSS" null for CAGE. There is no qualitative gain available, only a
+# choice of distance scale that no principle fixes.
+EFFECT_REGION_SETS = ('gene-anchored', 'ccre')
+
+# Layers whose null should come from cCREs rather than the gene-anchored mixture.
+# Keyed by the layer names in scorers.LAYER_CONFIGS.
+CCRE_ANCHORED_LAYERS = frozenset({
+    'chromatin_accessibility',
+    'histone_marks',
+    'tf_binding',
+})
+
+
+def sample_ccre_anchored_positions(
+    n: int,
+    *,
+    chrom_sizes: dict,
+    seed: int = 12345,
+    margin_bp: int = 600_000,
+) -> list:
+    """Positions inside ENCODE SCREEN cCREs, stratified by element class.
+
+    The matched reference class for a peak assay: "a variant inside a candidate
+    cis-regulatory element". Reuses :func:`sample_ccre_positions`, which the
+    *baseline* path has always used — the effect path never did, which is the whole
+    defect. Sharing it means the two paths cannot drift.
+
+    Returns ``(chrom, pos, stratum)`` triples so the caller's tally, logging and
+    provenance stamp work unchanged against ``sample_gene_anchored_positions``.
+
+    ``margin_bp`` keeps a position far enough from a contig end that the oracle's
+    input window fits; 600 kb clears AlphaGenome's 1,048,576 bp half-window.
+    """
+    per_category = {
+        # Roughly SCREEN's own class proportions, so no single element type
+        # dominates the null. PLS and dELS carry most real regulatory variation.
+        'PLS': 0.22, 'dELS': 0.28, 'pELS': 0.15, 'CA-CTCF': 0.10,
+        'CA-H3K4me3': 0.08, 'CA-TF': 0.07, 'CA': 0.06, 'TF': 0.04,
+    }
+    # Oversample, because the margin filter below rejects some.
+    counts = {k: max(1, int(round(n * v * 1.4))) for k, v in per_category.items()}
+    raw = sample_ccre_positions(n_per_category=counts, seed=seed)
+
+    usable = {c: L for c, L in chrom_sizes.items() if L > 2 * margin_bp}
+    out = []
+    for chrom, pos in raw:
+        if chrom not in usable:
+            continue
+        if not (margin_bp <= pos <= usable[chrom] - margin_bp):
+            continue
+        out.append((chrom, int(pos), 'ccre'))
+
+    rng = random.Random(seed)
+    rng.shuffle(out)
+    return out[:n]
+
+
 def build_transcript_exon_index(
     annotation: str = 'gencode_v48_basic',
     gene_types: Optional[set] = frozenset({'protein_coding'}),

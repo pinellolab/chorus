@@ -30,6 +30,7 @@ import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '
 
 from chorus.utils.annotations import (  # noqa: E402
     load_chrom_sizes,
+    sample_ccre_anchored_positions,
     sample_gene_anchored_positions,
 )
 from chorus.analysis.background_sampling import (  # noqa: E402
@@ -50,6 +51,14 @@ parser.add_argument("--reservoir-size", type=int, default=50000,
                     help="Max samples per track before compaction to 10K CDF")
 parser.add_argument("--n-cdf-points", type=int, default=10000,
                     help="Final CDF resolution (points per track)")
+parser.add_argument("--effect-regions", choices=["gene-anchored", "ccre"],
+                    default="gene-anchored",
+                    help="Reference population for the EFFECT null. 'ccre' samples "
+                         "inside ENCODE SCREEN cCREs, which is the matched class for "
+                         "peak assays (accessibility / histone ChIP / TF ChIP); those "
+                         "layers saturate against the gene-anchored mixture because "
+                         "most of its positions are not in a peak. Does not affect "
+                         "the baseline/summary path, which already uses cCREs.")
 args = parser.parse_args()
 
 log_dir = os.path.join(REPO_ROOT, "logs")
@@ -258,11 +267,19 @@ def build_variant_backgrounds():
     # 21.3 % within 1 kb of a TSS and 37.4 % within 100 bp of a splice junction.
     # 15 % stays uniform on purpose, to keep the null's lower body populated.
     random.seed(42)
-    sampled = sample_gene_anchored_positions(
-        args.n_variants,
-        chrom_sizes=load_chrom_sizes(os.path.join(REPO_ROOT, 'genomes/hg38.fa.fai')),
-        seed=42,
-    )
+    # Which reference population the effect null is drawn from. Peak layers
+    # (accessibility, histone ChIP, TF ChIP) saturate against the gene-anchored
+    # mixture because most of its positions are not inside a peak -- see
+    # EFFECT_REGION_SETS in chorus/utils/annotations.py for the measurements.
+    _sizes = load_chrom_sizes(os.path.join(REPO_ROOT, 'genomes/hg38.fa.fai'))
+    if args.effect_regions == 'ccre':
+        sampled = sample_ccre_anchored_positions(
+            args.n_variants, chrom_sizes=_sizes, seed=42,
+        )
+    else:
+        sampled = sample_gene_anchored_positions(
+            args.n_variants, chrom_sizes=_sizes, seed=42,
+        )
     snps = []
     strata_counts = defaultdict(int)
     for chrom, pos, stratum in sampled:
@@ -273,8 +290,12 @@ def build_variant_backgrounds():
                      "alt": random.choice([b for b in "ACGT" if b != ref_base]),
                      "stratum": stratum})
         strata_counts[stratum] += 1
-    logger.info("Generated %d gene-anchored SNPs from %d sampled positions: %s",
-                len(snps), len(sampled), dict(strata_counts))
+    # The region set is named in the message, not hardcoded, because there are now
+    # two and this line IS the provenance that scripts/stamp_background_provenance.py
+    # reads back. Saying "gene-anchored" while sampling cCREs would stamp a lie into
+    # every rebuilt NPZ.
+    logger.info("Generated %d %s SNPs from %d sampled positions: %s",
+                len(snps), args.effect_regions, len(sampled), dict(strata_counts))
 
     # Why a position can be dropped, reported at the end. A silent drop is
     # how enformer shipped effect_counts spanning 9600-9606 (#123).
