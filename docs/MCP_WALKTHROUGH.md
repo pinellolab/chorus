@@ -52,7 +52,7 @@ what a user types in natural language and what Claude returns.
 1. Calls `load_oracle("alphagenome")` — loads model weights (~30 s on GPU).
 2. Calls `discover_variant(oracle_name="alphagenome", position="chr1:109274968",
    ref_allele="G", alt_alleles=["T"], gene_name="SORT1", user_prompt="Load AlphaGenome...")`
-   — scores all 5,731 tracks, ranks by effect, builds a multi-layer report.
+   — scores all 5,168 tracks, ranks by effect, builds a multi-layer report.
 3. Returns a markdown summary (inline) + saves an HTML report with an
    embedded IGV genome browser to the working directory.
 
@@ -176,7 +176,7 @@ produced the numbers, and when it was generated.
 - **Natural language works.** You don't need to memorise tool names or
   parameters. Describe what you want in plain English and Claude picks the
   right tool.
-- **AlphaGenome is recommended** for most users: 1 Mb window, 5,731
+- **AlphaGenome is recommended** for most users: 1 Mb window, 5,168
   tracks, single base-pair resolution, covers all regulatory layers.
   Chorus ships two interchangeable AlphaGenome oracles — `alphagenome`
   (JAX, default) and `alphagenome_pt` (PyTorch, same model + same

@@ -4,7 +4,7 @@ A systematic approach to interpreting GWAS variants using genomic deep learning 
 
 ## Recommended Oracle Strategy
 
-**AlphaGenome is the primary oracle.** With a 1Mb output window at 1bp resolution and 5731 tracks
+**AlphaGenome is the primary oracle.** With a 1Mb output window at 1bp resolution and 5,168 tracks
 (DNASE, ATAC, CAGE, RNA-seq, ChIP-seq, splice sites, PRO-CAP), it is the most comprehensive
 model available. It can capture variant-to-gene effects up to 500kb+ — essential for distal
 enhancer variants, which are the majority of GWAS signals.
@@ -218,7 +218,7 @@ Enformer (114kb window) cannot reach IRX3 at all.
 
 ## Track Selection by Oracle
 
-### AlphaGenome (5731 tracks — start here)
+### AlphaGenome (5,168 tracks — start here)
 ```
 list_tracks("alphagenome", query="hepatocyte")   # CAGE/RNA for liver
 list_tracks("alphagenome", query="K562")          # CAGE for erythroid

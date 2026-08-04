@@ -1,0 +1,1334 @@
+{
+ "CAGE": [
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.011324399049094306
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.004291259093888156
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.001756392032513513
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.0004088935835867078
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.004220027939957989
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.0042361308853727225
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.0022440059702961046
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 6.520491420682066e-05
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.014059332971018496
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.013689445237476597
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.04010306123399191
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.03230177937030611
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.012108004827368814
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.0021143789698773426
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.005016397783728495
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.0018234851011075227
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.03266468578866063
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.035544097115535564
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.02559676254711286
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.025910457633320685
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.056430564029770564
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.05814035577171301
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.05203743395675108
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.022250521098103035
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.1773407370627665
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.22447610283713515
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.022491916024155994
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.01020581170713661
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.0002724228522902091
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.0744091532676677
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.07083994567740871
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.1593535425255302
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.0019253838143929154
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.0009838376737150568
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.002529114286014197
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.0015661773532791334
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.22487525088783952
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.4030180243661602
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.041772483392775374
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.18650354327203772
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.007226233884622467
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.01142025716954348
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.0011488475827386246
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.011540510694527297
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.0008612943641567823
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.0012667739135198298
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.002482999939289186
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.005517687219568632
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.0038532407577145204
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.0055372234129634984
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.014466805059938748
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.005937147251342703
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.020896866720166763
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.0344176844652374
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.02404287468111307
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.044715803412501975
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.019362116664500485
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.022855269327022965
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.009031127898501697
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.005344428994101116
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.0008483459297876862
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.0056358495628960675
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.02499348221343687
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.0014982214103053983
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.033178195921767004
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.031493196279457236
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.0392298612108954
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.03682966888197369
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.07094612006560867
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.0940222038668825
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.019767079267519635
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.021544770918715764
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.0222378163161223
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.013152996278749253
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.0022322247372922738
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.00471015222529211
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.03985697011619812
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.05690735211448395
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.003308851563143383
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.010895654653528937
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.06421684522132022
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.0578077328951975
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.028323328453435263
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.025727832957905573
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.05499652982274513
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.10125645471926384
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.07632837385361453
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.07859227756894199
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.007532816124624408
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.004492713439241363
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.08019575620150163
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.06506218173459899
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.003983674430098554
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.002144682763864456
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.010218204169630467
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.013828117231479314
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/+",
+   "abs_effect": 0.20105583482679665
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/+",
+   "abs_effect": 0.17185824190071528
+  },
+  {
+   "track": "CAGE/hCAGE CL:0000182/-",
+   "abs_effect": 0.013965137537448848
+  },
+  {
+   "track": "CAGE/hCAGE UBERON:0002107/-",
+   "abs_effect": 0.02135661861068691
+  }
+ ],
+ "RNA_SEQ": [
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 5.372461207908685e-05
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0023739175807131474
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.0004047281882808562
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0005246704431693949
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0018723169050409716
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.0002434308959573528
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 3.541125328565542e-05
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.002136355241322274
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.0003631859604240617
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.00036566955767280973
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 6.3920020867414e-05
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0007278223036869536
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0007222658807077842
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 3.0783825726965475e-05
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.0011002191565290254
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 8.128756442116192e-05
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.0004736237487055206
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.002884838704807713
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.00029227803124509677
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0005786649456205328
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0020663965177266375
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.0012738696167466923
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.00020818964647162375
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0009561674405962339
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.00012793543214284497
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0025997424276402725
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.002142284405187489
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0006236243483763726
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.00087197941160988
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.00023168487792668557
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.00027018425595132234
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0017669659717312047
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.00040792344041129525
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 9.615651233740863e-05
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.00013234944788553804
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.00010153530238848907
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0005436521467363509
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.0002732742051811954
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.0006923766918039975
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 1.3696013549946429e-06
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.0038790064679359304
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.029455493384989317
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.017636791029604915
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0001527229084183901
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.013515816718684626
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.002400899728812078
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.006671192645678836
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.030958923854119025
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.0006552629687917033
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.002601436109023858
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.0016652985211162985
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0013015541341090398
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.006642814485283033
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.004513916559011122
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.001103315301951291
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.009222683666572529
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.0008160591315675703
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.00019309131297529092
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.0012362003948682698
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0003625079156326372
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0011896661484032123
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.000930289406821494
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.00023618663148061714
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0014037543975109479
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 7.55255462285831e-05
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0004314444622357527
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.0008249532011008753
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0006573810827097404
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0016870962841406545
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.001695400521441126
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.001384252851560408
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0022321622085064163
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.0018743340216307303
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0007575820198115757
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.0003904758811801301
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0004975560827102377
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0008319024338340197
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.0003197760340013648
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.0003679906042635128
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0010568168854841464
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.0006851490175341368
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0032217351379077996
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.0005781091379457592
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.001155696074979895
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0037257130695695917
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.0030646306473083307
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.0007999947024080467
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0030899486308268997
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.00029647122454434793
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0036058731543988642
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.004276836708584142
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.001186525075305589
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0018737295418240763
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.004280348739358786
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 3.3975168127753363e-05
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0031428914532778407
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.0017985005166947232
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.003556437652774358
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.0022867257570371446
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0006107131098413987
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.002195357445616608
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.00017649133072339396
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.002442013107969654
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.002974407289603888
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 3.5941633180769372e-06
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0002541925520409549
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 9.39992304704873e-05
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.00031810037896451426
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.00038694937249372785
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.00017565088393611816
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.0003915418065698617
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 6.59706879830857e-05
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.00018402123642236035
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0017879139570098346
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.0002521804849688891
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 7.35027651610487e-06
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.002071908037648562
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.0008359463657843236
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.0010236185753325078
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.002521662923611334
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 1.5030117884506922e-05
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0018194495081083062
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 3.585986115339779e-05
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0014722893920662283
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0027180592696320893
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 7.648561176543112e-05
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.000378249919438578
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0028852134888610603
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 4.2251807741422454e-07
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0007194257349381061
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 2.3022214997503454e-05
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0005620813301143723
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.00021740303503725578
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.0002066197705636874
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.00034820604615326545
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 8.323069873461542e-05
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.0031270885509782076
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0024693985000530105
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.0032517183779630088
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0020324537392415465
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0015579208774143538
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.0023701027631528593
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.003473028424462399
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0026138496700396363
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.0016496780216694873
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0010253952321646054
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.0014807278056485629
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.00041553039099717637
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0005075739195445905
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.00019426142103640132
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.002179907564953787
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0017746447966042744
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 1.174193186770367e-05
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.001272243311292165
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 3.024093840231501e-06
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0008585813721833091
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.005014612390052076
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.005337495659538227
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.00020488407281504806
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.004598451717892971
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.00020530597238099801
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.00043948950490779737
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 9.423558216692385e-05
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0019835680775637243
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0005740918034966569
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.0010268675914293368
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.0020160923065115632
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0004700188627730917
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.0003955453920125862
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 9.493931744852802e-05
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.00012887802307481877
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0028506229725886456
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0012744496187981902
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.0014355571817894486
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.004380080219140936
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.002189565619554301
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 8.264470522956202e-05
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.001733862158005639
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.0006633457780682583
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.00014472260865261433
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0001740068053752708
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 6.904351289716004e-05
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.0006788503199783857
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0026097902430679554
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.003430452617637414
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0031317810936424273
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.0018518213002760575
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0014508805096252742
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.005098440030728124
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.0027281786736348956
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.0023203252657293394
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.006062750961529861
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.0002121563021594275
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0006589224205391098
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.0002864434593143894
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.000739715452803047
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0008949306758192499
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.0006480118640306287
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.0006661463797894285
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0007388228600269109
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.0006674828980157699
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0005545758665541634
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.001111558989960404
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0006743875166117519
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 1.1221796960114716e-05
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.0004703942829440422
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.0011958649353229767
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0003576728070018298
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.00010467422163440432
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0006165720052102586
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.000267673142026581
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0006287045735118291
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0017118587457223278
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.00022550833453161
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.0013216373104936174
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0025044806697218647
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.0006204015603294977
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0008478443903348065
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.000985753461275607
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 0.0006912898031461445
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0008887553206322618
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 0.00024069888018929397
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.00035282949444126466
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.0011772138104765295
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/+",
+   "abs_effect": 0.0013113396896526908
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+",
+   "abs_effect": 0.0041527445285449716
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/+",
+   "abs_effect": 0.0009048348480882318
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 total RNA-seq/-",
+   "abs_effect": 1.3655517616228963e-05
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-",
+   "abs_effect": 0.0019176670585663302
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 total RNA-seq/-",
+   "abs_effect": 4.1747617570919715e-05
+  },
+  {
+   "track": "RNA_SEQ/CL:0000182 polyA plus RNA-seq/.",
+   "abs_effect": 0.0008955982486442693
+  },
+  {
+   "track": "RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.",
+   "abs_effect": 0.004032481138474431
+  }
+ ]
+}

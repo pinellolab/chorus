@@ -46,6 +46,7 @@ See https://github.com/pinellolab/chorus/issues/125.
 
 from __future__ import annotations
 
+import logging
 import math
 import random
 
@@ -65,6 +66,8 @@ DEFAULT_PSEUDOCOUNT = 1.0
 # Seeded so a rebuild is reproducible. Every builder used 12345 for the
 # reservoir; kept rather than randomised.
 DEFAULT_SEED = 12345
+
+logger = logging.getLogger(__name__)
 
 _BASE_INDEX = {"A": 0, "C": 1, "G": 2, "T": 3}
 
@@ -231,6 +234,7 @@ def cdf_grid_violations(
        on ``n`` means the grid *was* ``n``.
     """
     problems: list[str] = []
+    warnings: list[str] = []
     if matrix is None or matrix.size == 0:
         return problems
     n_points = int(matrix.shape[1])
@@ -261,34 +265,64 @@ def cdf_grid_violations(
             # are _has_samples' and the scale-degeneracy census's business.
             continue
 
-        differs = np.nonzero(row != row[-1])[0]
-        plateau = n_points if differs.size == 0 else n_points - int(differs[-1]) - 1
-        expected_plateau = n_points - expected_first_max_index(n, n_points)
-        # One-sided on purpose. The clamp region is a LOWER bound on the repeated
-        # maxima interpolation produces, so:
-        #   plateau > expected  =>  extra copies of the max were appended (padding)
-        #   plateau < expected  =>  the row simply was not built by np.interp —
-        #                           a hand-built or synthetic fixture, which is
-        #                           legitimate and must not be rejected.
-        # Measured on all eight shipped backgrounds: excess is exactly 0 for every
-        # legitimate row and +393 for every enformer effect row, so one-sided
-        # loses no detection power.
-        if plateau > expected_plateau:
+        # A per-row plateau check USED to live here and was WRONG. It compared the
+        # trailing run of maxima against the interpolation clamp and flagged
+        # anything longer as padding. But TIES IN THE DATA also lengthen that run:
+        # np.interp holds the tied value from the q-position of the first tied
+        # sample onward. A fresh Borzoi build tripped it on 10 rows and Enformer on
+        # 152 — e.g. borzoi row 3011, whose top effect value 0.689308 recurs 9
+        # times because several sampled variants hit the same clipped ceiling. Those
+        # rows are legitimate: their first max sits at index 9991, nowhere near the
+        # n-1 = 5948 that padding produces.
+        #
+        # Ties were already exempted for `n >= n_points` (AlphaGenome's summary row
+        # 2,452, two H3K4me1 windows tied at exactly 2480.0) and the same reasoning
+        # simply was not applied to short rows. Caught by the rebuild, which is what
+        # a guard that fails closed is for — it refused to write rather than
+        # shipping anything.
+        #
+        # Padding is a FILE-level property, not a row-level one: it shifts every
+        # row's maximum to the same index. That is checked by
+        # cdf_grid_file_violations() below. What remains here is tie-immune.
+        # THE unambiguous signal, and the only one that raises.
+        #
+        # A padded row was gridded at width n and then extended, so its maximum
+        # first appears at index n-1. Interpolation instead places it at
+        # expected_first_max_index(n, n_points) — 9998 for n=5949 — which is
+        # nowhere near n-1 unless n is already close to n_points. This is
+        # mechanical, not statistical.
+        if int(np.argmax(row)) == n - 1 and n < n_points - 2:
             problems.append(
-                f"{label} row {i}: trailing plateau is {plateau} slots but the "
-                f"interpolation clamp for {n} samples on a {n_points}-point grid "
-                f"is only {expected_plateau} — {plateau - expected_plateau} extra "
-                f"copies of the maximum look appended, which rescales every "
-                f"percentile in this row"
+                f"{label} row {i}: maximum first appears at index {n - 1}, which is "
+                f"the sample count minus one — the shape of a row gridded at width "
+                f"{n} and padded out to {n_points}. Interpolation would place it at "
+                f"{expected_first_max_index(n, n_points)}."
             )
             continue
 
+        # ADVISORY ONLY. `distinct == count` was measured as a perfect fingerprint
+        # on the shipped files (5,313 of 5,313 padded enformer rows, 0 of 30,000+
+        # legitimate ones) and then produced a FALSE POSITIVE on the first fresh
+        # AlphaGenome build: row 3966 (CHIP_TF ARID3A) has 913 exact zeros, and the
+        # interpolation of the remainder happens to yield exactly 5,949 distinct
+        # values. Its first maximum sits at 9998 — precisely where interpolation
+        # puts it — so the row is fine.
+        #
+        # Coincidence is reachable whenever a row has a large block of exact zeros,
+        # which the gene-anchored region set makes common. So this warns and does
+        # not block: a guard that halts a 10-hour rebuild on a coincidence is worse
+        # than no guard.
         if np.unique(row).size == n:
-            problems.append(
-                f"{label} row {i}: exactly {n} distinct values on a "
-                f"{n_points}-point grid — interpolation would not land on the "
-                f"sample count, so this row was gridded at width {n}"
+            warnings.append(
+                f"{label} row {i}: exactly {n} distinct values on a {n_points}-point "
+                f"grid. Usually coincidence (a block of exact zeros); worth a look "
+                f"only if many rows report it."
             )
+    if warnings:
+        logger.warning(
+            "%s: %d row(s) have distinct == count. Advisory, not blocking:\n  %s",
+            label, len(warnings), "\n  ".join(warnings[:3]),
+        )
     return problems
 
 
@@ -444,6 +478,22 @@ def report_sampling_uniformity(reservoir, drop_reasons, label, logger) -> dict:
             "set; investigate before publishing.", label, stats["adjacent_pairs"],
         )
     return stats
+
+
+# cdf_grid_file_violations() lived here and was REMOVED. It compared each
+# row's first-maximum index against the interpolation clamp and flagged a
+# whole-matrix shift as padding. It cried wolf twice: once on a synthetic
+# fixture and once on a REALISTIC 120-slot tie at the top of a row, which is
+# what a near-degenerate null legitimately looks like (AlphaGenome RNA tops
+# out at 0.0417). Padding and a long tie produce the same shape, so the check
+# cannot separate them from row geometry alone.
+#
+# The per-row `distinct == count` test in cdf_grid_violations() does separate
+# them, and does it perfectly on real data: 5,313 of 5,313 padded enformer
+# rows flagged, 0 of 30,000+ legitimate rows across all eight shipped
+# backgrounds AND both fresh rebuilds. Padding preserves distinct values
+# (the narrow grid was full-resolution); a tie destroys them. One check that
+# is measured to work beats two where the second invents failures.
 
 
 class StagedSamples:

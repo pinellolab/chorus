@@ -116,7 +116,13 @@ def test_guard_catches_the_enformer_padding_shape():
 
     problems = cdf_grid_violations(padded, np.array([n]))
     assert problems, "padded row must be rejected"
-    assert "plateau" in problems[0]
+    # The message must name the MECHANICAL signal, not the distinct count. The
+    # distinct-vs-count fingerprint was demoted to advisory after firing on a
+    # healthy row: AlphaGenome effect_cdfs row 3966 has count == distinct == 5949
+    # by coincidence (913 exact zeros), and its first max at index 9998 proves it
+    # was interpolated. first_max == n-1 cannot be produced by np.interp.
+    assert "maximum first appears at index" in problems[0]
+    assert str(n - 1) in problems[0]
 
 
 def test_guard_catches_a_non_monotonic_row():
@@ -257,3 +263,46 @@ def test_shipped_backgrounds_have_reproducible_grids(oracle, path):
                 data[key], data[count_key], label=f"{oracle}.{key}"
             )
     assert not problems, "\n".join(problems)
+
+
+# ---------------------------------------------------------------------------
+# Ties at the maximum: the false positive a real rebuild exposed
+# ---------------------------------------------------------------------------
+
+
+def _row_with_tied_maximum(n_samples: int, n_tied: int, n_points: int = 10_000):
+    """A genuine to_cdf_matrix row whose top ``n_tied`` samples are equal.
+
+    Real: a fresh Borzoi build produced 10 of these and Enformer 152. Borzoi row
+    3011's top effect value 0.689308 recurs 9 times because several sampled
+    variants hit the same clipped ceiling.
+    """
+    sampler = ReservoirSampler(n_tracks=1, capacity=n_samples)
+    rng = np.random.default_rng(3)
+    values = np.sort(rng.exponential(1.0, n_samples))
+    values[-n_tied:] = values[-n_tied]          # tie the top
+    for v in values:
+        sampler.add(0, float(v))
+    return sampler.to_cdf_matrix(n_points=n_points)
+
+
+@pytest.mark.parametrize("n_tied", [2, 5, 9, 40])
+def test_ties_at_the_maximum_are_not_padding(n_tied):
+    """The regression. A per-row plateau check flagged all of these.
+
+    np.interp holds a tied value from the q-position of the first tied sample
+    onward, so ties lengthen the trailing run of maxima exactly as padding does.
+    The distinguishing fact is WHERE the first maximum sits: a tied row keeps it
+    near the interpolation clamp, while padding puts it at n-1.
+    """
+    matrix = _row_with_tied_maximum(5_949, n_tied)
+    counts = np.array([5_949])
+    # The per-row check is what must be tie-immune. The file-level one deliberately
+    # refuses to judge a single row — see test_file_level_check_needs_enough_rows.
+    assert cdf_grid_violations(matrix, counts) == []
+
+
+
+
+
+

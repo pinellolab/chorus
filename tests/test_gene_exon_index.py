@@ -269,6 +269,8 @@ def test_builder_no_longer_pools_exons_across_genes():
     src = Path("scripts/build_backgrounds_alphagenome.py").read_text()
     assert "def load_exon_index" not in src
     assert "def exon_bin_indices" not in src
-    assert "build_gene_exon_index()" in src
+    # now the TSS-in-window index, matching AlphaGenome's own selection rule —
+    # see test_alphagenome_uses_the_reference_gene_selection_rule
+    assert "build_transcript_exon_index()" in src
     assert "exon_bins_for_gene(" in src
-    assert "genes_overlapping(" in src
+    assert "genes_with_tss_in_window(" in src
