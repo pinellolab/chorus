@@ -69,7 +69,10 @@ from chorus.oracles.cherimoya_source.scoring import (  # noqa: E402
     score_window_sum,
 )
 
-from chorus.analysis.background_sampling import ReservoirSampler  # noqa: E402
+from chorus.analysis.background_sampling import (  # noqa: E402
+    ReservoirSampler,
+    StagedSamples,
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -547,22 +550,30 @@ def build(do_variants: bool, do_baselines: bool):
             continue
 
         model = oracle.model
+        # One try spans the variant pass AND the baseline pass for this track, so
+        # a failure in the second used to leave the first already committed --
+        # effect samples present with no matching summary/perbin (#123). Stage
+        # everything and commit only if the whole track succeeds.
+        staged = StagedSamples()
         try:
             if do_variants and n_var:
                 ref_sums, _ = forward_window_sums(model, X_ref, torch)
                 alt_sums, _ = forward_window_sums(model, X_alt, torch)
                 for r, a in zip(ref_sums, alt_sums):
-                    effect_res.add(idx, abs(compute_effect(float(r), float(a))))
+                    staged.add(idx, abs(compute_effect(float(r), float(a))),
+                               reservoir=0)
 
             if do_baselines and len(base_seqs):
                 base_sums, base_bins = forward_window_sums(
                     model, X_base, torch, perbin_idx=perbin_idx)
                 for s in base_sums:
-                    summary_res.add(idx, float(s))
-                perbin_res.add_batch(idx, base_bins.reshape(-1))
+                    staged.add(idx, float(s), reservoir=1)
+                staged.add_batch(idx, base_bins.reshape(-1), reservoir=2)
         except Exception as exc:
             logger.warning("Scoring failed for %s: %s", spec["track_id"], str(exc)[:200])
             continue
+        else:
+            staged.commit(effect_res, summary_res, perbin_res)
 
         logger.info("  done in %.1fs (effect=%d summary=%d perbin=%d)",
                     time.time() - t0,

@@ -24,7 +24,10 @@ import numpy as np
 
 import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')); sys.path.insert(0, REPO_ROOT)
 
-from chorus.analysis.background_sampling import ReservoirSampler  # noqa: E402
+from chorus.analysis.background_sampling import (  # noqa: E402
+    ReservoirSampler,
+    StagedSamples,
+)
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
 parser = argparse.ArgumentParser()
@@ -178,15 +181,21 @@ def build_variant_backgrounds():
         offset = INPUT_LENGTH // 2 - 1
         seq_alt = seq_ref[:offset] + snp["alt"] + seq_ref[offset + 1:]
 
+        # All 40 sequence classes, or none (#123). Failing part-way through the
+        # class loop would credit the classes already visited and skip the rest,
+        # so different classes would be ranked against different variant sets.
+        staged = StagedSamples()
         try:
             ref_classes = predict_classes(seq_ref)
             alt_classes = predict_classes(seq_alt)
             # Per-class effect (signed)
             for class_idx in range(n_tracks):
                 effect = float(alt_classes[class_idx] - ref_classes[class_idx])
-                effect_reservoir.add(class_idx, effect)
+                staged.add(class_idx, effect)
         except Exception as exc:
             logger.warning("Failed variant %d: %s", i, str(exc)[:150])
+        else:
+            staged.commit(effect_reservoir)
 
     elapsed_v = time.time() - t0
     logger.info("Variants done in %.1f hrs: %s samples", elapsed_v / 3600,
@@ -288,12 +297,16 @@ def build_baseline_backgrounds():
         if seq is None:
             continue
 
+        # Same all-or-nothing rule as the variant pass above (#123).
+        staged = StagedSamples()
         try:
             class_preds = predict_classes(seq)
             for class_idx in range(n_tracks):
-                summary_reservoir.add(class_idx, float(class_preds[class_idx]))
+                staged.add(class_idx, float(class_preds[class_idx]))
         except Exception as exc:
             logger.warning("Failed %s:%d: %s", chrom, pos, str(exc)[:150])
+        else:
+            staged.commit(summary_reservoir)
 
     elapsed_b = time.time() - t0
     logger.info("Baselines done in %.1f hrs: %s samples", elapsed_b / 3600,
