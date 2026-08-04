@@ -6,7 +6,41 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Three backgrounds rebuilt against a gene-anchored effect region set (AlphaGenome, Borzoi, Enformer).** The shipped effect nulls were drawn from uniformly random genomic positions, which is the wrong reference class for a TSS-localised assay: a random position has essentially no CAGE signal, so the `+1` pseudocount damps its log-ratio toward zero and the null's body sits far below where real regulatory effects live. Positions are now sampled per stratum from protein-coding annotation (GENCODE v48 basic) — 20 % within ±1 kb of a TSS, 20 % at 1–10 kb, 33 % within ±100 bp of an exon/intron boundary, 12 % elsewhere in a gene body, 15 % uniformly random. The random tail is deliberate: without near-zero mass, genuinely small effects would receive artificially *low* percentiles, the mirror of the failure being fixed. All three oracles drew from one seeded region set — each build logged an identical `tss_near 1200, tss_far 1200, junction 1980, gene_body 720, random 849` of 6,000 sampled positions — so the three are directly comparable. New `build_config` provenance is stamped into each NPZ.
+
+  Measured against strong TSS-proximal liver eQTLs from GTEx v8 (`|slope| >= 0.5`, `maf >= 0.05`, `p <= 1e-10`), scored in tissue-matched tracks:
+
+  | layer | eQTL percentile p50, before | after | saturated |
+  |---|---|---|---|
+  | RNA (232 rows, 8 tracks) | 0.899 | **0.781** | 0 % |
+  | CAGE (100 rows, 4 tracks) | 0.857 | **0.659** | 0 % |
+
+  Both moved down, which is the intended direction — the reference class now contains variants that actually perturb these assays, so a given eQTL is less extreme against it.
+
+- **Effect of the whole cycle on the committed examples.** Across the four AlphaGenome/Enformer variant walkthroughs, saturated rows (percentile pinned at exactly 1.0000, where the column has stopped discriminating) fell from **47 to 16** with row counts unchanged at 369 and distinct percentile values up from 280 to 284.
+
+  Attribution, and the honest limits of it. These were measured separately and are attributable:
+
+  | change | measured effect |
+  |---|---|
+  | RNA denominator: exon *intervals* → bins actually summed (#149) | numerator was overstated 251–1736×; median \|effect percentile\| 0.99+ → 0.062 on the unchanged population |
+  | Enformer `effect_cdfs` grid repair (#143) | reachable percentile ceiling 0.9605 → 0.9998; the top 4 % of the scale did not previously exist |
+  | Cross-process determinism (#127, #145) | a full report is now bit-exact: 603 numeric fields, 0 differing, 0 sign flips, worst relative delta 0.0 — against 454 differing fields with 36 sign flips before |
+  | Gene-anchored null (this entry) | the eQTL table above |
+
+  The per-layer walkthrough diff is a **combined** effect of all of the above plus the CHIP window classifier (#122/#146) and window-span parity (#147/#148); it is not decomposed per change, because doing so honestly would require re-running each rebuild in isolation. It is reported as a fused diff rather than split by guesswork.
+
+- **One layer did not improve, and is not described as fixed.** Enformer `chromatin_accessibility` at SORT1 went from 4/12 saturated to **6/12**, median percentile 0.960 → 1.000. This is not a new regression: 0.960 *was* the padded-grid artefact ceiling (#143), so those rows were already pinned and the repair only made the pinning visible instead of disguising it as a plausible 0.96. The underlying fact is that Enformer's accessibility effect null is genuinely too narrow for a variant this strong. It clears the release gate (7 distinct values across 12 rows, so the column is not constant) and is the next thing to look at.
+
 ### Fixed
+
+- **Walkthrough TSVs silently dropped every per-gene row after the first.** `scripts/regenerate_remaining_examples.py` carried its own report flattener that de-duplicated on `(allele, assay_id, layer)` — a key omitting the region. RNA and CAGE emit one row per *gene* per track, so all but one gene were discarded: `validation/TERT_chr5_1295046` shipped 18 rows where its JSON had 99 (one `tss_activity` row where there were fifteen, one per nearby gene TSS), `discovery/SORT1_cell_type_screen` 39 of 347, `sequence_engineering/region_swap` 4 of 32, `integration_simulation` 3 of 55. The same writer also put `region_label` in a column named `description`, which already means the *track* description in `to_dict()` — one name for two things across two artefacts of the same report. Fixed by deletion rather than repair: everything now routes through `report.to_dataframe()`, the canonical writer `scripts/regenerate_examples.py` already used. All 14 walkthrough (JSON, TSV) pairs now agree on both counts and row identities, pinned by `tests/test_json_tsv_parity.py`. Long-standing rather than a regression — the counts were identical before and after the rebuild.
+
+- **Docs overstated AlphaGenome's usable track count by 563.** Ten places across `README.md`, `docs/variant_analysis_framework.md`, `docs/MCP_WALKTHROUGH.md` and `docs/API_DOCUMENTATION.md` advertised **5,731 tracks**, including the README's headline sentence. That is the row count of AlphaGenome's metadata table; 563 of those rows are `padding` placeholders whose only purpose is keeping `local_index` aligned with the model's output array. They carry no assay, `iter_tracks()` skips them, and the shipped background has no row for any of them. The queryable count is **5,168** — verified both directions: 5,168 metadata tracks have a background row and 0 do not, and 5,168 + 563 = 5,731 exactly. `tests/test_documented_track_counts.py` now compares live-doc prose against the shipped NPZs so this cannot drift again. (An earlier entry below claims this was "disambiguated inline"; it was not, in any of the four live docs.)
+
+- **The background grid guard blocked a healthy rebuild.** The `distinct == count` fingerprint — reported as perfect, 5,313/5,313 with zero false positives — fired on AlphaGenome `effect_cdfs` row 3966 (CHIP_TF ARID3A) and refused an 11-hour merge. That row is not padded: 913 of its 5,949 samples are exact zeros, so interpolating the remainder lands on exactly 5,949 distinct values by coincidence, and its maximum first appears at index 9998 — precisely where `np.interp` puts it, where padding would put it at 5,948. The raising condition is now the mechanical one alone (`first_max == n - 1`, unreachable by `np.interp`, whose `source_q` stops at `(n-1)/n`); `distinct == count` is a `logger.warning` that says outright it is usually coincidence. Tally before the demotion was three false positives to one true catch.
 
 - **ChromBPNet recovers counts with `expm1`, not `exp`.** ChromBPNet's count head is trained against `log(1 + count)` (upstream `batchgen_generator.py` feeds `np.log(1+batch_cts.sum(-1, keepdims=True))` as the target), but chorus inverted it with `np.exp`, so every recovered count was high by exactly +1 — negligible at a peak (~0.1 % at 1,000 counts) but up to 100 % at a low-activity site, which is precisely the regime the activity CDFs are built from. Corrected at the three count-inversion sites: `oracles/chrombpnet.py:579` (`_transform_predictions_to_tracks`), `oracles/chrombpnet.py:802` (`predict_sliding`), and `scripts/build_backgrounds_chrombpnet.py:348` (`predict_profiles_batch`). The profile softmax `np.exp` calls at `:577`, `:801` and `:347` are a different transform and are unchanged. The bug was self-consistent — oracle and CDF builder made the same error — so ChromBPNet percentiles were internally valid, which is why it went unnoticed; raw counts and cross-oracle comparability were not. Cherimoya already did this correctly (`cherimoya_source/scoring.py`) and is unaffected. New regression suite `tests/test_chrombpnet_counts.py` covers all three sites, including an oracle/builder consistency check so the two cannot drift apart again.
 
