@@ -116,7 +116,13 @@ def test_guard_catches_the_enformer_padding_shape():
 
     problems = cdf_grid_violations(padded, np.array([n]))
     assert problems, "padded row must be rejected"
-    assert "distinct" in problems[0]
+    # The message must name the MECHANICAL signal, not the distinct count. The
+    # distinct-vs-count fingerprint was demoted to advisory after firing on a
+    # healthy row: AlphaGenome effect_cdfs row 3966 has count == distinct == 5949
+    # by coincidence (913 exact zeros), and its first max at index 9998 proves it
+    # was interpolated. first_max == n-1 cannot be produced by np.interp.
+    assert "maximum first appears at index" in problems[0]
+    assert str(n - 1) in problems[0]
 
 
 def test_guard_catches_a_non_monotonic_row():
