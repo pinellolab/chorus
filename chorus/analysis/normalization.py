@@ -421,6 +421,13 @@ class PerTrackNormalizer:
             entry["signed_flags"] = data["signed_flags"].astype(bool)
         else:
             entry["signed_flags"] = None
+        # As-built provenance (#124). Stored as a 1-element unicode array, so it
+        # reads under allow_pickle=False.
+        entry["build_config"] = None
+        if "build_config" in data:
+            entry["build_config"] = self._read_build_config(
+                data["build_config"], oracle_name,
+            )
         self._loaded[oracle_name] = entry
         n_tracks = len(entry["track_ids"])
         cdfs_present = [k for k in ("effect_cdfs", "summary_cdfs", "perbin_cdfs") if entry[k] is not None]
@@ -428,7 +435,84 @@ class PerTrackNormalizer:
             "Loaded per-track CDFs for '%s': %d tracks, CDFs: %s",
             oracle_name, n_tracks, ", ".join(cdfs_present),
         )
+        self._warn_on_geometry_mismatch(oracle_name, entry)
         return entry
+
+    @staticmethod
+    def _read_build_config(raw, label: str) -> dict | None:
+        """Parse a stored ``build_config``, accepting both shapes it ships in.
+
+        0-d is what ``build_and_save(provenance=...)`` wrote before 2026-08-04;
+        1-element is what Cherimoya's builder and the stamp script wrote, and what
+        every file on disk actually has. Reading only one of the two silently
+        discarded provenance from the other.
+        """
+        import json as _json
+
+        try:
+            arr = np.asarray(raw)
+            text = str(arr.item()) if arr.ndim == 0 else str(arr.reshape(-1)[0])
+            parsed = _json.loads(text)
+        except (ValueError, TypeError, IndexError, KeyError, AttributeError):
+            logger.warning(
+                "'%s' has a build_config that will not parse; treating it as "
+                "absent", label,
+            )
+            return None
+        return parsed if isinstance(parsed, dict) else None
+
+    def provenance(self, oracle_name: str) -> dict | None:
+        """The as-built ``build_config`` for *oracle_name*, or None if unstamped.
+
+        Public because a stamp nobody reads is documentation, not an invariant —
+        which is what it was until this method existed. See
+        :meth:`_warn_on_geometry_mismatch` for the one thing chorus itself does
+        with it.
+        """
+        entry = self._ensure_loaded(oracle_name)
+        return (entry or {}).get("build_config")
+
+    def _warn_on_geometry_mismatch(self, oracle_name: str, entry: dict) -> None:
+        """Compare the stamped build geometry against what the query will use.
+
+        This is #122's whole class turned into a data-carried check. #122 was
+        AlphaGenome histone CHIP tracks whose null was built over 501 bp while the
+        query summed 2001 bp — a mismatch invisible in both artefacts, because each
+        was internally consistent. Nothing compared them, so it shipped across
+        1,075 of 5,168 tracks.
+
+        A warning rather than an exception, deliberately: every background built
+        before the provenance work is unstamped, and older stamped files may
+        legitimately predate a query-side change. Refusing to load them would break
+        working installs to enforce a metadata convention. An unstamped file is
+        silent — it makes no claim to contradict.
+        """
+        config = entry.get("build_config")
+        if not isinstance(config, dict):
+            return
+        try:
+            from chorus.analysis.scorers import LAYER_CONFIGS
+        except Exception:                                  # pragma: no cover
+            return
+
+        expected = {
+            "histone_marks": config.get("histone_window_bp"),
+            "chromatin_accessibility": config.get("other_window_bp"),
+            "tf_binding": config.get("other_window_bp"),
+            "tss_activity": config.get("other_window_bp"),
+        }
+        for layer, built_bp in expected.items():
+            spec = LAYER_CONFIGS.get(layer)
+            if spec is None or built_bp is None or spec.window_bp is None:
+                continue
+            if int(spec.window_bp) != int(built_bp):
+                logger.warning(
+                    "'%s' background for layer %s was BUILT over %d bp but this "
+                    "query sums %d bp. Percentiles for that layer compare two "
+                    "different statistics (#122/#144). Rebuild the background or "
+                    "align LAYER_CONFIGS.",
+                    oracle_name, layer, int(built_bp), int(spec.window_bp),
+                )
 
     def n_tracks(self, oracle_name: str) -> int:
         """Number of tracks for an oracle."""
@@ -1006,8 +1090,15 @@ class PerTrackNormalizer:
         if provenance:
             import json as _json
 
+            # A 1-ELEMENT array, not 0-d. This wrote 0-d until 2026-08-04 while
+            # both real producers -- Cherimoya's builder and
+            # scripts/stamp_background_provenance.py -- wrote (1,), so a reader
+            # written against the shipped files raised IndexError on anything this
+            # function produced. Three producers, two conventions, nothing
+            # comparing them: the same shape of defect as #122 and the duplicate
+            # TSV writer. _read_build_config accepts both so old files still load.
             arrays["build_config"] = np.array(
-                _json.dumps(provenance, sort_keys=True, default=str), dtype="U",
+                [_json.dumps(provenance, sort_keys=True, default=str)], dtype="U",
             )
 
         path = out_dir / PerTrackNormalizer.npz_filename(oracle_name)
@@ -1159,12 +1250,9 @@ class PerTrackNormalizer:
 
         provenance = new_provenance
         if provenance is None and "build_config" in extra_file:
-            import json as _json
-
-            try:
-                provenance = _json.loads(str(extra_file["build_config"]))
-            except (ValueError, TypeError):
-                provenance = None
+            provenance = PerTrackNormalizer._read_build_config(
+                extra_file["build_config"], oracle_name,
+            )
         extra_file.pop("build_config", None)
 
         path = PerTrackNormalizer.build_and_save(

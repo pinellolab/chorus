@@ -2,7 +2,15 @@
 
 ``append_tracks`` loaded **every** key from the existing NPZ but forwarded only the
 canonical eight to ``build_and_save``, so anything else — a per-row ``layer``, a
-file-level ``build_config`` — vanished on the first merge. Cherimoya works around
+file-level ``build_config`` — vanished on the first merge.
+
+These assertions used ``json.loads(str(data["build_config"]))``, which only works on
+a 0-d array. ``build_and_save`` wrote 0-d while Cherimoya's builder and
+``scripts/stamp_background_provenance.py`` wrote a 1-element array — three producers,
+two conventions, and a reader written against the shipped files raised IndexError on
+anything ``build_and_save`` produced. The writer is now consistent at 1-element, and
+these tests parse through ``PerTrackNormalizer._read_build_config`` so they assert
+the *content* rather than pinning a shape that turned out not to be universal. Cherimoya works around
 it by re-stamping ``build_config`` after every append, which is why it is the only
 one of nine shipped NPZs that has one.
 
@@ -61,7 +69,7 @@ def test_file_level_provenance_round_trips(tmp_path):
     }
     path = _save(tmp_path, provenance=prov)
     with np.load(path, allow_pickle=True) as data:
-        assert json.loads(str(data["build_config"])) == prov
+        assert PerTrackNormalizer._read_build_config(data["build_config"], "t") == prov
 
 
 def test_per_row_provenance_round_trips(tmp_path):
@@ -111,7 +119,7 @@ def test_append_preserves_file_level_provenance(tmp_path):
     )
     with np.load(tmp_path / "provtest_pertrack.npz", allow_pickle=True) as data:
         assert "build_config" in data.files, "provenance dropped on merge (#124)"
-        assert json.loads(str(data["build_config"]))["genome"] == "hg38"
+        assert PerTrackNormalizer._read_build_config(data["build_config"], "t")["genome"] == "hg38"
         assert len(data["track_ids"]) == 5
 
 
@@ -178,7 +186,7 @@ def test_new_provenance_overrides_the_stored_one(tmp_path):
         new_provenance={"genome": "hg38", "schema_version": 2},
     )
     with np.load(tmp_path / "provtest_pertrack.npz", allow_pickle=True) as data:
-        assert json.loads(str(data["build_config"]))["schema_version"] == 2
+        assert PerTrackNormalizer._read_build_config(data["build_config"], "t")["schema_version"] == 2
 
 
 # ---------------------------------------------------------------------------
