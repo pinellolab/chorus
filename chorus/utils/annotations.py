@@ -1112,10 +1112,27 @@ EFFECT_REGION_SETS = ('gene-anchored', 'ccre')
 
 # Layers whose null should come from cCREs rather than the gene-anchored mixture.
 # Keyed by the layer names in scorers.LAYER_CONFIGS.
+#
+# This set is MEASURED, one layer at a time, not inferred from "peak layers behave
+# alike" — they do not. Enformer, 5,986 cCRE positions against 5,949 gene-anchored
+# (a 1.006 count ratio, so the comparison is not confounded by sample size):
+#
+#     layer                     saturated, gene-anchored -> cCRE
+#     chromatin_accessibility            50 %  ->   0 %    ACCEPTED
+#     tf_binding                         25 %  ->  50 %    REJECTED
+#     histone_marks                       0 %  ->   0 %    no change for enformer
+#     tss_activity                        0 %  ->   0 %    no change
+#
+# Accessibility is fixed outright. TF binding gets WORSE, and the reason is that a
+# cCRE is *defined* by accessibility, H3K4me3 or CTCF signal — a randomly chosen cCRE
+# is often not bound by the particular TF a given ChIP track measures, so its ChIP
+# signal there is low and a variant cannot move it. Gene-anchored positions include
+# promoters where many TFs are bound, which is a better reference class for TF ChIP.
+#
+# So the rule is: a cCRE-anchored null helps the layer whose signal *defines* a cCRE,
+# and hurts layers that merely correlate with it.
 CCRE_ANCHORED_LAYERS = frozenset({
     'chromatin_accessibility',
-    'histone_marks',
-    'tf_binding',
 })
 
 
