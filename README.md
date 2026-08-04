@@ -120,7 +120,7 @@ _Everything below is optional — the TLDR above is enough to get running. Secti
 
 **Conversational genomics.** The idea behind Chorus: ask in plain language what DNA does — and what happens when you change it — while an AI agent orchestrates the right sequence-to-function models to predict, compare, and explain the answer. An agent that *predicts* function from sequence, not a chatbot that looks up what is already known. Computation, replaced by conversation.
 
-Eight state-of-the-art genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Cherimoya/CATv1, Sei, LegNet, EPInformer-seq, AlphaGenome — wired through one API. The same five lines of Python predict variant effects on chromatin accessibility (ChromBPNet, base-pair resolution), TF binding (Enformer, BPNet), 5,731 multi-modal tracks at 1 Mb context (AlphaGenome), or RNA-seq-grade gene expression (Borzoi). Every prediction comes with **effect-percentile and activity-percentile scores** ranked against ~10 k random SNPs and ~30 k genome-wide cCREs, so a `+0.45 log₂FC` becomes `0.962 effect %ile, 0.81 activity %ile` — directly interpretable, not a raw fold-change you have to calibrate yourself.
+Eight state-of-the-art genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Cherimoya/CATv1, Sei, LegNet, EPInformer-seq, AlphaGenome — wired through one API. The same five lines of Python predict variant effects on chromatin accessibility (ChromBPNet, base-pair resolution), TF binding (Enformer, BPNet), 5,168 multi-modal tracks at 1 Mb context (AlphaGenome), or RNA-seq-grade gene expression (Borzoi). Every prediction comes with **effect-percentile and activity-percentile scores** ranked against ~10 k random SNPs and ~30 k genome-wide cCREs, so a `+0.45 log₂FC` becomes `0.962 effect %ile, 0.81 activity %ile` — directly interpretable, not a raw fold-change you have to calibrate yourself.
 
 Each oracle runs in its own conda environment (no TF/PyTorch/JAX dependency hell), every weight + reference + background is pre-mirrored to a chorus-controlled HuggingFace org (no broken-link surprises), and the **24-tool MCP server** lets you ask Claude to run the analysis in plain English. See [Pick an oracle](#pick-an-oracle) for the per-oracle hardware/cost matrix.
 
@@ -164,7 +164,7 @@ Start with one or two oracles and add more with `chorus setup --oracle <name>` l
 | **LegNet** | 4 GB | optional | <1 s | MPRA / promoter activity |
 | **Sei** | 4 GB | optional | ~2 s | regulatory sequence-class profiling |
 | **EPInformer-seq** | 2 GB | optional | <1 s | per-cell 2-channel enhancer activity (DNase cut-sites + H3K27ac, 3 assays, 11 Roadmap cells, 2114-bp window) |
-| **AlphaGenome** | 16 GB | strongly recommended | ~30 s (GPU) / 2–5 min (CPU) | comprehensive multi-layer (5,731 tracks, 1 Mb window) |
+| **AlphaGenome** | 16 GB | strongly recommended | ~30 s (GPU) / 2–5 min (CPU) | comprehensive multi-layer (5,168 tracks, 1 Mb window) |
 | **AlphaGenome (PyTorch backend)** ⓘ | 16 GB | recommended (esp. Apple Silicon) | ~3.8 s @524 kb on Mac MPS / ~2 s @1 MB on CUDA | alternative backend with the same weights; see [Two AlphaGenome backends](#two-alphagenome-backends) below |
 
 **GPU detection is automatic** — every oracle picks CUDA / MPS / CPU based on what's available; pass `device='cuda'` / `'cpu'` / `'mps'` to override, or set `CUDA_VISIBLE_DEVICES` to pin to a specific GPU. The platform-by-oracle support matrix and Apple Silicon nuances live in [Installation — detailed](#installation--detailed).
@@ -262,7 +262,7 @@ The base `chorus` environment itself is not removed by `chorus cleanup` — remo
 
 Chorus uses isolated conda environments for each oracle to avoid dependency conflicts between TensorFlow, PyTorch, and JAX models.
 
-**Which oracle to start with?** For variant analysis, **AlphaGenome** is the most comprehensive (1 Mb input window, 1 bp prediction resolution, 5,731 tracks) but requires ~16 GB RAM and benefits from a GPU. **Enformer** is a good lightweight alternative that runs comfortably on CPU with ~8 GB RAM (see the table in [examples/walkthroughs/README.md](examples/walkthroughs/README.md#which-oracle-should-i-use) for a full side-by-side comparison).
+**Which oracle to start with?** For variant analysis, **AlphaGenome** is the most comprehensive (1 Mb input window, 1 bp prediction resolution, 5,168 tracks) but requires ~16 GB RAM and benefits from a GPU. **Enformer** is a good lightweight alternative that runs comfortably on CPU with ~8 GB RAM (see the table in [examples/walkthroughs/README.md](examples/walkthroughs/README.md#which-oracle-should-i-use) for a full side-by-side comparison).
 
 ```bash
 # Set up each oracle individually (alternative to `chorus setup` which does all 7)
@@ -665,7 +665,7 @@ Key features:
 
 #### Variant analysis with AlphaGenome (recommended)
 
-AlphaGenome (1Mb window, 5731 tracks) is the recommended primary oracle for variant analysis. It covers DNASE, ATAC, CAGE, RNA-seq, ChIP-seq histone marks, and TF binding in a single model.
+AlphaGenome (1Mb window, 5,168 tracks) is the recommended primary oracle for variant analysis. It covers DNASE, ATAC, CAGE, RNA-seq, ChIP-seq histone marks, and TF binding in a single model.
 
 Example conversation with Claude:
 
@@ -882,7 +882,10 @@ LegNet is a fully convolutional neural network designed for efficient modeling o
 
 #### AlphaGenome
 
-AlphaGenome (Google DeepMind, Nature 2026) predicts 5,731 human functional genomic tracks at single base-pair resolution from up to 1 MB of DNA sequence using a JAX-based model.
+AlphaGenome (Google DeepMind, Nature 2026) predicts 5,168 human functional genomic tracks
+(its metadata table has 5,731 rows, 563 of which are `padding` placeholders that keep
+`local_index` aligned with the model's output array and carry no assay; `iter_tracks()`
+skips them, and the shipped background has a row for all 5,168 and none for the padding) at single base-pair resolution from up to 1 MB of DNA sequence using a JAX-based model.
 
 - Sequence length: 1,048,576 bp (1 MB) input
 - Output: 1,048,576 bins at single base-pair resolution
