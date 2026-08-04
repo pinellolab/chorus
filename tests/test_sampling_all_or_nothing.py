@@ -243,13 +243,30 @@ def test_rebuild_set_declares_drop_reasons_in_every_scope(oracle):
         )
 
 
-@pytest.mark.xfail(
-    reason="still latent at 5 sites in chrombpnet (2), sei (2) and cherimoya (1). "
-           "None is in the rebuild set, so none can produce fresh bad data; "
-           "converted in a follow-up",
-    strict=True,
-)
 def test_every_builder_stages_its_samples():
+    """All eight builders, no exceptions. The xfail is gone.
+
+    This carried a strict xfail while five sites were still unconverted --
+    chrombpnet (2), sei (2), cherimoya (1) -- on the reasoning that none was in the
+    rebuild set, so none could produce fresh bad data. That was true but it is not
+    a reason to leave them: the next rebuild of any of those three would have
+    reintroduced #123's partial-credit counts, and the xfail was the only thing
+    recording that.
+
+    Converted 2026-08-04. Two of the five were worse than a plain per-track loop:
+
+    * ``build_backgrounds_cherimoya.py`` wrapped the variant pass AND the baseline
+      pass for one track in a single ``try``, so a failure in the second left the
+      first already committed -- effect samples with no matching summary/perbin.
+    * ``build_backgrounds_chrombpnet.py``'s baseline batch wrote to TWO reservoirs
+      inside one loop, so a throw between the summary ``add`` and the perbin
+      ``add_batch`` left a summary sample with no perbin sample for the same
+      position. Staging makes the pair atomic as well as the batch.
+
+    sei's two sites are the clearest illustration of why this matters at all: both
+    loop over all 40 sequence classes inside the ``try``, so a mid-loop failure
+    ranked some classes against a different variant set than the others.
+    """
     offenders = {
         p.name: _try_blocks_wrapping_reservoir_loops(str(p))
         for p in sorted(Path("scripts").glob("build_backgrounds_*.py"))
