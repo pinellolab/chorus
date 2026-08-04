@@ -27,6 +27,29 @@ Not covered (require re-running the oracle):
   the full per-track allele scores needed for the drill-down table.
   Re-run ``scripts/regenerate_remaining_examples.py --only causal``
   to refresh. This script will warn but not error.
+
+THE REAL LIMITATION, WHICH THE LIST ABOVE USED TO OMIT (#133)
+-------------------------------------------------------------
+The round trip is **lossy everywhere**, not just for causal reports.
+``VariantReport.from_dict`` does not carry the per-bin prediction arrays the IGV
+panel is drawn from, so a rehydrated report is structurally valid, renders
+without complaint, and has no signal tracks.
+
+Measured: fixing this module's stale path and running it rewrote 15 shipped HTML
+reports from MB-scale down to 0.01-0.02 MB —
+``rs12740374_SORT1_multioracle_report.html`` 9.47 MB -> 0.01 MB,
+``..._alphagenome_report.html`` 2.99 MB -> 0.02 MB. No exception, no warning, and
+a diff that reads as a successful refresh. That is why the wrong path was left in
+place: a crash is strictly safer than silent data loss.
+
+So the path fix ships **only together with the guard below**. Before overwriting
+anything, the rehydrated output is compared against the artefact already on disk,
+and the write is refused when the reconstruction is materially poorer. The
+comparison is the same shape the feature-budget defect needed: compare what you
+are about to write against what is already there.
+
+Run with ``--force`` to overwrite anyway, and ``--check`` to report without
+writing at all.
 """
 from __future__ import annotations
 
@@ -44,7 +67,74 @@ logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("rerender")
 
-EXAMPLES = REPO_ROOT / "examples" / "applications"
+# examples/applications/ became examples/walkthroughs/ in 340f30e. This module was
+# the only file in the repo still on the old name, so every invocation since
+# 2026-04-21 died with FileNotFoundError before doing any work.
+EXAMPLES = REPO_ROOT / "examples" / "walkthroughs"
+
+# An HTML rehydrated without its per-bin arrays loses the IGV panel and collapses
+# to a fraction of its original size. Refuse to overwrite when the candidate is
+# smaller than this share of what is already on disk. 0.5 is well clear of both
+# regimes: the observed degradation was 100-900x (to ~0.3-1% of original), while a
+# genuine renderer change moves size by a few percent.
+_MIN_SIZE_RATIO = 0.5
+
+
+# ---------------------------------------------------------------------------
+# The guard: compare what is about to be written against what is there
+# ---------------------------------------------------------------------------
+
+FORCE = False
+CHECK_ONLY = False
+REFUSED: list[str] = []
+
+
+def _write_html_or_refuse(report, out_path: Path) -> bool:
+    """Render to a temp file, compare against the incumbent, then commit.
+
+    Renders beside the target rather than over it, because the whole point is that
+    the degraded output is *valid* — writing first and checking after would mean
+    the artefact is already destroyed by the time the check runs.
+
+    Returns True if the file was written.
+    """
+    rel = out_path.relative_to(REPO_ROOT)
+    incumbent = out_path.stat().st_size if out_path.exists() else 0
+
+    tmp_path = out_path.with_name(out_path.name + ".rerender-tmp")
+    try:
+        report.to_html(output_path=tmp_path)
+        candidate = tmp_path.stat().st_size
+        ratio = (candidate / incumbent) if incumbent else float("inf")
+
+        if incumbent and ratio < _MIN_SIZE_RATIO and not FORCE:
+            REFUSED.append(str(rel))
+            logger.error(
+                "  REFUSED %s: rehydrated HTML is %.2f MB against the existing "
+                "%.2f MB (%.1f%%). VariantReport.from_dict does not carry the "
+                "per-bin arrays, so this would silently drop the IGV panel "
+                "(#133). Re-run the oracle via scripts/regenerate_examples.py, "
+                "or pass --force if this shrink is genuinely intended.",
+                rel, candidate / 1e6, incumbent / 1e6, 100 * ratio,
+            )
+            return False
+
+        if CHECK_ONLY:
+            logger.info(
+                "  would rerender %s (%.2f MB -> %.2f MB, %.0f%%)",
+                rel, incumbent / 1e6, candidate / 1e6, 100 * ratio,
+            )
+            return False
+
+        tmp_path.replace(out_path)
+        logger.info(
+            "  rerendered %s (%.2f MB -> %.2f MB)",
+            rel, incumbent / 1e6, candidate / 1e6,
+        )
+        return True
+    finally:
+        if tmp_path.exists():
+            tmp_path.unlink()
 
 
 # ---------------------------------------------------------------------------
@@ -102,8 +192,8 @@ def _rehydrate_variant_report(json_path: Path) -> int:
         elif validation_matches:
             out_path = validation_matches[0]
 
-    report.to_html(output_path=out_path)
-    logger.info("  rerendered %s", out_path.relative_to(REPO_ROOT))
+    if not _write_html_or_refuse(report, out_path):
+        return 0
 
     # The TSV is a pure projection of the same report object, so refresh it
     # from the same rehydration rather than leaving it to drift. Only rewrite
@@ -231,7 +321,13 @@ def _refresh_multioracle(dir_path: Path) -> int:
         per_oracle_report_paths=per_oracle_paths,
     )
     html_path = dir_path / f"{moracle._fname_stub()}_multioracle_report.html"
-    moracle.to_html(output_path=html_path)
+    # Guarded like the per-oracle path. This is the WORST observed case of the
+    # #133 degradation: 9.47 MB -> 0.01 MB, a 900x loss that rendered fine. The
+    # markdown and JSON are only rewritten if the HTML survives the check, so a
+    # refused run leaves the directory internally consistent rather than half
+    # refreshed.
+    if not _write_html_or_refuse(moracle, html_path):
+        return 0
     with (dir_path / "example_output.md").open("w") as fh:
         fh.write(moracle.to_markdown())
     with (dir_path / "example_output.json").open("w") as fh:
@@ -242,10 +338,36 @@ def _refresh_multioracle(dir_path: Path) -> int:
 
 
 if __name__ == "__main__":
-    p = argparse.ArgumentParser()
+    p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument(
         "--only",
         help="Limit to one category name (variant_analysis, validation, …).",
     )
+    p.add_argument(
+        "--check", action="store_true",
+        help="Report what would change without writing anything. Use this first: "
+             "the round trip is lossy and the guard may refuse most of the run.",
+    )
+    p.add_argument(
+        "--force", action="store_true",
+        help="Overwrite even when the rehydrated report is materially smaller "
+             "than the artefact on disk. This is how 15 shipped reports were "
+             "silently degraded (#133) — only pass it if the shrink is intended.",
+    )
     args = p.parse_args()
-    walk_examples(only=args.only)
+    CHECK_ONLY = args.check
+    FORCE = args.force
+    # Module-level, because the guard reads them rather than threading a config
+    # object through five call sites.
+    globals()["CHECK_ONLY"] = args.check
+    globals()["FORCE"] = args.force
+
+    written = walk_examples(only=args.only)
+    if REFUSED:
+        logger.error(
+            "REFUSED %d of %d artefacts. The round trip drops the IGV panel; "
+            "re-run the oracle with scripts/regenerate_examples.py instead.",
+            len(REFUSED), len(REFUSED) + (written or 0),
+        )
+        sys.exit(1)
+    logger.info("rerendered %d artefact(s), 0 refused", written or 0)
