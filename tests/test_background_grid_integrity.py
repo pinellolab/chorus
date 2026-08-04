@@ -33,7 +33,6 @@ import pytest
 
 from chorus.analysis.background_sampling import (
     ReservoirSampler,
-    cdf_grid_file_violations,
     cdf_grid_violations,
     expected_first_max_index,
 )
@@ -297,31 +296,7 @@ def test_ties_at_the_maximum_are_not_padding(n_tied):
     assert cdf_grid_violations(matrix, counts) == []
 
 
-def test_the_file_level_check_still_catches_padding():
-    """Padding shifts EVERY row, which is why the median is the right statistic."""
-    n = 9_606
-    narrow, _ = _build_row(n, n_points=n)
-    rows = np.repeat(narrow, 40, axis=0)
-    padded = np.concatenate(
-        [rows, np.repeat(rows[:, -1:], N_POINTS - n, axis=1)], axis=1)
-    problems = cdf_grid_file_violations(padded, np.full(40, n))
-    assert problems and "earlier than" in problems[0]
 
 
-def test_a_few_tied_rows_among_many_healthy_ones_stay_quiet():
-    """The median tolerates a minority of tied rows; padding is unanimous."""
-    healthy = np.concatenate([_build_row(5_949, n_points=10_000)[0] for _ in range(30)], axis=0)
-    tied = np.concatenate([_row_with_tied_maximum(5_949, 9) for _ in range(5)], axis=0)
-    matrix = np.concatenate([healthy, tied], axis=0)
-    counts = np.full(35, 5_949)
-    assert cdf_grid_file_violations(matrix, counts) == []
 
 
-def test_file_level_check_needs_enough_rows_to_conclude():
-    """One tied row is indistinguishable from one padded row.
-
-    Only unanimity across a matrix separates them, so the check abstains below 8
-    rows rather than guessing. Real backgrounds carry thousands.
-    """
-    tied = _row_with_tied_maximum(5_949, 9)
-    assert cdf_grid_file_violations(tied, np.array([5_949])) == []

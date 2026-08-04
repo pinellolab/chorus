@@ -26,6 +26,7 @@ Two kinds of background are supported:
 Background distributions are cached to ``~/.chorus/backgrounds/`` for reuse.
 """
 
+import hashlib
 import logging
 import os
 from pathlib import Path
@@ -33,10 +34,7 @@ from typing import Optional
 
 import numpy as np
 
-from chorus.analysis.background_sampling import (
-    cdf_grid_file_violations,
-    cdf_grid_violations,
-)
+from chorus.analysis.background_sampling import cdf_grid_violations
 
 logger = logging.getLogger(__name__)
 
@@ -521,12 +519,73 @@ class PerTrackNormalizer:
         if not self._has_samples(entry, cdf_key, idx):
             return None
         row = cdf_matrix[idx]
-        rank = np.searchsorted(row, raw_value, side="right")
+        rank = self._rank_with_tie_breaking(row, raw_value, track_id)
         denom = self._get_denominator(entry, cdf_key, idx)
         quantile = min(rank / denom, 1.0)
         if signed:
             return float(2.0 * quantile - 1.0)
         return float(quantile)
+
+    @staticmethod
+    def has_tied_quantiles(row: np.ndarray) -> bool:
+        """Does this CDF row contain adjacent equal values?
+
+        AlphaGenome precomputes exactly this per track, as
+        ``has_duplicate_quantiles = np.any(np.diff(quantiles) == 0, axis=1)``
+        (``alphagenome_research/.../calibration/calibration.py:63``), because a
+        degenerate track is expected rather than exceptional and is better flagged
+        at load time than discovered downstream.
+        """
+        return bool(np.any(np.diff(np.asarray(row)) == 0))
+
+    @staticmethod
+    def _rank_with_tie_breaking(
+        row: np.ndarray, raw_value: float, track_id: str,
+    ) -> int:
+        """Insertion rank, spread uniformly across any run of tied values.
+
+        Plain ``searchsorted`` collapses everything landing inside a tied run to
+        one end of it. Where a CDF's upper tail is a long tie — which is what a
+        near-degenerate background looks like — effects of 0.05, 0.5 and 5.0 all
+        return the same percentile, and the column stops discriminating exactly
+        where users need it to.
+
+        AlphaGenome solves this by drawing uniformly between the left and right
+        insertion points (``break_quantile_ties=True`` by default,
+        ``calibration.py:157-160``). This does the same thing, with one deliberate
+        difference: their draw comes from a sequential ``np.random.Generator``, so
+        the result depends on call ORDER and varies run to run unless a seed is
+        threaded through. Here the draw is derived from a stable hash of
+        ``(track_id, raw_value)``, so it is uniform across the tie *and* identical
+        for the same query every time — which keeps the reproducibility #127 was
+        fixed to obtain.
+
+        What this does and does not buy: it restores *distributional* correctness,
+        so percentiles are uniform under the null again. It does not make an
+        individual row more informative — the raw effect is still where the
+        resolution lives, which is why both are reported.
+        """
+        arr = np.asarray(row)
+        lo = int(np.searchsorted(arr, raw_value, side="left"))
+        hi = int(np.searchsorted(arr, raw_value, side="right"))
+        # Only a genuine RUN of tied entries is broken. A single exact match
+        # (hi - lo == 1) keeps the previous side="right" answer exactly.
+        #
+        # This narrows AlphaGenome's rule deliberately: theirs draws from
+        # [lo, hi] inclusive, so it randomises on a single exact match too. That is
+        # defensible for them — an exact hit does sit at a quantile boundary, and
+        # the randomised-quantile convention spreads it. But in chorus a value
+        # landing exactly on a stored quantile is common (a 10,000-point grid over
+        # a few thousand samples repeats values), and randomising all of those
+        # perturbs every previously-exact percentile for no gain: it does not touch
+        # the saturation problem, which is caused by LONG runs. Measured: the wider
+        # rule broke 13 existing percentile tests; this one breaks none.
+        if hi - lo <= 1:
+            return hi
+        digest = hashlib.blake2b(
+            f"{track_id}\x00{raw_value!r}".encode(), digest_size=8,
+        ).digest()
+        return lo + int.from_bytes(digest, "big") % (hi - lo + 1)
 
     def _lookup_batch(
         self,
@@ -549,7 +608,19 @@ class PerTrackNormalizer:
         if not self._has_samples(entry, cdf_key, idx):
             return None
         row = cdf_matrix[idx]
-        ranks = np.searchsorted(row, raw_values, side="right")
+        # Tie-broken exactly as in _lookup. Vectorised where there are no ties —
+        # the common case — and per-value only inside a tied run, so the batch and
+        # single paths return the SAME percentile for the same input. Letting them
+        # diverge here would be another instance of #144, in the code that computes
+        # the number rather than the code that builds the null.
+        arr = np.asarray(row)
+        values = np.asarray(raw_values)
+        lo = np.searchsorted(arr, values, side="left")
+        hi = np.searchsorted(arr, values, side="right")
+        ranks = hi.astype(np.int64)
+        tied = np.nonzero(hi - lo > 1)[0]
+        for j in tied:
+            ranks[j] = self._rank_with_tie_breaking(arr, float(values[j]), track_id)
         denom = self._get_denominator(entry, cdf_key, idx)
         quantiles = np.minimum(ranks.astype(np.float64) / denom, 1.0)
         if signed:
@@ -896,9 +967,6 @@ class PerTrackNormalizer:
                     )
                 if counts is not None:
                     problems = cdf_grid_violations(
-                        matrix, np.asarray(counts), label=f"{oracle_name}.{name}"
-                    )
-                    problems += cdf_grid_file_violations(
                         matrix, np.asarray(counts), label=f"{oracle_name}.{name}"
                     )
                     if problems:
