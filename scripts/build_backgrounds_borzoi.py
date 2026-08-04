@@ -45,6 +45,13 @@ from chorus.analysis.background_sampling import (  # noqa: E402
 )
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
+
+def _shard_suffix():
+    """`.shard<K>of<N>` when position-sharded, else empty."""
+    if args.shard is None or args.shard_of is None:
+        return ""
+    return f".shard{args.shard}of{args.shard_of}"
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--part", choices=["variants", "baselines", "merge", "both", "all"], default="all")
 parser.add_argument("--gpu", type=int, default=0)
@@ -60,6 +67,18 @@ parser.add_argument("--effect-regions", choices=["gene-anchored", "ccre"],
                          "layers saturate against the gene-anchored mixture because "
                          "most of its positions are not in a peak. Does not affect "
                          "the baseline/summary path, which already uses cCREs.")
+parser.add_argument("--shard", type=int, default=None,
+                    help="0-indexed POSITION shard. With --shard-of N this process "
+                         "scores only positions where i %% N == shard, and writes its "
+                         "raw reservoir samples to a .shard<K>of<N> interim. These "
+                         "oracles emit every track from one forward pass, so sharding "
+                         "by TRACK (as the chrombpnet builder does) would save no GPU "
+                         "time -- each shard would still run every pass.")
+parser.add_argument("--shard-of", type=int, default=None,
+                    help="Total number of position shards. Required with --shard. "
+                         "Collect all shards, then run --part merge-shards, which "
+                         "unions the raw samples and builds the CDF exactly once "
+                         "(pooling the shards' CDF grids would only approximate it).")
 args = parser.parse_args()
 
 log_dir = os.path.join(REPO_ROOT, "logs")
@@ -328,6 +347,20 @@ def build_variant_backgrounds():
 
     # Why a position was dropped, reported at the end. A silent drop is how
     # enformer shipped effect_counts spanning 9600-9606 (#123).
+    # Position sharding. Applied AFTER the SNP list is built so every shard agrees
+    # on the same seeded position set and simply takes a stride through it -- the
+    # union over shards is then exactly the unsharded list, which is what makes
+    # tests/test_position_sharding.py's equality property hold.
+    if args.shard is not None or args.shard_of is not None:
+        if args.shard is None or args.shard_of is None:
+            raise SystemExit("--shard and --shard-of must be set together")
+        if not (0 <= args.shard < args.shard_of):
+            raise SystemExit(f"--shard ({args.shard}) must be in [0, {args.shard_of})")
+        before = len(snps)
+        snps = snps[args.shard::args.shard_of]
+        logger.info("--shard %d/%d: scoring %d of %d positions on this worker",
+                    args.shard, args.shard_of, len(snps), before)
+
     drop_reasons = defaultdict(int)
     t0 = time.time()
     for i, snp in enumerate(snps):
@@ -416,14 +449,39 @@ def build_variant_backgrounds():
     track_ids = [t['identifier'] for t in track_info]
     signed_flags = np.array([t['signed'] for t in track_info], dtype=bool)
 
-    interim_path = os.path.join(cache_dir, "borzoi_effect_cdfs_interim.npz")
-    np.savez_compressed(
-        interim_path,
-        track_ids=np.array(track_ids, dtype='U'),
-        effect_cdfs=effect_matrix.astype(np.float32),
-        effect_counts=effect_reservoir.get_counts(),
-        signed_flags=signed_flags,
-    )
+    # Per-row layer, from the same field the builder uses to choose this
+    # track's window. Load-bearing twice over: scripts/merge_effect_shards.py
+    # composes peak-layer rows from a cCRE-anchored build and the rest from a
+    # gene-anchored one, and #124 asked for a per-row layer so a background's
+    # rows can be identified without re-deriving them from opaque ids.
+    layers_per_row = np.array(
+        [str(t.get('layer') or 'unknown') for t in track_info], dtype='U')
+    _suffix = _shard_suffix()
+    interim_path = os.path.join(
+        cache_dir, f"borzoi_effect_cdfs_interim{_suffix}.npz")
+    if _suffix:
+        # A position shard holds a PARTIAL reservoir for every track, so it must
+        # ship raw samples: the CDF is built once, from the union, by
+        # --part merge-shards. Writing a CDF per shard and pooling the grids would
+        # only approximate the unsharded result.
+        np.savez_compressed(
+            interim_path,
+            track_ids=np.array(track_ids, dtype='U'),
+            signed_flags=signed_flags,
+            layers_per_row=layers_per_row,
+            **effect_reservoir.to_flat_samples(),
+        )
+        logger.info("Saved RAW shard samples: %s (%.1f MB)", interim_path,
+                    os.path.getsize(interim_path) / (1024 * 1024))
+    else:
+        np.savez_compressed(
+            interim_path,
+            track_ids=np.array(track_ids, dtype='U'),
+            effect_cdfs=effect_matrix.astype(np.float32),
+            effect_counts=effect_reservoir.get_counts(),
+            signed_flags=signed_flags,
+            layers_per_row=layers_per_row,
+        )
     logger.info("Saved interim effect CDFs: %s (%.1f MB)",
                 interim_path, os.path.getsize(interim_path) / (1024 * 1024))
 

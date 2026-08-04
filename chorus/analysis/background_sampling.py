@@ -108,7 +108,58 @@ class ReservoirSampler:
         self.counts[track_idx] += 1
 
     def add_batch(self, track_idx: int, values) -> None:
-        """Offer many values to one track.
+        """Offer many values to one track, vectorised where it is safe to be.
+
+        Ported from ``build_backgrounds_alphagenome.py``, which carried the last
+        un-migrated copy of this class (#125). That copy had to be migrated, not
+        merely kept in sync: adding ``to_flat_samples`` to THIS class while
+        AlphaGenome used its own left eight position shards running for fifty GPU
+        minutes before every one of them died with ``AttributeError`` at the write
+        step. Which is the thesis of #125, demonstrated at my own expense.
+
+        The fast path is only taken while the reservoir still has room, where
+        "which samples survive" is not yet a question -- everything offered is kept,
+        so extending in bulk is identical to appending one at a time. Once full it
+        falls back to per-value Algorithm R, because there the traversal ORDER
+        decides which samples survive and a different order moves the CDF without
+        any arithmetic changing.
+
+        Equivalence to the plain loop is pinned by
+        ``tests/test_background_sampling.py::test_add_batch_matches_where_a_builder_has_one``,
+        which exercises the overflow branch (400 values in 37-value chunks against a
+        capacity of 40) rather than only the happy path.
+        """
+        target = self.data[track_idx]
+        current = int(self.counts[track_idx])
+        cap = self.capacity
+        n_new = len(values)
+        if n_new == 0:
+            return
+
+        if current < cap:
+            room = cap - current
+            n_append = min(room, n_new)
+            if n_append > 0:
+                head = values[:n_append]
+                if hasattr(head, "tolist"):
+                    target.extend(head.tolist())
+                else:
+                    target.extend(float(v) for v in head)
+            for off, v in enumerate(values[n_append:]):
+                n_so_far = current + n_append + off
+                j = self._rng.randint(0, n_so_far)
+                if j < cap:
+                    target[j] = float(v)
+            self.counts[track_idx] += n_new
+        else:
+            for off, v in enumerate(values):
+                j = self._rng.randint(0, current + off)
+                if j < cap:
+                    target[j] = float(v)
+            self.counts[track_idx] += n_new
+
+    def _add_batch_reference(self, track_idx: int, values) -> None:
+        """The plain loop, kept so the equivalence test has something to compare to.
 
         Deliberately a plain loop over :meth:`add` rather than a vectorised
         reimplementation, because a different traversal order changes *which*
