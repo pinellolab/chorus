@@ -44,18 +44,29 @@ CHANGELOG (what changed vs the submitted draft, and why):
     first revision. Verified two ways: `grep -c "^@mcp.tool()"` and a runtime
     `list_tools()`. (Three other in-repo docs still say 22 — separate fix.)
 11. AlphaGenome resolution qualified. Only 2,915 of 5,731 tracks are 1 bp; all
-    2,816 CHIP tracks are 128 bp. Also noted that 5,168 of the 5,731 have
-    percentile backgrounds — both numbers are correct and AUDIT_CHECKLIST.md:205
-    requires always saying which.
+    2,816 CHIP tracks are 128 bp. On 5,731 vs 5,168: the 563-row difference is
+    entirely `padding` placeholders that keep `local_index` aligned with the
+    model's output array. They carry no assay and `iter_tracks()` skips them, so
+    "5,168 of 5,731 have backgrounds" was the wrong framing — it implied 563 real
+    tracks lack one. Every queryable track has a background row (verified both
+    directions: 5,168 with, 0 without). 5,168 is the number to quote.
 12. Sei "21,907 chromatin profiles" qualified: the classifier head is that wide,
     but chorus aggregates to 40 scoreable sequence classes, and
     `list_tracks("sei")` returns no track list at all. 40/21,907 = 0.18%.
 13. Background description corrected. It is NOT "thousands of random variants"
     uniformly, and it is NOT gnomAD (no code samples gnomAD, despite
-    docs/NORMALIZATION_GUIDE.md:389). Per-track effect samples are 1,697–1,909
-    for AlphaGenome, ~9,600 for Enformer/Borzoi/Sei/LegNet, 18,672 for
-    ChromBPNet/Cherimoya — and they are random genomic *positions given random
-    alternate alleles*, not catalogued variants.
+    docs/NORMALIZATION_GUIDE.md:389). They are sampled genomic *positions given
+    random alternate alleles*, not catalogued variants.
+
+    Updated 2026-08-04, because the rebuild moved these numbers. AlphaGenome,
+    Borzoi and Enformer effect nulls are now **gene-anchored** rather than
+    uniformly random — sampled per stratum from protein-coding annotation (20 %
+    within ±1 kb of a TSS, 20 % at 1–10 kb, 33 % junction-proximal, 12 % gene
+    body, 15 % uniformly random). Per-track effect sample counts are now
+    5,949–87,781 for AlphaGenome, 5,949–20,337 for Borzoi, 5,949 for Enformer,
+    and unchanged at 9,609 for Sei/LegNet and 18,672 for ChromBPNet/Cherimoya.
+    The 15 % random tail is deliberate: with no near-zero mass, genuinely small
+    effects would receive artificially low percentiles.
 14. Display axis: 1.0 is the per-bin p99, but the axis runs to 3.0 (a hard clip
     at 3x p99), so the earlier phrasing implied 1.0 was the ceiling.
 15. ANALYSIS A REPRODUCIBILITY NOTE REWRITTEN (supersedes item 8 above). The
@@ -180,9 +191,9 @@ These eight models span a wide range of context windows and resolutions, which i
 | **Cherimoya (CATv1)** | 2,114 bp | 1 bp | Accessibility across 1,518 ENCODE experiments (ATAC + DNase), one checkpoint per experiment |
 | **Enformer** | 393,216 bp | 128 bp | Expression (CAGE), accessibility, histone marks across long context |
 | **Borzoi** | 524,288 bp | 32 bp | Enformer-style outputs plus RNA-seq coverage |
-| **AlphaGenome** | 1,048,576 bp | 1 bp for most modalities, 128 bp for ChIP | Generalist: ATAC, DNase, CAGE, RNA-seq, splicing, PRO-CAP, and ChIP for histones and TFs (5,731 tracks, of which 5,168 have percentile backgrounds) |
+| **AlphaGenome** | 1,048,576 bp | 1 bp for most modalities, 128 bp for ChIP | Generalist: ATAC, DNase, CAGE, RNA-seq, splicing, PRO-CAP, and ChIP for histones and TFs (5,168 queryable tracks, all with percentile backgrounds; the metadata table's other 563 rows are alignment padding, not assays) |
 
-There is one more piece that makes cross-model work honest. Raw model outputs are not comparable: a "+1.3" from one track means something different from a "+1.3" from another. Chorus scores every prediction against a per-track genome-wide background (built from random genomic positions given random alternate alleles — 1,697–1,909 per AlphaGenome track, ~9,600 for Enformer/Borzoi/Sei/LegNet, 18,672 for ChromBPNet and Cherimoya), turning a raw log2 fold-change into two interpretable numbers: an **effect percentile** (how unusual this variant's effect is relative to random SNPs) and an **activity percentile** (how active the site is to begin with). For the genome-browser view, the same backgrounds rescale every track onto one shared display axis, where 1.0 marks roughly the top one percent of bins genome-wide (the axis itself runs to 3.0, i.e. 3× that threshold) and 0 sits at a per-layer activity floor. After this normalisation, effects and signals become comparable across cell types, variants, tracks, and oracles, and the browser can show every oracle's reference and alternate signal on a single axis.
+There is one more piece that makes cross-model work honest. Raw model outputs are not comparable: a "+1.3" from one track means something different from a "+1.3" from another. Chorus scores every prediction against a per-track genome-wide background (built from sampled genomic positions given random alternate alleles — gene-anchored for AlphaGenome, Borzoi and Enformer at 5,949–87,781 samples per track, and uniformly random at 9,609 for Sei/LegNet and 18,672 for ChromBPNet and Cherimoya), turning a raw log2 fold-change into two interpretable numbers: an **effect percentile** (how unusual this variant's effect is relative to the oracle's own reference population of sampled SNPs — near genes for AlphaGenome, Borzoi and Enformer, uniformly random for the rest) and an **activity percentile** (how active the site is to begin with). For the genome-browser view, the same backgrounds rescale every track onto one shared display axis, where 1.0 marks roughly the top one percent of bins genome-wide (the axis itself runs to 3.0, i.e. 3× that threshold) and 0 sits at a per-layer activity floor. After this normalisation, effects and signals become comparable across cell types, variants, tracks, and oracles, and the browser can show every oracle's reference and alternate signal on a single axis.
 
 ---
 

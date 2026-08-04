@@ -45,43 +45,27 @@ BASE = os.path.join(REPO_ROOT, "examples/walkthroughs")
 # Output helpers
 # ══════════════════════════════════════════════════════════════════════
 
-def _variant_report_tsv_rows(report) -> list[dict]:
-    """Flatten a VariantReport into TSV rows (one per track per allele)."""
-    rows: list[dict] = []
-    for allele, scores in report.allele_scores.items():
-        seen: set[tuple] = set()
-        for ts in scores:
-            key = (allele, ts.assay_id, ts.layer)
-            if key in seen:
-                continue
-            seen.add(key)
-            rows.append({
-                "allele": allele,
-                "layer": ts.layer,
-                "assay_id": ts.assay_id,
-                "assay_type": ts.assay_type,
-                "cell_type": ts.cell_type,
-                "description": ts.region_label or "",
-                "ref_value": ts.ref_value,
-                "alt_value": ts.alt_value,
-                "raw_score": ts.raw_score,
-                "quantile_score": ts.quantile_score,
-                "ref_signal_percentile": ts.ref_signal_percentile,
-                "note": ts.note,
-            })
-    return rows
+def _write_tsv(report, out_path: str) -> None:
+    """Write the TSV via ``report.to_dataframe()`` — the same path
+    ``scripts/regenerate_examples.py`` uses.
 
+    This file used to carry its own flattener, ``_variant_report_tsv_rows``, and it
+    was wrong in two ways that a second implementation is uniquely good at being
+    wrong in:
 
-def _write_tsv(rows: list[dict], out_path: str) -> None:
-    import csv
-    if not rows:
-        return
-    fieldnames = list(rows[0].keys())
-    with open(out_path, "w", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=fieldnames, delimiter="\t")
-        w.writeheader()
-        for r in rows:
-            w.writerow(r)
+    1. It de-duplicated on ``(allele, assay_id, layer)``, omitting the region. RNA
+       and CAGE emit one row per GENE per track, so every gene beyond the first was
+       discarded — TERT shipped 18 rows where the JSON had 99, region_swap 4 of 32,
+       integration_simulation 3 of 55. A dropped row leaves no trace in a TSV, so
+       nothing looked wrong.
+    2. It wrote ``region_label`` into a column named ``description``, which collides
+       with the *track* description that ``to_dict()`` already calls ``description``.
+       Two artefacts from one report therefore used one name for two things.
+
+    ``to_dataframe()`` keeps ``region_label`` as its own column and needs no de-dup,
+    so deleting the copy fixes both at once. tests/test_json_tsv_parity.py pins it.
+    """
+    report.to_dataframe().to_csv(out_path, sep="\t", index=False)
 
 
 def save_variant_report(report, out_dir: str, html_name: str) -> None:
@@ -90,7 +74,7 @@ def save_variant_report(report, out_dir: str, html_name: str) -> None:
         fh.write(report.to_markdown())
     with open(f"{out_dir}/example_output.json", "w") as fh:
         json.dump(report.to_dict(), fh, indent=2, default=str)
-    _write_tsv(_variant_report_tsv_rows(report), f"{out_dir}/example_output.tsv")
+    _write_tsv(report, f"{out_dir}/example_output.tsv")
     html_path = f"{out_dir}/{html_name}"
     report.to_html(output_path=html_path)
     size_kb = os.path.getsize(html_path) / 1024
@@ -188,20 +172,20 @@ def regen_discovery(oracle, norm):
     with open(f"{out_dir}/example_output.json", "w") as fh:
         json.dump(combined, fh, indent=2, default=str)
 
-    # Combined TSV (union of tracks across reports, tagged with cell_type focus)
-    all_rows = []
+    # Combined TSV (union of tracks across reports, tagged with cell_type focus).
+    # Via to_dataframe() like every other TSV here — the hand-rolled flattener this
+    # used to call silently dropped per-gene RNA/CAGE rows; see _write_tsv.
+    import pandas as pd
+
+    frames = []
     for ct, rpt in reports.items():
-        for row in _variant_report_tsv_rows(rpt):
-            row["focus_cell_type"] = ct
-            all_rows.append(row)
-    if all_rows:
-        import csv
-        fieldnames = list(all_rows[0].keys())
-        with open(f"{out_dir}/example_output.tsv", "w", newline="") as fh:
-            w = csv.DictWriter(fh, fieldnames=fieldnames, delimiter="\t")
-            w.writeheader()
-            for r in all_rows:
-                w.writerow(r)
+        frame = rpt.to_dataframe()
+        frame["focus_cell_type"] = ct
+        frames.append(frame)
+    if frames:
+        pd.concat(frames, ignore_index=True).to_csv(
+            f"{out_dir}/example_output.tsv", sep="\t", index=False,
+        )
     logger.info("  ✓ discovery: %d cell types, %d reports", len(hits), len(reports))
 
 
@@ -532,7 +516,7 @@ def regen_tert_chr5(oracle, norm):
         fh.write(report.to_markdown())
     with open(f"{out_dir}/example_output.json", "w") as fh:
         json.dump(report.to_dict(), fh, indent=2, default=str)
-    _write_tsv(_variant_report_tsv_rows(report), f"{out_dir}/example_output.tsv")
+    _write_tsv(report, f"{out_dir}/example_output.tsv")
 
     target = f"{out_dir}/{html_name}"
     logger.info("  ✓ %s (%.0f KB)", os.path.basename(target), os.path.getsize(target)/1024)

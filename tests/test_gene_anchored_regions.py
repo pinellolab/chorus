@@ -233,12 +233,46 @@ def test_rna_oracles_scope_the_mask_per_gene(oracle):
     from pathlib import Path
 
     src = Path(f"scripts/build_backgrounds_{oracle}.py").read_text()
-    assert "build_gene_exon_index()" in src
-    assert "exon_bins_for_gene(" in src
-    assert "genes_overlapping(" in src
+    assert "exon_bins_for_gene(" in src, f"{oracle} must score per gene"
+    # either per-gene index is acceptable here; the selection RULE is asserted
+    # separately per oracle below
+    assert ("build_transcript_exon_index()" in src
+            or "build_gene_exon_index()" in src), f"{oracle} needs a per-gene index"
     # the chromosome-pooled helpers must be gone, not merely unused
     assert "def load_exon_index" not in src
     assert "def exon_bins_for_window" not in src
+
+
+def test_alphagenome_uses_the_reference_gene_selection_rule():
+    """AlphaGenome selects genes by TSS-in-window, so chorus's builder must too.
+
+    Verified against the shipped implementation: gene_mask_extractor.py:326 selects
+    transcripts via a TSS _PositionExtractor, and :369 ORs the exon masks of only
+    those transcripts. A gene-body-overlap rule includes genes whose TSS lies
+    outside the window, which their scorer would score as absent.
+    """
+    from pathlib import Path
+
+    src = Path("scripts/build_backgrounds_alphagenome.py").read_text()
+    assert "genes_with_tss_in_window(" in src
+    assert "build_transcript_exon_index()" in src
+    code = "\n".join(l for l in src.splitlines() if not l.lstrip().startswith("#"))
+    assert "genes_overlapping(" not in code, "alphagenome must not use gene-body overlap"
+
+
+def test_borzoi_still_uses_overlap_and_that_is_recorded():
+    """Borzoi is deliberately NOT switched, and this pins the fact.
+
+    The TSS-in-window rule is AlphaGenome's, established from its own code. Borzoi
+    is a different model whose reference convention (Baskerville) has NOT been
+    verified here, and its background is already rebuilt under overlap. Switching it
+    on the assumption that one model's convention transfers to another would be the
+    same kind of guess this whole sequence has been removing.
+    """
+    from pathlib import Path
+
+    src = Path("scripts/build_backgrounds_borzoi.py").read_text()
+    assert "genes_overlapping(" in src
 
 
 def test_enformer_really_has_no_rna_layer():

@@ -1078,3 +1078,96 @@ def sample_gene_anchored_positions(
 
     rng.shuffle(out)
     return out
+
+
+def build_transcript_exon_index(
+    annotation: str = 'gencode_v48_basic',
+    gene_types: Optional[set] = frozenset({'protein_coding'}),
+) -> dict:
+    """Per-gene, per-**transcript** exon spans plus each transcript's TSS.
+
+    Needed because AlphaGenome selects genes by **TSS-in-window**, not by gene-body
+    overlap, and then unions the exons of *only those transcripts*
+    (``gene_mask_extractor.py:326, 357-371``). A gene whose body overlaps the
+    window but whose TSS lies outside contributes **nothing** under that rule,
+    where a gene-body-overlap rule contributes all of its exons.
+
+    TSS is strand-aware — ``Start`` for ``+``, ``End`` for ``-``
+    (``alphagenome/data/gene_annotation.py:94``). Getting that backwards anchors on
+    transcript 3' ends, and the gene counts would still look right.
+
+    ``gene_types`` defaults to protein-coding only, which is a **deliberate
+    divergence**: AlphaGenome applies no gene-type filter at all, but chorus's
+    query does (``variant_report.py:825``), and a null built over lncRNAs and
+    pseudogenes would be a different population from the numerator — #144 in the
+    other direction. Pass ``None`` for no filter. The choice is recorded in
+    provenance rather than left implicit.
+
+    Returns ``{chrom: [(gene_start, gene_end, gene_name, [(tss, [(es, ee), ...]), ...]), ...]}``.
+    """
+    manager = get_annotation_manager()
+    gtf_path = manager.get_annotation_path(annotation)
+    if not gtf_path:
+        raise ValueError(f"Could not find annotation: {annotation}")
+
+    exons = manager._get_exons_df(gtf_path)
+    if gene_types is not None:
+        genes = manager._get_genes_df(gtf_path)
+        keep = set(genes[genes['gene_type'].isin(gene_types)]['gene_name'])
+        exons = exons[exons['gene_name'].isin(keep)]
+
+    # exon rows -> per-transcript spans
+    per_tx: dict = {}
+    for row in exons.itertuples():
+        entry = per_tx.get(row.transcript_id)
+        if entry is None:
+            per_tx[row.transcript_id] = entry = [
+                str(row.chrom), str(row.strand), str(row.gene_name), [],
+            ]
+        entry[3].append((int(row.start), int(row.end)))
+
+    by_gene: dict = {}
+    for chrom, strand, gene_name, spans in per_tx.values():
+        spans.sort()
+        # A transcript's TSS is its outermost exon boundary on the 5' side.
+        tss = spans[0][0] if strand == '+' else spans[-1][1]
+        by_gene.setdefault((chrom, gene_name), []).append((tss, spans))
+
+    index: dict = {}
+    for (chrom, gene_name), transcripts in by_gene.items():
+        transcripts.sort(key=lambda t: t[0])
+        starts = [s for _tss, spans in transcripts for s, _e in spans]
+        ends = [e for _tss, spans in transcripts for _s, e in spans]
+        index.setdefault(chrom, []).append(
+            (min(starts), max(ends), gene_name, transcripts)
+        )
+    for chrom in index:
+        index[chrom].sort(key=lambda g: g[0])
+    return index
+
+
+def genes_with_tss_in_window(index: dict, chrom: str, start: int, end: int) -> list:
+    """``[(gene_name, merged_exon_spans), ...]`` for AlphaGenome's selection rule.
+
+    A gene is included iff at least one of its transcripts has its TSS in
+    ``[start, end)`` — semi-open, matching ``_PositionExtractor``. Its mask is the
+    union of the exons of **only** those transcripts, which is what
+    ``gene_mask |= exon_mask`` builds.
+    """
+    out = []
+    for _g_start, _g_end, gene_name, transcripts in index.get(chrom, []):
+        spans: list = []
+        for tss, tx_spans in transcripts:
+            if start <= tss < end:
+                spans.extend(tx_spans)
+        if not spans:
+            continue
+        spans.sort()
+        merged = [list(spans[0])]
+        for s, e in spans[1:]:
+            if s <= merged[-1][1]:
+                merged[-1][1] = max(merged[-1][1], e)
+            else:
+                merged.append([s, e])
+        out.append((gene_name, [(int(s), int(e)) for s, e in merged]))
+    return out

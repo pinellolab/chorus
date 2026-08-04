@@ -746,7 +746,7 @@ the Python API. See `chorus/analysis/analysis_request.py`.
 - Scalar output per cell type; no per-bin tracks
 
 ### AlphaGenome
-- **1 Mb input / 1 bp resolution / 5,731 tracks** — the most comprehensive oracle
+- **1 Mb input / 1 bp resolution / 5,168 tracks** — the most comprehensive oracle
 - Requires HuggingFace gated-model access (see main README)
 - Recommended default for multi-layer variant analysis
 
