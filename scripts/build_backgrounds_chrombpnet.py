@@ -27,6 +27,7 @@ import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '
 
 from chorus.analysis.background_sampling import (  # noqa: E402
     ReservoirSampler,
+    StagedSamples,
     compute_effect as _shared_compute_effect,
     one_hot_encode,
 )
@@ -530,6 +531,11 @@ def build_all_models(do_variants: bool, do_baselines: bool):
             for i in range(0, len(ref_seqs), args.batch_size):
                 ref_batch = ref_seqs[i:i + args.batch_size]
                 alt_batch = alt_seqs[i:i + args.batch_size]
+                # Whole batch, or none of it (#123). A throw part-way through the
+                # strand loop used to commit the variants already scored, so this
+                # model's count drifted from its neighbours' by however far the
+                # batch got.
+                staged = StagedSamples()
                 try:
                     ref_profiles = predict_profiles_batch(model, ref_batch)
                     alt_profiles = predict_profiles_batch(model, alt_batch)
@@ -541,9 +547,11 @@ def build_all_models(do_variants: bool, do_baselines: bool):
                             ref_val = score_window_sum(rp[:, strand])
                             alt_val = score_window_sum(ap[:, strand])
                             score = abs(compute_effect(ref_val, alt_val))
-                            effect_reservoir.add(model_idx, score)
+                            staged.add(model_idx, score)
                 except Exception as exc:
                     logger.warning("Variant batch failed: %s", str(exc)[:100])
+                else:
+                    staged.commit(effect_reservoir)
 
             logger.info("  Variants done in %.1f min, %s effect samples for this model",
                         (time.time() - t0) / 60,
@@ -560,6 +568,18 @@ def build_all_models(do_variants: bool, do_baselines: bool):
 
             for i in range(0, len(base_seqs), args.batch_size):
                 batch = base_seqs[i:i + args.batch_size]
+                # The worse of the two chrombpnet sites: it writes to TWO
+                # reservoirs inside one loop, so a throw between the summary add
+                # and the perbin add left a summary sample with no matching perbin
+                # sample for the same position (#123). Staging makes the pair
+                # atomic as well as making the batch atomic.
+                #
+                # rng_bins is still drawn inside the try, so a failed batch
+                # consumes randomness a successful one would not. That is
+                # deliberate and unchanged: moving the draw would alter which bins
+                # every later position samples, shifting the shipped perbin CDF for
+                # a reason unrelated to this fix.
+                staged = StagedSamples()
                 try:
                     profiles = predict_profiles_batch(model, batch)
                     for prof in profiles:
@@ -571,11 +591,14 @@ def build_all_models(do_variants: bool, do_baselines: bool):
                             p = prof[:, strand]
                             # Summary: window sum
                             signal = score_window_sum(p)
-                            summary_reservoir.add(model_idx, signal)
+                            staged.add(model_idx, signal, reservoir=0)
                             # Perbin: random bins from full output
-                            perbin_reservoir.add_batch(model_idx, p[bin_sample].astype(np.float64))
+                            staged.add_batch(model_idx, p[bin_sample].astype(np.float64),
+                                             reservoir=1)
                 except Exception as exc:
                     logger.warning("Baseline batch failed: %s", str(exc)[:100])
+                else:
+                    staged.commit(summary_reservoir, perbin_reservoir)
 
             logger.info("  Baselines done in %.1f min, %s summary + %s perbin samples for this model",
                         (time.time() - t0) / 60,
