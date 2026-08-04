@@ -5,7 +5,7 @@
 - **Tool**: `analyze_region_swap`
 - **Oracle**: alphagenome
 - **Tracks requested**: 4 K562 tracks
-- **Generated**: 2026-08-01 03:23 UTC
+- **Generated**: 2026-08-04 05:07 UTC
 
 ## Region Swap Analysis Report
 
@@ -16,35 +16,35 @@
 **Modification**: Replaced 1,000 bp region (chr1:109,274,501-109,275,500) with a 630 bp custom sequence
 **Modified region**: chr1:109,274,501-109,275,500 (1,000 bp)
 
-**Summary**: TSS activity (CAGE/PRO-CAP): very strong decrease (-8.06, CAGE:K562); Chromatin accessibility (DNASE/ATAC): very strong closing (-3.30, DNASE:K562); Histone modifications (ChIP-Histone): very strong mark loss (-1.35, CHIP:H3K27ac:K562).
+**Summary**: TSS activity (CAGE/PRO-CAP): very strong decrease (-7.96, CAGE:K562); Chromatin accessibility (DNASE/ATAC): very strong closing (-3.30, DNASE:K562); Histone modifications (ChIP-Histone): very strong mark loss (-1.48, CHIP:H3K27ac:K562).
 
 #### Chromatin accessibility (DNASE/ATAC)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| DNASE:K562 | 218 | 21.2 | -3.300 | ≥99th | 0.901 | Very strong closing |
+| DNASE:K562 | 218 | 21.2 | -3.299 | ≥99th | 0.900 | Very strong closing |
 
 #### Histone modifications (ChIP-Histone)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:H3K27ac:K562 | 4.9e+03 | 1.93e+03 | -1.347 | ≥99th | 0.986 | Very strong mark loss |
-| CHIP:H3K4me3:K562 | 2.12e+03 | 1.05e+03 | -1.014 | ≥99th | 0.895 | Very strong mark loss |
+| CHIP:H3K27ac:K562 | 4.75e+03 | 1.7e+03 | -1.477 | ≥99th | 0.895 | Very strong mark loss |
+| CHIP:H3K4me3:K562 | 2.03e+03 | 955 | -1.091 | ≥99th | 0.847 | Very strong mark loss |
 
 #### TSS activity (CAGE/PRO-CAP)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CAGE:K562 — GSTM2 TSS | 1.05e+03 | 2.95 | -8.057 | ≥99th | 0.971 | Very strong decrease |
-| CAGE:K562 — GNAI3 TSS | 1.09e+04 | 63.3 | -7.400 | ≥99th | 0.996 | Very strong decrease |
-| CAGE:K562 — GSTM1 TSS | 166 | 0.741 | -6.585 | ≥99th | 0.956 | Very strong decrease |
-| CAGE:K562 — CYB561D1 TSS | 898 | 11.3 | -6.197 | ≥99th | 0.970 | Very strong decrease |
-| CAGE:K562 — ATXN7L2 TSS | 1.28e+03 | 45 | -4.800 | ≥99th | 0.973 | Very strong decrease |
-| CAGE:K562 — AMPD2 TSS | 1.32e+03 | 47.4 | -4.773 | ≥99th | 0.973 | Very strong decrease |
-| CAGE:K562 — SYPL2 TSS | 32.4 | 2.97 | -3.071 | ≥99th | 0.930 | Very strong decrease |
-| CAGE:K562 — GSTM5 TSS | 10.3 | 0.369 | -3.048 | ≥99th | 0.896 | Very strong decrease |
-| CAGE:K562 — GSTM3 TSS | 9.62 | 0.901 | -2.482 | ≥99th | 0.893 | Very strong decrease |
-| CAGE:K562 — GSTM4 TSS | 3.04e+03 | 697 | -2.122 | ≥99th | 0.982 | Very strong decrease |
+| CAGE:K562 — GSTM2 TSS | 1.05e+03 | 3.23 | -7.957 | ≥99th | 0.971 | Very strong decrease |
+| CAGE:K562 — GNAI3 TSS | 1.09e+04 | 63.3 | -7.401 | ≥99th | 0.996 | Very strong decrease |
+| CAGE:K562 — GSTM1 TSS | 165 | 0.742 | -6.576 | ≥99th | 0.956 | Very strong decrease |
+| CAGE:K562 — CYB561D1 TSS | 896 | 11.3 | -6.193 | ≥99th | 0.970 | Very strong decrease |
+| CAGE:K562 — ATXN7L2 TSS | 1.28e+03 | 45.1 | -4.792 | ≥99th | 0.972 | Very strong decrease |
+| CAGE:K562 — AMPD2 TSS | 1.32e+03 | 47.4 | -4.770 | ≥99th | 0.973 | Very strong decrease |
+| CAGE:K562 — SYPL2 TSS | 32.3 | 2.98 | -3.063 | ≥99th | 0.930 | Very strong decrease |
+| CAGE:K562 — GSTM5 TSS | 10.3 | 0.367 | -3.043 | ≥99th | 0.895 | Very strong decrease |
+| CAGE:K562 — GSTM3 TSS | 9.63 | 0.902 | -2.482 | ≥99th | 0.893 | Very strong decrease |
+| CAGE:K562 — GSTM4 TSS | 3.04e+03 | 697 | -2.121 | ≥99th | 0.982 | Very strong decrease |
 | _…showing top 10 of 29 — see `example_output.json` for the full set_ | | | | | | |
 
 ---
