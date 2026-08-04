@@ -42,7 +42,7 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
 INPUT_LENGTH = 1_048_576
-OUT = Path("/data/chorus_data/cage_tss_null_probe.json")
+OUT = Path(os.environ.get("CAGE_PROBE_OUT", "/data/chorus_data/cage_tss_null_probe.json"))
 LIVER = ("UBERON:0002107", "CL:0000182")
 
 
@@ -51,6 +51,13 @@ def main() -> int:
     ap.add_argument("--gpu", default="4")
     ap.add_argument("--n", type=int, default=300)
     ap.add_argument("--window", type=int, default=501)
+    ap.add_argument("--offset-like-eqtl", metavar="TISSUE", default=None,
+                    help="Instead of placing the variant exactly AT the TSS, draw "
+                         "its distance from the empirical tss_distance distribution "
+                         "of this tissue's significant eQTLs. Placing it at the peak "
+                         "maximum makes the null systematically more perturbing than "
+                         "any real variant population — measured, p50 0.323 vs the "
+                         "gene-anchored null's 0.659.")
     args = ap.parse_args()
     os.environ.setdefault("CUDA_VISIBLE_DEVICES", str(args.gpu))
 
@@ -96,8 +103,31 @@ def main() -> int:
     ref_fa = pysam.FastaFile(str(REPO / "genomes" / "hg38.fa"))
     rng = random.Random(1)
 
+    # The offset pool. Empty means "variant exactly at the TSS".
+    offsets: list[int] = []
+    if args.offset_like_eqtl:
+        import gzip
+        path = (Path("/data/chorus_data/eqtl/GTEx_Analysis_v8_eQTL")
+                / f"{args.offset_like_eqtl}.v8.signif_variant_gene_pairs.txt.gz")
+        with gzip.open(path, "rt") as fh:
+            idx = {n: i for i, n in enumerate(fh.readline().rstrip("\n").split("\t"))}
+            for line in fh:
+                f = line.rstrip("\n").split("\t")
+                try:
+                    d = int(f[idx["tss_distance"]])
+                except (ValueError, KeyError):
+                    continue
+                if abs(d) <= 10_000:      # the range the TSS strata cover
+                    offsets.append(d)
+        print(f"[cage] {len(offsets)} eQTL tss_distances within 10 kb; "
+              f"median |d| {np.median(np.abs(offsets)):.0f} bp", flush=True)
+        if not offsets:
+            raise SystemExit("no eQTL offsets loaded")
+
     null: dict[str, list[float]] = {ident: [] for _, _, ident in cage}
     for k, (chrom, pos) in enumerate(tss):
+        if offsets:
+            pos = pos + rng.choice(offsets)
         half = INPUT_LENGTH // 2
         start, end = pos - half, pos + half
         seq_ref = ref_fa.fetch(chrom, start, end).upper()
