@@ -125,7 +125,24 @@ def test_a_report_is_bit_exact_across_two_processes():
     script = REPO / "scripts" / "gate_end_to_end_determinism.py"
     if not script.exists():
         pytest.skip("gate script absent")
-    proc = subprocess.run([sys.executable, str(script), "--gpu", "0"],
+
+    # AlphaGenome needs JAX, which lives only in the chorus-alphagenome env — the
+    # oracle envs are deliberately isolated (see CLAUDE.md). Running this under
+    # sys.executable from the base env fails with ModuleNotFoundError: jax, so
+    # locate the sibling interpreter rather than let the gate skip itself away.
+    interpreter = Path(sys.prefix).parent / "chorus-alphagenome" / "bin" / "python"
+    if not interpreter.exists():
+        try:
+            import jax  # noqa: F401
+        except ImportError:
+            pytest.skip(
+                "needs the chorus-alphagenome env; run manually with "
+                "`mamba run -n chorus-alphagenome python "
+                "scripts/gate_end_to_end_determinism.py --gpu 0`"
+            )
+        interpreter = Path(sys.executable)
+
+    proc = subprocess.run([str(interpreter), str(script), "--gpu", "0"],
                           cwd=str(REPO), capture_output=True, text=True,
                           timeout=3600)
     assert "PASS" in proc.stdout, proc.stdout[-4000:] + proc.stderr[-2000:]
