@@ -164,8 +164,19 @@ def test_builder_imports_the_shared_classifier_and_has_no_local_copy():
     existed elsewhere, which is exactly how #122 became possible.
     """
     src = Path("scripts/build_backgrounds_alphagenome.py").read_text()
-    assert "from chorus.analysis.scorers import classify_chip_layer" in src, \
-        "builder must import the shared classifier"
+    # Assert the NAME is imported from that module, not an exact import line. The
+    # line-literal version broke the moment a second name was added to the same
+    # import (canonical_layer), even though the property held -- a guard that fails
+    # on formatting trains people to edit the guard.
+    import ast
+    imported = {
+        alias.asname or alias.name
+        for node in ast.walk(ast.parse(src))
+        if isinstance(node, ast.ImportFrom) and node.module == "chorus.analysis.scorers"
+        for alias in node.names
+    }
+    assert "classify_chip_layer" in imported, \
+        f"builder must import the shared classifier; imports {sorted(imported)}"
     assert "def classify_chip_layer" not in src, \
         "builder still defines its own classify_chip_layer"
     assert "HISTONE_PATTERNS = frozenset" not in src, \

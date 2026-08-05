@@ -30,7 +30,7 @@
             "alt_value": 148.37360382080078,
             "raw_score": 3.506696590541169,
             "description": "CHIP:CEBPB:K562",
-            "quantile_score": 0.9997,
+            "quantile_score": 0.9999,
             "ref_signal_percentile": 0.9194,
             "low_effective_bins": true
           },
@@ -43,7 +43,7 @@
             "alt_value": 140.21848392486572,
             "raw_score": 3.6321021933965083,
             "description": "CHIP:CEBPB:IMR-90",
-            "quantile_score": 0.9996,
+            "quantile_score": 1.0,
             "ref_signal_percentile": 0.9085,
             "low_effective_bins": true
           },
@@ -56,7 +56,7 @@
             "alt_value": 145.67791366577148,
             "raw_score": 3.197583347644569,
             "description": "CHIP:CEBPB:HepG2",
-            "quantile_score": 0.9995,
+            "quantile_score": 0.9999,
             "ref_signal_percentile": 0.9549,
             "low_effective_bins": true
           },
@@ -69,7 +69,7 @@
             "alt_value": 166.91266918182373,
             "raw_score": 2.56820662163026,
             "description": "CHIP:3xFLAG-CEBPA:HepG2 genetically modified using CRISPR",
-            "quantile_score": 0.9994,
+            "quantile_score": 0.9998,
             "ref_signal_percentile": 0.9736,
             "low_effective_bins": true
           },
@@ -113,16 +113,16 @@
             "low_effective_bins": true
           },
           {
-            "assay_id": "ENCFF988PMK",
+            "assay_id": "ENCFF003HJB",
             "assay_type": "CHIP",
-            "cell_type": "K562 genetically modified using stable transfection",
+            "cell_type": "HepG2",
             "layer": "tf_binding",
-            "ref_value": 7.610668897628784,
-            "alt_value": 85.16093635559082,
-            "raw_score": 3.3228367093474245,
-            "description": "CHIP:eGFP-CEBPB:K562 genetically modified using stable transfection",
-            "quantile_score": 0.9998,
-            "ref_signal_percentile": 0.8981,
+            "ref_value": 15.491913318634033,
+            "alt_value": 107.8269362449646,
+            "raw_score": 2.7222050000553697,
+            "description": "CHIP:CEBPB:HepG2",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 0.9317,
             "low_effective_bins": true
           },
           {
@@ -134,21 +134,21 @@
             "alt_value": 117.6994571685791,
             "raw_score": 2.4589400905485648,
             "description": "CHIP:3xFLAG-CEBPG:HepG2 genetically modified using CRISPR",
-            "quantile_score": 0.9996,
+            "quantile_score": 0.9999,
             "ref_signal_percentile": 0.9507,
             "low_effective_bins": true
           },
           {
-            "assay_id": "ENCFF003HJB",
+            "assay_id": "ENCFF988PMK",
             "assay_type": "CHIP",
-            "cell_type": "HepG2",
+            "cell_type": "K562 genetically modified using stable transfection",
             "layer": "tf_binding",
-            "ref_value": 15.491913318634033,
-            "alt_value": 107.8269362449646,
-            "raw_score": 2.7222050000553697,
-            "description": "CHIP:CEBPB:HepG2",
-            "quantile_score": 0.9996,
-            "ref_signal_percentile": 0.9317,
+            "ref_value": 7.610668897628784,
+            "alt_value": 85.16093635559082,
+            "raw_score": 3.3228367093474245,
+            "description": "CHIP:eGFP-CEBPB:K562 genetically modified using stable transfection",
+            "quantile_score": 1.0,
+            "ref_signal_percentile": 0.8981,
             "low_effective_bins": true
           },
           {
@@ -160,7 +160,7 @@
             "alt_value": 90.42444849014282,
             "raw_score": 2.7856072757083945,
             "description": "CHIP:CEBPB:A549",
-            "quantile_score": 0.9996,
+            "quantile_score": 1.0,
             "ref_signal_percentile": 0.9552,
             "low_effective_bins": true
           },
@@ -173,7 +173,7 @@
             "alt_value": 54.774709701538086,
             "raw_score": 2.8273895382540264,
             "description": "CHIP:eGFP-CEBPG:K562 genetically modified using stable transfection",
-            "quantile_score": 0.9998,
+            "quantile_score": 0.9999,
             "ref_signal_percentile": 0.8693,
             "low_effective_bins": true
           }
@@ -188,7 +188,7 @@
             "alt_value": 343.9386978149414,
             "raw_score": 1.1179033259405198,
             "description": "CHIP:H3K27ac:right lobe of liver female adult (53 years)",
-            "quantile_score": 0.9995,
+            "quantile_score": 0.9989,
             "ref_signal_percentile": 0.8736
           },
           {
@@ -200,7 +200,7 @@
             "alt_value": 259.22487449645996,
             "raw_score": 1.4774754240510561,
             "description": "CHIP:H3K27ac:liver male adult (31 year)",
-            "quantile_score": 0.9996,
+            "quantile_score": 0.9995,
             "ref_signal_percentile": 0.8595
           },
           {
@@ -212,7 +212,7 @@
             "alt_value": 331.44230937957764,
             "raw_score": 1.0912986916642151,
             "description": "CHIP:H3K4me1:CD14-positive monocyte female",
-            "quantile_score": 0.9982,
+            "quantile_score": 0.9967,
             "ref_signal_percentile": 0.8967
           },
           {
@@ -236,20 +236,8 @@
             "alt_value": 274.48541927337646,
             "raw_score": 1.1894678754769317,
             "description": "CHIP:H3K4me1:CD14-positive monocyte male adult (21 year)",
-            "quantile_score": 0.9986,
+            "quantile_score": 0.997,
             "ref_signal_percentile": 0.8906
-          },
-          {
-            "assay_id": "ENCFF194XTD",
-            "assay_type": "CHIP",
-            "cell_type": "HeLa-S3",
-            "layer": "histone_marks",
-            "ref_value": 503.4661512374878,
-            "alt_value": 658.7103137969971,
-            "raw_score": 0.387075189573046,
-            "description": "CHIP:H3K27ac:HeLa-S3",
-            "quantile_score": 0.998,
-            "ref_signal_percentile": 0.9413
           },
           {
             "assay_id": "ENCFF891SNS",
@@ -260,8 +248,20 @@
             "alt_value": 181.5419397354126,
             "raw_score": 1.4168374301132929,
             "description": "CHIP:H3K27ac:heart left ventricle male adult (32 years)",
-            "quantile_score": 0.9996,
+            "quantile_score": 0.9995,
             "ref_signal_percentile": 0.8727
+          },
+          {
+            "assay_id": "ENCFF194XTD",
+            "assay_type": "CHIP",
+            "cell_type": "HeLa-S3",
+            "layer": "histone_marks",
+            "ref_value": 503.4661512374878,
+            "alt_value": 658.7103137969971,
+            "raw_score": 0.387075189573046,
+            "description": "CHIP:H3K27ac:HeLa-S3",
+            "quantile_score": 0.9927,
+            "ref_signal_percentile": 0.9413
           },
           {
             "assay_id": "ENCFF208VLV",
@@ -272,7 +272,7 @@
             "alt_value": 297.14069080352783,
             "raw_score": 0.7630034112652828,
             "description": "CHIP:H3K27ac:gastrocnemius medialis female adult (53 years)",
-            "quantile_score": 0.9988,
+            "quantile_score": 0.9989,
             "ref_signal_percentile": 0.8937
           },
           {
@@ -284,20 +284,8 @@
             "alt_value": 320.491548538208,
             "raw_score": 0.7018912227328912,
             "description": "CHIP:H3K27ac:gastrocnemius medialis male adult (37 years)",
-            "quantile_score": 0.9985,
+            "quantile_score": 0.9981,
             "ref_signal_percentile": 0.8935
-          },
-          {
-            "assay_id": "ENCFF360XRD",
-            "assay_type": "CHIP",
-            "cell_type": "gastrocnemius medialis male adult (54 years)",
-            "layer": "histone_marks",
-            "ref_value": 179.19516372680664,
-            "alt_value": 298.00146484375,
-            "raw_score": 0.7305922613181395,
-            "description": "CHIP:H3K27ac:gastrocnemius medialis male adult (54 years)",
-            "quantile_score": 0.9986,
-            "ref_signal_percentile": 0.8896
           },
           {
             "assay_id": "ENCFF096AVB",
@@ -308,8 +296,20 @@
             "alt_value": 263.2240400314331,
             "raw_score": 0.833500862317889,
             "description": "CHIP:H3K27ac:skeletal muscle tissue female adult (72 years)",
-            "quantile_score": 0.9986,
+            "quantile_score": 0.9985,
             "ref_signal_percentile": 0.8813
+          },
+          {
+            "assay_id": "ENCFF360XRD",
+            "assay_type": "CHIP",
+            "cell_type": "gastrocnemius medialis male adult (54 years)",
+            "layer": "histone_marks",
+            "ref_value": 179.19516372680664,
+            "alt_value": 298.00146484375,
+            "raw_score": 0.7305922613181395,
+            "description": "CHIP:H3K27ac:gastrocnemius medialis male adult (54 years)",
+            "quantile_score": 0.9983,
+            "ref_signal_percentile": 0.8896
           },
           {
             "assay_id": "ENCFF897XDW",
@@ -320,7 +320,7 @@
             "alt_value": 94.52730429172516,
             "raw_score": 1.8855866414878018,
             "description": "CHIP:H3K4me1:neutrophil male",
-            "quantile_score": 0.9994,
+            "quantile_score": 0.9999,
             "ref_signal_percentile": 0.7253
           }
         ],
@@ -334,7 +334,7 @@
             "alt_value": 37.330787658691406,
             "raw_score": 1.4424098639476457,
             "description": "ATAC:BM1137-GMP3-high-ATAC-2 / Bone Marrow CD34+ / GMP-C",
-            "quantile_score": 0.998,
+            "quantile_score": 0.996,
             "ref_signal_percentile": 0.8741,
             "low_effective_bins": true
           },
@@ -347,7 +347,7 @@
             "alt_value": 35.188276290893555,
             "raw_score": 1.5122538969567731,
             "description": "ATAC:BM1137-GMP2-mid-ATAC-1 / Bone Marrow CD34+ / GMP-B",
-            "quantile_score": 0.9987,
+            "quantile_score": 0.9972,
             "ref_signal_percentile": 0.8552,
             "low_effective_bins": true
           },
@@ -360,7 +360,7 @@
             "alt_value": 14.313192129135132,
             "raw_score": 2.1930035682619855,
             "description": "DNASE:amniotic epithelial cell",
-            "quantile_score": 1.0,
+            "quantile_score": 0.9998,
             "ref_signal_percentile": 0.8978,
             "low_effective_bins": true
           },
@@ -373,7 +373,7 @@
             "alt_value": 18.864001274108887,
             "raw_score": 1.4460286279889443,
             "description": "ATAC:BM1137-GMP1-low-ATAC-2 / Bone Marrow CD34+ / GMP-A",
-            "quantile_score": 0.9989,
+            "quantile_score": 0.9978,
             "ref_signal_percentile": 0.8483,
             "low_effective_bins": true
           },
@@ -386,7 +386,7 @@
             "alt_value": 19.13668727874756,
             "raw_score": 1.3102094111980203,
             "description": "ATAC:BM0106-UNK-ATAC-2 / Bone Marrow CD34+ / UNK",
-            "quantile_score": 0.9992,
+            "quantile_score": 0.9984,
             "ref_signal_percentile": 0.8476,
             "low_effective_bins": true
           },
@@ -399,7 +399,7 @@
             "alt_value": 11.004332065582275,
             "raw_score": 1.9971542705876415,
             "description": "DNASE:fibroblast of villous mesenchyme",
-            "quantile_score": 1.0,
+            "quantile_score": 0.9998,
             "ref_signal_percentile": 0.8829,
             "low_effective_bins": true
           },
@@ -412,7 +412,7 @@
             "alt_value": 11.822671294212341,
             "raw_score": 1.8427080165688252,
             "description": "DNASE:WI38 genetically modified using stable transfection originated from WI38",
-            "quantile_score": 1.0,
+            "quantile_score": 0.9992,
             "ref_signal_percentile": 0.9037,
             "low_effective_bins": true
           },
@@ -430,16 +430,16 @@
             "low_effective_bins": true
           },
           {
-            "assay_id": "ENCFF830FDL",
-            "assay_type": "DNASE",
-            "cell_type": "HeLa-S3 G1b phase",
+            "assay_id": "GSM2543100",
+            "assay_type": "ATAC",
+            "cell_type": "BM1214-Day0-UNK-A / Bone Marrow CD34+ / UNK",
             "layer": "chromatin_accessibility",
-            "ref_value": 8.05525290966034,
-            "alt_value": 16.098406314849854,
-            "raw_score": 0.9170350218505233,
-            "description": "DNASE:HeLa-S3 G1b phase",
-            "quantile_score": 0.9993,
-            "ref_signal_percentile": 0.9652,
+            "ref_value": 8.117249250411987,
+            "alt_value": 17.585235118865967,
+            "raw_score": 1.027486417508486,
+            "description": "ATAC:BM1214-Day0-UNK-A / Bone Marrow CD34+ / UNK",
+            "quantile_score": 0.9974,
+            "ref_signal_percentile": 0.8196,
             "low_effective_bins": true
           },
           {
@@ -451,34 +451,34 @@
             "alt_value": 7.725319921970367,
             "raw_score": 2.2470422572194217,
             "description": "DNASE:fibroblast of lung",
-            "quantile_score": 1.0,
+            "quantile_score": 0.9998,
             "ref_signal_percentile": 0.8571,
             "low_effective_bins": true
           },
           {
-            "assay_id": "GSM2543100",
-            "assay_type": "ATAC",
-            "cell_type": "BM1214-Day0-UNK-A / Bone Marrow CD34+ / UNK",
+            "assay_id": "ENCFF113YFF",
+            "assay_type": "DNASE",
+            "cell_type": "foreskin fibroblast male newborn",
             "layer": "chromatin_accessibility",
-            "ref_value": 8.117249250411987,
-            "alt_value": 17.585235118865967,
-            "raw_score": 1.027486417508486,
-            "description": "ATAC:BM1214-Day0-UNK-A / Bone Marrow CD34+ / UNK",
-            "quantile_score": 0.9988,
-            "ref_signal_percentile": 0.8196,
+            "ref_value": 1.8408353626728058,
+            "alt_value": 9.278371691703796,
+            "raw_score": 1.8552246003302004,
+            "description": "DNASE:foreskin fibroblast male newborn",
+            "quantile_score": 0.9989,
+            "ref_signal_percentile": 0.8696,
             "low_effective_bins": true
           },
           {
-            "assay_id": "ENCFF897EZG",
+            "assay_id": "ENCFF724HAH",
             "assay_type": "DNASE",
-            "cell_type": "NB4",
+            "cell_type": "CD14-positive monocyte male adult (21 year)",
             "layer": "chromatin_accessibility",
-            "ref_value": 1.7982392013072968,
-            "alt_value": 9.09399938583374,
-            "raw_score": 1.850906705477873,
-            "description": "DNASE:NB4",
-            "quantile_score": 1.0,
-            "ref_signal_percentile": 0.8756,
+            "ref_value": 0.9018608927726746,
+            "alt_value": 7.754608929157257,
+            "raw_score": 2.202631007048029,
+            "description": "DNASE:CD14-positive monocyte male adult (21 year)",
+            "quantile_score": 0.9998,
+            "ref_signal_percentile": 0.86,
             "low_effective_bins": true
           }
         ],
@@ -492,7 +492,7 @@
             "alt_value": 25.609206676483154,
             "raw_score": 0.4520130036719991,
             "description": "CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_",
-            "quantile_score": 0.9903,
+            "quantile_score": 0.9872,
             "ref_signal_percentile": 0.9157,
             "region_label": "variant site"
           },
@@ -505,7 +505,7 @@
             "alt_value": 412.4011468887329,
             "raw_score": 0.01760360072037789,
             "description": "CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_",
-            "quantile_score": 0.6089,
+            "quantile_score": 0.6335,
             "ref_signal_percentile": 0.9683,
             "region_label": "PSRC1 TSS"
           },
@@ -518,7 +518,7 @@
             "alt_value": 162.1453225016594,
             "raw_score": 0.12065560870022055,
             "description": "CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_",
-            "quantile_score": 0.9361,
+            "quantile_score": 0.9291,
             "ref_signal_percentile": 0.9423,
             "region_label": "CELSR2 TSS"
           },
@@ -531,7 +531,7 @@
             "alt_value": 51.00492564588785,
             "raw_score": 0.34018328653479174,
             "description": "CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_",
-            "quantile_score": 0.9851,
+            "quantile_score": 0.9813,
             "ref_signal_percentile": 0.9257,
             "region_label": "MYBPHL TSS"
           },
@@ -544,7 +544,7 @@
             "alt_value": 48.45329666137695,
             "raw_score": 0.21787030387737447,
             "description": "CAGE:locus coeruleus, adult,",
-            "quantile_score": 0.9774,
+            "quantile_score": 0.9741,
             "ref_signal_percentile": 0.9276,
             "region_label": "variant site"
           },
@@ -557,7 +557,7 @@
             "alt_value": 299.20547103881836,
             "raw_score": 0.08632208940469545,
             "description": "CAGE:locus coeruleus, adult,",
-            "quantile_score": 0.909,
+            "quantile_score": 0.9116,
             "ref_signal_percentile": 0.9807,
             "region_label": "PSRC1 TSS"
           },
@@ -570,7 +570,7 @@
             "alt_value": 254.30982100963593,
             "raw_score": 0.005718625225580395,
             "description": "CAGE:locus coeruleus, adult,",
-            "quantile_score": 0.3468,
+            "quantile_score": 0.3654,
             "ref_signal_percentile": 0.9775,
             "region_label": "CELSR2 TSS"
           },
@@ -583,7 +583,7 @@
             "alt_value": 7.185643225908279,
             "raw_score": 0.24831429099219415,
             "description": "CAGE:locus coeruleus, adult,",
-            "quantile_score": 0.9834,
+            "quantile_score": 0.978,
             "ref_signal_percentile": 0.8865,
             "region_label": "MYBPHL TSS"
           },
@@ -596,7 +596,7 @@
             "alt_value": 35.75696849822998,
             "raw_score": 0.237164250675947,
             "description": "CAGE:substantia nigra, adult,",
-            "quantile_score": 0.9838,
+            "quantile_score": 0.9792,
             "ref_signal_percentile": 0.9284,
             "region_label": "variant site"
           },
@@ -609,7 +609,7 @@
             "alt_value": 262.12941312789917,
             "raw_score": 0.09435411629259688,
             "description": "CAGE:substantia nigra, adult,",
-            "quantile_score": 0.9308,
+            "quantile_score": 0.9285,
             "ref_signal_percentile": 0.984,
             "region_label": "PSRC1 TSS"
           },
@@ -622,7 +622,7 @@
             "alt_value": 193.90960988402367,
             "raw_score": 0.03976671741937642,
             "description": "CAGE:substantia nigra, adult,",
-            "quantile_score": 0.8175,
+            "quantile_score": 0.8224,
             "ref_signal_percentile": 0.9753,
             "region_label": "CELSR2 TSS"
           },
@@ -635,7 +635,7 @@
             "alt_value": 8.606996014714241,
             "raw_score": 0.24135566947694365,
             "description": "CAGE:substantia nigra, adult,",
-            "quantile_score": 0.9847,
+            "quantile_score": 0.9795,
             "ref_signal_percentile": 0.9034,
             "region_label": "MYBPHL TSS"
           },
@@ -648,7 +648,7 @@
             "alt_value": 32.32414150238037,
             "raw_score": 0.24293005693509723,
             "description": "CAGE:globus pallidus, adult,",
-            "quantile_score": 0.9885,
+            "quantile_score": 0.9851,
             "ref_signal_percentile": 0.9272,
             "region_label": "variant site"
           },
@@ -661,7 +661,7 @@
             "alt_value": 250.2613501548767,
             "raw_score": 0.08581482919237825,
             "description": "CAGE:globus pallidus, adult,",
-            "quantile_score": 0.9436,
+            "quantile_score": 0.9343,
             "ref_signal_percentile": 0.9847,
             "region_label": "PSRC1 TSS"
           },
@@ -674,7 +674,7 @@
             "alt_value": 188.4575121998787,
             "raw_score": 0.03434750593319937,
             "description": "CAGE:globus pallidus, adult,",
-            "quantile_score": 0.7973,
+            "quantile_score": 0.8087,
             "ref_signal_percentile": 0.9764,
             "region_label": "CELSR2 TSS"
           },
@@ -687,112 +687,8 @@
             "alt_value": 8.263610064983368,
             "raw_score": 0.2064997095871453,
             "description": "CAGE:globus pallidus, adult,",
-            "quantile_score": 0.9857,
+            "quantile_score": 0.9802,
             "ref_signal_percentile": 0.9016,
-            "region_label": "MYBPHL TSS"
-          },
-          {
-            "assay_id": "CNhs10624",
-            "assay_type": "CAGE",
-            "cell_type": "liver",
-            "layer": "tss_activity",
-            "ref_value": 0.47338059917092323,
-            "alt_value": 2.877961829304695,
-            "raw_score": 1.3961684520109618,
-            "description": "CAGE:liver, adult, pool1",
-            "quantile_score": 0.9996,
-            "ref_signal_percentile": 0.8461,
-            "region_label": "variant site"
-          },
-          {
-            "assay_id": "CNhs10624",
-            "assay_type": "CAGE",
-            "cell_type": "liver",
-            "layer": "tss_activity",
-            "ref_value": 8.430865086615086,
-            "alt_value": 11.97496423125267,
-            "raw_score": 0.4602685419540158,
-            "description": "CAGE:liver, adult, pool1",
-            "quantile_score": 0.9939,
-            "ref_signal_percentile": 0.9213,
-            "region_label": "PSRC1 TSS"
-          },
-          {
-            "assay_id": "CNhs10624",
-            "assay_type": "CAGE",
-            "cell_type": "liver",
-            "layer": "tss_activity",
-            "ref_value": 8.642845042049885,
-            "alt_value": 9.584349561482668,
-            "raw_score": 0.1344018446690111,
-            "description": "CAGE:liver, adult, pool1",
-            "quantile_score": 0.9643,
-            "ref_signal_percentile": 0.9217,
-            "region_label": "CELSR2 TSS"
-          },
-          {
-            "assay_id": "CNhs10624",
-            "assay_type": "CAGE",
-            "cell_type": "liver",
-            "layer": "tss_activity",
-            "ref_value": 0.8200139473192394,
-            "alt_value": 1.1082273642532527,
-            "raw_score": 0.21208095822840334,
-            "description": "CAGE:liver, adult, pool1",
-            "quantile_score": 0.981,
-            "ref_signal_percentile": 0.8678,
-            "region_label": "MYBPHL TSS"
-          },
-          {
-            "assay_id": "CNhs12326",
-            "assay_type": "CAGE",
-            "cell_type": "epitheloid carcinoma cell line",
-            "layer": "tss_activity",
-            "ref_value": 11.670851230621338,
-            "alt_value": 14.573498725891113,
-            "raw_score": 0.2975796468747096,
-            "description": "CAGE:epitheloid carcinoma cell line: HelaS3 ENCODE, biol_",
-            "quantile_score": 0.9821,
-            "ref_signal_percentile": 0.9078,
-            "region_label": "variant site"
-          },
-          {
-            "assay_id": "CNhs12326",
-            "assay_type": "CAGE",
-            "cell_type": "epitheloid carcinoma cell line",
-            "layer": "tss_activity",
-            "ref_value": 320.9966492652893,
-            "alt_value": 315.8187189102173,
-            "raw_score": -0.02338809746720135,
-            "description": "CAGE:epitheloid carcinoma cell line: HelaS3 ENCODE, biol_",
-            "quantile_score": 0.6721,
-            "ref_signal_percentile": 0.9613,
-            "region_label": "PSRC1 TSS"
-          },
-          {
-            "assay_id": "CNhs12326",
-            "assay_type": "CAGE",
-            "cell_type": "epitheloid carcinoma cell line",
-            "layer": "tss_activity",
-            "ref_value": 108.73928028345108,
-            "alt_value": 121.40885040163994,
-            "raw_score": 0.15762785235436128,
-            "description": "CAGE:epitheloid carcinoma cell line: HelaS3 ENCODE, biol_",
-            "quantile_score": 0.9574,
-            "ref_signal_percentile": 0.9395,
-            "region_label": "CELSR2 TSS"
-          },
-          {
-            "assay_id": "CNhs12326",
-            "assay_type": "CAGE",
-            "cell_type": "epitheloid carcinoma cell line",
-            "layer": "tss_activity",
-            "ref_value": 0.5795705951750278,
-            "alt_value": 0.5668474808335304,
-            "raw_score": -0.011667663717236366,
-            "description": "CAGE:epitheloid carcinoma cell line: HelaS3 ENCODE, biol_",
-            "quantile_score": 0.5118,
-            "ref_signal_percentile": 0.7389,
             "region_label": "MYBPHL TSS"
           },
           {
@@ -804,7 +700,7 @@
             "alt_value": 32.735304832458496,
             "raw_score": 0.18676614182424806,
             "description": "CAGE:thalamus, adult, , tech_",
-            "quantile_score": 0.9765,
+            "quantile_score": 0.9739,
             "ref_signal_percentile": 0.9342,
             "region_label": "variant site"
           },
@@ -817,7 +713,7 @@
             "alt_value": 170.9333999156952,
             "raw_score": 0.08376552784150514,
             "description": "CAGE:thalamus, adult, , tech_",
-            "quantile_score": 0.9219,
+            "quantile_score": 0.9241,
             "ref_signal_percentile": 0.9829,
             "region_label": "PSRC1 TSS"
           },
@@ -830,7 +726,7 @@
             "alt_value": 163.4161712229252,
             "raw_score": -0.009530902612603198,
             "description": "CAGE:thalamus, adult, , tech_",
-            "quantile_score": 0.5126,
+            "quantile_score": 0.541,
             "ref_signal_percentile": 0.9835,
             "region_label": "CELSR2 TSS"
           },
@@ -843,7 +739,7 @@
             "alt_value": 3.5354019477963448,
             "raw_score": 0.1662186562128764,
             "description": "CAGE:thalamus, adult, , tech_",
-            "quantile_score": 0.9713,
+            "quantile_score": 0.9703,
             "ref_signal_percentile": 0.8824,
             "region_label": "MYBPHL TSS"
           },
@@ -856,7 +752,7 @@
             "alt_value": 31.175838470458984,
             "raw_score": 0.19394725211433936,
             "description": "CAGE:thalamus, adult,",
-            "quantile_score": 0.9754,
+            "quantile_score": 0.9694,
             "ref_signal_percentile": 0.9247,
             "region_label": "variant site"
           },
@@ -869,7 +765,7 @@
             "alt_value": 285.5549302101135,
             "raw_score": 0.07635484688866892,
             "description": "CAGE:thalamus, adult,",
-            "quantile_score": 0.9075,
+            "quantile_score": 0.9053,
             "ref_signal_percentile": 0.9839,
             "region_label": "PSRC1 TSS"
           },
@@ -882,7 +778,7 @@
             "alt_value": 221.5620576441288,
             "raw_score": 0.019921085975534193,
             "description": "CAGE:thalamus, adult,",
-            "quantile_score": 0.681,
+            "quantile_score": 0.6949,
             "ref_signal_percentile": 0.9768,
             "region_label": "CELSR2 TSS"
           },
@@ -895,7 +791,7 @@
             "alt_value": 8.674556508660316,
             "raw_score": 0.2704279453494279,
             "description": "CAGE:thalamus, adult,",
-            "quantile_score": 0.9861,
+            "quantile_score": 0.9813,
             "ref_signal_percentile": 0.9025,
             "region_label": "MYBPHL TSS"
           },
@@ -908,7 +804,7 @@
             "alt_value": 4.240488946437836,
             "raw_score": 1.31039848903064,
             "description": "CAGE:Hepatocyte,",
-            "quantile_score": 0.9995,
+            "quantile_score": 0.9994,
             "ref_signal_percentile": 0.8575,
             "region_label": "variant site"
           },
@@ -921,7 +817,7 @@
             "alt_value": 9.732196778059006,
             "raw_score": 0.4543810215628239,
             "description": "CAGE:Hepatocyte,",
-            "quantile_score": 0.9945,
+            "quantile_score": 0.9939,
             "ref_signal_percentile": 0.9209,
             "region_label": "PSRC1 TSS"
           },
@@ -934,7 +830,7 @@
             "alt_value": 7.961398422718048,
             "raw_score": 0.14403195171079908,
             "description": "CAGE:Hepatocyte,",
-            "quantile_score": 0.9722,
+            "quantile_score": 0.9668,
             "ref_signal_percentile": 0.9218,
             "region_label": "CELSR2 TSS"
           },
@@ -947,8 +843,60 @@
             "alt_value": 0.6600350998342037,
             "raw_score": 0.0925514734104046,
             "description": "CAGE:Hepatocyte,",
-            "quantile_score": 0.9467,
+            "quantile_score": 0.941,
             "ref_signal_percentile": 0.7781,
+            "region_label": "MYBPHL TSS"
+          },
+          {
+            "assay_id": "CNhs12320",
+            "assay_type": "CAGE",
+            "cell_type": "occipital cortex",
+            "layer": "tss_activity",
+            "ref_value": 24.413347244262695,
+            "alt_value": 27.7245454788208,
+            "raw_score": 0.17669765641165006,
+            "description": "CAGE:occipital cortex, adult,",
+            "quantile_score": 0.9694,
+            "ref_signal_percentile": 0.9268,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CNhs12320",
+            "assay_type": "CAGE",
+            "cell_type": "occipital cortex",
+            "layer": "tss_activity",
+            "ref_value": 175.7383918762207,
+            "alt_value": 181.73206567764282,
+            "raw_score": 0.048114356784313236,
+            "description": "CAGE:occipital cortex, adult,",
+            "quantile_score": 0.85,
+            "ref_signal_percentile": 0.9796,
+            "region_label": "PSRC1 TSS"
+          },
+          {
+            "assay_id": "CNhs12320",
+            "assay_type": "CAGE",
+            "cell_type": "occipital cortex",
+            "layer": "tss_activity",
+            "ref_value": 198.27564972639084,
+            "alt_value": 192.20086044073105,
+            "raw_score": -0.04466391299359986,
+            "description": "CAGE:occipital cortex, adult,",
+            "quantile_score": 0.8399,
+            "ref_signal_percentile": 0.9836,
+            "region_label": "CELSR2 TSS"
+          },
+          {
+            "assay_id": "CNhs12320",
+            "assay_type": "CAGE",
+            "cell_type": "occipital cortex",
+            "layer": "tss_activity",
+            "ref_value": 3.558846540749073,
+            "alt_value": 4.072813734412193,
+            "raw_score": 0.15411734177002295,
+            "description": "CAGE:occipital cortex, adult,",
+            "quantile_score": 0.9628,
+            "ref_signal_percentile": 0.8824,
             "region_label": "MYBPHL TSS"
           },
           {
@@ -960,7 +908,7 @@
             "alt_value": 22.515977382659912,
             "raw_score": 0.21723437733255307,
             "description": "CAGE:spinal cord - adult,",
-            "quantile_score": 0.9831,
+            "quantile_score": 0.9795,
             "ref_signal_percentile": 0.9295,
             "region_label": "variant site"
           },
@@ -973,7 +921,7 @@
             "alt_value": 158.54151010513306,
             "raw_score": 0.09534726844586491,
             "description": "CAGE:spinal cord - adult,",
-            "quantile_score": 0.9416,
+            "quantile_score": 0.9374,
             "ref_signal_percentile": 0.984,
             "region_label": "PSRC1 TSS"
           },
@@ -986,7 +934,7 @@
             "alt_value": 123.70943749696016,
             "raw_score": 0.028046533289320035,
             "description": "CAGE:spinal cord - adult,",
-            "quantile_score": 0.7966,
+            "quantile_score": 0.7992,
             "ref_signal_percentile": 0.9772,
             "region_label": "CELSR2 TSS"
           },
@@ -999,7 +947,7 @@
             "alt_value": 3.492511298507452,
             "raw_score": 0.21233912299967686,
             "description": "CAGE:spinal cord - adult,",
-            "quantile_score": 0.9819,
+            "quantile_score": 0.9791,
             "ref_signal_percentile": 0.8926,
             "region_label": "MYBPHL TSS"
           },
@@ -1012,7 +960,7 @@
             "alt_value": 29.694519996643066,
             "raw_score": 0.16219971122437402,
             "description": "CAGE:hippocampus, adult,",
-            "quantile_score": 0.9683,
+            "quantile_score": 0.9607,
             "ref_signal_percentile": 0.9211,
             "region_label": "variant site"
           },
@@ -1025,7 +973,7 @@
             "alt_value": 248.5511932373047,
             "raw_score": 0.03389132591726126,
             "description": "CAGE:hippocampus, adult,",
-            "quantile_score": 0.7752,
+            "quantile_score": 0.7825,
             "ref_signal_percentile": 0.9787,
             "region_label": "PSRC1 TSS"
           },
@@ -1038,7 +986,7 @@
             "alt_value": 269.09642374515533,
             "raw_score": -0.0611257332770988,
             "description": "CAGE:hippocampus, adult,",
-            "quantile_score": 0.872,
+            "quantile_score": 0.8737,
             "ref_signal_percentile": 0.9839,
             "region_label": "CELSR2 TSS"
           },
@@ -1051,8 +999,59 @@
             "alt_value": 5.004180110991001,
             "raw_score": 0.23087766521788194,
             "description": "CAGE:hippocampus, adult,",
-            "quantile_score": 0.9818,
+            "quantile_score": 0.9762,
             "ref_signal_percentile": 0.8811,
+            "region_label": "MYBPHL TSS"
+          },
+          {
+            "assay_id": "CNhs13808",
+            "assay_type": "CAGE",
+            "cell_type": "locus coeruleus - adult",
+            "layer": "tss_activity",
+            "ref_value": 23.296820163726807,
+            "alt_value": 26.337388038635254,
+            "raw_score": 0.1701078926007592,
+            "description": "CAGE:locus coeruleus - adult,",
+            "quantile_score": 0.9668,
+            "ref_signal_percentile": 0.9238,
+            "region_label": "variant site"
+          },
+          {
+            "assay_id": "CNhs13808",
+            "assay_type": "CAGE",
+            "cell_type": "locus coeruleus - adult",
+            "layer": "tss_activity",
+            "ref_value": 196.28975248336792,
+            "alt_value": 207.84166193008423,
+            "raw_score": 0.08209352226196855,
+            "description": "CAGE:locus coeruleus - adult,",
+            "quantile_score": 0.9167,
+            "ref_signal_percentile": 0.979,
+            "region_label": "PSRC1 TSS"
+          },
+          {
+            "assay_id": "CNhs13808",
+            "assay_type": "CAGE",
+            "cell_type": "locus coeruleus - adult",
+            "layer": "tss_activity",
+            "ref_value": 203.5862619280815,
+            "alt_value": 203.68571409583092,
+            "raw_score": 0.0007011433005291498,
+            "description": "CAGE:locus coeruleus - adult,",
+            "ref_signal_percentile": 0.9802,
+            "region_label": "CELSR2 TSS"
+          },
+          {
+            "assay_id": "CNhs13808",
+            "assay_type": "CAGE",
+            "cell_type": "locus coeruleus - adult",
+            "layer": "tss_activity",
+            "ref_value": 4.239379517734051,
+            "alt_value": 5.089467383921146,
+            "raw_score": 0.21692007982497255,
+            "description": "CAGE:locus coeruleus - adult,",
+            "quantile_score": 0.9764,
+            "ref_signal_percentile": 0.8917,
             "region_label": "MYBPHL TSS"
           },
           {
@@ -1064,7 +1063,7 @@
             "alt_value": 18.208890438079834,
             "raw_score": 0.24425630467910783,
             "description": "CAGE:spinal cord, adult,",
-            "quantile_score": 0.9869,
+            "quantile_score": 0.9835,
             "ref_signal_percentile": 0.926,
             "region_label": "variant site"
           },
@@ -1077,7 +1076,7 @@
             "alt_value": 147.48495888710022,
             "raw_score": 0.09354789090389733,
             "description": "CAGE:spinal cord, adult,",
-            "quantile_score": 0.9431,
+            "quantile_score": 0.9397,
             "ref_signal_percentile": 0.9823,
             "region_label": "PSRC1 TSS"
           },
@@ -1090,7 +1089,7 @@
             "alt_value": 105.06943225860596,
             "raw_score": 0.04232224992117252,
             "description": "CAGE:spinal cord, adult,",
-            "quantile_score": 0.8664,
+            "quantile_score": 0.8645,
             "ref_signal_percentile": 0.9738,
             "region_label": "CELSR2 TSS"
           },
@@ -1103,7 +1102,7 @@
             "alt_value": 3.832015462219715,
             "raw_score": 0.2097037857430747,
             "description": "CAGE:spinal cord, adult,",
-            "quantile_score": 0.9822,
+            "quantile_score": 0.9793,
             "ref_signal_percentile": 0.8973,
             "region_label": "MYBPHL TSS"
           }
@@ -1119,7 +1118,7 @@
           "alt_value": 148.37360382080078,
           "raw_score": 3.506696590541169,
           "description": "CHIP:CEBPB:K562",
-          "quantile_score": 0.9997,
+          "quantile_score": 0.9999,
           "ref_signal_percentile": 0.9194,
           "low_effective_bins": true
         },
@@ -1132,7 +1131,7 @@
           "alt_value": 140.21848392486572,
           "raw_score": 3.6321021933965083,
           "description": "CHIP:CEBPB:IMR-90",
-          "quantile_score": 0.9996,
+          "quantile_score": 1.0,
           "ref_signal_percentile": 0.9085,
           "low_effective_bins": true
         },
@@ -1145,7 +1144,7 @@
           "alt_value": 145.67791366577148,
           "raw_score": 3.197583347644569,
           "description": "CHIP:CEBPB:HepG2",
-          "quantile_score": 0.9995,
+          "quantile_score": 0.9999,
           "ref_signal_percentile": 0.9549,
           "low_effective_bins": true
         },
@@ -1158,7 +1157,7 @@
           "alt_value": 166.91266918182373,
           "raw_score": 2.56820662163026,
           "description": "CHIP:3xFLAG-CEBPA:HepG2 genetically modified using CRISPR",
-          "quantile_score": 0.9994,
+          "quantile_score": 0.9998,
           "ref_signal_percentile": 0.9736,
           "low_effective_bins": true
         },
@@ -1202,16 +1201,16 @@
           "low_effective_bins": true
         },
         {
-          "assay_id": "ENCFF988PMK",
+          "assay_id": "ENCFF003HJB",
           "assay_type": "CHIP",
-          "cell_type": "K562 genetically modified using stable transfection",
+          "cell_type": "HepG2",
           "layer": "tf_binding",
-          "ref_value": 7.610668897628784,
-          "alt_value": 85.16093635559082,
-          "raw_score": 3.3228367093474245,
-          "description": "CHIP:eGFP-CEBPB:K562 genetically modified using stable transfection",
-          "quantile_score": 0.9998,
-          "ref_signal_percentile": 0.8981,
+          "ref_value": 15.491913318634033,
+          "alt_value": 107.8269362449646,
+          "raw_score": 2.7222050000553697,
+          "description": "CHIP:CEBPB:HepG2",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.9317,
           "low_effective_bins": true
         },
         {
@@ -1223,21 +1222,21 @@
           "alt_value": 117.6994571685791,
           "raw_score": 2.4589400905485648,
           "description": "CHIP:3xFLAG-CEBPG:HepG2 genetically modified using CRISPR",
-          "quantile_score": 0.9996,
+          "quantile_score": 0.9999,
           "ref_signal_percentile": 0.9507,
           "low_effective_bins": true
         },
         {
-          "assay_id": "ENCFF003HJB",
+          "assay_id": "ENCFF988PMK",
           "assay_type": "CHIP",
-          "cell_type": "HepG2",
+          "cell_type": "K562 genetically modified using stable transfection",
           "layer": "tf_binding",
-          "ref_value": 15.491913318634033,
-          "alt_value": 107.8269362449646,
-          "raw_score": 2.7222050000553697,
-          "description": "CHIP:CEBPB:HepG2",
-          "quantile_score": 0.9996,
-          "ref_signal_percentile": 0.9317,
+          "ref_value": 7.610668897628784,
+          "alt_value": 85.16093635559082,
+          "raw_score": 3.3228367093474245,
+          "description": "CHIP:eGFP-CEBPB:K562 genetically modified using stable transfection",
+          "quantile_score": 1.0,
+          "ref_signal_percentile": 0.8981,
           "low_effective_bins": true
         },
         {
@@ -1249,7 +1248,7 @@
           "alt_value": 90.42444849014282,
           "raw_score": 2.7856072757083945,
           "description": "CHIP:CEBPB:A549",
-          "quantile_score": 0.9996,
+          "quantile_score": 1.0,
           "ref_signal_percentile": 0.9552,
           "low_effective_bins": true
         },
@@ -1262,7 +1261,7 @@
           "alt_value": 54.774709701538086,
           "raw_score": 2.8273895382540264,
           "description": "CHIP:eGFP-CEBPG:K562 genetically modified using stable transfection",
-          "quantile_score": 0.9998,
+          "quantile_score": 0.9999,
           "ref_signal_percentile": 0.8693,
           "low_effective_bins": true
         },
@@ -1275,7 +1274,7 @@
           "alt_value": 343.9386978149414,
           "raw_score": 1.1179033259405198,
           "description": "CHIP:H3K27ac:right lobe of liver female adult (53 years)",
-          "quantile_score": 0.9995,
+          "quantile_score": 0.9989,
           "ref_signal_percentile": 0.8736
         },
         {
@@ -1287,7 +1286,7 @@
           "alt_value": 259.22487449645996,
           "raw_score": 1.4774754240510561,
           "description": "CHIP:H3K27ac:liver male adult (31 year)",
-          "quantile_score": 0.9996,
+          "quantile_score": 0.9995,
           "ref_signal_percentile": 0.8595
         },
         {
@@ -1299,7 +1298,7 @@
           "alt_value": 331.44230937957764,
           "raw_score": 1.0912986916642151,
           "description": "CHIP:H3K4me1:CD14-positive monocyte female",
-          "quantile_score": 0.9982,
+          "quantile_score": 0.9967,
           "ref_signal_percentile": 0.8967
         },
         {
@@ -1323,20 +1322,8 @@
           "alt_value": 274.48541927337646,
           "raw_score": 1.1894678754769317,
           "description": "CHIP:H3K4me1:CD14-positive monocyte male adult (21 year)",
-          "quantile_score": 0.9986,
+          "quantile_score": 0.997,
           "ref_signal_percentile": 0.8906
-        },
-        {
-          "assay_id": "ENCFF194XTD",
-          "assay_type": "CHIP",
-          "cell_type": "HeLa-S3",
-          "layer": "histone_marks",
-          "ref_value": 503.4661512374878,
-          "alt_value": 658.7103137969971,
-          "raw_score": 0.387075189573046,
-          "description": "CHIP:H3K27ac:HeLa-S3",
-          "quantile_score": 0.998,
-          "ref_signal_percentile": 0.9413
         },
         {
           "assay_id": "ENCFF891SNS",
@@ -1347,8 +1334,20 @@
           "alt_value": 181.5419397354126,
           "raw_score": 1.4168374301132929,
           "description": "CHIP:H3K27ac:heart left ventricle male adult (32 years)",
-          "quantile_score": 0.9996,
+          "quantile_score": 0.9995,
           "ref_signal_percentile": 0.8727
+        },
+        {
+          "assay_id": "ENCFF194XTD",
+          "assay_type": "CHIP",
+          "cell_type": "HeLa-S3",
+          "layer": "histone_marks",
+          "ref_value": 503.4661512374878,
+          "alt_value": 658.7103137969971,
+          "raw_score": 0.387075189573046,
+          "description": "CHIP:H3K27ac:HeLa-S3",
+          "quantile_score": 0.9927,
+          "ref_signal_percentile": 0.9413
         },
         {
           "assay_id": "ENCFF208VLV",
@@ -1359,7 +1358,7 @@
           "alt_value": 297.14069080352783,
           "raw_score": 0.7630034112652828,
           "description": "CHIP:H3K27ac:gastrocnemius medialis female adult (53 years)",
-          "quantile_score": 0.9988,
+          "quantile_score": 0.9989,
           "ref_signal_percentile": 0.8937
         },
         {
@@ -1371,20 +1370,8 @@
           "alt_value": 320.491548538208,
           "raw_score": 0.7018912227328912,
           "description": "CHIP:H3K27ac:gastrocnemius medialis male adult (37 years)",
-          "quantile_score": 0.9985,
+          "quantile_score": 0.9981,
           "ref_signal_percentile": 0.8935
-        },
-        {
-          "assay_id": "ENCFF360XRD",
-          "assay_type": "CHIP",
-          "cell_type": "gastrocnemius medialis male adult (54 years)",
-          "layer": "histone_marks",
-          "ref_value": 179.19516372680664,
-          "alt_value": 298.00146484375,
-          "raw_score": 0.7305922613181395,
-          "description": "CHIP:H3K27ac:gastrocnemius medialis male adult (54 years)",
-          "quantile_score": 0.9986,
-          "ref_signal_percentile": 0.8896
         },
         {
           "assay_id": "ENCFF096AVB",
@@ -1395,8 +1382,20 @@
           "alt_value": 263.2240400314331,
           "raw_score": 0.833500862317889,
           "description": "CHIP:H3K27ac:skeletal muscle tissue female adult (72 years)",
-          "quantile_score": 0.9986,
+          "quantile_score": 0.9985,
           "ref_signal_percentile": 0.8813
+        },
+        {
+          "assay_id": "ENCFF360XRD",
+          "assay_type": "CHIP",
+          "cell_type": "gastrocnemius medialis male adult (54 years)",
+          "layer": "histone_marks",
+          "ref_value": 179.19516372680664,
+          "alt_value": 298.00146484375,
+          "raw_score": 0.7305922613181395,
+          "description": "CHIP:H3K27ac:gastrocnemius medialis male adult (54 years)",
+          "quantile_score": 0.9983,
+          "ref_signal_percentile": 0.8896
         },
         {
           "assay_id": "ENCFF897XDW",
@@ -1407,7 +1406,7 @@
           "alt_value": 94.52730429172516,
           "raw_score": 1.8855866414878018,
           "description": "CHIP:H3K4me1:neutrophil male",
-          "quantile_score": 0.9994,
+          "quantile_score": 0.9999,
           "ref_signal_percentile": 0.7253
         },
         {
@@ -1419,7 +1418,7 @@
           "alt_value": 37.330787658691406,
           "raw_score": 1.4424098639476457,
           "description": "ATAC:BM1137-GMP3-high-ATAC-2 / Bone Marrow CD34+ / GMP-C",
-          "quantile_score": 0.998,
+          "quantile_score": 0.996,
           "ref_signal_percentile": 0.8741,
           "low_effective_bins": true
         },
@@ -1432,7 +1431,7 @@
           "alt_value": 35.188276290893555,
           "raw_score": 1.5122538969567731,
           "description": "ATAC:BM1137-GMP2-mid-ATAC-1 / Bone Marrow CD34+ / GMP-B",
-          "quantile_score": 0.9987,
+          "quantile_score": 0.9972,
           "ref_signal_percentile": 0.8552,
           "low_effective_bins": true
         },
@@ -1445,7 +1444,7 @@
           "alt_value": 14.313192129135132,
           "raw_score": 2.1930035682619855,
           "description": "DNASE:amniotic epithelial cell",
-          "quantile_score": 1.0,
+          "quantile_score": 0.9998,
           "ref_signal_percentile": 0.8978,
           "low_effective_bins": true
         },
@@ -1458,7 +1457,7 @@
           "alt_value": 18.864001274108887,
           "raw_score": 1.4460286279889443,
           "description": "ATAC:BM1137-GMP1-low-ATAC-2 / Bone Marrow CD34+ / GMP-A",
-          "quantile_score": 0.9989,
+          "quantile_score": 0.9978,
           "ref_signal_percentile": 0.8483,
           "low_effective_bins": true
         },
@@ -1471,7 +1470,7 @@
           "alt_value": 19.13668727874756,
           "raw_score": 1.3102094111980203,
           "description": "ATAC:BM0106-UNK-ATAC-2 / Bone Marrow CD34+ / UNK",
-          "quantile_score": 0.9992,
+          "quantile_score": 0.9984,
           "ref_signal_percentile": 0.8476,
           "low_effective_bins": true
         },
@@ -1484,7 +1483,7 @@
           "alt_value": 11.004332065582275,
           "raw_score": 1.9971542705876415,
           "description": "DNASE:fibroblast of villous mesenchyme",
-          "quantile_score": 1.0,
+          "quantile_score": 0.9998,
           "ref_signal_percentile": 0.8829,
           "low_effective_bins": true
         },
@@ -1497,7 +1496,7 @@
           "alt_value": 11.822671294212341,
           "raw_score": 1.8427080165688252,
           "description": "DNASE:WI38 genetically modified using stable transfection originated from WI38",
-          "quantile_score": 1.0,
+          "quantile_score": 0.9992,
           "ref_signal_percentile": 0.9037,
           "low_effective_bins": true
         },
@@ -1515,16 +1514,16 @@
           "low_effective_bins": true
         },
         {
-          "assay_id": "ENCFF830FDL",
-          "assay_type": "DNASE",
-          "cell_type": "HeLa-S3 G1b phase",
+          "assay_id": "GSM2543100",
+          "assay_type": "ATAC",
+          "cell_type": "BM1214-Day0-UNK-A / Bone Marrow CD34+ / UNK",
           "layer": "chromatin_accessibility",
-          "ref_value": 8.05525290966034,
-          "alt_value": 16.098406314849854,
-          "raw_score": 0.9170350218505233,
-          "description": "DNASE:HeLa-S3 G1b phase",
-          "quantile_score": 0.9993,
-          "ref_signal_percentile": 0.9652,
+          "ref_value": 8.117249250411987,
+          "alt_value": 17.585235118865967,
+          "raw_score": 1.027486417508486,
+          "description": "ATAC:BM1214-Day0-UNK-A / Bone Marrow CD34+ / UNK",
+          "quantile_score": 0.9974,
+          "ref_signal_percentile": 0.8196,
           "low_effective_bins": true
         },
         {
@@ -1536,34 +1535,34 @@
           "alt_value": 7.725319921970367,
           "raw_score": 2.2470422572194217,
           "description": "DNASE:fibroblast of lung",
-          "quantile_score": 1.0,
+          "quantile_score": 0.9998,
           "ref_signal_percentile": 0.8571,
           "low_effective_bins": true
         },
         {
-          "assay_id": "GSM2543100",
-          "assay_type": "ATAC",
-          "cell_type": "BM1214-Day0-UNK-A / Bone Marrow CD34+ / UNK",
+          "assay_id": "ENCFF113YFF",
+          "assay_type": "DNASE",
+          "cell_type": "foreskin fibroblast male newborn",
           "layer": "chromatin_accessibility",
-          "ref_value": 8.117249250411987,
-          "alt_value": 17.585235118865967,
-          "raw_score": 1.027486417508486,
-          "description": "ATAC:BM1214-Day0-UNK-A / Bone Marrow CD34+ / UNK",
-          "quantile_score": 0.9988,
-          "ref_signal_percentile": 0.8196,
+          "ref_value": 1.8408353626728058,
+          "alt_value": 9.278371691703796,
+          "raw_score": 1.8552246003302004,
+          "description": "DNASE:foreskin fibroblast male newborn",
+          "quantile_score": 0.9989,
+          "ref_signal_percentile": 0.8696,
           "low_effective_bins": true
         },
         {
-          "assay_id": "ENCFF897EZG",
+          "assay_id": "ENCFF724HAH",
           "assay_type": "DNASE",
-          "cell_type": "NB4",
+          "cell_type": "CD14-positive monocyte male adult (21 year)",
           "layer": "chromatin_accessibility",
-          "ref_value": 1.7982392013072968,
-          "alt_value": 9.09399938583374,
-          "raw_score": 1.850906705477873,
-          "description": "DNASE:NB4",
-          "quantile_score": 1.0,
-          "ref_signal_percentile": 0.8756,
+          "ref_value": 0.9018608927726746,
+          "alt_value": 7.754608929157257,
+          "raw_score": 2.202631007048029,
+          "description": "DNASE:CD14-positive monocyte male adult (21 year)",
+          "quantile_score": 0.9998,
+          "ref_signal_percentile": 0.86,
           "low_effective_bins": true
         },
         {
@@ -1575,7 +1574,7 @@
           "alt_value": 25.609206676483154,
           "raw_score": 0.4520130036719991,
           "description": "CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_",
-          "quantile_score": 0.9903,
+          "quantile_score": 0.9872,
           "ref_signal_percentile": 0.9157,
           "region_label": "variant site"
         },
@@ -1588,7 +1587,7 @@
           "alt_value": 412.4011468887329,
           "raw_score": 0.01760360072037789,
           "description": "CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_",
-          "quantile_score": 0.6089,
+          "quantile_score": 0.6335,
           "ref_signal_percentile": 0.9683,
           "region_label": "PSRC1 TSS"
         },
@@ -1601,7 +1600,7 @@
           "alt_value": 162.1453225016594,
           "raw_score": 0.12065560870022055,
           "description": "CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_",
-          "quantile_score": 0.9361,
+          "quantile_score": 0.9291,
           "ref_signal_percentile": 0.9423,
           "region_label": "CELSR2 TSS"
         },
@@ -1614,7 +1613,7 @@
           "alt_value": 51.00492564588785,
           "raw_score": 0.34018328653479174,
           "description": "CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_",
-          "quantile_score": 0.9851,
+          "quantile_score": 0.9813,
           "ref_signal_percentile": 0.9257,
           "region_label": "MYBPHL TSS"
         },
@@ -1627,7 +1626,7 @@
           "alt_value": 48.45329666137695,
           "raw_score": 0.21787030387737447,
           "description": "CAGE:locus coeruleus, adult,",
-          "quantile_score": 0.9774,
+          "quantile_score": 0.9741,
           "ref_signal_percentile": 0.9276,
           "region_label": "variant site"
         },
@@ -1640,7 +1639,7 @@
           "alt_value": 299.20547103881836,
           "raw_score": 0.08632208940469545,
           "description": "CAGE:locus coeruleus, adult,",
-          "quantile_score": 0.909,
+          "quantile_score": 0.9116,
           "ref_signal_percentile": 0.9807,
           "region_label": "PSRC1 TSS"
         },
@@ -1653,7 +1652,7 @@
           "alt_value": 254.30982100963593,
           "raw_score": 0.005718625225580395,
           "description": "CAGE:locus coeruleus, adult,",
-          "quantile_score": 0.3468,
+          "quantile_score": 0.3654,
           "ref_signal_percentile": 0.9775,
           "region_label": "CELSR2 TSS"
         },
@@ -1666,7 +1665,7 @@
           "alt_value": 7.185643225908279,
           "raw_score": 0.24831429099219415,
           "description": "CAGE:locus coeruleus, adult,",
-          "quantile_score": 0.9834,
+          "quantile_score": 0.978,
           "ref_signal_percentile": 0.8865,
           "region_label": "MYBPHL TSS"
         },
@@ -1679,7 +1678,7 @@
           "alt_value": 35.75696849822998,
           "raw_score": 0.237164250675947,
           "description": "CAGE:substantia nigra, adult,",
-          "quantile_score": 0.9838,
+          "quantile_score": 0.9792,
           "ref_signal_percentile": 0.9284,
           "region_label": "variant site"
         },
@@ -1692,7 +1691,7 @@
           "alt_value": 262.12941312789917,
           "raw_score": 0.09435411629259688,
           "description": "CAGE:substantia nigra, adult,",
-          "quantile_score": 0.9308,
+          "quantile_score": 0.9285,
           "ref_signal_percentile": 0.984,
           "region_label": "PSRC1 TSS"
         },
@@ -1705,7 +1704,7 @@
           "alt_value": 193.90960988402367,
           "raw_score": 0.03976671741937642,
           "description": "CAGE:substantia nigra, adult,",
-          "quantile_score": 0.8175,
+          "quantile_score": 0.8224,
           "ref_signal_percentile": 0.9753,
           "region_label": "CELSR2 TSS"
         },
@@ -1718,7 +1717,7 @@
           "alt_value": 8.606996014714241,
           "raw_score": 0.24135566947694365,
           "description": "CAGE:substantia nigra, adult,",
-          "quantile_score": 0.9847,
+          "quantile_score": 0.9795,
           "ref_signal_percentile": 0.9034,
           "region_label": "MYBPHL TSS"
         },
@@ -1731,7 +1730,7 @@
           "alt_value": 32.32414150238037,
           "raw_score": 0.24293005693509723,
           "description": "CAGE:globus pallidus, adult,",
-          "quantile_score": 0.9885,
+          "quantile_score": 0.9851,
           "ref_signal_percentile": 0.9272,
           "region_label": "variant site"
         },
@@ -1744,7 +1743,7 @@
           "alt_value": 250.2613501548767,
           "raw_score": 0.08581482919237825,
           "description": "CAGE:globus pallidus, adult,",
-          "quantile_score": 0.9436,
+          "quantile_score": 0.9343,
           "ref_signal_percentile": 0.9847,
           "region_label": "PSRC1 TSS"
         },
@@ -1757,7 +1756,7 @@
           "alt_value": 188.4575121998787,
           "raw_score": 0.03434750593319937,
           "description": "CAGE:globus pallidus, adult,",
-          "quantile_score": 0.7973,
+          "quantile_score": 0.8087,
           "ref_signal_percentile": 0.9764,
           "region_label": "CELSR2 TSS"
         },
@@ -1770,112 +1769,8 @@
           "alt_value": 8.263610064983368,
           "raw_score": 0.2064997095871453,
           "description": "CAGE:globus pallidus, adult,",
-          "quantile_score": 0.9857,
+          "quantile_score": 0.9802,
           "ref_signal_percentile": 0.9016,
-          "region_label": "MYBPHL TSS"
-        },
-        {
-          "assay_id": "CNhs10624",
-          "assay_type": "CAGE",
-          "cell_type": "liver",
-          "layer": "tss_activity",
-          "ref_value": 0.47338059917092323,
-          "alt_value": 2.877961829304695,
-          "raw_score": 1.3961684520109618,
-          "description": "CAGE:liver, adult, pool1",
-          "quantile_score": 0.9996,
-          "ref_signal_percentile": 0.8461,
-          "region_label": "variant site"
-        },
-        {
-          "assay_id": "CNhs10624",
-          "assay_type": "CAGE",
-          "cell_type": "liver",
-          "layer": "tss_activity",
-          "ref_value": 8.430865086615086,
-          "alt_value": 11.97496423125267,
-          "raw_score": 0.4602685419540158,
-          "description": "CAGE:liver, adult, pool1",
-          "quantile_score": 0.9939,
-          "ref_signal_percentile": 0.9213,
-          "region_label": "PSRC1 TSS"
-        },
-        {
-          "assay_id": "CNhs10624",
-          "assay_type": "CAGE",
-          "cell_type": "liver",
-          "layer": "tss_activity",
-          "ref_value": 8.642845042049885,
-          "alt_value": 9.584349561482668,
-          "raw_score": 0.1344018446690111,
-          "description": "CAGE:liver, adult, pool1",
-          "quantile_score": 0.9643,
-          "ref_signal_percentile": 0.9217,
-          "region_label": "CELSR2 TSS"
-        },
-        {
-          "assay_id": "CNhs10624",
-          "assay_type": "CAGE",
-          "cell_type": "liver",
-          "layer": "tss_activity",
-          "ref_value": 0.8200139473192394,
-          "alt_value": 1.1082273642532527,
-          "raw_score": 0.21208095822840334,
-          "description": "CAGE:liver, adult, pool1",
-          "quantile_score": 0.981,
-          "ref_signal_percentile": 0.8678,
-          "region_label": "MYBPHL TSS"
-        },
-        {
-          "assay_id": "CNhs12326",
-          "assay_type": "CAGE",
-          "cell_type": "epitheloid carcinoma cell line",
-          "layer": "tss_activity",
-          "ref_value": 11.670851230621338,
-          "alt_value": 14.573498725891113,
-          "raw_score": 0.2975796468747096,
-          "description": "CAGE:epitheloid carcinoma cell line: HelaS3 ENCODE, biol_",
-          "quantile_score": 0.9821,
-          "ref_signal_percentile": 0.9078,
-          "region_label": "variant site"
-        },
-        {
-          "assay_id": "CNhs12326",
-          "assay_type": "CAGE",
-          "cell_type": "epitheloid carcinoma cell line",
-          "layer": "tss_activity",
-          "ref_value": 320.9966492652893,
-          "alt_value": 315.8187189102173,
-          "raw_score": -0.02338809746720135,
-          "description": "CAGE:epitheloid carcinoma cell line: HelaS3 ENCODE, biol_",
-          "quantile_score": 0.6721,
-          "ref_signal_percentile": 0.9613,
-          "region_label": "PSRC1 TSS"
-        },
-        {
-          "assay_id": "CNhs12326",
-          "assay_type": "CAGE",
-          "cell_type": "epitheloid carcinoma cell line",
-          "layer": "tss_activity",
-          "ref_value": 108.73928028345108,
-          "alt_value": 121.40885040163994,
-          "raw_score": 0.15762785235436128,
-          "description": "CAGE:epitheloid carcinoma cell line: HelaS3 ENCODE, biol_",
-          "quantile_score": 0.9574,
-          "ref_signal_percentile": 0.9395,
-          "region_label": "CELSR2 TSS"
-        },
-        {
-          "assay_id": "CNhs12326",
-          "assay_type": "CAGE",
-          "cell_type": "epitheloid carcinoma cell line",
-          "layer": "tss_activity",
-          "ref_value": 0.5795705951750278,
-          "alt_value": 0.5668474808335304,
-          "raw_score": -0.011667663717236366,
-          "description": "CAGE:epitheloid carcinoma cell line: HelaS3 ENCODE, biol_",
-          "quantile_score": 0.5118,
-          "ref_signal_percentile": 0.7389,
           "region_label": "MYBPHL TSS"
         },
         {
@@ -1887,7 +1782,7 @@
           "alt_value": 32.735304832458496,
           "raw_score": 0.18676614182424806,
           "description": "CAGE:thalamus, adult, , tech_",
-          "quantile_score": 0.9765,
+          "quantile_score": 0.9739,
           "ref_signal_percentile": 0.9342,
           "region_label": "variant site"
         },
@@ -1900,7 +1795,7 @@
           "alt_value": 170.9333999156952,
           "raw_score": 0.08376552784150514,
           "description": "CAGE:thalamus, adult, , tech_",
-          "quantile_score": 0.9219,
+          "quantile_score": 0.9241,
           "ref_signal_percentile": 0.9829,
           "region_label": "PSRC1 TSS"
         },
@@ -1913,7 +1808,7 @@
           "alt_value": 163.4161712229252,
           "raw_score": -0.009530902612603198,
           "description": "CAGE:thalamus, adult, , tech_",
-          "quantile_score": 0.5126,
+          "quantile_score": 0.541,
           "ref_signal_percentile": 0.9835,
           "region_label": "CELSR2 TSS"
         },
@@ -1926,7 +1821,7 @@
           "alt_value": 3.5354019477963448,
           "raw_score": 0.1662186562128764,
           "description": "CAGE:thalamus, adult, , tech_",
-          "quantile_score": 0.9713,
+          "quantile_score": 0.9703,
           "ref_signal_percentile": 0.8824,
           "region_label": "MYBPHL TSS"
         },
@@ -1939,7 +1834,7 @@
           "alt_value": 31.175838470458984,
           "raw_score": 0.19394725211433936,
           "description": "CAGE:thalamus, adult,",
-          "quantile_score": 0.9754,
+          "quantile_score": 0.9694,
           "ref_signal_percentile": 0.9247,
           "region_label": "variant site"
         },
@@ -1952,7 +1847,7 @@
           "alt_value": 285.5549302101135,
           "raw_score": 0.07635484688866892,
           "description": "CAGE:thalamus, adult,",
-          "quantile_score": 0.9075,
+          "quantile_score": 0.9053,
           "ref_signal_percentile": 0.9839,
           "region_label": "PSRC1 TSS"
         },
@@ -1965,7 +1860,7 @@
           "alt_value": 221.5620576441288,
           "raw_score": 0.019921085975534193,
           "description": "CAGE:thalamus, adult,",
-          "quantile_score": 0.681,
+          "quantile_score": 0.6949,
           "ref_signal_percentile": 0.9768,
           "region_label": "CELSR2 TSS"
         },
@@ -1978,7 +1873,7 @@
           "alt_value": 8.674556508660316,
           "raw_score": 0.2704279453494279,
           "description": "CAGE:thalamus, adult,",
-          "quantile_score": 0.9861,
+          "quantile_score": 0.9813,
           "ref_signal_percentile": 0.9025,
           "region_label": "MYBPHL TSS"
         },
@@ -1991,7 +1886,7 @@
           "alt_value": 4.240488946437836,
           "raw_score": 1.31039848903064,
           "description": "CAGE:Hepatocyte,",
-          "quantile_score": 0.9995,
+          "quantile_score": 0.9994,
           "ref_signal_percentile": 0.8575,
           "region_label": "variant site"
         },
@@ -2004,7 +1899,7 @@
           "alt_value": 9.732196778059006,
           "raw_score": 0.4543810215628239,
           "description": "CAGE:Hepatocyte,",
-          "quantile_score": 0.9945,
+          "quantile_score": 0.9939,
           "ref_signal_percentile": 0.9209,
           "region_label": "PSRC1 TSS"
         },
@@ -2017,7 +1912,7 @@
           "alt_value": 7.961398422718048,
           "raw_score": 0.14403195171079908,
           "description": "CAGE:Hepatocyte,",
-          "quantile_score": 0.9722,
+          "quantile_score": 0.9668,
           "ref_signal_percentile": 0.9218,
           "region_label": "CELSR2 TSS"
         },
@@ -2030,8 +1925,60 @@
           "alt_value": 0.6600350998342037,
           "raw_score": 0.0925514734104046,
           "description": "CAGE:Hepatocyte,",
-          "quantile_score": 0.9467,
+          "quantile_score": 0.941,
           "ref_signal_percentile": 0.7781,
+          "region_label": "MYBPHL TSS"
+        },
+        {
+          "assay_id": "CNhs12320",
+          "assay_type": "CAGE",
+          "cell_type": "occipital cortex",
+          "layer": "tss_activity",
+          "ref_value": 24.413347244262695,
+          "alt_value": 27.7245454788208,
+          "raw_score": 0.17669765641165006,
+          "description": "CAGE:occipital cortex, adult,",
+          "quantile_score": 0.9694,
+          "ref_signal_percentile": 0.9268,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CNhs12320",
+          "assay_type": "CAGE",
+          "cell_type": "occipital cortex",
+          "layer": "tss_activity",
+          "ref_value": 175.7383918762207,
+          "alt_value": 181.73206567764282,
+          "raw_score": 0.048114356784313236,
+          "description": "CAGE:occipital cortex, adult,",
+          "quantile_score": 0.85,
+          "ref_signal_percentile": 0.9796,
+          "region_label": "PSRC1 TSS"
+        },
+        {
+          "assay_id": "CNhs12320",
+          "assay_type": "CAGE",
+          "cell_type": "occipital cortex",
+          "layer": "tss_activity",
+          "ref_value": 198.27564972639084,
+          "alt_value": 192.20086044073105,
+          "raw_score": -0.04466391299359986,
+          "description": "CAGE:occipital cortex, adult,",
+          "quantile_score": 0.8399,
+          "ref_signal_percentile": 0.9836,
+          "region_label": "CELSR2 TSS"
+        },
+        {
+          "assay_id": "CNhs12320",
+          "assay_type": "CAGE",
+          "cell_type": "occipital cortex",
+          "layer": "tss_activity",
+          "ref_value": 3.558846540749073,
+          "alt_value": 4.072813734412193,
+          "raw_score": 0.15411734177002295,
+          "description": "CAGE:occipital cortex, adult,",
+          "quantile_score": 0.9628,
+          "ref_signal_percentile": 0.8824,
           "region_label": "MYBPHL TSS"
         },
         {
@@ -2043,7 +1990,7 @@
           "alt_value": 22.515977382659912,
           "raw_score": 0.21723437733255307,
           "description": "CAGE:spinal cord - adult,",
-          "quantile_score": 0.9831,
+          "quantile_score": 0.9795,
           "ref_signal_percentile": 0.9295,
           "region_label": "variant site"
         },
@@ -2056,7 +2003,7 @@
           "alt_value": 158.54151010513306,
           "raw_score": 0.09534726844586491,
           "description": "CAGE:spinal cord - adult,",
-          "quantile_score": 0.9416,
+          "quantile_score": 0.9374,
           "ref_signal_percentile": 0.984,
           "region_label": "PSRC1 TSS"
         },
@@ -2069,7 +2016,7 @@
           "alt_value": 123.70943749696016,
           "raw_score": 0.028046533289320035,
           "description": "CAGE:spinal cord - adult,",
-          "quantile_score": 0.7966,
+          "quantile_score": 0.7992,
           "ref_signal_percentile": 0.9772,
           "region_label": "CELSR2 TSS"
         },
@@ -2082,7 +2029,7 @@
           "alt_value": 3.492511298507452,
           "raw_score": 0.21233912299967686,
           "description": "CAGE:spinal cord - adult,",
-          "quantile_score": 0.9819,
+          "quantile_score": 0.9791,
           "ref_signal_percentile": 0.8926,
           "region_label": "MYBPHL TSS"
         },
@@ -2095,7 +2042,7 @@
           "alt_value": 29.694519996643066,
           "raw_score": 0.16219971122437402,
           "description": "CAGE:hippocampus, adult,",
-          "quantile_score": 0.9683,
+          "quantile_score": 0.9607,
           "ref_signal_percentile": 0.9211,
           "region_label": "variant site"
         },
@@ -2108,7 +2055,7 @@
           "alt_value": 248.5511932373047,
           "raw_score": 0.03389132591726126,
           "description": "CAGE:hippocampus, adult,",
-          "quantile_score": 0.7752,
+          "quantile_score": 0.7825,
           "ref_signal_percentile": 0.9787,
           "region_label": "PSRC1 TSS"
         },
@@ -2121,7 +2068,7 @@
           "alt_value": 269.09642374515533,
           "raw_score": -0.0611257332770988,
           "description": "CAGE:hippocampus, adult,",
-          "quantile_score": 0.872,
+          "quantile_score": 0.8737,
           "ref_signal_percentile": 0.9839,
           "region_label": "CELSR2 TSS"
         },
@@ -2134,8 +2081,59 @@
           "alt_value": 5.004180110991001,
           "raw_score": 0.23087766521788194,
           "description": "CAGE:hippocampus, adult,",
-          "quantile_score": 0.9818,
+          "quantile_score": 0.9762,
           "ref_signal_percentile": 0.8811,
+          "region_label": "MYBPHL TSS"
+        },
+        {
+          "assay_id": "CNhs13808",
+          "assay_type": "CAGE",
+          "cell_type": "locus coeruleus - adult",
+          "layer": "tss_activity",
+          "ref_value": 23.296820163726807,
+          "alt_value": 26.337388038635254,
+          "raw_score": 0.1701078926007592,
+          "description": "CAGE:locus coeruleus - adult,",
+          "quantile_score": 0.9668,
+          "ref_signal_percentile": 0.9238,
+          "region_label": "variant site"
+        },
+        {
+          "assay_id": "CNhs13808",
+          "assay_type": "CAGE",
+          "cell_type": "locus coeruleus - adult",
+          "layer": "tss_activity",
+          "ref_value": 196.28975248336792,
+          "alt_value": 207.84166193008423,
+          "raw_score": 0.08209352226196855,
+          "description": "CAGE:locus coeruleus - adult,",
+          "quantile_score": 0.9167,
+          "ref_signal_percentile": 0.979,
+          "region_label": "PSRC1 TSS"
+        },
+        {
+          "assay_id": "CNhs13808",
+          "assay_type": "CAGE",
+          "cell_type": "locus coeruleus - adult",
+          "layer": "tss_activity",
+          "ref_value": 203.5862619280815,
+          "alt_value": 203.68571409583092,
+          "raw_score": 0.0007011433005291498,
+          "description": "CAGE:locus coeruleus - adult,",
+          "ref_signal_percentile": 0.9802,
+          "region_label": "CELSR2 TSS"
+        },
+        {
+          "assay_id": "CNhs13808",
+          "assay_type": "CAGE",
+          "cell_type": "locus coeruleus - adult",
+          "layer": "tss_activity",
+          "ref_value": 4.239379517734051,
+          "alt_value": 5.089467383921146,
+          "raw_score": 0.21692007982497255,
+          "description": "CAGE:locus coeruleus - adult,",
+          "quantile_score": 0.9764,
+          "ref_signal_percentile": 0.8917,
           "region_label": "MYBPHL TSS"
         },
         {
@@ -2147,7 +2145,7 @@
           "alt_value": 18.208890438079834,
           "raw_score": 0.24425630467910783,
           "description": "CAGE:spinal cord, adult,",
-          "quantile_score": 0.9869,
+          "quantile_score": 0.9835,
           "ref_signal_percentile": 0.926,
           "region_label": "variant site"
         },
@@ -2160,7 +2158,7 @@
           "alt_value": 147.48495888710022,
           "raw_score": 0.09354789090389733,
           "description": "CAGE:spinal cord, adult,",
-          "quantile_score": 0.9431,
+          "quantile_score": 0.9397,
           "ref_signal_percentile": 0.9823,
           "region_label": "PSRC1 TSS"
         },
@@ -2173,7 +2171,7 @@
           "alt_value": 105.06943225860596,
           "raw_score": 0.04232224992117252,
           "description": "CAGE:spinal cord, adult,",
-          "quantile_score": 0.8664,
+          "quantile_score": 0.8645,
           "ref_signal_percentile": 0.9738,
           "region_label": "CELSR2 TSS"
         },
@@ -2186,7 +2184,7 @@
           "alt_value": 3.832015462219715,
           "raw_score": 0.2097037857430747,
           "description": "CAGE:spinal cord, adult,",
-          "quantile_score": 0.9822,
+          "quantile_score": 0.9793,
           "ref_signal_percentile": 0.8973,
           "region_label": "MYBPHL TSS"
         }
@@ -2201,6 +2199,6 @@
     "tracks_requested": "all Enformer tracks (discovery mode)",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-04 04:35 UTC"
+    "generated_at": "2026-08-05 05:08 UTC"
   }
 }

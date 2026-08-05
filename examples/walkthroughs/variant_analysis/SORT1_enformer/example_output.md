@@ -6,7 +6,7 @@
 - **Oracle**: enformer
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: all Enformer tracks (discovery mode)
-- **Generated**: 2026-08-04 04:35 UTC
+- **Generated**: 2026-08-05 05:08 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -15,22 +15,22 @@
 **Gene**: SORT1
 **Other nearby genes**: PSRC1, CELSR2, MYBPHL, SARS1
 
-**Summary**: Transcription factor binding (ChIP-TF): very strong binding gain (+4.37, CHIP:CEBPb:ChIP-seq, CEBPb_HighDensity_DMI / hMSC / Human…); Chromatin accessibility (DNASE/ATAC): very strong opening (+2.25, DNASE:fibroblast of lung); Histone modifications (ChIP-Histone): very strong mark gain (+1.89, CHIP:H3K4me1:neutrophil male); TSS activity (CAGE/PRO-CAP): very strong increase (+1.40, CAGE:liver, adult, pool1).
+**Summary**: Transcription factor binding (ChIP-TF): very strong binding gain (+4.37, CHIP:CEBPb:ChIP-seq, CEBPb_HighDensity_DMI / hMSC / Human…); Chromatin accessibility (DNASE/ATAC): very strong opening (+2.25, DNASE:fibroblast of lung); Histone modifications (ChIP-Histone): very strong mark gain (+1.89, CHIP:H3K4me1:neutrophil male); TSS activity (CAGE/PRO-CAP): very strong increase (+1.31, CAGE:Hepatocyte,).
 
 #### Chromatin accessibility (DNASE/ATAC)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
 | DNASE:fibroblast of lung | 0.838 | 7.73 | +2.247 | ≥99th | 0.857 | Very strong opening |
+| DNASE:CD14-positive monocyte male adult (21 year) | 0.902 | 7.75 | +2.203 | ≥99th | 0.860 | Very strong opening |
 | DNASE:amniotic epithelial cell | 2.35 | 14.3 | +2.193 | ≥99th | 0.898 | Very strong opening |
 | DNASE:fibroblast of villous mesenchyme | 2.01 | 11 | +1.997 | ≥99th | 0.883 | Very strong opening |
 | DNASE:HL-60 | 1.69 | 9.52 | +1.969 | ≥99th | 0.868 | Very strong opening |
-| DNASE:NB4 | 1.8 | 9.09 | +1.851 | ≥99th | 0.876 | Very strong opening |
+| DNASE:foreskin fibroblast male newborn | 1.84 | 9.28 | +1.855 | ≥99th | 0.870 | Very strong opening |
 | DNASE:WI38 genetically modified using stable transfection originated from WI38 | 2.57 | 11.8 | +1.843 | ≥99th | 0.904 | Very strong opening |
 | ATAC:BM1137-GMP2-mid-ATAC-1 / Bone Marrow CD34+ / GMP-B | 11.7 | 35.2 | +1.512 | ≥99th | 0.855 | Very strong opening |
 | ATAC:BM1137-GMP1-low-ATAC-2 / Bone Marrow CD34+ / GMP-A | 6.29 | 18.9 | +1.446 | ≥99th | 0.848 | Very strong opening |
 | ATAC:BM1137-GMP3-high-ATAC-2 / Bone Marrow CD34+ / GMP-C | 13.1 | 37.3 | +1.442 | ≥99th | 0.874 | Very strong opening |
-| ATAC:BM0106-UNK-ATAC-2 / Bone Marrow CD34+ / UNK | 7.12 | 19.1 | +1.310 | ≥99th | 0.848 | Very strong opening |
 | _…showing top 10 of 12 — see `example_output.json` for the full set_ | | | | | | |
 
 #### Transcription factor binding (ChIP-TF)
@@ -69,16 +69,16 @@
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CAGE:liver, adult, pool1 — variant site | 0.473 | 2.88 | +1.396 | ≥99th | 0.846 | Very strong increase |
 | CAGE:Hepatocyte, — variant site | 1.11 | 4.24 | +1.310 | ≥99th | 0.858 | Very strong increase |
-| CAGE:liver, adult, pool1 — PSRC1 TSS | 8.43 | 12 | +0.460 | ≥99th | 0.921 | Strong increase |
 | CAGE:Hepatocyte, — PSRC1 TSS | 6.83 | 9.73 | +0.454 | ≥99th | 0.921 | Strong increase |
-| CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_ — variant site | 18.5 | 25.6 | +0.452 | ≥99th | 0.916 | Strong increase |
-| CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_ — MYBPHL TSS | 40.1 | 51 | +0.340 | 0.99 | 0.926 | Strong increase |
-| CAGE:epitheloid carcinoma cell line: HelaS3 ENCODE, biol_ — variant site | 11.7 | 14.6 | +0.298 | 0.98 | 0.908 | Moderate increase |
-| CAGE:thalamus, adult, — MYBPHL TSS | 7.02 | 8.67 | +0.270 | 0.99 | 0.902 | Moderate increase |
+| CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_ — variant site | 18.5 | 25.6 | +0.452 | 0.99 | 0.916 | Strong increase |
+| CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_ — MYBPHL TSS | 40.1 | 51 | +0.340 | 0.98 | 0.926 | Strong increase |
+| CAGE:thalamus, adult, — MYBPHL TSS | 7.02 | 8.67 | +0.270 | 0.98 | 0.902 | Moderate increase |
 | CAGE:locus coeruleus, adult, — MYBPHL TSS | 5.89 | 7.19 | +0.248 | 0.98 | 0.886 | Moderate increase |
-| CAGE:spinal cord, adult, — variant site | 15.2 | 18.2 | +0.244 | 0.99 | 0.926 | Moderate increase |
+| CAGE:spinal cord, adult, — variant site | 15.2 | 18.2 | +0.244 | 0.98 | 0.926 | Moderate increase |
+| CAGE:globus pallidus, adult, — variant site | 27.2 | 32.3 | +0.243 | 0.99 | 0.927 | Moderate increase |
+| CAGE:substantia nigra, adult, — MYBPHL TSS | 7.13 | 8.61 | +0.241 | 0.98 | 0.903 | Moderate increase |
+| CAGE:substantia nigra, adult, — variant site | 30.2 | 35.8 | +0.237 | 0.98 | 0.928 | Moderate increase |
 | _…showing top 10 of 48 — see `example_output.json` for the full set_ | | | | | | |
 
 ---

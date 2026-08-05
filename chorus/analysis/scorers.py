@@ -209,6 +209,56 @@ def classify_chip_layer(assay_id: str, description: str = "") -> str:
     return "tf_binding"
 
 
+# Builders name their assay groups in their own internal vocabulary -- Enformer uses
+# ``DNASE``/``ATAC``/``CHIP_TF``/``CHIP_HIST``/``CAGE``, Borzoi ``track_type``,
+# AlphaGenome the canonical names already. Anything written into a background as a
+# per-row ``layer`` must be canonical, because downstream code keys on it.
+#
+# This existed as a silent trap: the effect-null composition keyed on
+# ``chromatin_accessibility`` matched 472 of AlphaGenome's rows and **0 of Enformer's
+# 5,313**, because Enformer had written its internal ``spec_key``. No error, no
+# warning -- the operation just did nothing for one oracle. Same defect class as #122
+# and #144: two producers, two vocabularies, nothing comparing them.
+_ASSAY_KEY_TO_LAYER = {
+    "DNASE": "chromatin_accessibility",
+    "ATAC": "chromatin_accessibility",
+    "CHIP_TF": "tf_binding",
+    "CHIP_HIST": "histone_marks",
+    "CHIP_HISTONE": "histone_marks",
+    "CAGE": "tss_activity",
+    "PRO_CAP": "tss_activity",
+    "PROCAP": "tss_activity",
+    "RNA": "gene_expression",
+    "RNA_SEQ": "gene_expression",
+    "SPLICE": "splicing",
+    "SPLICE_SITES": "splicing",
+    "SPLICE_SITE_USAGE": "splicing",
+    "LentiMPRA": "promoter_activity",
+}
+
+
+def canonical_layer(assay_key: str) -> str:
+    """Map a builder's internal assay key to a :data:`LAYER_CONFIGS` layer name.
+
+    Raises rather than returning a default. A silent fallback is what allowed an
+    unrecognised key to flow into a shipped background and match nothing downstream;
+    an unknown assay group is a build-time error worth stopping for.
+    """
+    key = str(assay_key or "").strip()
+    if key in LAYER_CONFIGS:
+        return key
+    upper = key.upper()
+    if upper in _ASSAY_KEY_TO_LAYER:
+        return _ASSAY_KEY_TO_LAYER[upper]
+    if key in _ASSAY_KEY_TO_LAYER:
+        return _ASSAY_KEY_TO_LAYER[key]
+    raise KeyError(
+        f"no canonical layer for assay key {assay_key!r}. Add it to "
+        f"_ASSAY_KEY_TO_LAYER in chorus/analysis/scorers.py rather than letting it "
+        f"reach a background as a non-canonical per-row layer."
+    )
+
+
 def classify_track_layer(track) -> str:
     """Classify a prediction track into a regulatory layer.
 

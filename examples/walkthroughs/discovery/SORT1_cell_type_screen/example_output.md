@@ -22,7 +22,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: top 30 tracks for HepG2
 - **Cell types**: HepG2
-- **Generated**: 2026-08-04 05:06 UTC
+- **Generated**: 2026-08-05 04:57 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -66,10 +66,10 @@
 | CHIP:H3K27me3:HepG2 | 1.2e+03 | 868 | -0.467 | ≥99th | 0.421 | Strong mark loss |
 | CHIP:H4K20me1:HepG2 | 1.1e+03 | 850 | -0.368 | ≥99th | 0.275 | Strong mark loss |
 | CHIP:H3K36me3:HepG2 | 1.12e+03 | 882 | -0.347 | ≥99th | 0.736 | Strong mark loss |
-| CHIP:H3K4me2:HepG2 | 2.54e+04 | 3.22e+04 | +0.341 | ≥99th | 0.947 | Strong mark gain |
+| CHIP:H3K4me2:HepG2 | 2.54e+04 | 3.22e+04 | +0.341 | 0.99 | 0.947 | Strong mark gain |
 | CHIP:H3K9me3:HepG2 | 513 | 437 | -0.228 | ≥99th | 0.137 | Moderate mark loss |
 | CHIP:H3K79me2:HepG2 | 1.09e+03 | 1.23e+03 | +0.174 | ≥99th | 0.708 | Moderate mark gain |
-| CHIP:H3K4me1:HepG2 | 1.58e+04 | 1.66e+04 | +0.073 | 0.94 | 0.998 | Minimal effect |
+| CHIP:H3K4me1:HepG2 | 1.58e+04 | 1.66e+04 | +0.073 | 0.89 | 0.998 | Minimal effect |
 
 #### TSS activity (CAGE/PRO-CAP)
 
@@ -77,14 +77,14 @@
 |---|---|---|---|---|---|---|
 | CAGE:HepG2 — variant site | 25.2 | 73.3 | +1.502 | ≥99th | 0.916 | Very strong increase |
 | CAGE:HepG2 — variant site | 75.2 | 174 | +1.203 | ≥99th | 0.943 | Very strong increase |
-| CAGE:HepG2 — PSRC1 TSS | 2.26e+03 | 2.66e+03 | +0.235 | 0.98 | 0.978 | Moderate increase |
+| CAGE:HepG2 — PSRC1 TSS | 2.26e+03 | 2.66e+03 | +0.235 | 0.97 | 0.978 | Moderate increase |
 | CAGE:HepG2 — MYBPHL TSS | 188 | 218 | +0.213 | 0.97 | 0.951 | Moderate increase |
-| CAGE:HepG2 — CELSR2 TSS | 2.47 | 2.98 | +0.198 | 0.97 | 0.838 | Moderate increase |
-| CAGE:HepG2 — PSRC1 TSS | 52 | 58.8 | +0.172 | 0.96 | 0.936 | Moderate increase |
-| CAGE:HepG2 — CELSR2 TSS | 666 | 751 | +0.172 | 0.96 | 0.965 | Moderate increase |
-| CAGE:HepG2 — MYBPHL TSS | 1.74 | 2 | +0.132 | 0.95 | 0.821 | Moderate increase |
-| CAGE:HepG2 — SORT1 TSS | 7.97 | 8.72 | +0.115 | 0.94 | 0.887 | Moderate increase |
-| CAGE:HepG2 — SORT1 TSS | 3.53e+03 | 3.67e+03 | +0.058 | 0.87 | 0.985 | Minimal effect |
+| CAGE:HepG2 — CELSR2 TSS | 2.47 | 2.98 | +0.198 | 0.96 | 0.838 | Moderate increase |
+| CAGE:HepG2 — PSRC1 TSS | 52 | 58.8 | +0.172 | 0.95 | 0.936 | Moderate increase |
+| CAGE:HepG2 — CELSR2 TSS | 666 | 751 | +0.172 | 0.95 | 0.965 | Moderate increase |
+| CAGE:HepG2 — MYBPHL TSS | 1.74 | 2 | +0.132 | 0.94 | 0.821 | Moderate increase |
+| CAGE:HepG2 — SORT1 TSS | 7.97 | 8.72 | +0.115 | 0.93 | 0.887 | Moderate increase |
+| CAGE:HepG2 — SORT1 TSS | 3.53e+03 | 3.67e+03 | +0.058 | 0.85 | 0.985 | Minimal effect |
 | _…showing top 10 of 58 — see `example_output.json` for the full set_ | | | | | | |
 
 #### Gene expression (RNA-seq)
@@ -120,7 +120,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: top 6 tracks for MCF 10A
 - **Cell types**: MCF 10A
-- **Generated**: 2026-08-04 05:07 UTC
+- **Generated**: 2026-08-05 04:58 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -141,7 +141,7 @@
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:CTCF:MCF 10A | 294 | 289 | -0.025 | 0.88 | 0.743 | Minimal effect |
+| CHIP:CTCF:MCF 10A | 294 | 289 | -0.025 | 0.86 | 0.743 | Minimal effect |
 
 #### Gene expression (RNA-seq)
 
@@ -163,7 +163,7 @@
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| SPLICE_SITES:MCF 10A | 0.00736 | 0.00599 | -0.002 | 0.88 | 0.878 | Minimal effect |
+| SPLICE_SITES:MCF 10A | 0.00736 | 0.00599 | -0.002 | 0.91 | 0.878 | Minimal effect |
 | SPLICE_SITES:MCF 10A | 0.00128 | 0.00127 | -0.000 | near-zero | 0.705 | Minimal effect |
 
 ---
@@ -183,7 +183,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: top 3 tracks for amniotic epithelial cell
 - **Cell types**: amniotic epithelial cell
-- **Generated**: 2026-08-04 05:07 UTC
+- **Generated**: 2026-08-05 04:58 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -205,15 +205,15 @@
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
 | CAGE:amniotic epithelial cell — variant site | 83.7 | 54.6 | -0.607 | ≥99th | 0.947 | Strong decrease |
-| CAGE:amniotic epithelial cell — variant site | 21.9 | 17.5 | -0.306 | 0.99 | 0.915 | Strong decrease |
-| CAGE:amniotic epithelial cell — CELSR2 TSS | 1.02e+03 | 989 | -0.039 | 0.82 | 0.970 | Minimal effect |
-| CAGE:amniotic epithelial cell — CELSR2 TSS | 4.26 | 4.19 | -0.019 | 0.69 | 0.866 | Minimal effect |
-| CAGE:amniotic epithelial cell — GNAI3 TSS | 215 | 218 | +0.018 | 0.69 | 0.954 | Minimal effect |
-| CAGE:amniotic epithelial cell — PSRC1 TSS | 1.78e+03 | 1.8e+03 | +0.016 | 0.66 | 0.977 | Minimal effect |
-| CAGE:amniotic epithelial cell — SORT1 TSS | 2.86e+03 | 2.89e+03 | +0.013 | 0.61 | 0.983 | Minimal effect |
-| CAGE:amniotic epithelial cell — SORT1 TSS | 5.86 | 5.91 | +0.012 | 0.60 | 0.879 | Minimal effect |
-| CAGE:amniotic epithelial cell — AMIGO1 TSS | 224 | 222 | -0.011 | 0.58 | 0.955 | Minimal effect |
-| CAGE:amniotic epithelial cell — GNAT2 TSS | 27.5 | 27.7 | +0.011 | 0.57 | 0.923 | Minimal effect |
+| CAGE:amniotic epithelial cell — variant site | 21.9 | 17.5 | -0.306 | 0.98 | 0.915 | Strong decrease |
+| CAGE:amniotic epithelial cell — CELSR2 TSS | 1.02e+03 | 989 | -0.039 | 0.80 | 0.970 | Minimal effect |
+| CAGE:amniotic epithelial cell — CELSR2 TSS | 4.26 | 4.19 | -0.019 | 0.67 | 0.866 | Minimal effect |
+| CAGE:amniotic epithelial cell — GNAI3 TSS | 215 | 218 | +0.018 | 0.67 | 0.954 | Minimal effect |
+| CAGE:amniotic epithelial cell — PSRC1 TSS | 1.78e+03 | 1.8e+03 | +0.016 | 0.64 | 0.977 | Minimal effect |
+| CAGE:amniotic epithelial cell — SORT1 TSS | 2.86e+03 | 2.89e+03 | +0.013 | 0.59 | 0.983 | Minimal effect |
+| CAGE:amniotic epithelial cell — SORT1 TSS | 5.86 | 5.91 | +0.012 | 0.58 | 0.879 | Minimal effect |
+| CAGE:amniotic epithelial cell — AMIGO1 TSS | 224 | 222 | -0.011 | 0.56 | 0.955 | Minimal effect |
+| CAGE:amniotic epithelial cell — GNAT2 TSS | 27.5 | 27.7 | +0.011 | 0.55 | 0.923 | Minimal effect |
 | _…showing top 10 of 58 — see `example_output.json` for the full set_ | | | | | | |
 
 ---

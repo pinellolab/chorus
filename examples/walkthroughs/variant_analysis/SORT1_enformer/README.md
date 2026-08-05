@@ -21,20 +21,20 @@ cross-tissue signature of this variant without pre-specifying cell type.
 ## Results
 
 **Summary**: Chromatin accessibility (DNASE/ATAC): very strong opening
-(+1.24); Transcription factor binding (ChIP-TF): very strong binding
-gain (+1.13); Histone modifications (ChIP-Histone): very strong mark
-gain (+0.73); TSS activity (CAGE/PRO-CAP): strong increase (+0.51).
+(+1.19); Transcription factor binding (ChIP-TF): very strong binding
+gain (+1.12); Histone modifications (ChIP-Histone): very strong mark
+gain (+0.73); TSS activity (CAGE/PRO-CAP): strong increase (+0.54).
 
 Top hits by layer:
 
 | Layer | Top Track | Effect | Interpretation |
 |-------|-----------|--------|----------------|
-| Chromatin | DNASE:LNCaP clone FGC | +1.236 | Very strong opening |
-| Chromatin | DNASE:HeLa-S3 G1b phase | +1.149 | Very strong opening |
-| TF binding | CHIP:HNF4A:liver (adult) | +1.125 | Very strong binding gain |
-| TF binding | CHIP:RXRA:liver (adult) | +1.100 | Very strong binding gain |
+| Chromatin | DNASE:LNCaP clone FGC | +1.189 | Very strong opening |
+| Chromatin | DNASE:HeLa-S3 G1b phase | +1.118 | Very strong opening |
+| TF binding | CHIP:HNF4A:liver (adult) | +1.118 | Very strong binding gain |
+| TF binding | CHIP:RXRA:liver (adult) | +1.091 | Very strong binding gain |
 | Histone | CHIP:H3K27ac:22Rv1 | +0.734 | Very strong mark gain |
-| CAGE | CAGE:breast MDA-MB-453 | +0.505 | Strong increase |
+| CAGE | CAGE:breast MDA-MB-453 | +0.541 | Strong increase |
 
 **Key observations**:
 - The strongest hits span many cell types (LNCaP, HeLa, MCF-7, placenta,
@@ -49,7 +49,7 @@ Top hits by layer:
 ## Cross-oracle comparison
 
 Compare with the [AlphaGenome focused HepG2 analysis](../SORT1_rs12740374/)
-(+0.449 DNASE:HepG2, +0.378 CEBPA:HepG2) and the [ChromBPNet 1bp analysis](../SORT1_chrombpnet/)
+(+0.449 DNASE:HepG2, +0.387 CEBPA:HepG2) and the [ChromBPNet 1bp analysis](../SORT1_chrombpnet/)
 (−0.111 ATAC:HepG2 — opposite direction, see the ChromBPNet README for
 why). Enformer's discovery-mode panorama complements the other two.
 

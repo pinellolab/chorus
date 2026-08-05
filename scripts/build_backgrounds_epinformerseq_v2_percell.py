@@ -36,6 +36,7 @@ import argparse
 import logging
 import os
 import random
+from collections import defaultdict
 import sys
 import time
 
@@ -49,6 +50,10 @@ sys.path.insert(0, REPO_ROOT)
 # and --bias-root if you want to point at a local training-output tree.
 from chorus.core.globals import CHORUS_DOWNLOADS_DIR  # noqa: E402
 
+from chorus.utils.annotations import (  # noqa: E402
+    load_chrom_sizes,
+    sample_gene_anchored_positions,
+)
 from chorus.analysis.background_sampling import ReservoirSampler  # noqa: E402
 _CHORUS_PERCELL_ROOT = str(CHORUS_DOWNLOADS_DIR / "epinformerseq")
 V2_PERCELL_DIR_DEFAULT = os.path.join(_CHORUS_PERCELL_ROOT, "per_cell_widewin")
@@ -339,23 +344,30 @@ def build_variant_backgrounds():
     ref = pysam.FastaFile(os.path.join(REPO_ROOT, "genomes", "hg38.fa"))
     rng = random.Random(42)
     chroms = [f"chr{i}" for i in range(1, 23)]
-    snps_per_chrom = args.n_variants // len(chroms) + 1
+    # EPInformer-seq predicts enhancer activity from DNase and H3K27ac, so a
+    # uniformly random position -- which is what this used to draw -- is the wrong
+    # reference population: almost none of them carry the signal the model reads.
+    #
+    # This oracle's own BASELINE pass already samples random + cCRE + DHS
+    # (see sample_positions()). Using the SAME composition for the effect pass
+    # removes an asymmetry inside a single oracle, which is harder to defend than any
+    # difference between oracles, and it matches what ChromBPNet and Cherimoya have
+    # always done for their effect nulls (uniform + DHS summits).
+    _sizes = load_chrom_sizes(os.path.join(REPO_ROOT, "genomes", "hg38.fa.fai"))
+    sampled = sample_gene_anchored_positions(
+        args.n_variants, chrom_sizes=_sizes, seed=42)
     snps = []
-    for chrom in chroms:
-        chrom_len = ref.get_reference_length(chrom)
-        max_pos = min(chrom_len - 5_000_000, 200_000_000)
-        for _ in range(snps_per_chrom):
-            if len(snps) >= args.n_variants:
-                break
-            pos = rng.randint(5_000_000, max_pos)
-            ref_base = ref.fetch(chrom, pos - 1, pos).upper()
-            if ref_base not in "ACGT":
-                continue
-            alt_base = rng.choice([b for b in "ACGT" if b != ref_base])
-            snps.append((chrom, pos, ref_base, alt_base))
+    strata_counts = defaultdict(int)
+    for chrom, pos, stratum in sampled:
+        ref_base = ref.fetch(chrom, pos - 1, pos).upper()
+        if ref_base not in "ACGT":
+            continue  # N or soft-masked; the tally records the shortfall
+        alt_base = rng.choice([b for b in "ACGT" if b != ref_base])
+        snps.append((chrom, pos, ref_base, alt_base))
+        strata_counts[stratum] += 1
     rng.shuffle(snps)
-    snps = snps[: args.n_variants]
-    logger.info("Generated %d random SNPs", len(snps))
+    logger.info("Generated %d gene-anchored+ccre SNPs from %d sampled positions: %s",
+                len(snps), len(sampled), dict(strata_counts))
 
     # Build ref + alt sequences as numpy arrays once, then batch through.
     half = IN_WINDOW // 2

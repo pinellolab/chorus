@@ -29,7 +29,7 @@ AlphaGenome paper's recommended variant scoring formulas exactly:
 
 | Variant | Locus | Paper Claim | Chorus Result | Status |
 |---------|-------|-------------|---------------|--------|
-| rs12740374 (G>T) | SORT1 / Fig.3 | C/EBP binding gain + CELSR2/PSRC1 upregulation in HepG2 | CEBPA +0.379, CEBPB +0.269, DNASE +0.450, CAGE +0.250 | Confirmed |
+| rs12740374 (G>T) | SORT1 / Fig.3 | C/EBP binding gain + CELSR2/PSRC1 upregulation in HepG2 | CEBPA +0.379, CEBPB +0.269, DNASE +0.450, CAGE +0.239 | Confirmed |
 | chr5:1295046 (T>G) | TERT / Fig.4 | ETS/ELF1 binding gain + TERT expression increase in melanocytes | CAGE +0.34 at TERT TSS (correct direction). ELF1 binding cannot be validated — no melanocyte TF ChIP tracks available. | Partially confirmed |
 
 ## Validation examples
@@ -59,12 +59,12 @@ The whole C/EBP family responds, which is the point of the validation:
 
 | Track | Effect (log2FC) | Effect %ile |
 |---|---|---|
-| CHIP:CEBPB:HepG2 | +3.044 | ≥99th |
-| CHIP:CEBPA:HepG2 | +2.764 | ≥99th |
+| CHIP:CEBPB:HepG2 | +2.981 | ≥99th |
+| CHIP:CEBPA:HepG2 | +2.709 | ≥99th |
 | CHIP:CEBPG:HepG2 | +2.269 | ≥99th |
-| CHIP:CEBPD:HepG2 | +1.818 | ≥99th |
+| CHIP:CEBPD:HepG2 | +1.739 | ≥99th |
 | DNASE:HepG2 | +1.332 | ≥99th |
-| CHIP:H3K27ac:HepG2 | +1.258 | ≥99th |
+| CHIP:H3K27ac:HepG2 | +1.251 | ≥99th |
 | ATAC:HepG2 | +0.732 | ≥99th |
 | RNA:HepG2 (best of 58 rows) | +0.718 | ≥99th |
 

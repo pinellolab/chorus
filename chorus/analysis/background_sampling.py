@@ -108,7 +108,58 @@ class ReservoirSampler:
         self.counts[track_idx] += 1
 
     def add_batch(self, track_idx: int, values) -> None:
-        """Offer many values to one track.
+        """Offer many values to one track, vectorised where it is safe to be.
+
+        Ported from ``build_backgrounds_alphagenome.py``, which carried the last
+        un-migrated copy of this class (#125). That copy had to be migrated, not
+        merely kept in sync: adding ``to_flat_samples`` to THIS class while
+        AlphaGenome used its own left eight position shards running for fifty GPU
+        minutes before every one of them died with ``AttributeError`` at the write
+        step. Which is the thesis of #125, demonstrated at my own expense.
+
+        The fast path is only taken while the reservoir still has room, where
+        "which samples survive" is not yet a question -- everything offered is kept,
+        so extending in bulk is identical to appending one at a time. Once full it
+        falls back to per-value Algorithm R, because there the traversal ORDER
+        decides which samples survive and a different order moves the CDF without
+        any arithmetic changing.
+
+        Equivalence to the plain loop is pinned by
+        ``tests/test_background_sampling.py::test_add_batch_matches_where_a_builder_has_one``,
+        which exercises the overflow branch (400 values in 37-value chunks against a
+        capacity of 40) rather than only the happy path.
+        """
+        target = self.data[track_idx]
+        current = int(self.counts[track_idx])
+        cap = self.capacity
+        n_new = len(values)
+        if n_new == 0:
+            return
+
+        if current < cap:
+            room = cap - current
+            n_append = min(room, n_new)
+            if n_append > 0:
+                head = values[:n_append]
+                if hasattr(head, "tolist"):
+                    target.extend(head.tolist())
+                else:
+                    target.extend(float(v) for v in head)
+            for off, v in enumerate(values[n_append:]):
+                n_so_far = current + n_append + off
+                j = self._rng.randint(0, n_so_far)
+                if j < cap:
+                    target[j] = float(v)
+            self.counts[track_idx] += n_new
+        else:
+            for off, v in enumerate(values):
+                j = self._rng.randint(0, current + off)
+                if j < cap:
+                    target[j] = float(v)
+            self.counts[track_idx] += n_new
+
+    def _add_batch_reference(self, track_idx: int, values) -> None:
+        """The plain loop, kept so the equivalence test has something to compare to.
 
         Deliberately a plain loop over :meth:`add` rather than a vectorised
         reimplementation, because a different traversal order changes *which*
@@ -163,6 +214,86 @@ class ReservoirSampler:
 
     def get_counts(self) -> np.ndarray:
         return self.counts.copy()
+
+    # ------------------------------------------------------------------
+    # Exact serialisation, for splitting one build across GPUs
+    # ------------------------------------------------------------------
+    #
+    # AlphaGenome, Borzoi and Enformer produce every track from ONE forward pass,
+    # so sharding them by *track* (which is how the ChromBPNet builder shards, and
+    # which works there because its tracks are separate model files) saves no GPU
+    # time at all — each shard would still run every pass. They have to be sharded
+    # by *position* instead, and that changes what a merge means: each shard holds a
+    # partial reservoir for EVERY track rather than a complete one for some tracks.
+    #
+    # Pooling the shards' 10,000-point CDF grids would be an approximation. A decent
+    # one when the shards are equal-sized, but this codebase has spent enough effort
+    # removing approximations that looked exact, so the shards serialise their raw
+    # samples and the CDF is built exactly once, from the union.
+    #
+    # Ragged data, stored flat with offsets rather than as an object array, so the
+    # NPZ still loads under allow_pickle=False.
+
+    def to_flat_samples(self) -> dict:
+        """Raw retained samples as ``{values, offsets, counts, n_tracks}``.
+
+        ``values[offsets[i]:offsets[i + 1]]`` is track *i*'s reservoir. ``counts``
+        is the true number of values ever offered, which is what the shipped
+        ``*_counts`` means and is not recoverable from the lengths.
+        """
+        lengths = np.fromiter((len(d) for d in self.data), dtype=np.int64,
+                              count=self.n_tracks)
+        offsets = np.zeros(self.n_tracks + 1, dtype=np.int64)
+        np.cumsum(lengths, out=offsets[1:])
+        values = (np.concatenate([np.asarray(d, dtype=np.float64)
+                                  for d in self.data if len(d)])
+                  if offsets[-1] else np.zeros(0, dtype=np.float64))
+        return {
+            "values": values,
+            "offsets": offsets,
+            "counts": self.counts.copy(),
+            "n_tracks": np.int64(self.n_tracks),
+        }
+
+    @classmethod
+    def from_flat_samples(cls, *parts, capacity: int = DEFAULT_CAPACITY,
+                          seed: int = DEFAULT_SEED) -> "ReservoirSampler":
+        """Rebuild one sampler from the union of several shards' samples.
+
+        Counts ADD, because each shard offered a disjoint set of positions. The
+        retained values concatenate; if that exceeds ``capacity`` the excess is
+        subsampled deterministically rather than by re-running Algorithm R, since
+        every retained value is already a uniform draw from its own shard and the
+        shards are equal-sized by construction.
+        """
+        if not parts:
+            raise ValueError("no shards given")
+        n_tracks = int(parts[0]["n_tracks"])
+        for p in parts[1:]:
+            if int(p["n_tracks"]) != n_tracks:
+                raise ValueError(
+                    f"shard track counts disagree: {n_tracks} vs {int(p['n_tracks'])}"
+                )
+        merged = cls(n_tracks=n_tracks, capacity=capacity, seed=seed)
+        rng = np.random.default_rng(seed)
+        for i in range(n_tracks):
+            pieces = []
+            total = 0
+            for p in parts:
+                off = np.asarray(p["offsets"])
+                lo, hi = int(off[i]), int(off[i + 1])
+                if hi > lo:
+                    pieces.append(np.asarray(p["values"])[lo:hi])
+                total += int(np.asarray(p["counts"])[i])
+            if pieces:
+                vals = np.concatenate(pieces)
+                if len(vals) > capacity:
+                    keep = rng.choice(len(vals), capacity, replace=False)
+                    keep.sort()
+                    vals = vals[keep]
+                merged.data[i] = [float(v) for v in vals]
+            merged.counts[i] = total
+        return merged
 
     def total_samples(self) -> int:
         return int(self.counts.sum())

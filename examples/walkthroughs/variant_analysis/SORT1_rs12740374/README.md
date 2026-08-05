@@ -30,11 +30,11 @@ The AlphaGenome analysis reproduces the published biology:
 
 | Track | Effect (log2FC) | Effect %ile | Activity %ile | Interpretation |
 |-------|----------------|------------|---------------|----------------|
-| CHIP:CEBPB:HepG2 | +3.046 | ≥99th | 0.977 | Very strong TF binding gain |
-| CHIP:CEBPA:HepG2 | +2.763 | ≥99th | 0.991 | Very strong TF binding gain |
-| CAGE:HepG2 (variant site) | +1.509 | ≥99th | 0.916 | Very strong transcription increase |
+| CHIP:CEBPB:HepG2 | +2.981 | ≥99th | 0.977 | Very strong TF binding gain |
+| CHIP:CEBPA:HepG2 | +2.626 | ≥99th | 0.991 | Very strong TF binding gain |
+| CAGE:HepG2 (variant site) | +1.502 | ≥99th | 0.916 | Very strong transcription increase |
 | DNASE:HepG2 | +1.332 | ≥99th | 0.973 | Very strong chromatin opening |
-| CHIP:H3K27ac:HepG2 | +1.257 | ≥99th | 0.999 | Very strong enhancer activation |
+| CHIP:H3K27ac:HepG2 | +1.251 | ≥99th | 0.999 | Very strong enhancer activation |
 | ATAC:HepG2 | +0.730 | ≥99th | 0.935 | Very strong chromatin opening |
 
 > **Why all `≥99th`?** Two separate reasons, and only the first is a
@@ -43,7 +43,7 @@ The AlphaGenome analysis reproduces the published biology:
 > Chorus collapses the top bucket to `≥99th` rather than rendering a
 > `99.3rd` / `99.7th` / `99.9th` gradient it cannot support. **But for
 > this variant the percentile is not doing the work — the effects
-> themselves are large.** A `+3.05` log2FC on CEBPB is an 8-fold
+> themselves are large.** A `+2.98` log2FC on CEBPB is an 8-fold
 > binding gain; the `≥99th` is a consequence, not the evidence.
 >
 > Read the **Effect** column first and the percentile second. The

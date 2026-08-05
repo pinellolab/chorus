@@ -22,7 +22,8 @@ differentiation tracks would show stronger effects.
 
 ## Key findings
 
-- Modest chromatin accessibility change (-0.113 log2FC in K562)
+- Modest chromatin accessibility gain (+0.145 log2FC in K562, effect
+  percentile 0.902) — an opening, not a closing
 - Minimal expression effects — consistent with K562 not being the optimal
   cell type for this enhancer
 - Demonstrates importance of cell-type selection for variant interpretation

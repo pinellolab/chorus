@@ -10,32 +10,37 @@ base-pair resolution, revealing the exact position of the effect.
 ## Example prompt
 
 > I want to zoom in on rs12740374 (chr1:109274968 G>T) at base-pair
-> resolution. Load ChromBPNet for ATAC accessibility in HepG2 and
+> resolution. Load ChromBPNet for DNase accessibility in HepG2 and
 > analyze this variant. Does the variant create a new accessibility
 > peak right at the SNP position?
 
 ## What Claude does
 
-1. `load_oracle('chrombpnet', assay='ATAC', cell_type='HepG2')`
+1. `load_oracle('chrombpnet', assay='DNASE', cell_type='HepG2')`
 2. `analyze_variant_multilayer('chrombpnet', 'chr1:109274968', 'G', ['T'], ['auto'])`
 3. Report shows a single chromatin accessibility layer at 1bp resolution
 
 ## Results
 
-**Summary**: Chromatin accessibility (DNASE/ATAC): moderate closing (-0.11).
+**Summary**: Chromatin accessibility (DNASE): very strong opening (+1.376,
+effect percentile 0.9995).
 
 | Track | Ref | Alt | Effect | Interpretation |
 |-------|-----|-----|--------|----------------|
-| ATAC:HepG2 | 687 | 636 | -0.111 | Moderate closing |
+| DNASE:HepG2 | 287 | 747 | +1.376 | Very strong opening |
 
-ChromBPNet reports moderate closing (-0.11 log2FC) at 1bp resolution
-in HepG2 ATAC. **The AlphaGenome DNASE analysis of the same variant
-shows strong opening (+0.45)** — opposite direction. See the
-"Why AlphaGenome DNASE and ChromBPNet ATAC can disagree" section
-below for the biological explanation. This is a legitimate divergence,
-not a bug: DNase-seq and ATAC-seq measure chromatin accessibility
-differently, and the two models use different window sizes and
-aggregation strategies.
+ChromBPNet reports a **2.6-fold increase** in local DNase accessibility at
+1 bp resolution, stronger than 99.95 % of variants in its reference
+population. The AlphaGenome DNASE analysis of the same variant agrees on
+direction and lands within a few percent on magnitude (see
+[../SORT1_rs12740374/](../SORT1_rs12740374/) for its exact figure), despite a
+1 Mb receptive field against ~2 kb and a 128 bp binned sum against a
+base-resolution peak.
+
+That agreement is the point of running both: rs12740374 creates a C/EBP
+binding site, and an effect that survives two independent models with
+different training data, receptive fields and aggregation is far more
+credible than either alone.
 
 The report has only one layer (chromatin) because ChromBPNet is
 a single-assay oracle. Compare with the
@@ -51,10 +56,11 @@ for the same variant.
 - **Complement AlphaGenome**: Use ChromBPNet for the detailed local
   view, AlphaGenome for the broad multi-layer context
 
-## Why AlphaGenome DNASE and ChromBPNet ATAC can disagree
+## When AlphaGenome and ChromBPNet *can* disagree
 
-Both oracles report chromatin accessibility at the same locus in HepG2,
-but raw effects can diverge (sometimes in sign). Three reasons:
+They agree at this locus. But they can diverge,
+sometimes in sign, and it is worth knowing why before trusting either in
+isolation. Three reasons:
 
 1. **Different training data.** AlphaGenome's DNASE:HepG2 track
    summarises ENCODE DNase-seq with a smoothing kernel over ~128 bp
@@ -74,6 +80,15 @@ but raw effects can diverge (sometimes in sign). Three reasons:
    itself. A motif-shift of 1–2 bp can raise the local peak
    (ChromBPNet opening) while redistributing signal across the wider
    window (AlphaGenome neutral or opposite).
+
+An earlier version of this page reported an ATAC run at −0.111 and built
+this section around explaining a contradiction with AlphaGenome. That
+contradiction was an artefact of stale prose: the committed run is DNase,
+not ATAC, and both oracles open strongly. The regeneration scripts rewrite
+`example_output.{json,md,tsv}` and the HTML but have never touched these
+READMEs, so every correctness fix left the narrative behind.
+`tests/test_walkthrough_readmes_match_artefacts.py` now fails on any number
+here that its own artefact does not contain.
 
 **Practical rule.** Agreement across both oracles ≈ a strong, robust
 signal. Disagreement is informative — usually the effect is either

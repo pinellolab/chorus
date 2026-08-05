@@ -153,8 +153,9 @@ def _logged_region_set(log_rel: str) -> dict:
                     "available": True,
                     "logged_at": line[:19],
                     "n_snps": int(m.group(1)),
-                    "n_positions": int(m.group(2)),
-                    "strata_counts": ast.literal_eval(m.group(3)),
+                    "region_set": m.group(2),
+                    "n_positions": int(m.group(3)),
+                    "strata_counts": ast.literal_eval(m.group(4)),
                 }
     return {"available": False, "reason": "no gene-anchored SNP line in the log"}
 
