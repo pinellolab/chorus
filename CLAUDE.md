@@ -28,6 +28,7 @@ mamba run -n chorus-alphagenome  # JAX
 mamba run -n chorus-enformer     # TF
 mamba run -n chorus-chrombpnet   # TF
 mamba run -n chorus-borzoi       # PyTorch
+mamba run -n chorus-cherimoya    # PyTorch + Triton (CUDA or CPU)
 mamba run -n chorus-sei          # PyTorch
 mamba run -n chorus-legnet       # PyTorch
 ```
