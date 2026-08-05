@@ -36,6 +36,30 @@ mamba run -n chorus-legnet       # PyTorch
 auto-download from
 `huggingface.co/datasets/lucapinello/chorus-backgrounds` on first use.
 
+## Where downloaded data goes
+
+Bulk data defaults to the **chorus installation directory**, not `$HOME`.
+Backgrounds used to land in `~/.chorus/backgrounds/` (7.8 GB) and model
+weights in `~/.cache/huggingface/` (12 GB, because nothing set `HF_HOME`);
+both now follow one switch:
+
+```bash
+export CHORUS_DATA_DIR=/data/chorus_data          # per-shell, highest priority
+chorus config data-dir --set /data/chorus_data    # persist for this install
+chorus setup --data-dir /data/chorus_data         # choose at install time
+chorus config data-dir                            # show what resolved, and why
+chorus config data-dir --set PATH --migrate       # move existing backgrounds
+```
+
+Resolution order: `CHORUS_DATA_DIR` > `<install>/chorus_data_dir.txt` >
+the install dir > `~/.chorus` (only if the install tree is not writable,
+e.g. a pip install into system site-packages).
+
+Two things deliberately do NOT follow it: **credentials**
+(`~/.chorus/config.toml`, the HF token) stay with the user, because a shared
+data dir is the wrong place for a personal token; and **conda environments**
+stay with the installation.
+
 ## Regeneration
 
 After any correctness fix (e.g. the ref-allele off-by-one) every

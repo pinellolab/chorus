@@ -23,7 +23,8 @@ Two kinds of background are supported:
 **2. Baseline signal backgrounds** (``{oracle}_{layer}_baseline.npy``)
     Maps raw predicted signal levels to genome-wide activity percentiles [0, 1].
 
-Background distributions are cached to ``~/.chorus/backgrounds/`` for reuse.
+Background distributions are cached under ``CHORUS_BACKGROUNDS_DIR`` for reuse
+(the installation directory by default; see ``chorus/core/globals.py``).
 """
 
 import hashlib
@@ -35,6 +36,7 @@ from typing import Optional
 import numpy as np
 
 from chorus.analysis.background_sampling import cdf_grid_violations
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +166,7 @@ class QuantileNormalizer:
 
     def __init__(self, cache_dir: Optional[str] = None):
         if cache_dir is None:
-            cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+            cache_dir = str(CHORUS_BACKGROUNDS_DIR)
         self.cache_dir = Path(cache_dir)
         self._distributions: dict[str, BackgroundDistribution] = {}
 
@@ -359,7 +361,7 @@ class PerTrackNormalizer:
 
     def __init__(self, cache_dir: Optional[str] = None):
         if cache_dir is None:
-            cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+            cache_dir = str(CHORUS_BACKGROUNDS_DIR)
         self.cache_dir = Path(cache_dir)
         # Keyed by oracle name
         self._loaded: dict[str, dict] = {}  # oracle -> {track_ids, effect_cdfs, ...}
@@ -1014,7 +1016,7 @@ class PerTrackNormalizer:
             (#124).
         """
         if cache_dir is None:
-            cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+            cache_dir = str(CHORUS_BACKGROUNDS_DIR)
         out_dir = Path(cache_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1137,7 +1139,7 @@ class PerTrackNormalizer:
             of tracks that were actually appended (after dedup).
         """
         if cache_dir is None:
-            cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+            cache_dir = str(CHORUS_BACKGROUNDS_DIR)
         out_dir = Path(cache_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         npz_path = out_dir / PerTrackNormalizer.npz_filename(oracle_name)
@@ -1326,7 +1328,7 @@ def get_pertrack_normalizer(
     no per-track CDFs exist for *oracle_name*.
     """
     if cache_dir is None:
-        cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+        cache_dir = str(CHORUS_BACKGROUNDS_DIR)
     norm = PerTrackNormalizer(cache_dir=cache_dir)
     if norm.has_oracle(oracle_name):
         norm._ensure_loaded(oracle_name)
@@ -1367,7 +1369,7 @@ def download_pertrack_backgrounds(
     Returns 1 if downloaded, 0 if already exists or not available.
     """
     if cache_dir is None:
-        cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+        cache_dir = str(CHORUS_BACKGROUNDS_DIR)
     bg_dir = Path(cache_dir)
     bg_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1420,7 +1422,7 @@ def download_backgrounds(
     exist locally.
     """
     if cache_dir is None:
-        cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+        cache_dir = str(CHORUS_BACKGROUNDS_DIR)
     bg_dir = Path(cache_dir)
     bg_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1487,7 +1489,7 @@ def get_normalizer(
     don't need to branch.
     """
     if cache_dir is None:
-        cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+        cache_dir = str(CHORUS_BACKGROUNDS_DIR)
     bg_dir = Path(cache_dir)
 
     # ── 1. Try the per-track NPZ first (new format, auto-downloaded from HF).

@@ -9,10 +9,11 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
+from chorus.core.globals import CHORUS_CONFIG_PATH
 
 logger = logging.getLogger(__name__)
 
-_LDLINK_CONFIG_PATH = Path.home() / ".chorus" / "config.toml"
+_LDLINK_CONFIG_PATH = CHORUS_CONFIG_PATH
 
 
 def _resolve_ldlink_token(explicit: Optional[str]) -> Optional[str]:

@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
+from chorus.core.globals import CHORUS_LIB_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,7 @@ logger = logging.getLogger(__name__)
 # hosts). The CDN <script> fallback is the last resort and only triggers
 # when both the bundled copy and both network paths fail.
 _IGV_CDN = "https://cdn.jsdelivr.net/npm/igv@3.1.1/dist/igv.min.js"
-_IGV_LOCAL = Path.home() / ".chorus" / "lib" / "igv.min.js"
+_IGV_LOCAL = CHORUS_LIB_DIR / "igv.min.js"
 _IGV_BUNDLED = Path(__file__).parent / "static" / "igv.min.js"
 # HuggingFace mirror — tertiary fallback for unusual installs where the
 # bundled resource is missing (e.g. stripped by a packer) and stdlib
