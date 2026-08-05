@@ -29,6 +29,18 @@ elif device and device.startswith("cuda:"):
 import numpy
 import torch
 
+# Reuse Triton's autotune choice from a previous process instead of
+# re-benchmarking it for this one forward pass (~7.2s/call on CATv1).  Must
+# precede `import cherimoya`, which is when the decorators read the knob.
+# Kept inline rather than imported from cherimoya_source/_triton_autotune.py
+# (which documents why) to keep this template self-contained -- importing
+# chorus in this env costs ~0.6s, which would eat much of the saving.
+try:
+    from triton import knobs
+    knobs.autotuning.cache = True
+except (ImportError, AttributeError):
+    pass
+
 from cherimoya import Cherimoya
 
 if device in (None, "", "auto"):
