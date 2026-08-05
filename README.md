@@ -160,12 +160,14 @@ Start with one or two oracles and add more with `chorus setup --oracle <name>` l
 | **Enformer** | 8 GB | optional | ~10 s (GPU) / ~1 min (CPU) | lightweight multi-track, CPU-friendly starter |
 | **Borzoi** | 12 GB | recommended | ~30 s (GPU) | distal gene-expression effects, longer context |
 | **ChromBPNet** | 4 GB | optional | ~1 s (CPU ok) | base-pair chromatin / motif disruption |
-| **Cherimoya / CATv1** | 4 GB | recommended | ~60 s (GPU, default) — [see note](#cherimoya-timing-depends-on-the-mode-you-run-it-in) | base-pair chromatin accessibility across 1,518 ENCODE DNase/ATAC experiments — the widest biosample coverage in chorus |
+| **Cherimoya / CATv1** | 4 GB | recommended | ~25 s (GPU, default) — [see note](#cherimoya-timing-depends-on-the-mode-you-run-it-in) | base-pair chromatin accessibility across 1,518 ENCODE DNase/ATAC experiments — the widest biosample coverage in chorus |
 | **LegNet** | 4 GB | optional | <1 s | MPRA / promoter activity |
 | **Sei** | 4 GB | optional | ~2 s | regulatory sequence-class profiling |
 | **EPInformer-seq** | 2 GB | optional | <1 s | per-cell 2-channel enhancer activity (DNase cut-sites + H3K27ac, 3 assays, 11 Roadmap cells, 2114-bp window) |
 | **AlphaGenome** | 16 GB | strongly recommended | ~30 s (GPU) / 2–5 min (CPU) | comprehensive multi-layer (5,168 tracks, 1 Mb window) |
 | **AlphaGenome (PyTorch backend)** ⓘ | 16 GB | recommended (esp. Apple Silicon) | ~3.8 s @524 kb on Mac MPS / ~2 s @1 MB on CUDA | alternative backend with the same weights; see [Two AlphaGenome backends](#two-alphagenome-backends) below |
+
+⁑ **The Cherimoya figures are the inference step only** — model load, FASTA extraction and (under `use_environment=True`) subprocess startup are excluded, unlike the cold-predict numbers on the other rows. Measured on one H200 vs 8 CPU threads: **1.2 ms GPU / 10.5 ms CPU** for the single 2,114 bp window a 1 kb query needs. The GPU margin widens sharply with query width, because the GPU batches windows while CPU per-window cost climbs: **8.5×** at 1 kb (1 window), **45×** at 10 kb (8 windows), **150×** at 100 kb (98 windows — 18 ms GPU vs 2.8 s CPU). CPU is therefore comfortable for single-locus work and impractical for wide scans. Note also that the CPU path diverges from the Triton GPU path by ~1e-2 relative on the logits (r = 0.99999), so don't mix devices inside one comparison.
 
 **GPU detection is automatic** — every oracle picks CUDA / MPS / CPU based on what's available; pass `device='cuda'` / `'cpu'` / `'mps'` to override, or set `CUDA_VISIBLE_DEVICES` to pin to a specific GPU. The platform-by-oracle support matrix and Apple Silicon nuances live in [Installation — detailed](#installation--detailed).
 
@@ -212,7 +214,7 @@ The TLDR's `chorus setup` does everything you need. This section covers the edge
 | Platform | Default oracle path | Notes |
 |---|---|---|
 | **Linux x86_64 + NVIDIA CUDA** | full GPU acceleration on every oracle | NVIDIA CUDA auto-detected; pass `device='cuda'` / `CUDA_VISIBLE_DEVICES=N` to pin to a specific GPU |
-| **macOS (Apple Silicon)** | TF-backed oracles (Enformer, ChromBPNet) and PyTorch-backed (Borzoi, Sei, LegNet) use Metal automatically | `tensorflow-metal` for TF; PyTorch MPS for the rest |
+| **macOS (Apple Silicon)** | TF-backed oracles (Enformer, ChromBPNet) and PyTorch-backed (Borzoi, Sei, LegNet) use Metal automatically; Cherimoya runs **CPU-only** | `tensorflow-metal` for TF; PyTorch MPS for the rest. Cherimoya has no MPS/Metal path in the model, and its `triton>=3.5.1` pin ships no macOS wheel — `chorus setup` installs it with `--no-deps` and the import-guarded pure-PyTorch CPU path runs |
 | **macOS (Intel)** | CPU on every oracle | works, just slower |
 | **AlphaGenome on Apple Silicon** | use the `alphagenome_pt` PyTorch backend (installed by default) for MPS at ≤600 kb windows | the JAX `alphagenome` oracle falls back to CPU on Apple Silicon — JAX-Metal still matures; see [Two AlphaGenome backends](#two-alphagenome-backends) |
 
@@ -222,7 +224,7 @@ The default `chorus setup` (all 8 oracles, both AlphaGenome backends, hg38, all 
 
 | Bucket | Size |
 |---|---|
-| 7 oracle conda envs (~3 GB each; EPInformer-seq env ~2 GB) | ~20 GB |
+| 7 of the 8 oracle conda envs (~3 GB each; EPInformer-seq env ~2 GB) — Cherimoya's is larger, listed separately below | ~20 GB |
 | `hg38` reference fasta + index | ~3 GB |
 | Per-oracle CDF backgrounds (`~/.chorus/backgrounds/`) | ~2 GB |
 | AlphaGenome PyTorch backend (`alphagenome_pt`, default-on so Mac users get MPS speed) | ~2.6 GB |
@@ -277,11 +279,12 @@ Chorus uses isolated conda environments for each oracle to avoid dependency conf
 **Which oracle to start with?** For variant analysis, **AlphaGenome** is the most comprehensive (1 Mb input window, 1 bp prediction resolution, 5,168 tracks) but requires ~16 GB RAM and benefits from a GPU. **Enformer** is a good lightweight alternative that runs comfortably on CPU with ~8 GB RAM (see the table in [examples/walkthroughs/README.md](examples/walkthroughs/README.md#which-oracle-should-i-use) for a full side-by-side comparison).
 
 ```bash
-# Set up each oracle individually (alternative to `chorus setup` which does all 7)
+# Set up each oracle individually (alternative to `chorus setup` which does all 8)
 chorus setup --oracle alphagenome    # JAX-based — default AlphaGenome backend (see AlphaGenome section below for auth)
 chorus setup --oracle enformer       # TensorFlow-based
 chorus setup --oracle borzoi         # PyTorch-based
 chorus setup --oracle chrombpnet     # TensorFlow-based (includes BPNet for TF binding)
+chorus setup --oracle cherimoya      # PyTorch-based (CATv1: 1,518 ENCODE DNase/ATAC experiments; CUDA or CPU)
 chorus setup --oracle sei            # PyTorch-based
 chorus setup --oracle legnet         # PyTorch-based
 chorus setup --oracle epinformerseq  # PyTorch-based (per-cell 2-channel DNase+H3K27ac enhancer activity, 11 Roadmap cells)
@@ -321,7 +324,7 @@ Two tokens are relevant. `chorus setup` surfaces both so they aren't a mid-predi
 
 | Token | When you need it | How `chorus setup` handles it |
 |---|---|---|
-| `HF_TOKEN` (HuggingFace) | Required for **AlphaGenome** — the `google/alphagenome-all-folds` model is gated. | Resolved via `--hf-token` → `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN` env → existing `huggingface-cli login` → interactive prompt. `chorus setup` (bare or `--oracle all`) **halts** the whole flow if no working token can be resolved, so the other 5 oracles aren't built for nothing. |
+| `HF_TOKEN` (HuggingFace) | Required for **AlphaGenome** — the `google/alphagenome-all-folds` model is gated. | Resolved via `--hf-token` → `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN` env → existing `huggingface-cli login` → interactive prompt. `chorus setup` (bare or `--oracle all`) **halts** the whole flow if no working token can be resolved, so the other 7 oracles aren't built for nothing. |
 | `LDLINK_TOKEN` | Optional — only used by `fine_map_causal_variant` (auto-fetch LD proxies from the NIH LDlink REST API). | Non-blocking prompt during `chorus setup`. If provided, stored in `~/.chorus/config.toml`; `chorus.utils.ld` also reads `LDLINK_TOKEN` from env. |
 
 Register an HF read token at <https://huggingface.co/settings/tokens>, then accept the model license at <https://huggingface.co/google/alphagenome-all-folds>. Register a free LDlink token at <https://ldlink.nih.gov/?tab=apiaccess>.
@@ -384,7 +387,7 @@ The chorus mirrors are byte-identical to the originals (verified via md5 / size 
 | Enformer | ~520 MB | 5,313 |
 | Borzoi | ~770 MB | 7,611 |
 | ChromBPNet | ~80 MB | 753 (9 ATAC/DNASE + 744 CHIP) |
-| Cherimoya | ~154 MB | 1,518 (369 ATAC + 1,149 DNASE) |
+| Cherimoya | ~162 MB | 1,518 (369 ATAC + 1,149 DNASE) |
 | Sei | ~2.8 MB | 40 classes |
 | LegNet | ~210 KB | 3 cell types |
 | EPInformer-seq | ~2.3 MB | 33 tracks (11 cell types × 3 assays: DNase, H3K27ac, composite) |
@@ -395,7 +398,8 @@ To pre-download by hand:
 
 ```python
 from chorus.analysis.normalization import download_pertrack_backgrounds
-for oracle in ["alphagenome", "enformer", "borzoi", "chrombpnet", "sei", "legnet", "epinformerseq"]:
+for oracle in ["alphagenome", "enformer", "borzoi", "chrombpnet", "cherimoya",
+               "sei", "legnet", "epinformerseq"]:
     download_pertrack_backgrounds(oracle)
 ```
 
@@ -567,9 +571,11 @@ Three end-to-end Jupyter notebooks shipped with the repo. Run them in order — 
 | Notebook | Oracles | What you'll build |
 |----------|---------|----------------|
 | `examples/notebooks/single_oracle_quickstart.ipynb` | Enformer | Predictions → region replacement → sequence insertion → variant effect → gene expression → coolbox visualization. The "I get it now" notebook. |
-| `examples/notebooks/comprehensive_oracle_showcase.ipynb` | All 6 (does not yet include EPInformer-seq) | Same variant scored by every oracle side-by-side. Cross-model agreement, sub-region scoring, gene-expression layer integration. |
+| `examples/notebooks/comprehensive_oracle_showcase.ipynb` | 6 oracles — Enformer, Borzoi, ChromBPNet/BPNet, Sei, LegNet, AlphaGenome (does not yet include Cherimoya or EPInformer-seq) | Same variant scored by every oracle side-by-side. Cross-model agreement, sub-region scoring, gene-expression layer integration. |
 | `examples/notebooks/advanced_multi_oracle_analysis.ipynb` | Enformer + ChromBPNet/BPNet + LegNet | CHIP-seq TF footprinting, strand-specific tracks, the Interval API, effect-percentile normalization, cell-type switching. The graduate-level notebook. |
 
+> **Per-oracle deep-dive (Cherimoya / CATv1).** [`examples/notebooks/cherimoya_quickstart.ipynb`](examples/notebooks/cherimoya_quickstart.ipynb) is the notebook to read if you need a *specific* cell type or tissue — it works the 1,518-experiment atlas end-to-end: search it, disambiguate a biosample that has several experiments (K562 alone has four ATAC), predict, score a variant, and compare accessibility across biosamples using activity percentiles. Needs a CUDA GPU for fast execution — it runs many predictions across biosamples, which is the regime where CPU falls 45–150× behind (see the timing footnote under [Pick an oracle](#pick-an-oracle)). It will still complete on CPU, just slowly; the shipped `chorus-cherimoya` env is Linux/CUDA, and Apple Silicon is CPU-only (see [Platform & GPU support](#platform--gpu-support)).
+>
 > **Per-oracle deep-dives (EPInformer-seq).** Two notebooks go deeper on the per-cell 2-channel model: [`examples/notebooks/epinformerseq_testing.ipynb`](examples/notebooks/epinformerseq_testing.ipynb) walks the SORT1 / rs12740374 locus end-to-end — per-cell DNase + H3K27ac across all 11 Roadmap cells, variant effect, base-resolution saturation mutagenesis, and a cross-oracle DNase comparison (vs ChromBPNet + AlphaGenome) — and [`examples/notebooks/klf1_validated_enhancer_profiles.ipynb`](examples/notebooks/klf1_validated_enhancer_profiles.ipynb) profiles CRISPR-validated KLF1 enhancers across five oracles (EPInformer-seq + ChromBPNet + AlphaGenome + Borzoi + Enformer). Both pull in gated/multi-env oracles, so run them on a box with the per-oracle conda envs (AlphaGenome needs HF auth; `RUN_ALPHAGENOME=1` opts it in for `epinformerseq_testing`).
 
 ### MCP server — chorus, but you talk to Claude
@@ -747,7 +753,7 @@ predictions = oracle.predict(sequence, ['DNase:K562'])
 predictions = oracle.predict(sequence, ['CNhs11250'])  # CAGE:K562
 ```
 
-> **MCP users:** The MCP server requires ENCODE identifiers (e.g. `ENCFF413AHU`), not descriptive names. Use `list_tracks(oracle_name, query='K562')` to search and get the `identifier` field.
+> **MCP users:** The MCP server requires ENCODE identifiers (e.g. `ENCFF413AHU`), not descriptive names. Use `list_tracks(oracle_name, query='K562')` to search and get the `identifier` field. **Cherimoya returns `track_id` instead** (e.g. `DNASE:ENCSR000EOT`) — it keys on the ENCODE *experiment* accession rather than a file accession; see [Cherimoya / CATv1](#cherimoya--catv1).
 
 #### 4. BedGraph output
 
@@ -870,6 +876,52 @@ oracle.load_pretrained_model(
     is_custom=True                  # enables custom weight paths
 )
 ```
+
+#### Cherimoya / CATv1
+
+Cherimoya is a compact (~614 K parameter) ConvNeXt-style convolutional model in the BPNet / ChromBPNet family. **CATv1** — the Cherimoya Accessibility aTlas — is a family of 1,518 per-experiment chromatin accessibility models covering 1,149 ENCODE DNase-seq and 369 ATAC-seq experiments, each trained across five chromosome-held-out folds. That makes it the widest biosample coverage in chorus.
+
+- Sequence length: 2,114 bp input
+- Output: 1,000 bins at 1 bp resolution
+- Bin size: 1 bp
+- Track types: DNase / ATAC chromatin accessibility (`list_assay_types()` → `['ATAC', 'DNASE']`)
+- Track identifiers: `ASSAY:ENCSR` — the ENCODE **experiment** accession, e.g. `DNASE:ENCSR000EOT` (not `ASSAY:cell_type`)
+- Scoring window: 501 bp central window, matching ChromBPNet
+- Assembly: GRCh38 only — CATv1 ships no mouse models
+- Weights: [`programmable-genomics/CATv1`](https://huggingface.co/programmable-genomics/CATv1) (CC-BY-4.0), fold-0 checkpoints ~2.5 MB each, fetched lazily
+- Device: CUDA (Triton kernels) or CPU; **no MPS/Metal path**
+
+One CATv1 model covers exactly one ENCODE experiment, so one experiment is loaded at a time — the same one-model-per-instance contract ChromBPNet uses:
+
+```python
+oracle = chorus.create_oracle('cherimoya', use_environment=True,
+                              reference_fasta=str(genome_path))
+
+# By biosample — resolves through the committed defaults table
+oracle.load_pretrained_model(assay="DNASE", cell_type="K562")
+
+# Or pin one experiment exactly (recommended when the biosample is ambiguous)
+oracle.load_pretrained_model(assay="ATAC", encode_id="ENCSR483RKN")
+```
+
+> **`(assay, cell_type)` is ambiguous for most of the atlas** — 1,188 of the 1,518 experiments share an (assay, biosample) pair, and K562 alone has four ATAC experiments. Ambiguous pairs resolve through `cherimoya_source/catv1_defaults.py` and log which experiment was chosen. To pick deliberately, search the metadata and pass the accession:
+
+```python
+from chorus.oracles.cherimoya_source.catv1_metadata import get_metadata
+meta = get_metadata()
+hits = meta.search_tracks('K562')
+print(hits[['track_id', 'assay', 'biosample', 'experiment_accession']])
+#      track_id            assay  biosample  experiment_accession
+#      ATAC:ENCSR859USB    ATAC   K562       ENCSR859USB
+#      DNASE:ENCSR000EOT   DNASE  K562       ENCSR000EOT
+#      ATAC:ENCSR868FGK    ATAC   K562       ENCSR868FGK
+#      ATAC:ENCSR483RKN    ATAC   K562       ENCSR483RKN
+#      ATAC:ENCSR956DNB    ATAC   K562       ENCSR956DNB
+```
+
+Note the metadata column is `track_id` (Enformer/Borzoi use `identifier`). From Claude, the equivalent is `list_tracks("cherimoya", query="K562")`.
+
+> **Counts are `log(count + 1)`.** Cherimoya's count head predicts `log1p`, so recovering raw counts uses `expm1`. That transform lives in `cherimoya_source/scoring.py`, shared with the background builder so the oracle and the CDFs cannot drift.
 
 #### Sei
 
@@ -1088,6 +1140,7 @@ The isolated environments include GPU support. On Linux with NVIDIA GPUs, Chorus
 |---|---|---|
 | Borzoi, Sei, LegNet | PyTorch | **MPS** auto-detected via `torch.backends.mps.is_available()` |
 | ChromBPNet, Enformer | TensorFlow | **Metal** via `tensorflow-metal` (added automatically by `chorus setup` on macOS arm64) |
+| Cherimoya | PyTorch | **CPU** — the model has no MPS/Metal path, and its `triton` dep ships no macOS wheel; `chorus setup` installs Cherimoya with `--no-deps` and the import-guarded pure-PyTorch CPU path runs |
 | AlphaGenome | JAX | **CPU** — `jax-metal` is installed but Apple's plugin doesn't yet support all ops AlphaGenome needs (e.g. `default_memory_space`); Chorus falls back to CPU |
 
 You can always force a specific device:
@@ -1166,6 +1219,7 @@ Chorus integrates several groundbreaking models:
 - Enformer (Avsec et al., 2021)
 - Borzoi (Linder et al., 2023)
 - ChromBPNet / BPNet (Agarwal et al., 2021)
+- Cherimoya / CATv1 (Schreiber, 2026 — [code](https://github.com/jmschrei/cherimoya), [weights](https://huggingface.co/programmable-genomics/CATv1); preprint forthcoming)
 - Sei (Chen et al., 2022)
 - LegNet (Penzar et al., 2023)
 - EPInformer-seq (Lin et al., *Nature Communications*, 2026)
@@ -1319,6 +1373,8 @@ for o in ["alphagenome", "enformer", "borzoi", "chrombpnet", "cherimoya",
 This is also how you pick up a rebuilt background: `download_pertrack_backgrounds`
 checks a cached file and refetches it if it predates the current provenance schema,
 rather than keeping whatever is on disk.
+
+(`alphagenome_pt` is deliberately absent — it aliases to `alphagenome`'s NPZ at lookup time, so asking for it returns 0.)
 
 #### Using backgrounds via MCP / Claude
 
