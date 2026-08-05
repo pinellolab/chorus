@@ -66,7 +66,7 @@ def _effect_path(oracle: str, suffix: str = "") -> Path:
 def union_shards(oracle: str, n_shards: int, n_points: int) -> Path:
     from chorus.analysis.background_sampling import ReservoirSampler
 
-    parts, ids, flags = [], None, None
+    parts, ids, flags, layers = [], None, None, None
     for k in range(n_shards):
         p = _effect_path(oracle, f".shard{k}of{n_shards}")
         if not p.exists():
@@ -81,8 +81,11 @@ def union_shards(oracle: str, n_shards: int, n_points: int) -> Path:
             parts.append({k2: d[k2] for k2 in ("values", "offsets", "counts", "n_tracks")})
             shard_ids = [str(x) for x in d["track_ids"]]
             shard_flags = d["signed_flags"] if "signed_flags" in d.files else None
+            shard_layers = (d["layers_per_row"] if "layers_per_row" in d.files
+                            else None)
         if ids is None:
             ids, flags = shard_ids, shard_flags
+            layers = shard_layers
         elif shard_ids != ids:
             raise SystemExit(f"shard {k} track_ids disagree with shard 0")
         print(f"  shard {k}: {int(np.asarray(parts[-1]['counts']).max())} samples/track")
@@ -104,8 +107,15 @@ def union_shards(oracle: str, n_shards: int, n_points: int) -> Path:
                    effect_counts=counts)
     if flags is not None:
         payload["signed_flags"] = flags
+    if layers is not None:
+        # Carried through from the shards. Dropping it here is exactly what made
+        # every rebuilt background ship WITHOUT a per-row layer, while the guard
+        # test skipped itself because the field was absent -- a guard that protects
+        # nothing. The union is the only place the field can be lost.
+        payload["layers_per_row"] = np.asarray(layers)
     np.savez_compressed(out, **payload)
-    print(f"  wrote {out} ({out.stat().st_size / 1e6:.1f} MB)")
+    print(f"  wrote {out} ({out.stat().st_size / 1e6:.1f} MB)"
+          + ("" if layers is not None else "  [WARNING: no layers_per_row]"))
     return out
 
 
