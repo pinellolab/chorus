@@ -733,6 +733,82 @@ class PerTrackNormalizer:
         """
         return self._lookup(oracle_name, track_id, "effect_cdfs", raw_score, signed=signed)
 
+    def effect_null_support(
+        self,
+        oracle_name: str,
+        track_id: str,
+    ) -> tuple[float, float] | None:
+        """The (most negative, most positive) effect the null actually contains.
+
+        These are the first and last entries of the track's ``effect_cdfs`` row —
+        the smallest and largest of the sampled background effects. They are
+        already in the shipped artefacts, so nothing here needs a rebuild.
+
+        Unsigned rows start at 0.0 (the row holds ``abs`` effects); signed rows —
+        every Sei and LegNet track, 12.9% of AlphaGenome's and 20.3% of Borzoi's —
+        run negative, so **both** ends are live and a caller must not assume the
+        maximum is the only bound that can be crossed.
+        """
+        entry = self._ensure_loaded(oracle_name)
+        if entry is None:
+            return None
+        cdf_matrix = entry.get("effect_cdfs")
+        if cdf_matrix is None:
+            return None
+        idx = self._resolve_row(track_id, entry)
+        if idx is None or not self._has_samples(entry, "effect_cdfs", idx):
+            return None
+        row = np.asarray(cdf_matrix[idx])
+        if row.size == 0:
+            return None
+        return (float(row[0]), float(row[-1]))
+
+    def effect_exceedance(
+        self,
+        oracle_name: str,
+        track_id: str,
+        raw_score: float,
+        signed: bool = False,
+    ) -> float | None:
+        """How far past the null's most extreme sample an effect lies, as a ratio.
+
+        ``effect_percentile`` is ``min(rank / denominator, 1.0)``, so it reaches
+        exactly 1.0 the moment the effect reaches the largest of the ~10–12k
+        sampled background effects, and stays there however much further it goes.
+        At rs12740374, ``CHIP:HepG2:CEBPA:+`` scores +1.865 against a null maximum
+        of 1.682: it pins at 1.0, indistinguishable from an effect ten times
+        larger. That is a real loss of information, and it is not fixable by
+        resampling — the ceiling is a single extreme order statistic, so its
+        position carries large sampling variance. Measured across Enformer's 12
+        ``tf_binding`` tracks after re-anchoring, 12 of 12 got a *wider* p99
+        (+63%) while 11 of 12 reported a *lower* maximum.
+
+        So report the distance instead. Returns ``|raw| / |bound|`` where *bound*
+        is the end of the support the effect crossed, or ``None`` when the effect
+        is inside the support and the percentile is already exact. A returned
+        1.11 means "11% beyond the most extreme background effect sampled for
+        this track".
+
+        This is deliberately **not** an extrapolated percentile. Fitting a
+        generalised Pareto tail to Enformer's TF nulls gives shape c = −0.190,
+        i.e. a *bounded* tail whose endpoint (4.245) sits above the empirical
+        maximum (2.956) but still below the observed effect (4.372) — so the
+        fitted model calls the measurement impossible. Forcing an exponential
+        tail (c = 0) does extrapolate monotonically and never saturates, but it
+        turns a measurement into a modelling assumption and prints it to eight
+        decimal places. The ratio is a fact about the sample.
+        """
+        support = self.effect_null_support(oracle_name, track_id)
+        if support is None:
+            return None
+        lo, hi = support
+        value = raw_score if signed else abs(raw_score)
+        if value > hi and hi > 0:
+            return float(value / hi)
+        if signed and value < lo and lo < 0:
+            return float(value / lo)
+        return None
+
     def activity_percentile(
         self,
         oracle_name: str,

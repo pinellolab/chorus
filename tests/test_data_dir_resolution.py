@@ -54,6 +54,9 @@ def _layout(env_extra: dict | None = None, cwd: Path | None = None) -> dict:
         from chorus.core.globals import describe_layout
         out = describe_layout()
         out["_hf_home_env"] = os.environ.get("HF_HOME", "")
+        out["_hf_hub_cache_env"] = os.environ.get("HF_HUB_CACHE", "")
+        from huggingface_hub import get_token
+        out["_token_found"] = bool(get_token())
         print("@@@" + json.dumps(out))
         """
     ) % str(REPO)
@@ -86,9 +89,49 @@ def test_default_is_the_installation_directory_not_home():
 def test_hf_cache_is_redirected_out_of_home():
     """The 12 GB that nothing used to control."""
     layout = _layout()
-    assert layout["_hf_home_env"], "HF_HOME was not set, so weights land in ~/.cache"
-    assert layout["_hf_home_env"] == layout["hf_cache"]
-    assert ".cache/huggingface" not in layout["hf_cache"]
+    assert layout["_hf_hub_cache_env"], (
+        "HF_HUB_CACHE was not set, so model weights land in ~/.cache/huggingface/hub"
+    )
+    assert layout["_hf_hub_cache_env"].startswith(layout["hf_cache"])
+    assert ".cache/huggingface" not in layout["_hf_hub_cache_env"]
+
+
+def test_redirecting_the_cache_does_not_orphan_the_login_token():
+    """The regression: chorus set HF_HOME, which also relocated the credential.
+
+    ``HF_HOME`` is the parent of both the blob store (``hub/``) and the token written
+    by ``huggingface-cli login``. Setting it moved both, so on a machine that had
+    already logged in the token stayed at ``~/.cache/huggingface/token`` where
+    ``huggingface_hub`` no longer looked. Every gated model -- i.e. AlphaGenome --
+    then failed with "requires HuggingFace authentication ... run
+    'huggingface-cli login'", which the user had already done. Found while running a
+    measurement that needed AlphaGenome, not by a test, which is why this exists.
+
+    Only ``HF_HUB_CACHE`` may be set. Skipped where no token is configured, since
+    then there is nothing to orphan.
+    """
+    # Baseline must be a process that never imports chorus -- passing HF_HOME=""
+    # does NOT work, because huggingface_hub reads the empty string as a real path
+    # and finds no token, which made an earlier version of this test skip itself and
+    # assert nothing.
+    env = dict(os.environ)
+    for var in ("HF_HOME", "HF_HUB_CACHE", "HUGGINGFACE_HUB_CACHE"):
+        env.pop(var, None)
+    probe = subprocess.run(
+        [sys.executable, "-c",
+         "from huggingface_hub import get_token; print(bool(get_token()))"],
+        env=env, capture_output=True, text=True, timeout=300)
+    if probe.stdout.strip() != "True":
+        pytest.skip("no huggingface token configured on this machine")
+    layout = _layout()
+    assert layout["_token_found"], (
+        "a token was discoverable with a default HF_HOME but not after chorus "
+        "redirected the cache -- the credential has been orphaned"
+    )
+    assert not layout["_hf_home_env"], (
+        f"chorus set HF_HOME={layout['_hf_home_env']!r}; it must set HF_HUB_CACHE "
+        f"only, so that huggingface-cli login credentials stay discoverable"
+    )
 
 
 def test_a_user_set_hf_home_is_left_alone():

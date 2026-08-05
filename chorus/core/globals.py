@@ -176,17 +176,31 @@ def point_hf_cache_at_data_dir() -> str:
     A pre-existing ``HF_HOME`` / ``HF_HUB_CACHE`` is left alone: someone who has
     already pointed the HF cache somewhere deliberately does not want chorus
     second-guessing it.
+
+    **Sets ``HF_HUB_CACHE``, not ``HF_HOME``**, and the distinction is not cosmetic.
+    ``HF_HOME`` is the parent of *both* the blob store (``hub/``, the 12 GB this
+    function exists to relocate) and the credential written by
+    ``huggingface-cli login`` (``token``). An earlier version of this function set
+    ``HF_HOME``, which moved the token too: on a machine that had already logged in,
+    the token stayed at ``~/.cache/huggingface/token`` where ``huggingface_hub`` no
+    longer looked, so every gated model (AlphaGenome) failed with "requires
+    HuggingFace authentication ... run 'huggingface-cli login'" -- advice the user
+    had already followed. Redirecting only ``HF_HUB_CACHE`` moves the bulk and leaves
+    the credential discoverable, which is the same split already applied to
+    ``CHORUS_CONFIG_PATH``: bulk data follows the data directory, secrets stay with
+    the user.
     """
     for var in ("HF_HOME", "HF_HUB_CACHE", "HUGGINGFACE_HUB_CACHE"):
         if os.environ.get(var):
             return os.environ[var]
+    hub = CHORUS_HF_CACHE_DIR / "hub"
     try:
-        CHORUS_HF_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        hub.mkdir(parents=True, exist_ok=True)
     except Exception as exc:                                    # pragma: no cover
-        logger.warning("could not create %s: %s", CHORUS_HF_CACHE_DIR, exc)
+        logger.warning("could not create %s: %s", hub, exc)
         return ""
-    os.environ["HF_HOME"] = str(CHORUS_HF_CACHE_DIR)
-    return str(CHORUS_HF_CACHE_DIR)
+    os.environ["HF_HUB_CACHE"] = str(hub)
+    return str(hub)
 
 
 point_hf_cache_at_data_dir()

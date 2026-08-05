@@ -51,6 +51,12 @@ class TrackScore:
     alt_value: float | None
     raw_score: float | None
     quantile_score: float | None = None
+    # Set only when the effect lands at or beyond the most extreme effect in this
+    # track's background, which is exactly when ``quantile_score`` pins at 1.0 (or
+    # -1.0) and stops discriminating. The ratio to that bound is what the
+    # percentile can no longer say: 1.11 means 11% past the largest of ~10k
+    # sampled background effects. See PerTrackNormalizer.effect_exceedance.
+    effect_exceedance: float | None = None
     ref_signal_percentile: float | None = None
     description: str | None = None  # human-readable track description
     note: str | None = None
@@ -74,6 +80,8 @@ class TrackScore:
             d["description"] = self.description
         if self.quantile_score is not None:
             d["quantile_score"] = self.quantile_score
+        if self.effect_exceedance is not None:
+            d["effect_exceedance"] = self.effect_exceedance
         if self.ref_signal_percentile is not None:
             d["ref_signal_percentile"] = self.ref_signal_percentile
         if self.note is not None:
@@ -160,6 +168,7 @@ class VariantReport:
                     alt_value=td.get("alt_value"),
                     raw_score=td.get("raw_score"),
                     quantile_score=td.get("quantile_score"),
+                    effect_exceedance=td.get("effect_exceedance"),
                     ref_signal_percentile=td.get("ref_signal_percentile"),
                     description=td.get("description"),
                     note=td.get("note"),
@@ -243,6 +252,7 @@ class VariantReport:
                     "alt_value": ts.alt_value,
                     "raw_score": ts.raw_score,
                     "quantile_score": ts.quantile_score,
+                    "effect_exceedance": ts.effect_exceedance,
                     "ref_signal_percentile": ts.ref_signal_percentile,
                     "note": ts.note,
                 })
@@ -422,7 +432,7 @@ class VariantReport:
                     cols = [track_label, ref_str, alt_str, score_str]
                     if has_quantile:
                         cols.append(
-                            _fmt_percentile(ts.quantile_score)
+                            _fmt_percentile(ts.quantile_score, ts.effect_exceedance)
                         )
                     if has_baseline:
                         cols.append(
@@ -450,6 +460,16 @@ class VariantReport:
                     "- **Effect %ile**: Variant effect ranked against ~10K random SNPs. "
                     "0.95 = stronger than 95% of random variants."
                 )
+                if any(ts.effect_exceedance is not None for ts in scores):
+                    lines.append(
+                        "- **`N× null max`**: the effect exceeded *every* sampled "
+                        "background effect for that track, so the percentile is "
+                        "clamped and cannot rank it further. The multiplier gives the "
+                        "distance to that ceiling — `1.11×` is 11% beyond the most "
+                        "extreme of ~10K background effects. Common for variants that "
+                        "create or destroy a complete transcription-factor motif, "
+                        "which random genomic positions rarely do."
+                    )
             if has_baseline:
                 lines.append(
                     "- **Activity %ile**: Reference signal ranked genome-wide against "
@@ -552,7 +572,7 @@ def _sort_layer_scores(layer_scores: list["TrackScore"]) -> list["TrackScore"]:
 # ---------------------------------------------------------------------------
 
 
-def _fmt_percentile(q: float | None) -> str:
+def _fmt_percentile(q: float | None, exceedance: float | None = None) -> str:
     """Format a quantile score for display, avoiding misleading precision.
 
     ``None`` means the percentile was suppressed because ``|raw_score|``
@@ -561,13 +581,24 @@ def _fmt_percentile(q: float | None) -> str:
     background that's also mostly near-zero. We render ``near-zero``
     (rather than a cryptic em-dash) so users don't interpret it as
     missing data.
+
+    *exceedance* annotates the top (and, for signed layers, bottom) bucket with
+    how far past the null's most extreme sample the effect actually lies. Without
+    it, "≥99th" is where the strongest variants in the genome pile up
+    indistinguishably: at rs12740374 a motif-creating change scoring 11% beyond
+    its null's maximum renders identically to one scoring 10× beyond. The
+    percentile genuinely cannot separate them — it is clamped — so the separation
+    has to come from a different number rather than more decimal places.
     """
     if q is None:
         return "near-zero"
+    suffix = f" ({exceedance:.2f}× null max)" if exceedance is not None else ""
     if q >= 0.99:
-        return "≥99th"
+        return "≥99th" + suffix
     if q <= 0.01:
-        return "≤1st"
+        return "≤1st" + suffix
+    # An exceedance with a mid-range percentile would be contradictory: both are
+    # read off the same CDF row, so crossing the support's edge forces the clamp.
     return f"{q:.2f}"
 
 
@@ -777,6 +808,14 @@ def _apply_normalization(
         if ts.raw_score is not None and not in_noise_floor:
             raw_for_norm = ts.raw_score if use_signed else abs(ts.raw_score)
             ts.quantile_score = normalizer.effect_percentile(
+                oracle_name, assay_id, raw_for_norm, signed=use_signed,
+            )
+            # Computed unconditionally rather than only when quantile_score == 1.0:
+            # the two are derived from the same row, and gating on the pinned value
+            # would make the field's presence depend on a float equality against a
+            # clamp. effect_exceedance returns None on its own when the effect is
+            # inside the null's support.
+            ts.effect_exceedance = normalizer.effect_exceedance(
                 oracle_name, assay_id, raw_for_norm, signed=use_signed,
             )
         # else: leave ts.quantile_score at its default None

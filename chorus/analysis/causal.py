@@ -332,7 +332,7 @@ class CausalResult:
                     cell = f"{sign}{ts.raw_score:.3f}"
                     if ts.quantile_score is not None:
                         from chorus.analysis.variant_report import _fmt_percentile
-                        cell += f" ({_fmt_percentile(ts.quantile_score)})"
+                        cell += f" ({_fmt_percentile(ts.quantile_score, ts.effect_exceedance)})"
                     row += f" {cell} |"
                 else:
                     row += " — |"
@@ -686,6 +686,7 @@ def _extract_component_scores(
                 "alt_value": ts.alt_value,
                 "raw_score": ts.raw_score,
                 "quantile_score": ts.quantile_score,
+                "effect_exceedance": ts.effect_exceedance,
                 "description": ts.description or "",
             }
 
