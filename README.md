@@ -1238,7 +1238,7 @@ The per-bin CDFs are used by the unified `chorus.analysis._igv_report.rescale_fo
 <!-- BEGIN GENERATED: background-table -->
 | Oracle | Tracks | Effect samples / track | Activity samples / track | Effect reference population | NPZ size |
 |---|---|---|---|---|---|
-| AlphaGenome | 5,168 | 5,949–87,781 | 6,337–104,033 | gene-anchored | 276 MB |
+| AlphaGenome | 5,168 | 11,934–148,367 | 6,337–104,033 | gene-anchored+ccre | 272 MB |
 | Enformer | 5,313 | 11,933 | 19,549–31,005 | gene-anchored+ccre | 550 MB |
 | Borzoi | 7,611 | 11,934–34,482 | 19,548–75,021 | gene-anchored+ccre | 793 MB |
 | ChromBPNet | 753 | 18,672–37,344 | 34,004–68,008 | uniform + DHS summits | 80 MB |
