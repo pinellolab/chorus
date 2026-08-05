@@ -224,10 +224,16 @@ def discover_cell_types(
         if cfg is None:
             continue
 
-        # Score in the standard window
-        half = (cfg.window_bp or 501) // 2
-        ref_v = ref_track.score_region(chrom, pos - half, pos + half + 1, cfg.aggregation)
-        alt_v = alt_track.score_region(chrom, pos - half, pos + half + 1, cfg.aggregation)
+        # Score in the standard window, via the ONE shared definition of "centred
+        # window" (#144 instance 5, second site). See the longer note in
+        # discover_variant_effects: hand-building genomic coordinates and letting
+        # score_region floor/ceil-expand them yields 4 or 5 bins where the null has
+        # 3, and the cell-type ranking below is a comparison OF those effects, so a
+        # span that varies with sub-bin position reorders the ranking itself.
+        ref_v = ref_track.score_centered_window(
+            chrom, pos, cfg.window_bp or 501, cfg.aggregation)
+        alt_v = alt_track.score_centered_window(
+            chrom, pos, cfg.window_bp or 501, cfg.aggregation)
 
         if ref_v is None or alt_v is None:
             continue
@@ -500,13 +506,42 @@ def _score_all_tracks(
         if cfg is None:
             continue
 
-        # Score using the layer's window and aggregation
+        # Score using the layer's window and aggregation.
+        #
+        # This is #144 instance FIVE, found by audit after the umbrella issue was
+        # closed on four. The line below used to be
+        #
+        #     ref_track.score_region(chrom, pos - half, pos + half + 1, ...)
+        #
+        # which is the exact pre-#144 arithmetic scorers.py was migrated off: it
+        # builds genomic coordinates and lets score_region floor/ceil-expand them
+        # back to bins, giving 4 OR 5 bins for window_bp=501 at Enformer's 128 bp
+        # depending on where the variant falls inside its bin — against a null built
+        # over 3. The discovery path reads the SAME per-track nulls as the variant
+        # report, so it was comparing a wider statistic to a narrower reference.
         if cfg.window_bp is not None:
-            half = cfg.window_bp // 2
-            ref_v = ref_track.score_region(chrom, pos - half, pos + half + 1, cfg.aggregation)
-            alt_v = alt_track.score_region(chrom, pos - half, pos + half + 1, cfg.aggregation)
+            ref_v = ref_track.score_centered_window(
+                chrom, pos, cfg.window_bp, cfg.aggregation)
+            alt_v = alt_track.score_centered_window(
+                chrom, pos, cfg.window_bp, cfg.aggregation)
+        elif layer == "gene_expression":
+            # RNA has window_bp=None because its statistic is the mean over the
+            # gene's merged exon mask, not a centred window. Taking the mean over
+            # the WHOLE prediction — which is what this branch used to do — averages
+            # ~524 kb (Borzoi) to 1 Mb (AlphaGenome) of mostly intergenic and
+            # intronic zeros, so the number bears no relation to the exon-mask null
+            # it is then ranked against. Discovery has no gene context to build that
+            # mask from, so it declines to score the layer rather than emit a
+            # confidently wrong percentile; use analyze_variant_multilayer, which
+            # takes a gene, for RNA.
+            logger.debug(
+                "discovery: skipping %s for %s — RNA needs a gene's exon mask, "
+                "which the discovery path does not have",
+                layer, getattr(ref_track, "assay_id", "?"),
+            )
+            continue
         else:
-            # Full output (MPRA, Sei classes)
+            # Full output (MPRA, Sei classes) — these genuinely have no window.
             ref_v = float(np.mean(ref_track.values)) if len(ref_track.values) > 0 else None
             alt_v = float(np.mean(alt_track.values)) if len(alt_track.values) > 0 else None
 

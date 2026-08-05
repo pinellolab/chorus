@@ -120,7 +120,7 @@ _Everything below is optional — the TLDR above is enough to get running. Secti
 
 **Conversational genomics.** The idea behind Chorus: ask in plain language what DNA does — and what happens when you change it — while an AI agent orchestrates the right sequence-to-function models to predict, compare, and explain the answer. An agent that *predicts* function from sequence, not a chatbot that looks up what is already known. Computation, replaced by conversation.
 
-Eight state-of-the-art genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Cherimoya/CATv1, Sei, LegNet, EPInformer-seq, AlphaGenome — wired through one API. The same five lines of Python predict variant effects on chromatin accessibility (ChromBPNet, base-pair resolution), TF binding (Enformer, BPNet), 5,168 multi-modal tracks at 1 Mb context (AlphaGenome), or RNA-seq-grade gene expression (Borzoi). Every prediction comes with **effect-percentile and activity-percentile scores** ranked against ~10 k random SNPs and ~30 k genome-wide cCREs, so a `+0.45 log₂FC` becomes `0.962 effect %ile, 0.81 activity %ile` — directly interpretable, not a raw fold-change you have to calibrate yourself.
+Eight state-of-the-art genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Cherimoya/CATv1, Sei, LegNet, EPInformer-seq, AlphaGenome — wired through one API. The same five lines of Python predict variant effects on chromatin accessibility (ChromBPNet, base-pair resolution), TF binding (Enformer, BPNet), 5,168 multi-modal tracks at 1 Mb context (AlphaGenome), or RNA-seq-grade gene expression (Borzoi). Every prediction comes with **effect-percentile and activity-percentile scores** ranked against ~6 k–20 k sampled SNPs and ~19 k–104 k genome-wide positions, so a `+0.45 log₂FC` becomes `0.962 effect %ile, 0.81 activity %ile` — directly interpretable, not a raw fold-change you have to calibrate yourself.
 
 Each oracle runs in its own conda environment (no TF/PyTorch/JAX dependency hell), every weight + reference + background is pre-mirrored to a chorus-controlled HuggingFace org (no broken-link surprises), and the **24-tool MCP server** lets you ask Claude to run the analysis in plain English. See [Pick an oracle](#pick-an-oracle) for the per-oracle hardware/cost matrix.
 
@@ -132,7 +132,7 @@ Each oracle runs in its own conda environment (no TF/PyTorch/JAX dependency hell
 | **Oracle** | A deep learning model that predicts regulatory activity from DNA sequence (e.g. Enformer, AlphaGenome) |
 | **Track** | A single experimental measurement predicted by an oracle (e.g. DNase-seq in K562 cells) |
 | **assay_id** | The unique identifier for a track, used in API calls (e.g. `"ENCFF413AHU"` or `"DNASE/EFO:0001187 DNase-seq/."`) |
-| **Effect percentile** | How extreme a variant's effect is compared to ~10,000 random SNPs (≥99th = stronger than 99% of random variants) |
+| **Effect percentile** | How extreme a variant's effect is compared to that track's own reference population of sampled SNPs (≥99th = stronger than 99% of them). See [Variant effect distribution](#1-variant-effect-distribution) for which population each oracle uses |
 | **log2FC** | Log2 fold-change between alternate and reference allele predictions — the raw effect size (most layers). Gene-expression uses **lnFC** (natural log) and MPRA uses **Δ (alt−ref)**; every report states the formula used per layer. |
 
 ### Worked application examples — seven things you can do today
@@ -344,7 +344,7 @@ Genomes are stored in the `genomes/` directory within your Chorus installation.
 
 #### Per-track background distributions (auto-downloaded)
 
-Chorus converts every raw prediction into an **effect percentile** and **activity percentile** against ~10,000 random SNPs and ~30,000 genome-wide positions scored on the same oracle. These pre-computed per-track CDFs are what let a user interpret a `+0.45` log2FC as `0.962 activity %ile`.
+Chorus converts every raw prediction into an **effect percentile** and **activity percentile** against each track's own sampled-SNP reference population and ~19,000–104,000 genome-wide positions scored on the same oracle. These pre-computed per-track CDFs are what let a user interpret a `+0.45` log2FC as `0.962 activity %ile`.
 
 **Nothing to configure.** `chorus setup` pre-downloads the relevant backgrounds for every oracle. If you skipped that step, on the first variant analysis for a given oracle the backgrounds are automatically fetched from the public HuggingFace dataset [`lucapinello/chorus-backgrounds`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds) and cached at `~/.chorus/backgrounds/`.
 
@@ -1170,7 +1170,7 @@ A raw `log2FC = +0.45` in a DNase-seq track is hard to interpret. Is it strong? 
 
 | Percentile | What it measures | Computed from |
 |---|---|---|
-| **Effect percentile** | How unusual is *this* variant's effect on this track? | The distribution of variant-effect scores from ~10K random SNPs scored on the same track |
+| **Effect percentile** | How unusual is *this* variant's effect on this track? | The distribution of variant-effect scores from that track's reference population of sampled SNPs (gene-anchored, cCRE-anchored or uniform — see below) |
 | **Activity percentile** | How active is the reference signal at the variant site, genome-wide? | The distribution of window-summed signal at ~31.5K diverse genomic positions |
 
 Both range `[0, 1]` for unsigned layers (chromatin, ChIP, CAGE, splicing). For signed layers (gene expression, MPRA, Sei), the effect percentile ranges `[-1, 1]` (preserving the direction of effect).
@@ -1187,7 +1187,19 @@ The build scripts live in [`scripts/`](scripts/) — one per oracle. Each perfor
 
 ##### 1. Variant effect distribution
 
-10,000 random SNPs sampled uniformly across `chr1`–`chr22`, well away from chromosome edges. For each SNP:
+The reference population differs by oracle, and by layer, because a percentile only means something against a population the variant could plausibly have come from.
+
+| oracle | effect reference population |
+|---|---|
+| AlphaGenome, Borzoi, Enformer | **gene-anchored**: sampled per stratum from GENCODE v48 protein-coding annotation — 20 % within ±1 kb of a TSS, 20 % at 1–10 kb, 33 % within ±100 bp of an exon/intron boundary, 12 % elsewhere in a gene body, 15 % uniformly random |
+| ↳ their `chromatin_accessibility` rows | **cCRE-anchored**: inside ENCODE SCREEN candidate cis-regulatory elements, stratified over PLS / dELS / pELS / CA-CTCF / CA-H3K4me3 / CA-TF / CA / TF |
+| ChromBPNet, Cherimoya, Sei, LegNet, EPInformer-seq | uniformly random across `chr1`–`chr22`, away from contig edges |
+
+Uniform-random was the original choice everywhere, and it is the wrong reference class for a localised assay: a random position carries almost no CAGE or accessibility signal, so the `+1` pseudocount damps its log-ratio toward zero and the null's body collapses below where real regulatory effects live. The 15 % uniform tail in the gene-anchored mixture is deliberate — with no near-zero mass, genuinely small effects would receive artificially *low* percentiles, which is the mirror of the same failure.
+
+Accessibility rows are drawn from cCREs because they were the one layer still saturating against the gene-anchored mixture: measured at SORT1, 50 % of Enformer's accessibility rows exceeded their own track's null maximum, and a cCRE-anchored null takes that to 0 %. That treatment is *not* extended to TF binding or histone marks, which were measured and got no better or worse — a cCRE is defined by accessibility, H3K4me3 or CTCF signal, so a randomly chosen one is often not bound by the particular TF a given ChIP track measures.
+
+For each sampled SNP:
 
 1. Predict reference and alternate alleles across the full output window.
 2. For each track, score the variant effect using the layer-specific formula:
@@ -1223,15 +1235,18 @@ The per-bin CDFs are used by the unified `chorus.analysis._igv_report.rescale_fo
 
 #### Sample sizes per oracle
 
-| Oracle | Tracks | Effect samples / track | Activity samples / track | NPZ size |
-|---|---|---|---|---|
-| AlphaGenome | 5,168 | 10,000 | 31,500 | 260 MB |
-| Enformer | 5,313 | 10,000 | 31,500 | 520 MB |
-| Borzoi | 7,611 | 10,000 | 31,500 | 770 MB |
-| ChromBPNet | 753 (9 ATAC/DNASE + 744 CHIP) | 18,672 | 34,004 | 80 MB |
-| Sei | 40 classes | 10,000 | 31,500 | 2.8 MB |
-| LegNet | 3 cell types | 10,000 | 31,500 | 210 KB |
-| EPInformer-seq | 33 (11 cells × 3 assays: DNase, H3K27ac, composite) | 9,608 | 34,002 | 2.3 MB |
+<!-- BEGIN GENERATED: background-table -->
+| Oracle | Tracks | Effect samples / track | Activity samples / track | Effect reference population | NPZ size |
+|---|---|---|---|---|---|
+| AlphaGenome | 5,168 | 11,934–148,367 | 6,337–104,033 | gene-anchored+ccre | 272 MB |
+| Enformer | 5,313 | 11,933 | 19,549–31,005 | gene-anchored+ccre | 550 MB |
+| Borzoi | 7,611 | 11,934–34,482 | 19,548–75,021 | gene-anchored+ccre | 793 MB |
+| ChromBPNet | 753 | 18,672–37,344 | 34,004–68,008 | uniform + DHS summits | 80 MB |
+| Cherimoya (CATv1) | 1,518 | 18,672 | 34,004 | uniform + DHS summits | 162 MB |
+| Sei | 40 | 11,934 | 29,004 | gene-anchored+ccre | 3 MB |
+| LegNet | 3 | 11,913 | 29,002 | promoter-anchored | 198 KB |
+| EPInformer-seq | 33 | 11,934 | 34,002 | gene-anchored+ccre | 2 MB |
+<!-- END GENERATED: background-table -->
 
 Effect and activity reservoirs are converted to 10,000-point CDFs (sorted sample arrays) — so a percentile lookup is a single O(log n) bisect.
 
@@ -1295,7 +1310,7 @@ In the resulting report, every track row gets two extra columns — `Effect %ile
 | Column | Range | Reading |
 |---|---|---|
 | **Raw effect** (e.g. log2FC) | unbounded; biologically meaningful units | `+1.0` = alt is 2× ref; `-1.0` = alt is 0.5× ref |
-| **Effect percentile** (unsigned) | `[0, 1]` | `0.95` = stronger than 95% of ~10K random SNPs in the same track |
+| **Effect percentile** (unsigned) | `[0, 1]` | `0.95` = stronger than 95% of the same track's reference population |
 | **Effect percentile** (signed) | `[-1, 1]` | `+0.95` = strongly above-baseline gain; `-0.95` = strongly above-baseline loss |
 | **Activity percentile** | `[0, 1]` | `0.95` = reference signal at this site is in the top 5% genome-wide for this track |
 | **Display rescale (unsigned)** | `[0, 3.0]` | `1.0` = top-1% bin value genome-wide; `3.0` = hard cap (3× p99); `0` = below the layer floor (p90 / p95 / p85 depending on layer) |

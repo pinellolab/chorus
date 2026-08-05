@@ -54,7 +54,7 @@
             "alt_value": 1666.310546875,
             "raw_score": 1.3344578086817067,
             "description": "DNASE:HepG2",
-            "quantile_score": 0.9981,
+            "quantile_score": 0.9976,
             "ref_signal_percentile": 0.9728
           }
         ],
@@ -68,7 +68,7 @@
             "alt_value": 15952.0,
             "raw_score": 2.9454282931023896,
             "description": "CHIP:CEBPA:HepG2",
-            "quantile_score": 0.9997,
+            "quantile_score": 0.9999,
             "ref_signal_percentile": 0.9881,
             "low_effective_bins": true
           }
@@ -97,7 +97,7 @@
             "alt_value": 73.28700256347656,
             "raw_score": 1.5022141347796536,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.9984,
+            "quantile_score": 0.9988,
             "ref_signal_percentile": 0.9163,
             "region_label": "variant site"
           },
@@ -110,7 +110,7 @@
             "alt_value": 3672.14013671875,
             "raw_score": 0.05809299508700055,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.8716,
+            "quantile_score": 0.8544,
             "ref_signal_percentile": 0.9846,
             "region_label": "SORT1 TSS"
           },
@@ -123,7 +123,7 @@
             "alt_value": 2660.997314453125,
             "raw_score": 0.23509440548265717,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.9778,
+            "quantile_score": 0.9711,
             "ref_signal_percentile": 0.9775,
             "region_label": "PSRC1 TSS"
           },
@@ -136,7 +136,7 @@
             "alt_value": 2.9810590744018555,
             "raw_score": 0.1982157127190542,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.9715,
+            "quantile_score": 0.9627,
             "ref_signal_percentile": 0.8383,
             "region_label": "CELSR2 TSS"
           },
@@ -149,7 +149,7 @@
             "alt_value": 217.64712524414062,
             "raw_score": 0.21251429692610155,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.9743,
+            "quantile_score": 0.9658,
             "ref_signal_percentile": 0.9507,
             "region_label": "MYBPHL TSS"
           },
@@ -162,7 +162,7 @@
             "alt_value": 49.38893127441406,
             "raw_score": 0.019713605325968487,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.6884,
+            "quantile_score": 0.6872,
             "ref_signal_percentile": 0.9321,
             "region_label": "SARS1 TSS"
           },
@@ -175,7 +175,7 @@
             "alt_value": 0.8056581020355225,
             "raw_score": 0.0019172523907583301,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.2821,
+            "quantile_score": 0.2771,
             "ref_signal_percentile": 0.7637,
             "region_label": "ELAPOR1 TSS"
           },
@@ -188,7 +188,7 @@
             "alt_value": 11532.8974609375,
             "raw_score": 0.0035057262444152994,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.3736,
+            "quantile_score": 0.3786,
             "ref_signal_percentile": 0.9985,
             "region_label": "PSMA5 TSS"
           },
@@ -201,7 +201,7 @@
             "alt_value": 11.859798431396484,
             "raw_score": 0.00350430143753518,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.3736,
+            "quantile_score": 0.3785,
             "ref_signal_percentile": 0.8977,
             "region_label": "CFAP276 TSS"
           },
@@ -214,7 +214,7 @@
             "alt_value": 357.5505065917969,
             "raw_score": 0.010460145896249738,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.5673,
+            "quantile_score": 0.57,
             "ref_signal_percentile": 0.9584,
             "region_label": "TMEM167B TSS"
           },
@@ -227,7 +227,7 @@
             "alt_value": 6.707468032836914,
             "raw_score": 0.007156340380930805,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.4944,
+            "quantile_score": 0.4983,
             "ref_signal_percentile": 0.8765,
             "region_label": "SYPL2 TSS"
           },
@@ -240,7 +240,7 @@
             "alt_value": 4076.529541015625,
             "raw_score": 0.004827514642728844,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.4264,
+            "quantile_score": 0.4333,
             "ref_signal_percentile": 0.9874,
             "region_label": "TAF13 TSS"
           },
@@ -265,7 +265,7 @@
             "alt_value": 9.252126693725586,
             "raw_score": -0.002276692982683841,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.3114,
+            "quantile_score": 0.3047,
             "ref_signal_percentile": 0.8883,
             "region_label": "CYB561D1 TSS"
           },
@@ -290,7 +290,7 @@
             "alt_value": 1630.0963134765625,
             "raw_score": 0.012980449844780912,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.6092,
+            "quantile_score": 0.611,
             "ref_signal_percentile": 0.9718,
             "region_label": "WDR47 TSS"
           },
@@ -315,7 +315,7 @@
             "alt_value": 352.62628173828125,
             "raw_score": 0.0061778535595709136,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.4675,
+            "quantile_score": 0.4746,
             "ref_signal_percentile": 0.9584,
             "region_label": "GNAI3 TSS"
           },
@@ -328,7 +328,7 @@
             "alt_value": 66.09471130371094,
             "raw_score": 0.0038744820703045606,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.3896,
+            "quantile_score": 0.3967,
             "ref_signal_percentile": 0.9365,
             "region_label": "GNAT2 TSS"
           },
@@ -341,7 +341,7 @@
             "alt_value": 87.19255065917969,
             "raw_score": -0.00811555386238249,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.5232,
+            "quantile_score": 0.5217,
             "ref_signal_percentile": 0.9405,
             "region_label": "AMPD2 TSS"
           },
@@ -354,7 +354,7 @@
             "alt_value": 4133.53515625,
             "raw_score": 0.001043612390758798,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.1992,
+            "quantile_score": 0.1906,
             "ref_signal_percentile": 0.9882,
             "region_label": "CLCC1 TSS"
           },
@@ -367,7 +367,7 @@
             "alt_value": 23.46685791015625,
             "raw_score": -0.00540001015202221,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.4433,
+            "quantile_score": 0.4506,
             "ref_signal_percentile": 0.9149,
             "region_label": "GPSM2 TSS"
           },
@@ -380,7 +380,7 @@
             "alt_value": 2.1003975868225098,
             "raw_score": -0.0018127675730091287,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.272,
+            "quantile_score": 0.2681,
             "ref_signal_percentile": 0.8281,
             "region_label": "AKNAD1 TSS"
           },
@@ -393,7 +393,7 @@
             "alt_value": 61.02226638793945,
             "raw_score": 0.0056333078281749025,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.4506,
+            "quantile_score": 0.4576,
             "ref_signal_percentile": 0.9358,
             "region_label": "GSTM4 TSS"
           },
@@ -406,7 +406,7 @@
             "alt_value": 1.2481606006622314,
             "raw_score": 0.0013041368722309452,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.2283,
+            "quantile_score": 0.2224,
             "ref_signal_percentile": 0.7952,
             "region_label": "GSTM2 TSS"
           },
@@ -419,7 +419,7 @@
             "alt_value": 0.6180233955383301,
             "raw_score": 0.0011128793050707284,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.2058,
+            "quantile_score": 0.199,
             "ref_signal_percentile": 0.7401,
             "region_label": "GSTM1 TSS"
           },
@@ -456,7 +456,7 @@
             "alt_value": 3817.642333984375,
             "raw_score": -0.0021806807100152384,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.3035,
+            "quantile_score": 0.2973,
             "ref_signal_percentile": 0.9862,
             "region_label": "EPS8L3 TSS"
           }
@@ -472,7 +472,7 @@
           "alt_value": 1666.310546875,
           "raw_score": 1.3344578086817067,
           "description": "DNASE:HepG2",
-          "quantile_score": 0.9981,
+          "quantile_score": 0.9976,
           "ref_signal_percentile": 0.9728
         },
         {
@@ -484,7 +484,7 @@
           "alt_value": 15952.0,
           "raw_score": 2.9454282931023896,
           "description": "CHIP:CEBPA:HepG2",
-          "quantile_score": 0.9997,
+          "quantile_score": 0.9999,
           "ref_signal_percentile": 0.9881,
           "low_effective_bins": true
         },
@@ -509,7 +509,7 @@
           "alt_value": 73.28700256347656,
           "raw_score": 1.5022141347796536,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.9984,
+          "quantile_score": 0.9988,
           "ref_signal_percentile": 0.9163,
           "region_label": "variant site"
         },
@@ -522,7 +522,7 @@
           "alt_value": 3672.14013671875,
           "raw_score": 0.05809299508700055,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.8716,
+          "quantile_score": 0.8544,
           "ref_signal_percentile": 0.9846,
           "region_label": "SORT1 TSS"
         },
@@ -535,7 +535,7 @@
           "alt_value": 2660.997314453125,
           "raw_score": 0.23509440548265717,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.9778,
+          "quantile_score": 0.9711,
           "ref_signal_percentile": 0.9775,
           "region_label": "PSRC1 TSS"
         },
@@ -548,7 +548,7 @@
           "alt_value": 2.9810590744018555,
           "raw_score": 0.1982157127190542,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.9715,
+          "quantile_score": 0.9627,
           "ref_signal_percentile": 0.8383,
           "region_label": "CELSR2 TSS"
         },
@@ -561,7 +561,7 @@
           "alt_value": 217.64712524414062,
           "raw_score": 0.21251429692610155,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.9743,
+          "quantile_score": 0.9658,
           "ref_signal_percentile": 0.9507,
           "region_label": "MYBPHL TSS"
         },
@@ -574,7 +574,7 @@
           "alt_value": 49.38893127441406,
           "raw_score": 0.019713605325968487,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.6884,
+          "quantile_score": 0.6872,
           "ref_signal_percentile": 0.9321,
           "region_label": "SARS1 TSS"
         },
@@ -587,7 +587,7 @@
           "alt_value": 0.8056581020355225,
           "raw_score": 0.0019172523907583301,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.2821,
+          "quantile_score": 0.2771,
           "ref_signal_percentile": 0.7637,
           "region_label": "ELAPOR1 TSS"
         },
@@ -600,7 +600,7 @@
           "alt_value": 11532.8974609375,
           "raw_score": 0.0035057262444152994,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.3736,
+          "quantile_score": 0.3786,
           "ref_signal_percentile": 0.9985,
           "region_label": "PSMA5 TSS"
         },
@@ -613,7 +613,7 @@
           "alt_value": 11.859798431396484,
           "raw_score": 0.00350430143753518,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.3736,
+          "quantile_score": 0.3785,
           "ref_signal_percentile": 0.8977,
           "region_label": "CFAP276 TSS"
         },
@@ -626,7 +626,7 @@
           "alt_value": 357.5505065917969,
           "raw_score": 0.010460145896249738,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.5673,
+          "quantile_score": 0.57,
           "ref_signal_percentile": 0.9584,
           "region_label": "TMEM167B TSS"
         },
@@ -639,7 +639,7 @@
           "alt_value": 6.707468032836914,
           "raw_score": 0.007156340380930805,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.4944,
+          "quantile_score": 0.4983,
           "ref_signal_percentile": 0.8765,
           "region_label": "SYPL2 TSS"
         },
@@ -652,7 +652,7 @@
           "alt_value": 4076.529541015625,
           "raw_score": 0.004827514642728844,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.4264,
+          "quantile_score": 0.4333,
           "ref_signal_percentile": 0.9874,
           "region_label": "TAF13 TSS"
         },
@@ -677,7 +677,7 @@
           "alt_value": 9.252126693725586,
           "raw_score": -0.002276692982683841,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.3114,
+          "quantile_score": 0.3047,
           "ref_signal_percentile": 0.8883,
           "region_label": "CYB561D1 TSS"
         },
@@ -702,7 +702,7 @@
           "alt_value": 1630.0963134765625,
           "raw_score": 0.012980449844780912,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.6092,
+          "quantile_score": 0.611,
           "ref_signal_percentile": 0.9718,
           "region_label": "WDR47 TSS"
         },
@@ -727,7 +727,7 @@
           "alt_value": 352.62628173828125,
           "raw_score": 0.0061778535595709136,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.4675,
+          "quantile_score": 0.4746,
           "ref_signal_percentile": 0.9584,
           "region_label": "GNAI3 TSS"
         },
@@ -740,7 +740,7 @@
           "alt_value": 66.09471130371094,
           "raw_score": 0.0038744820703045606,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.3896,
+          "quantile_score": 0.3967,
           "ref_signal_percentile": 0.9365,
           "region_label": "GNAT2 TSS"
         },
@@ -753,7 +753,7 @@
           "alt_value": 87.19255065917969,
           "raw_score": -0.00811555386238249,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.5232,
+          "quantile_score": 0.5217,
           "ref_signal_percentile": 0.9405,
           "region_label": "AMPD2 TSS"
         },
@@ -766,7 +766,7 @@
           "alt_value": 4133.53515625,
           "raw_score": 0.001043612390758798,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.1992,
+          "quantile_score": 0.1906,
           "ref_signal_percentile": 0.9882,
           "region_label": "CLCC1 TSS"
         },
@@ -779,7 +779,7 @@
           "alt_value": 23.46685791015625,
           "raw_score": -0.00540001015202221,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.4433,
+          "quantile_score": 0.4506,
           "ref_signal_percentile": 0.9149,
           "region_label": "GPSM2 TSS"
         },
@@ -792,7 +792,7 @@
           "alt_value": 2.1003975868225098,
           "raw_score": -0.0018127675730091287,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.272,
+          "quantile_score": 0.2681,
           "ref_signal_percentile": 0.8281,
           "region_label": "AKNAD1 TSS"
         },
@@ -805,7 +805,7 @@
           "alt_value": 61.02226638793945,
           "raw_score": 0.0056333078281749025,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.4506,
+          "quantile_score": 0.4576,
           "ref_signal_percentile": 0.9358,
           "region_label": "GSTM4 TSS"
         },
@@ -818,7 +818,7 @@
           "alt_value": 1.2481606006622314,
           "raw_score": 0.0013041368722309452,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.2283,
+          "quantile_score": 0.2224,
           "ref_signal_percentile": 0.7952,
           "region_label": "GSTM2 TSS"
         },
@@ -831,7 +831,7 @@
           "alt_value": 0.6180233955383301,
           "raw_score": 0.0011128793050707284,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.2058,
+          "quantile_score": 0.199,
           "ref_signal_percentile": 0.7401,
           "region_label": "GSTM1 TSS"
         },
@@ -868,7 +868,7 @@
           "alt_value": 3817.642333984375,
           "raw_score": -0.0021806807100152384,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.3035,
+          "quantile_score": 0.2973,
           "ref_signal_percentile": 0.9862,
           "region_label": "EPS8L3 TSS"
         }
@@ -883,6 +883,6 @@
     "tracks_requested": "4 tracks",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-04 04:56 UTC"
+    "generated_at": "2026-08-05 05:14 UTC"
   }
 }

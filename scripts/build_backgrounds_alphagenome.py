@@ -27,6 +27,13 @@ import numpy as np
 import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')); sys.path.insert(0, REPO_ROOT)
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
+
+def _shard_suffix():
+    """`.shard<K>of<N>` when position-sharded, else empty."""
+    if args.shard is None or args.shard_of is None:
+        return ""
+    return f".shard{args.shard}of{args.shard_of}"
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--part", choices=["variants", "baselines", "merge", "both", "all"], default="all")
 parser.add_argument("--gpu", type=int, default=0)
@@ -39,6 +46,26 @@ parser.add_argument("--n-gene-body", type=int, default=500)
 parser.add_argument("--reservoir-size", type=int, default=20000)
 parser.add_argument("--n-cdf-points", type=int, default=10000)
 parser.add_argument("--perbin-bins", type=int, default=32)
+parser.add_argument("--effect-regions", choices=["gene-anchored", "ccre"],
+                    default="gene-anchored",
+                    help="Reference population for the EFFECT null. 'ccre' samples "
+                         "inside ENCODE SCREEN cCREs, which is the matched class for "
+                         "peak assays (accessibility / histone ChIP / TF ChIP); those "
+                         "layers saturate against the gene-anchored mixture because "
+                         "most of its positions are not in a peak. Does not affect "
+                         "the baseline/summary path, which already uses cCREs.")
+parser.add_argument("--shard", type=int, default=None,
+                    help="0-indexed POSITION shard. With --shard-of N this process "
+                         "scores only positions where i %% N == shard, and writes its "
+                         "raw reservoir samples to a .shard<K>of<N> interim. These "
+                         "oracles emit every track from one forward pass, so sharding "
+                         "by TRACK (as the chrombpnet builder does) would save no GPU "
+                         "time -- each shard would still run every pass.")
+parser.add_argument("--shard-of", type=int, default=None,
+                    help="Total number of position shards. Required with --shard. "
+                         "Collect all shards, then run --part merge-shards, which "
+                         "unions the raw samples and builds the CDF exactly once "
+                         "(pooling the shards' CDF grids would only approximate it).")
 args = parser.parse_args()
 
 log_dir = os.path.join(REPO_ROOT, "logs")
@@ -77,104 +104,31 @@ LAYER_FROM_CHORUS_TYPE = {
 
 
 # ── Reservoir sampler ────────────────────────────────────────────
-class ReservoirSampler:
-    def __init__(self, n_tracks: int, capacity: int = 20_000):
-        self.n_tracks = n_tracks
-        self.capacity = capacity
-        self.data = [[] for _ in range(n_tracks)]
-        self.counts = np.zeros(n_tracks, dtype=np.int64)
-        self._rng = random.Random(12345)
-
-    def add(self, track_idx: int, value: float):
-        n = self.counts[track_idx]
-        if n < self.capacity:
-            self.data[track_idx].append(value)
-        else:
-            j = self._rng.randint(0, n)
-            if j < self.capacity:
-                self.data[track_idx][j] = value
-        self.counts[track_idx] += 1
-
-    def add_batch(self, track_idx: int, values):
-        # Vectorized batch insertion: while reservoir has capacity, just extend.
-        # Once full, switch to per-value reservoir replacement.
-        target = self.data[track_idx]
-        current_count = int(self.counts[track_idx])
-        cap = self.capacity
-        n_new = len(values)
-
-        if current_count < cap:
-            # We have room — append as many as fit
-            room = cap - current_count
-            n_to_append = min(room, n_new)
-            if n_to_append > 0:
-                # Convert to Python floats once, then extend
-                if hasattr(values, 'tolist'):
-                    target.extend(values[:n_to_append].tolist())
-                else:
-                    target.extend(float(v) for v in values[:n_to_append])
-            # Handle overflow with reservoir replacement
-            if n_to_append < n_new:
-                rest = values[n_to_append:]
-                rng = self._rng
-                for off, v in enumerate(rest):
-                    n_so_far = current_count + n_to_append + off
-                    j = rng.randint(0, n_so_far)
-                    if j < cap:
-                        target[j] = float(v)
-            self.counts[track_idx] += n_new
-        else:
-            # Full reservoir — per-value replacement
-            rng = self._rng
-            for off, v in enumerate(values):
-                n_so_far = current_count + off
-                j = rng.randint(0, n_so_far)
-                if j < cap:
-                    target[j] = float(v)
-            self.counts[track_idx] += n_new
-
-    def get_sorted(self, track_idx: int) -> np.ndarray:
-        arr = np.array(self.data[track_idx], dtype=np.float64)
-        arr.sort()
-        return arr
-
-    def to_cdf_matrix(self, n_points: int = 10_000) -> np.ndarray:
-        matrix = np.zeros((self.n_tracks, n_points), dtype=np.float64)
-        target_q = np.linspace(0, 1, n_points)
-        for i in range(self.n_tracks):
-            arr = self.get_sorted(i)
-            n = len(arr)
-            if n == 0:
-                continue
-            if n >= n_points:
-                indices = np.linspace(0, n - 1, n_points, dtype=int)
-                matrix[i] = arr[indices]
-            else:
-                source_q = np.arange(n) / n
-                matrix[i] = np.interp(target_q, source_q, arr)
-        return matrix
-
-    def get_counts(self) -> np.ndarray:
-        return self.counts.copy()
-
-    def total_samples(self) -> int:
-        return int(self.counts.sum())
-
-    def tracks_with_data(self) -> int:
-        return int((self.counts > 0).sum())
-
-
+# ReservoirSampler used to be defined HERE, a local copy of the shared class. It was
+# the last un-migrated one of the eight (#125), and keeping it cost real time: adding
+# to_flat_samples to the shared class left eight position shards running for fifty
+# GPU minutes before every one died with AttributeError at the write step, because
+# this file's copy did not have the method. Deleted rather than kept in sync.
+#
+# The two differences the copy carried are both preserved:
+#   * default capacity 20,000 vs the shared 50,000 -- moot here, since all three
+#     call sites pass capacity=args.reservoir_size explicitly;
+#   * a hand-vectorised add_batch, needed for the baseline pass's per-variant
+#     fan-out. That is now the shared implementation, with the plain loop kept as
+#     _add_batch_reference so the equivalence test still has something to compare to.
 from chorus.analysis.background_sampling import (  # noqa: E402
+    ReservoirSampler,
     StagedSamples,
     centered_bin_span,
     report_sampling_uniformity,
 )
-from chorus.analysis.scorers import classify_chip_layer  # noqa: E402
+from chorus.analysis.scorers import canonical_layer, classify_chip_layer  # noqa: E402
 from chorus.utils.annotations import (  # noqa: E402
     build_transcript_exon_index,
     exon_bins_for_gene,
     genes_with_tss_in_window,
     load_chrom_sizes,
+    sample_ccre_anchored_positions,
     sample_gene_anchored_positions,
 )
 
@@ -389,11 +343,19 @@ def build_variant_backgrounds():
     # uniform on purpose, to keep the null's lower body populated — without it,
     # small real effects would get artificially LOW percentiles.
     random.seed(42)
-    sampled = sample_gene_anchored_positions(
-        args.n_variants,
-        chrom_sizes=load_chrom_sizes(os.path.join(REPO_ROOT, 'genomes/hg38.fa.fai')),
-        seed=42,
-    )
+    # Which reference population the effect null is drawn from. Peak layers
+    # (accessibility, histone ChIP, TF ChIP) saturate against the gene-anchored
+    # mixture because most of its positions are not inside a peak -- see
+    # EFFECT_REGION_SETS in chorus/utils/annotations.py for the measurements.
+    _sizes = load_chrom_sizes(os.path.join(REPO_ROOT, 'genomes/hg38.fa.fai'))
+    if args.effect_regions == 'ccre':
+        sampled = sample_ccre_anchored_positions(
+            args.n_variants, chrom_sizes=_sizes, seed=42,
+        )
+    else:
+        sampled = sample_gene_anchored_positions(
+            args.n_variants, chrom_sizes=_sizes, seed=42,
+        )
     snps = []
     strata_counts = defaultdict(int)
     for chrom, pos, stratum in sampled:
@@ -406,11 +368,29 @@ def build_variant_backgrounds():
             "stratum": stratum,
         })
         strata_counts[stratum] += 1
-    logger.info("Generated %d gene-anchored SNPs from %d sampled positions: %s",
-                len(snps), len(sampled), dict(strata_counts))
+    # The region set is named in the message, not hardcoded, because there are now
+    # two and this line IS the provenance that scripts/stamp_background_provenance.py
+    # reads back. Saying "gene-anchored" while sampling cCREs would stamp a lie into
+    # every rebuilt NPZ.
+    logger.info("Generated %d %s SNPs from %d sampled positions: %s",
+                len(snps), args.effect_regions, len(sampled), dict(strata_counts))
 
     # Why a position was dropped, reported at the end. A silent drop is how
     # enformer shipped effect_counts spanning 9600-9606 (#123).
+    # Position sharding. Applied AFTER the SNP list is built so every shard agrees
+    # on the same seeded position set and simply takes a stride through it -- the
+    # union over shards is then exactly the unsharded list, which is what makes
+    # tests/test_position_sharding.py's equality property hold.
+    if args.shard is not None or args.shard_of is not None:
+        if args.shard is None or args.shard_of is None:
+            raise SystemExit("--shard and --shard-of must be set together")
+        if not (0 <= args.shard < args.shard_of):
+            raise SystemExit(f"--shard ({args.shard}) must be in [0, {args.shard_of})")
+        before = len(snps)
+        snps = snps[args.shard::args.shard_of]
+        logger.info("--shard %d/%d: scoring %d of %d positions on this worker",
+                    args.shard, args.shard_of, len(snps), before)
+
     drop_reasons = defaultdict(int)
     t0 = time.time()
     for i, snp in enumerate(snps):
@@ -516,14 +496,39 @@ def build_variant_backgrounds():
     signed_flags = np.array([t['signed'] for t in track_info], dtype=bool)
     effect_matrix = effect_reservoir.to_cdf_matrix(n_points=args.n_cdf_points)
 
-    interim_path = os.path.join(cache_dir, "alphagenome_effect_cdfs_interim.npz")
-    np.savez_compressed(
-        interim_path,
-        track_ids=np.array(track_ids, dtype='U'),
-        effect_cdfs=effect_matrix.astype(np.float32),
-        effect_counts=effect_reservoir.get_counts(),
-        signed_flags=signed_flags,
-    )
+    # Per-row layer, from the same field the builder uses to choose this
+    # track's window. Load-bearing twice over: scripts/merge_effect_shards.py
+    # composes peak-layer rows from a cCRE-anchored build and the rest from a
+    # gene-anchored one, and #124 asked for a per-row layer so a background's
+    # rows can be identified without re-deriving them from opaque ids.
+    layers_per_row = np.array(
+        [canonical_layer(t['layer']) for t in track_info], dtype='U')
+    _suffix = _shard_suffix()
+    interim_path = os.path.join(
+        cache_dir, f"alphagenome_effect_cdfs_interim{_suffix}.npz")
+    if _suffix:
+        # A position shard holds a PARTIAL reservoir for every track, so it must
+        # ship raw samples: the CDF is built once, from the union, by
+        # --part merge-shards. Writing a CDF per shard and pooling the grids would
+        # only approximate the unsharded result.
+        np.savez_compressed(
+            interim_path,
+            track_ids=np.array(track_ids, dtype='U'),
+            signed_flags=signed_flags,
+            layers_per_row=layers_per_row,
+            **effect_reservoir.to_flat_samples(),
+        )
+        logger.info("Saved RAW shard samples: %s (%.1f MB)", interim_path,
+                    os.path.getsize(interim_path) / (1024 * 1024))
+    else:
+        np.savez_compressed(
+            interim_path,
+            track_ids=np.array(track_ids, dtype='U'),
+            effect_cdfs=effect_matrix.astype(np.float32),
+            effect_counts=effect_reservoir.get_counts(),
+            signed_flags=signed_flags,
+            layers_per_row=layers_per_row,
+        )
     logger.info("Saved effect interim: %s", interim_path)
     ref.close()
 

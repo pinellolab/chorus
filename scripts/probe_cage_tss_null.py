@@ -51,6 +51,13 @@ def main() -> int:
     ap.add_argument("--gpu", default="4")
     ap.add_argument("--n", type=int, default=300)
     ap.add_argument("--window", type=int, default=501)
+    ap.add_argument("--offset-uniform-bp", type=int, default=None, metavar="N",
+                    help="Draw the variant's distance from the TSS uniformly over "
+                         "[-N, +N]. This is the reference class with NO selection "
+                         "effect: 'a random SNV within N bp of an annotated "
+                         "protein-coding TSS'. Preferred over --offset-like-eqtl, "
+                         "whose distribution partly reflects GTEx's testing window "
+                         "and discovery power rather than biology.")
     ap.add_argument("--offset-like-eqtl", metavar="TISSUE", default=None,
                     help="Instead of placing the variant exactly AT the TSS, draw "
                          "its distance from the empirical tss_distance distribution "
@@ -105,7 +112,12 @@ def main() -> int:
 
     # The offset pool. Empty means "variant exactly at the TSS".
     offsets: list[int] = []
-    if args.offset_like_eqtl:
+    if args.offset_uniform_bp:
+        n = int(args.offset_uniform_bp)
+        offsets = list(range(-n, n + 1))
+        print(f"[cage] uniform offsets over +/-{n} bp "
+              f"(mean |d| {n / 2:.0f} bp)", flush=True)
+    elif args.offset_like_eqtl:
         import gzip
         path = (Path("/data/chorus_data/eqtl/GTEx_Analysis_v8_eQTL")
                 / f"{args.offset_like_eqtl}.v8.signif_variant_gene_pairs.txt.gz")

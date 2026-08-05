@@ -24,6 +24,10 @@ import numpy as np
 
 import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')); sys.path.insert(0, REPO_ROOT)
 
+from chorus.utils.annotations import (  # noqa: E402
+    load_chrom_sizes,
+    sample_promoter_anchored_positions,
+)
 from chorus.analysis.background_sampling import ReservoirSampler  # noqa: E402
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
@@ -130,23 +134,35 @@ def build_variant_backgrounds():
 
     random.seed(42)
     chroms = [f"chr{i}" for i in range(1, 23)]
-    snps_per_chrom = args.n_variants // len(chroms) + 1
+    # LegNet is a promoter MPRA model: 200 bp input, window_bp=None, so the sampled
+    # position IS the whole thing being modelled. Anchored on promoters, NOT on the
+    # generic cCRE mix (62% of that catalogue is distal enhancer-like) and not on DHS
+    # summits, which track accessibility rather than promoter identity. See
+    # PROMOTER_REGION_STRATA.
+    #
+    # This was a uniformly random draw over chr1-chr22. For an assay with localised
+    # signal that is the wrong reference population: a random position carries almost
+    # no signal, so the pseudocount damps its log-ratio toward zero and the null's
+    # body collapses below where real regulatory effects live. Five of the eight
+    # oracles already anchored their effect null on peaks; this one did not, even
+    # though its own BASELINE pass already used cCREs -- an asymmetry inside a single
+    # oracle that is harder to defend than any difference between oracles.
+    _sizes = load_chrom_sizes(os.path.join(REPO_ROOT, 'genomes/hg38.fa.fai'))
+    sampled = sample_promoter_anchored_positions(
+        args.n_variants, chrom_sizes=_sizes, seed=42)
     snps = []
-    for chrom in chroms:
-        chrom_len = ref.get_reference_length(chrom)
-        max_pos = min(chrom_len - 5_000_000, 200_000_000)
-        for _ in range(snps_per_chrom):
-            if len(snps) >= args.n_variants:
-                break
-            pos = random.randint(5_000_000, max_pos)
-            ref_base = ref.fetch(chrom, pos - 1, pos).upper()
-            if ref_base not in "ACGT":
-                continue
-            snps.append({"chrom": chrom, "pos": pos, "ref": ref_base,
-                         "alt": random.choice([b for b in "ACGT" if b != ref_base])})
+    strata_counts = defaultdict(int)
+    for chrom, pos, stratum in sampled:
+        ref_base = ref.fetch(chrom, pos - 1, pos).upper()
+        if ref_base not in "ACGT":
+            continue  # N or soft-masked; the tally records the shortfall
+        snps.append({"chrom": chrom, "pos": pos, "ref": ref_base,
+                     "alt": random.choice([b for b in "ACGT" if b != ref_base]),
+                     "stratum": stratum})
+        strata_counts[stratum] += 1
     random.shuffle(snps)
-    snps = snps[:args.n_variants]
-    logger.info("Generated %d SNPs", len(snps))
+    logger.info("Generated %d promoter-anchored SNPs from %d sampled positions: %s",
+                len(snps), len(sampled), dict(strata_counts))
 
     import torch
 

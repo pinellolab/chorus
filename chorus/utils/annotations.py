@@ -971,12 +971,89 @@ def exon_bins_for_gene(
 # correlated with effect size. That would bias the null toward large effects and
 # make everything look unremarkable.
 DEFAULT_REGION_STRATA = {
-    "tss_near": 0.20,    # within +/- 1 kb of a protein-coding TSS
-    "tss_far": 0.20,     # 1-10 kb from a TSS
-    "junction": 0.33,    # +/- 100 bp of an annotated exon/intron boundary
-    "gene_body": 0.12,   # elsewhere inside a protein-coding gene
-    "random": 0.15,      # uniform, to keep the null's lower body populated
+    # Half the positions reproduce the previously shipped gene-anchored set EXACTLY,
+    # in its original internal proportions (0.20 / 0.20 / 0.33 / 0.12 / 0.15).
+    "tss_near": 0.100,   # within +/- 1 kb of a protein-coding TSS
+    "tss_far": 0.100,    # 1-10 kb from a TSS
+    "junction": 0.165,   # +/- 100 bp of an annotated exon/intron boundary
+    "gene_body": 0.060,  # elsewhere inside a protein-coding gene
+    "random": 0.075,     # uniform, to keep the null's lower body populated
+    # The other half is new, and purely ADDITIVE.
+    "ccre": 0.500,       # inside an ENCODE SCREEN candidate cis-regulatory element
 }
+
+# The intended total. At n=12,000 the strata above yield tss_near 1,200,
+# tss_far 1,200, junction 1,980, gene_body 720, random 900 -- the same counts the
+# shipped gene-anchored build used -- plus 6,000 cCRE positions on top.
+DEFAULT_N_EFFECT_POSITIONS = 12_000
+
+# ONE region set, shared by every layer and every oracle, and it is a UNION rather
+# than a mixture. That distinction is the whole finding, and it was learned the hard
+# way, so it is written down at length.
+#
+# WHY NOT PER-LAYER REFERENCE SETS
+# --------------------------------
+# Composing a different population per layer means keying on a per-row layer field,
+# and the builders did not agree on a vocabulary: Enformer wrote its internal
+# ``spec_key`` (``DNASE``, ``ATAC``, ``CHIP_HIST``, ``CHIP_TF``, ``CAGE``) while
+# AlphaGenome wrote canonical names. A composition keyed on
+# ``chromatin_accessibility`` matched 472 of AlphaGenome's rows and **0 of Enformer's
+# 5,313** -- silently, for the one oracle where the change had been measured to help.
+# Same defect class as #122 and #144: two producers, two conventions, nothing
+# comparing them. (Fixed separately by ``scorers.canonical_layer``, which raises.)
+#
+# It is also the wrong shape of solution, because layers are shared far more widely
+# than per-layer treatment assumes. Measured row counts:
+#
+#     layer                     AG    enformer  borzoi  chrombpnet  cherimoya  epinf
+#     chromatin_accessibility   472    684        906      9          1,518      11
+#     histone_marks           1,116  1,890     (subset)  (subset)      -         22
+#     tf_binding              1,617  2,101     (subset)  (subset)      -          -
+#     tss_activity              558    638      1,276      -           -          -
+#     gene_expression           667      -      1,543      -           -          -
+#
+# Accessibility exists in SIX oracles and already had TWO reference classes across
+# them. A third for only some of them would make "0.98 accessibility percentile"
+# mean three things depending on which oracle answered, and the multi-oracle
+# walkthrough prints them side by side.
+#
+# WHY A UNION AT 2N, NOT A MIXTURE AT N
+# -------------------------------------
+# The first attempt held the total position count fixed and gave cCRE 25 % of it.
+# It made things WORSE, and the reason is worth internalising: the statistic that
+# decides whether a percentile still discriminates is the null MAXIMUM, and a maximum
+# grows with the number of draws. Splitting a fixed budget gives every component
+# fewer draws, so every component's tail SHORTENS. Measured on one Enformer
+# accessibility track and one TF track:
+#
+#     reference set                              accessibility    tf_binding
+#     gene-anchored, 5,949 positions                    1.653         3.539
+#     cCRE-only,     5,986 positions                    2.754         3.301
+#     25/75 mixture, 5,962 total (1,500 cCRE)           1.697         2.937
+#
+# The mixture's maximum came out below BOTH full-size components for TF binding, and
+# saturation there went from 25 % of rows to 92 %. Mixing does not combine the best
+# of both; at fixed N it dilutes both.
+#
+# Keeping each component at full size instead makes the union's maximum exactly
+# ``max(max_gene, max_ccre)``, so the union is **provably never worse than the better
+# component, for every layer**. That is a guarantee, not a lucky measurement:
+#
+#     layer                     gene only   cCRE only   union at 2N
+#     chromatin_accessibility        50 %        0 %          0 %
+#     tf_binding                     25 %       50 %         25 %
+#     histone_marks                   0 %        0 %          0 %
+#     tss_activity                    0 %        0 %          0 %
+#     all committed rows             11 %        7 %          4 %
+#
+# Because the gene-anchored half reproduces the shipped counts exactly, the cCRE half
+# is purely additive: nothing that already worked can get worse.
+#
+# STILL NOT FIXED, and not claimed to be: AlphaGenome ``histone_marks`` and Enformer
+# ``tf_binding`` keep whatever their better component gives (20 % and 25 %). Both
+# would need a *per-track* population -- that mark's own broad domains, that factor's
+# own ChIP peaks -- which is a different design, not a different fraction.
+DEFAULT_CCRE_STRATUM = "ccre"
 
 
 def load_chrom_sizes(fai_path: Union[str, Path]) -> dict:
@@ -1054,11 +1131,33 @@ def sample_gene_anchored_positions(
     def _clamp(chrom, pos):
         return min(max(pos, margin_bp), usable[chrom] - margin_bp)
 
+    # cCRE positions come from the SAME sampler the baseline path uses, drawn once
+    # up front rather than per-position, because get_screen_ccres() parses a
+    # genome-wide BED. Drawn generously: the loop below rejects any that fall inside
+    # the contig-end margin.
+    ccre_pool: List[Tuple[str, int]] = []
+    if strata.get("ccre"):
+        want = int(round(n * strata["ccre"]))
+        per_class = {
+            "PLS": 0.22, "dELS": 0.28, "pELS": 0.15, "CA-CTCF": 0.10,
+            "CA-H3K4me3": 0.08, "CA-TF": 0.07, "CA": 0.06, "TF": 0.04,
+        }
+        raw = sample_ccre_positions(
+            n_per_category={k2: max(1, int(round(want * v * 2.0)))
+                            for k2, v in per_class.items()},
+            seed=seed,
+        )
+        ccre_pool = [(c, int(p)) for c, p in raw
+                     if c in usable and margin_bp <= p <= usable[c] - margin_bp]
+        rng.shuffle(ccre_pool)
+
     out: List[Tuple[str, int, str]] = []
     for name, frac in strata.items():
         k = int(round(n * frac))
         for _ in range(k):
-            if name == "tss_near" and tss:
+            if name == "ccre" and ccre_pool:
+                c, p = ccre_pool[len(out) % len(ccre_pool)]
+            elif name == "tss_near" and tss:
                 c, p = rng.choice(tss)
                 p += rng.randint(-tss_near_bp, tss_near_bp)
             elif name == "tss_far" and tss:
@@ -1073,6 +1172,205 @@ def sample_gene_anchored_positions(
                 p = rng.randint(s, e) if e > s else s
             else:
                 c = rng.choice(chrom_list)
+                p = rng.randint(margin_bp, usable[c] - margin_bp)
+            out.append((c, _clamp(c, p), name))
+
+    rng.shuffle(out)
+    return out
+
+
+# Per-layer effect region sets. A percentile answers "how unusual is this effect
+# against a reference population of variants", and the right population depends on
+# what the assay measures.
+#
+# Measured 2026-08-04 over every committed walkthrough row, comparing each raw
+# effect against its own track's null maximum on the gene-anchored null:
+#
+#     oracle        layer                      rows   above null max
+#     enformer      chromatin_accessibility      12       50.0 %
+#     alphagenome   histone_marks                10       30.0 %
+#     enformer      tf_binding                   12       25.0 %
+#     alphagenome   gene_expression             100        7.0 %
+#     alphagenome   tss_activity                263        8.0 %
+#     enformer      tss_activity                 48        0.0 %
+#
+# The *peak* layers saturate and the rest do not, and the reason is structural: most
+# gene-anchored positions are not inside a peak, and a variant in closed chromatin
+# cannot move an accessibility or ChIP signal much. So the null's upper tail is too
+# short — at SORT1, enformer accessibility effects are 1.14-1.45x its null maximum,
+# which is exactly why they pin at 1.0000 and stop discriminating.
+#
+# CAGE needs nothing. That was measured too, and the result was the opposite of what
+# was expected: sweeping the variant's distance from an annotated TSS gives a
+# monotone curve in that one parameter (eQTL percentile p50 0.323 at the TSS itself,
+# 0.411 at +/-500 bp, 0.526 at 1 kb, 0.604 at 2 kb, 0.654 at 5 kb, 0.729 at 10 kb),
+# and the shipped gene-anchored mixture sits at 0.659 — i.e. it already behaves like
+# a "+/-5 kb of a TSS" null for CAGE. There is no qualitative gain available, only a
+# choice of distance scale that no principle fixes.
+EFFECT_REGION_SETS = ('gene-anchored', 'ccre')
+
+# Layers whose null should come from cCREs rather than the gene-anchored mixture.
+# Keyed by the layer names in scorers.LAYER_CONFIGS.
+#
+# This set is MEASURED, one layer at a time, not inferred from "peak layers behave
+# alike" — they do not. Enformer, 5,986 cCRE positions against 5,949 gene-anchored
+# (a 1.006 count ratio, so the comparison is not confounded by sample size):
+#
+#     layer                     saturated, gene-anchored -> cCRE
+#     chromatin_accessibility            50 %  ->   0 %    ACCEPTED
+#     tf_binding                         25 %  ->  50 %    REJECTED
+#     histone_marks                       0 %  ->   0 %    no change for enformer
+#     tss_activity                        0 %  ->   0 %    no change
+#
+# Accessibility is fixed outright. TF binding gets WORSE, and the reason is that a
+# cCRE is *defined* by accessibility, H3K4me3 or CTCF signal — a randomly chosen cCRE
+# is often not bound by the particular TF a given ChIP track measures, so its ChIP
+# signal there is low and a variant cannot move it. Gene-anchored positions include
+# promoters where many TFs are bound, which is a better reference class for TF ChIP.
+#
+# So the rule is: a cCRE-anchored null helps the layer whose signal *defines* a cCRE,
+# and hurts layers that merely correlate with it.
+CCRE_ANCHORED_LAYERS = frozenset({
+    'chromatin_accessibility',
+})
+
+
+def sample_ccre_anchored_positions(
+    n: int,
+    *,
+    chrom_sizes: dict,
+    seed: int = 12345,
+    margin_bp: int = 600_000,
+) -> list:
+    """Positions inside ENCODE SCREEN cCREs, stratified by element class.
+
+    The matched reference class for a peak assay: "a variant inside a candidate
+    cis-regulatory element". Reuses :func:`sample_ccre_positions`, which the
+    *baseline* path has always used — the effect path never did, which is the whole
+    defect. Sharing it means the two paths cannot drift.
+
+    Returns ``(chrom, pos, stratum)`` triples so the caller's tally, logging and
+    provenance stamp work unchanged against ``sample_gene_anchored_positions``.
+
+    ``margin_bp`` keeps a position far enough from a contig end that the oracle's
+    input window fits; 600 kb clears AlphaGenome's 1,048,576 bp half-window.
+    """
+    per_category = {
+        # Roughly SCREEN's own class proportions, so no single element type
+        # dominates the null. PLS and dELS carry most real regulatory variation.
+        'PLS': 0.22, 'dELS': 0.28, 'pELS': 0.15, 'CA-CTCF': 0.10,
+        'CA-H3K4me3': 0.08, 'CA-TF': 0.07, 'CA': 0.06, 'TF': 0.04,
+    }
+    # Oversample, because the margin filter below rejects some.
+    counts = {k: max(1, int(round(n * v * 1.4))) for k, v in per_category.items()}
+    raw = sample_ccre_positions(n_per_category=counts, seed=seed)
+
+    usable = {c: L for c, L in chrom_sizes.items() if L > 2 * margin_bp}
+    out = []
+    for chrom, pos in raw:
+        if chrom not in usable:
+            continue
+        if not (margin_bp <= pos <= usable[chrom] - margin_bp):
+            continue
+        out.append((chrom, int(pos), 'ccre'))
+
+    rng = random.Random(seed)
+    rng.shuffle(out)
+    return out[:n]
+
+
+# LegNet is a promoter MPRA model: 200 bp input, ``window_bp=None``, so the sampled
+# position IS the whole thing being modelled. A uniformly random 200 bp window is
+# almost entirely non-promoter sequence, which makes it the worst-anchored effect null
+# in the fleet -- the null answers "what does a variant do to random DNA" while every
+# query asks about a promoter.
+#
+# Deliberately NOT the generic cCRE mix, and not DHS summits. Both are
+# accessibility-general: the SCREEN catalogue is 62 % dELS (1,469,205 of 2,348,854
+# distal enhancer-like) against 2 % PLS (47,532 promoter-like), and DHS summits track
+# accessibility rather than promoter identity. Anchoring a promoter model on either
+# would give it a null made mostly of enhancers -- right family, wrong member.
+#
+# PLS *is* "promoter-like signature", i.e. LegNet's own estimand, so it leads. pELS
+# (proximal enhancer-like) is promoter-adjacent and included at a lower weight. The
+# 15 % uniform tail is kept for the same reason the gene-anchored set keeps one:
+# without near-zero mass, genuinely small effects receive artificially LOW percentiles.
+PROMOTER_REGION_STRATA = {
+    "tss_promoter": 0.40,   # within +/- 250 bp of a protein-coding TSS, so a 200 bp
+                            # window overlaps the core promoter
+    "ccre_pls": 0.30,       # SCREEN promoter-like signature
+    "ccre_pels": 0.15,      # SCREEN proximal enhancer-like
+    "random": 0.15,         # uniform, to keep the null's lower body populated
+}
+
+
+def sample_promoter_anchored_positions(
+    n: int,
+    *,
+    chrom_sizes: dict,
+    annotation: str = 'gencode_v48_basic',
+    strata: Optional[dict] = None,
+    seed: int = 12345,
+    margin_bp: int = 100_000,
+    tss_jitter_bp: int = 250,
+) -> list:
+    """Positions anchored on promoters, for promoter-activity models.
+
+    Returns ``(chrom, pos, stratum)`` triples, matching
+    :func:`sample_gene_anchored_positions` so a builder's tally, logging and
+    provenance stamp work against either without branching.
+    """
+    strata = dict(strata or PROMOTER_REGION_STRATA)
+    usable = {c: L for c, L in chrom_sizes.items() if L > 2 * margin_bp}
+    if not usable:
+        raise ValueError("no chromosome long enough for the requested margin")
+    rng = random.Random(seed)
+
+    manager = get_annotation_manager()
+    gtf = manager.get_annotation_path(annotation)
+    genes = manager._get_genes_df(gtf)
+    pc = genes[genes["gene_type"] == "protein_coding"]
+    tss = []
+    for row in pc.itertuples():
+        chrom = str(row.chrom)
+        if chrom not in usable:
+            continue
+        pos = int(row.start) if row.strand == "+" else int(row.end)
+        if margin_bp <= pos <= usable[chrom] - margin_bp:
+            tss.append((chrom, pos))
+    if not tss:
+        raise ValueError("no usable protein-coding TSS found")
+
+    def _ccre_pool(classes, want):
+        raw = sample_ccre_positions(
+            n_per_category={c: max(1, int(round(want * 2.0 / len(classes))))
+                            for c in classes},
+            seed=seed,
+        )
+        pool = [(c, int(p)) for c, p in raw
+                if c in usable and margin_bp <= p <= usable[c] - margin_bp]
+        rng.shuffle(pool)
+        return pool
+
+    pls = _ccre_pool(["PLS"], int(round(n * strata.get("ccre_pls", 0))))         if strata.get("ccre_pls") else []
+    pels = _ccre_pool(["pELS"], int(round(n * strata.get("ccre_pels", 0))))         if strata.get("ccre_pels") else []
+
+    def _clamp(chrom, pos):
+        return min(max(pos, margin_bp), usable[chrom] - margin_bp)
+
+    out = []
+    for name, frac in strata.items():
+        k = int(round(n * frac))
+        for i in range(k):
+            if name == "tss_promoter":
+                c, p = rng.choice(tss)
+                p += rng.randint(-tss_jitter_bp, tss_jitter_bp)
+            elif name == "ccre_pls" and pls:
+                c, p = pls[i % len(pls)]
+            elif name == "ccre_pels" and pels:
+                c, p = pels[i % len(pels)]
+            else:
+                c = rng.choice(list(usable))
                 p = rng.randint(margin_bp, usable[c] - margin_bp)
             out.append((c, _clamp(c, p), name))
 
