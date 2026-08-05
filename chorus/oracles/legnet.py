@@ -186,8 +186,21 @@ class LegNetOracle(OracleBase):
         return ["LentiMPRA"]
 
     def list_cell_types(self) -> List[str]:
-        """Return LegNet's cell types."""       
-        return [self.cell_type]
+        """Every cell type LegNet has weights for — not just the loaded one.
+
+        This used to return ``[self.cell_type]``, i.e. whichever single line the
+        instance happened to be constructed with. All three are reachable via
+        ``LegNetOracle(cell_type=...)`` and all three ship a background row, so
+        returning one of them made the other two undiscoverable: an agent asking
+        "what cell types does LegNet cover?" through the MCP layer would be told
+        HepG2 and never find K562 or WTC11.
+
+        ``LEGNET_AVAILABLE_CELLTYPES`` was already the authoritative list; this
+        method simply was not using it.
+        """
+        from .legnet_source.legnet_globals import LEGNET_AVAILABLE_CELLTYPES
+
+        return list(LEGNET_AVAILABLE_CELLTYPES)
  
     def _validate_loaded(self):
         """Check if model is loaded."""

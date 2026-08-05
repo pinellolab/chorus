@@ -157,3 +157,9 @@ annotations
 # Local screenshot sweeps (regenerate via headless Chrome on demand)
 screenshots/
 examples/walkthroughs/**/screenshot_*.png
+
+# Data directories (see chorus/core/globals.py). These follow CHORUS_DATA_DIR and
+# default to the installation directory, so on a default install they appear here.
+backgrounds/
+huggingface/
+chorus_data_dir.txt
