@@ -229,17 +229,22 @@ illustrating the limits and strengths of different oracle window sizes.
 
 ### [SORT1_chrombpnet/](SORT1_chrombpnet/)
 **rs12740374 via ChromBPNet** — Same SORT1 variant analyzed at **1bp resolution**
-with ChromBPNet (ATAC accessibility only). Shows how ChromBPNet reports
+with ChromBPNet (DNase accessibility only). Shows how ChromBPNet reports
 contain a single layer. Useful for base-resolution motif analysis.
 
-Key finding: Strong opening (+0.44 log2FC) at base resolution, consistent
-with AlphaGenome results.
+Key finding: Very strong opening (+1.376 log2FC) at base resolution, within
+3 % of AlphaGenome's +1.334 for the same variant.
 
 ### [SORT1_enformer/](SORT1_enformer/)
 **rs12740374 via Enformer** — Same SORT1 variant analyzed with Enformer
 (chromatin, TF, histone, CAGE — **no RNA**). Demonstrates how reports
 automatically adapt when a layer is unavailable.
 
-Key finding: Very strong CTCF binding loss (-0.89), very strong chromatin
-opening (+0.86), strong TSS increase (+0.66). Cross-oracle comparison table
+Key finding: very strong TF binding gain (+4.372), strong chromatin opening
+(+2.247) and histone-mark gain (+1.886). Cross-oracle comparison table
 included.
+
+(An earlier version of this entry reported a CTCF binding loss. The committed
+artefact contains no CTCF track at all — the claim predated a correctness fix
+and nothing compared it to the data. See
+tests/test_walkthrough_readmes_match_artefacts.py.)

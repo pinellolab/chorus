@@ -35,7 +35,7 @@
           "raw_score": 1.3344578086817067,
           "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
           "cell_type": "HepG2",
-          "quantile_score": 0.9981,
+          "quantile_score": 0.9976,
           "description": "DNASE:HepG2"
         }
       },
@@ -49,7 +49,7 @@
           "raw_score": 0.3465881049633026,
           "assay_id": "LentiMPRA:HepG2",
           "cell_type": "HepG2",
-          "quantile_score": 0.9934000000000001,
+          "quantile_score": 0.9878,
           "description": "LentiMPRA:HepG2"
         },
         "alphagenome": null
@@ -65,7 +65,7 @@
           "raw_score": 2.9454282931023896,
           "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
           "cell_type": "HepG2",
-          "quantile_score": 0.9997,
+          "quantile_score": 0.9999,
           "description": "CHIP:CEBPA:HepG2"
         }
       },
@@ -95,7 +95,7 @@
           "raw_score": 1.5022141347796536,
           "assay_id": "CAGE/hCAGE EFO:0001187/-",
           "cell_type": "HepG2",
-          "quantile_score": 0.9984,
+          "quantile_score": 0.9988,
           "description": "CAGE:HepG2"
         }
       },
@@ -110,6 +110,6 @@
     "tracks_requested": "assay_ids as listed in each per-oracle request",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-04 04:56 UTC"
+    "generated_at": "2026-08-05 05:14 UTC"
   }
 }

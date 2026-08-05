@@ -33,6 +33,7 @@ import numpy as np
 import pytest
 
 from chorus.utils.annotations import (
+    DEFAULT_N_EFFECT_POSITIONS,
     DEFAULT_REGION_STRATA,
     load_chrom_sizes,
     sample_gene_anchored_positions,
@@ -74,9 +75,20 @@ def test_the_random_stratum_is_present_and_substantial():
     """Load-bearing, not filler.
 
     Without a near-zero mass the null loses its lower body and small real effects
-    would get artificially LOW percentiles — the exact mirror of today's failure.
+    would get artificially LOW percentiles — the exact mirror of the failure the
+    gene anchoring exists to fix.
+
+    Asserted as an absolute COUNT, not a fraction. When the cCRE stratum was added
+    the total went from 6,000 positions to 12,000 and every pre-existing fraction
+    halved to keep its own count identical: random went 0.15 -> 0.075, which is
+    900 positions either way. A fraction floor would have failed that change while
+    the property it protects was exactly preserved.
     """
-    assert DEFAULT_REGION_STRATA["random"] >= 0.10
+    n_random = DEFAULT_REGION_STRATA["random"] * DEFAULT_N_EFFECT_POSITIONS
+    assert n_random >= 900, (
+        f"only {n_random:.0f} uniformly random positions; the null's lower body "
+        f"needs a real population, not a token one"
+    )
 
 
 def test_strata_proportions_are_honoured(sampled):

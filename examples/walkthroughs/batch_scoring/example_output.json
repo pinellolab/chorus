@@ -8,7 +8,7 @@
     "tracks_requested": "6 HepG2 tracks",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-04 05:07 UTC"
+    "generated_at": "2026-08-05 04:58 UTC"
   },
   "scores": [
     {
@@ -19,7 +19,7 @@
       "variant_id": "rs12740374",
       "gene_name": "SORT1",
       "max_effect": 3.315624299526132,
-      "max_quantile": 0.9997,
+      "max_quantile": 0.9999,
       "top_layer": "tf_binding",
       "top_track": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.",
       "per_layer_scores": {
@@ -36,7 +36,7 @@
           "ref_value": 660.1571044921875,
           "alt_value": 1666.310546875,
           "raw_score": 1.3344578086817067,
-          "quantile_score": 0.9981,
+          "quantile_score": 0.9976,
           "ref_signal_percentile": 0.9728
         },
         "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.": {
@@ -46,7 +46,7 @@
           "ref_value": 2070.0,
           "alt_value": 15952.0,
           "raw_score": 2.9454282931023896,
-          "quantile_score": 0.9997,
+          "quantile_score": 0.9999,
           "ref_signal_percentile": 0.9881
         },
         "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.": {
@@ -56,7 +56,7 @@
           "ref_value": 1077.0,
           "alt_value": 10732.0,
           "raw_score": 3.315624299526132,
-          "quantile_score": 0.9995,
+          "quantile_score": 0.9999,
           "ref_signal_percentile": 0.964
         },
         "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.": {
@@ -86,7 +86,7 @@
           "ref_value": 3823.418701171875,
           "alt_value": 3817.642333984375,
           "raw_score": -0.0021806807100152384,
-          "quantile_score": 0.3035,
+          "quantile_score": 0.2973,
           "ref_signal_percentile": 0.9862
         }
       }
@@ -99,7 +99,7 @@
       "variant_id": "rs7528419",
       "gene_name": "SORT1",
       "max_effect": -0.06217387873733,
-      "max_quantile": 0.8805,
+      "max_quantile": 0.8641,
       "top_layer": "tss_activity",
       "top_track": "CAGE/hCAGE EFO:0001187/-",
       "per_layer_scores": {
@@ -116,7 +116,7 @@
           "ref_value": 136.76522827148438,
           "alt_value": 131.630859375,
           "raw_score": -0.05479531198592862,
-          "quantile_score": 0.8615,
+          "quantile_score": 0.7964,
           "ref_signal_percentile": 0.9103
         },
         "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.": {
@@ -126,7 +126,7 @@
           "ref_value": 904.0,
           "alt_value": 910.0,
           "raw_score": 0.009533261831482873,
-          "quantile_score": 0.4034,
+          "quantile_score": 0.3759,
           "ref_signal_percentile": 0.9153
         },
         "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.": {
@@ -136,7 +136,7 @@
           "ref_value": 670.0,
           "alt_value": 668.0,
           "raw_score": -0.004306555558722696,
-          "quantile_score": 0.1841,
+          "quantile_score": 0.1643,
           "ref_signal_percentile": 0.9018
         },
         "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.": {
@@ -146,7 +146,7 @@
           "ref_value": 17864.0,
           "alt_value": 17586.0,
           "raw_score": -0.022626505828785795,
-          "quantile_score": 0.8705,
+          "quantile_score": 0.8327,
           "ref_signal_percentile": 0.9587
         },
         "CAGE/hCAGE EFO:0001187/+": {
@@ -156,7 +156,7 @@
           "ref_value": 41.14167785644531,
           "alt_value": 41.21977615356445,
           "raw_score": 0.002671173925712485,
-          "quantile_score": 0.3289,
+          "quantile_score": 0.3279,
           "ref_signal_percentile": 0.931
         },
         "CAGE/hCAGE EFO:0001187/-": {
@@ -166,7 +166,7 @@
           "ref_value": 4515.75927734375,
           "alt_value": 4520.7158203125,
           "raw_score": 0.001582298031584023,
-          "quantile_score": 0.2577,
+          "quantile_score": 0.2482,
           "ref_signal_percentile": 0.9892
         }
       }
@@ -179,7 +179,7 @@
       "variant_id": "rs1626484",
       "gene_name": "SORT1",
       "max_effect": -0.05918770421043501,
-      "max_quantile": 0.8802,
+      "max_quantile": 0.8432,
       "top_layer": "chromatin_accessibility",
       "top_track": "DNASE/EFO:0001187 DNase-seq/.",
       "per_layer_scores": {
@@ -196,7 +196,7 @@
           "ref_value": 74.12393188476562,
           "alt_value": 71.10427856445312,
           "raw_score": -0.05918770421043501,
-          "quantile_score": 0.8721,
+          "quantile_score": 0.8121,
           "ref_signal_percentile": 0.8828
         },
         "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.": {
@@ -206,7 +206,7 @@
           "ref_value": 410.0,
           "alt_value": 408.0,
           "raw_score": -0.007037550739934066,
-          "quantile_score": 0.3157,
+          "quantile_score": 0.2958,
           "ref_signal_percentile": 0.8048
         },
         "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.": {
@@ -216,7 +216,7 @@
           "ref_value": 397.5,
           "alt_value": 398.5,
           "raw_score": 0.003615778937504873,
-          "quantile_score": 0.1628,
+          "quantile_score": 0.1441,
           "ref_signal_percentile": 0.7544
         },
         "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.": {
@@ -226,7 +226,7 @@
           "ref_value": 11746.0,
           "alt_value": 11550.0,
           "raw_score": -0.02427460719325611,
-          "quantile_score": 0.8802,
+          "quantile_score": 0.8432,
           "ref_signal_percentile": 0.9308
         },
         "CAGE/hCAGE EFO:0001187/+": {
@@ -236,7 +236,7 @@
           "ref_value": 35.803993225097656,
           "alt_value": 35.98295974731445,
           "raw_score": 0.006998381420832211,
-          "quantile_score": 0.5008,
+          "quantile_score": 0.4985,
           "ref_signal_percentile": 0.9284
         },
         "CAGE/hCAGE EFO:0001187/-": {
@@ -259,7 +259,7 @@
       "variant_id": "rs4970836",
       "gene_name": "SORT1",
       "max_effect": 0.05816565560663547,
-      "max_quantile": 0.8717,
+      "max_quantile": 0.8547,
       "top_layer": "tss_activity",
       "top_track": "CAGE/hCAGE EFO:0001187/-",
       "per_layer_scores": {
@@ -276,7 +276,7 @@
           "ref_value": 7.986789226531982,
           "alt_value": 7.837434768676758,
           "raw_score": -0.024178104912187807,
-          "quantile_score": 0.6851,
+          "quantile_score": 0.5941,
           "ref_signal_percentile": 0.1495
         },
         "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.": {
@@ -286,7 +286,7 @@
           "ref_value": 130.25,
           "alt_value": 129.0,
           "raw_score": -0.013805799525030428,
-          "quantile_score": 0.5265,
+          "quantile_score": 0.4859,
           "ref_signal_percentile": 0.0747
         },
         "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.": {
@@ -296,7 +296,7 @@
           "ref_value": 137.625,
           "alt_value": 137.375,
           "raw_score": -0.0026041433801576807,
-          "quantile_score": 0.1146,
+          "quantile_score": 0.1021,
           "ref_signal_percentile": 0.1093
         },
         "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.": {
@@ -306,7 +306,7 @@
           "ref_value": 2976.0,
           "alt_value": 2994.25,
           "raw_score": 0.00881720170786082,
-          "quantile_score": 0.674,
+          "quantile_score": 0.6444,
           "ref_signal_percentile": 0.8571
         },
         "CAGE/hCAGE EFO:0001187/+": {
@@ -316,7 +316,7 @@
           "ref_value": 39.694976806640625,
           "alt_value": 39.61896896362305,
           "raw_score": -0.0026971061135631297,
-          "quantile_score": 0.33,
+          "quantile_score": 0.3299,
           "ref_signal_percentile": 0.9303
         },
         "CAGE/hCAGE EFO:0001187/-": {
@@ -326,7 +326,7 @@
           "ref_value": 4142.75634765625,
           "alt_value": 4132.90087890625,
           "raw_score": -0.003435378445995292,
-          "quantile_score": 0.3696,
+          "quantile_score": 0.3755,
           "ref_signal_percentile": 0.9884
         }
       }
@@ -339,7 +339,7 @@
       "variant_id": "rs660240",
       "gene_name": "SORT1",
       "max_effect": 0.022648738945200326,
-      "max_quantile": 0.6989,
+      "max_quantile": 0.676,
       "top_layer": "tf_binding",
       "top_track": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
       "per_layer_scores": {
@@ -356,7 +356,7 @@
           "ref_value": 407.78802490234375,
           "alt_value": 408.41796875,
           "raw_score": 0.002221487135691499,
-          "quantile_score": 0.1049,
+          "quantile_score": 0.0792,
           "ref_signal_percentile": 0.9515
         },
         "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.": {
@@ -366,7 +366,7 @@
           "ref_value": 631.0,
           "alt_value": 641.0,
           "raw_score": 0.022648738945200326,
-          "quantile_score": 0.6989,
+          "quantile_score": 0.6362,
           "ref_signal_percentile": 0.8729
         },
         "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPB/.": {
@@ -376,7 +376,7 @@
           "ref_value": 443.0,
           "alt_value": 449.0,
           "raw_score": 0.019365324866931214,
-          "quantile_score": 0.6172,
+          "quantile_score": 0.577,
           "ref_signal_percentile": 0.7941
         },
         "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.": {
@@ -386,7 +386,7 @@
           "ref_value": 15856.0,
           "alt_value": 15816.0,
           "raw_score": -0.0036438613571772656,
-          "quantile_score": 0.4293,
+          "quantile_score": 0.4049,
           "ref_signal_percentile": 0.9507
         },
         "CAGE/hCAGE EFO:0001187/+": {
@@ -396,7 +396,7 @@
           "ref_value": 38.332820892333984,
           "alt_value": 38.435523986816406,
           "raw_score": 0.00376215418228156,
-          "quantile_score": 0.3841,
+          "quantile_score": 0.3896,
           "ref_signal_percentile": 0.9301
         },
         "CAGE/hCAGE EFO:0001187/-": {
@@ -406,7 +406,7 @@
           "ref_value": 4008.8857421875,
           "alt_value": 4016.54833984375,
           "raw_score": 0.002754253696417804,
-          "quantile_score": 0.3376,
+          "quantile_score": 0.3355,
           "ref_signal_percentile": 0.9872
         }
       }

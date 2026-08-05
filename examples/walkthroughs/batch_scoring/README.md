@@ -120,7 +120,7 @@ d = result.to_dict()                        # JSON for pipelines
 ```
 | Variant | ID | DNASE:HepG2 Ref | DNASE:HepG2 Alt | DNASE:HepG2 log2FC | DNASE:HepG2 Effect %ile | CHIP:CEBPA:HepG2 Ref | CHIP:CEBPA:HepG2 Alt | CHIP:CEBPA:HepG2 log2FC | CHIP:CEBPA:HepG2 Effect %ile | …
 |---------|-----|------------------|------------------|---------------------|--------------------------|-----------------------|-----------------------|--------------------------|-------------------------------|---
-| chr1:109274968 G>T | rs12740374 | 662 | 1.67e+03 | +1.330 | ≥99th | 2.57e+03 | 1.75e+04 | +2.764 | ≥99th | … |
+| chr1:109274968 G>T | rs12740374 | 662 | 1.67e+03 | +1.330 | ≥99th | 2.57e+03 | 1.75e+04 | +2.945 | ≥99th | … |
 | chr1:109274570 A>G | rs7528419 | 137 | 132 | -0.053 | 0.90 | 1.01e+03 | 1.02e+03 | +0.009 | 0.39 | … |
 | chr1:109275684 G>T | rs1626484 | 73.8 | 71 | -0.056 | 0.91 | 560 | 556 | -0.010 | 0.46 | … |
 | chr1:109279175 G>A | rs4970836 | 7.99 | 7.84 | -0.024 | 0.73 | 194 | 193 | -0.007 | 0.35 | … |
@@ -146,7 +146,7 @@ so you can see both absolute allele predictions and the derived effect at a glan
 
 **Interpretation**: rs12740374 is the clear top hit, and it is the effect
 sizes that make the case, not the percentiles — `+1.330` log2FC on
-`DNASE:HepG2` and `+2.764` on `CEBPA` (a ~6.8-fold binding gain),
+`DNASE:HepG2` and `+2.945` on `CEBPA` (a ~6.8-fold binding gain),
 `≥99th` on every track. The four LD proxies all sit at `|log2FC| < 0.06`
 and spread across `0.18`–`0.91`, which is what a non-causal neighbour
 should look like. That spread is the point of the table: read the log2FC
