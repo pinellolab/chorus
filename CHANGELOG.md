@@ -8,6 +8,45 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- **Every oracle's variant-effect null is now drawn from the regions its assay actually measures.** The effect null answers "how unusual is this effect, compared to what?", and for a localised assay a uniformly random genomic position is the wrong comparison: it carries almost no signal, so the pseudocount damps its log-ratio toward zero and the null's body collapses below where real regulatory effects live.
+
+  Five of the eight oracles already anchored on peaks — ChromBPNet drew 10,000 DHS-summit variants alongside 10,000 uniform, Cherimoya unioned `random + dhs` explicitly. The other three did not, **even though two of them already used cCREs for their baseline pass** — an asymmetry inside a single oracle, which is harder to defend than any difference between oracles. That is now closed, 8 of 8:
+
+  | oracle | effect reference population | tracks |
+  |---|---|---|
+  | AlphaGenome, Enformer, Borzoi, Sei, EPInformer-seq | gene-anchored ∪ ENCODE SCREEN cCREs | 18,145 |
+  | LegNet | promoter-anchored (TSS ±250 bp, PLS, pELS) | 3 |
+  | ChromBPNet, Cherimoya | uniform ∪ DHS summits (unchanged) | 2,271 |
+
+  Measured per track, as the ratio of the new null's tail to the old one's — median over tracks, and the share of tracks that got wider:
+
+  | oracle | tracks | p99 | p99.9 | wider |
+  |---|---|---|---|---|
+  | Sei | 40 | **2.05×** | 1.80× | 100% |
+  | EPInformer-seq | 33 | 1.38× | 1.28× | 76% |
+  | LegNet | 3 | 1.30× | 1.17× | 67% |
+  | Enformer | 5,313 | 1.26× | 1.33× | 84% |
+  | Borzoi | 7,611 | 1.19× | 1.19× | 82% |
+
+  The concrete win: at SORT1, **half of Enformer's chromatin-accessibility rows had a percentile pinned at exactly 1.0000** — the column had stopped discriminating precisely where it mattered. That is now zero.
+
+- **It is a union at doubled N, not a mixture — and the difference is the whole finding.** The first attempt held the position count fixed and gave cCRE 25% of it. It made things *worse*. The statistic that decides whether a percentile still discriminates is the null **maximum**, and a maximum grows with the number of draws, so splitting a fixed budget shortens *every* component's tail. Measured on one Enformer accessibility track and one TF track:
+
+  | reference set | accessibility | tf_binding |
+  |---|---|---|
+  | gene-anchored, 5,949 positions | 1.653 | 3.539 |
+  | cCRE-only, 5,986 positions | 2.754 | 3.301 |
+  | 25/75 mixture, 5,962 total | 1.697 | **2.937** ← below both |
+
+  TF saturation went from 25% of rows to 92%. Keeping each component at full size instead makes the union's maximum exactly `max(max_gene, max_cCRE)`, so it is **provably never worse than the better component for any layer**. The gene-anchored half reproduces the previously shipped counts exactly (1,200 / 1,200 / 1,980 / 720), so the 6,000 cCRE positions are purely additive: nothing that already worked can get worse.
+
+- **Calibration held.** Against strong TSS-proximal liver eQTLs (GTEx v8, tissue-matched tracks), the median AlphaGenome effect percentile moved from 0.781 to **0.778** for RNA and 0.659 to **0.625** for CAGE — both inside the acceptance band, both 0% saturated. The tail widened for the peak layers without disturbing the layers that were already well calibrated.
+
+- **Not fixed, and not claimed to be.** AlphaGenome `histone_marks` and Enformer `tf_binding` keep whatever their better component gives (20% and 25% of rows still pinned at 1.0). Both would need a *per-track* reference population — that mark's own broad domains, that factor's own ChIP peaks — which is a different design, not a different fraction.
+
+- **Weaker evidence for three of the eight, stated as such.** Sei, LegNet and EPInformer-seq have no committed walkthrough rows and no positive set (there is no eQTL equivalent for MPRA activity or Sei sequence classes). Unlike the accessibility fix, where saturation was measured at 50% and dropped to 0%, those three are justified by tail width and by matching the assay's biology — **not** by a calibration check.
+
+
 - **Three backgrounds rebuilt against a gene-anchored effect region set (AlphaGenome, Borzoi, Enformer).** The shipped effect nulls were drawn from uniformly random genomic positions, which is the wrong reference class for a TSS-localised assay: a random position has essentially no CAGE signal, so the `+1` pseudocount damps its log-ratio toward zero and the null's body sits far below where real regulatory effects live. Positions are now sampled per stratum from protein-coding annotation (GENCODE v48 basic) — 20 % within ±1 kb of a TSS, 20 % at 1–10 kb, 33 % within ±100 bp of an exon/intron boundary, 12 % elsewhere in a gene body, 15 % uniformly random. The random tail is deliberate: without near-zero mass, genuinely small effects would receive artificially *low* percentiles, the mirror of the failure being fixed. All three oracles drew from one seeded region set — each build logged an identical `tss_near 1200, tss_far 1200, junction 1980, gene_body 720, random 849` of 6,000 sampled positions — so the three are directly comparable. New `build_config` provenance is stamped into each NPZ.
 
   Measured against strong TSS-proximal liver eQTLs from GTEx v8 (`|slope| >= 0.5`, `maf >= 0.05`, `p <= 1e-10`), scored in tissue-matched tracks:
@@ -17,7 +56,7 @@ project adheres to [Semantic Versioning](https://semver.org/).
   | RNA (232 rows, 8 tracks) | 0.899 | **0.781** | 0 % |
   | CAGE (100 rows, 4 tracks) | 0.857 | **0.659** | 0 % |
 
-  Both moved down, which is the intended direction — the reference class now contains variants that actually perturb these assays, so a given eQTL is less extreme against it.
+  Both moved down, which is the intended direction — the reference class now contains variants that actually perturb these assays, so a given eQTL is less extreme against it. (These are the figures after the gene-anchored rebuild. The cCRE union that followed moved them again, to 0.778 and 0.625 — see the entry above for the final values.)
 
 - **Effect of the whole cycle on the committed examples.** Across the four AlphaGenome/Enformer variant walkthroughs, saturated rows (percentile pinned at exactly 1.0000, where the column has stopped discriminating) fell from **47 to 16** with row counts unchanged at 369 and distinct percentile values up from 280 to 284.
 
@@ -32,7 +71,9 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
   The per-layer walkthrough diff is a **combined** effect of all of the above plus the CHIP window classifier (#122/#146) and window-span parity (#147/#148); it is not decomposed per change, because doing so honestly would require re-running each rebuild in isolation. It is reported as a fused diff rather than split by guesswork.
 
-- **One layer did not improve, and is not described as fixed.** Enformer `chromatin_accessibility` at SORT1 went from 4/12 saturated to **6/12**, median percentile 0.960 → 1.000. This is not a new regression: 0.960 *was* the padded-grid artefact ceiling (#143), so those rows were already pinned and the repair only made the pinning visible instead of disguising it as a plausible 0.96. The underlying fact is that Enformer's accessibility effect null is genuinely too narrow for a variant this strong. It clears the release gate (7 distinct values across 12 rows, so the column is not constant) and is the next thing to look at.
+- **One layer did not improve in this step.** Enformer `chromatin_accessibility` at SORT1 went from 4/12 saturated to **6/12**, median percentile 0.960 → 1.000. That was not a new regression: 0.960 *was* the padded-grid artefact ceiling (#143), so those rows were already pinned and the repair only made the pinning visible instead of disguising it as a plausible 0.96. The underlying fact was that Enformer's accessibility effect null was genuinely too narrow for a variant this strong.
+
+  **Fixed later in the same release** by the cCRE union described in the entry above — that layer is now 0/12 saturated. The two entries are sequential, not contradictory: this one records the state after the gene-anchored rebuild, and the entry above records the state after the union.
 
 ### Fixed
 
