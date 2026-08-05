@@ -53,7 +53,10 @@ kernel from the Kernel menu.
 ## Scaling up
 
 - `single_oracle_quickstart` runs fully on CPU with 8 GB RAM (Enformer).
-- `cherimoya_quickstart` needs a CUDA GPU (the `chorus-cherimoya` env is Linux/CUDA).
+- `cherimoya_quickstart` needs a CUDA GPU for fast execution, but not to
+  run at all — it completes on CPU, just slowly, because it predicts across
+  many biosamples and that is where CPU falls 45–150× behind (the
+  `chorus-cherimoya` env is Linux/CUDA; Apple Silicon is CPU-only).
 - `advanced_multi_oracle_analysis` needs **all six oracle envs**
   installed (see the matrix in
   [`../../README.md#setting-up-oracle-environments`](../../README.md#setting-up-oracle-environments)).
