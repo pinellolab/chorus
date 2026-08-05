@@ -675,3 +675,57 @@ def test_builder_gpu_flag_is_applied_before_torch_import():
         "CUDA_VISIBLE_DEVICES must be set at module scope, before torch is "
         "imported inside build()"
     )
+
+
+# ── Triton autotune cache ────────────────────────────────────────────
+
+def _template_source(name):
+    from pathlib import Path
+    path = (Path(__file__).resolve().parents[1] / "chorus" / "oracles"
+            / "cherimoya_source" / "templates" / name)
+    assert path.exists(), f"{name} is missing"
+    return path.read_text()
+
+
+def test_enable_autotune_cache_returns_bool_and_never_raises():
+    """The helper must degrade to a no-op rather than fail.
+
+    It runs on every load, including on macOS and CPU-only installs where
+    Triton is absent, so an ImportError here would break loading entirely.
+    """
+    from chorus.oracles.cherimoya_source._triton_autotune import (
+        enable_autotune_cache,
+    )
+    assert isinstance(enable_autotune_cache(), bool)
+
+
+@pytest.mark.parametrize("name", ["load_template.py", "predict_template.py"])
+def test_templates_set_autotune_cache_before_cherimoya_import(name):
+    """The knob must be set before `import cherimoya`.
+
+    triton.autotune reads knobs.autotuning.cache in Autotuner.__init__,
+    which runs when the decorators are evaluated at import time. Setting it
+    afterwards is silently useless -- every call would go back to
+    re-benchmarking (~7.2s per call on CATv1), with no error to notice.
+    """
+    source = _template_source(name)
+    knob = source.index("knobs.autotuning.cache = True")
+    import_cherimoya = source.index("from cherimoya import Cherimoya")
+    assert knob < import_cherimoya, (
+        f"{name}: knobs.autotuning.cache must be set before cherimoya is "
+        f"imported, otherwise the autotune cache never takes effect"
+    )
+
+
+def test_load_direct_enables_autotune_cache_before_import():
+    """Same ordering constraint on the in-process path (builder + tests)."""
+    import inspect
+    from chorus.oracles.cherimoya import CherimoyaOracle
+
+    source = inspect.getsource(CherimoyaOracle._load_direct)
+    enable = source.index("enable_autotune_cache()")
+    import_cherimoya = source.index("from cherimoya import Cherimoya")
+    assert enable < import_cherimoya, (
+        "_load_direct must enable the autotune cache before importing "
+        "cherimoya"
+    )
