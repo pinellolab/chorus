@@ -37,6 +37,7 @@ from chorus.utils.annotations import (  # noqa: E402
     sample_ccre_anchored_positions,
     sample_gene_anchored_positions,
 )
+from chorus.analysis.scorers import canonical_layer  # noqa: E402
 from chorus.analysis.background_sampling import (  # noqa: E402
     ReservoirSampler,
     StagedSamples,
@@ -455,7 +456,7 @@ def build_variant_backgrounds():
     # gene-anchored one, and #124 asked for a per-row layer so a background's
     # rows can be identified without re-deriving them from opaque ids.
     layers_per_row = np.array(
-        [str(t.get('layer') or 'unknown') for t in track_info], dtype='U')
+        [canonical_layer(t['layer']) for t in track_info], dtype='U')
     _suffix = _shard_suffix()
     interim_path = os.path.join(
         cache_dir, f"borzoi_effect_cdfs_interim{_suffix}.npz")

@@ -33,6 +33,7 @@ from chorus.utils.annotations import (  # noqa: E402
     sample_ccre_anchored_positions,
     sample_gene_anchored_positions,
 )
+from chorus.analysis.scorers import canonical_layer  # noqa: E402
 from chorus.analysis.background_sampling import (  # noqa: E402
     ReservoirSampler,
     StagedSamples,
@@ -204,6 +205,11 @@ def load_model_and_metadata():
             'identifier': identifier,
             'assay_type': assay_type,
             'spec_key': spec_key,
+            # Canonical layer name, NOT spec_key. This is written into the background
+            # as layers_per_row, where downstream code keys on it -- and where
+            # 'DNASE' instead of 'chromatin_accessibility' silently matched 0 of 5,313
+            # rows while AlphaGenome matched 472. Same defect class as #122/#144.
+            'layer': canonical_layer(spec_key) if spec_key else 'unknown',
             'window': window,
             'formula': formula,
             'pseudocount': pseudocount,
@@ -395,7 +401,7 @@ def build_variant_backgrounds():
     # gene-anchored one, and #124 asked for a per-row layer so a background's
     # rows can be identified without re-deriving them from opaque ids.
     layers_per_row = np.array(
-        [str(t.get('spec_key') or 'unknown') for t in track_info], dtype='U')
+        [canonical_layer(t['layer']) for t in track_info], dtype='U')
     _suffix = _shard_suffix()
     interim_path = os.path.join(
         cache_dir, f"enformer_effect_cdfs_interim{_suffix}.npz")

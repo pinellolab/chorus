@@ -122,7 +122,7 @@ from chorus.analysis.background_sampling import (  # noqa: E402
     centered_bin_span,
     report_sampling_uniformity,
 )
-from chorus.analysis.scorers import classify_chip_layer  # noqa: E402
+from chorus.analysis.scorers import canonical_layer, classify_chip_layer  # noqa: E402
 from chorus.utils.annotations import (  # noqa: E402
     build_transcript_exon_index,
     exon_bins_for_gene,
@@ -502,7 +502,7 @@ def build_variant_backgrounds():
     # gene-anchored one, and #124 asked for a per-row layer so a background's
     # rows can be identified without re-deriving them from opaque ids.
     layers_per_row = np.array(
-        [str(t.get('layer') or 'unknown') for t in track_info], dtype='U')
+        [canonical_layer(t['layer']) for t in track_info], dtype='U')
     _suffix = _shard_suffix()
     interim_path = os.path.join(
         cache_dir, f"alphagenome_effect_cdfs_interim{_suffix}.npz")
