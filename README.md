@@ -1235,15 +1235,18 @@ The per-bin CDFs are used by the unified `chorus.analysis._igv_report.rescale_fo
 
 #### Sample sizes per oracle
 
-| Oracle | Tracks | Effect samples / track | Activity samples / track | NPZ size |
-|---|---|---|---|---|
-| AlphaGenome | 5,168 | 10,000 | 31,500 | 260 MB |
-| Enformer | 5,313 | 10,000 | 31,500 | 520 MB |
-| Borzoi | 7,611 | 10,000 | 31,500 | 770 MB |
-| ChromBPNet | 753 (9 ATAC/DNASE + 744 CHIP) | 18,672 | 34,004 | 80 MB |
-| Sei | 40 classes | 10,000 | 31,500 | 2.8 MB |
-| LegNet | 3 cell types | 10,000 | 31,500 | 210 KB |
-| EPInformer-seq | 33 (11 cells × 3 assays: DNase, H3K27ac, composite) | 9,608 | 34,002 | 2.3 MB |
+<!-- BEGIN GENERATED: background-table -->
+| Oracle | Tracks | Effect samples / track | Activity samples / track | Effect reference population | NPZ size |
+|---|---|---|---|---|---|
+| AlphaGenome | 5,168 | 5,949–87,781 | 6,337–104,033 | gene-anchored | 276 MB |
+| Enformer | 5,313 | 11,933 | 19,549–31,005 | gene-anchored+ccre | 550 MB |
+| Borzoi | 7,611 | 11,934–34,482 | 19,548–75,021 | gene-anchored+ccre | 793 MB |
+| ChromBPNet | 753 | 18,672–37,344 | 34,004–68,008 | uniform + DHS summits | 80 MB |
+| Cherimoya (CATv1) | 1,518 | 18,672 | 34,004 | uniform + DHS summits | 162 MB |
+| Sei | 40 | 11,934 | 29,004 | gene-anchored+ccre | 3 MB |
+| LegNet | 3 | 11,913 | 29,002 | promoter-anchored | 198 KB |
+| EPInformer-seq | 33 | 11,934 | 34,002 | gene-anchored+ccre | 2 MB |
+<!-- END GENERATED: background-table -->
 
 Effect and activity reservoirs are converted to 10,000-point CDFs (sorted sample arrays) — so a percentile lookup is a single O(log n) bisect.
 
