@@ -54,6 +54,7 @@ from chorus.utils.annotations import (  # noqa: E402
     load_chrom_sizes,
     sample_gene_anchored_positions,
 )
+from chorus.analysis.background_sampling import sampling_block  # noqa: E402
 from chorus.analysis.background_sampling import ReservoirSampler  # noqa: E402
 _CHORUS_PERCELL_ROOT = str(CHORUS_DOWNLOADS_DIR / "epinformerseq")
 V2_PERCELL_DIR_DEFAULT = os.path.join(_CHORUS_PERCELL_ROOT, "per_cell_widewin")
@@ -327,6 +328,7 @@ def build_baseline_backgrounds():
         track_ids=np.array(track_ids, dtype="U"),
         summary_cdfs=summary_matrix.astype(np.float32),
         summary_counts=reservoir.counts.copy(),
+        summary_retained=reservoir.retained_counts(),
     )
     logger.info("Saved baseline interim: %s", interim)
     for i, tid in enumerate(track_ids):
@@ -432,6 +434,7 @@ def build_variant_backgrounds():
         track_ids=np.array(track_ids, dtype="U"),
         effect_cdfs=effect_matrix.astype(np.float32),
         effect_counts=reservoir.counts.copy(),
+        effect_retained=reservoir.retained_counts(),
         signed_flags=np.zeros(n_tracks, dtype=bool),  # unsigned |log2fc|
     )
     logger.info("Saved effect interim: %s", interim)
