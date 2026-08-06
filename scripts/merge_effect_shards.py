@@ -63,8 +63,12 @@ def _effect_path(oracle: str, suffix: str = "") -> Path:
     return BG / f"{oracle}_effect_cdfs_interim{suffix}.npz"
 
 
-def union_shards(oracle: str, n_shards: int, n_points: int) -> Path:
-    from chorus.analysis.background_sampling import ReservoirSampler
+def union_shards(oracle: str, n_shards: int, n_points: int,
+                 exact: bool = True) -> Path:
+    from chorus.analysis.background_sampling import (
+        DEFAULT_CAPACITY,
+        ReservoirSampler,
+    )
 
     parts, ids, flags, layers = [], None, None, None
     for k in range(n_shards):
@@ -90,10 +94,26 @@ def union_shards(oracle: str, n_shards: int, n_points: int) -> Path:
             raise SystemExit(f"shard {k} track_ids disagree with shard 0")
         print(f"  shard {k}: {int(np.asarray(parts[-1]['counts']).max())} samples/track")
 
-    merged = ReservoirSampler.from_flat_samples(*parts)
+    # capacity=None keeps EVERY value. The previous call passed no capacity at all
+    # and silently inherited DEFAULT_CAPACITY=50,000, which thinned every
+    # AlphaGenome RNA track's 148,367 samples down to a 50,000 uniform subsample and
+    # understated its ceiling by a median 1.33x (up to 8.34x). See
+    # ReservoirSampler.from_flat_samples.
+    merged = ReservoirSampler.from_flat_samples(
+        *parts, capacity=None if exact else DEFAULT_CAPACITY)
     counts = merged.get_counts()
+    retained = merged.retained_counts()
+    thinned = int((retained < counts).sum())
     print(f"  union: {len(ids)} tracks, counts min={counts.min()} max={counts.max()}, "
           f"{int((counts > 0).sum())} tracks with data")
+    print(f"  retention: {'EXACT' if exact else f'capped at {DEFAULT_CAPACITY}'}; "
+          f"{thinned} of {len(ids)} tracks thinned "
+          f"(retained min={retained.min()} max={retained.max()})")
+    if exact and thinned:
+        raise SystemExit(
+            f"--exact was requested but {thinned} tracks are still thinned; refusing "
+            f"to write a background whose ceiling is a subsample"
+        )
 
     matrix = merged.to_cdf_matrix(n_points=n_points)
     from chorus.analysis.background_sampling import cdf_grid_violations
@@ -201,11 +221,17 @@ def main() -> int:
                     help="Take peak-layer rows from the cCRE interim and the rest "
                          "from the backed-up gene-anchored interim.")
     ap.add_argument("--n-points", type=int, default=10_000)
+    ap.add_argument("--capped", action="store_true",
+                    help="Subsample the union to DEFAULT_CAPACITY instead of keeping "
+                         "every value. This reproduces the pre-2026-08-06 behaviour "
+                         "that thinned AlphaGenome's RNA ceilings; it exists only so "
+                         "the defect can be reproduced in a test.")
     args = ap.parse_args()
 
     if args.shards:
         print(f"[{args.oracle}] unioning {args.shards} position shards")
-        union_shards(args.oracle, args.shards, args.n_points)
+        union_shards(args.oracle, args.shards, args.n_points,
+                     exact=not args.capped)
     if args.compose_layers:
         print(f"[{args.oracle}] composing per-layer reference sets")
         compose_layers(args.oracle)

@@ -256,7 +256,7 @@ class ReservoirSampler:
         }
 
     @classmethod
-    def from_flat_samples(cls, *parts, capacity: int = DEFAULT_CAPACITY,
+    def from_flat_samples(cls, *parts, capacity: "int | None",
                           seed: int = DEFAULT_SEED) -> "ReservoirSampler":
         """Rebuild one sampler from the union of several shards' samples.
 
@@ -265,6 +265,28 @@ class ReservoirSampler:
         subsampled deterministically rather than by re-running Algorithm R, since
         every retained value is already a uniform draw from its own shard and the
         shards are equal-sized by construction.
+
+        ``capacity`` is **keyword-only with no default, deliberately.** This method
+        used to default to ``DEFAULT_CAPACITY`` (50,000), and
+        ``scripts/merge_effect_shards.py`` called it positionally without one. Every
+        AlphaGenome ``gene_expression`` track offers 148,367 effect values, so the
+        union was silently thinned to a uniform 50,000-subsample — 2.97x — and the
+        shipped grid's *maximum* became the max of that subsample. A uniform
+        m-of-N subsample retains the true maximum with probability exactly m/N:
+        50,000/148,367 = 0.337, and 33.9% of the 667 RNA rows were measured to have
+        kept it. The damage was a median 1.33x understated ceiling, up to 8.34x,
+        while p99 stayed correct to 0.6% — which is why no percentile test noticed,
+        and why the effect null pinned earlier than it should have.
+
+        Passing ``capacity=None`` means **exact retention**: keep every value, so the
+        grid's top slot is the true maximum over all offered positions. Use it
+        whenever the union fits in memory, which for every current oracle it does.
+
+        Neither the builders' ``capacity`` argument nor the write-time
+        ``cdf_grid_violations`` guard could have prevented this: no *shard* exceeded
+        its capacity (each offered ~18.5k), and the guard is fed the *offered* count
+        while checking geometry set by the *retained* count, then skips every row
+        with ``n >= n_points``. See ``thinning_violations``.
         """
         if not parts:
             raise ValueError("no shards given")
@@ -274,26 +296,46 @@ class ReservoirSampler:
                 raise ValueError(
                     f"shard track counts disagree: {n_tracks} vs {int(p['n_tracks'])}"
                 )
+
+        totals = np.zeros(n_tracks, dtype=np.int64)
+        for p in parts:
+            totals += np.asarray(p["counts"]).astype(np.int64)
+
+        if capacity is None:
+            # Size the reservoir to the largest stream, so nothing is subsampled AND
+            # the returned object stays internally consistent if a caller offers it
+            # more values later (``add``/``add_batch`` compare against self.capacity).
+            capacity = int(totals.max()) if n_tracks else 0
+
         merged = cls(n_tracks=n_tracks, capacity=capacity, seed=seed)
         rng = np.random.default_rng(seed)
         for i in range(n_tracks):
             pieces = []
-            total = 0
             for p in parts:
                 off = np.asarray(p["offsets"])
                 lo, hi = int(off[i]), int(off[i + 1])
                 if hi > lo:
                     pieces.append(np.asarray(p["values"])[lo:hi])
-                total += int(np.asarray(p["counts"])[i])
             if pieces:
                 vals = np.concatenate(pieces)
                 if len(vals) > capacity:
                     keep = rng.choice(len(vals), capacity, replace=False)
                     keep.sort()
                     vals = vals[keep]
-                merged.data[i] = [float(v) for v in vals]
-            merged.counts[i] = total
+                # .tolist() rather than a float() comprehension: same result, and
+                # this path now moves ~150M values for an exact AlphaGenome union.
+                merged.data[i] = vals.tolist()
+            merged.counts[i] = int(totals[i])
         return merged
+
+    def retained_counts(self) -> np.ndarray:
+        """How many values each track actually holds, as opposed to was offered.
+
+        ``counts`` is the offered count. The difference between the two is exactly
+        the thinning that went unnoticed for AlphaGenome's RNA tracks, and it is not
+        recoverable from a shipped NPZ today because only ``counts`` is written.
+        """
+        return np.array([len(d) for d in self.data], dtype=np.int64)
 
     def total_samples(self) -> int:
         return int(self.counts.sum())

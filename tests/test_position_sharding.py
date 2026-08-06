@@ -130,7 +130,22 @@ def test_shards_with_disagreeing_track_counts_are_refused():
 
 def test_no_shards_is_an_error_not_an_empty_sampler():
     with pytest.raises(ValueError, match="no shards"):
-        ReservoirSampler.from_flat_samples()
+        ReservoirSampler.from_flat_samples(capacity=10_000)
+
+
+def test_capacity_must_be_passed_explicitly():
+    """The defect: ``from_flat_samples`` defaulted to DEFAULT_CAPACITY = 50,000.
+
+    ``merge_effect_shards.py`` called it without a capacity, so every AlphaGenome
+    RNA track's 148,367-value union was silently subsampled to 50,000 and the grid's
+    maximum became the max of that subsample rather than of the population. Making
+    the argument required turns that from a silent 2.97x thinning into a TypeError.
+    """
+    s = ReservoirSampler(n_tracks=1, capacity=10)
+    for v in range(10):
+        s.add(0, float(v))
+    with pytest.raises(TypeError):
+        ReservoirSampler.from_flat_samples(s.to_flat_samples())  # no capacity=
 
 
 def test_a_track_with_no_samples_in_any_shard_stays_empty():
