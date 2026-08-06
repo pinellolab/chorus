@@ -69,6 +69,7 @@ from chorus.oracles.cherimoya_source.scoring import (  # noqa: E402
     score_window_sum,
 )
 
+from chorus.analysis.background_sampling import abort_if_nothing_loads  # noqa: E402
 from chorus.analysis.background_sampling import (
     sampling_block,  # noqa: E402
     ReservoirSampler,
@@ -562,6 +563,8 @@ def build(do_variants: bool, do_baselines: bool):
 
     track_ids = [s["track_id"] for s in specs]
     loop_start = time.time()
+    _n_attempted = _n_loaded = 0
+    name_for_abort = 'cherimoya'
     for idx, spec in enumerate(specs):
         t0 = time.time()
         logger.info("=" * 60)
@@ -572,7 +575,12 @@ def build(do_variants: bool, do_baselines: bool):
                 assay=spec["assay"], encode_id=spec["encode_id"], fold=args.fold)
         except Exception as exc:
             logger.warning("Failed to load %s: %s", spec["track_id"], str(exc)[:200])
+            _n_attempted += 1
+            abort_if_nothing_loads(_n_attempted, _n_loaded,
+                                   label=f"{name_for_abort}.load")
             continue
+        _n_attempted += 1
+        _n_loaded += 1
 
         model = oracle.model
         # One try spans the variant pass AND the baseline pass for this track, so

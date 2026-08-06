@@ -25,6 +25,7 @@ import numpy as np
 
 import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')); sys.path.insert(0, REPO_ROOT)
 
+from chorus.analysis.background_sampling import abort_if_nothing_loads  # noqa: E402
 from chorus.analysis.background_sampling import (
     sampling_block,  # noqa: E402
     ReservoirSampler,
@@ -518,6 +519,7 @@ def build_all_models(do_variants: bool, do_baselines: bool):
                     len(tss_list), len(dhs_baseline))
 
     # Iterate over models
+    _n_attempted = _n_loaded = 0
     for model_idx, spec in enumerate(models_to_score):
         tid = _track_id_for(spec)
         logger.info("=" * 60)
@@ -536,7 +538,11 @@ def build_all_models(do_variants: bool, do_baselines: bool):
             )
         except Exception as exc:
             logger.warning("Failed to load %s: %s", tid, str(exc)[:200])
+            _n_attempted += 1
+            abort_if_nothing_loads(_n_attempted, _n_loaded, label="chrombpnet.load")
             continue
+        _n_attempted += 1
+        _n_loaded += 1
 
         model = oracle.model
 

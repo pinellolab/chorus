@@ -32,10 +32,19 @@ mamba run -n chorus-sei          # PyTorch
 mamba run -n chorus-legnet       # PyTorch
 ```
 
-Two oracles have **no env of their own** and are missing from the list above, which
-cost two failed builds in the 2026-08-06 fleet rebuild: **cherimoya** and
-**epinformerseq** both `import torch` inside their builders, and the base `chorus` env
-has no torch. Run both under `chorus-borzoi` (torch 2.12.1 + CUDA; both import cleanly).
+The list above is **incomplete** — `conda env list` shows more, and two of the missing
+ones are needed:
+
+```bash
+mamba run -n chorus-cherimoya      # PyTorch 2.13 + the `cherimoya` package
+mamba run -n chorus-epinformerseq  # PyTorch
+```
+
+Both builders `import torch`, and cherimoya additionally imports the `cherimoya`
+package itself, which exists **only** in `chorus-cherimoya`. Running it elsewhere does
+not fail fast: it logs `Failed to load <track>` once per track and carries on, so a
+1,518-track run spent 75 minutes loading nothing before dying at the provenance step.
+Always check `conda env list` rather than trusting this section.
 
 Pass `--gpu N` to the five builders that accept it rather than relying on
 `CUDA_VISIBLE_DEVICES` alone. They used to *overwrite* the env var with the `--gpu`

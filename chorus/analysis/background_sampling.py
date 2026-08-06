@@ -594,6 +594,31 @@ def sampling_block(*interims, tail_k: "dict | int | None" = None) -> dict:
     return block
 
 
+def abort_if_nothing_loads(
+    n_attempted: int, n_loaded: int, *, label: str, min_attempts: int = 25,
+) -> None:
+    """Stop a per-track builder that has failed to load every model so far.
+
+    Cherimoya and ChromBPNet load one model per track inside a
+    ``try/except: logger.warning(...); continue`` loop. That tolerance is right -- a
+    single missing checkpoint should not lose a whole run -- but with no floor it also
+    tolerates loading NOTHING. Run in an env without the ``cherimoya`` package, the
+    builder logged "Failed to load <track>" 1,518 times over 75 minutes, then died at
+    the provenance step. Had that step not happened to import the missing package, it
+    would have written an all-zero background.
+
+    A run that has attempted ``min_attempts`` tracks and loaded none is misconfigured,
+    not unlucky: raise while it has cost a minute rather than an hour.
+    """
+    if n_attempted >= min_attempts and n_loaded == 0:
+        raise RuntimeError(
+            f"{label}: attempted {n_attempted} tracks and loaded NONE. This is a "
+            f"configuration failure, not bad luck -- check the conda env has the "
+            f"oracle's package (cherimoya lives only in chorus-cherimoya) and that "
+            f"the weights are present. Aborting rather than building an empty null."
+        )
+
+
 def yield_violations(
     counts: np.ndarray,
     *,
