@@ -448,7 +448,10 @@ def merge_to_final():
     baseline_path = os.path.join(cache_dir, f"epinformerseq_{INTERIM_TAG}baseline_cdfs_interim.npz")
     if not os.path.exists(baseline_path):
         logger.error("Missing baseline interim: %s — run --part baselines first.", baseline_path)
-        return
+        raise SystemExit(1)  # A missing interim is a FAILED merge, not a no-op. Returning here exited 0,
+        # so a driver keying off exit codes recorded "rc=0" for a step that wrote
+        # nothing -- the same report-success-after-failure shape as the all-zero
+        # interim and the guard nobody wired up.
     have_effect = os.path.exists(effect_path)
     if not have_effect:
         logger.warning("Missing effect interim: %s — final NPZ will only have summary_cdfs.",

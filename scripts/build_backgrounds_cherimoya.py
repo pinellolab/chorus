@@ -668,7 +668,10 @@ def merge(incremental: bool = False):
     base_path = os.path.join(CACHE_DIR, f"{NPZ_STEM}_baseline_cdfs_interim.npz")
     if not (os.path.exists(eff_path) and os.path.exists(base_path)):
         logger.error("Missing interim files -- run --part both first.")
-        return
+        raise SystemExit(1)  # A missing interim is a FAILED merge, not a no-op. Returning here exited 0,
+        # so a driver keying off exit codes recorded "rc=0" for a step that wrote
+        # nothing -- the same report-success-after-failure shape as the all-zero
+        # interim and the guard nobody wired up.
 
     eff = numpy.load(eff_path, allow_pickle=False)
     base = numpy.load(base_path, allow_pickle=False)

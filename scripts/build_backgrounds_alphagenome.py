@@ -821,7 +821,10 @@ def merge_to_final():
     baseline_path = os.path.join(cache_dir, "alphagenome_baseline_cdfs_interim.npz")
     if not os.path.exists(effect_path) or not os.path.exists(baseline_path):
         logger.error("Missing interim files")
-        return
+        raise SystemExit(1)  # A missing interim is a FAILED merge, not a no-op. Returning here exited 0,
+        # so a driver keying off exit codes recorded "rc=0" for a step that wrote
+        # nothing -- the same report-success-after-failure shape as the all-zero
+        # interim and the guard nobody wired up.
 
     effect_data = np.load(effect_path, allow_pickle=False)
     baseline_data = np.load(baseline_path, allow_pickle=False)
