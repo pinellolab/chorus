@@ -36,6 +36,17 @@ parser.add_argument("--part", choices=["variants", "baselines", "merge", "both",
 parser.add_argument("--device", type=str, default=None)
 parser.add_argument("--n-variants", type=int, default=10000)
 parser.add_argument("--reservoir-size", type=int, default=50000)
+parser.add_argument("--no-dhs", action="store_true",
+                    help="Ablation: drop the DHS stratum and rescale the promoter "
+                         "strata to their original proportions. Mirrors the existing "
+                         "--no-dhs on the Cherimoya builder. Exists so the effect of "
+                         "adding DHS to a PROMOTER model's null can be measured "
+                         "rather than argued about.")
+parser.add_argument("--tail-k", type=int, default=0,
+                    help="Keep the exact top/bottom K values per track alongside the "
+                         "uniform body. 0 = off, which is correct whenever the offered "
+                         "count is under the reservoir capacity (LegNet offers 11,913 "
+                         "effect and 29,002 summary values against 50,000).")
 parser.add_argument("--n-cdf-points", type=int, default=10000)
 args = parser.parse_args()
 
@@ -51,7 +62,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-cache_dir = os.path.expanduser("~/.chorus/backgrounds")
+# Honour the data-dir mechanism rather than hardcoding $HOME. All eight
+# builders had this literal, so a chorus installed with
+# CHORUS_DATA_DIR=/data/... still wrote its backgrounds into the home
+# directory the data dir exists to avoid. CHORUS_BACKGROUNDS_DIR applies
+# the legacy ~/.chorus compatibility itself, per kind.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+cache_dir = os.environ.get("CHORUS_BUILD_CACHE_DIR") or str(CHORUS_BACKGROUNDS_DIR)
 os.makedirs(cache_dir, exist_ok=True)
 
 
@@ -148,8 +165,17 @@ def build_variant_backgrounds():
     # though its own BASELINE pass already used cCREs -- an asymmetry inside a single
     # oracle that is harder to defend than any difference between oracles.
     _sizes = load_chrom_sizes(os.path.join(REPO_ROOT, 'genomes/hg38.fa.fai'))
+    _strata = None
+    if args.no_dhs:
+        # Ablation: drop DHS and restore the original promoter proportions, so the two
+        # runs differ ONLY in whether DHS is present.
+        from chorus.utils.annotations import PROMOTER_REGION_STRATA
+        _strata = {k: v for k, v in PROMOTER_REGION_STRATA.items() if k != "dhs"}
+        _tot = sum(_strata.values())
+        _strata = {k: v / _tot for k, v in _strata.items()}
+        logger.info("ABLATION --no-dhs: strata rescaled to %s", _strata)
     sampled = sample_promoter_anchored_positions(
-        args.n_variants, chrom_sizes=_sizes, seed=42)
+        args.n_variants, chrom_sizes=_sizes, seed=42, strata=_strata)
     snps = []
     strata_counts = defaultdict(int)
     for chrom, pos, stratum in sampled:
@@ -203,6 +229,10 @@ def build_variant_backgrounds():
         track_ids=np.array(cell_types, dtype='U'),
         effect_cdfs=effect_matrix.astype(np.float32),
         effect_counts=effect_reservoir.get_counts(),
+        # Retention beside the offered count, so "was the tail thinned?" is answerable
+        # from the artefact. Only the offered count was ever written, which is why the
+        # AlphaGenome thinning was invisible for months.
+        effect_retained=effect_reservoir.retained_counts(),
         signed_flags=signed_flags,
     )
     logger.info("Saved effect interim: %s", interim_path)
@@ -304,9 +334,28 @@ def build_baseline_backgrounds():
         track_ids=np.array(cell_types, dtype='U'),
         summary_cdfs=summary_matrix.astype(np.float32),
         summary_counts=summary_reservoir.get_counts(),
+        summary_retained=summary_reservoir.retained_counts(),
     )
     logger.info("Saved baseline interim: %s", interim_path)
     ref.close()
+
+
+def _sampling_block(effect_data, baseline_data):
+    """Per-layer offered/retained, for the write-time thinning guard.
+
+    Absent, build_and_save logs an error and writes with no thinning protection --
+    which is how both the padded enformer grid and the AlphaGenome thinning shipped
+    past guards that already existed.
+    """
+    block = {}
+    for key, data in (("effect", effect_data), ("summary", baseline_data)):
+        counts = data.get(f"{key}_counts")
+        retained = data.get(f"{key}_retained")
+        if counts is None or retained is None:
+            continue
+        block[key] = {"offered": counts, "retained": retained,
+                      "tail_k": int(args.tail_k) if args.tail_k else None}
+    return block or None
 
 
 def merge_to_final():
@@ -335,6 +384,7 @@ def merge_to_final():
         effect_counts=effect_data["effect_counts"] if "effect_counts" in effect_data else None,
         summary_counts=baseline_data["summary_counts"] if "summary_counts" in baseline_data else None,
         cache_dir=cache_dir,
+        sampling=_sampling_block(effect_data, baseline_data),
     )
     logger.info("DONE — final file: %s (%.1f MB)", path, path.stat().st_size / 1e6)
 

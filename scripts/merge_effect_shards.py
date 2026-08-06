@@ -52,7 +52,11 @@ import numpy as np
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
-BG = Path.home() / ".chorus" / "backgrounds"
+# Resolved through the data-dir mechanism, not hardcoded to $HOME. Every
+# background-handling script had this literal; CHORUS_BACKGROUNDS_DIR applies
+# the legacy ~/.chorus compatibility itself, per kind.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+BG = CHORUS_BACKGROUNDS_DIR
 GENE_ANCHORED_BACKUP = Path("/data/chorus_data/interims_gene_anchored")
 # A count ratio outside this band means the two sources are not comparable and the
 # composed file would mix a well-estimated tail with a poorly-estimated one.

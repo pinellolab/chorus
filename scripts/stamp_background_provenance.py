@@ -44,7 +44,11 @@ from pathlib import Path
 import numpy as np
 
 REPO = Path(__file__).resolve().parent.parent
-BG = Path.home() / ".chorus" / "backgrounds"
+# Resolved through the data-dir mechanism, not hardcoded to $HOME. Every
+# background-handling script had this literal; CHORUS_BACKGROUNDS_DIR applies
+# the legacy ~/.chorus compatibility itself, per kind.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+BG = CHORUS_BACKGROUNDS_DIR
 FASTA = REPO / "genomes" / "hg38.fa"
 
 # Build windows, read from the actual run logs. These let the stamp state a

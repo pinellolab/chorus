@@ -214,8 +214,14 @@ def test_every_backgrounds_default_goes_through_the_global(tmp_path):
     """
     import re
 
+    # scripts/ is scanned too. It was not, and all EIGHT background builders
+    # hardcoded `os.path.expanduser("~/.chorus/backgrounds")` -- so a chorus installed
+    # with CHORUS_DATA_DIR=/data/... still wrote every background it built into the
+    # home directory the data dir exists to avoid. The guard covering only `chorus/`
+    # is the same half-fix shape as the str.replace(..., 1) it was written for.
     offenders = []
-    for path in (REPO / "chorus").rglob("*.py"):
+    roots = [REPO / "chorus", REPO / "scripts"]
+    for path in [q for r in roots for q in r.rglob("*.py")]:
         if "_source" in path.parts:
             continue
         for i, line in enumerate(path.read_text().splitlines(), start=1):

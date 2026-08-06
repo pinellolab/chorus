@@ -200,28 +200,58 @@ def test_tss_near_positions_are_actually_near_a_tss(sizes):
 # ---------------------------------------------------------------------------
 
 
-def test_the_union_grew_rather_than_being_re_divided():
-    """Every pre-existing stratum keeps its EXACT absolute count.
+def test_n_grew_and_the_proportions_held():
+    """More positions from the SAME populations is the lever that measured well.
 
-    Re-dividing a fixed N dilutes: measured when the cCRE half was first tried that
-    way, TF-track saturation went 25% -> 92%, because each component got half the
-    draws and therefore a shorter tail. Growing N is what makes "nothing that already
-    worked can get worse" true, via max(union) = max(max_a, max_b).
+    A DHS third was added here and removed the same day. Three Sei builds, differing
+    only as labelled, medians over 40 tracks:
+
+        A = 12,000 no DHS   B = 18,000 +DHS   C = 18,000 no DHS
+
+            p50     p90     p99     p99.9   max
+        B/A 0.971   0.937   0.954   0.936   1.000
+        C/A 1.035   1.030   1.042   0.992   1.261
+
+    B/A max is exactly 1.000 -- across all 40 tracks not one DHS position beat the best
+    cCRE- or gene-anchored position already in the set, so DHS added nothing to the
+    ceiling while lowering every quantile. C, the same budget spent on the existing
+    populations, raised the ceiling 26%.
+
+    Re-dividing a fixed N would dilute, which is a separate and still-true hazard:
+    measured when the cCRE half was first tried that way, TF saturation went 25% ->
+    92% because each component got half the draws.
     """
     n = DEFAULT_N_EFFECT_POSITIONS
-    expected = {"tss_near": 1200, "tss_far": 1200, "junction": 1980,
-                "gene_body": 720, "random": 900, "ccre": 6000, "dhs": 6000}
+    assert n == 18_000
+    expected = {"tss_near": 1800, "tss_far": 1800, "junction": 2970,
+                "gene_body": 1080, "random": 1350, "ccre": 9000}
     for name, want in expected.items():
-        got = round(n * DEFAULT_REGION_STRATA[name])
-        assert got == want, f"{name}: {got} positions, expected {want}"
-    assert n == sum(expected.values()) == 18_000
+        assert round(n * DEFAULT_REGION_STRATA[name]) == want, name
+    assert sum(expected.values()) == n
+    assert "dhs" not in DEFAULT_REGION_STRATA, (
+        "DHS was measured to add nothing to the ceiling and to dilute every quantile "
+        "on both the gene-anchored and promoter mixtures; see the table above"
+    )
 
-    promoter = {"tss_promoter": 4800, "ccre_pls": 3600, "ccre_pels": 1800,
-                "random": 1800, "dhs": 6000}
+    promoter = {"tss_promoter": 7200, "ccre_pls": 5400, "ccre_pels": 2700,
+                "random": 2700}
     for name, want in promoter.items():
-        got = round(n * PROMOTER_REGION_STRATA[name])
-        assert got == want, f"promoter {name}: {got}, expected {want}"
-    assert sum(promoter.values()) == 18_000
+        assert round(n * PROMOTER_REGION_STRATA[name]) == want, f"promoter {name}"
+    assert sum(promoter.values()) == n
+    assert "dhs" not in PROMOTER_REGION_STRATA
+
+
+def test_the_dhs_branch_still_works_even_though_it_is_not_in_the_defaults(sizes):
+    """Removed from the mixtures, kept as a capability.
+
+    ChromBPNet's and Cherimoya's nulls have always been DHS-anchored, and the ablation
+    that produced the decision needs the branch to exist. Deleting it would make the
+    measurement unrepeatable.
+    """
+    out = sample_gene_anchored_positions(
+        120, chrom_sizes=sizes, strata={"dhs": 1.0}, seed=5)
+    assert len(out) == 120
+    assert {s for _, _, s in out} == {"dhs"}
 
 
 def test_pool_cursors_are_per_stratum_not_global(sizes):

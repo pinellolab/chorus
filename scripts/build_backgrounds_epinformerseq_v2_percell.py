@@ -105,7 +105,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-cache_dir = os.path.expanduser("~/.chorus/backgrounds")
+# Honour the data-dir mechanism rather than hardcoding $HOME. All eight
+# builders had this literal, so a chorus installed with
+# CHORUS_DATA_DIR=/data/... still wrote its backgrounds into the home
+# directory the data dir exists to avoid. CHORUS_BACKGROUNDS_DIR applies
+# the legacy ~/.chorus compatibility itself, per kind.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+cache_dir = os.environ.get("CHORUS_BUILD_CACHE_DIR") or str(CHORUS_BACKGROUNDS_DIR)
 os.makedirs(cache_dir, exist_ok=True)
 
 V2_WINDOW = 1024

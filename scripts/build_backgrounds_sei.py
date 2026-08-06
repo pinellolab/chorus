@@ -39,6 +39,12 @@ parser.add_argument("--part", choices=["variants", "baselines", "merge", "both",
 parser.add_argument("--gpu", type=int, default=0)
 parser.add_argument("--device", type=str, default=None, help="cpu or cuda:N")
 parser.add_argument("--n-variants", type=int, default=10000)
+parser.add_argument("--no-dhs", action="store_true",
+                    help="Ablation: drop the DHS stratum and rescale the rest. Exists "
+                         "so DHS's effect on a GENE-ANCHORED null can be measured. It "
+                         "was measured to dilute every quantile of LegNet's PROMOTER "
+                         "null and was removed there; whether the same holds for a "
+                         "genome-wide chromatin model is a different question.")
 parser.add_argument("--reservoir-size", type=int, default=50000)
 parser.add_argument("--n-cdf-points", type=int, default=10000)
 args = parser.parse_args()
@@ -55,7 +61,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-cache_dir = os.path.expanduser("~/.chorus/backgrounds")
+# Honour the data-dir mechanism rather than hardcoding $HOME. All eight
+# builders had this literal, so a chorus installed with
+# CHORUS_DATA_DIR=/data/... still wrote its backgrounds into the home
+# directory the data dir exists to avoid. CHORUS_BACKGROUNDS_DIR applies
+# the legacy ~/.chorus compatibility itself, per kind.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+cache_dir = os.environ.get("CHORUS_BUILD_CACHE_DIR") or str(CHORUS_BACKGROUNDS_DIR)
 os.makedirs(cache_dir, exist_ok=True)
 
 INPUT_LENGTH = 4096
@@ -165,8 +177,15 @@ def build_variant_backgrounds():
     # though its own BASELINE pass already used cCREs -- an asymmetry inside a single
     # oracle that is harder to defend than any difference between oracles.
     _sizes = load_chrom_sizes(os.path.join(REPO_ROOT, 'genomes/hg38.fa.fai'))
+    _strata = None
+    if args.no_dhs:
+        from chorus.utils.annotations import DEFAULT_REGION_STRATA
+        _strata = {k: v for k, v in DEFAULT_REGION_STRATA.items() if k != "dhs"}
+        _tot = sum(_strata.values())
+        _strata = {k: v / _tot for k, v in _strata.items()}
+        logger.info("ABLATION --no-dhs: strata rescaled to %s", _strata)
     sampled = sample_gene_anchored_positions(
-        args.n_variants, chrom_sizes=_sizes, seed=42)
+        args.n_variants, chrom_sizes=_sizes, seed=42, strata=_strata)
     snps = []
     strata_counts = defaultdict(int)
     for chrom, pos, stratum in sampled:
@@ -226,6 +245,7 @@ def build_variant_backgrounds():
         track_ids=np.array(class_names, dtype='U'),
         effect_cdfs=effect_matrix.astype(np.float32),
         effect_counts=effect_reservoir.get_counts(),
+        effect_retained=effect_reservoir.retained_counts(),
         signed_flags=signed_flags,
     )
     logger.info("Saved effect interim: %s", interim_path)
@@ -335,6 +355,7 @@ def build_baseline_backgrounds():
         track_ids=np.array(class_names, dtype='U'),
         summary_cdfs=summary_matrix.astype(np.float32),
         summary_counts=summary_reservoir.get_counts(),
+        summary_retained=summary_reservoir.retained_counts(),
     )
     logger.info("Saved baseline interim: %s", interim_path)
     ref.close()

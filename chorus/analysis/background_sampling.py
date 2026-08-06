@@ -497,6 +497,73 @@ def expected_first_max_index(n_samples: int, n_points: int) -> int:
     return math.ceil((n_points - 1) * (n_samples - 1) / n_samples)
 
 
+def derive_tail_k(
+    n_expected: int,
+    *,
+    n_points: int = DEFAULT_CDF_POINTS,
+    min_slots: int = MIN_EXACT_TAIL_SLOTS,
+) -> int:
+    """How large an exact tail a layer needs, derived rather than picked.
+
+    The top ``K`` of ``N`` values occupy the top ``K * n_points / N`` grid slots, so to
+    keep ``min_slots`` of them exact you need ``K >= min_slots * N / n_points``. A
+    single fixed K cannot work across layers because ``N`` spans two orders of
+    magnitude: at ``K = 20,000`` the same choice gives AlphaGenome's perbin 202 exact
+    slots but ChromBPNet's only **91** (2,176,256 offered) and Cherimoya's **183**
+    (1,088,128) -- silently below the bar on exactly the two oracles with the most
+    thinning.
+
+    ``n_expected`` is knowable before the first forward pass: it is
+    ``n_positions x fan_out``, where fan_out is 1, the number of bins per position, the
+    number of strands, or the per-gene fan-out for RNA. That is what makes this a
+    preflight check rather than a post-mortem.
+    """
+    if n_expected <= 0:
+        return 0
+    k = -(-int(min_slots) * int(n_expected) // int(n_points))   # ceil division
+    return max(k, int(n_points))
+
+
+def sampler_preflight(
+    label: str,
+    *,
+    n_expected: int,
+    capacity: "int | None",
+    tail_k: "int | None",
+    n_points: int = DEFAULT_CDF_POINTS,
+) -> dict:
+    """Log, and refuse, a sampling configuration that would thin the tail.
+
+    Called BEFORE any forward pass. The AlphaGenome thinning cost 25 GPU-hours of a
+    build whose ceiling was wrong on 667 tracks; every input to this check is known in
+    advance, so there is no reason to discover it afterwards.
+    """
+    exact = capacity is None or n_expected <= capacity
+    slots = n_points if exact else int(
+        min(tail_k or 0, n_expected) * n_points // max(n_expected, 1)
+    )
+    info = {
+        "label": label, "n_expected": int(n_expected),
+        "capacity": None if capacity is None else int(capacity),
+        "tail_k": None if not tail_k else int(tail_k),
+        "mode": "exact" if exact else "hybrid",
+        "exact_top_slots": int(slots),
+    }
+    logger.info(
+        "sampler preflight %s: n_expected=%d capacity=%s tail_k=%s mode=%s "
+        "exact_top_slots=%d", label, info["n_expected"], info["capacity"],
+        info["tail_k"], info["mode"], info["exact_top_slots"],
+    )
+    if slots < MIN_EXACT_TAIL_SLOTS:
+        raise ValueError(
+            f"sampler preflight FAILED for {label}: only {slots} of {n_points} grid "
+            f"slots would be exact (need >= {MIN_EXACT_TAIL_SLOTS}). n_expected="
+            f"{n_expected}, capacity={capacity}, tail_k={tail_k}. Raise the capacity "
+            f"or pass tail_k>={derive_tail_k(n_expected, n_points=n_points)}."
+        )
+    return info
+
+
 def thinning_violations(
     offered: np.ndarray,
     retained: np.ndarray,

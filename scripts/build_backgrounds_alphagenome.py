@@ -44,6 +44,16 @@ parser.add_argument("--n-ccre", type=int, default=4000)
 parser.add_argument("--n-tss", type=int, default=1000)
 parser.add_argument("--n-gene-body", type=int, default=500)
 parser.add_argument("--reservoir-size", type=int, default=20000)
+parser.add_argument("--perbin-tail-k", type=int, default=19740,
+                    help="Exact top/bottom K values kept per track for the perbin "
+                         "layer, which cannot be retained whole (986,976 offered per track). Derived as "
+                         "ceil(200 * N_expected / 10000) so at least 200 of the "
+                         "10,000 grid slots are true order statistics; a single fixed "
+                         "K silently gives ChromBPNet only 91.")
+parser.add_argument("--exact-capacity", type=int, default=4000000,
+                    help="Reservoir capacity for the effect and summary layers. Large "
+                         "enough to retain every offered value, so their ceilings are "
+                         "population maxima rather than draws from a subsample.")
 parser.add_argument("--n-cdf-points", type=int, default=10000)
 parser.add_argument("--perbin-bins", type=int, default=32)
 parser.add_argument("--effect-regions", choices=["gene-anchored", "ccre"],
@@ -80,7 +90,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-cache_dir = os.path.expanduser("~/.chorus/backgrounds")
+# Honour the data-dir mechanism rather than hardcoding $HOME. All eight
+# builders had this literal, so a chorus installed with
+# CHORUS_DATA_DIR=/data/... still wrote its backgrounds into the home
+# directory the data dir exists to avoid. CHORUS_BACKGROUNDS_DIR applies
+# the legacy ~/.chorus compatibility itself, per kind.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+cache_dir = os.environ.get("CHORUS_BUILD_CACHE_DIR") or str(CHORUS_BACKGROUNDS_DIR)
 os.makedirs(cache_dir, exist_ok=True)
 
 INPUT_LENGTH = 1_048_576  # 1 MB
@@ -303,7 +319,7 @@ def build_variant_backgrounds():
                 args.n_variants, n_tracks)
     logger.info("=" * 60)
 
-    effect_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size)
+    effect_reservoir = ReservoirSampler(n_tracks, capacity=args.exact_capacity)
     # AlphaGenome selects genes by TSS-in-window, then unions the exons of ONLY
     # those transcripts (gene_mask_extractor.py:326, 357-371). Protein-coding only
     # is a DELIBERATE divergence: AlphaGenome applies no gene-type filter, but
@@ -526,6 +542,7 @@ def build_variant_backgrounds():
             track_ids=np.array(track_ids, dtype='U'),
             effect_cdfs=effect_matrix.astype(np.float32),
             effect_counts=effect_reservoir.get_counts(),
+            effect_retained=effect_reservoir.retained_counts(),
             signed_flags=signed_flags,
             layers_per_row=layers_per_row,
         )
@@ -545,8 +562,8 @@ def build_baseline_backgrounds():
     logger.info("PER-TRACK BASELINE BACKGROUNDS: %d tracks", n_tracks)
     logger.info("=" * 60)
 
-    summary_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size)
-    perbin_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size)
+    summary_reservoir = ReservoirSampler(n_tracks, capacity=args.exact_capacity)
+    perbin_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size, tail_k=args.perbin_tail_k)
     rng_bins = np.random.RandomState(999)
     # AlphaGenome selects genes by TSS-in-window, then unions the exons of ONLY
     # those transcripts (gene_mask_extractor.py:326, 357-371). Protein-coding only
@@ -787,8 +804,10 @@ def build_baseline_backgrounds():
         track_ids=np.array(track_ids, dtype='U'),
         summary_cdfs=summary_matrix.astype(np.float32),
         summary_counts=summary_reservoir.get_counts(),
+        summary_retained=summary_reservoir.retained_counts(),
         perbin_cdfs=perbin_matrix.astype(np.float32),
         perbin_counts=perbin_reservoir.get_counts(),
+        perbin_retained=perbin_reservoir.retained_counts(),
     )
     logger.info("Saved baseline interim: %s", interim_path)
     ref.close()

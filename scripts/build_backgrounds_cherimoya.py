@@ -109,6 +109,16 @@ parser.add_argument("--n-dhs-variants", type=int, default=10000)
 parser.add_argument("--n-dhs-peaks", type=int, default=5000)
 parser.add_argument("--dhs-path", default=None)
 parser.add_argument("--reservoir-size", type=int, default=50000)
+parser.add_argument("--perbin-tail-k", type=int, default=21763,
+                    help="Exact top/bottom K values kept per track for the perbin "
+                         "layer, which cannot be retained whole (1,088,128 offered per track). Derived as "
+                         "ceil(200 * N_expected / 10000) so at least 200 of the "
+                         "10,000 grid slots are true order statistics; a single fixed "
+                         "K silently gives ChromBPNet only 91.")
+parser.add_argument("--exact-capacity", type=int, default=4000000,
+                    help="Reservoir capacity for the effect and summary layers. Large "
+                         "enough to retain every offered value, so their ceilings are "
+                         "population maxima rather than draws from a subsample.")
 parser.add_argument("--n-cdf-points", type=int, default=10000)
 parser.add_argument("--batch-size", type=int, default=512)
 parser.add_argument("--reference", default=os.path.join(REPO_ROOT, "genomes/hg38.fa"))
@@ -164,7 +174,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-CACHE_DIR = os.path.expanduser("~/.chorus/backgrounds")
+# Honour the data-dir mechanism rather than hardcoding $HOME. All eight
+# builders had this literal, so a chorus installed with
+# CHORUS_DATA_DIR=/data/... still wrote its backgrounds into the home
+# directory the data dir exists to avoid. CHORUS_BACKGROUNDS_DIR applies
+# the legacy ~/.chorus compatibility itself, per kind.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+CACHE_DIR = os.environ.get("CHORUS_BUILD_CACHE_DIR") or str(CHORUS_BACKGROUNDS_DIR)
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 PERBIN_BINS_PER_POSITION = 32
@@ -477,9 +493,9 @@ def build(do_variants: bool, do_baselines: bool):
         logger.warning("No tracks to score; nothing to do.")
         return
 
-    effect_res = ReservoirSampler(n_tracks, args.reservoir_size) if do_variants else None
-    summary_res = ReservoirSampler(n_tracks, args.reservoir_size) if do_baselines else None
-    perbin_res = ReservoirSampler(n_tracks, args.reservoir_size) if do_baselines else None
+    effect_res = ReservoirSampler(n_tracks, capacity=args.exact_capacity) if do_variants else None
+    summary_res = ReservoirSampler(n_tracks, capacity=args.exact_capacity) if do_baselines else None
+    perbin_res = ReservoirSampler(n_tracks, capacity=args.reservoir_size, tail_k=args.perbin_tail_k) if do_baselines else None
 
     # ── assemble the sequence sets ──
     ref_seqs, alt_seqs = [], []
@@ -603,6 +619,7 @@ def build(do_variants: bool, do_baselines: bool):
             track_ids=numpy.array(track_ids, dtype="U"),
             effect_cdfs=effect_res.to_cdf_matrix(args.n_cdf_points).astype(numpy.float32),
             effect_counts=effect_res.get_counts(),
+            effect_retained=effect_res.retained_counts(),
             signed_flags=numpy.zeros(n_tracks, dtype=bool),
             build_config=numpy.array([config]),
         )
@@ -615,8 +632,10 @@ def build(do_variants: bool, do_baselines: bool):
             track_ids=numpy.array(track_ids, dtype="U"),
             summary_cdfs=summary_res.to_cdf_matrix(args.n_cdf_points).astype(numpy.float32),
             summary_counts=summary_res.get_counts(),
+            summary_retained=summary_res.retained_counts(),
             perbin_cdfs=perbin_res.to_cdf_matrix(args.n_cdf_points).astype(numpy.float32),
             perbin_counts=perbin_res.get_counts(),
+            perbin_retained=perbin_res.retained_counts(),
             build_config=numpy.array([config]),
         )
         logger.info("Saved %s", path)

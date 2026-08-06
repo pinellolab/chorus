@@ -971,38 +971,58 @@ def exon_bins_for_gene(
 # correlated with effect size. That would bias the null toward large effects and
 # make everything look unremarkable.
 DEFAULT_REGION_STRATA = {
-    # One third of the positions reproduce the originally shipped gene-anchored set
-    # EXACTLY, in its original internal proportions (0.20 / 0.20 / 0.33 / 0.12 / 0.15).
-    "tss_near": 1 / 15,   # within +/- 1 kb of a protein-coding TSS   -> 1,200
-    "tss_far": 1 / 15,    # 1-10 kb from a TSS                        -> 1,200
-    "junction": 0.11,     # +/- 100 bp of an exon/intron boundary     -> 1,980
-    "gene_body": 0.04,    # elsewhere inside a protein-coding gene    ->   720
-    "random": 0.05,       # uniform, to keep the null's lower body    ->   900
-    # The second third, added 2026-08-03, purely ADDITIVE.
-    "ccre": 1 / 3,        # inside an ENCODE SCREEN cCRE              -> 6,000
-    # The final third, added 2026-08-06, also purely ADDITIVE. DHS summits from the
-    # Meuleman index concentrate transcription-factor footprints, so a single-base
-    # change there perturbs TF and histone tracks far more than one in a gene body --
-    # which lengthens the tail of exactly the layers that pin most.
-    #
-    # Justified by tail width and by max(union) = max(max_a, max_b), NOT by a
-    # calibration measurement, and it does NOT fix motif-creation saturation: the
-    # DHS-anchored null ChromBPNet has always used still pins on rs12740374 CEBPA at
-    # 1.11x. A null over random positions -- DHS, cCRE or gene-anchored alike --
-    # contains few single-base changes that complete a specific factor's full motif.
-    "dhs": 1 / 3,         # +/-150 bp of a Meuleman DHS summit        -> 6,000
+    # Proportions unchanged since the cCRE half was added; only N has grown.
+    "tss_near": 0.100,   # within +/- 1 kb of a protein-coding TSS   -> 1,800
+    "tss_far": 0.100,    # 1-10 kb from a TSS                        -> 1,800
+    "junction": 0.165,   # +/- 100 bp of an exon/intron boundary     -> 2,970
+    "gene_body": 0.060,  # elsewhere inside a protein-coding gene    -> 1,080
+    "random": 0.075,     # uniform, keeps the null's lower body      -> 1,350
+    "ccre": 0.500,       # inside an ENCODE SCREEN cCRE              -> 9,000
 }
 
-# The intended total. Grown with each added component rather than re-divided, so
-# every pre-existing stratum keeps its EXACT absolute count: at n=18,000 the strata
-# above yield tss_near 1,200, tss_far 1,200, junction 1,980, gene_body 720,
-# random 900 -- the same counts the original gene-anchored build used -- plus 6,000
-# cCRE and 6,000 DHS positions on top.
+# A DHS stratum was added here on 2026-08-06 and REMOVED the same day, on measurement.
+# The reasoning for it was sound a priori -- Meuleman DHS summits concentrate
+# transcription-factor footprints, so single-base changes there should perturb TF and
+# histone tracks more than changes in a gene body, lengthening the tail of the layers
+# that pin most. It does not survive contact with the data.
 #
-# Re-dividing instead of growing would DILUTE. Measured when the cCRE half was first
-# tried at a fixed N: TF-track saturation went from 25% to 92%, because each
-# component got half the draws and so a shorter tail. Additivity is what makes
-# "nothing that already worked can get worse" true.
+# Three Sei builds, differing only as labelled (scripts/build_backgrounds_sei.py
+# --no-dhs), medians over its 40 tracks:
+#
+#     A = 12,000 positions, no DHS   (the composition shipped before this)
+#     B = 18,000 positions, +DHS     (the proposal: purely additive, N grown)
+#     C = 18,000 positions, no DHS   (same budget, spent on more cCRE + gene instead)
+#
+#     stat     B/A      C/A      B/C
+#     p50     0.971    1.035    0.942
+#     p90     0.937    1.030    0.908
+#     p99     0.954    1.042    0.913
+#     p99.9   0.936    0.992    0.924
+#     max     1.000    1.261    0.821
+#
+# B/A max is exactly 1.000: across all 40 tracks, not one DHS position produced a
+# larger effect than the best cCRE- or gene-anchored position already in the set. DHS
+# contributed nothing to the ceiling while slightly lowering every quantile. Meanwhile
+# C -- the same 18,000 positions drawn from the populations ALREADY in use -- widened
+# every statistic and raised the ceiling 26%.
+#
+# The same ablation on LegNet's promoter null was worse still: p50/p90/p99 diluted
+# 8-19% on all three cell types (see PROMOTER_REGION_STRATA).
+#
+# Why the a-priori argument failed: the cCRE catalogue already contains the
+# accessibility-and-TF categories DHS was meant to add (CA-TF, CA-CTCF, CA-H3K4me3,
+# TF), so DHS summits were largely redundant with positions already sampled -- while
+# also being 3.6% TSS-proximal with a median distance of 68.7 kb, i.e. skewed distal.
+# Redundant draws dilute a mixture without extending it.
+#
+# The lever that DOES work is simply more positions from the same populations, which
+# is why N went 12,000 -> 18,000 and stayed there.
+#
+# ``sample_gene_anchored_positions`` and ``sample_promoter_anchored_positions`` both
+# retain a working "dhs" branch, and ``sample_dhs_positions`` is still used by the
+# ChromBPNet and Cherimoya builders, whose nulls have always been DHS-anchored. What
+# was removed is only DHS's place in these two default mixtures.
+
 DEFAULT_N_EFFECT_POSITIONS = 18_000
 
 # ONE region set, shared by every layer and every oracle, and it is a UNION rather
@@ -1393,21 +1413,38 @@ def sample_ccre_anchored_positions(
 # (proximal enhancer-like) is promoter-adjacent and included at a lower weight. The
 # 15 % uniform tail is kept for the same reason the gene-anchored set keeps one:
 # without near-zero mass, genuinely small effects receive artificially LOW percentiles.
-# 2026-08-06: DHS is now included after all, and the paragraph above needs its
-# qualification rather than deletion. The objection stands for a *re-weighting* --
-# giving DHS a share of a fixed N would dilute the promoter component and hand a
-# promoter model a null made mostly of enhancers. It does not stand for an ADDITIVE
-# union at scaled N: every stratum below keeps its exact absolute count, N grows from
-# 12,000 to 18,000, and max(union) = max(max_promoter, max_dhs), so the promoter
-# component cannot be weakened by the addition. That is the only construction under
-# which the two are reconcilable, and it is the one used here.
+# 2026-08-06: DHS was tried here and REMOVED, on measurement. The paragraph above is
+# correct and the attempted reconciliation was not.
+#
+# The argument for adding it was that an ADDITIVE union at scaled N cannot weaken the
+# promoter component, since max(union) = max(max_promoter, max_dhs). That is true of
+# the MAXIMUM and of nothing else. A percentile is a quantile of the mixture, so
+# adding 6,000 positions whose effects are systematically smaller lowers the whole
+# upper body, and the same variant then scores a HIGHER percentile than it should.
+#
+# Measured by ablation -- two LegNet builds differing only in whether the DHS third
+# was present (scripts/build_backgrounds_legnet.py --no-dhs), n=18,000 both:
+#
+#     track   p50    p90    p99    max
+#     K562   0.81x  0.85x  0.94x  1.14x
+#     HepG2  0.91x  0.90x  0.90x  1.01x
+#     WTC11  0.88x  0.89x  0.95x  1.28x
+#
+# Every quantile diluted on every track; only the ceiling rose. For a 200 bp promoter
+# MPRA model that is the wrong trade: it buys a slightly higher ceiling by making the
+# other 99% of the scale wrong. DHS summits are 3.6% TSS-proximal with a median
+# distance of 68.7 kb, i.e. mostly enhancer-distal -- "right family, wrong member",
+# exactly as stated above.
+#
+# N is still 18,000 rather than 12,000: more positions from the SAME appropriate
+# populations is a pure gain, and the contig-margin fix means they are now genuinely
+# anchored rather than 12% clamped onto boundary coordinates.
 PROMOTER_REGION_STRATA = {
-    "tss_promoter": 4 / 15,  # +/- 250 bp of a PC TSS, so a 200 bp window overlaps
-                             # the core promoter                        -> 4,800
-    "ccre_pls": 0.20,        # SCREEN promoter-like signature           -> 3,600
-    "ccre_pels": 0.10,       # SCREEN proximal enhancer-like            -> 1,800
-    "random": 0.10,          # uniform, keeps the null's lower body     -> 1,800
-    "dhs": 1 / 3,            # +/-150 bp of a Meuleman DHS summit       -> 6,000
+    "tss_promoter": 0.40,   # +/- 250 bp of a PC TSS, so a 200 bp window overlaps the
+                            # core promoter                             -> 7,200
+    "ccre_pls": 0.30,       # SCREEN promoter-like signature            -> 5,400
+    "ccre_pels": 0.15,      # SCREEN proximal enhancer-like             -> 2,700
+    "random": 0.15,         # uniform, keeps the null's lower body      -> 2,700
 }
 
 
