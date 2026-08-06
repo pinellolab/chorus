@@ -38,6 +38,7 @@ import numpy as np
 from chorus.analysis.background_sampling import (
     cdf_grid_violations,
     thinning_violations,
+    yield_violations,
 )
 from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
 
@@ -1132,6 +1133,14 @@ class PerTrackNormalizer:
                         oracle_name, name, matrix.shape[1], n_points, matrix.shape[1],
                     )
                 if counts is not None:
+                    problems = yield_violations(
+                        np.asarray(counts), label=f"{oracle_name}.{name}"
+                    )
+                    if problems:
+                        raise ValueError(
+                            "refusing to write a background where almost every "
+                            "position failed:\n  " + "\n  ".join(problems)
+                        )
                     problems = cdf_grid_violations(
                         matrix, np.asarray(counts), label=f"{oracle_name}.{name}"
                     )

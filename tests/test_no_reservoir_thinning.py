@@ -431,3 +431,62 @@ def test_the_interior_is_still_the_same_uniform_estimate():
     for q in (0.25, 0.5, 0.75, 0.9):
         got, want = np.quantile(row, q), np.quantile(truth, q)
         assert abs(got / want - 1) < 0.05, f"q={q}: {got} vs {want}"
+
+
+# ---------------------------------------------------------------------------
+# A build where everything failed must not write a well-formed empty file
+# ---------------------------------------------------------------------------
+
+
+def test_yield_violations_catches_a_build_where_every_position_failed():
+    from chorus.analysis.background_sampling import yield_violations
+    problems = yield_violations(np.zeros(5313, dtype=np.int64), label="enformer.effect")
+    assert len(problems) == 1
+    assert "0 of 5313" in problems[0]
+    assert yield_violations(np.full(5313, 17_900, dtype=np.int64)) == []
+
+
+def test_build_and_save_refuses_an_all_zero_background(tmp_path):
+    """The failure this is drawn from, which produced a file rather than an error.
+
+    Two TensorFlow processes were launched onto the same GPU because the builder
+    overwrote CUDA_VISIBLE_DEVICES with its --gpu default. The second could not
+    allocate a cuBLAS handle, so EVERY forward pass raised InternalError, and the
+    per-position try/except -- correctly there so one bad locus cannot lose a run --
+    dropped all 5,968 positions and wrote a well-formed interim: 5,313 tracks, every
+    row all-zero, every count 0.
+
+    That file merges cleanly. `_has_samples` would then suppress those tracks at query
+    time, so the symptom is an oracle that silently stops ranking anything: the same
+    shape as Sei's 40 dark rows, reached by a different route.
+    """
+    from chorus.analysis.normalization import PerTrackNormalizer
+
+    n = 64
+    with pytest.raises(ValueError, match="almost every position failed"):
+        PerTrackNormalizer.build_and_save(
+            oracle_name="synthetic",
+            track_ids=[f"t{i}" for i in range(n)],
+            effect_cdfs=np.zeros((n, 10_000)),
+            effect_counts=np.zeros(n, dtype=np.int64),
+            cache_dir=str(tmp_path),
+        )
+    assert not list(tmp_path.glob("*.npz"))
+
+
+def test_a_partial_build_is_still_allowed(tmp_path):
+    """The per-position tolerance must survive: some loci legitimately fail."""
+    from chorus.analysis.normalization import PerTrackNormalizer
+
+    n = 64
+    counts = np.full(n, 17_900, dtype=np.int64)
+    counts[:20] = 0                      # 69% of tracks have data -- above the floor
+    row = np.linspace(0.0, 1.0, 10_000)
+    matrix = np.tile(row, (n, 1))
+    matrix[:20] = 0.0
+    out = PerTrackNormalizer.build_and_save(
+        oracle_name="synthetic", track_ids=[f"t{i}" for i in range(n)],
+        effect_cdfs=matrix, effect_counts=counts, cache_dir=str(tmp_path),
+        sampling={"effect": {"offered": counts, "retained": counts}},
+    )
+    assert out.exists()

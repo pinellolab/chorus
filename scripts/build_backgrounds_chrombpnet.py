@@ -206,7 +206,15 @@ def _interim_suffix() -> str:
 
 def load_models_and_setup():
     """Load reference, set up GPU, return (oracle, models_to_score, ref)."""
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+    # An explicit CUDA_VISIBLE_DEVICES wins. This used to assign unconditionally, so
+    # `CUDA_VISIBLE_DEVICES=1 python build_...py` silently ran on GPU 0 anyway. Two
+    # arms of an ablation launched that way both landed on GPU 0; the first grabbed
+    # 78 GB, the second could not allocate a cuBLAS handle, and EVERY position was
+    # dropped with "Attempting to perform BLAS operation using StreamExecutor without
+    # BLAS support". A fleet rebuild sharded across GPUs by env var would have
+    # serialised onto one device the same way.
+    if os.environ.get("CUDA_VISIBLE_DEVICES") in (None, ""):
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
     try:
         import nvidia

@@ -564,6 +564,46 @@ def sampler_preflight(
     return info
 
 
+def yield_violations(
+    counts: np.ndarray,
+    *,
+    label: str = "cdf",
+    min_fraction: float = 0.5,
+) -> list[str]:
+    """Refuse a build whose positions almost all failed.
+
+    An enformer ablation launched two TensorFlow processes onto the same GPU by
+    accident. The second could not allocate a cuBLAS handle, so every single forward
+    pass raised ``InternalError: Attempting to perform BLAS operation using
+    StreamExecutor without BLAS support`` -- and the builder, whose per-position
+    try/except is there so one bad locus cannot lose a whole run, dutifully dropped all
+    5,968 of them and wrote a perfectly well-formed interim: 5,313 tracks, every row
+    all-zero, every count 0.
+
+    That file would have merged cleanly. ``_has_samples`` would then suppress those
+    tracks' percentiles at query time, so the symptom would have been an oracle that
+    silently stopped ranking anything -- the same failure shape as Sei's dark 40 rows,
+    reached by a different route.
+
+    The per-position tolerance is right; what was missing is a floor on the total. A
+    build that retained less than ``min_fraction`` of its tracks' samples is a failed
+    build, not a partial one.
+    """
+    counts = np.asarray(counts)
+    if counts.size == 0:
+        return [f"{label}: no tracks at all"]
+    with_data = int((counts > 0).sum())
+    frac = with_data / counts.size
+    if frac >= min_fraction:
+        return []
+    return [
+        f"{label}: only {with_data} of {counts.size} tracks have any samples "
+        f"({frac:.1%}, floor {min_fraction:.0%}). Every position was probably rejected "
+        f"-- check the drop-reason tally in the build log before trusting this file. "
+        f"An all-zero interim merges cleanly and then silently disables the oracle."
+    ]
+
+
 def thinning_violations(
     offered: np.ndarray,
     retained: np.ndarray,

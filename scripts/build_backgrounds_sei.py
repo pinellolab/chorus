@@ -82,7 +82,15 @@ INPUT_LENGTH = 4096
 
 def load_model_and_setup():
     """Load Sei model + reference. Returns (predict_fn, get_seq_fn, ref, class_names)."""
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+    # An explicit CUDA_VISIBLE_DEVICES wins. This used to assign unconditionally, so
+    # `CUDA_VISIBLE_DEVICES=1 python build_...py` silently ran on GPU 0 anyway. Two
+    # arms of an ablation launched that way both landed on GPU 0; the first grabbed
+    # 78 GB, the second could not allocate a cuBLAS handle, and EVERY position was
+    # dropped with "Attempting to perform BLAS operation using StreamExecutor without
+    # BLAS support". A fleet rebuild sharded across GPUs by env var would have
+    # serialised onto one device the same way.
+    if os.environ.get("CUDA_VISIBLE_DEVICES") in (None, ""):
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
     import torch
     from chorus.oracles.sei_source.sei import Sei, SeiProjector

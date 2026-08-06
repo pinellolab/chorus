@@ -54,6 +54,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--part", choices=["variants", "baselines", "merge", "both", "all"], default="all")
 parser.add_argument("--gpu", type=int, default=0)
 parser.add_argument("--n-variants", type=int, default=10000)
+parser.add_argument("--no-dhs", action="store_true",
+                    help="Ablation: drop DHS and rescale the remaining strata. Used to "
+                         "test whether DHS helps the tf_binding layer specifically -- "
+                         "the layer that saturates, and the one the DHS proposal was "
+                         "about. Sei's ablation covered chromatin-state classes only.")
+parser.add_argument("--with-dhs", type=float, default=0.0,
+                    help="Ablation: give DHS this fraction of the mixture, rescaling "
+                         "the rest proportionally. 0 = the shipped composition.")
 parser.add_argument("--n-random-positions", type=int, default=5000)
 parser.add_argument("--reservoir-size", type=int, default=50000,
                     help="Max samples per track before compaction to 10K CDF")
@@ -154,7 +162,15 @@ os.makedirs(cache_dir, exist_ok=True)
 
 def load_model_and_metadata():
     """Load Enformer model and track metadata. Returns (predict_fn, track_info)."""
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+    # An explicit CUDA_VISIBLE_DEVICES wins. This used to assign unconditionally, so
+    # `CUDA_VISIBLE_DEVICES=1 python build_...py` silently ran on GPU 0 anyway. Two
+    # arms of an ablation launched that way both landed on GPU 0; the first grabbed
+    # 78 GB, the second could not allocate a cuBLAS handle, and EVERY position was
+    # dropped with "Attempting to perform BLAS operation using StreamExecutor without
+    # BLAS support". A fleet rebuild sharded across GPUs by env var would have
+    # serialised onto one device the same way.
+    if os.environ.get("CUDA_VISIBLE_DEVICES") in (None, ""):
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
     # Pre-load nvidia CUDA libs
     try:
@@ -318,8 +334,15 @@ def build_variant_backgrounds():
             args.n_variants, chrom_sizes=_sizes, seed=42,
         )
     else:
+        _strata = None
+        if args.with_dhs > 0:
+            from chorus.utils.annotations import DEFAULT_REGION_STRATA
+            _rest = 1.0 - args.with_dhs
+            _strata = {k: v * _rest for k, v in DEFAULT_REGION_STRATA.items()}
+            _strata["dhs"] = args.with_dhs
+            logger.info("ABLATION --with-dhs=%.3f: %s", args.with_dhs, _strata)
         sampled = sample_gene_anchored_positions(
-            args.n_variants, chrom_sizes=_sizes, seed=42,
+            args.n_variants, chrom_sizes=_sizes, seed=42, strata=_strata,
         )
     snps = []
     strata_counts = defaultdict(int)
