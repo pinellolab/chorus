@@ -51,6 +51,59 @@ def _median_ratio(new: np.ndarray, old: np.ndarray, key: str) -> float:
     return float(np.median(r)) if r else float("nan")
 
 
+def pinning_rate(oracle: str, new: dict, old: dict) -> "tuple[int, int, int] | None":
+    """How many REAL committed effects pin against each null. The user-facing measure.
+
+    Distributional ratios say the null got wider; this says whether that translates into
+    variants that can be ranked. An effect at or beyond the ceiling reads exactly 1.0 and
+    carries no ordering information beyond the exceedance ratio, so the fraction of real
+    effects in that state is the thing the rebuild exists to reduce.
+
+    Uses the raw scores already committed in ``examples/**/example_output.json``, which
+    are real predictions at real variants and need no GPU to re-score.
+    """
+    import glob
+    import json
+
+    rows: list = []
+
+    def walk(o):
+        if isinstance(o, dict):
+            if o.get("assay_id") and o.get("raw_score") is not None:
+                rows.append(o)
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+
+    for f in glob.glob("examples/**/example_output.json", recursive=True):
+        try:
+            d = json.load(open(f))
+        except Exception:
+            continue
+        # NB: the key is `oracle`, not `oracle_name` -- getting that wrong silently
+        # matches zero rows and reports a clean 0% either way.
+        if d.get("oracle") == oracle:
+            walk(d)
+    if not rows or "effect_cdfs" not in new or not old or "effect_cdfs" not in old:
+        return None
+
+    o_ids = {str(t): i for i, t in enumerate(old["track_ids"])}
+    n_ids = {str(t): i for i, t in enumerate(new["track_ids"])}
+    o_m, n_m = np.abs(old["effect_cdfs"]), np.abs(new["effect_cdfs"])
+    n = pin_old = pin_new = 0
+    for r in rows:
+        i, j = o_ids.get(r["assay_id"]), n_ids.get(r["assay_id"])
+        if i is None or j is None:
+            continue
+        v = abs(r["raw_score"])
+        n += 1
+        pin_old += int(v >= o_m[i].max())
+        pin_new += int(v >= n_m[j].max())
+    return (n, pin_old, pin_new) if n else None
+
+
 def verify(oracle: str, new_path: Path, old_path: Path, *, strict: bool) -> list[str]:
     from chorus.analysis.background_sampling import MIN_EXACT_TAIL_SLOTS
 
@@ -159,6 +212,16 @@ def verify(oracle: str, new_path: Path, old_path: Path, *, strict: bool) -> list
                         print(f"  ADVISORY: ceiling {r:.2f}x on only {n_tracks} "
                               f"tracks -- too few for a median max to mean anything; "
                               f"judge this oracle on p50/p90/p99")
+    got = pinning_rate(oracle, new, old) if old is not None else None
+    if got:
+        n, po, pn = got
+        print(f"  pinned on {n} committed effects: {po} ({po / n:.1%}) -> "
+              f"{pn} ({pn / n:.1%})")
+        if pn > po:
+            problems.append(
+                f"{oracle}: MORE real effects pin than before ({po} -> {pn} of {n}). "
+                f"A wider null cannot increase pinning, so the ceiling moved the wrong "
+                f"way for the tracks that matter")
     return problems
 
 
