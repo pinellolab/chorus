@@ -56,6 +56,11 @@ perform BLAS operation using StreamExecutor without BLAS support`, silently drop
 
 `--part` differs: most take `both`, but **epinformerseq takes `all`**.
 
+`conda run` **buffers stdout**, so a long build's log stays 0 bytes until the process
+exits — during the 2026-08-06 rebuild that meant no progress visibility on a 14-hour
+job. Use `conda run --no-capture-output ... python -u` when you need to watch a build,
+and key failure detection off the exit code rather than off log contents.
+
 `CUDA_VISIBLE_DEVICES=0|1` respected across all envs. Per-track CDFs
 auto-download from
 `huggingface.co/datasets/lucapinello/chorus-backgrounds` on first use.
