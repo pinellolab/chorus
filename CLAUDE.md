@@ -32,6 +32,21 @@ mamba run -n chorus-sei          # PyTorch
 mamba run -n chorus-legnet       # PyTorch
 ```
 
+Two oracles have **no env of their own** and are missing from the list above, which
+cost two failed builds in the 2026-08-06 fleet rebuild: **cherimoya** and
+**epinformerseq** both `import torch` inside their builders, and the base `chorus` env
+has no torch. Run both under `chorus-borzoi` (torch 2.12.1 + CUDA; both import cleanly).
+
+Pass `--gpu N` to the five builders that accept it rather than relying on
+`CUDA_VISIBLE_DEVICES` alone. They used to *overwrite* the env var with the `--gpu`
+default of 0, so two processes launched with different env values both landed on GPU 0 —
+the first took 78 GB and the second failed every forward pass with `Attempting to
+perform BLAS operation using StreamExecutor without BLAS support`, silently dropping all
+5,968 positions. An explicit env var now wins, but `--gpu` is unambiguous. `legnet` and
+`epinformerseq` have only `--device`, so they do need the env var.
+
+`--part` differs: most take `both`, but **epinformerseq takes `all`**.
+
 `CUDA_VISIBLE_DEVICES=0|1` respected across all envs. Per-track CDFs
 auto-download from
 `huggingface.co/datasets/lucapinello/chorus-backgrounds` on first use.
