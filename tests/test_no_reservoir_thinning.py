@@ -309,3 +309,125 @@ def test_omitting_the_sampling_block_is_logged_as_an_error(tmp_path, caplog):
                for r in caplog.records), (
         f"no error logged; records={[r.getMessage() for r in caplog.records]}"
     )
+
+
+# ---------------------------------------------------------------------------
+# The opt-in exact tail
+# ---------------------------------------------------------------------------
+
+
+def _heavy(n, seed=3):
+    """A heavy-tailed stream, which is what an RNA or splice null looks like."""
+    return np.random.default_rng(seed).pareto(1.5, n) + 1.0
+
+
+def _fill(sampler, vals, chunk=8192):
+    for i in range(0, len(vals), chunk):
+        sampler.add_batch(0, vals[i:i + chunk])
+    return sampler
+
+
+def test_the_exact_tail_captures_the_true_extremes():
+    vals = _heavy(200_000)
+    s = _fill(ReservoirSampler(1, capacity=50_000, tail_k=2_000), vals)
+    bot, top = s.exact_tail(0)
+    assert top.max() == vals.max()
+    assert bot.min() == vals.min()
+    assert len(top) == len(bot) == 2_000
+
+
+def test_both_ends_are_tracked_because_signed_layers_need_the_floor():
+    """12.9% of AlphaGenome's rows and 20.3% of Borzoi's are signed.
+
+    For those, a strongly repressive effect crosses the LOWER bound, so tracking only
+    the maximum would leave exactly those rows with an estimated floor -- and
+    ``effect_exceedance`` divides by whichever end was crossed.
+    """
+    vals = np.concatenate([_heavy(100_000), -_heavy(100_000, seed=4)])
+    s = _fill(ReservoirSampler(1, capacity=20_000, tail_k=1_000), vals)
+    bot, top = s.exact_tail(0)
+    assert top.max() == vals.max()
+    assert bot.min() == vals.min() < 0
+
+
+def test_the_grid_row_recovers_the_population_maximum():
+    vals = _heavy(300_000)
+    hybrid = _fill(ReservoirSampler(1, capacity=50_000, tail_k=20_000),
+                   vals).to_cdf_matrix(n_points=10_000)[0]
+    plain = _fill(ReservoirSampler(1, capacity=50_000),
+                  vals).to_cdf_matrix(n_points=10_000)[0]
+    truth = np.sort(vals)
+
+    assert hybrid[-1] == truth[-1], "the hybrid row's ceiling is not the true maximum"
+    assert hybrid[0] == truth[0]
+    # And the failure it replaces: the plain thinned row understates badly. Measured
+    # 0.40x on this fixture; assert only that it is materially low, so the test does
+    # not depend on one RNG draw.
+    assert plain[-1] < 0.75 * truth[-1], (
+        f"the thinned row's ceiling is {plain[-1] / truth[-1]:.2f}x of the true "
+        f"maximum; if this is no longer materially low, the fixture stopped modelling "
+        f"the defect"
+    )
+
+
+def test_the_tail_slots_are_exact_order_statistics_not_estimates():
+    """Exactness in the top K*n_points/N slots is the whole point of the design."""
+    vals = _heavy(300_000)
+    n, n_points, k = len(vals), 10_000, 20_000
+    row = _fill(ReservoirSampler(1, capacity=50_000, tail_k=k),
+                vals).to_cdf_matrix(n_points=n_points)[0]
+
+    truth = np.sort(vals)
+    ranks = np.rint(np.arange(n_points) * (n - 1) / (n_points - 1)).astype(np.int64)
+    ref = truth[ranks]
+    n_top = int(np.sum(ranks >= n - k))
+    n_bot = int(np.sum(ranks < k))
+    assert n_top >= 200 and n_bot >= 200
+
+    assert np.array_equal(row[-n_top:], ref[-n_top:]), (
+        "the top tail slots are not the population's own order statistics"
+    )
+    assert np.array_equal(row[:n_bot], ref[:n_bot])
+
+
+def test_an_unthinned_build_is_bit_identical_with_or_without_a_tail():
+    """The degeneracy guarantee: nothing changes where nothing was discarded.
+
+    Without this, turning the feature on would silently move every background whose
+    stream fits in capacity -- i.e. most of them -- and no existing grid-integrity
+    test would still be describing real behaviour.
+    """
+    vals = _heavy(30_000)
+    with_tail = _fill(ReservoirSampler(1, capacity=50_000, tail_k=5_000),
+                      vals).to_cdf_matrix(n_points=10_000)
+    without = _fill(ReservoirSampler(1, capacity=50_000),
+                    vals).to_cdf_matrix(n_points=10_000)
+    assert np.array_equal(with_tail, without)
+
+
+def test_the_default_is_off_so_todays_builders_are_unaffected():
+    s = ReservoirSampler(4, capacity=100)
+    assert s.tail_k is None
+    bot, top = s.exact_tail(0)
+    assert len(bot) == len(top) == 0
+
+
+def test_a_spliced_row_is_non_decreasing():
+    """A non-monotone CDF row silently corrupts every searchsorted downstream."""
+    for seed in range(4):
+        vals = np.concatenate([_heavy(80_000, seed), -_heavy(80_000, seed + 10)])
+        row = _fill(ReservoirSampler(1, capacity=20_000, tail_k=4_000),
+                    vals).to_cdf_matrix(n_points=10_000)[0]
+        assert np.all(np.diff(row) >= 0), f"seed {seed}: row is not sorted"
+
+
+def test_the_interior_is_still_the_same_uniform_estimate():
+    """Only the ends become exact; the body must not be perturbed."""
+    vals = _heavy(300_000)
+    n, n_points, k = len(vals), 10_000, 20_000
+    row = _fill(ReservoirSampler(1, capacity=50_000, tail_k=k),
+                vals).to_cdf_matrix(n_points=n_points)[0]
+    truth = np.sort(vals)
+    for q in (0.25, 0.5, 0.75, 0.9):
+        got, want = np.quantile(row, q), np.quantile(truth, q)
+        assert abs(got / want - 1) < 0.05, f"q={q}: {got} vs {want}"

@@ -96,12 +96,32 @@ class ReservoirSampler:
         n_tracks: int,
         capacity: int = DEFAULT_CAPACITY,
         seed: int = DEFAULT_SEED,
+        tail_k: "int | None" = None,
     ):
         self.n_tracks = n_tracks
         self.capacity = capacity
         self.data: list[list[float]] = [[] for _ in range(n_tracks)]
         self.counts = np.zeros(n_tracks, dtype=np.int64)
         self._rng = random.Random(seed)
+        # Optional EXACT extremes, kept alongside the uniform body.
+        #
+        # Opt-in (``tail_k=None`` by default) so that constructing a sampler the way
+        # every builder does today gives byte-identical behaviour. The uniform body is
+        # unbiased for the middle of the distribution but its *maximum* is a draw:
+        # a uniform m-of-N subsample keeps the population max with probability m/N
+        # only, which is how AlphaGenome's RNA ceilings came to be understated by a
+        # median 1.33x. Where the union does not fit in memory -- the ``perbin``
+        # layer, offering up to 2,176,256 values per track against a 50,000 capacity,
+        # a 43.5x thinning -- retaining the exact top and bottom K is what keeps the
+        # part of the grid that percentiles actually saturate in truthful.
+        #
+        # Both ends, not just the top: 12.9% of AlphaGenome's rows and 20.3% of
+        # Borzoi's are signed, and for those a strongly repressive effect crosses the
+        # LOWER bound. Tracking only the maximum would leave exactly those rows with
+        # an estimated floor.
+        self.tail_k = int(tail_k) if tail_k else None
+        self._top: list[list[float]] = [[] for _ in range(n_tracks)]
+        self._bot: list[list[float]] = [[] for _ in range(n_tracks)]
 
     def add(self, track_idx: int, value: float) -> None:
         n = self.counts[track_idx]
@@ -112,6 +132,40 @@ class ReservoirSampler:
             if j < self.capacity:
                 self.data[track_idx][j] = value
         self.counts[track_idx] += 1
+        if self.tail_k is not None:
+            self._offer_tail(track_idx, (value,))
+
+    def _offer_tail(self, track_idx: int, values) -> None:
+        """Keep the exact largest and smallest ``tail_k`` values for one track.
+
+        Buffered then trimmed rather than heap-maintained. A heapq touched once per
+        value would be O(N log K) Python-level operations, and the perbin layer offers
+        7.1e9 values across the fleet; trimming a bounded buffer with np.partition is
+        O(K) and happens only when the buffer fills, so the amortised cost is one
+        append per value.
+        """
+        k = self.tail_k
+        if not k:
+            return
+        top, bot = self._top[track_idx], self._bot[track_idx]
+        top.extend(values)
+        bot.extend(values)
+        if len(top) > 4 * k:
+            arr = np.partition(np.asarray(top, dtype=np.float64), -k)[-k:]
+            self._top[track_idx] = arr.tolist()
+        if len(bot) > 4 * k:
+            arr = np.partition(np.asarray(bot, dtype=np.float64), k - 1)[:k]
+            self._bot[track_idx] = arr.tolist()
+
+    def exact_tail(self, track_idx: int) -> "tuple[np.ndarray, np.ndarray]":
+        """``(smallest_k_sorted, largest_k_sorted)`` for one track."""
+        k = self.tail_k
+        if not k:
+            empty = np.empty(0, dtype=np.float64)
+            return empty, empty
+        top = np.sort(np.asarray(self._top[track_idx], dtype=np.float64))[-k:]
+        bot = np.sort(np.asarray(self._bot[track_idx], dtype=np.float64))[:k]
+        return bot, top
 
     def add_batch(self, track_idx: int, values) -> None:
         """Offer many values to one track, vectorised where it is safe to be.
@@ -163,6 +217,8 @@ class ReservoirSampler:
                 if j < cap:
                     target[j] = float(v)
             self.counts[track_idx] += n_new
+        if self.tail_k is not None:
+            self._offer_tail(track_idx, values)
 
     def _add_batch_reference(self, track_idx: int, values) -> None:
         """The plain loop, kept so the equivalence test has something to compare to.
@@ -189,6 +245,68 @@ class ReservoirSampler:
         arr.sort()
         return arr
 
+    def _row_with_exact_tail(
+        self, track_idx: int, body: np.ndarray, offered: int, n_points: int,
+    ) -> np.ndarray:
+        """One grid row spliced from an exact tail and a uniform body, by population rank.
+
+        Built by mapping each grid slot to the POPULATION rank it represents, rather
+        than by concatenating the tail onto the body and re-gridding. Concatenating
+        would double-count every value present in both, and would place the tail's
+        order statistics at the wrong quantiles -- the top K of N belong at the top
+        ``K/N`` of the grid, not at the top ``K/(len(body)+K)``.
+
+        Properties, each pinned by a test:
+
+        * non-decreasing by construction, since both pieces are sorted and the
+          exact bounds are the join points;
+        * EXACT in the top and bottom ``K * n_points / N`` slots, so the maximum the
+          percentile clamps against and the bound ``effect_exceedance`` divides by are
+          population values, not draws;
+        * identical to the plain gridding in the interior, which is the same uniform
+          sample it has always been;
+        * never reached when ``offered == len(body)`` -- the caller takes the original
+          path then, so an unthinned build is byte-for-byte what it was before.
+
+        The one approximation: ties exactly at a join bound make the count of body
+        values below it slightly biased, which shifts the interior estimate within the
+        tie region only. ``_rank_with_tie_breaking`` already spreads ranks across ties
+        downstream.
+        """
+        k = int(self.tail_k or 0)
+        bot, top = self.exact_tail(track_idx)
+        k = min(k, len(bot), len(top))
+        if k == 0 or offered < 4 * k:
+            # Not enough room for two disjoint exact ends plus an interior; fall back
+            # to gridding whatever the body holds rather than inventing structure.
+            idx = np.linspace(0, len(body) - 1, n_points, dtype=int)
+            return body[idx]
+
+        lo_bound, hi_bound = float(bot[-1]), float(top[0])
+        interior = body[(body > lo_bound) & (body < hi_bound)]
+        m = len(interior)
+
+        row = np.empty(n_points, dtype=np.float64)
+        ranks = np.rint(np.arange(n_points) * (offered - 1) / (n_points - 1)).astype(
+            np.int64
+        )
+        for slot, j in enumerate(ranks):
+            if j < k:
+                row[slot] = bot[j]
+            elif j >= offered - k:
+                row[slot] = top[j - (offered - k)]
+            elif m:
+                # Population ranks k .. offered-k-1 are represented by the interior
+                # sample, mapped proportionally.
+                frac = (j - k) / max(offered - 2 * k - 1, 1)
+                row[slot] = interior[min(int(round(frac * (m - 1))), m - 1)]
+            else:
+                row[slot] = lo_bound
+        # Sorted by construction, but assert cheaply rather than trust the arithmetic:
+        # a non-monotone CDF row silently corrupts every searchsorted downstream.
+        np.maximum.accumulate(row, out=row)
+        return row
+
     def to_cdf_matrix(self, n_points: int = DEFAULT_CDF_POINTS) -> np.ndarray:
         """Project every track's reservoir onto a fixed ``n_points`` grid.
 
@@ -209,6 +327,11 @@ class ReservoirSampler:
             arr = self.get_sorted(i)
             n = len(arr)
             if n == 0:
+                continue
+            offered = int(self.counts[i])
+            if self.tail_k and offered > n:
+                # Thinned AND an exact tail was kept: splice by POPULATION rank.
+                matrix[i] = self._row_with_exact_tail(i, arr, offered, n_points)
                 continue
             if n >= n_points:
                 indices = np.linspace(0, n - 1, n_points, dtype=int)
