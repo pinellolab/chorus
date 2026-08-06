@@ -170,15 +170,32 @@ def verify(oracle: str, new_path: Path, old_path: Path, *, strict: bool) -> list
 
     # --- distributional, vs the backup ------------------------------------
     if old is not None and "effect_cdfs" in new and "effect_cdfs" in old:
-        if len(old["track_ids"]) != n_tracks:
+        o_ids = [str(x) for x in old["track_ids"]]
+        n_ids = [str(x) for x in new["track_ids"]]
+        if set(o_ids) != set(n_ids):
+            missing, added = set(o_ids) - set(n_ids), set(n_ids) - set(o_ids)
             problems.append(
-                f"{oracle}: track count changed {len(old['track_ids'])} -> {n_tracks}")
-        elif [str(x) for x in old["track_ids"]] != [str(x) for x in new["track_ids"]]:
-            problems.append(f"{oracle}: track_ids changed order or content")
+                f"{oracle}: the track SET changed -- {len(missing)} lost "
+                f"{sorted(missing)[:3]}, {len(added)} gained {sorted(added)[:3]}")
         else:
+            if o_ids != n_ids:
+                # Benign for querying: PerTrackNormalizer._resolve_row looks a track up
+                # by id, not by row index, so a reordered file answers identically. It
+                # is NOT benign for any operation that splices rows BETWEEN files --
+                # apply_effect_rebuild.py rightly refuses on a reorder, because
+                # carrying a per-row array across would misalign every row.
+                # Cherimoya's rebuild emits sorted ids where the shipped file was
+                # unsorted; same 1,518 tracks, 1,511 positions moved.
+                print(f"  NOTE: track order changed ({sum(a != b for a, b in zip(o_ids, n_ids))}"
+                      f" of {n_tracks} positions). Same set, so queries are unaffected, "
+                      f"but do NOT splice rows between this file and the old one.")
+            # Compare BY ID rather than by position, or a reorder would look like a
+            # catastrophic distributional shift.
+            order = [o_ids.index(i) for i in n_ids]
+            old_aligned = old["effect_cdfs"][order]
             print(f"  {'stat':>6s} {'ratio (new/old)':>16s}")
             for key in ("p50", "p90", "p99", "max"):
-                r = _median_ratio(new["effect_cdfs"], old["effect_cdfs"], key)
+                r = _median_ratio(new["effect_cdfs"], old_aligned, key)
                 print(f"  {key:>6s} {r:16.3f}")
                 if key in ("p50", "p90", "p99") and not (0.5 <= r <= 2.0):
                     problems.append(
