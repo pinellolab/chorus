@@ -202,3 +202,110 @@ def test_borzoi_and_enformer_effect_unions_are_a_no_op(oracle):
         assert np.allclose(grid.astype(np.float32), shipped[int(i)], rtol=0, atol=0), (
             f"{oracle} row {i} does not reproduce from its shards bit-exactly"
         )
+
+
+# ---------------------------------------------------------------------------
+# The write-time guard
+# ---------------------------------------------------------------------------
+
+
+def test_thinning_violations_passes_an_exact_sample():
+    from chorus.analysis.background_sampling import thinning_violations
+    assert thinning_violations(np.array([100, 148_367]),
+                               np.array([100, 148_367])) == []
+
+
+def test_thinning_violations_catches_the_alphagenome_case():
+    from chorus.analysis.background_sampling import thinning_violations
+    problems = thinning_violations(np.array([148_367]), np.array([50_000]))
+    assert len(problems) == 1
+    assert "2.97x thinned" in problems[0]
+    assert "0.337" in problems[0], (
+        "the message should state the probability the ceiling survived, since that "
+        "is the whole mechanism"
+    )
+
+
+def test_an_exact_top_k_tail_is_accepted_but_a_token_one_is_not():
+    from chorus.analysis.background_sampling import (
+        MIN_EXACT_TAIL_SLOTS, thinning_violations,
+    )
+    # A tail wide enough to fill >= MIN_EXACT_TAIL_SLOTS grid slots is fine: the
+    # region the percentile saturates in is then exact even though the body is not.
+    assert thinning_violations(np.array([148_367]), np.array([69_832]),
+                               tail_k=19_832) == []
+    # A token tail is not. 100 of 148,367 fills 6 slots of 10,000.
+    problems = thinning_violations(np.array([148_367]), np.array([50_100]),
+                                   tail_k=100)
+    assert len(problems) == 1 and "6 of 10000" in problems[0]
+    assert str(MIN_EXACT_TAIL_SLOTS) in problems[0]
+
+
+def test_build_and_save_refuses_to_write_a_thinned_matrix(tmp_path):
+    """The point of the guard: it has to actually block, not just exist.
+
+    The previous guard existed, was called, and could not see this class of defect --
+    it is fed the OFFERED count while validating geometry set by the RETAINED count,
+    and returns early on every row with n >= n_points.
+    """
+    from chorus.analysis.normalization import PerTrackNormalizer
+
+    n_points = 10_000
+    row = np.linspace(0.0, 1.0, n_points)
+    matrix = np.vstack([row, row])
+    counts = np.array([148_367, 148_367])
+
+    with pytest.raises(ValueError, match="thinned sample"):
+        PerTrackNormalizer.build_and_save(
+            oracle_name="synthetic",
+            track_ids=["a", "b"],
+            effect_cdfs=matrix,
+            effect_counts=counts,
+            cache_dir=str(tmp_path),
+            sampling={"effect": {"offered": counts,
+                                 "retained": np.array([50_000, 50_000])}},
+        )
+    assert not list(tmp_path.glob("*.npz")), "a rejected build must write nothing"
+
+
+def test_build_and_save_accepts_the_same_matrix_when_retention_was_exact(tmp_path):
+    from chorus.analysis.normalization import PerTrackNormalizer
+
+    n_points = 10_000
+    row = np.linspace(0.0, 1.0, n_points)
+    counts = np.array([148_367, 148_367])
+    out = PerTrackNormalizer.build_and_save(
+        oracle_name="synthetic",
+        track_ids=["a", "b"],
+        effect_cdfs=np.vstack([row, row]),
+        effect_counts=counts,
+        cache_dir=str(tmp_path),
+        sampling={"effect": {"offered": counts, "retained": counts}},
+    )
+    assert out.exists()
+
+
+def test_omitting_the_sampling_block_is_logged_as_an_error(tmp_path, caplog):
+    """Silence is how both previous guards were bypassed.
+
+    A builder that forgets `sampling=` gets no thinning protection whatsoever, so the
+    absence has to be noisy rather than a default-None that quietly disables the
+    check.
+    """
+    import logging
+
+    from chorus.analysis.normalization import PerTrackNormalizer
+
+    row = np.linspace(0.0, 1.0, 10_000)
+    with caplog.at_level(logging.ERROR):
+        PerTrackNormalizer.build_and_save(
+            oracle_name="synthetic",
+            track_ids=["a"],
+            effect_cdfs=row.reshape(1, -1),
+            effect_counts=np.array([11_934]),
+            cache_dir=str(tmp_path),
+        )
+    assert any("WITHOUT a sampling= block" in r.getMessage()
+               for r in caplog.records), (
+        f"no error logged; records={[r.getMessage() for r in caplog.records]}"
+    )

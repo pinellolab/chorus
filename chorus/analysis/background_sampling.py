@@ -66,6 +66,12 @@ DEFAULT_PSEUDOCOUNT = 1.0
 # Seeded so a rebuild is reproducible. Every builder used 12345 for the
 # reservoir; kept rather than randomised.
 DEFAULT_SEED = 12345
+# How many of a CDF row's TOP grid slots must be exact order statistics rather than
+# estimates from a subsample. 200 of 10,000 is the top 2%, which covers p98 upward --
+# the region where effect_percentile saturates and where effect_exceedance divides by
+# the row's maximum. Below this, the ceiling is a random draw: a uniform m-of-N
+# subsample keeps the population maximum with probability only m/N.
+MIN_EXACT_TAIL_SLOTS = 200
 
 logger = logging.getLogger(__name__)
 
@@ -366,6 +372,78 @@ def expected_first_max_index(n_samples: int, n_points: int) -> int:
     if n_samples >= n_points:
         return n_points - 1
     return math.ceil((n_points - 1) * (n_samples - 1) / n_samples)
+
+
+def thinning_violations(
+    offered: np.ndarray,
+    retained: np.ndarray,
+    *,
+    n_points: int = DEFAULT_CDF_POINTS,
+    tail_k: "int | None" = None,
+    label: str = "cdf",
+    max_report: int = 5,
+) -> list[str]:
+    """Rows whose TOP grid slots came from a thinned sample rather than the population.
+
+    A separate check from ``cdf_grid_violations``, deliberately, because that function
+    is about row *geometry* and is structurally unable to see this. It is handed the
+    **offered** count while the geometry it validates is set by the **retained** count,
+    and its first act is ``if n >= n_points: continue`` -- offered is always >= 10,000
+    for a real build, so every thinned row is skipped. Its docstring promises it
+    "refuses to write a CDF matrix that could not have been produced by
+    ``to_cdf_matrix``", and that promise is false whenever retained < offered.
+
+    What went wrong without it: ``merge_effect_shards.py`` unioned AlphaGenome's 8
+    shards without passing a capacity, inheriting 50,000, against 148,367 offered
+    values per ``gene_expression`` track. The body of the null was unaffected --
+    reservoir sampling is unbiased -- but the *maximum* became the max of a 33.7%
+    subsample, understating the ceiling by a median 1.33x and up to 8.34x. Since the
+    ceiling is exactly what ``effect_percentile`` clamps against, the null pinned
+    earlier than it should have, and nothing detected it because every calibration
+    gate measures the body.
+
+    Passes a row when EITHER:
+
+    * ``retained == offered`` -- nothing was discarded, so every grid slot is a true
+      order statistic; or
+    * the row keeps an exact top-K tail wide enough to fill at least
+      ``MIN_EXACT_TAIL_SLOTS`` grid slots, i.e.
+      ``floor(min(tail_k, offered) * n_points / offered) >= MIN_EXACT_TAIL_SLOTS``.
+
+    ``tail_k=None`` means no exact tail is kept, so any thinning is a violation.
+    """
+    offered = np.asarray(offered, dtype=np.int64)
+    retained = np.asarray(retained, dtype=np.int64)
+    if offered.shape != retained.shape:
+        raise ValueError(
+            f"{label}: offered/retained shape mismatch {offered.shape} vs "
+            f"{retained.shape}"
+        )
+    problems: list[str] = []
+    for i, (n_off, n_ret) in enumerate(zip(offered, retained)):
+        if n_off <= 0 or n_ret >= n_off:
+            continue
+        if tail_k:
+            exact_slots = int(min(tail_k, n_off) * n_points // n_off)
+            if exact_slots >= MIN_EXACT_TAIL_SLOTS:
+                continue
+            problems.append(
+                f"{label} row {i}: offered {n_off}, retained {n_ret}, exact top-K "
+                f"tail fills only {exact_slots} of {n_points} grid slots "
+                f"(need >= {MIN_EXACT_TAIL_SLOTS}) -- the row's maximum is a draw "
+                f"from a subsample, not the population maximum"
+            )
+        else:
+            problems.append(
+                f"{label} row {i}: offered {n_off} values but retained only {n_ret} "
+                f"({n_off / max(n_ret, 1):.2f}x thinned) with no exact tail kept. A "
+                f"uniform subsample retains the population maximum with probability "
+                f"{n_ret / n_off:.3f}, so this row's ceiling is a random draw."
+            )
+        if len(problems) >= max_report:
+            problems.append(f"{label}: ... and more")
+            break
+    return problems
 
 
 def cdf_grid_violations(

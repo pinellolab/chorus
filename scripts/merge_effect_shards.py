@@ -116,15 +116,25 @@ def union_shards(oracle: str, n_shards: int, n_points: int,
         )
 
     matrix = merged.to_cdf_matrix(n_points=n_points)
-    from chorus.analysis.background_sampling import cdf_grid_violations
+    from chorus.analysis.background_sampling import (
+        cdf_grid_violations,
+        thinning_violations,
+    )
     problems = cdf_grid_violations(matrix, counts, label=f"{oracle}.effect_cdfs")
+    problems += thinning_violations(counts, retained, n_points=n_points,
+                                    label=f"{oracle}.effect_cdfs")
     if problems:
         raise SystemExit("refusing to write: " + "\n".join(problems[:3]))
 
     out = _effect_path(oracle)
     payload = dict(track_ids=np.array(ids, dtype="U"),
                    effect_cdfs=matrix.astype(np.float32),
-                   effect_counts=counts)
+                   effect_counts=counts,
+                   # Retention alongside the offered count, so "was this thinned?" is
+                   # answerable from the file. Its absence is exactly why the
+                   # AlphaGenome thinning was invisible: only `counts` (offered) was
+                   # ever written, and offered == retained is the thing that matters.
+                   effect_retained=retained)
     if flags is not None:
         payload["signed_flags"] = flags
     if layers is not None:

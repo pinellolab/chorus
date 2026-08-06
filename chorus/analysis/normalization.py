@@ -35,7 +35,10 @@ from typing import Optional
 
 import numpy as np
 
-from chorus.analysis.background_sampling import cdf_grid_violations
+from chorus.analysis.background_sampling import (
+    cdf_grid_violations,
+    thinning_violations,
+)
 from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
 
 logger = logging.getLogger(__name__)
@@ -1048,6 +1051,7 @@ class PerTrackNormalizer:
         n_points: int = 10_000,
         provenance: dict | None = None,
         per_row: dict | None = None,
+        sampling: dict | None = None,
     ) -> Path:
         """Save per-track CDF matrices to a compressed ``.npz`` file.
 
@@ -1137,6 +1141,43 @@ class PerTrackNormalizer:
                             "been produced by ReservoirSampler.to_cdf_matrix:\n  "
                             + "\n  ".join(problems)
                         )
+
+                # A SECOND, independent check: was the sample thinned before it was
+                # gridded? cdf_grid_violations cannot answer that -- it is handed the
+                # OFFERED count while the geometry it validates is set by the RETAINED
+                # count, and it skips every row with n >= n_points. Offered is always
+                # >= n_points for a real build, so it skipped every thinned row, which
+                # is how AlphaGenome shipped 667 RNA ceilings drawn from a 33.7%
+                # subsample (median 1.33x understated, worst 8.34x).
+                layer_key = name.replace("_cdfs", "")
+                spec = (sampling or {}).get(layer_key)
+                if spec is not None:
+                    problems = thinning_violations(
+                        np.asarray(spec["offered"]),
+                        np.asarray(spec["retained"]),
+                        n_points=matrix.shape[1],
+                        tail_k=spec.get("tail_k"),
+                        label=f"{oracle_name}.{name}",
+                    )
+                    if problems:
+                        raise ValueError(
+                            "refusing to write a CDF matrix whose top grid slots came "
+                            "from a thinned sample -- the row maximum would be a draw "
+                            "from a subsample, and that maximum is what "
+                            "effect_percentile clamps against:\n  "
+                            + "\n  ".join(problems)
+                        )
+                elif counts is not None and np.any(np.asarray(counts) > 0):
+                    # Loud, not silent. A builder that forgets to pass `sampling` gets
+                    # NO thinning protection at all, and "a guard nobody wired up" is
+                    # how both the padded enformer grid and the AlphaGenome thinning
+                    # reached users past guards that already existed.
+                    logger.error(
+                        "%s.%s written WITHOUT a sampling= block: thinning cannot be "
+                        "checked for this matrix. Pass sampling={%r: {'offered': ..., "
+                        "'retained': ..., 'tail_k': ...}} from the builder.",
+                        oracle_name, name, layer_key,
+                    )
                 arrays[name] = matrix.astype(np.float32)
 
         if signed_flags is not None:
