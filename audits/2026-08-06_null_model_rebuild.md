@@ -188,3 +188,36 @@ rests on it) and 9 for the oracle-free MCP tools.
 - `oracle_status`, `score_prediction_region`, `score_variant_effect_at_region` remain
   untested (all need a loaded model).
 - Two HF tokens exposed in plaintext earlier in this work still need rotating.
+
+## Addendum: the builder is bit-reproducible, verified accidentally
+
+Cherimoya was rebuilt twice — once with `--n-variants 18000` (my error: that is the
+gene-anchored oracles' setting, and cherimoya uses random ∪ DHS-summit, so it shifted the
+composition from 50:50 to 64:36) and once with its shipped defaults.
+
+| statistic | diluted (n=18k) | correct (defaults) |
+|---|---|---|
+| p50 | 0.963 | **1.000** |
+| p90 | 0.962 | **1.000** |
+| p99 | 0.983 | **1.000** |
+| max | 1.000 | **1.000** |
+
+The correct build reproduces the shipped effect null **bit-identically on all 1,518
+rows**, with identical offered counts. Two things follow, neither of which was the point
+of the exercise:
+
+1. **The builder is deterministic end to end** — region sampling, GPU forward passes,
+   reservoir, gridding and NPZ write all reproduce exactly across a 75-minute run on a
+   different day. That is a stronger reproducibility statement than any test in the
+   suite makes, and it is worth keeping: a future rebuild of an oracle whose inputs have
+   not changed should be bit-identical, and if it is not, something moved that nobody
+   declared.
+
+2. **My composition flag was the sole cause of the 3.7% narrowing**, not the retention
+   change, not the margin fix, not the sampler rewrite. Isolating that took one rebuild
+   because the two runs differed in exactly one flag.
+
+The same reflex produced both of this cycle's wrong calls: adding DHS to LegNet's
+promoter null, and applying n=18,000 to cherimoya. Both are "treat the oracles as
+interchangeable", and both were caught only by measuring per-oracle rather than reasoning
+about the fleet.
