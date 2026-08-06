@@ -25,7 +25,8 @@ import numpy as np
 
 import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')); sys.path.insert(0, REPO_ROOT)
 
-from chorus.analysis.background_sampling import (  # noqa: E402
+from chorus.analysis.background_sampling import (
+    sampling_block,  # noqa: E402
     ReservoirSampler,
     StagedSamples,
     compute_effect as _shared_compute_effect,
@@ -693,6 +694,7 @@ def merge_to_final():
         summary_counts=baseline_data["summary_counts"] if "summary_counts" in baseline_data else None,
         perbin_counts=baseline_data["perbin_counts"] if "perbin_counts" in baseline_data else None,
         cache_dir=cache_dir,
+        sampling=sampling_block(effect_data, baseline_data, tail_k={"perbin": args.perbin_tail_k}),
     )
     logger.info("DONE — final file: %s (%.1f MB)", path, path.stat().st_size / 1e6)
 

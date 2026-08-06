@@ -475,6 +475,7 @@ def merge_to_final():
         effect_counts=(effect["effect_counts"] if have_effect else None),
         summary_counts=baseline["summary_counts"],
         cache_dir=cache_dir,
+        sampling=sampling_block(effect if have_effect else None, baseline),
     )
     size_mb = path.stat().st_size / 1e6
     logger.info("DONE — wrote %s  (%.2f MB)", path, size_mb)

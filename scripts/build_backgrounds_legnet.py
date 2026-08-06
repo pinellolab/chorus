@@ -28,7 +28,10 @@ from chorus.utils.annotations import (  # noqa: E402
     load_chrom_sizes,
     sample_promoter_anchored_positions,
 )
-from chorus.analysis.background_sampling import ReservoirSampler  # noqa: E402
+from chorus.analysis.background_sampling import (  # noqa: E402
+    ReservoirSampler,
+    sampling_block,
+)
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
 parser = argparse.ArgumentParser()
@@ -340,24 +343,6 @@ def build_baseline_backgrounds():
     ref.close()
 
 
-def _sampling_block(effect_data, baseline_data):
-    """Per-layer offered/retained, for the write-time thinning guard.
-
-    Absent, build_and_save logs an error and writes with no thinning protection --
-    which is how both the padded enformer grid and the AlphaGenome thinning shipped
-    past guards that already existed.
-    """
-    block = {}
-    for key, data in (("effect", effect_data), ("summary", baseline_data)):
-        counts = data.get(f"{key}_counts")
-        retained = data.get(f"{key}_retained")
-        if counts is None or retained is None:
-            continue
-        block[key] = {"offered": counts, "retained": retained,
-                      "tail_k": int(args.tail_k) if args.tail_k else None}
-    return block or None
-
-
 def merge_to_final():
     from chorus.analysis.normalization import PerTrackNormalizer
 
@@ -384,7 +369,7 @@ def merge_to_final():
         effect_counts=effect_data["effect_counts"] if "effect_counts" in effect_data else None,
         summary_counts=baseline_data["summary_counts"] if "summary_counts" in baseline_data else None,
         cache_dir=cache_dir,
-        sampling=_sampling_block(effect_data, baseline_data),
+        sampling=sampling_block(effect_data, baseline_data),
     )
     logger.info("DONE — final file: %s (%.1f MB)", path, path.stat().st_size / 1e6)
 

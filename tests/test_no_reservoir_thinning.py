@@ -490,3 +490,56 @@ def test_a_partial_build_is_still_allowed(tmp_path):
         sampling={"effect": {"offered": counts, "retained": counts}},
     )
     assert out.exists()
+
+
+# ---------------------------------------------------------------------------
+# T2: thinning must be provable from a shipped artefact, not just an interim
+# ---------------------------------------------------------------------------
+
+
+def test_retention_is_persisted_into_the_written_file(tmp_path):
+    """Only the OFFERED count was ever stored, so nobody could check.
+
+    ``*_counts`` is the offered count. Without the retained count beside it, "was this
+    track's tail thinned?" is unanswerable from a published background -- which is
+    exactly how AlphaGenome's 2.97x thinning survived a republish and months of use.
+    """
+    from chorus.analysis.normalization import PerTrackNormalizer
+
+    n, n_points = 8, 10_000
+    row = np.linspace(0.0, 1.0, n_points)
+    counts = np.full(n, 222_551, dtype=np.int64)
+    out = PerTrackNormalizer.build_and_save(
+        oracle_name="synthetic", track_ids=[f"t{i}" for i in range(n)],
+        effect_cdfs=np.tile(row, (n, 1)), effect_counts=counts,
+        cache_dir=str(tmp_path),
+        sampling={"effect": {"offered": counts, "retained": counts}},
+    )
+    with np.load(out, allow_pickle=True) as d:
+        assert "effect_retained" in d.files, (
+            f"retention absent from the shipped file; keys={sorted(d.files)}"
+        )
+        assert np.array_equal(d["effect_retained"], counts)
+        assert int((d["effect_retained"] < d["effect_counts"]).sum()) == 0
+
+
+def test_a_hybrid_layer_records_its_tail_k(tmp_path):
+    """So a reader can reconstruct how many top slots are exact."""
+    from chorus.analysis.background_sampling import MIN_EXACT_TAIL_SLOTS
+    from chorus.analysis.normalization import PerTrackNormalizer
+
+    n, n_points = 4, 10_000
+    row = np.linspace(0.0, 1.0, n_points)
+    offered = np.full(n, 991_552, dtype=np.int64)
+    retained = np.full(n, 50_000 + 2 * 19_832, dtype=np.int64)
+    out = PerTrackNormalizer.build_and_save(
+        oracle_name="synthetic", track_ids=[f"t{i}" for i in range(n)],
+        perbin_cdfs=np.tile(row, (n, 1)), perbin_counts=offered,
+        cache_dir=str(tmp_path),
+        sampling={"perbin": {"offered": offered, "retained": retained,
+                             "tail_k": 19_832}},
+    )
+    with np.load(out, allow_pickle=True) as d:
+        assert int(d["perbin_tail_k"]) == 19_832
+        slots = int(19_832 * n_points // 991_552)
+        assert slots >= MIN_EXACT_TAIL_SLOTS

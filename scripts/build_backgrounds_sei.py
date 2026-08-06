@@ -28,7 +28,8 @@ from chorus.utils.annotations import (  # noqa: E402
     load_chrom_sizes,
     sample_gene_anchored_positions,
 )
-from chorus.analysis.background_sampling import (  # noqa: E402
+from chorus.analysis.background_sampling import (
+    sampling_block,  # noqa: E402
     ReservoirSampler,
     StagedSamples,
 )
@@ -395,6 +396,7 @@ def merge_to_final():
         effect_counts=effect_data["effect_counts"] if "effect_counts" in effect_data else None,
         summary_counts=baseline_data["summary_counts"] if "summary_counts" in baseline_data else None,
         cache_dir=cache_dir,
+        sampling=sampling_block(effect_data, baseline_data, tail_k=None),
     )
     logger.info("DONE — final file: %s (%.1f MB)", path, path.stat().st_size / 1e6)
 

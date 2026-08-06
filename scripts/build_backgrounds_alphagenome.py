@@ -132,7 +132,8 @@ LAYER_FROM_CHORUS_TYPE = {
 #   * a hand-vectorised add_batch, needed for the baseline pass's per-variant
 #     fan-out. That is now the shared implementation, with the plain loop kept as
 #     _add_batch_reference so the equivalence test still has something to compare to.
-from chorus.analysis.background_sampling import (  # noqa: E402
+from chorus.analysis.background_sampling import (
+    sampling_block,  # noqa: E402
     ReservoirSampler,
     StagedSamples,
     centered_bin_span,
@@ -840,6 +841,7 @@ def merge_to_final():
         summary_counts=baseline_data["summary_counts"] if "summary_counts" in baseline_data else None,
         perbin_counts=baseline_data["perbin_counts"] if "perbin_counts" in baseline_data else None,
         cache_dir=cache_dir,
+        sampling=sampling_block(effect_data, baseline_data, tail_k={"perbin": args.perbin_tail_k}),
     )
     logger.info("DONE — final file: %s (%.1f MB)", path, path.stat().st_size / 1e6)
 

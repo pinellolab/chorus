@@ -38,7 +38,8 @@ from chorus.utils.annotations import (  # noqa: E402
     sample_gene_anchored_positions,
 )
 from chorus.analysis.scorers import canonical_layer  # noqa: E402
-from chorus.analysis.background_sampling import (  # noqa: E402
+from chorus.analysis.background_sampling import (
+    sampling_block,  # noqa: E402
     ReservoirSampler,
     StagedSamples,
     centered_bin_span,
@@ -807,6 +808,7 @@ def merge_to_final():
         summary_counts=summary_counts,
         perbin_counts=perbin_counts,
         cache_dir=cache_dir,
+        sampling=sampling_block(effect_data, baseline_data, tail_k={"perbin": args.perbin_tail_k}),
     )
 
     norm = PerTrackNormalizer(cache_dir=cache_dir)

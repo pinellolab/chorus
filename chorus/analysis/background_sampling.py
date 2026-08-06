@@ -564,6 +564,36 @@ def sampler_preflight(
     return info
 
 
+def sampling_block(*interims, tail_k: "dict | int | None" = None) -> dict:
+    """Assemble ``build_and_save(sampling=...)`` from whatever the interims recorded.
+
+    One helper rather than the same seven lines in seven builders. Each interim NPZ may
+    carry ``{effect,summary,perbin}_counts`` (offered) and ``*_retained``; a layer is
+    included only when both are present, so an interim written before retention was
+    tracked degrades to "no claim" instead of a false one.
+
+    Omitting the block entirely is what ``build_and_save`` logs an error about: without
+    it there is no thinning check at all, and a guard nobody wired up is how both the
+    padded enformer grid and the AlphaGenome thinning reached users.
+    """
+    block: dict = {}
+    for data in interims:
+        if data is None:
+            continue
+        keys = set(getattr(data, "files", None) or data.keys())
+        for layer in ("effect", "summary", "perbin"):
+            ck, rk = f"{layer}_counts", f"{layer}_retained"
+            if ck not in keys or rk not in keys:
+                continue
+            k = tail_k.get(layer) if isinstance(tail_k, dict) else tail_k
+            block[layer] = {
+                "offered": np.asarray(data[ck]),
+                "retained": np.asarray(data[rk]),
+                "tail_k": int(k) if k else None,
+            }
+    return block
+
+
 def yield_violations(
     counts: np.ndarray,
     *,

@@ -1176,6 +1176,18 @@ class PerTrackNormalizer:
                             "effect_percentile clamps against:\n  "
                             + "\n  ".join(problems)
                         )
+                if spec is not None:
+                    # Persist retention INTO the shipped file, not just the interim.
+                    # Only the offered count was ever stored, so "was this track's tail
+                    # thinned?" was unanswerable from a published background -- which is
+                    # precisely why AlphaGenome's 2.97x thinning went unnoticed through
+                    # a republish. One extra int64 per track per layer.
+                    arrays[f"{layer_key}_retained"] = np.asarray(
+                        spec["retained"], dtype=np.int64
+                    )
+                    if spec.get("tail_k"):
+                        arrays[f"{layer_key}_tail_k"] = np.int64(spec["tail_k"])
+
                 elif counts is not None and np.any(np.asarray(counts) > 0):
                     # Loud, not silent. A builder that forgets to pass `sampling` gets
                     # NO thinning protection at all, and "a guard nobody wired up" is

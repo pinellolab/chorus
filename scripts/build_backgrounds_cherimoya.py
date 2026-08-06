@@ -69,7 +69,8 @@ from chorus.oracles.cherimoya_source.scoring import (  # noqa: E402
     score_window_sum,
 )
 
-from chorus.analysis.background_sampling import (  # noqa: E402
+from chorus.analysis.background_sampling import (
+    sampling_block,  # noqa: E402
     ReservoirSampler,
     StagedSamples,
 )
@@ -705,6 +706,8 @@ def merge(incremental: bool = False):
             perbin_counts=base["perbin_counts"],
             cache_dir=CACHE_DIR,
             n_points=args.n_cdf_points,
+            sampling=sampling_block(eff, base,
+                                    tail_k={"perbin": args.perbin_tail_k}),
         )
 
     path = Path(path)
