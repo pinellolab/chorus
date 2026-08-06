@@ -146,7 +146,10 @@ def verify(oracle: str, new_path: Path, old_path: Path, *, strict: bool) -> list
         if ret is None:
             msg = (f"{oracle}.{layer}: no {layer}_retained recorded -- thinning is "
                    f"not checkable from this artefact")
-            (problems if strict else print)(msg) if strict else print("  WARN " + msg)
+            if strict:
+                problems.append(msg)
+            else:
+                print("  WARN " + msg)
         else:
             offered = np.asarray(new[cnt_key])
             retained = np.asarray(ret)

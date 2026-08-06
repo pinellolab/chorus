@@ -663,7 +663,8 @@ def build_baseline_backgrounds():
                         summary_counts=summary_reservoir.get_counts(),
                         summary_retained=summary_reservoir.retained_counts(),
                         perbin_cdfs=perbin_matrix.astype(np.float32),
-                        perbin_counts=perbin_reservoir.get_counts())
+                        perbin_counts=perbin_reservoir.get_counts(),
+                        perbin_retained=perbin_reservoir.retained_counts())
     logger.info("Saved interim baseline CDFs: %s (%.1f MB)",
                 interim_path, os.path.getsize(interim_path) / (1024 * 1024))
 
