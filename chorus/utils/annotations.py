@@ -1009,6 +1009,21 @@ DEFAULT_REGION_STRATA = {
 # The same ablation on LegNet's promoter null was worse still: p50/p90/p99 diluted
 # 8-19% on all three cell types (see PROMOTER_REGION_STRATA).
 #
+# And tested where the idea was actually AIMED. Sei outputs chromatin-state classes,
+# not TF ChIP tracks, and tf_binding is the layer that saturates -- so the Sei result
+# alone did not settle it. Enformer, n=6,000 per arm, medians of (+DHS / no-DHS) over
+# each layer's tracks:
+#
+#     layer                       n      p90     p99   p99.9     max
+#     chromatin_accessibility   684    0.942   0.980   0.972   0.947
+#     histone_marks            1890    0.953   0.917   0.916   0.931
+#     tf_binding               2101    0.904   0.858   0.888   0.953
+#     tss_activity              638    0.747   0.822   0.760   0.810
+#
+# tf_binding is diluted the MOST of any layer, and only 744 of its 2,101 tracks gained
+# a higher ceiling against 1,217 that lost one (median max 1.0920 -> 1.0419). The
+# hypothesis fails hardest on precisely the layer it was meant to fix.
+#
 # Why the a-priori argument failed: the cCRE catalogue already contains the
 # accessibility-and-TF categories DHS was meant to add (CA-TF, CA-CTCF, CA-H3K4me3,
 # TF), so DHS summits were largely redundant with positions already sampled -- while
