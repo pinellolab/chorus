@@ -971,21 +971,39 @@ def exon_bins_for_gene(
 # correlated with effect size. That would bias the null toward large effects and
 # make everything look unremarkable.
 DEFAULT_REGION_STRATA = {
-    # Half the positions reproduce the previously shipped gene-anchored set EXACTLY,
-    # in its original internal proportions (0.20 / 0.20 / 0.33 / 0.12 / 0.15).
-    "tss_near": 0.100,   # within +/- 1 kb of a protein-coding TSS
-    "tss_far": 0.100,    # 1-10 kb from a TSS
-    "junction": 0.165,   # +/- 100 bp of an annotated exon/intron boundary
-    "gene_body": 0.060,  # elsewhere inside a protein-coding gene
-    "random": 0.075,     # uniform, to keep the null's lower body populated
-    # The other half is new, and purely ADDITIVE.
-    "ccre": 0.500,       # inside an ENCODE SCREEN candidate cis-regulatory element
+    # One third of the positions reproduce the originally shipped gene-anchored set
+    # EXACTLY, in its original internal proportions (0.20 / 0.20 / 0.33 / 0.12 / 0.15).
+    "tss_near": 1 / 15,   # within +/- 1 kb of a protein-coding TSS   -> 1,200
+    "tss_far": 1 / 15,    # 1-10 kb from a TSS                        -> 1,200
+    "junction": 0.11,     # +/- 100 bp of an exon/intron boundary     -> 1,980
+    "gene_body": 0.04,    # elsewhere inside a protein-coding gene    ->   720
+    "random": 0.05,       # uniform, to keep the null's lower body    ->   900
+    # The second third, added 2026-08-03, purely ADDITIVE.
+    "ccre": 1 / 3,        # inside an ENCODE SCREEN cCRE              -> 6,000
+    # The final third, added 2026-08-06, also purely ADDITIVE. DHS summits from the
+    # Meuleman index concentrate transcription-factor footprints, so a single-base
+    # change there perturbs TF and histone tracks far more than one in a gene body --
+    # which lengthens the tail of exactly the layers that pin most.
+    #
+    # Justified by tail width and by max(union) = max(max_a, max_b), NOT by a
+    # calibration measurement, and it does NOT fix motif-creation saturation: the
+    # DHS-anchored null ChromBPNet has always used still pins on rs12740374 CEBPA at
+    # 1.11x. A null over random positions -- DHS, cCRE or gene-anchored alike --
+    # contains few single-base changes that complete a specific factor's full motif.
+    "dhs": 1 / 3,         # +/-150 bp of a Meuleman DHS summit        -> 6,000
 }
 
-# The intended total. At n=12,000 the strata above yield tss_near 1,200,
-# tss_far 1,200, junction 1,980, gene_body 720, random 900 -- the same counts the
-# shipped gene-anchored build used -- plus 6,000 cCRE positions on top.
-DEFAULT_N_EFFECT_POSITIONS = 12_000
+# The intended total. Grown with each added component rather than re-divided, so
+# every pre-existing stratum keeps its EXACT absolute count: at n=18,000 the strata
+# above yield tss_near 1,200, tss_far 1,200, junction 1,980, gene_body 720,
+# random 900 -- the same counts the original gene-anchored build used -- plus 6,000
+# cCRE and 6,000 DHS positions on top.
+#
+# Re-dividing instead of growing would DILUTE. Measured when the cCRE half was first
+# tried at a fixed N: TF-track saturation went from 25% to 92%, because each
+# component got half the draws and so a shorter tail. Additivity is what makes
+# "nothing that already worked can get worse" true.
+DEFAULT_N_EFFECT_POSITIONS = 18_000
 
 # ONE region set, shared by every layer and every oracle, and it is a UNION rather
 # than a mixture. That distinction is the whole finding, and it was learned the hard
@@ -1077,6 +1095,7 @@ def sample_gene_anchored_positions(
     tss_near_bp: int = 1_000,
     tss_far_bp: Tuple[int, int] = (1_000, 10_000),
     junction_bp: int = 100,
+    dhs_jitter_bp: int = 150,
     margin_bp: int = 5_000_000,
 ) -> List[Tuple[str, int, str]]:
     """``[(chrom, pos, stratum), ...]`` for building an effect background.
@@ -1113,17 +1132,40 @@ def sample_gene_anchored_positions(
     usable = {c: L for c, L in chrom_sizes.items()
               if L > 2 * margin_bp and c in set(pc['chrom'])}
 
+    # Every anchored source population is filtered to the usable interval, NOT just to
+    # a usable chromosome. The cCRE pool below always did this; these three did not,
+    # and the difference was a real defect in the shipped backgrounds.
+    #
+    # 2,515 of 20,083 protein-coding TSS (12.5%) lie within 5 Mb of a contig end. They
+    # passed the `r.chrom in usable` test, then `_clamp` moved them onto the margin
+    # boundary -- up to 5 Mb from the TSS they were labelled as being within 1 kb of.
+    # Measured over 6,000 positions: 12.1% of `tss_near`, 12.2% of `junction`, 13.0%
+    # of `tss_far` and 14.6% of `gene_body` landed EXACTLY on a boundary coordinate,
+    # only 5,265 of 6,000 positions were distinct, and chr16:5,000,000 alone appeared
+    # 64 times.
+    #
+    # Two harms, and the second is the one that matters for the null. The reference
+    # class was mislabelled -- a position 5 Mb from any TSS tagged `tss_near`. And
+    # duplicate positions yield *identical* effect values, which inflate the sample
+    # count without adding information and manufacture tied runs in the CDF: exactly
+    # the degeneracy `_rank_with_tie_breaking` exists to paper over, injected by the
+    # sampler rather than by the biology.
+    def _in_margin(chrom, pos):
+        return chrom in usable and margin_bp <= pos <= usable[chrom] - margin_bp
+
     # TSS is strand-aware: start for +, end for -. Getting this backwards would
     # anchor CAGE on transcript 3' ends, where there is no promoter signal.
     tss = [(r.chrom, int(r.start) if r.strand == '+' else int(r.end))
-           for r in pc.itertuples() if r.chrom in usable]
+           for r in pc.itertuples()]
+    tss = [(c, p) for c, p in tss if _in_margin(c, p)]
     # Exon boundaries are splice junctions; both edges of every exon count.
-    junctions = [(r.chrom, int(r.start)) for r in pc_exons.itertuples()
-                 if r.chrom in usable]
-    junctions += [(r.chrom, int(r.end)) for r in pc_exons.itertuples()
-                  if r.chrom in usable]
+    junctions = [(r.chrom, int(r.start)) for r in pc_exons.itertuples()]
+    junctions += [(r.chrom, int(r.end)) for r in pc_exons.itertuples()]
+    junctions = [(c, p) for c, p in junctions if _in_margin(c, p)]
+    # A gene body is kept only where the whole span is usable, so a position drawn
+    # uniformly inside it never needs clamping.
     bodies = [(r.chrom, int(r.start), int(r.end)) for r in pc.itertuples()
-              if r.chrom in usable]
+              if _in_margin(r.chrom, int(r.start)) and _in_margin(r.chrom, int(r.end))]
     chrom_list = sorted(usable)
 
     rng = _random.Random(seed)
@@ -1151,26 +1193,82 @@ def sample_gene_anchored_positions(
                      if c in usable and margin_bp <= p <= usable[c] - margin_bp]
         rng.shuffle(ccre_pool)
 
+    # DHS summits, drawn once like the cCRE pool. Generously (2x) so the cursor below
+    # never has to wrap and emit a duplicate position. Jittered by +/-150 bp to match
+    # the convention the ChromBPNet and Cherimoya builders already use, so the "dhs"
+    # stratum means the same thing in every oracle rather than merely having the same
+    # name.
+    dhs_pool: List[Tuple[str, int]] = []
+    if strata.get("dhs"):
+        want = int(round(n * strata["dhs"]))
+        raw = sample_dhs_positions(max(1, want * 2), seed=seed)
+        dhs_pool = [(c, int(p)) for c, p in raw
+                    if c in usable and margin_bp <= p <= usable[c] - margin_bp]
+        rng.shuffle(dhs_pool)
+
+    # Per-stratum cursors, NOT a shared index into the pools.
+    #
+    # This used to be ``ccre_pool[len(out) % len(ccre_pool)]`` -- indexed by the TOTAL
+    # number of positions emitted so far. Inserting any new stratum therefore shifted
+    # which cCREs got drawn, silently, which would have broken the additivity this
+    # mixture is built on the moment "dhs" was added. The promoter sampler already
+    # used a per-stratum counter (``pls[i % len(pls)]``); the two disagreed, which is
+    # the #144 shape again -- two code paths computing the same thing differently.
+    #
+    # Note this does change WHICH cCRE positions are drawn relative to the currently
+    # shipped build. That is fine and expected: the additivity guarantee is
+    # ``max(union) >= max(component)``, which holds for any valid uniform draw from
+    # the pool, not for one specific draw.
+    _ANCHORED = {
+        "ccre": ccre_pool, "dhs": dhs_pool, "tss_near": tss, "tss_far": tss,
+        "junction": junctions, "gene_body": bodies,
+    }
+
     out: List[Tuple[str, int, str]] = []
     for name, frac in strata.items():
+        if name != "random" and name not in _ANCHORED:
+            # The landmine this replaces: the old ``else`` branch was simultaneously
+            # the "random" handler, the empty-pool fallback AND the catch-all for
+            # unrecognised names. Adding "dhs" to the strata dict without a handler
+            # would have emitted 6,000 UNIFORMLY RANDOM positions, tagged them
+            # "dhs", tallied them as DHS in the build log and stamped them as DHS in
+            # provenance -- an invisibly wrong reference class in every artefact.
+            raise ValueError(
+                f"unhandled stratum {name!r}: no sampler branch exists for it. Add "
+                f"one rather than letting it fall through to uniform random "
+                f"positions, which would be tagged and stamped with this name. "
+                f"Known: {sorted(set(_ANCHORED) | {'random'})}"
+            )
+        if name != "random" and not _ANCHORED[name]:
+            # Also previously silent: an empty pool fell through to random. A missing
+            # or unreadable annotation source must be loud, not quietly substituted.
+            raise ValueError(
+                f"stratum {name!r} was requested but its source population is empty "
+                f"(no usable positions after the {margin_bp} bp contig-end margin). "
+                f"Refusing to substitute uniform random positions under this label."
+            )
+
         k = int(round(n * frac))
-        for _ in range(k):
-            if name == "ccre" and ccre_pool:
-                c, p = ccre_pool[len(out) % len(ccre_pool)]
-            elif name == "tss_near" and tss:
+        for i in range(k):
+            if name == "ccre":
+                c, p = ccre_pool[i % len(ccre_pool)]
+            elif name == "dhs":
+                c, p = dhs_pool[i % len(dhs_pool)]
+                p += rng.randint(-dhs_jitter_bp, dhs_jitter_bp)
+            elif name == "tss_near":
                 c, p = rng.choice(tss)
                 p += rng.randint(-tss_near_bp, tss_near_bp)
-            elif name == "tss_far" and tss:
+            elif name == "tss_far":
                 c, p = rng.choice(tss)
                 off = rng.randint(*tss_far_bp)
                 p += off if rng.random() < 0.5 else -off
-            elif name == "junction" and junctions:
+            elif name == "junction":
                 c, p = rng.choice(junctions)
                 p += rng.randint(-junction_bp, junction_bp)
-            elif name == "gene_body" and bodies:
+            elif name == "gene_body":
                 c, s, e = rng.choice(bodies)
                 p = rng.randint(s, e) if e > s else s
-            else:
+            else:                                    # name == "random"
                 c = rng.choice(chrom_list)
                 p = rng.randint(margin_bp, usable[c] - margin_bp)
             out.append((c, _clamp(c, p), name))
@@ -1295,12 +1393,21 @@ def sample_ccre_anchored_positions(
 # (proximal enhancer-like) is promoter-adjacent and included at a lower weight. The
 # 15 % uniform tail is kept for the same reason the gene-anchored set keeps one:
 # without near-zero mass, genuinely small effects receive artificially LOW percentiles.
+# 2026-08-06: DHS is now included after all, and the paragraph above needs its
+# qualification rather than deletion. The objection stands for a *re-weighting* --
+# giving DHS a share of a fixed N would dilute the promoter component and hand a
+# promoter model a null made mostly of enhancers. It does not stand for an ADDITIVE
+# union at scaled N: every stratum below keeps its exact absolute count, N grows from
+# 12,000 to 18,000, and max(union) = max(max_promoter, max_dhs), so the promoter
+# component cannot be weakened by the addition. That is the only construction under
+# which the two are reconcilable, and it is the one used here.
 PROMOTER_REGION_STRATA = {
-    "tss_promoter": 0.40,   # within +/- 250 bp of a protein-coding TSS, so a 200 bp
-                            # window overlaps the core promoter
-    "ccre_pls": 0.30,       # SCREEN promoter-like signature
-    "ccre_pels": 0.15,      # SCREEN proximal enhancer-like
-    "random": 0.15,         # uniform, to keep the null's lower body populated
+    "tss_promoter": 4 / 15,  # +/- 250 bp of a PC TSS, so a 200 bp window overlaps
+                             # the core promoter                        -> 4,800
+    "ccre_pls": 0.20,        # SCREEN promoter-like signature           -> 3,600
+    "ccre_pels": 0.10,       # SCREEN proximal enhancer-like            -> 1,800
+    "random": 0.10,          # uniform, keeps the null's lower body     -> 1,800
+    "dhs": 1 / 3,            # +/-150 bp of a Meuleman DHS summit       -> 6,000
 }
 
 
@@ -1313,6 +1420,7 @@ def sample_promoter_anchored_positions(
     seed: int = 12345,
     margin_bp: int = 100_000,
     tss_jitter_bp: int = 250,
+    dhs_jitter_bp: int = 150,
 ) -> list:
     """Positions anchored on promoters, for promoter-activity models.
 
@@ -1355,21 +1463,48 @@ def sample_promoter_anchored_positions(
     pls = _ccre_pool(["PLS"], int(round(n * strata.get("ccre_pls", 0))))         if strata.get("ccre_pls") else []
     pels = _ccre_pool(["pELS"], int(round(n * strata.get("ccre_pels", 0))))         if strata.get("ccre_pels") else []
 
+    dhs_pool = []
+    if strata.get("dhs"):
+        want = int(round(n * strata["dhs"]))
+        raw = sample_dhs_positions(max(1, want * 2), seed=seed)
+        dhs_pool = [(c, int(pp)) for c, pp in raw
+                    if c in usable and margin_bp <= pp <= usable[c] - margin_bp]
+        rng.shuffle(dhs_pool)
+
     def _clamp(chrom, pos):
         return min(max(pos, margin_bp), usable[chrom] - margin_bp)
 
+    # Same discipline as sample_gene_anchored_positions: an unrecognised stratum name
+    # must RAISE rather than fall through to uniform random positions that then get
+    # tagged, tallied and stamped with that name.
+    _ANCHORED = {"tss_promoter": tss, "ccre_pls": pls, "ccre_pels": pels,
+                 "dhs": dhs_pool}
+
     out = []
     for name, frac in strata.items():
+        if name != "random" and name not in _ANCHORED:
+            raise ValueError(
+                f"unhandled stratum {name!r}: no sampler branch exists for it. "
+                f"Known: {sorted(set(_ANCHORED) | {'random'})}"
+            )
+        if name != "random" and not _ANCHORED[name]:
+            raise ValueError(
+                f"stratum {name!r} was requested but its source population is empty; "
+                f"refusing to substitute uniform random positions under this label"
+            )
         k = int(round(n * frac))
         for i in range(k):
             if name == "tss_promoter":
                 c, p = rng.choice(tss)
                 p += rng.randint(-tss_jitter_bp, tss_jitter_bp)
-            elif name == "ccre_pls" and pls:
+            elif name == "ccre_pls":
                 c, p = pls[i % len(pls)]
-            elif name == "ccre_pels" and pels:
+            elif name == "ccre_pels":
                 c, p = pels[i % len(pels)]
-            else:
+            elif name == "dhs":
+                c, p = dhs_pool[i % len(dhs_pool)]
+                p += rng.randint(-dhs_jitter_bp, dhs_jitter_bp)
+            else:                                    # name == "random"
                 c = rng.choice(list(usable))
                 p = rng.randint(margin_bp, usable[c] - margin_bp)
             out.append((c, _clamp(c, p), name))
