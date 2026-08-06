@@ -619,6 +619,33 @@ def abort_if_nothing_loads(
         )
 
 
+def scope_violations(
+    n_planned: int, *, label: str, n_shipped: "int | None" = None,
+    min_fraction: float = 0.9,
+) -> list[str]:
+    """Refuse a build that covers far fewer tracks than the background it replaces.
+
+    ``yield_violations`` asks "did the tracks we attempted produce samples?" and cannot
+    ask "did we attempt the right tracks?". ChromBPNet's ``--assay`` defaults to
+    ATAC_DNASE, so a rebuild launched without it enumerated 9 models, scored all 9
+    successfully, and wrote a 1.0 MB background to replace a 753-track 80 MB one --
+    dropping every CHIP track, which is the layer the saturation work is about. Every
+    guard passed: rc=0, 9 of 9 tracks with data, 100% yield, exact retention, and a
+    perbin tail with 400 exact slots. The build was flawless and 1.2% of the job.
+
+    So this is a check on SCOPE, made before the GPU time is spent, against the track
+    count of the background actually on disk.
+    """
+    if not n_shipped or n_planned >= min_fraction * n_shipped:
+        return []
+    return [
+        f"{label}: planning {n_planned} tracks against {n_shipped} in the shipped "
+        f"background ({n_planned / n_shipped:.1%}). A build that covers a fraction of "
+        f"the tracks still succeeds on every other measure and then replaces the whole "
+        f"file -- check the assay/cell selection flags before spending the GPU time."
+    ]
+
+
 def yield_violations(
     counts: np.ndarray,
     *,

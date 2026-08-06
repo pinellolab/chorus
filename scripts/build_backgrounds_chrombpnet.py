@@ -243,6 +243,34 @@ def load_models_and_setup():
 
     models_to_score = _enumerate_models(args.assay)
 
+    # Scope preflight, before any model is loaded. --assay defaults to ATAC_DNASE, so a
+    # rebuild launched without it enumerates 9 of the 753 shipped tracks, scores all 9
+    # perfectly, and writes a background that replaces the whole file. Every other guard
+    # passes in that case, because nothing else asks whether the right tracks were
+    # attempted.
+    try:
+        import numpy as _np
+
+        from chorus.analysis.background_sampling import scope_violations
+        from chorus.core.globals import CHORUS_BACKGROUNDS_DIR as _BG
+        _shipped = _BG / "chrombpnet_pertrack.npz"
+        _n_shipped = None
+        if _shipped.exists():
+            with _np.load(_shipped, allow_pickle=True) as _d:
+                _n_shipped = len(_d["track_ids"])
+        logger.info("scope preflight: --assay=%s enumerates %d models; shipped "
+                    "background has %s tracks", args.assay, len(models_to_score),
+                    _n_shipped)
+        _probs = scope_violations(len(models_to_score),
+                                 label=f"chrombpnet(--assay={args.assay})",
+                                 n_shipped=_n_shipped)
+        if _probs:
+            raise SystemExit("refusing to build:\n  " + "\n  ".join(_probs))
+    except SystemExit:
+        raise
+    except Exception as _exc:                      # never let the preflight itself fail
+        logger.warning("scope preflight could not run: %s", _exc)
+
     # Optional incremental mode: skip models already present in the NPZ.
     if args.only_missing:
         existing_npz = os.path.join(cache_dir, "chrombpnet_pertrack.npz")

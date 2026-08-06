@@ -33,6 +33,8 @@ instinct is to assume one did:
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -543,3 +545,53 @@ def test_a_hybrid_layer_records_its_tail_k(tmp_path):
         assert int(d["perbin_tail_k"]) == 19_832
         slots = int(19_832 * n_points // 991_552)
         assert slots >= MIN_EXACT_TAIL_SLOTS
+
+
+# ---------------------------------------------------------------------------
+# Scope: did we build the right TRACKS, not just build them well?
+# ---------------------------------------------------------------------------
+
+
+def test_scope_violations_catches_a_build_covering_a_fraction_of_the_tracks():
+    """The one failure mode every other guard passes.
+
+    ChromBPNet's --assay defaults to ATAC_DNASE. A rebuild launched without it
+    enumerated 9 models, scored all 9, and wrote a 1.0 MB background to replace a
+    753-track 80 MB one -- dropping every CHIP track, the layer the saturation work is
+    about. rc=0. 9 of 9 tracks with data. 100% yield. Exact retention. A perbin tail with
+    400 exact slots. The build was flawless and 1.2% of the job.
+
+    yield_violations asks "did the attempted tracks produce samples?" and structurally
+    cannot ask "were the right tracks attempted?".
+    """
+    from chorus.analysis.background_sampling import scope_violations
+
+    problems = scope_violations(9, label="chrombpnet", n_shipped=753)
+    assert len(problems) == 1
+    assert "1.2%" in problems[0] and "753" in problems[0]
+
+    assert scope_violations(753, label="x", n_shipped=753) == []
+    # A modest shortfall is allowed: a track can legitimately drop out of a registry.
+    assert scope_violations(700, label="x", n_shipped=753) == []
+    # And with nothing to compare against, it makes no claim.
+    assert scope_violations(9, label="x", n_shipped=None) == []
+
+
+def test_the_chrombpnet_builder_refuses_the_default_scope():
+    """Pinned against the source: the preflight must run before any model loads.
+
+    Asserted by parsing rather than by string match, and by checking the call is inside
+    the enumeration path rather than merely present in the file.
+    """
+    import ast
+
+    src = (Path(__file__).resolve().parent.parent
+           / "scripts" / "build_backgrounds_chrombpnet.py").read_text()
+    tree = ast.parse(src)
+    calls = [n for n in ast.walk(tree) if isinstance(n, ast.Call)
+             and getattr(n.func, "id", "") == "scope_violations"]
+    assert calls, "the chrombpnet builder does not call scope_violations"
+    # and it must be able to stop the build
+    assert "refusing to build" in src, (
+        "scope_violations is called but its result is not turned into a refusal"
+    )
