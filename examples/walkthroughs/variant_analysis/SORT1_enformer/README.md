@@ -20,21 +20,28 @@ cross-tissue signature of this variant without pre-specifying cell type.
 
 ## Results
 
-**Summary**: Chromatin accessibility (DNASE/ATAC): very strong opening
-(+1.19); Transcription factor binding (ChIP-TF): very strong binding
-gain (+1.12); Histone modifications (ChIP-Histone): very strong mark
-gain (+0.73); TSS activity (CAGE/PRO-CAP): strong increase (+0.54).
+**Summary**: rs12740374 creates a C/EBP motif, and Enformer's strongest response
+is exactly that: CEBPB binding (+4.37 log2FC), beyond every one of the 17,909
+sampled background effects for that track. Chromatin opens (+2.25), H3K4me1
+increases (+1.89), and hepatocyte CAGE rises (+1.31).
 
-Top hits by layer:
+Top hit per layer — **Effect is the raw log2 fold-change**; the percentile ranks it
+against that track's background:
 
-| Layer | Top Track | Effect | Interpretation |
-|-------|-----------|--------|----------------|
-| Chromatin | DNASE:LNCaP clone FGC | +1.189 | Very strong opening |
-| Chromatin | DNASE:HeLa-S3 G1b phase | +1.118 | Very strong opening |
-| TF binding | CHIP:HNF4A:liver (adult) | +1.118 | Very strong binding gain |
-| TF binding | CHIP:RXRA:liver (adult) | +1.091 | Very strong binding gain |
-| Histone | CHIP:H3K27ac:22Rv1 | +0.734 | Very strong mark gain |
-| CAGE | CAGE:breast MDA-MB-453 | +0.541 | Strong increase |
+| Layer | Top Track | Effect (log2FC) | Effect %ile | Interpretation |
+|-------|-----------|-----------------|-------------|----------------|
+| TF binding | CHIP:CEBPb (CEBPb_HighDensity) | +4.372 | ≥99th (1.08× null max) | Motif created |
+| Chromatin | DNASE:fibroblast of lung | +2.247 | 0.9998 | Very strong opening |
+| Histone | CHIP:H3K4me1:neutrophil male | +1.886 | 0.9996 | Very strong mark gain |
+| CAGE | CAGE:Hepatocyte | +1.310 | 0.9991 | Strong increase |
+
+The CEBPB row is the one to read carefully. Its effect exceeds the largest of the
+17,909 background effects sampled for that track, so the percentile is **clamped at
+1.0 and cannot rank it further** — `1.08× null max` is the distance past that
+ceiling. That is expected here rather than a defect: a null drawn from random
+regulatory positions contains few single-base changes that build a complete
+transcription-factor motif, which is precisely what this variant does. See
+[`docs/BACKGROUND_NULL_PROTOCOL.md`](../../../../docs/BACKGROUND_NULL_PROTOCOL.md).
 
 **Key observations**:
 - The strongest hits span many cell types (LNCaP, HeLa, MCF-7, placenta,

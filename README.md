@@ -1238,14 +1238,14 @@ The per-bin CDFs are used by the unified `chorus.analysis._igv_report.rescale_fo
 <!-- BEGIN GENERATED: background-table -->
 | Oracle | Tracks | Effect samples / track | Activity samples / track | Effect reference population | NPZ size |
 |---|---|---|---|---|---|
-| AlphaGenome | 5,168 | 11,934–148,367 | 6,337–104,033 | gene-anchored+ccre | 272 MB |
-| Enformer | 5,313 | 11,933 | 19,549–31,005 | gene-anchored+ccre | 550 MB |
-| Borzoi | 7,611 | 11,934–34,482 | 19,548–75,021 | gene-anchored+ccre | 793 MB |
-| ChromBPNet | 753 | 18,672–37,344 | 34,004–68,008 | uniform + DHS summits | 80 MB |
-| Cherimoya (CATv1) | 1,518 | 18,672 | 34,004 | uniform + DHS summits | 162 MB |
-| Sei | 40 | 11,934 | 29,004 | gene-anchored+ccre | 3 MB |
-| LegNet | 3 | 11,913 | 29,002 | promoter-anchored | 198 KB |
-| EPInformer-seq | 33 | 11,934 | 34,002 | gene-anchored+ccre | 2 MB |
+| AlphaGenome | 5,168 | 17,908–225,253 | 19,504–319,642 | gene-anchored + cCRE (17,909) | 279 MB |
+| Enformer | 5,313 | 17,907 | 19,549–31,005 | gene-anchored + cCRE (17,909) | 557 MB |
+| Borzoi | 7,611 | 17,908–51,831 | 19,548–75,021 | gene-anchored + cCRE (17,909) | 804 MB |
+| ChromBPNet | 753 | 18,672–37,344 | 34,004–68,008 | uniform + DHS summits (18,672) | 79 MB |
+| Cherimoya (CATv1) | 1,518 | 18,672 | 34,004 | uniform + DHS summits (18,672) | 162 MB |
+| Sei | 40 | 17,909 | 29,004 | gene-anchored + cCRE (17,909) | 3 MB |
+| LegNet | 3 | 17,805 | 29,002 | promoter-anchored (17,805) | 200 KB |
+| EPInformer-seq | 33 | 17,909 | 34,002 | gene-anchored + cCRE (17,909) | 2 MB |
 <!-- END GENERATED: background-table -->
 
 Effect and activity reservoirs are converted to 10,000-point CDFs (sorted sample arrays) — so a percentile lookup is a single O(log n) bisect.

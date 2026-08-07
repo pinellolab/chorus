@@ -6,7 +6,7 @@
 - **Oracle**: enformer
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: all Enformer tracks (discovery mode)
-- **Generated**: 2026-08-05 05:08 UTC
+- **Generated**: 2026-08-07 11:51 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -37,9 +37,9 @@
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:CEBPb:ChIP-seq, CEBPb_HighDensity_DMI / hMSC / Human Mesenchymal Stem Cells | 2.56 | 72.7 | +4.372 | ≥99th | 0.771 | Very strong binding gain |
-| CHIP:CEBPb:ChIP-seq, CEBPb_LowDensity_DMI / hMSC / Human Mesenchymal Stem Cells | 3.99 | 97.9 | +4.310 | ≥99th | 0.793 | Very strong binding gain |
-| CHIP:CEBPb:ChIP-seq, CEBPb_HighDensity_noDMI / hMSC / Human Mesenchymal Stem Cells | 7.06 | 106 | +3.729 | ≥99th | 0.744 | Very strong binding gain |
+| CHIP:CEBPb:ChIP-seq, CEBPb_HighDensity_DMI / hMSC / Human Mesenchymal Stem Cells | 2.56 | 72.7 | +4.372 | ≥99th (1.08× null max) | 0.771 | Very strong binding gain |
+| CHIP:CEBPb:ChIP-seq, CEBPb_LowDensity_DMI / hMSC / Human Mesenchymal Stem Cells | 3.99 | 97.9 | +4.310 | ≥99th (1.03× null max) | 0.793 | Very strong binding gain |
+| CHIP:CEBPb:ChIP-seq, CEBPb_HighDensity_noDMI / hMSC / Human Mesenchymal Stem Cells | 7.06 | 106 | +3.729 | ≥99th (1.18× null max) | 0.744 | Very strong binding gain |
 | CHIP:CEBPB:IMR-90 | 10.4 | 140 | +3.632 | ≥99th | 0.908 | Very strong binding gain |
 | CHIP:CEBPB:K562 | 12.1 | 148 | +3.507 | ≥99th | 0.919 | Very strong binding gain |
 | CHIP:eGFP-CEBPB:K562 genetically modified using stable transfection | 7.61 | 85.2 | +3.323 | ≥99th | 0.898 | Very strong binding gain |
@@ -71,12 +71,12 @@
 |---|---|---|---|---|---|---|
 | CAGE:Hepatocyte, — variant site | 1.11 | 4.24 | +1.310 | ≥99th | 0.858 | Very strong increase |
 | CAGE:Hepatocyte, — PSRC1 TSS | 6.83 | 9.73 | +0.454 | ≥99th | 0.921 | Strong increase |
-| CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_ — variant site | 18.5 | 25.6 | +0.452 | 0.99 | 0.916 | Strong increase |
+| CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_ — variant site | 18.5 | 25.6 | +0.452 | 0.98 | 0.916 | Strong increase |
 | CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_ — MYBPHL TSS | 40.1 | 51 | +0.340 | 0.98 | 0.926 | Strong increase |
 | CAGE:thalamus, adult, — MYBPHL TSS | 7.02 | 8.67 | +0.270 | 0.98 | 0.902 | Moderate increase |
-| CAGE:locus coeruleus, adult, — MYBPHL TSS | 5.89 | 7.19 | +0.248 | 0.98 | 0.886 | Moderate increase |
+| CAGE:locus coeruleus, adult, — MYBPHL TSS | 5.89 | 7.19 | +0.248 | 0.97 | 0.886 | Moderate increase |
 | CAGE:spinal cord, adult, — variant site | 15.2 | 18.2 | +0.244 | 0.98 | 0.926 | Moderate increase |
-| CAGE:globus pallidus, adult, — variant site | 27.2 | 32.3 | +0.243 | 0.99 | 0.927 | Moderate increase |
+| CAGE:globus pallidus, adult, — variant site | 27.2 | 32.3 | +0.243 | 0.98 | 0.927 | Moderate increase |
 | CAGE:substantia nigra, adult, — MYBPHL TSS | 7.13 | 8.61 | +0.241 | 0.98 | 0.903 | Moderate increase |
 | CAGE:substantia nigra, adult, — variant site | 30.2 | 35.8 | +0.237 | 0.98 | 0.928 | Moderate increase |
 | _…showing top 10 of 48 — see `example_output.json` for the full set_ | | | | | | |
@@ -84,4 +84,5 @@
 ---
 **Score guide:**
 - **Effect %ile**: Variant effect ranked against ~10K random SNPs. 0.95 = stronger than 95% of random variants.
+- **`N× null max`**: the effect exceeded *every* sampled background effect for that track, so the percentile is clamped and cannot rank it further. The multiplier gives the distance to that ceiling — `1.11×` is 11% beyond the most extreme of ~10K background effects. Common for variants that create or destroy a complete transcription-factor motif, which random genomic positions rarely do.
 - **Activity %ile**: Reference signal ranked genome-wide against ENCODE SCREEN cCREs + random regions. 0.95 = more active than 95% of genomic positions.

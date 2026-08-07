@@ -6,7 +6,7 @@
 - **Oracle**: alphagenome
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: 7 HepG2 tracks
-- **Generated**: 2026-08-05 04:59 UTC
+- **Generated**: 2026-08-07 11:55 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -29,28 +29,28 @@
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
 | CHIP:CEBPB:HepG2 | 1.08e+03 | 1.07e+04 | +3.316 | ≥99th | 0.964 | Very strong binding gain |
-| CHIP:CEBPA:HepG2 | 2.07e+03 | 1.6e+04 | +2.945 | ≥99th | 0.988 | Very strong binding gain |
+| CHIP:CEBPA:HepG2 | 2.07e+03 | 1.6e+04 | +2.945 | ≥99th | 0.986 | Very strong binding gain |
 
 #### Histone modifications (ChIP-Histone)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:H3K27ac:HepG2 | 1.51e+04 | 3.58e+04 | +1.251 | ≥99th | 0.947 | Very strong mark gain |
+| CHIP:H3K27ac:HepG2 | 1.51e+04 | 3.58e+04 | +1.251 | ≥99th | 0.946 | Very strong mark gain |
 
 #### TSS activity (CAGE/PRO-CAP)
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CAGE:HepG2 — variant site | 25.2 | 73.3 | +1.502 | ≥99th | 0.916 | Very strong increase |
-| CAGE:HepG2 — variant site | 75.2 | 174 | +1.203 | ≥99th | 0.943 | Very strong increase |
-| CAGE:HepG2 — PSRC1 TSS | 2.26e+03 | 2.66e+03 | +0.235 | 0.97 | 0.978 | Moderate increase |
-| CAGE:HepG2 — MYBPHL TSS | 188 | 218 | +0.213 | 0.97 | 0.951 | Moderate increase |
-| CAGE:HepG2 — CELSR2 TSS | 2.47 | 2.98 | +0.198 | 0.96 | 0.838 | Moderate increase |
-| CAGE:HepG2 — PSRC1 TSS | 52 | 58.8 | +0.172 | 0.95 | 0.936 | Moderate increase |
-| CAGE:HepG2 — CELSR2 TSS | 666 | 751 | +0.172 | 0.95 | 0.965 | Moderate increase |
-| CAGE:HepG2 — MYBPHL TSS | 1.74 | 2 | +0.132 | 0.94 | 0.821 | Moderate increase |
-| CAGE:HepG2 — SORT1 TSS | 7.97 | 8.72 | +0.115 | 0.93 | 0.887 | Moderate increase |
-| CAGE:HepG2 — SORT1 TSS | 3.53e+03 | 3.67e+03 | +0.058 | 0.85 | 0.985 | Minimal effect |
+| CAGE:HepG2 — variant site | 25.2 | 73.3 | +1.502 | ≥99th | 0.919 | Very strong increase |
+| CAGE:HepG2 — variant site | 75.2 | 174 | +1.203 | ≥99th | 0.942 | Very strong increase |
+| CAGE:HepG2 — PSRC1 TSS | 2.26e+03 | 2.66e+03 | +0.235 | 0.97 | 0.980 | Moderate increase |
+| CAGE:HepG2 — MYBPHL TSS | 188 | 218 | +0.213 | 0.97 | 0.954 | Moderate increase |
+| CAGE:HepG2 — CELSR2 TSS | 2.47 | 2.98 | +0.198 | 0.96 | 0.841 | Moderate increase |
+| CAGE:HepG2 — PSRC1 TSS | 52 | 58.8 | +0.172 | 0.96 | 0.936 | Moderate increase |
+| CAGE:HepG2 — CELSR2 TSS | 666 | 751 | +0.172 | 0.96 | 0.965 | Moderate increase |
+| CAGE:HepG2 — MYBPHL TSS | 1.74 | 2 | +0.132 | 0.94 | 0.819 | Moderate increase |
+| CAGE:HepG2 — SORT1 TSS | 7.97 | 8.72 | +0.115 | 0.93 | 0.886 | Moderate increase |
+| CAGE:HepG2 — SORT1 TSS | 3.53e+03 | 3.67e+03 | +0.058 | 0.85 | 0.986 | Minimal effect |
 | _…showing top 10 of 58 — see `example_output.json` for the full set_ | | | | | | |
 
 ---
