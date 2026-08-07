@@ -1,7 +1,9 @@
 # Background null models: protocol
 
-**Status: LIVING DOCUMENT — updated as the 2026-08-06 rebuild converges.**
-Last updated 2026-08-07 (reference sets added, §4b). Sections marked ⚠️ are not yet final.
+**Status: CONVERGED for the 2026-08-06/07 rebuild, and still living.**
+All 8 oracles rebuilt, verified and swapped into place on 2026-08-07; provenance stamped at
+schema 4. §10 records the final state and what remains open. Update this document in the
+same commit as any change it describes.
 
 Every percentile chorus reports is a rank against a *background null* — a per-track
 distribution of what the same statistic looks like at positions the variant is not at.
@@ -404,13 +406,59 @@ hybrid layers, and no increase in real-effect pinning.
 | 2026-08-06 | vectorising Algorithm R **not** done | measured 2.4M values/s ≈ 19% of a pass; saves <1 h fleet-wide while changing every retained sample |
 | 2026-08-07 | motif-anchored ChIP null **deferred** | cost is per-TF scoring (240 TFs × ~6,000 passes), not motif lookup; and peak/attribution-derived positions cannot contain motif-*creating* variants, which is the saturating case |
 
-## 10. ⚠️ Open
+## 10. The converged state (2026-08-07)
 
-* The 2026-08-06 rebuild is **not complete**: AlphaGenome's effect pass is outstanding.
-  Numbers here for AlphaGenome `effect` still describe the 2026-08-05 exact re-merge.
-* Nothing has been swapped into the live backgrounds; staged in
-  `/data/chorus_data/rebuild_2026-08-06/`, originals in
-  `/data/chorus_data/pre_unified_rebuild/`.
+All 8 oracles rebuilt onto one reference population per family, verified, and swapped in
+atomically with read-back and a manifest. Backups at
+`/data/chorus_data/pre_unified_rebuild/`; `swap_in_rebuilt_backgrounds.py --rollback`
+restores them, applying the same read-back check to the backup.
+
+### What each oracle now draws from
+
+| oracle | effect population | activity population | retention |
+|---|---|---|---|
+| enformer, borzoi, alphagenome, sei, epinformerseq | `snps_gene_anchored` 17,909 | `regions_genome_dominated` 31,500 | effect+summary exact, perbin capped + exact tail |
+| legnet | `snps_promoter` 17,805 | same | exact |
+| chrombpnet, cherimoya | `snps_accessibility` 18,672 | same | effect+summary exact, perbin capped + exact tail |
+
+Every file records the **content sha256** of both populations, so "which reference class is
+this?" is answerable from the artefact. Tests assert the stamp matches the artefact on
+disk, that all gene-anchored oracles share one effect hash, and that all 8 share one
+activity hash.
+
+### The measured outcome
+
+Body unchanged, ceilings up. Medians of **per-track** ratios (new/old):
+
+| oracle | layer | p50 | p99 | max | % tracks with a higher ceiling |
+|---|---|---|---|---|---|
+| alphagenome | effect | 1.022 | 1.026 | 1.110 | 68% |
+| alphagenome | perbin | 1.000 | 1.011 | **1.682** | 98% |
+| borzoi | effect | 1.033 | 1.049 | 1.251 | 70% |
+| enformer | effect | 1.028 | 1.067 | 1.114 | 68% |
+| enformer | perbin | 1.000 | 1.001 | 1.195 | 95% |
+| chrombpnet | perbin | 1.000 | 1.002 | **2.350** | 97% |
+| cherimoya | perbin | 1.000 | 0.998 | 1.827 | 97% |
+| sei | effect | 1.021 | 1.031 | 1.308 | 85% |
+
+Real-effect **pinning** on committed artefacts — the user-facing measure:
+enformer **9.5% → 3.6%**, alphagenome **2.5% → 2.0%**.
+
+And the mechanism, confirmed across every thinned layer (1 − *m/N* predicts the share of
+tracks whose ceiling rises), worst deviation **1.4 points** over predictions from 26% to
+98%, with **0 of borzoi's 6,068 unthinned tracks** moving — see
+`audits/2026-08-06_null_model_rebuild.md`.
+
+## 11. ⚠️ Open
+
+* AlphaGenome's `perbin` carries **199** exact tail slots against an intended 200,
+  because `n_expected` was estimated 0.08% low (986,976 against 987,776). The floor
+  tolerates 1% for exactly this, and `derive_tail_k` now carries a 2% margin so future
+  builds land at 204. Recorded rather than fixed: correcting one grid slot would cost a
+  14 GPU-hour rebuild for the difference between p98.00 and p98.01.
+* The **effect** and **summary/perbin** layers of an oracle are built by separate passes,
+  so a partial rebuild can still put them on different populations. `unified_build: true`
+  plus the two sha256 fields make that detectable; nothing yet *prevents* it.
 * LegNet declares `resolution = 50` over a 200 bp window while holding **one** value, so
   every sub-region score returns `None`. The tools now explain it; the geometry is not
   fixed, because that would move its background and every committed artefact.
