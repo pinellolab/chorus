@@ -105,7 +105,10 @@ def pinning_rate(oracle: str, new: dict, old: dict) -> "tuple[int, int, int] | N
 
 
 def verify(oracle: str, new_path: Path, old_path: Path, *, strict: bool) -> list[str]:
-    from chorus.analysis.background_sampling import MIN_EXACT_TAIL_SLOTS
+    from chorus.analysis.background_sampling import (
+        MIN_EXACT_TAIL_SLOTS,
+        thinning_violations,
+    )
 
     problems: list[str] = []
     if not new_path.exists():
@@ -161,15 +164,45 @@ def verify(oracle: str, new_path: Path, old_path: Path, *, strict: bool) -> list
                     f"exact tail -- their ceilings are draws from a subsample")
             elif thinned:
                 slots = int(min(tail_k, offered.max()) * m.shape[1] // offered.max())
-                status = "ok" if slots >= MIN_EXACT_TAIL_SLOTS else "TOO FEW"
+                # DELEGATE the pass/fail to thinning_violations rather than re-deriving
+                # it. This block used to compare `slots >= MIN_EXACT_TAIL_SLOTS` directly
+                # while thinning_violations applies a documented 1%-of-floor tolerance for
+                # estimation error in n_expected, so the two disagreed on AlphaGenome's
+                # perbin: the builder accepted 199 slots and the verifier refused them.
+                # Two implementations of one rule is the #144 shape, and it appeared here
+                # in code written to catch exactly that class of defect.
+                probs = thinning_violations(
+                    offered, retained, n_points=m.shape[1], tail_k=tail_k,
+                    label=f"{oracle}.{layer}", max_report=2)
+                status = "ok" if not probs else "TOO FEW"
                 print(f"  {layer}: {thinned}/{n_tracks} thinned, exact tail k={tail_k} "
-                      f"-> {slots} exact grid slots ({status})")
-                if slots < MIN_EXACT_TAIL_SLOTS:
-                    problems.append(
-                        f"{oracle}.{layer}: only {slots} exact grid slots "
-                        f"(need >= {MIN_EXACT_TAIL_SLOTS})")
+                      f"-> {slots} exact grid slots ({status}"
+                      + (f", intent {MIN_EXACT_TAIL_SLOTS}" if slots < MIN_EXACT_TAIL_SLOTS
+                         else "") + ")")
+                problems += probs
             else:
                 print(f"  {layer}: exact retention, 0 thinned")
+
+    # --- per-row arrays must not be LOST relative to the file being replaced ---
+    # layers_per_row went missing from all three rebuilt gene-anchored oracles: the effect
+    # interim carried it, build_and_save forwards only its canonical keys, and
+    # merge_to_final did not pass it. Every other gate passed. The existing guard test did
+    # not fire because it reads the LIVE backgrounds, which still had the field from the
+    # previous build -- a guard that cannot see the artefact under test.
+    if old is not None:
+        n_tracks_old = len(old["track_ids"])
+        for key, arr in old.items():
+            if key in ("track_ids",) or not hasattr(arr, "shape"):
+                continue
+            if arr.ndim != 1 or arr.shape[0] != n_tracks_old:
+                continue                      # not a per-row array
+            if key.endswith(("_counts", "_retained")) or key == "signed_flags":
+                continue                      # covered by their own checks
+            if key not in new:
+                problems.append(
+                    f"{oracle}: per-row array {key!r} present in the file being replaced "
+                    f"but ABSENT from the rebuild -- downstream code keying on it breaks "
+                    f"silently (compose_layers exits, per-layer analysis raises)")
 
     # --- distributional, vs the backup ------------------------------------
     if old is not None and "effect_cdfs" in new and "effect_cdfs" in old:

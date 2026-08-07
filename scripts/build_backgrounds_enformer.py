@@ -731,6 +731,15 @@ def merge_to_final():
         perbin_counts=perbin_counts,
         cache_dir=cache_dir,
         sampling=sampling_block(effect_data, baseline_data, tail_k={"perbin": args.perbin_tail_k}),
+            # Carry the per-row layer through to the FINAL file. The effect interim has
+            # it and build_and_save forwards only its canonical keys, so omitting it here
+            # dropped it from every rebuilt pertrack.npz -- breaking per-layer analysis
+            # entirely (compose_layers SystemExits without it, and the before/after table
+            # generator KeyErrors). This is the SECOND time this field has been lost in
+            # this cycle: c8ece2a fixed union_shards dropping it, and the merge dropped it
+            # again one step later.
+        per_row=({'layers_per_row': effect_data['layers_per_row']}
+                 if 'layers_per_row' in effect_data else None),
     )
 
     # Verify the file loads correctly
