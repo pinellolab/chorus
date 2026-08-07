@@ -30,6 +30,18 @@ instinct is to assume one did:
 * `cdf_grid_violations` is handed the **offered** count while the geometry it checks
   is set by the **retained** count, and it does `if n >= n_points: continue` --
   offered is always >= 10,000, so it skips every thinned row by construction.
+
+Scope note, because an earlier version of this file got it wrong. It recorded borzoi
+and enformer as "never thinned and deliberately NOT rebuilt". Neither half survived
+the 2026-08-07 unified rebuild: all eight oracles were rebuilt, and borzoi's effect
+layer went from 34,482 offered to **51,831**, past `DEFAULT_CAPACITY`. It is now the
+one shipped effect layer that exercises the exact-retention path, which makes it the
+canary that keeps the retention assertions from being vacuous.
+
+The integration checks below therefore assert retention **from the shipped artefact**
+rather than by re-unioning interim shards. Shards accumulate across builds and the
+ones on disk are usually not the ones that shipped; diffing across builds produced a
+failure that read like data corruption when nothing was wrong.
 """
 from __future__ import annotations
 
@@ -143,15 +155,55 @@ def _union(oracle: str, n_shards: int = 8, capacity=None):
     return ReservoirSampler.from_flat_samples(*parts, capacity=capacity), ids, layers
 
 
+def _shards_belong_to_the_shipped_build(oracle: str, merged, shipped_path: Path) -> bool:
+    """Do these interim shards actually come from the build that shipped?
+
+    They usually do not, and that is the point of asking. Interim shards accumulate
+    in the backgrounds directory across builds -- 24 of them, 4 GB, survived the
+    2026-08-07 unified rebuild whose own shards were staged elsewhere and then
+    cleaned. Re-unioning those and diffing against the shipped rows compares **two
+    different builds** and fails with a message that reads like a corruption bug:
+    "ships a ceiling of 0.800 but the true maximum over all 148367 offered values is
+    0.875". Nothing is corrupt. 148,367 is the *old* offered count; the shipped file
+    offered 225,253.
+
+    A stale shard set is not the same condition as an absent one, so it does not get
+    the same silent skip. `effect_counts` is stamped into the shipped file, so build
+    identity is checkable in one comparison.
+    """
+    with np.load(shipped_path, allow_pickle=True) as d:
+        if "effect_counts" not in d.files:
+            return False
+        shipped_counts = np.asarray(d["effect_counts"])
+    offered = np.asarray(merged.get_counts())
+    return offered.shape == shipped_counts.shape and bool((offered == shipped_counts).all())
+
+
 @pytest.mark.integration
 def test_alphagenome_shipped_ceilings_are_the_exact_population_maxima():
-    """The fix, verified against the raw samples rather than against itself."""
+    """The fix, verified against the raw samples rather than against itself.
+
+    Only runs when the shards on disk are the ones the shipped file was built from;
+    see `_shards_belong_to_the_shipped_build`. When they are, this is the strongest
+    check available -- it recomputes the true population maximum from every offered
+    value and requires the shipped ceiling to equal it.
+    """
     path = _bg() / "alphagenome_pertrack.npz"
     if not path.exists():
         pytest.skip("no downloaded background for alphagenome")
     merged, ids, layers = _union("alphagenome")
     if merged is None:
         pytest.skip("alphagenome effect shards not on disk")
+    if not _shards_belong_to_the_shipped_build("alphagenome", merged, path):
+        with np.load(path, allow_pickle=True) as d:
+            shipped_max = int(np.asarray(d["effect_counts"]).max())
+        pytest.skip(
+            f"the alphagenome interim shards on disk are from a DIFFERENT build than "
+            f"the shipped file (shards offer up to {int(merged.get_counts().max())}, "
+            f"shipped file records {shipped_max}) -- comparing them would diff two "
+            f"builds. Re-run after a rebuild that keeps its shards, or clear the "
+            f"stale ones."
+        )
 
     assert int((merged.retained_counts() < merged.get_counts()).sum()) == 0, (
         "the exact union is still thinning tracks"
@@ -173,37 +225,69 @@ def test_alphagenome_shipped_ceilings_are_the_exact_population_maxima():
 
 @pytest.mark.integration
 @pytest.mark.parametrize("oracle", ["borzoi", "enformer"])
-def test_borzoi_and_enformer_effect_unions_are_a_no_op(oracle):
-    """Recorded as a permanent negative result so nobody re-derives it.
+def test_the_shipped_effect_layer_retained_every_offered_value(oracle):
+    """Exact retention, asserted from the shipped file alone.
 
-    Their unions are below DEFAULT_CAPACITY, so `from_flat_samples` never takes the
-    `rng.choice` path and the merge is a pure concatenate-then-sort. They were
-    therefore never thinned and deliberately NOT rebuilt -- worth pinning, because
-    "we rebuilt AlphaGenome but not these two" otherwise looks like an omission.
+    This replaces a test that asserted borzoi and enformer "were never thinned and
+    deliberately NOT rebuilt", verified by re-unioning their shards and requiring a
+    bit-exact match. Both halves of that premise expired:
+
+    * they **were** rebuilt, in the 2026-08-07 unified build, so the shards left in
+      the backgrounds directory no longer describe the shipped rows;
+    * borzoi's effect layer is no longer under capacity. It offered 34,482 at the old
+      position count and offers **51,831** at the new one -- past `DEFAULT_CAPACITY`
+      of 50,000. The rebuild meant to fix the thinning defect would have introduced
+      it, on the one layer that had been clean.
+
+    So the useful assertion is not "the union is a no-op" but "the shipped file
+    retained everything it offered", which needs no shards and cannot go stale. The
+    companion assertion below is the one that stops this from being vacuous.
     """
     path = _bg() / f"{oracle}_pertrack.npz"
     if not path.exists():
         pytest.skip(f"no downloaded background for {oracle}")
-    merged, ids, _ = _union(oracle)
-    if merged is None:
-        pytest.skip(f"{oracle} effect shards not on disk")
-
-    counts, retained = merged.get_counts(), merged.retained_counts()
-    assert int((retained < counts).sum()) == 0, (
-        f"{oracle} IS thinned at the union ({int((retained < counts).sum())} tracks), "
-        f"so it does need a rebuild -- max offered {counts.max()} vs capacity "
-        f"{DEFAULT_CAPACITY}"
-    )
     with np.load(path, allow_pickle=True) as d:
-        shipped = d["effect_cdfs"]
-    # A few rows including the highest-count ones, where thinning would show first.
-    probe = list(np.argsort(counts)[-3:]) + [0, len(ids) // 2, len(ids) - 1]
-    for i in probe:
-        row = np.sort(np.array(merged.data[int(i)]))
-        grid = row[np.linspace(0, len(row) - 1, shipped.shape[1], dtype=int)]
-        assert np.allclose(grid.astype(np.float32), shipped[int(i)], rtol=0, atol=0), (
-            f"{oracle} row {i} does not reproduce from its shards bit-exactly"
-        )
+        if "effect_retained" not in d.files:
+            pytest.fail(
+                f"{oracle} ships no effect_retained array, so whether its effect null "
+                f"was thinned is unanswerable from the artefact -- which is the state "
+                f"this release exists to end"
+            )
+        offered = np.asarray(d["effect_counts"])
+        retained = np.asarray(d["effect_retained"])
+    thinned = int((retained < offered).sum())
+    assert thinned == 0, (
+        f"{oracle} ships {thinned} thinned effect rows: worst offered "
+        f"{int(offered.max())} vs retained {int(retained.min())}"
+    )
+
+
+@pytest.mark.integration
+def test_exact_retention_is_load_bearing_for_borzoi_not_vacuous():
+    """Borzoi is past capacity, so "retained == offered" is a real property.
+
+    Without this, `test_the_shipped_effect_layer_retained_every_offered_value` could
+    pass forever on a build that never came near the cap -- the state enformer is
+    actually in (17,907 offered against a 50,000 default). Borzoi is the one effect
+    layer where the exact path is exercised by the shipped artefact, so it is the one
+    that proves the guard is doing work rather than agreeing with a tautology.
+    """
+    path = _bg() / "borzoi_pertrack.npz"
+    if not path.exists():
+        pytest.skip("no downloaded background for borzoi")
+    with np.load(path, allow_pickle=True) as d:
+        offered = np.asarray(d["effect_counts"])
+        retained = np.asarray(d["effect_retained"])
+    assert offered.max() > DEFAULT_CAPACITY, (
+        f"borzoi's effect layer now offers only {int(offered.max())}, under the "
+        f"{DEFAULT_CAPACITY} default -- so no shipped effect layer exercises the exact "
+        f"retention path and the retention assertions are vacuous. If the position "
+        f"count was deliberately reduced, move this canary to whichever layer is now "
+        f"over capacity rather than deleting it."
+    )
+    assert int(retained[int(np.argmax(offered))]) == int(offered.max()), (
+        "borzoi's largest effect row is past capacity and did NOT retain everything"
+    )
 
 
 # ---------------------------------------------------------------------------
