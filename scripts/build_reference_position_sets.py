@@ -235,6 +235,76 @@ def build(out_path: Path) -> dict:
     logger.info("  accessibility: %d SNPs (%d random + %d DHS)",
                 len(rows), n_random, n_dhs)
 
+    # ---- REGION set (the ACTIVITY null's reference population) ---------------
+    # Genome-DOMINATED, unlike the SNP sets, because the question is "is this locus
+    # active for this track, genome-wide?" -- most of the genome is silent for most
+    # tracks, and that has to dominate the CDF so real peaks land as high percentiles.
+    # Replicates the enformer/borzoi/alphagenome baseline construction exactly, including
+    # its four separate RNG streams (789 random, 456 cCRE, 111 TSS, 222 gene body) and its
+    # 10 Mb random-position margin, which is WIDER than the SNP sets' 5 Mb.
+    from chorus.utils.annotations import get_annotation_manager, sample_ccre_positions
+
+    logger.info("sampling REGION set 'genome_dominated'")
+    region_rows: list = []
+
+    n_random = 15_000
+    random.seed(789)
+    for chrom in [f"chr{i}" for i in range(1, 23)]:
+        clen = len(fa[chrom])
+        max_pos = min(clen - 10_000_000, 200_000_000)
+        if max_pos <= 10_000_000:
+            max_pos = clen - 1_000_000
+        for _ in range(n_random // 22 + 1):
+            if sum(1 for r in region_rows if r[2] == "random") >= n_random:
+                break
+            region_rows.append((chrom, random.randint(10_000_000, max_pos), "random"))
+
+    for c, pos in sample_ccre_positions(
+            n_per_category={"PLS": 3000, "dELS": 2500, "pELS": 1500, "CA-CTCF": 1500,
+                            "CA-TF": 1000, "TF": 500, "CA-H3K4me3": 1000, "CA": 500},
+            seed=456):
+        region_rows.append((c, int(pos), "ccre"))
+
+    mgr = get_annotation_manager()
+    genes = mgr._get_genes_df(mgr.get_annotation_path("gencode_v48_basic"))
+    pc = genes[genes["gene_type"] == "protein_coding"].copy()
+    pc["tss"] = pc.apply(lambda r: r["start"] if r["strand"] == "+" else r["end"], axis=1)
+    pc = pc[pc["chrom"].isin({f"chr{i}" for i in range(1, 23)})]
+    tss = list(zip(pc.groupby("gene_name").first().reset_index()["chrom"],
+                   pc.groupby("gene_name").first().reset_index()["tss"]))
+    if len(tss) > 3000:
+        tss = random.Random(111).sample(tss, 3000)
+    for c, pos in tss:
+        region_rows.append((str(c), int(pos), "tss"))
+
+    long_g = pc[(pc["end"] - pc["start"]) > 10_000].copy()
+    long_g["midpoint"] = (long_g["start"] + long_g["end"]) // 2
+    gb = list(zip(long_g.groupby("gene_name").first().reset_index()["chrom"],
+                  long_g.groupby("gene_name").first().reset_index()["midpoint"]))
+    if len(gb) > 2000:
+        gb = random.Random(222).sample(gb, 2000)
+    for c, pos in gb:
+        region_rows.append((str(c), int(pos), "gene_body"))
+
+    arrays["regions_genome_dominated"] = np.array(
+        region_rows, dtype=[("chrom", "U32"), ("pos", "i8"), ("stratum", "U16")])
+    realised_r: dict = {}
+    for _c, _p, s in region_rows:
+        realised_r[s] = realised_r.get(s, 0) + 1
+    prov["sets"]["regions_genome_dominated"] = {
+        "kind": "region",
+        "purpose": "reference population for the ACTIVITY null (summary + perbin)",
+        "n_positions": len(region_rows),
+        "strata_realised": realised_r,
+        "note": "genome-dominated on purpose and NOT interchangeable with the SNP sets: "
+                "if the two populations were unified, the acceptance criterion 'median "
+                "activity percentile of the effect null's REF windows' would be 0.5 "
+                "identically, for any track",
+        "seeds": {"random": 789, "ccre": 456, "tss": 111, "gene_body": 222},
+        "sha256": _sha256_of(region_rows),
+    }
+    logger.info("  regions: %d positions %s", len(region_rows), realised_r)
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     prov_json = json.dumps(prov, indent=1, sort_keys=True)
     np.savez_compressed(out_path, provenance=np.array([prov_json]), **arrays)

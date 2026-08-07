@@ -189,9 +189,24 @@ distributional verifier:
   repetitive, so that stratum was not a uniform genomic background. Fixed to the same
   rule: 0% non-primary, 24 contigs.
 
-⚠️ A **region** set for the activity null is not yet emitted — the baseline positions are
-still seed-derived per builder. Adding it is the next step to making both nulls reference
-artefacts.
+### The region set
+
+`regions_genome_dominated`, **31,500 positions** — random 15,000 · cCRE 11,500 · TSS
+3,000 · gene-body 2,000, with its own four RNG streams (789 / 456 / 111 / 222) and a
+**10 Mb** random-position margin, wider than the SNP sets' 5 Mb. Reproduces what the
+enformer, borzoi and AlphaGenome baselines logged exactly.
+
+Uniform positions are the largest stratum **on purpose**: most of the genome is silent for
+most tracks, and that is what makes a real peak land as a high percentile. Tests assert
+`random` is the largest stratum and >45% of the set, and that the region and SNP
+populations remain **distinct** (<5% overlap) — because unifying them makes the acceptance
+criterion "median activity percentile of the effect null's REF windows" equal 0.5
+identically for any track (§1).
+
+Verification compares the **maximum** `summary_counts`, not the minimum: that array has a
+genuine per-track spread (enformer 19,549–31,005 of 31,500) because a track can lack a
+usable value at a position even when the forward pass succeeded. The maximum tracks the
+size of the population; the minimum tracks something else.
 
 ## 5. How regions are sampled, exactly
 

@@ -210,3 +210,109 @@ def test_a_built_background_reproduces_the_reference_population(oracle):
     assert mod.verify(REF, oracle, root) == 0, (
         f"{oracle}'s background does not reproduce its reference population"
     )
+
+
+# ---------------------------------------------------------------------------
+# The REGION set (activity null)
+# ---------------------------------------------------------------------------
+
+
+def test_the_region_set_is_present_and_genome_dominated(ref, prov):
+    """The activity null's population, and it must NOT resemble the SNP sets.
+
+    Uniform positions have to dominate: most of the genome is silent for most tracks, and
+    that is what makes a real peak land as a high percentile. If this population were
+    peak-anchored instead, "98th percentile accessibility" would stop meaning *top 2% of
+    the genome* and start meaning *top 2% of cCREs*, silently, in every report and IGV
+    colour bar.
+    """
+    r = ref["regions_genome_dominated"]
+    meta = prov["sets"]["regions_genome_dominated"]
+    assert meta["kind"] == "region"
+    assert len(r) == 31_500 == meta["n_positions"]
+    st = meta["strata_realised"]
+    assert st == {"random": 15_000, "ccre": 11_500, "tss": 3_000, "gene_body": 2_000}
+    # uniform must be the largest single stratum
+    assert st["random"] == max(st.values())
+    assert st["random"] / len(r) > 0.45, st
+
+
+def test_the_region_and_snp_populations_are_different(ref):
+    """They answer different questions and must not be unified — see the protocol §1.
+
+    Unifying them would make the acceptance criterion "median activity percentile of the
+    effect null's REF windows" equal 0.5 identically, for any track, because it measures
+    the offset between two populations rather than a quality.
+    """
+    reg = {(str(c), int(p)) for c, p, _ in ref["regions_genome_dominated"]}
+    snp = {(str(c), int(p)) for c, p, _, _, _ in ref["snps_gene_anchored"]}
+    overlap = reg & snp
+    assert len(overlap) / len(snp) < 0.05, (
+        f"{len(overlap)} of {len(snp)} SNP positions also appear in the region set; "
+        f"these are meant to be distinct populations"
+    )
+
+
+def test_the_region_set_records_its_own_seeds(prov):
+    """Four independent RNG streams; a rebuild is only reproducible if all are pinned."""
+    seeds = prov["sets"]["regions_genome_dominated"]["seeds"]
+    assert seeds == {"random": 789, "ccre": 456, "tss": 111, "gene_body": 222}
+
+
+def test_region_positions_are_distinct(ref):
+    r = ref["regions_genome_dominated"]
+    coords = [(str(c), int(p)) for c, p, _ in r]
+    dupes = len(coords) - len(set(coords))
+    # A handful of collisions are expected where a TSS and a cCRE coincide; a large
+    # number would mean wasted forward passes and manufactured CDF ties.
+    assert dupes <= 0.001 * len(coords), f"{dupes} duplicate region positions"
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("oracle", ["enformer", "alphagenome", "borzoi"])
+def test_a_built_baseline_used_the_reference_region_count(oracle):
+    """The three oracles whose baselines the 2026-08 rebuild harmonised to 31,500.
+
+    Compared on the MAXIMUM offered count, not the minimum. ``summary_counts`` has a
+    genuine per-track spread -- enformer's runs 19,549 to 31,005 of 31,500 -- because a
+    track can lack a usable value at a position even when the forward pass succeeded, and
+    that spread is pre-existing and reported rather than asserted elsewhere in the suite.
+    The maximum is the best-case track and is what tracks the size of the position
+    population.
+
+    AlphaGenome's baseline was 10,500 -- a third the size of the two oracles printed
+    beside it in multi-oracle reports -- so its activity percentiles were ranked against a
+    smaller null. That is the regression this pins.
+    """
+    from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+
+    staged = Path("/data/chorus_data/rebuild_2026-08-06")
+    candidates = [staged / f"{oracle}_baseline_cdfs_interim.npz",
+                  staged / f"{oracle}_pertrack.npz",
+                  CHORUS_BACKGROUNDS_DIR / f"{oracle}_pertrack.npz"]
+    counts = None
+    for src in candidates:
+        if not src.exists():
+            continue
+        try:
+            with np.load(src, allow_pickle=True) as d:
+                if "summary_counts" in d.files:
+                    counts = d["summary_counts"]
+                    used = src
+                    break
+        except Exception:
+            continue          # a file mid-write during a running rebuild
+    if counts is None:
+        pytest.skip(f"no readable baseline artefact for {oracle}")
+
+    with np.load(REF, allow_pickle=False) as d:
+        n_ref = len(d["regions_genome_dominated"])
+
+    n_max = int(counts.max())
+    # RNA layers fan out over genes, so the max can EXCEED the position count; what must
+    # not happen is a max far BELOW it, which means fewer positions were used.
+    assert n_max >= 0.9 * n_ref, (
+        f"{oracle} ({used.name}) max summary_counts {n_max} against {n_ref} reference "
+        f"regions ({n_max / n_ref:.1%}) -- it did not use the reference region "
+        f"population. AlphaGenome's pre-rebuild baseline was 10,500 of 31,500 = 33%."
+    )
