@@ -321,6 +321,45 @@ def list_oracles() -> dict:
     return {"oracles": results}
 
 
+_TRACK_RESULT_CAP = 200
+
+
+def _track_page(oracle_name: str, query: str, results: list) -> dict:
+    """Cap a track search at ``_TRACK_RESULT_CAP`` rows and *say so in the payload*.
+
+    All four search branches used to return ``{"num_results": len(results),
+    "tracks": results[:200]}``. ``num_results`` did carry the true count, but a
+    caller that read ``tracks`` — which is the field named after the thing it
+    wants — saw 200 of AlphaGenome's 1,504 RNA tracks with nothing anywhere in
+    the response indicating that 1,304 were dropped. For an MCP tool the caller
+    is usually a model, and "the list I was handed is the list that exists" is
+    the natural reading.
+
+    So the cap is now explicit: ``truncated`` and ``showing`` are always
+    present, and when rows were dropped ``note`` says how to reach them. Same
+    class of defect as the reservoir thinning this release fixes — a silent
+    subsample presented as the whole population — so it gets the same
+    treatment: make the loss visible at the point of loss.
+    """
+    shown = results[:_TRACK_RESULT_CAP]
+    truncated = len(results) > len(shown)
+    out = {
+        "oracle": oracle_name,
+        "query": query,
+        "num_results": len(results),
+        "showing": len(shown),
+        "truncated": truncated,
+        "tracks": shown,
+    }
+    if truncated:
+        out["note"] = (
+            f"{len(results)} tracks matched; showing the first {len(shown)}. "
+            "Narrow the query (e.g. add an assay or cell type) to see the rest — "
+            "'num_results' is the full match count."
+        )
+    return out
+
+
 @mcp.tool()
 @_safe_tool
 def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
@@ -355,7 +394,7 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
         if query:
             df = meta.search_tracks(query)
             results = df.to_dict(orient="records")
-            return {"oracle": oracle_name, "query": query, "num_results": len(results), "tracks": results[:200]}
+            return _track_page(oracle_name, query, results)
         else:
             return {
                 "oracle": oracle_name,
@@ -370,7 +409,7 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
         if query:
             df = meta.search_tracks(query)
             results = df.to_dict(orient="records")
-            return {"oracle": oracle_name, "query": query, "num_results": len(results), "tracks": results[:200]}
+            return _track_page(oracle_name, query, results)
         return {
             "oracle": oracle_name,
             "assay_types": meta.list_assay_types(),
@@ -393,12 +432,7 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
                 "profile_pearson", "count_pearson",
             ]
             results = df[columns].to_dict(orient="records")
-            return {
-                "oracle": oracle_name,
-                "query": query,
-                "num_results": len(results),
-                "tracks": results[:200],
-            }
+            return _track_page(oracle_name, query, results)
         return {
             "oracle": oracle_name,
             "assay_types": meta.list_assay_types(),
@@ -464,7 +498,7 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
         if query:
             df = meta.search_tracks(query)
             results = df.to_dict(orient="records")
-            return {"oracle": oracle_name, "query": query, "num_results": len(results), "tracks": results[:200]}
+            return _track_page(oracle_name, query, results)
         return {
             "oracle": oracle_name,
             "assay_types": meta.list_assay_types(),
