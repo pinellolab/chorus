@@ -261,8 +261,9 @@ than transcribing numbers, so it can be re-run as each oracle lands.
 # Addendum C — post-swap verification sweep (2026-08-07)
 
 Everything above concerns the rebuild itself. This records the audit run *after* the swap,
-covering the checklist sections that need the live artefacts in place, and the six defects
-it found. Five were in this cycle's own work; one was long-standing.
+covering the checklist sections that need the live artefacts in place, and the seven defects
+it found. Five were in this cycle's own work; two were long-standing (the `list_tracks`
+truncation and the test-isolation bug).
 
 ## What was verified
 
@@ -383,5 +384,32 @@ elements mismatched at max **relative** 2.3e-3 while four other GPUs sat at 99%,
 autotuning under occupancy pressure. Its tolerance stays at kernel-agreement strictness,
 because that is the only setting at which it can detect the path divergence it exists for.
 
-**Release gates must be run on an unloaded GPU.** Seven of the twelve failures in the first
-sweep were contention, not defects.
+**Correction to the paragraph above, which I got wrong the first time.** I wrote that seven
+of the twelve failures in the first sweep were GPU contention. They were not. They were
+**order dependence**, and they are defect 7 below. The box was in fact shared with another
+user's 4-way DDP job, which made "contention" a plausible-looking explanation — and
+plausible-looking explanations for order-dependent failures are how they survive. The only
+failure genuinely attributable to load is the cherimoya one.
+
+**7. `test_mcp.py` left the MCP state singleton holding `reference_fasta=None`.** Seven
+tests in `test_mcp_scoring_tools.py` failed in the full sweep and passed in isolation with
+
+    ValueError: Reference FASTA required for genomic coordinates.
+
+`OracleStateManager` is a singleton and resolves the genome exactly once, in `__init__`.
+Seven tests in `TestOracleStateManager` need a manager built under a mocked
+`GenomeManager`, so each sets `_instance = None` and reconstructs inside the patch, where
+`is_genome_downloaded()` returns False. The fresh singleton takes `_reference_fasta = None`
+and **keeps it after the patch lifts** — nothing restored it, because nothing saved it.
+That field is what the state manager passes to an oracle as `reference_fasta`.
+
+Located by bisecting the file list: `test_mcp.py` alone reproduces all seven, and the four
+other candidates in the same range do not. Fixed with an autouse snapshot/restore fixture
+in a new `tests/conftest.py` — restoring the same object rather than resetting to None, so
+module-scoped fixtures that loaded an oracle into the singleton keep seeing it instead of
+reloading a model per test. Three tests guard the fixture and were verified to fail
+without it.
+
+**Release gates should still be run on an unloaded GPU** — the cherimoya flake is real —
+but "the machine was busy" must not be the first hypothesis for a failure that reproduces
+deterministically under a fixed test order.
