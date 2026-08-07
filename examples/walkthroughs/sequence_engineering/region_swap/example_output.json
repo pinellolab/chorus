@@ -54,8 +54,8 @@
             "alt_value": 21.222328186035156,
             "raw_score": -3.298927588812509,
             "description": "DNASE:K562",
-            "quantile_score": 0.9996,
-            "ref_signal_percentile": 0.9004
+            "quantile_score": 0.9997,
+            "ref_signal_percentile": 0.901
           }
         ],
         "histone_marks": [
@@ -68,8 +68,8 @@
             "alt_value": 1704.5,
             "raw_score": -1.476821294816028,
             "description": "CHIP:H3K27ac:K562",
-            "quantile_score": 1.0,
-            "ref_signal_percentile": 0.8949
+            "quantile_score": 0.9999,
+            "ref_signal_percentile": 0.8926
           },
           {
             "assay_id": "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K4me3/.",
@@ -80,8 +80,8 @@
             "alt_value": 954.75,
             "raw_score": -1.0906780213053617,
             "description": "CHIP:H3K4me3:K562",
-            "quantile_score": 0.9995,
-            "ref_signal_percentile": 0.847
+            "quantile_score": 0.9994,
+            "ref_signal_percentile": 0.8484
           }
         ],
         "tss_activity": [
@@ -95,7 +95,7 @@
             "raw_score": -0.7106449891844899,
             "description": "CAGE:K562",
             "quantile_score": 0.9943,
-            "ref_signal_percentile": 0.9253,
+            "ref_signal_percentile": 0.9233,
             "region_label": "variant site"
           },
           {
@@ -107,8 +107,8 @@
             "alt_value": 11.664129257202148,
             "raw_score": 0.7522718648272283,
             "description": "CAGE:K562",
-            "quantile_score": 0.9949,
-            "ref_signal_percentile": 0.8775,
+            "quantile_score": 0.9947,
+            "ref_signal_percentile": 0.8753,
             "region_label": "SORT1 TSS"
           },
           {
@@ -120,8 +120,8 @@
             "alt_value": 36.92109680175781,
             "raw_score": -0.9853467731922855,
             "description": "CAGE:K562",
-            "quantile_score": 0.997,
-            "ref_signal_percentile": 0.9462,
+            "quantile_score": 0.9969,
+            "ref_signal_percentile": 0.9448,
             "region_label": "PSRC1 TSS"
           },
           {
@@ -133,8 +133,8 @@
             "alt_value": 733.4147338867188,
             "raw_score": 0.26818509452465433,
             "description": "CAGE:K562",
-            "quantile_score": 0.9728,
-            "ref_signal_percentile": 0.9649,
+            "quantile_score": 0.9729,
+            "ref_signal_percentile": 0.9655,
             "region_label": "CELSR2 TSS"
           },
           {
@@ -146,8 +146,8 @@
             "alt_value": 1.515873908996582,
             "raw_score": 0.3780454354445037,
             "description": "CAGE:K562",
-            "quantile_score": 0.9852,
-            "ref_signal_percentile": 0.7435,
+            "quantile_score": 0.9822,
+            "ref_signal_percentile": 0.7382,
             "region_label": "MYBPHL TSS"
           },
           {
@@ -159,8 +159,8 @@
             "alt_value": 14967.4677734375,
             "raw_score": 0.029025986163359982,
             "description": "CAGE:K562",
-            "quantile_score": 0.7393,
-            "ref_signal_percentile": 0.9986,
+            "quantile_score": 0.7386,
+            "ref_signal_percentile": 0.9991,
             "region_label": "SARS1 TSS"
           },
           {
@@ -172,8 +172,8 @@
             "alt_value": 47.5471076965332,
             "raw_score": 0.009944043655496986,
             "description": "CAGE:K562",
-            "quantile_score": 0.5248,
-            "ref_signal_percentile": 0.9375,
+            "quantile_score": 0.5168,
+            "ref_signal_percentile": 0.9363,
             "region_label": "ELAPOR1 TSS"
           },
           {
@@ -185,8 +185,8 @@
             "alt_value": 188.48623657226562,
             "raw_score": 0.6259400475677217,
             "description": "CAGE:K562",
-            "quantile_score": 0.9932,
-            "ref_signal_percentile": 0.9536,
+            "quantile_score": 0.9921,
+            "ref_signal_percentile": 0.9505,
             "region_label": "PSMA5 TSS"
           },
           {
@@ -198,8 +198,8 @@
             "alt_value": 14.728235244750977,
             "raw_score": 0.0947875502785049,
             "description": "CAGE:K562",
-            "quantile_score": 0.9082,
-            "ref_signal_percentile": 0.9049,
+            "quantile_score": 0.9094,
+            "ref_signal_percentile": 0.9035,
             "region_label": "CFAP276 TSS"
           },
           {
@@ -211,8 +211,8 @@
             "alt_value": 3616.360595703125,
             "raw_score": -0.02888841425748416,
             "description": "CAGE:K562",
-            "quantile_score": 0.7387,
-            "ref_signal_percentile": 0.9848,
+            "quantile_score": 0.7373,
+            "ref_signal_percentile": 0.9862,
             "region_label": "TMEM167B TSS"
           },
           {
@@ -225,7 +225,8 @@
             "raw_score": -3.062812062568365,
             "description": "CAGE:K562",
             "quantile_score": 1.0,
-            "ref_signal_percentile": 0.9302,
+            "effect_exceedance": 1.0459962171674926,
+            "ref_signal_percentile": 0.9283,
             "region_label": "SYPL2 TSS"
           },
           {
@@ -237,8 +238,8 @@
             "alt_value": 37.620609283447266,
             "raw_score": -0.08168865174397814,
             "description": "CAGE:K562",
-            "quantile_score": 0.8927,
-            "ref_signal_percentile": 0.9345,
+            "quantile_score": 0.8944,
+            "ref_signal_percentile": 0.9332,
             "region_label": "TAF13 TSS"
           },
           {
@@ -251,7 +252,8 @@
             "raw_score": -4.791819214193164,
             "description": "CAGE:K562",
             "quantile_score": 1.0,
-            "ref_signal_percentile": 0.9721,
+            "effect_exceedance": 1.636478069501099,
+            "ref_signal_percentile": 0.9725,
             "region_label": "ATXN7L2 TSS"
           },
           {
@@ -264,7 +266,8 @@
             "raw_score": -6.1927224996342,
             "description": "CAGE:K562",
             "quantile_score": 1.0,
-            "ref_signal_percentile": 0.9695,
+            "effect_exceedance": 2.1149075347292245,
+            "ref_signal_percentile": 0.9693,
             "region_label": "CYB561D1 TSS"
           },
           {
@@ -276,8 +279,8 @@
             "alt_value": 0.7373642921447754,
             "raw_score": -1.0715123486076343,
             "description": "CAGE:K562",
-            "quantile_score": 0.9976,
-            "ref_signal_percentile": 0.8278,
+            "quantile_score": 0.9973,
+            "ref_signal_percentile": 0.8244,
             "region_label": "AMIGO1 TSS"
           },
           {
@@ -289,8 +292,8 @@
             "alt_value": 3.122574806213379,
             "raw_score": -0.0052406743813635005,
             "description": "CAGE:K562",
-            "quantile_score": 0.3894,
-            "ref_signal_percentile": 0.841,
+            "quantile_score": 0.3756,
+            "ref_signal_percentile": 0.836,
             "region_label": "WDR47 TSS"
           },
           {
@@ -302,8 +305,8 @@
             "alt_value": 0.02713984251022339,
             "raw_score": -2.0757817292982157,
             "description": "CAGE:K562",
-            "quantile_score": 0.9998,
-            "ref_signal_percentile": 0.8445,
+            "quantile_score": 0.9996,
+            "ref_signal_percentile": 0.8397,
             "region_label": "GPR61 TSS"
           },
           {
@@ -316,7 +319,8 @@
             "raw_score": -7.4005029265408915,
             "description": "CAGE:K562",
             "quantile_score": 1.0,
-            "ref_signal_percentile": 0.9961,
+            "effect_exceedance": 2.527382649723369,
+            "ref_signal_percentile": 0.9973,
             "region_label": "GNAI3 TSS"
           },
           {
@@ -328,8 +332,8 @@
             "alt_value": 1407.75244140625,
             "raw_score": 0.4984346953449724,
             "description": "CAGE:K562",
-            "quantile_score": 0.9906,
-            "ref_signal_percentile": 0.9705,
+            "quantile_score": 0.9886,
+            "ref_signal_percentile": 0.9702,
             "region_label": "GNAT2 TSS"
           },
           {
@@ -342,7 +346,8 @@
             "raw_score": -4.76971318898052,
             "description": "CAGE:K562",
             "quantile_score": 1.0,
-            "ref_signal_percentile": 0.9725,
+            "effect_exceedance": 1.628928530620922,
+            "ref_signal_percentile": 0.9729,
             "region_label": "AMPD2 TSS"
           },
           {
@@ -354,8 +359,8 @@
             "alt_value": 43.11888122558594,
             "raw_score": 0.07228162090148915,
             "description": "CAGE:K562",
-            "quantile_score": 0.8789,
-            "ref_signal_percentile": 0.9346,
+            "quantile_score": 0.88,
+            "ref_signal_percentile": 0.9338,
             "region_label": "CLCC1 TSS"
           },
           {
@@ -367,7 +372,7 @@
             "alt_value": 2507.859130859375,
             "raw_score": -0.1051520633458169,
             "description": "CAGE:K562",
-            "quantile_score": 0.9172,
+            "quantile_score": 0.9183,
             "ref_signal_percentile": 0.9811,
             "region_label": "GPSM2 TSS"
           },
@@ -380,8 +385,8 @@
             "alt_value": 8.023273468017578,
             "raw_score": 0.052661793096825185,
             "description": "CAGE:K562",
-            "quantile_score": 0.8399,
-            "ref_signal_percentile": 0.8824,
+            "quantile_score": 0.8391,
+            "ref_signal_percentile": 0.8833,
             "region_label": "AKNAD1 TSS"
           },
           {
@@ -393,8 +398,8 @@
             "alt_value": 697.3531494140625,
             "raw_score": -2.120921590096523,
             "description": "CAGE:K562",
-            "quantile_score": 0.9998,
-            "ref_signal_percentile": 0.9823,
+            "quantile_score": 0.9997,
+            "ref_signal_percentile": 0.9828,
             "region_label": "GSTM4 TSS"
           },
           {
@@ -407,7 +412,8 @@
             "raw_score": -7.957458013321203,
             "description": "CAGE:K562",
             "quantile_score": 1.0,
-            "ref_signal_percentile": 0.9709,
+            "effect_exceedance": 2.717591158114796,
+            "ref_signal_percentile": 0.9705,
             "region_label": "GSTM2 TSS"
           },
           {
@@ -420,7 +426,8 @@
             "raw_score": -6.575592795764506,
             "description": "CAGE:K562",
             "quantile_score": 1.0,
-            "ref_signal_percentile": 0.9557,
+            "effect_exceedance": 2.2456634783643263,
+            "ref_signal_percentile": 0.9534,
             "region_label": "GSTM1 TSS"
           },
           {
@@ -432,8 +439,8 @@
             "alt_value": 0.9022068977355957,
             "raw_score": -2.4820755434785564,
             "description": "CAGE:K562",
-            "quantile_score": 0.9999,
-            "ref_signal_percentile": 0.8927,
+            "quantile_score": 0.9998,
+            "ref_signal_percentile": 0.8916,
             "region_label": "GSTM3 TSS"
           },
           {
@@ -446,7 +453,8 @@
             "raw_score": -3.043479973180568,
             "description": "CAGE:K562",
             "quantile_score": 1.0,
-            "ref_signal_percentile": 0.8952,
+            "effect_exceedance": 1.0393940189403437,
+            "ref_signal_percentile": 0.8944,
             "region_label": "GSTM5 TSS"
           },
           {
@@ -458,8 +466,8 @@
             "alt_value": 0.3964812755584717,
             "raw_score": -0.7307336999526038,
             "description": "CAGE:K562",
-            "quantile_score": 0.9948,
-            "ref_signal_percentile": 0.7755,
+            "quantile_score": 0.9945,
+            "ref_signal_percentile": 0.7705,
             "region_label": "EPS8L3 TSS"
           }
         ]
@@ -474,8 +482,8 @@
           "alt_value": 21.222328186035156,
           "raw_score": -3.298927588812509,
           "description": "DNASE:K562",
-          "quantile_score": 0.9996,
-          "ref_signal_percentile": 0.9004
+          "quantile_score": 0.9997,
+          "ref_signal_percentile": 0.901
         },
         {
           "assay_id": "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K27ac/.",
@@ -486,8 +494,8 @@
           "alt_value": 1704.5,
           "raw_score": -1.476821294816028,
           "description": "CHIP:H3K27ac:K562",
-          "quantile_score": 1.0,
-          "ref_signal_percentile": 0.8949
+          "quantile_score": 0.9999,
+          "ref_signal_percentile": 0.8926
         },
         {
           "assay_id": "CHIP_HISTONE/EFO:0002067 Histone ChIP-seq H3K4me3/.",
@@ -498,8 +506,8 @@
           "alt_value": 954.75,
           "raw_score": -1.0906780213053617,
           "description": "CHIP:H3K4me3:K562",
-          "quantile_score": 0.9995,
-          "ref_signal_percentile": 0.847
+          "quantile_score": 0.9994,
+          "ref_signal_percentile": 0.8484
         },
         {
           "assay_id": "CAGE/hCAGE EFO:0002067/+",
@@ -511,7 +519,7 @@
           "raw_score": -0.7106449891844899,
           "description": "CAGE:K562",
           "quantile_score": 0.9943,
-          "ref_signal_percentile": 0.9253,
+          "ref_signal_percentile": 0.9233,
           "region_label": "variant site"
         },
         {
@@ -523,8 +531,8 @@
           "alt_value": 11.664129257202148,
           "raw_score": 0.7522718648272283,
           "description": "CAGE:K562",
-          "quantile_score": 0.9949,
-          "ref_signal_percentile": 0.8775,
+          "quantile_score": 0.9947,
+          "ref_signal_percentile": 0.8753,
           "region_label": "SORT1 TSS"
         },
         {
@@ -536,8 +544,8 @@
           "alt_value": 36.92109680175781,
           "raw_score": -0.9853467731922855,
           "description": "CAGE:K562",
-          "quantile_score": 0.997,
-          "ref_signal_percentile": 0.9462,
+          "quantile_score": 0.9969,
+          "ref_signal_percentile": 0.9448,
           "region_label": "PSRC1 TSS"
         },
         {
@@ -549,8 +557,8 @@
           "alt_value": 733.4147338867188,
           "raw_score": 0.26818509452465433,
           "description": "CAGE:K562",
-          "quantile_score": 0.9728,
-          "ref_signal_percentile": 0.9649,
+          "quantile_score": 0.9729,
+          "ref_signal_percentile": 0.9655,
           "region_label": "CELSR2 TSS"
         },
         {
@@ -562,8 +570,8 @@
           "alt_value": 1.515873908996582,
           "raw_score": 0.3780454354445037,
           "description": "CAGE:K562",
-          "quantile_score": 0.9852,
-          "ref_signal_percentile": 0.7435,
+          "quantile_score": 0.9822,
+          "ref_signal_percentile": 0.7382,
           "region_label": "MYBPHL TSS"
         },
         {
@@ -575,8 +583,8 @@
           "alt_value": 14967.4677734375,
           "raw_score": 0.029025986163359982,
           "description": "CAGE:K562",
-          "quantile_score": 0.7393,
-          "ref_signal_percentile": 0.9986,
+          "quantile_score": 0.7386,
+          "ref_signal_percentile": 0.9991,
           "region_label": "SARS1 TSS"
         },
         {
@@ -588,8 +596,8 @@
           "alt_value": 47.5471076965332,
           "raw_score": 0.009944043655496986,
           "description": "CAGE:K562",
-          "quantile_score": 0.5248,
-          "ref_signal_percentile": 0.9375,
+          "quantile_score": 0.5168,
+          "ref_signal_percentile": 0.9363,
           "region_label": "ELAPOR1 TSS"
         },
         {
@@ -601,8 +609,8 @@
           "alt_value": 188.48623657226562,
           "raw_score": 0.6259400475677217,
           "description": "CAGE:K562",
-          "quantile_score": 0.9932,
-          "ref_signal_percentile": 0.9536,
+          "quantile_score": 0.9921,
+          "ref_signal_percentile": 0.9505,
           "region_label": "PSMA5 TSS"
         },
         {
@@ -614,8 +622,8 @@
           "alt_value": 14.728235244750977,
           "raw_score": 0.0947875502785049,
           "description": "CAGE:K562",
-          "quantile_score": 0.9082,
-          "ref_signal_percentile": 0.9049,
+          "quantile_score": 0.9094,
+          "ref_signal_percentile": 0.9035,
           "region_label": "CFAP276 TSS"
         },
         {
@@ -627,8 +635,8 @@
           "alt_value": 3616.360595703125,
           "raw_score": -0.02888841425748416,
           "description": "CAGE:K562",
-          "quantile_score": 0.7387,
-          "ref_signal_percentile": 0.9848,
+          "quantile_score": 0.7373,
+          "ref_signal_percentile": 0.9862,
           "region_label": "TMEM167B TSS"
         },
         {
@@ -641,7 +649,8 @@
           "raw_score": -3.062812062568365,
           "description": "CAGE:K562",
           "quantile_score": 1.0,
-          "ref_signal_percentile": 0.9302,
+          "effect_exceedance": 1.0459962171674926,
+          "ref_signal_percentile": 0.9283,
           "region_label": "SYPL2 TSS"
         },
         {
@@ -653,8 +662,8 @@
           "alt_value": 37.620609283447266,
           "raw_score": -0.08168865174397814,
           "description": "CAGE:K562",
-          "quantile_score": 0.8927,
-          "ref_signal_percentile": 0.9345,
+          "quantile_score": 0.8944,
+          "ref_signal_percentile": 0.9332,
           "region_label": "TAF13 TSS"
         },
         {
@@ -667,7 +676,8 @@
           "raw_score": -4.791819214193164,
           "description": "CAGE:K562",
           "quantile_score": 1.0,
-          "ref_signal_percentile": 0.9721,
+          "effect_exceedance": 1.636478069501099,
+          "ref_signal_percentile": 0.9725,
           "region_label": "ATXN7L2 TSS"
         },
         {
@@ -680,7 +690,8 @@
           "raw_score": -6.1927224996342,
           "description": "CAGE:K562",
           "quantile_score": 1.0,
-          "ref_signal_percentile": 0.9695,
+          "effect_exceedance": 2.1149075347292245,
+          "ref_signal_percentile": 0.9693,
           "region_label": "CYB561D1 TSS"
         },
         {
@@ -692,8 +703,8 @@
           "alt_value": 0.7373642921447754,
           "raw_score": -1.0715123486076343,
           "description": "CAGE:K562",
-          "quantile_score": 0.9976,
-          "ref_signal_percentile": 0.8278,
+          "quantile_score": 0.9973,
+          "ref_signal_percentile": 0.8244,
           "region_label": "AMIGO1 TSS"
         },
         {
@@ -705,8 +716,8 @@
           "alt_value": 3.122574806213379,
           "raw_score": -0.0052406743813635005,
           "description": "CAGE:K562",
-          "quantile_score": 0.3894,
-          "ref_signal_percentile": 0.841,
+          "quantile_score": 0.3756,
+          "ref_signal_percentile": 0.836,
           "region_label": "WDR47 TSS"
         },
         {
@@ -718,8 +729,8 @@
           "alt_value": 0.02713984251022339,
           "raw_score": -2.0757817292982157,
           "description": "CAGE:K562",
-          "quantile_score": 0.9998,
-          "ref_signal_percentile": 0.8445,
+          "quantile_score": 0.9996,
+          "ref_signal_percentile": 0.8397,
           "region_label": "GPR61 TSS"
         },
         {
@@ -732,7 +743,8 @@
           "raw_score": -7.4005029265408915,
           "description": "CAGE:K562",
           "quantile_score": 1.0,
-          "ref_signal_percentile": 0.9961,
+          "effect_exceedance": 2.527382649723369,
+          "ref_signal_percentile": 0.9973,
           "region_label": "GNAI3 TSS"
         },
         {
@@ -744,8 +756,8 @@
           "alt_value": 1407.75244140625,
           "raw_score": 0.4984346953449724,
           "description": "CAGE:K562",
-          "quantile_score": 0.9906,
-          "ref_signal_percentile": 0.9705,
+          "quantile_score": 0.9886,
+          "ref_signal_percentile": 0.9702,
           "region_label": "GNAT2 TSS"
         },
         {
@@ -758,7 +770,8 @@
           "raw_score": -4.76971318898052,
           "description": "CAGE:K562",
           "quantile_score": 1.0,
-          "ref_signal_percentile": 0.9725,
+          "effect_exceedance": 1.628928530620922,
+          "ref_signal_percentile": 0.9729,
           "region_label": "AMPD2 TSS"
         },
         {
@@ -770,8 +783,8 @@
           "alt_value": 43.11888122558594,
           "raw_score": 0.07228162090148915,
           "description": "CAGE:K562",
-          "quantile_score": 0.8789,
-          "ref_signal_percentile": 0.9346,
+          "quantile_score": 0.88,
+          "ref_signal_percentile": 0.9338,
           "region_label": "CLCC1 TSS"
         },
         {
@@ -783,7 +796,7 @@
           "alt_value": 2507.859130859375,
           "raw_score": -0.1051520633458169,
           "description": "CAGE:K562",
-          "quantile_score": 0.9172,
+          "quantile_score": 0.9183,
           "ref_signal_percentile": 0.9811,
           "region_label": "GPSM2 TSS"
         },
@@ -796,8 +809,8 @@
           "alt_value": 8.023273468017578,
           "raw_score": 0.052661793096825185,
           "description": "CAGE:K562",
-          "quantile_score": 0.8399,
-          "ref_signal_percentile": 0.8824,
+          "quantile_score": 0.8391,
+          "ref_signal_percentile": 0.8833,
           "region_label": "AKNAD1 TSS"
         },
         {
@@ -809,8 +822,8 @@
           "alt_value": 697.3531494140625,
           "raw_score": -2.120921590096523,
           "description": "CAGE:K562",
-          "quantile_score": 0.9998,
-          "ref_signal_percentile": 0.9823,
+          "quantile_score": 0.9997,
+          "ref_signal_percentile": 0.9828,
           "region_label": "GSTM4 TSS"
         },
         {
@@ -823,7 +836,8 @@
           "raw_score": -7.957458013321203,
           "description": "CAGE:K562",
           "quantile_score": 1.0,
-          "ref_signal_percentile": 0.9709,
+          "effect_exceedance": 2.717591158114796,
+          "ref_signal_percentile": 0.9705,
           "region_label": "GSTM2 TSS"
         },
         {
@@ -836,7 +850,8 @@
           "raw_score": -6.575592795764506,
           "description": "CAGE:K562",
           "quantile_score": 1.0,
-          "ref_signal_percentile": 0.9557,
+          "effect_exceedance": 2.2456634783643263,
+          "ref_signal_percentile": 0.9534,
           "region_label": "GSTM1 TSS"
         },
         {
@@ -848,8 +863,8 @@
           "alt_value": 0.9022068977355957,
           "raw_score": -2.4820755434785564,
           "description": "CAGE:K562",
-          "quantile_score": 0.9999,
-          "ref_signal_percentile": 0.8927,
+          "quantile_score": 0.9998,
+          "ref_signal_percentile": 0.8916,
           "region_label": "GSTM3 TSS"
         },
         {
@@ -862,7 +877,8 @@
           "raw_score": -3.043479973180568,
           "description": "CAGE:K562",
           "quantile_score": 1.0,
-          "ref_signal_percentile": 0.8952,
+          "effect_exceedance": 1.0393940189403437,
+          "ref_signal_percentile": 0.8944,
           "region_label": "GSTM5 TSS"
         },
         {
@@ -874,8 +890,8 @@
           "alt_value": 0.3964812755584717,
           "raw_score": -0.7307336999526038,
           "description": "CAGE:K562",
-          "quantile_score": 0.9948,
-          "ref_signal_percentile": 0.7755,
+          "quantile_score": 0.9945,
+          "ref_signal_percentile": 0.7705,
           "region_label": "EPS8L3 TSS"
         }
       ]
@@ -889,7 +905,7 @@
     "tracks_requested": "4 K562 tracks",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-05 04:58 UTC"
+    "generated_at": "2026-08-07 12:25 UTC"
   },
   "modification_description": "Replaced 1,000 bp region (chr1:109,274,501-109,275,500) with a 630 bp custom sequence",
   "modification_region": [
