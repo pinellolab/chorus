@@ -143,23 +143,82 @@ def test_the_rebuilt_backgrounds_are_stamped_and_agree_with_the_query(oracle, ca
 
 
 @pytest.mark.parametrize("oracle", REBUILT)
-def test_the_rebuilt_backgrounds_record_the_region_set_they_logged(oracle):
-    """The strongest field in the stamp: what the build itself reported sampling.
+def test_the_rebuilt_backgrounds_record_the_reference_population_they_used(oracle):
+    """Which reference class this background ranks against, checkable from the file.
 
-    It outranks mtimes and commit shas — borzoi and enformer began eight minutes
-    BEFORE the commit that introduced gene-anchored sampling, so file mtimes read as
-    changed-after-build for both, while their logs show the strata from the first
-    minute.
+    Rewritten for schema 4. The previous version asserted
+    ``effect_region_set_as_logged`` with hardcoded strata ({tss_near: 1200 ...
+    random: 849}, n_positions 6,000) -- the 2026-08-05 build's numbers, scraped from the
+    builder's stdout by a regex.
+
+    Both halves were wrong to keep. The numbers pinned ONE build's reference class, so
+    they went stale the moment the class changed (n 12,000 -> 18,000, cCRE added, DHS
+    tried and rejected). And the field came from log scraping, which is how AlphaGenome
+    ended up with a stamped *claim* and a scraped *measurement* contradicting each other,
+    and why that scraper crashed on the 2026-08-06 logs when the message changed.
+
+    Schema 4 records the reference sets by CONTENT HASH, so this compares the stamp
+    against the artefact rather than against a constant, and stays true across rebuilds.
+    """
+    import json
+
+    import numpy as np
+
+    if not (BACKGROUNDS / f"{oracle}_pertrack.npz").exists():
+        pytest.skip(f"no downloaded background for {oracle}")
+    ref = (Path(__file__).resolve().parent.parent / "reference_sets"
+           / "chorus_reference_positions_v1.npz")
+    if not ref.exists():
+        pytest.skip("reference sets not generated in this checkout")
+
+    config = PerTrackNormalizer(cache_dir=str(BACKGROUNDS)).provenance(oracle)
+    rs = (config or {}).get("reference_sets")
+    assert rs, f"{oracle}: schema {(config or {}).get('schema_version')} lacks reference_sets"
+
+    with np.load(ref, allow_pickle=False) as d:
+        prov = json.loads(str(d["provenance"][0]))
+
+    fam = rs["effect_family"]
+    assert f"snps_{fam}" in prov["sets"], (oracle, fam)
+    assert rs["effect_sha256"] == prov["sets"][f"snps_{fam}"]["sha256"], (
+        f"{oracle}: stamped effect population {rs['effect_sha256'][:12]} != the reference "
+        f"artefact's {prov['sets'][f'snps_{fam}']['sha256'][:12]} -- built against a "
+        f"different population than the one on disk"
+    )
+    assert rs["effect_strata"] == prov["sets"][f"snps_{fam}"]["strata_realised"]
+    assert rs["activity_sha256"] == prov["sets"]["regions_genome_dominated"]["sha256"]
+
+    if fam == "gene_anchored":
+        st = rs["effect_strata"]
+        assert set(st) == {"tss_near", "tss_far", "junction", "gene_body",
+                           "random", "ccre"}, st
+        assert st["ccre"] == 9_000
+        # The uniform stratum is load-bearing: without near-zero mass, small real effects
+        # receive artificially LOW percentiles -- the mirror of saturation.
+        assert st["random"] >= 1_200, st
+        assert "dhs" not in st, "DHS was measured and rejected for this family"
+
+
+@pytest.mark.parametrize("oracle", REBUILT)
+def test_all_rebuilt_backgrounds_share_one_reference_population(oracle):
+    """Comparable percentiles need the SAME population, not a similar one.
+
+    Before the 2026-08 rebuild, effect_cdfs were on a newer null than summary_cdfs for six
+    of eight oracles and nothing in any file said so.
     """
     if not (BACKGROUNDS / f"{oracle}_pertrack.npz").exists():
         pytest.skip(f"no downloaded background for {oracle}")
-    config = PerTrackNormalizer(cache_dir=str(BACKGROUNDS)).provenance(oracle)
-    logged = config.get("effect_region_set_as_logged") or {}
-    assert logged.get("available") is True, f"{oracle}: {logged.get('reason')}"
-    counts = logged["strata_counts"]
-    assert set(counts) == {"tss_near", "tss_far", "junction", "gene_body", "random"}
-    # All three oracles drew from ONE seeded region set, which is what makes their
-    # percentiles comparable. Identical counts is the evidence.
-    assert counts == {"tss_near": 1200, "tss_far": 1200, "junction": 1980,
-                      "gene_body": 720, "random": 849}
-    assert logged["n_positions"] == 6_000
+    nz = PerTrackNormalizer(cache_dir=str(BACKGROUNDS))
+    cfgs = {}
+    for o in REBUILT:
+        if (BACKGROUNDS / f"{o}_pertrack.npz").exists():
+            c = nz.provenance(o) or {}
+            if c.get("reference_sets"):
+                cfgs[o] = c["reference_sets"]
+    assert cfgs, "no stamped backgrounds"
+    acts = {o: r["activity_sha256"] for o, r in cfgs.items()}
+    assert len(set(acts.values())) == 1, f"activity populations differ: {acts}"
+    gene = {o: r["effect_sha256"] for o, r in cfgs.items()
+            if r["effect_family"] == "gene_anchored"}
+    if len(gene) > 1:
+        assert len(set(gene.values())) == 1, f"gene-anchored effect sets differ: {gene}"

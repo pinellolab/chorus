@@ -204,6 +204,23 @@ def verify(oracle: str, new_path: Path, old_path: Path, *, strict: bool) -> list
                     f"but ABSENT from the rebuild -- downstream code keying on it breaks "
                     f"silently (compose_layers exits, per-layer analysis raises)")
 
+        # And FILE-LEVEL arrays, which the loop above cannot see: it selects on
+        # `shape[0] == n_tracks`, and build_config has shape (1,). That hole let all three
+        # rebuilt oracles ship with NO provenance at all -- the same "lost a field the old
+        # file had" defect as layers_per_row, one shape away from the check written for it.
+        for key in old:
+            if key in new or key in ("track_ids",):
+                continue
+            arr = old[key]
+            if not hasattr(arr, "shape") or (arr.ndim == 1 and arr.shape[0] == n_tracks_old):
+                continue                      # per-row: handled above
+            problems.append(
+                f"{oracle}: file-level array {key!r} present in the file being replaced "
+                f"but ABSENT from the rebuild"
+                + (" -- provenance: which regions, which formula, which genome, which "
+                   "builder commit. Without it the reference class is unrecoverable from "
+                   "the artefact." if key == "build_config" else ""))
+
     # --- distributional, vs the backup ------------------------------------
     if old is not None and "effect_cdfs" in new and "effect_cdfs" in old:
         o_ids = [str(x) for x in old["track_ids"]]
