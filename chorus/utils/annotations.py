@@ -1481,7 +1481,19 @@ def sample_promoter_anchored_positions(
     provenance stamp work against either without branching.
     """
     strata = dict(strata or PROMOTER_REGION_STRATA)
-    usable = {c: L for c, L in chrom_sizes.items() if L > 2 * margin_bp}
+    # Contigs must be long enough AND carry protein-coding genes -- the same rule
+    # sample_gene_anchored_positions uses. Filtering on margin alone (margin_bp is only
+    # 100,000 here, so any contig >200 kb qualified) put 81.7% of the `random` stratum --
+    # 2,206 of 2,700 positions across 109 unplaced scaffolds and alt haplotypes -- on
+    # non-primary sequence, 12.3% of the whole null. Alt contigs are redundant copies of
+    # primary sequence and scaffolds are largely repetitive, so that stratum was not a
+    # uniform genomic background at all. Two samplers computing "which contigs are
+    # usable" differently is the #144 shape.
+    _mgr = get_annotation_manager()
+    _genes = _mgr._get_genes_df(_mgr.get_annotation_path(annotation))
+    _pc_chroms = set(_genes[_genes["gene_type"] == "protein_coding"]["chrom"])
+    usable = {c: L for c, L in chrom_sizes.items()
+              if L > 2 * margin_bp and c in _pc_chroms}
     if not usable:
         raise ValueError("no chromosome long enough for the requested margin")
     rng = random.Random(seed)

@@ -1,7 +1,7 @@
 # Background null models: protocol
 
 **Status: LIVING DOCUMENT — updated as the 2026-08-06 rebuild converges.**
-Last updated 2026-08-07. Sections marked ⚠️ are not yet final.
+Last updated 2026-08-07 (reference sets added, §4b). Sections marked ⚠️ are not yet final.
 
 Every percentile chorus reports is a rank against a *background null* — a per-track
 distribution of what the same statistic looks like at positions the variant is not at.
@@ -147,6 +147,51 @@ Baseline positions out of margin are **dropped and counted** in `drop_reasons`, 
 clamped — see §5.
 
 ---
+
+## 4b. The reference sets — versioned populations
+
+`reference_sets/chorus_reference_positions_v1.npz`, built by
+`scripts/build_reference_position_sets.py`. Three SNP families, each with a content
+sha256, plus provenance (generator git sha, `fai` sha256, FASTA prefix hash, every seed,
+requested **and** realised strata):
+
+| family | oracles | SNPs | composition |
+|---|---|---|---|
+| `gene_anchored` | enformer, borzoi, alphagenome, sei, epinformerseq | 17,909 | §3.1 |
+| `promoter` | legnet | 17,805 | §3.2 |
+| `accessibility` | chrombpnet, cherimoya | 18,672 | random 9,609 ∪ DHS 9,063 |
+
+**Why an artefact rather than a seed.** A seed reproduces positions only while nothing
+upstream moves, and the GTF, cCRE BED, DHS index and FASTA are all updatable without
+anyone noticing the reference class moved with them. Since the composition *is* the
+reference-class definition (§2), that would silently redefine every percentile.
+
+**Verification.** `--verify-against ORACLE [--backgrounds-dir DIR]` checks a built
+background reproduces its family's population. The **retained subset is
+oracle-specific**: a window whose N content exceeds `max_n_fraction` is rejected, and
+windows differ by orders of magnitude — measured shortfall Sei **0**, Borzoi **1**,
+Enformer **2** of 17,909 (≤0.011%). So percentiles across oracles rank against *nearly*
+the same population, not identically the same, and the tolerance makes that checkable
+rather than assumed. It also flags a consecutive run of `*_counts` as the #123
+partial-credit fingerprint.
+
+**Two defects it caught on its first run**, both of which had already passed the
+distributional verifier:
+
+* **epinformerseq built on 10,000 positions, not 18,000** — its builder's
+  `--n-variants` defaults to 10,000 and the fleet driver never passed it. Its null was
+  inconsistent with the rest of its family. Rebuilt; shortfall now 0.
+* **81.7% of the promoter `random` stratum was on non-primary contigs** — 2,206 of 2,700
+  positions across 109 unplaced scaffolds and alt haplotypes, 12.3% of LegNet's whole
+  null. The promoter sampler filtered contigs on margin alone (100 kb, so anything
+  >200 kb qualified) while the gene-anchored sampler also requires protein-coding genes
+  present. Alt contigs are redundant copies of primary sequence and scaffolds are largely
+  repetitive, so that stratum was not a uniform genomic background. Fixed to the same
+  rule: 0% non-primary, 24 contigs.
+
+⚠️ A **region** set for the activity null is not yet emitted — the baseline positions are
+still seed-derived per builder. Adding it is the next step to making both nulls reference
+artefacts.
 
 ## 5. How regions are sampled, exactly
 
