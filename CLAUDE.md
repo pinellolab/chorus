@@ -89,6 +89,21 @@ Two things deliberately do NOT follow it: **credentials**
 data dir is the wrong place for a personal token; and **conda environments**
 stay with the installation.
 
+## Background nulls
+
+Every percentile is a rank against a per-track background null. Before changing a region
+set, a sampling rule, a retention policy or adding an oracle, read:
+
+- **[`docs/BACKGROUND_NULL_PROTOCOL.md`](docs/BACKGROUND_NULL_PROTOCOL.md)** — which
+  regions and why, how they are sampled, which SNPs, how the CDFs are computed
+  (stratified or not), the guard inventory, a step-by-step for adding a new oracle, and a
+  dated decision log with the measurement behind each call.
+
+It is a LIVING document: update it in the same commit as any change it describes. Two
+rules it exists to enforce — the effect and baseline nulls are different reference classes
+and must not be unified, and **no composition change ships without a two-arm measurement**
+(every unmeasured composition guess in this project was wrong).
+
 ## Regeneration
 
 After any correctness fix (e.g. the ref-allele off-by-one) every
