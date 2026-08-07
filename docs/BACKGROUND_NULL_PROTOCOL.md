@@ -383,11 +383,49 @@ Compute `N_expected = n_positions × fan_out` per layer, then:
 Pass `sampling=sampling_block(...)` to `build_and_save`. Omitting it logs an error and
 disables the thinning check entirely.
 
-### Step 6 — verify before shipping
+### Step 6 — register the reference family
+
+Add the oracle to `ORACLE_SNP_SET` in `scripts/build_reference_position_sets.py`, choosing
+the family that matches Step 2:
+
+| family | size | who uses it |
+|---|---|---|
+| `snps_gene_anchored` | 17,909 | enformer, borzoi, alphagenome, sei, epinformerseq |
+| `snps_promoter` | 17,805 | legnet |
+| `snps_accessibility` | 18,672 | chrombpnet, cherimoya |
+
+This is not bookkeeping. It is what lets
+`build_reference_position_sets.py --verify-against ORACLE --backgrounds-dir DIR` prove the
+built file drew from the **same** population as its family, rather than a
+similar-looking one. A ChromBPNet run in this cycle exited 0, reported 100% yield and
+exact retention, and had built **9 of 753 tracks** — a population comparison was the only
+check that caught it. If the new oracle needs a family that does not exist, add it to the
+builder and give it a sha256, so the same comparison is possible for the next one.
+
+### Step 7 — verify before shipping
 
 `scripts/verify_rebuilt_backgrounds.py --strict-retention`, then §7's expectations:
 body ratios ≈ 1.0, ceiling not falling, 0 thinned on exact layers, ≥200 exact slots on
 hybrid layers, and no increase in real-effect pinning.
+
+Two failure modes this cycle that a plain "did it finish" check misses, both now guarded
+but worth knowing about when the guard is the thing you are changing:
+
+* **A build that produces nothing still writes a valid file.** All 5,968 positions were
+  dropped (two processes on one GPU, cuBLAS OOM) and the result loaded fine.
+  `yield_violations` exists for this. Never key success off the exit code alone —
+  `conda run` also buffers stdout, so a 14-hour job's log stays empty until it exits.
+* **Arrays get lost between interim and final.** `layers_per_row` twice, `build_config`
+  once. The first version of that guard only checked arrays whose first dimension equals
+  the track count, so it could not see `build_config` (file-level, shape `(1,)`) at all. If
+  you add a new array, confirm the preservation check covers its shape class.
+
+### Step 8 — stamp provenance
+
+`scripts/stamp_provenance_v4.py` — schema 4, one `build_id`, read **from the artefacts
+rather than the build logs**. Logs describe what a run intended; artefacts describe what it
+produced, and AlphaGenome once shipped a stamped claim contradicted by a stale measurement
+sitting in the same file.
 
 ---
 
@@ -444,10 +482,37 @@ Body unchanged, ceilings up. Medians of **per-track** ratios (new/old):
 Real-effect **pinning** on committed artefacts — the user-facing measure:
 enformer **9.5% → 3.6%**, alphagenome **2.5% → 2.0%**.
 
-And the mechanism, confirmed across every thinned layer (1 − *m/N* predicts the share of
-tracks whose ceiling rises), worst deviation **1.4 points** over predictions from 26% to
-98%, with **0 of borzoi's 6,068 unthinned tracks** moving — see
+And the mechanism, confirmed on the **six layers whose position population is unchanged**,
+so retention is the only variable. 1 − *m/N* predicts the share of tracks whose ceiling
+rises; worst deviation **1.4 points** over predictions spanning 26% to 98% and a 32-fold
+range of thinning, with **0 of borzoi's 6,068 unthinned tracks** moving.
+
+AlphaGenome's three layers are **deliberately excluded** from that check. Its position
+count grew in the same rebuild (effect 148,367 → 225,253), so retention is not the only
+variable and the identity does not apply — measured 70.8% against a predicted 86.5% for
+`effect`, and 97.0% against 80.8% for `summary`. Those two numbers are not evidence for
+or against the mechanism; quoting them as agreement would be dishonest, and quoting them
+as disagreement would be equally wrong. The six controlled layers are the evidence. See
 `audits/2026-08-06_null_model_rebuild.md`.
+
+### One layer got narrower, and it is recorded rather than smoothed over
+
+LegNet was **never thinned** — 3 tracks, well under capacity. It moved to the shared
+`snps_promoter` reference class (11,913 → 17,805 positions), and that composition change
+*narrowed* one of its three ceilings:
+
+| track | n before | n after | max before | max after | ratio | p99 ratio |
+|---|---|---|---|---|---|---|
+| K562 | 11,913 | 17,805 | 0.9057 | 0.7887 | **0.871** | 0.954 |
+| HepG2 | 11,913 | 17,805 | 0.9879 | 0.9788 | 0.991 | 1.034 |
+| WTC11 | 11,913 | 17,805 | 1.3651 | 1.4353 | 1.051 | 1.067 |
+
+A narrower ceiling *raises* percentiles — the opposite of this rebuild's intent — and it
+happened with 49% **more** positions offered, which is only possible because the population
+itself changed. Verified consequence-free on what ships (0 of LegNet's committed rows pin,
+checked in `validation/SORT1_rs12740374_multioracle`), but it is a composition effect on
+n=3 and should be re-measured if LegNet ever gains tracks or a committed walkthrough with
+strong promoter effects.
 
 ## 11. ⚠️ Open
 
