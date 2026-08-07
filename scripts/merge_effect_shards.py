@@ -63,8 +63,16 @@ GENE_ANCHORED_BACKUP = Path("/data/chorus_data/interims_gene_anchored")
 _MAX_COUNT_RATIO = 1.15
 
 
+# Overridable so a STAGED rebuild can be merged without reading or writing the live
+# directory. Without this the union would have read the 8 stale `.shard*of8.npz` files
+# left in the live dir by the 2026-08-05 build and written its output over the live
+# interim -- reading the wrong inputs and mutating data that is deliberately untouched
+# until the swap.
+_DIR: "Path | None" = None
+
+
 def _effect_path(oracle: str, suffix: str = "") -> Path:
-    return BG / f"{oracle}_effect_cdfs_interim{suffix}.npz"
+    return (_DIR or BG) / f"{oracle}_effect_cdfs_interim{suffix}.npz"
 
 
 def union_shards(oracle: str, n_shards: int, n_points: int,
@@ -235,12 +243,22 @@ def main() -> int:
                     help="Take peak-layer rows from the cCRE interim and the rest "
                          "from the backed-up gene-anchored interim.")
     ap.add_argument("--n-points", type=int, default=10_000)
+    ap.add_argument("--dir", default=None,
+                    help="Directory holding the shards, and where the union is written. "
+                         "Defaults to the live CHORUS_BACKGROUNDS_DIR. Point it at a "
+                         "staging directory when merging a rebuild that has not been "
+                         "swapped in -- otherwise stale shards from an earlier build "
+                         "with a different shard count are silently in scope.")
     ap.add_argument("--capped", action="store_true",
                     help="Subsample the union to DEFAULT_CAPACITY instead of keeping "
                          "every value. This reproduces the pre-2026-08-06 behaviour "
                          "that thinned AlphaGenome's RNA ceilings; it exists only so "
                          "the defect can be reproduced in a test.")
     args = ap.parse_args()
+    global _DIR
+    if args.dir:
+        _DIR = Path(args.dir)
+        print(f"[shards] reading and writing {_DIR}")
 
     if args.shards:
         print(f"[{args.oracle}] unioning {args.shards} position shards")
