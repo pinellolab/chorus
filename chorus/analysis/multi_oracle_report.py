@@ -263,6 +263,38 @@ class MultiOracleReport:
                     entry["agreement"] = "disagree"
             else:
                 entry["agreement"] = "no_data"
+
+            # Direction is all ``agreement`` has ever measured -- it is
+            # ``1 if raw_score > 0 else -1``, nothing more. So "✅ all ↑" reads as
+            # a clean consensus whether the oracles span 2.5x-3.5x or 2x-100x, and
+            # a reader has no way to tell which from the badge.
+            #
+            # That became load-bearing when a third accessibility oracle joined
+            # this matrix: at rs12740374 the chromatin row carries AlphaGenome
+            # +1.334, ChromBPNet +1.376 and Cherimoya +1.793, all ↑ and all
+            # "consensus", while the extremes differ by 1.37x in linear fold
+            # change. Concordant on the finding, not on the size -- and only the
+            # first half was rendered.
+            #
+            # So record the spread beside the direction. Same units as the column
+            # (whatever that layer's raw_score is), because converting to a fold
+            # ratio would be wrong for any layer that is not log2FC -- this report
+            # deliberately mixes log2FC, lnFC and Δ, which is why it carries a
+            # units glossary.
+            scores = [
+                o["raw_score"] for o in entry["oracles"].values()
+                if o is not None and o.get("raw_score") is not None
+            ]
+            if len(scores) >= 2:
+                lo, hi = min(scores), max(scores)
+                entry["spread"] = {
+                    "min": lo,
+                    "max": hi,
+                    "range": hi - lo,
+                    "n_oracles": len(scores),
+                }
+            else:
+                entry["spread"] = None
             rows.append(entry)
         return rows
 
@@ -520,7 +552,7 @@ class MultiOracleReport:
         lines.append("")
         lines.append("## Cross-oracle consensus")
         lines.append("")
-        header = ["Layer"] + list(self.reports.keys()) + ["Agreement"]
+        header = ["Layer"] + list(self.reports.keys()) + ["Agreement (direction)"]
         lines.append("| " + " | ".join(header) + " |")
         lines.append("|" + "---|" * len(header))
         for row in self._consensus_rows():
@@ -564,6 +596,9 @@ class MultiOracleReport:
                 "disagree": "disagree",
                 "no_data": "—",
             }[row["agreement"]]
+            sp = row.get("spread")
+            if sp and row["agreement"] in ("consensus_gain", "consensus_loss"):
+                agree += f" · {sp['min']:+.2f}…{sp['max']:+.2f}"
             cells.append(agree)
             lines.append("| " + " | ".join(cells) + " |")
         return "\n".join(lines)
@@ -674,7 +709,10 @@ def _build_multioracle_html(report: "MultiOracleReport") -> str:
     p.append("<th>Layer</th>")
     for name in report.reports.keys():
         p.append(f"<th>{esc(name)}</th>")
-    p.append("<th>Agreement</th></tr></thead><tbody>")
+    # Named "direction" because that is literally what is compared: the sign of
+    # each oracle's raw_score. The magnitude spread is rendered inside the cell.
+    p.append("<th>Agreement <span class='track'>on direction</span></th>"
+             "</tr></thead><tbody>")
 
     for row in report._consensus_rows():
         layer = row["layer"]
@@ -714,6 +752,15 @@ def _build_multioracle_html(report: "MultiOracleReport") -> str:
             "disagree": ("⚠ disagree", "agree-mixed"),
             "no_data": ("—", "agree-none"),
         }[agree]
+        # The badge is a DIRECTION verdict. Show the magnitude spread next to it so
+        # "all ↑" cannot be read as "and they agree on how much" -- see the comment
+        # in _consensus_rows() for why that distinction started mattering.
+        sp = row.get("spread")
+        if sp and agree in ("consensus_gain", "consensus_loss"):
+            agree_label += (
+                f"<span class='track'>{sp['n_oracles']} oracles, "
+                f"{sp['min']:+.2f}…{sp['max']:+.2f}</span>"
+            )
         p.append(f"<td class='{agree_cls}'>{agree_label}</td>")
         p.append("</tr>")
     p.append("</tbody></table>")

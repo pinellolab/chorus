@@ -49,9 +49,16 @@ accession is what identifies a model.
 
 1. **Consensus matrix** — each row is a regulatory layer, each oracle column
    shows its strongest track for that layer (with assay and cell type). The
-   "Agreement" column flags whether the oracles push in the same direction:
+   "Agreement (direction)" column flags whether the oracles push the same way:
    `✅ all ↑`, `✅ all ↓`, `⚠ disagree`, or `↑ only (n=1)` when only a single
    oracle is competent on that layer.
+
+   **It compares direction only** — literally the sign of each oracle's effect —
+   so it is shown alongside the magnitude spread rather than on its own. The
+   accessibility row here reads `✅ all ↑ · 3 oracles, +1.33…+1.79`: unanimous on
+   direction, and differing by 1.37× in linear fold change between the extremes.
+   Without the spread, that renders identically to three oracles agreeing exactly,
+   and a reader has no way to tell which they are looking at.
 2. **Cross-oracle genome browser** — one unified IGV instance stacks every
    oracle's ref (grey) / alt (coloured) signal tracks on a single x-axis.
    The default locus is AlphaGenome's 1 Mb window so you can see long-range

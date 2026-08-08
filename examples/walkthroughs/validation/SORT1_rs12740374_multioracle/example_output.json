@@ -51,7 +51,13 @@
           "description": "DNASE:HepG2"
         }
       },
-      "agreement": "consensus_gain"
+      "agreement": "consensus_gain",
+      "spread": {
+        "min": 1.3344578086817067,
+        "max": 1.7929634212041239,
+        "range": 0.45850561252241717,
+        "n_oracles": 3
+      }
     },
     {
       "layer": "promoter_activity",
@@ -68,7 +74,8 @@
         },
         "alphagenome": null
       },
-      "agreement": "single_gain"
+      "agreement": "single_gain",
+      "spread": null
     },
     {
       "layer": "tf_binding",
@@ -85,7 +92,8 @@
           "description": "CHIP:CEBPA:HepG2"
         }
       },
-      "agreement": "single_gain"
+      "agreement": "single_gain",
+      "spread": null
     },
     {
       "layer": "histone_marks",
@@ -102,7 +110,8 @@
           "description": "CHIP:H3K27ac:HepG2"
         }
       },
-      "agreement": "single_gain"
+      "agreement": "single_gain",
+      "spread": null
     },
     {
       "layer": "tss_activity",
@@ -119,7 +128,8 @@
           "description": "CAGE:HepG2"
         }
       },
-      "agreement": "single_gain"
+      "agreement": "single_gain",
+      "spread": null
     }
   ],
   "analysis_request": {
@@ -130,6 +140,6 @@
     "tracks_requested": "assay_ids as listed in each per-oracle request",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-08 04:34 UTC"
+    "generated_at": "2026-08-08 13:02 UTC"
   }
 }
