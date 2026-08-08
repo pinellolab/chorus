@@ -694,7 +694,8 @@ def _build_multioracle_html(report: "MultiOracleReport") -> str:
             # chorus report so "≥99th" / "≤1st" / "near-zero" are used
             # uniformly (not "+100.0%").
             q = entry.get("quantile_score")
-            q_str = f" · {_fmt_percentile(q)}" if q is not None else ""
+            q_str = (f" · {_fmt_percentile(q, layer=entry.get('layer'))}"
+                     if q is not None else "")
             # Prefer enriched label (CHIP:CEBPA:HepG2) over raw assay_id
             # so the consensus matrix matches per-variant reports.
             track_line = entry.get("description") or entry["assay_id"]
@@ -805,7 +806,7 @@ def _build_multioracle_html(report: "MultiOracleReport") -> str:
                 ref_s = f"{ts.ref_value:.3g}" if ts.ref_value is not None else "—"
                 alt_s = f"{ts.alt_value:.3g}" if ts.alt_value is not None else "—"
                 q = ts.quantile_score
-                q_str = (_fmt_percentile(q, ts.effect_exceedance)
+                q_str = (_fmt_percentile(q, ts.effect_exceedance, layer=ts.layer)
                          if q is not None else "—")
                 # Prefer enriched description (e.g. "CHIP:CEBPA:HepG2")
                 # over the raw AlphaGenome assay_id so the per-oracle

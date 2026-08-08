@@ -11,11 +11,13 @@
   "gene_name": "SORT1",
   "oracles": [
     "chrombpnet",
+    "cherimoya",
     "legnet",
     "alphagenome"
   ],
   "per_oracle_report_paths": {
     "chrombpnet": "rs12740374_SORT1_chrombpnet_report.html",
+    "cherimoya": "rs12740374_SORT1_cherimoya_report.html",
     "legnet": "rs12740374_SORT1_legnet_report.html",
     "alphagenome": "rs12740374_SORT1_alphagenome_report.html"
   },
@@ -28,6 +30,14 @@
           "assay_id": "DNASE:HepG2",
           "cell_type": "HepG2",
           "quantile_score": 0.9995,
+          "effect_exceedance": null,
+          "description": "DNASE:HepG2"
+        },
+        "cherimoya": {
+          "raw_score": 1.7929634212041239,
+          "assay_id": "DNASE:ENCSR149XIL",
+          "cell_type": "HepG2",
+          "quantile_score": 0.9999,
           "effect_exceedance": null,
           "description": "DNASE:HepG2"
         },
@@ -47,6 +57,7 @@
       "layer": "promoter_activity",
       "oracles": {
         "chrombpnet": null,
+        "cherimoya": null,
         "legnet": {
           "raw_score": 0.3465881049633026,
           "assay_id": "LentiMPRA:HepG2",
@@ -63,6 +74,7 @@
       "layer": "tf_binding",
       "oracles": {
         "chrombpnet": null,
+        "cherimoya": null,
         "legnet": null,
         "alphagenome": {
           "raw_score": 2.9454282931023896,
@@ -79,6 +91,7 @@
       "layer": "histone_marks",
       "oracles": {
         "chrombpnet": null,
+        "cherimoya": null,
         "legnet": null,
         "alphagenome": {
           "raw_score": 1.2505934648002608,
@@ -95,6 +108,7 @@
       "layer": "tss_activity",
       "oracles": {
         "chrombpnet": null,
+        "cherimoya": null,
         "legnet": null,
         "alphagenome": {
           "raw_score": 1.5022141347796536,
@@ -111,11 +125,11 @@
   "analysis_request": {
     "user_prompt": "Validate rs12740374 (the classic SORT1 LDL-cholesterol causal variant) by scoring it with three independent deep-learning oracles: ChromBPNet for chromatin accessibility, LegNet for MPRA promoter activity, and AlphaGenome as a generalist model covering ChIP, histones and CAGE. A new user should be able to see at a glance whether the three oracles agree on direction, and which assay/cell type drove each call.",
     "tool_name": "MultiOracleReport",
-    "oracle_name": "chrombpnet, legnet, alphagenome",
+    "oracle_name": "chrombpnet, cherimoya, legnet, alphagenome",
     "normalizer_name": "per-oracle chorus per-track v1",
     "tracks_requested": "assay_ids as listed in each per-oracle request",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-07 12:33 UTC"
+    "generated_at": "2026-08-08 04:34 UTC"
   }
 }

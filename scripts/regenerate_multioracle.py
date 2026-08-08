@@ -3,14 +3,22 @@
 The report combines three oracles that look at the same variant from very
 different angles:
 
-    ChromBPNet      — chromatin accessibility (ATAC/DNase), HepG2
+    ChromBPNet      — chromatin accessibility (DNase), HepG2
+    Cherimoya       — chromatin accessibility (DNase), HepG2, CATv1/ENCSR149XIL
     LegNet          — promoter activity (LentiMPRA), HepG2
     AlphaGenome     — generalist: ChIP, histone marks, CAGE, etc.
 
+ChromBPNet and Cherimoya answer the *same* question — HepG2 DNase accessibility —
+which is the point of including both. Two independently trained models on one
+variant is a stronger statement than one model, and because they share a 2,114 bp
+input window and base-pair-resolution output, the rows and IGV tracks are directly
+comparable rather than merely adjacent.
+
 Each oracle runs inside its own conda env:
 
-    mamba run -n chorus-chrombpnet python scripts/regenerate_multioracle.py --oracle chrombpnet
-    mamba run -n chorus-legnet     python scripts/regenerate_multioracle.py --oracle legnet
+    mamba run -n chorus-chrombpnet  python scripts/regenerate_multioracle.py --oracle chrombpnet
+    mamba run -n chorus-cherimoya   python scripts/regenerate_multioracle.py --oracle cherimoya
+    mamba run -n chorus-legnet      python scripts/regenerate_multioracle.py --oracle legnet
     mamba run -n chorus-alphagenome python scripts/regenerate_multioracle.py --oracle alphagenome
 
 Then the consolidator — which has no GPU requirement and runs in any env:
@@ -251,6 +259,69 @@ def run_chrombpnet():
     report._predictions[alt_key] = alt_pred
 
     return _save_oracle_artefacts(report, "chrombpnet")
+
+
+def run_cherimoya():
+    """Cherimoya (CATv1) on the same HepG2 DNase question ChromBPNet answers.
+
+    Deliberately the same assay and biosample as the ChromBPNet row, because the
+    interesting comparison here is not "another accessibility number" but two
+    independently trained accessibility models on one variant. They share a
+    2,114 bp input window and both emit base-pair-resolution profiles, so the
+    rows are directly comparable and the IGV tracks line up.
+
+    ``DNASE:ENCSR149XIL`` is the HepG2 DNase experiment (count_pearson 0.649).
+    Cherimoya track ids are ``ASSAY:ENCSR`` rather than ``ASSAY:biosample``,
+    because (assay, biosample) is ambiguous for 1,188 of its 1,518 experiments --
+    so the accession is what pins the model, and passing ``cell_type="HepG2"``
+    alone would not identify one.
+    """
+    from chorus.oracles.cherimoya import CherimoyaOracle
+    from chorus.core.interval import Interval, GenomeRef
+    # use_environment=False: we are already inside chorus-cherimoya via mamba
+    # run, and predict_sliding needs to reach self.model directly.
+    oracle = CherimoyaOracle(use_environment=False, reference_fasta=GENOME_REF)
+    oracle.load_pretrained_model(encode_id="ENCSR149XIL", fold=0)
+
+    # Native window centred on the variant, for the same reason as ChromBPNet:
+    # tiling a 2,114 bp model across the 1 Mb multi-oracle locus averages the
+    # effect down, and the table value should be the canonical narrow-window one.
+    seqlen = int(getattr(oracle, "sequence_length", 2114) or 2114)
+    half = seqlen // 2
+    region = f"{VARIANT['chrom']}:{VARIANT['position'] - half}-{VARIANT['position'] + half}"
+    report = _build_variant_report(oracle, oracle_name="cherimoya", region=region)
+
+    # Wide sliding track for IGV display only; scoring above is untouched.
+    HALF = 524288
+    variant_pos = VARIANT["position"]
+    chrom = VARIANT["chrom"]
+    wide_start = max(0, variant_pos - HALF)
+    wide_end = variant_pos + HALF
+
+    logger.info(
+        "Sliding cherimoya across %s:%d-%d (%.0f kb) for IGV display ...",
+        chrom, wide_start, wide_end, (wide_end - wide_start) / 1000,
+    )
+    ref_iv = Interval.make(GenomeRef(
+        chrom=chrom, start=wide_start, end=wide_end, fasta=GENOME_REF,
+    ))
+    real_pos = (variant_pos - 1) - wide_start  # 0-based variant index
+    alt_iv = ref_iv.replace(seq=VARIANT["alt"], start=real_pos, end=real_pos + 1)
+
+    ref_pred = oracle.predict_sliding(ref_iv)
+    alt_pred = oracle.predict_sliding(alt_iv)
+
+    if report._predictions is None:
+        report._predictions = {}
+    report._predictions["reference"] = ref_pred
+    alt_key = next(
+        (k for k in (report._predictions.keys() if report._predictions else [])
+         if k != "reference"),
+        "alt_1",
+    )
+    report._predictions[alt_key] = alt_pred
+
+    return _save_oracle_artefacts(report, "cherimoya")
 
 
 def _legnet_sliding_prediction(oracle, chrom, wide_start, wide_end, seq):
@@ -499,7 +570,10 @@ def consolidate():
     per_oracle = {}
     reports = []
     ordered_oracles = []
-    for oracle_name in ("chrombpnet", "legnet", "alphagenome"):
+    # Order is the display order in the consensus matrix. chrombpnet and
+    # cherimoya sit adjacent on purpose: same assay, same biosample, two
+    # independently trained models, so a reader can compare them directly.
+    for oracle_name in ("chrombpnet", "cherimoya", "legnet", "alphagenome"):
         pkl = os.path.join(OUT_DIR, f"{oracle_name}_variant_report.pkl")
         jp = os.path.join(OUT_DIR, f"{oracle_name}_variant_report.json")
         if os.path.isfile(pkl):
@@ -595,7 +669,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--oracle",
-        choices=["chrombpnet", "legnet", "alphagenome"],
+        choices=["chrombpnet", "cherimoya", "legnet", "alphagenome"],
         help="Run a single oracle and save its VariantReport JSON to OUT_DIR.",
     )
     parser.add_argument(
@@ -606,6 +680,8 @@ def main():
 
     if args.oracle == "chrombpnet":
         run_chrombpnet()
+    elif args.oracle == "cherimoya":
+        run_cherimoya()
     elif args.oracle == "legnet":
         run_legnet()
     elif args.oracle == "alphagenome":

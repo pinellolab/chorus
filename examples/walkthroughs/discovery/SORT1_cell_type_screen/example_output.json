@@ -16,7 +16,7 @@
     "tracks_requested": "all DNASE/ATAC scout tracks, then all tracks in the top cell types",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-07 12:25 UTC"
+    "generated_at": "2026-08-08 03:48 UTC"
   },
   "cell_type_ranking": [
     {
@@ -5873,7 +5873,7 @@
           "HepG2"
         ],
         "notes": [],
-        "generated_at": "2026-08-07 12:24 UTC"
+        "generated_at": "2026-08-08 03:47 UTC"
       }
     },
     "MCF 10A": {
@@ -7485,7 +7485,7 @@
           "MCF 10A"
         ],
         "notes": [],
-        "generated_at": "2026-08-07 12:25 UTC"
+        "generated_at": "2026-08-08 03:48 UTC"
       }
     },
     "amniotic epithelial cell": {
@@ -9069,7 +9069,7 @@
           "amniotic epithelial cell"
         ],
         "notes": [],
-        "generated_at": "2026-08-07 12:25 UTC"
+        "generated_at": "2026-08-08 03:48 UTC"
       }
     }
   }

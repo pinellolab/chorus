@@ -1,7 +1,7 @@
 # Multi-oracle validation — rs12740374 at the SORT1 locus
 
-**What this example demonstrates.** A single variant is scored by **three
-independent deep-learning oracles** and the three answers are fused into one
+**What this example demonstrates.** A single variant is scored by **four
+independent deep-learning oracles** and the answers are fused into one
 consensus view so a new user can tell at a glance whether the oracles agree
 on direction, and which assay / cell type drove each call.
 
@@ -18,8 +18,32 @@ activity at this variant — all on the HepG2 cell type.
 | Oracle | Role | Regulatory layer |
 | --- | --- | --- |
 | **ChromBPNet** | chromatin accessibility specialist | DNase/ATAC |
+| **Cherimoya** (CATv1) | chromatin accessibility specialist | DNase/ATAC |
 | **LegNet** | MPRA / promoter activity specialist | LentiMPRA (promoter) |
 | **AlphaGenome** | generalist multi-track model | ChIP, histones, CAGE |
+
+**ChromBPNet and Cherimoya are deliberately pointed at the same question** —
+HepG2 DNase accessibility — rather than being given different assays to cover.
+Two independently trained models agreeing on one variant is a stronger claim
+than one model asserting it, and because they share a 2,114 bp input window and
+base-pair-resolution output, their rows and IGV tracks are directly comparable
+instead of merely adjacent. They agree here on direction and differ on
+magnitude — and because AlphaGenome also carries a HepG2 DNase track, the same
+question is answered three independent ways:
+
+| Oracle | HepG2 DNase track | raw log2FC | percentile |
+| --- | --- | --- | --- |
+| Cherimoya | `DNASE:ENCSR149XIL` | **+1.793** | 0.9999 |
+| ChromBPNet | `DNASE:HepG2` | **+1.376** | 0.9995 |
+| AlphaGenome | `DNASE:HepG2` | **+1.334** | 0.9964 |
+
+Read that as concordance on the finding and honest uncertainty on the size: a
+2.5–3.5× predicted increase in accessibility, agreed by three models trained
+separately on different data. The percentiles differ more than the raw effects
+do, which is expected — each is a rank against that model's own background.
+Cherimoya track ids are `ASSAY:ENCSR` rather than `ASSAY:biosample`, because
+(assay, biosample) is ambiguous for 1,188 of its 1,518 experiments — the
+accession is what identifies a model.
 
 ## What to look at first
 
@@ -31,7 +55,7 @@ activity at this variant — all on the HepG2 cell type.
 2. **Cross-oracle genome browser** — one unified IGV instance stacks every
    oracle's ref (grey) / alt (coloured) signal tracks on a single x-axis.
    The default locus is AlphaGenome's 1 Mb window so you can see long-range
-   context; the specialists (ChromBPNet ~1 kb, LegNet ~200 bp) render blank
+   context; the specialists (ChromBPNet and Cherimoya ~2 kb, LegNet ~200 bp) render blank
    outside their own windows, which is the *intended* visual cue that
    they can only reach local positions. Signals are floor-rescaled so 1.0
    on every track means "genome-wide p99 peak for this assay".
@@ -44,15 +68,21 @@ activity at this variant — all on the HepG2 cell type.
 ## How this was produced
 
 Each oracle runs in its own conda env (their dependencies don't coexist), so
-the regeneration is split into three per-oracle runs plus one consolidator
+the regeneration is split into four per-oracle runs plus one consolidator
 step:
 
 ```bash
 mamba run -n chorus-chrombpnet  python scripts/regenerate_multioracle.py --oracle chrombpnet
+mamba run -n chorus-cherimoya   python scripts/regenerate_multioracle.py --oracle cherimoya
 mamba run -n chorus-legnet      python scripts/regenerate_multioracle.py --oracle legnet
 mamba run -n chorus-alphagenome python scripts/regenerate_multioracle.py --oracle alphagenome
 mamba run -n chorus             python scripts/regenerate_multioracle.py --consolidate
 ```
+
+The `chorus-cherimoya` env is the only one carrying the `cherimoya` package.
+Run that step anywhere else and it does **not** fail fast — it logs
+`Failed to load <track>` per track and carries on, producing a report with no
+scores in it.
 
 Each per-oracle run saves three artefacts:
 
@@ -60,7 +90,8 @@ Each per-oracle run saves three artefacts:
   arrays; round-trips through `VariantReport.from_dict`).
 - `<oracle>_variant_report.pkl` — full `VariantReport` **with prediction
   arrays**, used by the consolidator to draw IGV signal tracks. These
-  are `.gitignore`d because AlphaGenome's pickle is ~600 MB.
+  are `.gitignore`d because they are large (AlphaGenome ~610 MB, Cherimoya
+  ~194 MB, ChromBPNet ~106 MB).
 - `rs12740374_SORT1_<oracle>_report.html` — standalone per-oracle
   HTML report, linked from the unified page.
 

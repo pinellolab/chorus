@@ -213,7 +213,9 @@ class BatchResult:
                     sign = "+" if ts.raw_score >= 0 else ""
                     fc_str = f"{sign}{ts.raw_score:.3f}"
                     from chorus.analysis.variant_report import _fmt_percentile
-                    pct_str = _fmt_percentile(ts.quantile_score, ts.effect_exceedance)
+                    pct_str = _fmt_percentile(
+                        ts.quantile_score, ts.effect_exceedance, layer=ts.layer,
+                    )
                     row += f" {ref_str} | {alt_str} | {fc_str} | {pct_str} |"
                 else:
                     row += " — | — | — | — |"
@@ -362,7 +364,9 @@ class BatchResult:
                     sign = "+" if ts.raw_score >= 0 else ""
                     cls = "gain" if ts.raw_score > 0.1 else ("loss" if ts.raw_score < -0.1 else "neutral")
                     from chorus.analysis.variant_report import _fmt_percentile
-                    pct_str = _fmt_percentile(ts.quantile_score, ts.effect_exceedance)
+                    pct_str = _fmt_percentile(
+                        ts.quantile_score, ts.effect_exceedance, layer=ts.layer,
+                    )
                     parts.append(f"<td>{ref_str}</td><td>{alt_str}</td>"
                                  f"<td class='{cls}'>{sign}{ts.raw_score:.3f}</td>"
                                  f"<td>{pct_str}</td>")

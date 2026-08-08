@@ -192,15 +192,91 @@ def test_unknown_track_and_oracle_return_none_rather_than_raising(norm):
 
 
 def test_the_table_shows_the_ratio_beside_the_pinned_bucket():
-    """``≥99th`` is where every strong variant piled up indistinguishably."""
-    assert _fmt_percentile(1.0) == "≥99th"
+    """The bucket appears exactly when the percentile is clamped, and not otherwise.
+
+    A clamped percentile carries no ordering information -- 1.11x past the null's
+    maximum and 10x past it both saturate at the same end of the same CDF row -- so
+    the bucket plus the ratio is the honest rendering.
+
+    An *un*clamped percentile is a real rank, and gets real digits. This is the
+    part that changed with exact retention: while the nulls were thinned the top of
+    the scale was an artefact of a subsample, so bucketing 0.9995 and 0.9998
+    together was correct. Now they order, and the report must say so.
+    """
+    # Clamped: bucket + ratio, no fabricated decimals.
     assert _fmt_percentile(1.0, 1.109) == "≥99th (1.11× null max)"
     assert _fmt_percentile(-1.0, 1.25) == "≤1st (1.25× null max)"
-    # Mid-range is unannotated — an exceedance there would be contradictory.
+    # Inside support: four decimals, because two cannot separate the tail.
+    assert _fmt_percentile(1.0) == "1.0000"
+    assert _fmt_percentile(0.9998) == "0.9998"
+    assert _fmt_percentile(0.9995) == "0.9995"
+    assert _fmt_percentile(0.9998) != _fmt_percentile(0.9995)
+    assert _fmt_percentile(0.005) == "0.0050"
+    # Mid-range keeps two decimals -- an exceedance there would be contradictory.
     assert _fmt_percentile(0.5) == "0.50"
     # Suppressed (below the noise floor) stays legible.
     assert _fmt_percentile(None) == "near-zero"
     assert _fmt_percentile(None, 2.0) == "near-zero"
+
+
+def test_a_signed_layers_negative_half_is_not_the_bottom_percentile():
+    """A signed percentile near -0.8 is a strong DOWN effect, not "≤1st".
+
+    Signed layers span [-1, 1]: the sign is direction, the magnitude is how
+    unusual. The old rule tested ``q <= 0.01``, which is true for the entire
+    negative half, so the C/EBP vignette rendered nine ``gene_expression`` rows
+    as "≤1st" whose real percentiles were -0.7374 to -0.9634 -- moderately to
+    strongly down-regulated. Beside a "≥99th" three rows above, that reads as a
+    variant which both strongly represses and is indistinguishable from noise.
+
+    Unsigned layers keep both ends as tails, because for them ``q`` near zero
+    really is the bottom of the scale. The same number needs opposite treatment
+    depending on the layer, which is why the layer has to be passed.
+    """
+    # Signed: mid-magnitude negatives are body values, shown with two decimals.
+    for q in (-0.7374, -0.8410, -0.8700, -0.9054, -0.9634):
+        out = _fmt_percentile(q, layer="gene_expression")
+        assert out == f"{q:.2f}", f"signed {q} rendered as {out!r}"
+        assert "1st" not in out, f"signed {q} still reads as a bottom-percentile bucket"
+    # Signed: only |q| >= 0.99 is a tail, and gets four decimals.
+    assert _fmt_percentile(-0.9950, layer="gene_expression") == "-0.9950"
+    assert _fmt_percentile(0.9950, layer="gene_expression") == "0.9950"
+    # Unsigned: the low end IS a tail.
+    assert _fmt_percentile(0.0050, layer="chromatin_accessibility") == "0.0050"
+    assert _fmt_percentile(0.9998, layer="chromatin_accessibility") == "0.9998"
+    # Unsigned mid-range keeps two decimals.
+    assert _fmt_percentile(0.42, layer="chromatin_accessibility") == "0.42"
+
+
+def test_an_unknown_or_absent_layer_falls_back_to_the_unsigned_reading():
+    """Most layers are unsigned, so that is the safer default.
+
+    Asserted rather than left implicit: a caller that forgets the argument should
+    degrade to imprecision, never to the sign confusion above.
+    """
+    assert _fmt_percentile(0.0050) == "0.0050"
+    assert _fmt_percentile(0.0050, layer="no_such_layer") == "0.0050"
+    assert _fmt_percentile(0.9998, layer=None) == "0.9998"
+
+
+def test_a_clamped_signed_row_still_buckets_by_sign():
+    """Past the ceiling, direction is all that is left to report."""
+    assert _fmt_percentile(1.0, 1.5, layer="gene_expression") == "≥99th (1.50× null max)"
+    assert _fmt_percentile(-1.0, 1.5, layer="gene_expression") == "≤1st (1.50× null max)"
+
+
+def test_the_cebp_vignette_ordering_is_visible_in_the_rendered_string():
+    """The regression this change exists to prevent, in the numbers that caused it.
+
+    CEBPA outranks CEBPB at rs12740374 on a *smaller* raw effect, because each is
+    ranked against its own track's null. Both previously rendered as a bare
+    "≥99th", so the report contradicted the walkthrough README explaining the
+    contrast.
+    """
+    cebpa, cebpb, cebpg = 0.9998, 0.9995, 0.9997
+    shown = [_fmt_percentile(q) for q in (cebpa, cebpb, cebpg)]
+    assert len(set(shown)) == 3, f"three distinct percentiles still render alike: {shown}"
+    assert shown[0] > shown[1], "CEBPA must read above CEBPB as displayed text"
 
 
 def test_the_field_survives_a_json_round_trip():

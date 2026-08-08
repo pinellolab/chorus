@@ -432,7 +432,8 @@ class VariantReport:
                     cols = [track_label, ref_str, alt_str, score_str]
                     if has_quantile:
                         cols.append(
-                            _fmt_percentile(ts.quantile_score, ts.effect_exceedance)
+                            _fmt_percentile(ts.quantile_score, ts.effect_exceedance,
+                                            layer=ts.layer)
                         )
                     if has_baseline:
                         cols.append(
@@ -572,7 +573,11 @@ def _sort_layer_scores(layer_scores: list["TrackScore"]) -> list["TrackScore"]:
 # ---------------------------------------------------------------------------
 
 
-def _fmt_percentile(q: float | None, exceedance: float | None = None) -> str:
+def _fmt_percentile(
+    q: float | None,
+    exceedance: float | None = None,
+    layer: str | None = None,
+) -> str:
     """Format a quantile score for display, avoiding misleading precision.
 
     ``None`` means the percentile was suppressed because ``|raw_score|``
@@ -583,23 +588,66 @@ def _fmt_percentile(q: float | None, exceedance: float | None = None) -> str:
     missing data.
 
     *exceedance* annotates the top (and, for signed layers, bottom) bucket with
-    how far past the null's most extreme sample the effect actually lies. Without
-    it, "≥99th" is where the strongest variants in the genome pile up
-    indistinguishably: at rs12740374 a motif-creating change scoring 11% beyond
-    its null's maximum renders identically to one scoring 10× beyond. The
-    percentile genuinely cannot separate them — it is clamped — so the separation
-    has to come from a different number rather than more decimal places.
+    how far past the null's most extreme sample the effect actually lies. Where it
+    is set, the percentile is **clamped** and carries no ordering information: a
+    motif-creating change scoring 11% beyond its null's maximum is arithmetically
+    identical to one scoring 10× beyond, because both saturate at the same end of
+    the same CDF row. There the bucket label is the honest rendering and the ratio
+    is the only thing that can separate them — more decimal places would be
+    fabricated precision.
+
+    Where it is **not** set, the effect is inside the null's support, so the
+    percentile is a genuine rank and 0.9998 really does order above 0.9995. This
+    function used to bucket those too, and that was right while the nulls were
+    thinned: the sampler discarded the population maximum at rate *m/N*, so the
+    top of the scale was an artefact of a subsample and the fourth decimal was
+    noise. With exact retention it is signal, and bucketing threw it away —
+    measured at **127 committed rows collapsing 81 distinct values**, including
+    the C/EBP vignette where CEBPA (0.9998) outranks CEBPB (0.9995) on a *smaller*
+    raw effect. That contrast is the whole point of the example, and it was
+    invisible in the HTML while being present in the JSON.
+
+    So the rule is now "bucket exactly when the number is not real", rather than
+    "bucket the ends of the scale". Four decimals in the tails because that is
+    where percentiles bunch and where two decimals cannot separate anything; two
+    in the body, where they can.
+
+    *layer* decides which end counts as a tail, and omitting it used to produce a
+    wrong answer rather than an imprecise one. Unsigned layers span [0, 1], so both
+    ends are tails. **Signed** layers span [-1, 1] — direction is the sign,
+    unusualness is the magnitude — so `q` near zero is the *body*, not the bottom
+    percentile. The old `q <= 0.01` test therefore captured the entire negative
+    half of every signed layer: the C/EBP vignette rendered nine `gene_expression`
+    rows as "≤1st" whose real percentiles were -0.74 to -0.96, i.e. moderately to
+    strongly *down*, not bottom-1%. Reading "≤1st" there and "≥99th" three rows
+    above suggests a variant that both strongly represses and is barely
+    distinguishable from noise.
+
+    Without a *layer* the function cannot tell -0.74 (signed, mid-body) from 0.005
+    (unsigned, genuine low tail) — the two need opposite treatment and look
+    identical to a magnitude test. So it falls back to the unsigned reading, which
+    is what the majority of layers are, and callers that have a layer should pass
+    it.
     """
     if q is None:
         return "near-zero"
-    suffix = f" ({exceedance:.2f}× null max)" if exceedance is not None else ""
-    if q >= 0.99:
-        return "≥99th" + suffix
-    if q <= 0.01:
-        return "≤1st" + suffix
-    # An exceedance with a mid-range percentile would be contradictory: both are
-    # read off the same CDF row, so crossing the support's edge forces the clamp.
-    return f"{q:.2f}"
+
+    signed = False
+    if layer:
+        cfg = LAYER_CONFIGS.get(layer)
+        signed = bool(getattr(cfg, "signed", False)) if cfg is not None else False
+
+    if exceedance is not None:
+        # Past the edge of support: clamped, unorderable, ratio-separated. Which
+        # edge depends on the range, and the midpoint differs: an unsigned layer
+        # clamps low at q == 0.0, a signed one at q == -1.0. Testing ``q >= 0``
+        # for both would label an unsigned bottom-clamp as "≥99th".
+        high = q >= 0 if signed else q >= 0.5
+        label = "≥99th" if high else "≤1st"
+        return f"{label} ({exceedance:.2f}× null max)"
+
+    in_tail = abs(q) >= 0.99 if signed else (q >= 0.99 or q <= 0.01)
+    return f"{q:.4f}" if in_tail else f"{q:.2f}"
 
 
 def _interpret_score(
@@ -1656,7 +1704,9 @@ def _build_html_report(report: "VariantReport") -> str:
                 )
 
                 if has_quantile:
-                    q_str = _fmt_percentile(ts.quantile_score)
+                    q_str = _fmt_percentile(
+                        ts.quantile_score, ts.effect_exceedance, layer=ts.layer,
+                    )
                     parts.append(f"<td>{q_str}</td>")
 
                 if has_baseline:

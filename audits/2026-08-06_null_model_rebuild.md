@@ -1,4 +1,4 @@
-# 2026-08-06 — Fixing the background null model, and eight defects found on the way
+# 2026-08-06 — Fixing the background null model, and ten defects found on the way
 
 Scope: the per-track background nulls (`effect_cdfs`, `summary_cdfs`, `perbin_cdfs`)
 that every percentile in chorus is computed against. Prompted by a user asking for a
@@ -413,3 +413,106 @@ without it.
 **Release gates should still be run on an unloaded GPU** — the cherimoya flake is real —
 but "the machine was busy" must not be the first hypothesis for a failure that reproduces
 deterministically under a fixed test order.
+
+---
+
+# Addendum D — visual inspection of the rendered artefacts (2026-08-08)
+
+Addendum C recorded §7 as "18 shipped HTML reports vs sibling JSON/TSV: consistent in all
+21 directories". That was true and it was not a visual check. It compared *text*: file
+dates, greps for a clamped `1.0000`, NaN counts, plot-marker counts. It could not have told
+you whether a chart was blank, mislabelled, or misleading. Prompted to actually look, I
+rendered all 18 reports in Chromium via Playwright and extracted all 41 notebook figures.
+
+## One real finding, fixed
+
+**127 committed rows rendered as a single `≥99th` bin, hiding 81 distinct values.**
+
+`_fmt_percentile` bucketed everything at or above 0.99. Its docstring gives the rationale,
+and the rationale was **correct for the regime it was written in**: past the null's
+maximum the percentile is clamped, so an effect 1.11× beyond the ceiling is arithmetically
+identical to one 10× beyond, and only the exceedance ratio can separate them. More decimal
+places there would be fabricated precision.
+
+The rebuild moved these rows out of that regime. With exact retention the C/EBP effects sit
+*inside* support: CEBPA 0.9998, CEBPG 0.9997, CEBPB 0.9995 — real, orderable ranks. The
+escape valve (`(N× null max)`) only fires when an effect is genuinely past the ceiling, so
+with nothing past it, all five C/EBP rows rendered as an identical bare `≥99th`. The
+walkthrough README explains at length that CEBPA outranks CEBPB on a *smaller* raw effect;
+the report contradicted it.
+
+So the release's headline benefit was invisible in the artefact users open, while being
+present in the JSON all along. The rule is now "bucket exactly when the number is not
+real" rather than "bucket the ends of the scale": four decimals in the tails, where
+percentiles bunch and two decimals cannot separate anything; two in the body; bucket plus
+ratio only when clamped.
+
+Worth stating plainly because it generalises: **a display policy tuned to a broken
+statistic becomes wrong when the statistic is fixed, and nothing fails.** No test caught
+this — the tests asserted the bucketing, so they encoded the old regime as the contract.
+
+## A second display bug, found by fixing the first
+
+Signed layers span [-1, 1] -- the sign is direction, the magnitude is how unusual -- so the
+old `q <= 0.01` test captured **the entire negative half of every signed layer**. The C/EBP
+vignette rendered nine `gene_expression` rows as `≤1st` whose real percentiles were
+**-0.7374 to -0.9634**: moderately to strongly down-regulated, nowhere near the bottom
+percentile. Three rows above them sat a `≥99th`. Read together that describes a variant
+which both strongly represses transcription and is indistinguishable from noise.
+
+It surfaced only because the first fix changed those cells, and the diff was reviewed
+rather than assumed. `_fmt_percentile` now takes the `layer` and tests `|q| >= 0.99` for
+signed layers while keeping both ends as tails for unsigned ones -- necessary because the
+same number needs opposite treatment depending on the layer, and the function cannot tell
+-0.74 (signed, mid-body) from 0.005 (unsigned, genuine low tail) without being told.
+
+Long-standing, and it survived because **no test ever passed a negative percentile**. Two
+test classes covered this helper and both used unsigned values only.
+
+One further bug of my own, caught by a test I had just written: my first version chose the
+clamp label with `q >= 0`, which is correct for a signed layer (clamps at ±1) and wrong for
+an unsigned one (clamps at 0 and 1), so an unsigned bottom-clamp reported `≥99th`. The
+midpoint has to depend on the range.
+
+## One false alarm, and how it was caught
+
+I reported that the embedded IGV panel renders nothing — ~1,180 px blank under a heading
+promising an interactive browser, `#igv-div` with 0 children, console logging "IGV browser
+created successfully", reproduced across cold and warm profiles, 60 s waits, and in **both**
+`chrome-headless-shell` and the full Chromium build after installing the missing system
+libraries. All 14 external fetches (igv.org genome metadata, UCSC `hg38.2bit`, 7.3 MB
+`ncbiRefSeq.txt.gz`) returned 200/206 with real payloads.
+
+**It renders correctly in a real browser.** The user downloaded the multi-oracle report and
+saw the tracks. The finding was an artefact of this headless environment — no display,
+software GL, possibly proxied network — not of the report.
+
+Recorded rather than deleted, for two reasons. First, so nobody spends the same hours
+re-deriving it: headless Chromium on this box is not a valid oracle for whether igv.js
+renders, however many ways you probe it. Second, because the shape of the mistake is worth
+remembering — I had a reproducible, multi-configuration, zero-error negative result and it
+was still wrong, because every configuration shared the one confound I could not vary from
+inside the box. The check that settled it took someone opening the file.
+
+The one substantive thing that survives: the reports **do** require live network access to
+`igv.org` and `hgdownload.soe.ucsc.edu` for the genome and RefSeq track. `igv.js` itself is
+inlined, and the code comment "no network needed" refers only to that script — not to the
+browser as a whole. Relevant to §15 (offline), where a user without internet gets tables
+but no genome browser.
+
+## Two notebook figures that are honest but read wrong
+
+Not fixed; flagged for a presentation pass rather than silently accepted.
+
+* `comprehensive_oracle_showcase`, GATA1 fold-change bar chart: three bars at exactly 1.0
+  on a 0→1.0 axis, drawn in alarm-red, with the dashed "No change" line sitting exactly at
+  the bar tops. Reaching the top of the chart *means no effect*. A reader skimming sees
+  three maxed-out red bars and concludes the opposite of the data. Centring the axis on 1.0
+  (or stating "no detectable change") would fix it.
+* `advanced_multi_oracle_analysis`, four stacked signal panels (G/A/C/T) on a fixed 0–8
+  axis: real signal peaks at roughly 1/8 of the range, three of four panels read as flat
+  lines, about 85% of the canvas is white, the data stops short of the axis extent, and
+  there is no title, y-label or legend.
+
+Both are pre-existing and neither affects a number. They are the kind of thing only looking
+finds, which is the point of this addendum.

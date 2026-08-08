@@ -5,7 +5,7 @@
 - **Tool**: `simulate_integration`
 - **Oracle**: alphagenome
 - **Tracks requested**: 3 K562 tracks
-- **Generated**: 2026-08-07 12:25 UTC
+- **Generated**: 2026-08-08 03:49 UTC
 
 ## Integration Simulation Report
 
@@ -28,7 +28,7 @@
 
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
-| CHIP:H3K27ac:K562 | 3.23e+03 | 7.97e+03 | +1.304 | ≥99th | 0.871 | Very strong mark gain |
+| CHIP:H3K27ac:K562 | 3.23e+03 | 7.97e+03 | +1.304 | 0.9998 | 0.871 | Very strong mark gain |
 
 #### TSS activity (CAGE/PRO-CAP)
 
@@ -43,7 +43,7 @@
 | CAGE:K562 — ISOC2 TSS | 5.81 | 72.1 | +3.423 | ≥99th (1.17× null max) | 0.869 | Very strong increase |
 | CAGE:K562 — TMEM238 TSS | 11.8 | 118 | +3.220 | ≥99th (1.10× null max) | 0.899 | Very strong increase |
 | CAGE:K562 — ZNF524 TSS | 797 | 94.7 | -3.059 | ≥99th (1.04× null max) | 0.968 | Very strong decrease |
-| CAGE:K562 — SSC5D TSS | 106 | 14.8 | -2.759 | ≥99th | 0.949 | Very strong decrease |
+| CAGE:K562 — SSC5D TSS | 106 | 14.8 | -2.759 | 0.9999 | 0.949 | Very strong decrease |
 | _…showing top 10 of 53 — see `example_output.json` for the full set_ | | | | | | |
 
 ---

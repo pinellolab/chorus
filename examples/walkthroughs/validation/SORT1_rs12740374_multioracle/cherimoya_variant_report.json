@@ -7,7 +7,7 @@
       "T"
     ]
   },
-  "oracle": "chrombpnet",
+  "oracle": "cherimoya",
   "gene_name": "SORT1",
   "nearby_genes": [
     "SORT1",
@@ -19,31 +19,31 @@
       "scores_by_layer": {
         "chromatin_accessibility": [
           {
-            "assay_id": "DNASE:HepG2",
+            "assay_id": "DNASE:ENCSR149XIL",
             "assay_type": "DNASE",
             "cell_type": "HepG2",
             "layer": "chromatin_accessibility",
-            "ref_value": 287.21728706359863,
-            "alt_value": 746.8668701946735,
-            "raw_score": 1.375624605011599,
+            "ref_value": 603.3464052301788,
+            "alt_value": 2093.217161055631,
+            "raw_score": 1.7929634212041239,
             "description": "DNASE:HepG2",
-            "quantile_score": 0.9995,
-            "ref_signal_percentile": 0.906
+            "quantile_score": 0.9999,
+            "ref_signal_percentile": 0.9458
           }
         ]
       },
       "all_scores": [
         {
-          "assay_id": "DNASE:HepG2",
+          "assay_id": "DNASE:ENCSR149XIL",
           "assay_type": "DNASE",
           "cell_type": "HepG2",
           "layer": "chromatin_accessibility",
-          "ref_value": 287.21728706359863,
-          "alt_value": 746.8668701946735,
-          "raw_score": 1.375624605011599,
+          "ref_value": 603.3464052301788,
+          "alt_value": 2093.217161055631,
+          "raw_score": 1.7929634212041239,
           "description": "DNASE:HepG2",
-          "quantile_score": 0.9995,
-          "ref_signal_percentile": 0.906
+          "quantile_score": 0.9999,
+          "ref_signal_percentile": 0.9458
         }
       ]
     }
@@ -51,11 +51,11 @@
   "analysis_request": {
     "user_prompt": "Validate rs12740374 (the classic SORT1 LDL-cholesterol causal variant) by scoring it with three independent deep-learning oracles: ChromBPNet for chromatin accessibility, LegNet for MPRA promoter activity, and AlphaGenome as a generalist model covering ChIP, histones and CAGE. A new user should be able to see at a glance whether the three oracles agree on direction, and which assay/cell type drove each call.",
     "tool_name": "analyze_variant_multilayer",
-    "oracle_name": "chrombpnet",
+    "oracle_name": "cherimoya",
     "normalizer_name": "chorus per-track v1",
     "tracks_requested": "1 tracks",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-08 04:32 UTC"
+    "generated_at": "2026-08-08 03:46 UTC"
   }
 }
