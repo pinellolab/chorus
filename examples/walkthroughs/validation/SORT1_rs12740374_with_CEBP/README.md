@@ -17,10 +17,21 @@ expression changes.
 ## Key results
 
 The AlphaGenome prediction reproduces the published mechanism:
-- CEBPA binding gain: +0.37 (strong)
-- CEBPB binding gain: +0.27 (moderate)
-- DNASE opening: +0.43 (strong)
-- H3K27ac activation: +0.18 (moderate)
+Values are raw log2 fold-changes, with the percentile against each track's own
+background in brackets:
+
+- CEBPA binding gain: **+2.945** (0.9998)
+- CEBPB binding gain: **+3.316** (0.9995)
+- DNASE opening: **+1.334** (0.9964)
+- H3K27ac activation: **+1.251** (0.9992)
+
+Two things worth reading carefully. **CEBPA ranks higher than CEBPB (0.9998 against
+0.9995) despite a smaller raw effect** — each is ranked against its own track's
+background, and those differ; percentiles are comparable within a track, not across
+tracks. And **nothing here is pinned**: 0 of 246 scored rows sit at a clamped 1.0. Before
+the 2026-08 rebuild, CEBPA at this locus exceeded its null's maximum and reported 1.0
+with no ranking information — see
+[`docs/BACKGROUND_NULL_PROTOCOL.md`](../../../../docs/BACKGROUND_NULL_PROTOCOL.md) §10.
 
 Multi-layer convergence in the same direction provides strong evidence
 that this is indeed the causal regulatory variant.

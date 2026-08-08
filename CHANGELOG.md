@@ -14,7 +14,7 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
   | oracle | effect reference population | tracks |
   |---|---|---|
-  | AlphaGenome, Enformer, Borzoi, Sei, EPInformer-seq | gene-anchored ∪ ENCODE SCREEN cCREs | 18,145 |
+  | AlphaGenome, Enformer, Borzoi, Sei, EPInformer-seq | gene-anchored ∪ ENCODE SCREEN cCREs | 18,165 |
   | LegNet | promoter-anchored (TSS ±250 bp, PLS, pELS) | 3 |
   | ChromBPNet, Cherimoya | uniform ∪ DHS summits (unchanged) | 2,271 |
 
@@ -76,6 +76,74 @@ project adheres to [Semantic Versioning](https://semver.org/).
   **Fixed later in the same release** by the cCRE union described in the entry above — that layer is now 0/12 saturated. The two entries are sequential, not contradictory: this one records the state after the gene-anchored rebuild, and the entry above records the state after the union.
 
 ### Fixed
+
+- **The background sampler was throwing away the tail it existed to measure.** Every percentile Chorus reports is a rank against a per-track empirical null, and `effect_percentile` is `min(rank/denominator, 1.0)` — so it clamps the moment an effect reaches the largest *sampled* background value. That ceiling had been patched three times (re-anchoring, union-at-2N, the read-side `effect_exceedance` ratio). None of them addressed the cause, because the cause was a defect, not a limitation:
+
+  **`ReservoirSampler` keeps a uniform subsample once a track's offered count exceeds its capacity, and a uniform *m*-of-*N* subsample retains the population maximum with probability exactly *m/N*.** The maximum is precisely what the clamp is computed against. So the sampler was, by construction, discarding the statistic the whole mechanism depends on — and doing it silently, at a rate nobody had measured.
+
+  It was not one oracle. **9 of 19 (oracle, layer) reservoir pairs were thinned**, from 1.36× to 43.5×:
+
+  | oracle | layer | offered | cap | thinning | retained now |
+  |---|---|---|---|---|---|
+  | alphagenome | effect | 148,367 → 225,253 | 20,000 | **7.42×** | **exact** |
+  | alphagenome | summary | 104,033 → 319,642 | 20,000 | **5.20×** | **exact** |
+  | alphagenome | perbin | 328,992 → 987,776 | 20,000 | **16.45×** | 20,000 + exact top 19,740 |
+  | borzoi | summary | 75,021 | 50,000 | **1.50×** | **exact** |
+  | borzoi | perbin | 991,552 | 50,000 | **19.83×** | 50,000 + exact top 19,832 |
+  | enformer | perbin | 992,160 | 50,000 | **19.84×** | 50,000 + exact top 19,844 |
+  | chrombpnet | summary | 68,008 | 50,000 | **1.36×** | **exact** |
+  | chrombpnet | perbin | 2,176,256 | 50,000 | **43.53×** | 50,000 + exact top 43,526 |
+  | cherimoya | perbin | 1,088,128 | 50,000 | **21.76×** | 50,000 + exact top 21,763 |
+
+  Borzoi's `effect` layer is the near-miss worth naming: at the old position count it offered 34,482 against a 50,000 cap and was never thinned, but the new count takes it to 51,831. **The rebuild meant to fix this defect would have introduced it**, on the one layer that had been clean. A preflight catches it in two seconds; nothing before this release would have.
+
+  **The mechanism is confirmed, not inferred.** `1 - m/N` predicts what share of tracks should gain a higher ceiling under exact retention. Across the six layers whose position population is unchanged — so the only variable is retention — prediction and measurement agree to within 1.4 points over a 32-fold range of thinning:
+
+  | oracle.layer | thinning | 1 − m/N predicts | measured |
+  |---|---|---|---|
+  | chrombpnet.summary | 1.4× | 26.5% | **25.9%** |
+  | borzoi.summary | 1.5× | 33.4% | **34.2%** |
+  | borzoi.perbin | 19.8× | 95.0% | **95.0%** |
+  | enformer.perbin | 19.8× | 95.3% | **95.3%** |
+  | cherimoya.perbin | 21.8× | 95.4% | **96.8%** |
+  | chrombpnet.perbin | 43.5× | 97.7% | **97.5%** |
+
+  And the control holds: **0 of Borzoi's 6,068 unthinned tracks moved.** AlphaGenome's three layers are deliberately excluded from that table — their position count grew too, so retention is not the only variable and the identity does not apply. Quoting them as agreement would have been dishonest.
+
+  Why it survived every existing test. Re-unioning AlphaGenome's raw shards showed `gene_expression`'s maximum was wrong by a **median 1.33×, up to 8.34×**, while p99 was right to **0.6%**. Every percentile test looked at the body. The tail was the only thing broken, and the tail was the only thing that mattered. It also explains instability previously written off as sampling variance: after an earlier re-anchoring, 12/12 Enformer TF tracks got a wider p99 while 11/12 reported a *lower* maximum — which is not noise, it is the subsample.
+
+  What the fix is. `effect` and `summary` are now **exact** for all eight oracles. `perbin` — 2.2 M values on ChromBPNet, and display-only — keeps a uniform body plus an **exact top-K**, with `K` derived (`ceil(200 × N_expected / n_points)`, 2% margin) rather than picked, so at least the top 2% of the grid is exact. The hybrid degenerates **bit-identically** to the old implementation when `N ≤ C`, so every pre-existing grid-integrity test still describes real behaviour. `from_flat_samples`' `capacity` is now keyword-only with no default: the original defect site (`merge_effect_shards.py` inheriting `DEFAULT_CAPACITY=50_000` from a bare call) is now a `TypeError`.
+
+  **User-visible effect**, measured on the committed corpus:
+
+  | | before | after |
+  |---|---|---|
+  | Enformer, 168 committed effects pinned at 1.0000 | 9.5% | **3.6%** |
+  | AlphaGenome, 1,792 committed effects pinned | 2.5% | **2.0%** |
+  | SORT1 rs12740374 × C/EBP validation, 246 rows | CEBPA at **1.11× its null's maximum** | **0 rows pinned** |
+
+  That last row is the one to read. `CHIP:CEBPA:HepG2` had an effect *above* everything its null contained, so it reported 1.0 and carried no ranking information at the exact locus the walkthrough exists to explain. It now resolves to **0.9998** (raw +2.945), CEBPB to **0.9995** (+3.316), CEBPG to **0.9997** (+2.460).
+
+  **Honest negatives, all measured:**
+
+  - **Meuleman DHS was tested and rejected.** It was the obvious candidate for widening the ChIP tail and was added to the plan on that basis. Two-arm measurement at n=6,000/arm: it raised **no** ceiling anywhere on Sei (max ratio exactly 1.000 across all 40 tracks) and *diluted* Enformer `tf_binding` worse than any other layer (p99 **0.858**; 744 of 2,101 tracks gained a ceiling, 1,217 lost one). The prior argument that "an additive union cannot hurt" is wrong as stated — `max(union) = max(max_a, max_b)` protects the **maximum**, not the quantiles, and p99 is what a user reads. No composition change ships without a two-arm measurement; every unmeasured composition guess in this project has been wrong.
+  - **Motif-creation saturation is unfixed and unfixable this way.** AlphaGenome `histone_marks` (18.2%) and Enformer `tf_binding` (25.0%) still pin. A null over random regulatory positions contains almost no single-base changes that *complete* a specific factor's motif, which is exactly the saturating case. Correcting the ceiling cannot manufacture draws that were never in the population. `effect_exceedance` — the ratio past the end of support — remains the answer above the ceiling, and remains a ratio rather than a percentile on purpose.
+  - **Extrapolation is not the answer, and this was measured rather than assumed.** A GPD fit overshoots the far tail by **3.8×** and an exponential undershoots by **0.27×**, while the plain empirical maximum is within **13%**. A GPD is well calibrated for modest extrapolation (1.05× at q=0.999) and useless beyond it. Percentiles stay strictly empirical.
+  - **LegNet's effect null got narrower at the top, on one of three tracks.** LegNet was never thinned; it moved to the shared `snps_promoter` reference class (11,913 → 17,805 positions), and that composition change took K562's ceiling from 0.906 to **0.789** (0.871×) while HepG2 and WTC11 were flat or wider (0.991×, 1.051×). A narrower ceiling raises percentiles, the opposite of the intent. Verified consequence-free on the shipped artefacts — 0 of LegNet's committed rows pin — but it is a composition effect on n=3 and is recorded as such, not smoothed over.
+
+  **Guards added**, because every defect in this cycle was one a guard should have caught. The pre-existing write-time check passed `offered` counts to a function whose geometry assertions describe `retained`, and which did `if n >= n_points: continue` — **skipping every thinned row by construction**. Its docstring's promise was false precisely when it mattered. Now: `thinning_violations` (independent of the geometry check, not folded into it), `yield_violations` (an all-zero build previously wrote a valid file), `scope_violations` (a ChromBPNet run built 9 of 753 tracks, exited 0, reported 100% yield and exact retention — only a track-set comparison caught it), `abort_if_nothing_loads` (a wrong-env run logged 1,518 identical warnings over 75 minutes instead of stopping), and a per-row **and file-level** array-preservation check (`layers_per_row` was lost twice; `build_config` once, invisibly, because the first version of that guard only checked arrays whose first dimension was the track count).
+
+  Provenance is now `schema_version: 4`, one `build_id` across all eight oracles, stamped **from the artefacts rather than the build logs**, and records the reference-set sha256s so a rebuild can be shown to reproduce the population. All eight verified against the committed reference sets; backups at `/data/chorus_data/pre_unified_rebuild/`.
+
+- **`list_tracks` returned 200 tracks of 1,504 without saying so.** All four search branches returned `{"num_results": len(results), "tracks": results[:200]}`. The true count was present, in a sibling field — but a caller reading `tracks`, the field named after the thing it asked for, got a silent 13% sample. For an MCP tool that caller is usually a model, and "the list I was handed is the list that exists" is the natural reading; the failure mode is an agent concluding a track is unavailable and narrowing its own analysis. Responses now always carry `showing` (== `len(tracks)`, so the two cannot drift) and `truncated`, plus a `note` naming `num_results` when rows were dropped. Unconditional, because a flag that appears only when set is a flag you must already know to look for — which is how this shipped. Same shape as the reservoir defect above, and the same remedy: make the loss visible where it happens.
+
+- **The report collapsed every top-ranked percentile into one `≥99th` bucket, hiding the ordering this release restored.** `_fmt_percentile` bucketed everything at or above 0.99. That was **correct while the nulls were thinned**: past the ceiling a percentile is clamped, so an effect 1.11× beyond it is arithmetically identical to one 10× beyond, and only the exceedance ratio can separate them — more decimals would be fabricated precision. Exact retention moved these rows *inside* support, where 0.9998 genuinely orders above 0.9995, and the escape valve (`(N× null max)`) fires only when an effect is past the ceiling — so with nothing past it, all five C/EBP rows rendered as an identical bare `≥99th`. Measured: **127 committed rows collapsing 81 distinct values**, including the case the C/EBP walkthrough exists to explain (CEBPA 0.9998 outranking CEBPB 0.9995 on a *smaller* raw effect). The rule is now "bucket exactly when the number is not real": four decimals in the tails, two in the body, bucket plus ratio only when clamped. Generalisable lesson — **a display policy tuned to a broken statistic becomes wrong when the statistic is fixed, and nothing fails.** No test caught it because the tests asserted the bucketing, encoding the old regime as the contract.
+
+- **Signed layers rendered their entire negative half as `≤1st`.** Found while fixing the above. Signed layers span [−1, 1] — sign is direction, magnitude is unusualness — so the `q <= 0.01` test captured every negative value. The C/EBP vignette showed nine `gene_expression` rows as `≤1st` whose real percentiles were **−0.74 to −0.96**: moderately to strongly down-regulated, not bottom-1%. Beside a `≥99th` three rows above, that reads as a variant which both strongly represses *and* is indistinguishable from noise. `_fmt_percentile` now takes the `layer` and tests `|q| >= 0.99` for signed layers while keeping both ends as tails for unsigned ones, since the same number needs opposite treatment depending on the layer. Long-standing, and it survived because no test passed a negative percentile.
+
+- **Cherimoya added to the SORT1 multi-oracle walkthrough**, pointed deliberately at the *same* question ChromBPNet answers — HepG2 DNase accessibility (`DNASE:ENCSR149XIL`) — rather than at a new assay. Two independently trained models agreeing on one variant is a stronger statement than one asserting it, and since they share a 2,114 bp window and base-pair-resolution output the rows and IGV tracks are directly comparable. They concur on direction and differ on magnitude: ChromBPNet **+1.069** (0.9977), Cherimoya **+1.793** (0.9999).
+
+- **A test left the MCP state singleton unable to resolve the reference genome, breaking seven later tests.** `OracleStateManager` is a singleton that resolves hg38 exactly once, in `__init__`. Seven tests in `test_mcp.py` need one built under a mocked `GenomeManager`, so each sets `_instance = None` and reconstructs inside the patch — where `is_genome_downloaded()` returns False. The rebuilt singleton takes `_reference_fasta = None` and **keeps it after the patch lifts**, because nothing saved the old value. That field is what the state manager hands an oracle as `reference_fasta`, so every subsequent test scoring a genomic interval raised `ValueError: Reference FASTA required for genomic coordinates`. Fixed with an autouse snapshot/restore fixture in a new `tests/conftest.py`, covering any future test that reaches for the same pattern rather than the seven current call sites. It restores the same object rather than resetting to None, so module-scoped fixtures that loaded an oracle into the singleton keep seeing it instead of reloading a model per test. Worth recording for how it presented: the seven failures appeared only in the full suite, passed in isolation, and the box happened to be sharing GPUs with another job — so they were initially and wrongly written off as contention. Bisecting the file list identified `test_mcp.py` as the sole cause. Three tests now guard the fixture and were verified to fail without it.
 
 - **Walkthrough TSVs silently dropped every per-gene row after the first.** `scripts/regenerate_remaining_examples.py` carried its own report flattener that de-duplicated on `(allele, assay_id, layer)` — a key omitting the region. RNA and CAGE emit one row per *gene* per track, so all but one gene were discarded: `validation/TERT_chr5_1295046` shipped 18 rows where its JSON had 99 (one `tss_activity` row where there were fifteen, one per nearby gene TSS), `discovery/SORT1_cell_type_screen` 39 of 347, `sequence_engineering/region_swap` 4 of 32, `integration_simulation` 3 of 55. The same writer also put `region_label` in a column named `description`, which already means the *track* description in `to_dict()` — one name for two things across two artefacts of the same report. Fixed by deletion rather than repair: everything now routes through `report.to_dataframe()`, the canonical writer `scripts/regenerate_examples.py` already used. All 14 walkthrough (JSON, TSV) pairs now agree on both counts and row identities, pinned by `tests/test_json_tsv_parity.py`. Long-standing rather than a regression — the counts were identical before and after the rebuild.
 

@@ -57,7 +57,7 @@
           "ref_value": 4.853412628173828,
           "alt_value": 4.360832214355469,
           "raw_score": -0.1268,
-          "quantile_score": 0.953,
+          "quantile_score": 0.9527,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -67,7 +67,7 @@
           "ref_value": 5125.0,
           "alt_value": 2240.25,
           "raw_score": -1.1935,
-          "quantile_score": 0.9995,
+          "quantile_score": 0.9991,
           "description": "CHIP:H3K27ac:fibroblast of lung"
         },
         "tf_binding": {
@@ -77,7 +77,7 @@
           "ref_value": 386.0,
           "alt_value": 383.0,
           "raw_score": -0.0112,
-          "quantile_score": 0.4279,
+          "quantile_score": 0.4167,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -87,7 +87,7 @@
           "ref_value": 674.447021484375,
           "alt_value": 260.6814880371094,
           "raw_score": -1.368,
-          "quantile_score": 0.9912,
+          "quantile_score": 0.9924,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -97,7 +97,7 @@
           "ref_value": 0.7520714338418527,
           "alt_value": 0.747943679541815,
           "raw_score": -0.0055,
-          "quantile_score": -0.9764,
+          "quantile_score": -0.9752,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -146,7 +146,7 @@
           "ref_value": 3.317455291748047,
           "alt_value": 3.1904964447021484,
           "raw_score": -0.0431,
-          "quantile_score": 0.81,
+          "quantile_score": 0.8043,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -156,7 +156,7 @@
           "ref_value": 927.98828125,
           "alt_value": 806.521484375,
           "raw_score": -0.2022,
-          "quantile_score": 0.9733,
+          "quantile_score": 0.9739,
           "description": "CHIP:H3K4me2:fibroblast of lung"
         },
         "tf_binding": {
@@ -166,7 +166,7 @@
           "ref_value": 426.0,
           "alt_value": 418.0,
           "raw_score": -0.0273,
-          "quantile_score": 0.6869,
+          "quantile_score": 0.6783,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -176,7 +176,7 @@
           "ref_value": 168.2633514404297,
           "alt_value": 77.66957092285156,
           "raw_score": -1.1054,
-          "quantile_score": 0.9877,
+          "quantile_score": 0.9882,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -186,7 +186,7 @@
           "ref_value": 0.0010198108522582643,
           "alt_value": 0.001035175391287556,
           "raw_score": 0.0076,
-          "quantile_score": 0.9878,
+          "quantile_score": 0.9858,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -235,7 +235,7 @@
           "ref_value": 1.9954586029052734,
           "alt_value": 2.103200912475586,
           "raw_score": 0.051,
-          "quantile_score": 0.8438,
+          "quantile_score": 0.8454,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -245,7 +245,7 @@
           "ref_value": 577.875,
           "alt_value": 483.625,
           "raw_score": -0.2564,
-          "quantile_score": 0.9815,
+          "quantile_score": 0.9813,
           "description": "CHIP:H3K4me2:fibroblast of lung"
         },
         "tf_binding": {
@@ -255,7 +255,7 @@
           "ref_value": 265.5,
           "alt_value": 257.5,
           "raw_score": -0.044,
-          "quantile_score": 0.7961,
+          "quantile_score": 0.7925,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -265,7 +265,7 @@
           "ref_value": 8.209230422973633,
           "alt_value": 3.4960174560546875,
           "raw_score": -1.0344,
-          "quantile_score": 0.9862,
+          "quantile_score": 0.9864,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -275,7 +275,7 @@
           "ref_value": 0.001591381010173316,
           "alt_value": 0.0015848143255227116,
           "raw_score": -0.0025,
-          "quantile_score": -0.9234,
+          "quantile_score": -0.9174,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -324,7 +324,7 @@
           "ref_value": 2.6909446716308594,
           "alt_value": 2.6495790481567383,
           "raw_score": -0.0163,
-          "quantile_score": 0.513,
+          "quantile_score": 0.5112,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -344,7 +344,7 @@
           "ref_value": 376.0,
           "alt_value": 385.5,
           "raw_score": 0.0359,
-          "quantile_score": 0.7537,
+          "quantile_score": 0.7471,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -354,7 +354,7 @@
           "ref_value": 61.607940673828125,
           "alt_value": 75.84400177001953,
           "raw_score": 0.2956,
-          "quantile_score": 0.9197,
+          "quantile_score": 0.9204,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -364,7 +364,7 @@
           "ref_value": 0.0009110552572771548,
           "alt_value": 0.0009149972246711925,
           "raw_score": 0.0021,
-          "quantile_score": 0.8786,
+          "quantile_score": 0.8738,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -413,7 +413,7 @@
           "ref_value": 1.6474382877349854,
           "alt_value": 1.6818294525146484,
           "raw_score": 0.0186,
-          "quantile_score": 0.5605,
+          "quantile_score": 0.5554,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -423,7 +423,7 @@
           "ref_value": 1500.25,
           "alt_value": 1396.75,
           "raw_score": -0.1031,
-          "quantile_score": 0.9808,
+          "quantile_score": 0.9814,
           "description": "CHIP:H3K27me3:fibroblast of lung"
         },
         "tf_binding": {
@@ -443,7 +443,7 @@
           "ref_value": 5.018213272094727,
           "alt_value": 4.938457489013672,
           "raw_score": -0.0192,
-          "quantile_score": 0.3818,
+          "quantile_score": 0.3819,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -453,7 +453,7 @@
           "ref_value": 0.4850998722555066,
           "alt_value": 0.48373637906498784,
           "raw_score": -0.0028,
-          "quantile_score": -0.924,
+          "quantile_score": -0.9204,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -502,7 +502,7 @@
           "ref_value": 4.076263427734375,
           "alt_value": 5.215694427490234,
           "raw_score": 0.2921,
-          "quantile_score": 0.9877,
+          "quantile_score": 0.986,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -512,7 +512,7 @@
           "ref_value": 310.71875,
           "alt_value": 311.84375,
           "raw_score": 0.0052,
-          "quantile_score": 0.4741,
+          "quantile_score": 0.471,
           "description": "CHIP:H3K79me2:fibroblast of lung"
         },
         "tf_binding": {
@@ -522,7 +522,7 @@
           "ref_value": 312.0,
           "alt_value": 310.0,
           "raw_score": -0.0092,
-          "quantile_score": 0.3737,
+          "quantile_score": 0.3637,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -532,7 +532,7 @@
           "ref_value": 5.904504776000977,
           "alt_value": 5.946260452270508,
           "raw_score": 0.0087,
-          "quantile_score": 0.1937,
+          "quantile_score": 0.2021,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -542,7 +542,7 @@
           "ref_value": 0.0008382999230569331,
           "alt_value": 0.0008305009997370256,
           "raw_score": -0.0043,
-          "quantile_score": -0.9648,
+          "quantile_score": -0.9612,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -591,7 +591,7 @@
           "ref_value": 1.9905118942260742,
           "alt_value": 2.0551538467407227,
           "raw_score": 0.0309,
-          "quantile_score": 0.7235,
+          "quantile_score": 0.7248,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -601,7 +601,7 @@
           "ref_value": 1656.25,
           "alt_value": 1843.0,
           "raw_score": 0.154,
-          "quantile_score": 0.9663,
+          "quantile_score": 0.9665,
           "description": "CHIP:H3K27ac:fibroblast of lung"
         },
         "tf_binding": {
@@ -611,7 +611,7 @@
           "ref_value": 278.0,
           "alt_value": 274.5,
           "raw_score": -0.0182,
-          "quantile_score": 0.5729,
+          "quantile_score": 0.5616,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -621,7 +621,7 @@
           "ref_value": 695.150390625,
           "alt_value": 696.4902954101562,
           "raw_score": 0.0028,
-          "quantile_score": 0.0633,
+          "quantile_score": 0.0714,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -631,7 +631,7 @@
           "ref_value": 0.18059470173070638,
           "alt_value": 0.1802802382011075,
           "raw_score": -0.0017,
-          "quantile_score": -0.8432,
+          "quantile_score": -0.846,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -680,7 +680,7 @@
           "ref_value": 4.2945404052734375,
           "alt_value": 4.352264404296875,
           "raw_score": 0.0156,
-          "quantile_score": 0.5064,
+          "quantile_score": 0.5021,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -690,7 +690,7 @@
           "ref_value": 1412.75,
           "alt_value": 1432.25,
           "raw_score": 0.0198,
-          "quantile_score": 0.7683,
+          "quantile_score": 0.7638,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -700,7 +700,7 @@
           "ref_value": 342.0,
           "alt_value": 336.5,
           "raw_score": -0.0233,
-          "quantile_score": 0.6472,
+          "quantile_score": 0.6346,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -710,7 +710,7 @@
           "ref_value": 13.399360656738281,
           "alt_value": 11.219749450683594,
           "raw_score": -0.2368,
-          "quantile_score": 0.8985,
+          "quantile_score": 0.8988,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -720,7 +720,7 @@
           "ref_value": 0.32024207044003616,
           "alt_value": 0.31943688463808884,
           "raw_score": -0.0025,
-          "quantile_score": -0.9134,
+          "quantile_score": -0.915,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -769,7 +769,7 @@
           "ref_value": 1.2905769348144531,
           "alt_value": 1.320455551147461,
           "raw_score": 0.0187,
-          "quantile_score": 0.562,
+          "quantile_score": 0.5574,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -779,7 +779,7 @@
           "ref_value": 839.75,
           "alt_value": 844.25,
           "raw_score": 0.0077,
-          "quantile_score": 0.4815,
+          "quantile_score": 0.4795,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -789,7 +789,7 @@
           "ref_value": 79.875,
           "alt_value": 96.5,
           "raw_score": 0.2697,
-          "quantile_score": 0.9803,
+          "quantile_score": 0.9806,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -799,7 +799,7 @@
           "ref_value": 5.364902496337891,
           "alt_value": 5.4431304931640625,
           "raw_score": 0.0176,
-          "quantile_score": 0.358,
+          "quantile_score": 0.359,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -809,7 +809,7 @@
           "ref_value": 0.0023191800743491207,
           "alt_value": 0.0023103036248504215,
           "raw_score": -0.0027,
-          "quantile_score": -0.9322,
+          "quantile_score": -0.9248,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -858,7 +858,7 @@
           "ref_value": 2.9737472534179688,
           "alt_value": 2.9232921600341797,
           "raw_score": -0.0184,
-          "quantile_score": 0.5561,
+          "quantile_score": 0.5524,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -868,7 +868,7 @@
           "ref_value": 546.25,
           "alt_value": 551.75,
           "raw_score": 0.0144,
-          "quantile_score": 0.6752,
+          "quantile_score": 0.6687,
           "description": "CHIP:H3K27ac:fibroblast of lung"
         },
         "tf_binding": {
@@ -878,7 +878,7 @@
           "ref_value": 357.5,
           "alt_value": 354.0,
           "raw_score": -0.0142,
-          "quantile_score": 0.4974,
+          "quantile_score": 0.4853,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -888,7 +888,7 @@
           "ref_value": 31.617401123046875,
           "alt_value": 34.177616119384766,
           "raw_score": 0.109,
-          "quantile_score": 0.8031,
+          "quantile_score": 0.7965,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -898,7 +898,7 @@
           "ref_value": 0.0031676966399632276,
           "alt_value": 0.0031752687053888964,
           "raw_score": 0.0018,
-          "quantile_score": 0.8578,
+          "quantile_score": 0.8558,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -947,7 +947,7 @@
           "ref_value": 1.3161367177963257,
           "alt_value": 1.3220632076263428,
           "raw_score": 0.0037,
-          "quantile_score": 0.1392,
+          "quantile_score": 0.1494,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -957,7 +957,7 @@
           "ref_value": 1144.9375,
           "alt_value": 1126.875,
           "raw_score": -0.0229,
-          "quantile_score": 0.8028,
+          "quantile_score": 0.7969,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -967,7 +967,7 @@
           "ref_value": 203.375,
           "alt_value": 197.8125,
           "raw_score": -0.0398,
-          "quantile_score": 0.7768,
+          "quantile_score": 0.7718,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -977,7 +977,7 @@
           "ref_value": 5.944418907165527,
           "alt_value": 5.086444854736328,
           "raw_score": -0.1903,
-          "quantile_score": 0.8768,
+          "quantile_score": 0.874,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -987,7 +987,7 @@
           "ref_value": 0.0015248165988801248,
           "alt_value": 0.0015298797004160924,
           "raw_score": 0.002,
-          "quantile_score": 0.8792,
+          "quantile_score": 0.8764,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -1036,7 +1036,7 @@
           "ref_value": 1.4299614429473877,
           "alt_value": 1.406314492225647,
           "raw_score": -0.0141,
-          "quantile_score": 0.4692,
+          "quantile_score": 0.4676,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -1046,7 +1046,7 @@
           "ref_value": 579.03125,
           "alt_value": 589.546875,
           "raw_score": 0.0259,
-          "quantile_score": 0.7735,
+          "quantile_score": 0.7672,
           "description": "CHIP:H3K4me2:fibroblast of lung"
         },
         "tf_binding": {
@@ -1056,7 +1056,7 @@
           "ref_value": 195.5,
           "alt_value": 181.25,
           "raw_score": -0.1086,
-          "quantile_score": 0.9333,
+          "quantile_score": 0.9324,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -1066,7 +1066,7 @@
           "ref_value": 3.115966320037842,
           "alt_value": 3.2002174854278564,
           "raw_score": 0.0292,
-          "quantile_score": 0.4912,
+          "quantile_score": 0.4981,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -1076,7 +1076,7 @@
           "ref_value": 0.13056429813751205,
           "alt_value": 0.1311153516755608,
           "raw_score": 0.0042,
-          "quantile_score": 0.9482,
+          "quantile_score": 0.9454,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -1125,7 +1125,7 @@
           "ref_value": 1.6623916625976562,
           "alt_value": 1.617147445678711,
           "raw_score": -0.0247,
-          "quantile_score": 0.6589,
+          "quantile_score": 0.657,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -1135,7 +1135,7 @@
           "ref_value": 857.875,
           "alt_value": 852.125,
           "raw_score": -0.0097,
-          "quantile_score": 0.668,
+          "quantile_score": 0.6666,
           "description": "CHIP:H3K27me3:fibroblast of lung"
         },
         "tf_binding": {
@@ -1145,7 +1145,7 @@
           "ref_value": 69.5,
           "alt_value": 64.75,
           "raw_score": -0.1006,
-          "quantile_score": 0.9268,
+          "quantile_score": 0.9233,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -1155,7 +1155,7 @@
           "ref_value": 2.9899282455444336,
           "alt_value": 2.961740493774414,
           "raw_score": -0.0102,
-          "quantile_score": 0.2237,
+          "quantile_score": 0.2346,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -1165,7 +1165,7 @@
           "ref_value": 0.0014242785705397489,
           "alt_value": 0.0014169680424440648,
           "raw_score": -0.003,
-          "quantile_score": -0.9464,
+          "quantile_score": -0.9392,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -1214,7 +1214,7 @@
           "ref_value": 1.3478063344955444,
           "alt_value": 1.3844780921936035,
           "raw_score": 0.0224,
-          "quantile_score": 0.6262,
+          "quantile_score": 0.6159,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -1224,7 +1224,7 @@
           "ref_value": 5362.0,
           "alt_value": 5480.0,
           "raw_score": 0.0314,
-          "quantile_score": 0.825,
+          "quantile_score": 0.8217,
           "description": "CHIP:H3K27ac:fibroblast of lung"
         },
         "tf_binding": {
@@ -1234,7 +1234,7 @@
           "ref_value": 344.0,
           "alt_value": 339.0,
           "raw_score": -0.0211,
-          "quantile_score": 0.6184,
+          "quantile_score": 0.6072,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -1244,7 +1244,7 @@
           "ref_value": 13.332815170288086,
           "alt_value": 13.751813888549805,
           "raw_score": 0.0416,
-          "quantile_score": 0.5889,
+          "quantile_score": 0.591,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -1254,7 +1254,7 @@
           "ref_value": 0.19897197921617554,
           "alt_value": 0.19862037919773348,
           "raw_score": -0.0018,
-          "quantile_score": -0.8466,
+          "quantile_score": -0.8492,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -1303,7 +1303,7 @@
           "ref_value": 1.1383206844329834,
           "alt_value": 1.1183322668075562,
           "raw_score": -0.0135,
-          "quantile_score": 0.4528,
+          "quantile_score": 0.4506,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -1313,7 +1313,7 @@
           "ref_value": 328.234375,
           "alt_value": 329.609375,
           "raw_score": 0.006,
-          "quantile_score": 0.5239,
+          "quantile_score": 0.5179,
           "description": "CHIP:H3K79me2:fibroblast of lung"
         },
         "tf_binding": {
@@ -1323,7 +1323,7 @@
           "ref_value": 203.75,
           "alt_value": 203.25,
           "raw_score": -0.0035,
-          "quantile_score": 0.1627,
+          "quantile_score": 0.1619,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -1333,7 +1333,7 @@
           "ref_value": 6.339704990386963,
           "alt_value": 6.391419410705566,
           "raw_score": 0.0101,
-          "quantile_score": 0.2213,
+          "quantile_score": 0.2327,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -1343,7 +1343,7 @@
           "ref_value": 0.17848390982933673,
           "alt_value": 0.17882096903405714,
           "raw_score": 0.0019,
-          "quantile_score": 0.866,
+          "quantile_score": 0.8656,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -1392,7 +1392,7 @@
           "ref_value": 4.367069244384766,
           "alt_value": 4.3077850341796875,
           "raw_score": -0.016,
-          "quantile_score": 0.5072,
+          "quantile_score": 0.5066,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -1402,7 +1402,7 @@
           "ref_value": 4192.0,
           "alt_value": 4222.5,
           "raw_score": 0.0105,
-          "quantile_score": 0.5959,
+          "quantile_score": 0.5893,
           "description": "CHIP:H3K27ac:fibroblast of lung"
         },
         "tf_binding": {
@@ -1412,7 +1412,7 @@
           "ref_value": 276.5,
           "alt_value": 283.5,
           "raw_score": 0.0359,
-          "quantile_score": 0.754,
+          "quantile_score": 0.7475,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -1422,7 +1422,7 @@
           "ref_value": 12.183394432067871,
           "alt_value": 12.548808097839355,
           "raw_score": 0.0394,
-          "quantile_score": 0.5737,
+          "quantile_score": 0.5776,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -1432,7 +1432,7 @@
           "ref_value": 0.0013284538013811006,
           "alt_value": 0.0013086412571776654,
           "raw_score": -0.0085,
-          "quantile_score": -0.987,
+          "quantile_score": -0.9864,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -1481,7 +1481,7 @@
           "ref_value": 2.104522228240967,
           "alt_value": 2.2354073524475098,
           "raw_score": 0.0596,
-          "quantile_score": 0.8738,
+          "quantile_score": 0.8664,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -1491,7 +1491,7 @@
           "ref_value": 2183.5,
           "alt_value": 2213.0,
           "raw_score": 0.0194,
-          "quantile_score": 0.8397,
+          "quantile_score": 0.8384,
           "description": "CHIP:H3K27me3:fibroblast of lung"
         },
         "tf_binding": {
@@ -1501,7 +1501,7 @@
           "ref_value": 355.0,
           "alt_value": 359.5,
           "raw_score": 0.0181,
-          "quantile_score": 0.571,
+          "quantile_score": 0.56,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -1511,7 +1511,7 @@
           "ref_value": 38.39580535888672,
           "alt_value": 35.98226547241211,
           "raw_score": -0.0912,
-          "quantile_score": 0.7676,
+          "quantile_score": 0.7666,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -1521,7 +1521,7 @@
           "ref_value": 0.0016978809418787069,
           "alt_value": 0.0016745199958105655,
           "raw_score": -0.0087,
-          "quantile_score": -0.9876,
+          "quantile_score": -0.9874,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -1531,7 +1531,7 @@
           "ref_value": 0.002708490937948227,
           "alt_value": 0.0034556128084659576,
           "raw_score": 0.0011,
-          "quantile_score": 0.8765,
+          "quantile_score": 0.8595,
           "description": "SPLICE_SITES:fibroblast of lung"
         }
       }
@@ -1570,7 +1570,7 @@
           "ref_value": 2.4625492095947266,
           "alt_value": 2.439821243286133,
           "raw_score": -0.0095,
-          "quantile_score": 0.342,
+          "quantile_score": 0.3455,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -1580,7 +1580,7 @@
           "ref_value": 2506.0,
           "alt_value": 2438.5,
           "raw_score": -0.0394,
-          "quantile_score": 0.8981,
+          "quantile_score": 0.8939,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -1590,7 +1590,7 @@
           "ref_value": 245.5,
           "alt_value": 249.5,
           "raw_score": 0.0232,
-          "quantile_score": 0.6459,
+          "quantile_score": 0.6332,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -1600,7 +1600,7 @@
           "ref_value": 21.558570861816406,
           "alt_value": 22.134231567382812,
           "raw_score": 0.0364,
-          "quantile_score": 0.5512,
+          "quantile_score": 0.5567,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -1610,7 +1610,7 @@
           "ref_value": 0.00031450187346063945,
           "alt_value": 0.000310955277408462,
           "raw_score": -0.0027,
-          "quantile_score": -0.9336,
+          "quantile_score": -0.926,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -1659,7 +1659,7 @@
           "ref_value": 3.7174911499023438,
           "alt_value": 3.8055572509765625,
           "raw_score": 0.0267,
-          "quantile_score": 0.681,
+          "quantile_score": 0.6739,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -1669,7 +1669,7 @@
           "ref_value": 2916.5,
           "alt_value": 2937.25,
           "raw_score": 0.0102,
-          "quantile_score": 0.5891,
+          "quantile_score": 0.5839,
           "description": "CHIP:H3K27ac:fibroblast of lung"
         },
         "tf_binding": {
@@ -1679,7 +1679,7 @@
           "ref_value": 370.0,
           "alt_value": 371.5,
           "raw_score": 0.0058,
-          "quantile_score": 0.2565,
+          "quantile_score": 0.251,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -1689,7 +1689,7 @@
           "ref_value": 16.29583740234375,
           "alt_value": 16.39731216430664,
           "raw_score": 0.0084,
-          "quantile_score": 0.1883,
+          "quantile_score": 0.1968,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -1699,7 +1699,7 @@
           "ref_value": 0.001005053607551015,
           "alt_value": 0.0009993291330135444,
           "raw_score": -0.0029,
-          "quantile_score": -0.9296,
+          "quantile_score": -0.9234,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -1748,7 +1748,7 @@
           "ref_value": 2.2203731536865234,
           "alt_value": 2.360915184020996,
           "raw_score": 0.0616,
-          "quantile_score": 0.8788,
+          "quantile_score": 0.8719,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -1758,7 +1758,7 @@
           "ref_value": 1663.5,
           "alt_value": 1625.5,
           "raw_score": -0.0333,
-          "quantile_score": 0.8157,
+          "quantile_score": 0.8117,
           "description": "CHIP:H3K4me2:fibroblast of lung"
         },
         "tf_binding": {
@@ -1768,7 +1768,7 @@
           "ref_value": 289.5,
           "alt_value": 298.75,
           "raw_score": 0.0452,
-          "quantile_score": 0.8018,
+          "quantile_score": 0.799,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -1778,7 +1778,7 @@
           "ref_value": 7.619575500488281,
           "alt_value": 7.367488861083984,
           "raw_score": -0.0428,
-          "quantile_score": 0.596,
+          "quantile_score": 0.5979,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -1788,7 +1788,7 @@
           "ref_value": 0.3898346744366546,
           "alt_value": 0.39051739137564134,
           "raw_score": 0.0017,
-          "quantile_score": 0.8514,
+          "quantile_score": 0.8498,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -1837,7 +1837,7 @@
           "ref_value": 4.215190887451172,
           "alt_value": 4.339473724365234,
           "raw_score": 0.034,
-          "quantile_score": 0.7512,
+          "quantile_score": 0.7526,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -1847,7 +1847,7 @@
           "ref_value": 306.4375,
           "alt_value": 304.875,
           "raw_score": -0.0074,
-          "quantile_score": 0.592,
+          "quantile_score": 0.5908,
           "description": "CHIP:H3K79me2:fibroblast of lung"
         },
         "tf_binding": {
@@ -1857,7 +1857,7 @@
           "ref_value": 358.5,
           "alt_value": 359.5,
           "raw_score": 0.004,
-          "quantile_score": 0.1839,
+          "quantile_score": 0.1837,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -1867,7 +1867,7 @@
           "ref_value": 8.965217590332031,
           "alt_value": 8.949440002441406,
           "raw_score": -0.0023,
-          "quantile_score": 0.0522,
+          "quantile_score": 0.0588,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -1877,7 +1877,7 @@
           "ref_value": 0.6642492003622493,
           "alt_value": 0.6652577434185462,
           "raw_score": 0.0015,
-          "quantile_score": 0.7562,
+          "quantile_score": 0.747,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -1926,7 +1926,7 @@
           "ref_value": 2.931619644165039,
           "alt_value": 3.0023117065429688,
           "raw_score": 0.0257,
-          "quantile_score": 0.6683,
+          "quantile_score": 0.6622,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -1936,7 +1936,7 @@
           "ref_value": 1983.0,
           "alt_value": 1997.0,
           "raw_score": 0.0101,
-          "quantile_score": 0.5702,
+          "quantile_score": 0.5682,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -1946,7 +1946,7 @@
           "ref_value": 428.0,
           "alt_value": 410.0,
           "raw_score": -0.0618,
-          "quantile_score": 0.8581,
+          "quantile_score": 0.8559,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -1956,7 +1956,7 @@
           "ref_value": 63.77440643310547,
           "alt_value": 59.692325592041016,
           "raw_score": -0.0939,
-          "quantile_score": 0.7729,
+          "quantile_score": 0.7711,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -1966,7 +1966,7 @@
           "ref_value": 0.09620444945994633,
           "alt_value": 0.09655007980206826,
           "raw_score": 0.0035,
-          "quantile_score": 0.9314,
+          "quantile_score": 0.9282,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -2015,7 +2015,7 @@
           "ref_value": 3.6285476684570312,
           "alt_value": 3.770427703857422,
           "raw_score": 0.0436,
-          "quantile_score": 0.8128,
+          "quantile_score": 0.807,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -2025,7 +2025,7 @@
           "ref_value": 1604.5,
           "alt_value": 1627.5,
           "raw_score": 0.0205,
-          "quantile_score": 0.7785,
+          "quantile_score": 0.7728,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -2035,7 +2035,7 @@
           "ref_value": 305.0,
           "alt_value": 308.5,
           "raw_score": 0.0164,
-          "quantile_score": 0.5407,
+          "quantile_score": 0.5297,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -2045,7 +2045,7 @@
           "ref_value": 6.515047073364258,
           "alt_value": 6.6858367919921875,
           "raw_score": 0.0324,
-          "quantile_score": 0.5195,
+          "quantile_score": 0.5272,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -2055,7 +2055,7 @@
           "ref_value": 0.49895211861614036,
           "alt_value": 0.5003045472506485,
           "raw_score": 0.0027,
-          "quantile_score": 0.9202,
+          "quantile_score": 0.9164,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -2104,7 +2104,7 @@
           "ref_value": 2.124500274658203,
           "alt_value": 2.099794387817383,
           "raw_score": -0.0115,
-          "quantile_score": 0.4007,
+          "quantile_score": 0.3988,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -2114,7 +2114,7 @@
           "ref_value": 568.25,
           "alt_value": 565.125,
           "raw_score": -0.0079,
-          "quantile_score": 0.4863,
+          "quantile_score": 0.4788,
           "description": "CHIP:H3K4me2:fibroblast of lung"
         },
         "tf_binding": {
@@ -2124,7 +2124,7 @@
           "ref_value": 326.5,
           "alt_value": 323.0,
           "raw_score": -0.0155,
-          "quantile_score": 0.5222,
+          "quantile_score": 0.5126,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -2134,7 +2134,7 @@
           "ref_value": 6.76548957824707,
           "alt_value": 6.503293991088867,
           "raw_score": -0.0496,
-          "quantile_score": 0.6306,
+          "quantile_score": 0.6331,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -2144,7 +2144,7 @@
           "ref_value": 0.5061230677615554,
           "alt_value": 0.5072821313739578,
           "raw_score": 0.0023,
-          "quantile_score": 0.8956,
+          "quantile_score": 0.8912,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -2193,7 +2193,7 @@
           "ref_value": 0.8847622871398926,
           "alt_value": 0.8829240202903748,
           "raw_score": -0.0014,
-          "quantile_score": 0.0547,
+          "quantile_score": 0.0581,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -2203,7 +2203,7 @@
           "ref_value": 1094.75,
           "alt_value": 1083.0,
           "raw_score": -0.0156,
-          "quantile_score": 0.8679,
+          "quantile_score": 0.8636,
           "description": "CHIP:H3K36me3:fibroblast of lung"
         },
         "tf_binding": {
@@ -2213,7 +2213,7 @@
           "ref_value": 231.5,
           "alt_value": 218.75,
           "raw_score": -0.0814,
-          "quantile_score": 0.9015,
+          "quantile_score": 0.8979,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -2223,7 +2223,7 @@
           "ref_value": 14.732965469360352,
           "alt_value": 14.610620498657227,
           "raw_score": -0.0113,
-          "quantile_score": 0.2411,
+          "quantile_score": 0.2552,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -2233,7 +2233,7 @@
           "ref_value": 0.001481312068582941,
           "alt_value": 0.0014708259052045747,
           "raw_score": -0.0042,
-          "quantile_score": -0.9694,
+          "quantile_score": -0.9674,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -2282,7 +2282,7 @@
           "ref_value": 2.9303531646728516,
           "alt_value": 2.8622379302978516,
           "raw_score": -0.0252,
-          "quantile_score": 0.6651,
+          "quantile_score": 0.6632,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -2292,7 +2292,7 @@
           "ref_value": 1104.0234375,
           "alt_value": 1083.14453125,
           "raw_score": -0.0275,
-          "quantile_score": 0.7822,
+          "quantile_score": 0.7788,
           "description": "CHIP:H3K4me2:fibroblast of lung"
         },
         "tf_binding": {
@@ -2302,7 +2302,7 @@
           "ref_value": 415.0,
           "alt_value": 416.0,
           "raw_score": 0.0035,
-          "quantile_score": 0.1614,
+          "quantile_score": 0.16,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -2312,7 +2312,7 @@
           "ref_value": 181.15264892578125,
           "alt_value": 188.18531799316406,
           "raw_score": 0.0547,
-          "quantile_score": 0.6563,
+          "quantile_score": 0.6559,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -2322,7 +2322,7 @@
           "ref_value": 0.0009595897424663919,
           "alt_value": 0.000970760779396285,
           "raw_score": 0.0057,
-          "quantile_score": 0.9804,
+          "quantile_score": 0.9774,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -2371,7 +2371,7 @@
           "ref_value": 8.768745422363281,
           "alt_value": 9.033294677734375,
           "raw_score": 0.0386,
-          "quantile_score": 0.7814,
+          "quantile_score": 0.7837,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -2381,7 +2381,7 @@
           "ref_value": 2227.0,
           "alt_value": 2341.5,
           "raw_score": 0.0723,
-          "quantile_score": 0.9673,
+          "quantile_score": 0.9666,
           "description": "CHIP:H3K27me3:fibroblast of lung"
         },
         "tf_binding": {
@@ -2391,7 +2391,7 @@
           "ref_value": 343.0,
           "alt_value": 345.5,
           "raw_score": 0.0104,
-          "quantile_score": 0.4059,
+          "quantile_score": 0.3979,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -2401,7 +2401,7 @@
           "ref_value": 5.748050689697266,
           "alt_value": 5.788654327392578,
           "raw_score": 0.0087,
-          "quantile_score": 0.1934,
+          "quantile_score": 0.2012,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -2411,7 +2411,7 @@
           "ref_value": 1.4161928091476212,
           "alt_value": 1.4212099900886195,
           "raw_score": 0.0035,
-          "quantile_score": 0.9504,
+          "quantile_score": 0.9478,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -2460,7 +2460,7 @@
           "ref_value": 4.719963073730469,
           "alt_value": 4.650825500488281,
           "raw_score": -0.0175,
-          "quantile_score": 0.5377,
+          "quantile_score": 0.5368,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -2470,7 +2470,7 @@
           "ref_value": 916.0,
           "alt_value": 889.125,
           "raw_score": -0.0429,
-          "quantile_score": 0.8515,
+          "quantile_score": 0.8491,
           "description": "CHIP:H3K4me2:fibroblast of lung"
         },
         "tf_binding": {
@@ -2480,7 +2480,7 @@
           "ref_value": 374.0,
           "alt_value": 365.0,
           "raw_score": -0.035,
-          "quantile_score": 0.7471,
+          "quantile_score": 0.7424,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -2490,7 +2490,7 @@
           "ref_value": 6.459409713745117,
           "alt_value": 6.271171569824219,
           "raw_score": -0.0369,
-          "quantile_score": 0.5568,
+          "quantile_score": 0.5608,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -2500,7 +2500,7 @@
           "ref_value": 0.3633811153582673,
           "alt_value": 0.3620718770952367,
           "raw_score": -0.0036,
-          "quantile_score": -0.9566,
+          "quantile_score": -0.956,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -2549,7 +2549,7 @@
           "ref_value": 3.241138458251953,
           "alt_value": 3.1825027465820312,
           "raw_score": -0.0201,
-          "quantile_score": 0.5891,
+          "quantile_score": 0.5805,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -2559,7 +2559,7 @@
           "ref_value": 698.75,
           "alt_value": 695.0,
           "raw_score": -0.0078,
-          "quantile_score": 0.4795,
+          "quantile_score": 0.472,
           "description": "CHIP:H3K4me2:fibroblast of lung"
         },
         "tf_binding": {
@@ -2569,7 +2569,7 @@
           "ref_value": 337.0,
           "alt_value": 332.0,
           "raw_score": -0.0215,
-          "quantile_score": 0.6244,
+          "quantile_score": 0.6136,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -2579,7 +2579,7 @@
           "ref_value": 4.422874450683594,
           "alt_value": 4.471233367919922,
           "raw_score": 0.0128,
-          "quantile_score": 0.2699,
+          "quantile_score": 0.2835,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -2589,7 +2589,7 @@
           "ref_value": 0.16268399003623188,
           "alt_value": 0.1632065040477808,
           "raw_score": 0.0032,
-          "quantile_score": 0.9408,
+          "quantile_score": 0.9362,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -2638,7 +2638,7 @@
           "ref_value": 3.593669891357422,
           "alt_value": 3.5241622924804688,
           "raw_score": -0.022,
-          "quantile_score": 0.6212,
+          "quantile_score": 0.6172,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -2648,7 +2648,7 @@
           "ref_value": 1421.0,
           "alt_value": 1430.5,
           "raw_score": 0.0096,
-          "quantile_score": 0.552,
+          "quantile_score": 0.5512,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -2658,7 +2658,7 @@
           "ref_value": 311.0,
           "alt_value": 310.5,
           "raw_score": -0.0023,
-          "quantile_score": 0.116,
+          "quantile_score": 0.1157,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -2668,7 +2668,7 @@
           "ref_value": 8.6900634765625,
           "alt_value": 8.930122375488281,
           "raw_score": 0.0353,
-          "quantile_score": 0.5416,
+          "quantile_score": 0.5498,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -2678,7 +2678,7 @@
           "ref_value": 0.0011457038797787538,
           "alt_value": 0.0011393284538456243,
           "raw_score": -0.003,
-          "quantile_score": -0.934,
+          "quantile_score": -0.928,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -2727,7 +2727,7 @@
           "ref_value": 7.529350280761719,
           "alt_value": 7.6239013671875,
           "raw_score": 0.0159,
-          "quantile_score": 0.5118,
+          "quantile_score": 0.508,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -2737,7 +2737,7 @@
           "ref_value": 2268.5,
           "alt_value": 2260.75,
           "raw_score": -0.0049,
-          "quantile_score": 0.4451,
+          "quantile_score": 0.4444,
           "description": "CHIP:H3K27me3:fibroblast of lung"
         },
         "tf_binding": {
@@ -2747,7 +2747,7 @@
           "ref_value": 312.5,
           "alt_value": 312.0,
           "raw_score": -0.0023,
-          "quantile_score": 0.1148,
+          "quantile_score": 0.1146,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -2757,7 +2757,7 @@
           "ref_value": 6.430641174316406,
           "alt_value": 6.24871826171875,
           "raw_score": -0.0358,
-          "quantile_score": 0.5471,
+          "quantile_score": 0.5528,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -2767,7 +2767,7 @@
           "ref_value": 0.0026332442484908367,
           "alt_value": 0.0026423241475119663,
           "raw_score": 0.0025,
-          "quantile_score": 0.9184,
+          "quantile_score": 0.9138,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -2816,7 +2816,7 @@
           "ref_value": 8.693550109863281,
           "alt_value": 8.617630004882812,
           "raw_score": -0.0113,
-          "quantile_score": 0.3954,
+          "quantile_score": 0.3963,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -2826,7 +2826,7 @@
           "ref_value": 2206.25,
           "alt_value": 2194.5,
           "raw_score": -0.0077,
-          "quantile_score": 0.5943,
+          "quantile_score": 0.5896,
           "description": "CHIP:H3K27me3:fibroblast of lung"
         },
         "tf_binding": {
@@ -2836,7 +2836,7 @@
           "ref_value": 344.0,
           "alt_value": 342.5,
           "raw_score": -0.0063,
-          "quantile_score": 0.276,
+          "quantile_score": 0.2696,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -2846,7 +2846,7 @@
           "ref_value": 5.790477752685547,
           "alt_value": 5.942768096923828,
           "raw_score": 0.032,
-          "quantile_score": 0.5164,
+          "quantile_score": 0.524,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -2856,7 +2856,7 @@
           "ref_value": 0.06928767320676178,
           "alt_value": 0.0690975824071771,
           "raw_score": -0.0027,
-          "quantile_score": -0.9338,
+          "quantile_score": -0.9262,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -2905,7 +2905,7 @@
           "ref_value": 8.238067626953125,
           "alt_value": 8.114524841308594,
           "raw_score": -0.0194,
-          "quantile_score": 0.5783,
+          "quantile_score": 0.57,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -2915,7 +2915,7 @@
           "ref_value": 1239.125,
           "alt_value": 1232.5,
           "raw_score": -0.0077,
-          "quantile_score": 0.4829,
+          "quantile_score": 0.4807,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -2925,7 +2925,7 @@
           "ref_value": 371.0,
           "alt_value": 373.5,
           "raw_score": 0.0097,
-          "quantile_score": 0.3849,
+          "quantile_score": 0.377,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -2935,7 +2935,7 @@
           "ref_value": 6.718463897705078,
           "alt_value": 6.791858673095703,
           "raw_score": 0.0137,
-          "quantile_score": 0.2884,
+          "quantile_score": 0.2972,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -2945,7 +2945,7 @@
           "ref_value": 0.0032669246494092165,
           "alt_value": 0.0032830866226253182,
           "raw_score": 0.0038,
-          "quantile_score": 0.9634,
+          "quantile_score": 0.9604,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -2994,7 +2994,7 @@
           "ref_value": 3.429422378540039,
           "alt_value": 3.4060020446777344,
           "raw_score": -0.0076,
-          "quantile_score": 0.2842,
+          "quantile_score": 0.2865,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -3004,7 +3004,7 @@
           "ref_value": 1323.75,
           "alt_value": 1336.25,
           "raw_score": 0.0135,
-          "quantile_score": 0.6666,
+          "quantile_score": 0.6603,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -3014,7 +3014,7 @@
           "ref_value": 339.5,
           "alt_value": 342.5,
           "raw_score": 0.0127,
-          "quantile_score": 0.4638,
+          "quantile_score": 0.4505,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -3024,7 +3024,7 @@
           "ref_value": 6.005062103271484,
           "alt_value": 6.137889862060547,
           "raw_score": 0.0271,
-          "quantile_score": 0.4682,
+          "quantile_score": 0.4764,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -3034,7 +3034,7 @@
           "ref_value": 0.09260552135693285,
           "alt_value": 0.09200091210048368,
           "raw_score": -0.0065,
-          "quantile_score": -0.9814,
+          "quantile_score": -0.9806,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -3083,7 +3083,7 @@
           "ref_value": 3.810749053955078,
           "alt_value": 3.7446212768554688,
           "raw_score": -0.02,
-          "quantile_score": 0.5867,
+          "quantile_score": 0.5857,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -3093,7 +3093,7 @@
           "ref_value": 451.625,
           "alt_value": 450.375,
           "raw_score": -0.004,
-          "quantile_score": 0.2964,
+          "quantile_score": 0.2953,
           "description": "CHIP:H3K4me2:fibroblast of lung"
         },
         "tf_binding": {
@@ -3103,7 +3103,7 @@
           "ref_value": 362.5,
           "alt_value": 365.0,
           "raw_score": 0.0099,
-          "quantile_score": 0.3913,
+          "quantile_score": 0.383,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -3113,7 +3113,7 @@
           "ref_value": 5.240898132324219,
           "alt_value": 5.255352020263672,
           "raw_score": 0.0033,
-          "quantile_score": 0.0766,
+          "quantile_score": 0.0857,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -3123,7 +3123,7 @@
           "ref_value": 0.0009551985060656857,
           "alt_value": 0.0009477690383980784,
           "raw_score": -0.0038,
-          "quantile_score": -0.9566,
+          "quantile_score": -0.9528,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -3172,7 +3172,7 @@
           "ref_value": 3.311063766479492,
           "alt_value": 3.2360572814941406,
           "raw_score": -0.0253,
-          "quantile_score": 0.6637,
+          "quantile_score": 0.6578,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -3182,7 +3182,7 @@
           "ref_value": 242.25,
           "alt_value": 242.9375,
           "raw_score": 0.0041,
-          "quantile_score": 0.3937,
+          "quantile_score": 0.3904,
           "description": "CHIP:H3K79me2:fibroblast of lung"
         },
         "tf_binding": {
@@ -3192,7 +3192,7 @@
           "ref_value": 342.5,
           "alt_value": 344.5,
           "raw_score": 0.0084,
-          "quantile_score": 0.3479,
+          "quantile_score": 0.3378,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -3202,7 +3202,7 @@
           "ref_value": 5.13963508605957,
           "alt_value": 5.161378860473633,
           "raw_score": 0.0051,
-          "quantile_score": 0.1192,
+          "quantile_score": 0.1259,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -3261,7 +3261,7 @@
           "ref_value": 6.086578369140625,
           "alt_value": 6.156097412109375,
           "raw_score": 0.0141,
-          "quantile_score": 0.4686,
+          "quantile_score": 0.467,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -3271,7 +3271,7 @@
           "ref_value": 1319.625,
           "alt_value": 1340.125,
           "raw_score": 0.0222,
-          "quantile_score": 0.7963,
+          "quantile_score": 0.7903,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -3281,7 +3281,7 @@
           "ref_value": 348.0,
           "alt_value": 345.5,
           "raw_score": -0.0104,
-          "quantile_score": 0.4043,
+          "quantile_score": 0.3961,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -3291,7 +3291,7 @@
           "ref_value": 12.269966125488281,
           "alt_value": 12.303779602050781,
           "raw_score": 0.0037,
-          "quantile_score": 0.0837,
+          "quantile_score": 0.0923,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -3301,7 +3301,7 @@
           "ref_value": 0.06644502631489689,
           "alt_value": 0.06629296839668505,
           "raw_score": -0.0023,
-          "quantile_score": -0.9056,
+          "quantile_score": -0.8988,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -3350,7 +3350,7 @@
           "ref_value": 6.267250061035156,
           "alt_value": 6.244007110595703,
           "raw_score": -0.0046,
-          "quantile_score": 0.1754,
+          "quantile_score": 0.1842,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -3360,7 +3360,7 @@
           "ref_value": 1403.0,
           "alt_value": 1396.25,
           "raw_score": -0.007,
-          "quantile_score": 0.4498,
+          "quantile_score": 0.4463,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -3370,7 +3370,7 @@
           "ref_value": 312.5,
           "alt_value": 311.0,
           "raw_score": -0.0069,
-          "quantile_score": 0.3017,
+          "quantile_score": 0.2926,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -3380,7 +3380,7 @@
           "ref_value": 4.612842559814453,
           "alt_value": 4.507598876953125,
           "raw_score": -0.0273,
-          "quantile_score": 0.4698,
+          "quantile_score": 0.4788,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -3390,7 +3390,7 @@
           "ref_value": 0.001115172548710601,
           "alt_value": 0.001104557681923168,
           "raw_score": -0.005,
-          "quantile_score": -0.9732,
+          "quantile_score": -0.9714,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -3439,7 +3439,7 @@
           "ref_value": 1.8447697162628174,
           "alt_value": 1.8474555015563965,
           "raw_score": 0.0014,
-          "quantile_score": 0.0534,
+          "quantile_score": 0.0561,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -3449,7 +3449,7 @@
           "ref_value": 1286.25,
           "alt_value": 1293.0,
           "raw_score": 0.0075,
-          "quantile_score": 0.4758,
+          "quantile_score": 0.4729,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -3469,7 +3469,7 @@
           "ref_value": 3.104078769683838,
           "alt_value": 3.148235321044922,
           "raw_score": 0.0154,
-          "quantile_score": 0.3227,
+          "quantile_score": 0.3259,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -3479,7 +3479,7 @@
           "ref_value": 0.44841970146382265,
           "alt_value": 0.447701936438963,
           "raw_score": -0.0016,
-          "quantile_score": -0.7698,
+          "quantile_score": -0.7622,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -3528,7 +3528,7 @@
           "ref_value": 2.6755056381225586,
           "alt_value": 2.731508255004883,
           "raw_score": 0.0218,
-          "quantile_score": 0.6191,
+          "quantile_score": 0.6147,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -3538,7 +3538,7 @@
           "ref_value": 435.875,
           "alt_value": 434.5,
           "raw_score": -0.0045,
-          "quantile_score": 0.4545,
+          "quantile_score": 0.4453,
           "description": "CHIP:H3K4me3:fibroblast of lung"
         },
         "tf_binding": {
@@ -3548,7 +3548,7 @@
           "ref_value": 282.5,
           "alt_value": 280.5,
           "raw_score": -0.0102,
-          "quantile_score": 0.4012,
+          "quantile_score": 0.392,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -3558,7 +3558,7 @@
           "ref_value": 5.617832183837891,
           "alt_value": 5.632781982421875,
           "raw_score": 0.0033,
-          "quantile_score": 0.0746,
+          "quantile_score": 0.0837,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -3568,7 +3568,7 @@
           "ref_value": 0.0009105130109383579,
           "alt_value": 0.0009160080316142475,
           "raw_score": 0.0029,
-          "quantile_score": 0.9278,
+          "quantile_score": 0.9242,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -3617,7 +3617,7 @@
           "ref_value": 2.8847055435180664,
           "alt_value": 2.912525177001953,
           "raw_score": 0.0103,
-          "quantile_score": 0.3685,
+          "quantile_score": 0.3682,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -3627,7 +3627,7 @@
           "ref_value": 2431.5,
           "alt_value": 2446.5,
           "raw_score": 0.0089,
-          "quantile_score": 0.6407,
+          "quantile_score": 0.6371,
           "description": "CHIP:H3K27me3:fibroblast of lung"
         },
         "tf_binding": {
@@ -3637,7 +3637,7 @@
           "ref_value": 248.0,
           "alt_value": 252.0,
           "raw_score": 0.023,
-          "quantile_score": 0.6428,
+          "quantile_score": 0.6311,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -3647,7 +3647,7 @@
           "ref_value": 3.346954345703125,
           "alt_value": 3.400196075439453,
           "raw_score": 0.0176,
-          "quantile_score": 0.3573,
+          "quantile_score": 0.3583,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -3657,7 +3657,7 @@
           "ref_value": 0.001168445859892891,
           "alt_value": 0.001173271150747255,
           "raw_score": 0.0022,
-          "quantile_score": 0.8918,
+          "quantile_score": 0.8866,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -3706,7 +3706,7 @@
           "ref_value": 2.3988986015319824,
           "alt_value": 2.429853916168213,
           "raw_score": 0.0131,
-          "quantile_score": 0.445,
+          "quantile_score": 0.4424,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -3716,7 +3716,7 @@
           "ref_value": 810.375,
           "alt_value": 794.4375,
           "raw_score": -0.0286,
-          "quantile_score": 0.8939,
+          "quantile_score": 0.8938,
           "description": "CHIP:H3K27me3:fibroblast of lung"
         },
         "tf_binding": {
@@ -3736,7 +3736,7 @@
           "ref_value": 9.899492263793945,
           "alt_value": 9.456257820129395,
           "raw_score": -0.0599,
-          "quantile_score": 0.6783,
+          "quantile_score": 0.6768,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -3746,7 +3746,7 @@
           "ref_value": 0.0024230231217403507,
           "alt_value": 0.002406839337480727,
           "raw_score": -0.0047,
-          "quantile_score": -0.9746,
+          "quantile_score": -0.973,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -3795,7 +3795,7 @@
           "ref_value": 1.7161245346069336,
           "alt_value": 1.706979751586914,
           "raw_score": -0.0049,
-          "quantile_score": 0.1841,
+          "quantile_score": 0.1911,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -3805,7 +3805,7 @@
           "ref_value": 2146.0,
           "alt_value": 2156.0,
           "raw_score": 0.0067,
-          "quantile_score": 0.5488,
+          "quantile_score": 0.543,
           "description": "CHIP:H3K27me3:fibroblast of lung"
         },
         "tf_binding": {
@@ -3815,7 +3815,7 @@
           "ref_value": 250.5,
           "alt_value": 248.0,
           "raw_score": -0.0144,
-          "quantile_score": 0.5029,
+          "quantile_score": 0.4903,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -3825,7 +3825,7 @@
           "ref_value": 9.928813934326172,
           "alt_value": 10.066108703613281,
           "raw_score": 0.018,
-          "quantile_score": 0.3628,
+          "quantile_score": 0.3642,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -3835,7 +3835,7 @@
           "ref_value": 0.002955500699727618,
           "alt_value": 0.0029647810703545587,
           "raw_score": 0.0023,
-          "quantile_score": 0.9082,
+          "quantile_score": 0.9042,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -3884,7 +3884,7 @@
           "ref_value": 3.114870309829712,
           "alt_value": 3.0485870838165283,
           "raw_score": -0.0234,
-          "quantile_score": 0.6401,
+          "quantile_score": 0.6318,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -3894,7 +3894,7 @@
           "ref_value": 1164.375,
           "alt_value": 1158.125,
           "raw_score": -0.0078,
-          "quantile_score": 0.4838,
+          "quantile_score": 0.4813,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -3904,7 +3904,7 @@
           "ref_value": 325.0,
           "alt_value": 325.5,
           "raw_score": 0.0022,
-          "quantile_score": 0.1072,
+          "quantile_score": 0.1078,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -3914,7 +3914,7 @@
           "ref_value": 3.0857486724853516,
           "alt_value": 3.0656847953796387,
           "raw_score": -0.0071,
-          "quantile_score": 0.1614,
+          "quantile_score": 0.1686,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -3924,7 +3924,7 @@
           "ref_value": 0.0010698778395676733,
           "alt_value": 0.0010622405077344809,
           "raw_score": -0.0037,
-          "quantile_score": -0.9544,
+          "quantile_score": -0.9504,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -3973,7 +3973,7 @@
           "ref_value": 1.5707124471664429,
           "alt_value": 1.5936050415039062,
           "raw_score": 0.0128,
-          "quantile_score": 0.4374,
+          "quantile_score": 0.435,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -3983,7 +3983,7 @@
           "ref_value": 1024.25,
           "alt_value": 1036.25,
           "raw_score": 0.0168,
-          "quantile_score": 0.8102,
+          "quantile_score": 0.8085,
           "description": "CHIP:H3K27me3:fibroblast of lung"
         },
         "tf_binding": {
@@ -3993,7 +3993,7 @@
           "ref_value": 160.0,
           "alt_value": 167.125,
           "raw_score": 0.0625,
-          "quantile_score": 0.8598,
+          "quantile_score": 0.8572,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -4003,7 +4003,7 @@
           "ref_value": 3.3885433673858643,
           "alt_value": 3.5086092948913574,
           "raw_score": 0.0389,
-          "quantile_score": 0.5716,
+          "quantile_score": 0.5744,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -4013,7 +4013,7 @@
           "ref_value": 0.0009390632049457958,
           "alt_value": 0.0009344860017819021,
           "raw_score": -0.0024,
-          "quantile_score": -0.9022,
+          "quantile_score": -0.8966,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -4062,7 +4062,7 @@
           "ref_value": 1.0625760555267334,
           "alt_value": 1.0739636421203613,
           "raw_score": 0.0079,
-          "quantile_score": 0.2901,
+          "quantile_score": 0.2969,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -4072,7 +4072,7 @@
           "ref_value": 871.5,
           "alt_value": 886.5,
           "raw_score": 0.0246,
-          "quantile_score": 0.82,
+          "quantile_score": 0.8131,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -4082,7 +4082,7 @@
           "ref_value": 269.0,
           "alt_value": 280.5,
           "raw_score": 0.0602,
-          "quantile_score": 0.8538,
+          "quantile_score": 0.8523,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -4092,7 +4092,7 @@
           "ref_value": 2.5202560424804688,
           "alt_value": 2.6150667667388916,
           "raw_score": 0.0383,
-          "quantile_score": 0.568,
+          "quantile_score": 0.571,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -4102,7 +4102,7 @@
           "ref_value": 0.509251424114967,
           "alt_value": 0.5102296498036354,
           "raw_score": 0.0019,
-          "quantile_score": 0.8638,
+          "quantile_score": 0.8604,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -4151,7 +4151,7 @@
           "ref_value": 0.31313812732696533,
           "alt_value": 0.2906256914138794,
           "raw_score": -0.0249,
-          "quantile_score": 0.6622,
+          "quantile_score": 0.66,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -4161,7 +4161,7 @@
           "ref_value": 950.75,
           "alt_value": 938.75,
           "raw_score": -0.0183,
-          "quantile_score": 0.7491,
+          "quantile_score": 0.7448,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -4171,7 +4171,7 @@
           "ref_value": 185.0,
           "alt_value": 174.375,
           "raw_score": -0.0849,
-          "quantile_score": 0.9064,
+          "quantile_score": 0.9038,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -4181,7 +4181,7 @@
           "ref_value": 2.239823818206787,
           "alt_value": 2.1896302700042725,
           "raw_score": -0.0225,
-          "quantile_score": 0.4194,
+          "quantile_score": 0.4244,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -4191,7 +4191,7 @@
           "ref_value": 0.0012982483257991658,
           "alt_value": 0.0013035246529893806,
           "raw_score": 0.0023,
-          "quantile_score": 0.8966,
+          "quantile_score": 0.8918,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -4240,7 +4240,7 @@
           "ref_value": 2.2926340103149414,
           "alt_value": 2.3533058166503906,
           "raw_score": 0.0263,
-          "quantile_score": 0.6761,
+          "quantile_score": 0.6694,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -4250,7 +4250,7 @@
           "ref_value": 1034.25,
           "alt_value": 1040.625,
           "raw_score": 0.0089,
-          "quantile_score": 0.5261,
+          "quantile_score": 0.5238,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -4260,7 +4260,7 @@
           "ref_value": 51.25,
           "alt_value": 51.3125,
           "raw_score": 0.0017,
-          "quantile_score": 0.0634,
+          "quantile_score": 0.0667,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -4280,7 +4280,7 @@
           "ref_value": 0.002608481888195977,
           "alt_value": 0.0025948077889543083,
           "raw_score": -0.0038,
-          "quantile_score": -0.9638,
+          "quantile_score": -0.96,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -4329,7 +4329,7 @@
           "ref_value": 2.3348445892333984,
           "alt_value": 2.3145904541015625,
           "raw_score": -0.0088,
-          "quantile_score": 0.316,
+          "quantile_score": 0.3247,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -4339,7 +4339,7 @@
           "ref_value": 953.875,
           "alt_value": 963.6875,
           "raw_score": 0.0147,
-          "quantile_score": 0.6918,
+          "quantile_score": 0.6858,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -4349,7 +4349,7 @@
           "ref_value": 269.0,
           "alt_value": 269.5,
           "raw_score": 0.0027,
-          "quantile_score": 0.135,
+          "quantile_score": 0.1348,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -4359,7 +4359,7 @@
           "ref_value": 5.571249008178711,
           "alt_value": 5.579214096069336,
           "raw_score": 0.0017,
-          "quantile_score": 0.0397,
+          "quantile_score": 0.047,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -4369,7 +4369,7 @@
           "ref_value": 0.0017988642273973603,
           "alt_value": 0.0018130552439144204,
           "raw_score": 0.0051,
-          "quantile_score": 0.979,
+          "quantile_score": 0.9768,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -4418,7 +4418,7 @@
           "ref_value": 0.7554619312286377,
           "alt_value": 0.7499565482139587,
           "raw_score": -0.0045,
-          "quantile_score": 0.171,
+          "quantile_score": 0.1792,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -4428,7 +4428,7 @@
           "ref_value": 515.25,
           "alt_value": 521.375,
           "raw_score": 0.017,
-          "quantile_score": 0.7126,
+          "quantile_score": 0.7064,
           "description": "CHIP:H3K27ac:fibroblast of lung"
         },
         "tf_binding": {
@@ -4438,7 +4438,7 @@
           "ref_value": 221.5,
           "alt_value": 220.75,
           "raw_score": -0.0049,
-          "quantile_score": 0.2251,
+          "quantile_score": 0.2207,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -4448,7 +4448,7 @@
           "ref_value": 2.550149440765381,
           "alt_value": 2.6179909706115723,
           "raw_score": 0.0273,
-          "quantile_score": 0.4698,
+          "quantile_score": 0.4788,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -4458,7 +4458,7 @@
           "ref_value": 0.002048459109948508,
           "alt_value": 0.002057084841794105,
           "raw_score": 0.0028,
-          "quantile_score": 0.935,
+          "quantile_score": 0.9308,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -4507,7 +4507,7 @@
           "ref_value": 1.1445064544677734,
           "alt_value": 1.1557159423828125,
           "raw_score": 0.0075,
-          "quantile_score": 0.275,
+          "quantile_score": 0.2851,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -4517,7 +4517,7 @@
           "ref_value": 863.5,
           "alt_value": 868.75,
           "raw_score": 0.0087,
-          "quantile_score": 0.5205,
+          "quantile_score": 0.519,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -4527,7 +4527,7 @@
           "ref_value": 66.75,
           "alt_value": 66.9375,
           "raw_score": 0.004,
-          "quantile_score": 0.1826,
+          "quantile_score": 0.1831,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -4537,7 +4537,7 @@
           "ref_value": 5.830196380615234,
           "alt_value": 5.761348724365234,
           "raw_score": -0.0146,
-          "quantile_score": 0.3073,
+          "quantile_score": 0.3124,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -4547,7 +4547,7 @@
           "ref_value": 0.12132728381600866,
           "alt_value": 0.12150107060316043,
           "raw_score": 0.0014,
-          "quantile_score": 0.7982,
+          "quantile_score": 0.7978,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -4596,7 +4596,7 @@
           "ref_value": 0.3403049111366272,
           "alt_value": 0.3077874183654785,
           "raw_score": -0.0354,
-          "quantile_score": 0.7652,
+          "quantile_score": 0.7565,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -4606,7 +4606,7 @@
           "ref_value": 419.25,
           "alt_value": 417.25,
           "raw_score": -0.0069,
-          "quantile_score": 0.4822,
+          "quantile_score": 0.4722,
           "description": "CHIP:H3K27ac:fibroblast of lung"
         },
         "tf_binding": {
@@ -4616,7 +4616,7 @@
           "ref_value": 206.75,
           "alt_value": 202.75,
           "raw_score": -0.028,
-          "quantile_score": 0.6938,
+          "quantile_score": 0.6855,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -4626,7 +4626,7 @@
           "ref_value": 2.1793196201324463,
           "alt_value": 2.1858177185058594,
           "raw_score": 0.0029,
-          "quantile_score": 0.0675,
+          "quantile_score": 0.0759,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -4636,7 +4636,7 @@
           "ref_value": 0.001573749238339516,
           "alt_value": 0.0015777703114939884,
           "raw_score": 0.0016,
-          "quantile_score": 0.8234,
+          "quantile_score": 0.8212,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -4685,7 +4685,7 @@
           "ref_value": 1.7043724060058594,
           "alt_value": 1.7188316583633423,
           "raw_score": 0.0077,
-          "quantile_score": 0.2855,
+          "quantile_score": 0.2879,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -4695,7 +4695,7 @@
           "ref_value": 988.25,
           "alt_value": 992.875,
           "raw_score": 0.0067,
-          "quantile_score": 0.4392,
+          "quantile_score": 0.4356,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -4715,7 +4715,7 @@
           "ref_value": 3.1001768112182617,
           "alt_value": 3.107227325439453,
           "raw_score": 0.0025,
-          "quantile_score": 0.0573,
+          "quantile_score": 0.0638,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -4725,7 +4725,7 @@
           "ref_value": 0.002976298312956238,
           "alt_value": 0.0029646291068583307,
           "raw_score": -0.0029,
-          "quantile_score": -0.9438,
+          "quantile_score": -0.9358,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -4774,7 +4774,7 @@
           "ref_value": 0.33646976947784424,
           "alt_value": 0.32557034492492676,
           "raw_score": -0.0118,
-          "quantile_score": 0.41,
+          "quantile_score": 0.4075,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -4784,7 +4784,7 @@
           "ref_value": 926.625,
           "alt_value": 929.125,
           "raw_score": 0.0039,
-          "quantile_score": 0.283,
+          "quantile_score": 0.2801,
           "description": "CHIP:H2AFZ:fibroblast of lung"
         },
         "tf_binding": {
@@ -4794,7 +4794,7 @@
           "ref_value": 213.0,
           "alt_value": 209.25,
           "raw_score": -0.0255,
-          "quantile_score": 0.6709,
+          "quantile_score": 0.6603,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -4804,7 +4804,7 @@
           "ref_value": 2.760547161102295,
           "alt_value": 2.7666053771972656,
           "raw_score": 0.0023,
-          "quantile_score": 0.0531,
+          "quantile_score": 0.0596,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -4814,7 +4814,7 @@
           "ref_value": 0.0010026184173893414,
           "alt_value": 0.0009943043517423333,
           "raw_score": -0.0042,
-          "quantile_score": -0.9636,
+          "quantile_score": -0.9598,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -4863,7 +4863,7 @@
           "ref_value": 0.8000746965408325,
           "alt_value": 0.891532301902771,
           "raw_score": 0.0715,
-          "quantile_score": 0.8994,
+          "quantile_score": 0.8992,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -4873,7 +4873,7 @@
           "ref_value": 267.0625,
           "alt_value": 270.875,
           "raw_score": 0.0204,
-          "quantile_score": 0.7279,
+          "quantile_score": 0.7188,
           "description": "CHIP:H3K4me2:fibroblast of lung"
         },
         "tf_binding": {
@@ -4883,7 +4883,7 @@
           "ref_value": 206.25,
           "alt_value": 211.5,
           "raw_score": 0.0361,
-          "quantile_score": 0.7549,
+          "quantile_score": 0.7488,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -4893,7 +4893,7 @@
           "ref_value": 1.5396270751953125,
           "alt_value": 1.5992372035980225,
           "raw_score": 0.0335,
-          "quantile_score": 0.5273,
+          "quantile_score": 0.5347,
           "description": "DNASE:fibroblast of lung"
         },
         "gene_expression": {
@@ -4903,7 +4903,7 @@
           "ref_value": 0.0642942657691525,
           "alt_value": 0.06411332435442293,
           "raw_score": -0.0028,
-          "quantile_score": -0.9366,
+          "quantile_score": -0.9292,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -4952,7 +4952,7 @@
           "ref_value": 0.5576047897338867,
           "alt_value": 0.5618302822113037,
           "raw_score": 0.0039,
-          "quantile_score": 0.1501,
+          "quantile_score": 0.1567,
           "description": "CAGE:lung fibroblast"
         },
         "histone_marks": {
@@ -4962,7 +4962,7 @@
           "ref_value": 280.8125,
           "alt_value": 278.8125,
           "raw_score": -0.0103,
-          "quantile_score": 0.5575,
+          "quantile_score": 0.5505,
           "description": "CHIP:H3K4me2:fibroblast of lung"
         },
         "tf_binding": {
@@ -4972,7 +4972,7 @@
           "ref_value": 175.5,
           "alt_value": 178.0,
           "raw_score": 0.0203,
-          "quantile_score": 0.6071,
+          "quantile_score": 0.5958,
           "description": "CHIP:CTCF:fibroblast of lung"
         },
         "chromatin_accessibility": {
@@ -4992,7 +4992,7 @@
           "ref_value": 0.0025041086889391567,
           "alt_value": 0.002518070403055929,
           "raw_score": 0.004,
-          "quantile_score": 0.9672,
+          "quantile_score": 0.964,
           "description": "RNA:fibroblast of lung"
         },
         "splicing": {
@@ -5019,6 +5019,6 @@
       "lung fibroblast"
     ],
     "notes": [],
-    "generated_at": "2026-08-05 04:59 UTC"
+    "generated_at": "2026-08-08 03:50 UTC"
   }
 }

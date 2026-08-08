@@ -173,6 +173,20 @@ def test_predict_matches_direct_window_scoring(
     Scoring the prediction the way the builder will (501 bp central window
     sum) must equal scoring the raw head outputs through the shared
     helper.  If these diverge, every percentile is silently wrong.
+
+    Known flake under concurrent GPU load; do NOT respond by loosening the
+    tolerance. Observed 2026-08-07 during a full sweep run while four other GPUs
+    were at 99% occupancy: 980/1000 elements mismatched, max **relative**
+    difference 2.3e-3, max absolute 0.041 -- against the rtol=1e-5 below. The
+    device assert above passed, so this was not the CPU fallback; it is
+    consistent with Triton autotuning selecting a different kernel under
+    occupancy pressure, which is the same mechanism as the ~1e-2 Triton/CPU gap
+    already noted below. On a quiet machine it passes repeatedly (3/3 verified).
+
+    The tolerance is intentionally at kernel-agreement strictness rather than at
+    "close enough for a CDF", because that is the only setting at which this test
+    can detect the thing it exists for -- a genuine divergence between the two
+    scoring paths would also be small. Run release gates on an unloaded GPU.
     """
     # Path A: through the oracle's public predict().
     profile_from_predict = prediction_values[

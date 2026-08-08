@@ -23,7 +23,8 @@ Two kinds of background are supported:
 **2. Baseline signal backgrounds** (``{oracle}_{layer}_baseline.npy``)
     Maps raw predicted signal levels to genome-wide activity percentiles [0, 1].
 
-Background distributions are cached to ``~/.chorus/backgrounds/`` for reuse.
+Background distributions are cached under ``CHORUS_BACKGROUNDS_DIR`` for reuse
+(the installation directory by default; see ``chorus/core/globals.py``).
 """
 
 import hashlib
@@ -34,7 +35,12 @@ from typing import Optional
 
 import numpy as np
 
-from chorus.analysis.background_sampling import cdf_grid_violations
+from chorus.analysis.background_sampling import (
+    cdf_grid_violations,
+    thinning_violations,
+    yield_violations,
+)
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +170,7 @@ class QuantileNormalizer:
 
     def __init__(self, cache_dir: Optional[str] = None):
         if cache_dir is None:
-            cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+            cache_dir = str(CHORUS_BACKGROUNDS_DIR)
         self.cache_dir = Path(cache_dir)
         self._distributions: dict[str, BackgroundDistribution] = {}
 
@@ -359,7 +365,7 @@ class PerTrackNormalizer:
 
     def __init__(self, cache_dir: Optional[str] = None):
         if cache_dir is None:
-            cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+            cache_dir = str(CHORUS_BACKGROUNDS_DIR)
         self.cache_dir = Path(cache_dir)
         # Keyed by oracle name
         self._loaded: dict[str, dict] = {}  # oracle -> {track_ids, effect_cdfs, ...}
@@ -731,6 +737,82 @@ class PerTrackNormalizer:
         """
         return self._lookup(oracle_name, track_id, "effect_cdfs", raw_score, signed=signed)
 
+    def effect_null_support(
+        self,
+        oracle_name: str,
+        track_id: str,
+    ) -> tuple[float, float] | None:
+        """The (most negative, most positive) effect the null actually contains.
+
+        These are the first and last entries of the track's ``effect_cdfs`` row —
+        the smallest and largest of the sampled background effects. They are
+        already in the shipped artefacts, so nothing here needs a rebuild.
+
+        Unsigned rows start at 0.0 (the row holds ``abs`` effects); signed rows —
+        every Sei and LegNet track, 12.9% of AlphaGenome's and 20.3% of Borzoi's —
+        run negative, so **both** ends are live and a caller must not assume the
+        maximum is the only bound that can be crossed.
+        """
+        entry = self._ensure_loaded(oracle_name)
+        if entry is None:
+            return None
+        cdf_matrix = entry.get("effect_cdfs")
+        if cdf_matrix is None:
+            return None
+        idx = self._resolve_row(track_id, entry)
+        if idx is None or not self._has_samples(entry, "effect_cdfs", idx):
+            return None
+        row = np.asarray(cdf_matrix[idx])
+        if row.size == 0:
+            return None
+        return (float(row[0]), float(row[-1]))
+
+    def effect_exceedance(
+        self,
+        oracle_name: str,
+        track_id: str,
+        raw_score: float,
+        signed: bool = False,
+    ) -> float | None:
+        """How far past the null's most extreme sample an effect lies, as a ratio.
+
+        ``effect_percentile`` is ``min(rank / denominator, 1.0)``, so it reaches
+        exactly 1.0 the moment the effect reaches the largest of the ~10–12k
+        sampled background effects, and stays there however much further it goes.
+        At rs12740374, ``CHIP:HepG2:CEBPA:+`` scores +1.865 against a null maximum
+        of 1.682: it pins at 1.0, indistinguishable from an effect ten times
+        larger. That is a real loss of information, and it is not fixable by
+        resampling — the ceiling is a single extreme order statistic, so its
+        position carries large sampling variance. Measured across Enformer's 12
+        ``tf_binding`` tracks after re-anchoring, 12 of 12 got a *wider* p99
+        (+63%) while 11 of 12 reported a *lower* maximum.
+
+        So report the distance instead. Returns ``|raw| / |bound|`` where *bound*
+        is the end of the support the effect crossed, or ``None`` when the effect
+        is inside the support and the percentile is already exact. A returned
+        1.11 means "11% beyond the most extreme background effect sampled for
+        this track".
+
+        This is deliberately **not** an extrapolated percentile. Fitting a
+        generalised Pareto tail to Enformer's TF nulls gives shape c = −0.190,
+        i.e. a *bounded* tail whose endpoint (4.245) sits above the empirical
+        maximum (2.956) but still below the observed effect (4.372) — so the
+        fitted model calls the measurement impossible. Forcing an exponential
+        tail (c = 0) does extrapolate monotonically and never saturates, but it
+        turns a measurement into a modelling assumption and prints it to eight
+        decimal places. The ratio is a fact about the sample.
+        """
+        support = self.effect_null_support(oracle_name, track_id)
+        if support is None:
+            return None
+        lo, hi = support
+        value = raw_score if signed else abs(raw_score)
+        if value > hi and hi > 0:
+            return float(value / hi)
+        if signed and value < lo and lo < 0:
+            return float(value / lo)
+        return None
+
     def activity_percentile(
         self,
         oracle_name: str,
@@ -970,6 +1052,7 @@ class PerTrackNormalizer:
         n_points: int = 10_000,
         provenance: dict | None = None,
         per_row: dict | None = None,
+        sampling: dict | None = None,
     ) -> Path:
         """Save per-track CDF matrices to a compressed ``.npz`` file.
 
@@ -1014,7 +1097,7 @@ class PerTrackNormalizer:
             (#124).
         """
         if cache_dir is None:
-            cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+            cache_dir = str(CHORUS_BACKGROUNDS_DIR)
         out_dir = Path(cache_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1050,6 +1133,14 @@ class PerTrackNormalizer:
                         oracle_name, name, matrix.shape[1], n_points, matrix.shape[1],
                     )
                 if counts is not None:
+                    problems = yield_violations(
+                        np.asarray(counts), label=f"{oracle_name}.{name}"
+                    )
+                    if problems:
+                        raise ValueError(
+                            "refusing to write a background where almost every "
+                            "position failed:\n  " + "\n  ".join(problems)
+                        )
                     problems = cdf_grid_violations(
                         matrix, np.asarray(counts), label=f"{oracle_name}.{name}"
                     )
@@ -1059,6 +1150,55 @@ class PerTrackNormalizer:
                             "been produced by ReservoirSampler.to_cdf_matrix:\n  "
                             + "\n  ".join(problems)
                         )
+
+                # A SECOND, independent check: was the sample thinned before it was
+                # gridded? cdf_grid_violations cannot answer that -- it is handed the
+                # OFFERED count while the geometry it validates is set by the RETAINED
+                # count, and it skips every row with n >= n_points. Offered is always
+                # >= n_points for a real build, so it skipped every thinned row, which
+                # is how AlphaGenome shipped 667 RNA ceilings drawn from a 33.7%
+                # subsample (median 1.33x understated, worst 8.34x).
+                layer_key = name.replace("_cdfs", "")
+                spec = (sampling or {}).get(layer_key)
+                if spec is not None:
+                    problems = thinning_violations(
+                        np.asarray(spec["offered"]),
+                        np.asarray(spec["retained"]),
+                        n_points=matrix.shape[1],
+                        tail_k=spec.get("tail_k"),
+                        label=f"{oracle_name}.{name}",
+                    )
+                    if problems:
+                        raise ValueError(
+                            "refusing to write a CDF matrix whose top grid slots came "
+                            "from a thinned sample -- the row maximum would be a draw "
+                            "from a subsample, and that maximum is what "
+                            "effect_percentile clamps against:\n  "
+                            + "\n  ".join(problems)
+                        )
+                if spec is not None:
+                    # Persist retention INTO the shipped file, not just the interim.
+                    # Only the offered count was ever stored, so "was this track's tail
+                    # thinned?" was unanswerable from a published background -- which is
+                    # precisely why AlphaGenome's 2.97x thinning went unnoticed through
+                    # a republish. One extra int64 per track per layer.
+                    arrays[f"{layer_key}_retained"] = np.asarray(
+                        spec["retained"], dtype=np.int64
+                    )
+                    if spec.get("tail_k"):
+                        arrays[f"{layer_key}_tail_k"] = np.int64(spec["tail_k"])
+
+                elif counts is not None and np.any(np.asarray(counts) > 0):
+                    # Loud, not silent. A builder that forgets to pass `sampling` gets
+                    # NO thinning protection at all, and "a guard nobody wired up" is
+                    # how both the padded enformer grid and the AlphaGenome thinning
+                    # reached users past guards that already existed.
+                    logger.error(
+                        "%s.%s written WITHOUT a sampling= block: thinning cannot be "
+                        "checked for this matrix. Pass sampling={%r: {'offered': ..., "
+                        "'retained': ..., 'tail_k': ...}} from the builder.",
+                        oracle_name, name, layer_key,
+                    )
                 arrays[name] = matrix.astype(np.float32)
 
         if signed_flags is not None:
@@ -1137,7 +1277,7 @@ class PerTrackNormalizer:
             of tracks that were actually appended (after dedup).
         """
         if cache_dir is None:
-            cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+            cache_dir = str(CHORUS_BACKGROUNDS_DIR)
         out_dir = Path(cache_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         npz_path = out_dir / PerTrackNormalizer.npz_filename(oracle_name)
@@ -1326,7 +1466,7 @@ def get_pertrack_normalizer(
     no per-track CDFs exist for *oracle_name*.
     """
     if cache_dir is None:
-        cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+        cache_dir = str(CHORUS_BACKGROUNDS_DIR)
     norm = PerTrackNormalizer(cache_dir=cache_dir)
     if norm.has_oracle(oracle_name):
         norm._ensure_loaded(oracle_name)
@@ -1367,7 +1507,7 @@ def download_pertrack_backgrounds(
     Returns 1 if downloaded, 0 if already exists or not available.
     """
     if cache_dir is None:
-        cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+        cache_dir = str(CHORUS_BACKGROUNDS_DIR)
     bg_dir = Path(cache_dir)
     bg_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1420,7 +1560,7 @@ def download_backgrounds(
     exist locally.
     """
     if cache_dir is None:
-        cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+        cache_dir = str(CHORUS_BACKGROUNDS_DIR)
     bg_dir = Path(cache_dir)
     bg_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1487,7 +1627,7 @@ def get_normalizer(
     don't need to branch.
     """
     if cache_dir is None:
-        cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+        cache_dir = str(CHORUS_BACKGROUNDS_DIR)
     bg_dir = Path(cache_dir)
 
     # ── 1. Try the per-track NPZ first (new format, auto-downloaded from HF).

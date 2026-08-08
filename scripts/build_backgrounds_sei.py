@@ -28,7 +28,8 @@ from chorus.utils.annotations import (  # noqa: E402
     load_chrom_sizes,
     sample_gene_anchored_positions,
 )
-from chorus.analysis.background_sampling import (  # noqa: E402
+from chorus.analysis.background_sampling import (
+    sampling_block,  # noqa: E402
     ReservoirSampler,
     StagedSamples,
 )
@@ -39,6 +40,12 @@ parser.add_argument("--part", choices=["variants", "baselines", "merge", "both",
 parser.add_argument("--gpu", type=int, default=0)
 parser.add_argument("--device", type=str, default=None, help="cpu or cuda:N")
 parser.add_argument("--n-variants", type=int, default=10000)
+parser.add_argument("--no-dhs", action="store_true",
+                    help="Ablation: drop the DHS stratum and rescale the rest. Exists "
+                         "so DHS's effect on a GENE-ANCHORED null can be measured. It "
+                         "was measured to dilute every quantile of LegNet's PROMOTER "
+                         "null and was removed there; whether the same holds for a "
+                         "genome-wide chromatin model is a different question.")
 parser.add_argument("--reservoir-size", type=int, default=50000)
 parser.add_argument("--n-cdf-points", type=int, default=10000)
 args = parser.parse_args()
@@ -55,7 +62,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-cache_dir = os.path.expanduser("~/.chorus/backgrounds")
+# Honour the data-dir mechanism rather than hardcoding $HOME. All eight
+# builders had this literal, so a chorus installed with
+# CHORUS_DATA_DIR=/data/... still wrote its backgrounds into the home
+# directory the data dir exists to avoid. CHORUS_BACKGROUNDS_DIR applies
+# the legacy ~/.chorus compatibility itself, per kind.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+cache_dir = os.environ.get("CHORUS_BUILD_CACHE_DIR") or str(CHORUS_BACKGROUNDS_DIR)
 os.makedirs(cache_dir, exist_ok=True)
 
 INPUT_LENGTH = 4096
@@ -70,7 +83,15 @@ INPUT_LENGTH = 4096
 
 def load_model_and_setup():
     """Load Sei model + reference. Returns (predict_fn, get_seq_fn, ref, class_names)."""
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+    # An explicit CUDA_VISIBLE_DEVICES wins. This used to assign unconditionally, so
+    # `CUDA_VISIBLE_DEVICES=1 python build_...py` silently ran on GPU 0 anyway. Two
+    # arms of an ablation launched that way both landed on GPU 0; the first grabbed
+    # 78 GB, the second could not allocate a cuBLAS handle, and EVERY position was
+    # dropped with "Attempting to perform BLAS operation using StreamExecutor without
+    # BLAS support". A fleet rebuild sharded across GPUs by env var would have
+    # serialised onto one device the same way.
+    if os.environ.get("CUDA_VISIBLE_DEVICES") in (None, ""):
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
     import torch
     from chorus.oracles.sei_source.sei import Sei, SeiProjector
@@ -165,8 +186,15 @@ def build_variant_backgrounds():
     # though its own BASELINE pass already used cCREs -- an asymmetry inside a single
     # oracle that is harder to defend than any difference between oracles.
     _sizes = load_chrom_sizes(os.path.join(REPO_ROOT, 'genomes/hg38.fa.fai'))
+    _strata = None
+    if args.no_dhs:
+        from chorus.utils.annotations import DEFAULT_REGION_STRATA
+        _strata = {k: v for k, v in DEFAULT_REGION_STRATA.items() if k != "dhs"}
+        _tot = sum(_strata.values())
+        _strata = {k: v / _tot for k, v in _strata.items()}
+        logger.info("ABLATION --no-dhs: strata rescaled to %s", _strata)
     sampled = sample_gene_anchored_positions(
-        args.n_variants, chrom_sizes=_sizes, seed=42)
+        args.n_variants, chrom_sizes=_sizes, seed=42, strata=_strata)
     snps = []
     strata_counts = defaultdict(int)
     for chrom, pos, stratum in sampled:
@@ -226,6 +254,7 @@ def build_variant_backgrounds():
         track_ids=np.array(class_names, dtype='U'),
         effect_cdfs=effect_matrix.astype(np.float32),
         effect_counts=effect_reservoir.get_counts(),
+        effect_retained=effect_reservoir.retained_counts(),
         signed_flags=signed_flags,
     )
     logger.info("Saved effect interim: %s", interim_path)
@@ -335,6 +364,7 @@ def build_baseline_backgrounds():
         track_ids=np.array(class_names, dtype='U'),
         summary_cdfs=summary_matrix.astype(np.float32),
         summary_counts=summary_reservoir.get_counts(),
+        summary_retained=summary_reservoir.retained_counts(),
     )
     logger.info("Saved baseline interim: %s", interim_path)
     ref.close()
@@ -347,7 +377,10 @@ def merge_to_final():
     baseline_path = os.path.join(cache_dir, "sei_baseline_cdfs_interim.npz")
     if not os.path.exists(effect_path) or not os.path.exists(baseline_path):
         logger.error("Missing interim files")
-        return
+        raise SystemExit(1)  # A missing interim is a FAILED merge, not a no-op. Returning here exited 0,
+        # so a driver keying off exit codes recorded "rc=0" for a step that wrote
+        # nothing -- the same report-success-after-failure shape as the all-zero
+        # interim and the guard nobody wired up.
 
     effect_data = np.load(effect_path, allow_pickle=False)
     baseline_data = np.load(baseline_path, allow_pickle=False)
@@ -366,6 +399,7 @@ def merge_to_final():
         effect_counts=effect_data["effect_counts"] if "effect_counts" in effect_data else None,
         summary_counts=baseline_data["summary_counts"] if "summary_counts" in baseline_data else None,
         cache_dir=cache_dir,
+        sampling=sampling_block(effect_data, baseline_data, tail_k=None),
     )
     logger.info("DONE — final file: %s (%.1f MB)", path, path.stat().st_size / 1e6)
 

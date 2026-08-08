@@ -440,12 +440,24 @@ class SeiOracle(OracleBase):
                 values = target_preds[:, source_ind]
                 assay_type = info.assay
                 cell_type = info.celltype
+                metadata = None
 
             elif source == 'c':
                 info = sei_classes[source_ind]
                 values = class_preds[:, source_ind]
                 cell_type = info.group
-                assay_type = info.name
+                # Sei's 40 sequence classes are ONE layer -- regulatory_classification
+                # -- not 40 distinct assay types. ``classify_track_layer`` dispatches
+                # on the literal string "sequence-class" (scorers.py:297), so assigning
+                # ``info.name`` here (e.g. "Polycomb-repressed") fell through to
+                # "other", whose LAYER_CONFIGS entry is None, so ``score_track_effect``
+                # returned None and EVERY Sei track scored raw_score=None. Sei
+                # consequently appeared in no committed example output and its 40
+                # background rows were unreachable from the query path -- a whole
+                # oracle silently dark, with a built and shipped null behind it.
+                # The class name is preserved as the description rather than dropped.
+                assay_type = "sequence-class"
+                metadata = {"description": info.name}
             else:
                 raise ValueError(f"Invalid mapping: {mapping[ind]}")
             
@@ -461,7 +473,7 @@ class SeiOracle(OracleBase):
                 input_interval=input_interval,
                 resolution=self.bin_size,
                 values=values,
-                metadata=None,
+                metadata=metadata,
                 preferred_aggregation='sum',
                 preferred_interpolation='linear_divided',
                 preferred_scoring_strategy='mean'

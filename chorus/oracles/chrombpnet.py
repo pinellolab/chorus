@@ -562,9 +562,40 @@ class ChromBPNetOracle(OracleBase):
         """Return ChromBPNet's assay types."""
         return ["ATAC", "DNASE", "CHIP"]
     
-    def list_cell_types(self) -> List[str]:
-        """Return ChromBPNet's cell types."""
-        return ["IMR-90", "GM12878", "HepG2", "K562"]
+    def list_cell_types(self, assay: str | None = None) -> List[str]:
+        """Cell types ChromBPNet has models for, derived from the registry.
+
+        This was a hardcoded ``["IMR-90", "GM12878", "HepG2", "K562"]`` while
+        ``CHROMBPNET_MODELS_DICT`` — the registry the loader actually reads — has
+        five under DNASE. **H1 was missing**, even though ``DNASE:H1`` ships a
+        background row, so it could be loaded and scored but never discovered. A
+        hardcoded list beside a registry is a second source of truth, and this is what
+        that costs.
+
+        ``assay`` narrows to one of ATAC / DNASE / CHIP; omitted, the union of the
+        accessibility assays is returned. CHIP cell types are deliberately excluded
+        from the default: there are 172 of them against 5 accessibility lines, and
+        returning them all would bury the answer to "which cell types can I profile
+        accessibility in?". Pass ``assay="CHIP"`` for those.
+        """
+        from .chrombpnet_source.chrombpnet_globals import CHROMBPNET_MODELS_DICT
+        from .chrombpnet_source.metadata import BPNetMetadata
+
+        if assay:
+            key = assay.upper()
+            if key not in CHROMBPNET_MODELS_DICT:
+                raise InvalidAssayError(
+                    f"unknown assay {assay!r}; expected one of "
+                    f"{sorted(CHROMBPNET_MODELS_DICT)}"
+                )
+            if key == "CHIP":
+                return sorted(BPNetMetadata().list_cell_types())
+            return sorted(CHROMBPNET_MODELS_DICT[key])
+
+        cells: set[str] = set()
+        for key in ("ATAC", "DNASE"):
+            cells.update(CHROMBPNET_MODELS_DICT.get(key, {}))
+        return sorted(cells)
     
     def _transform_predictions_to_tracks(self, probabilities: np.array, counts: np.array, seq_len: int) -> np.array:
 

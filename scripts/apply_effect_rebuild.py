@@ -41,7 +41,11 @@ import numpy as np
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
-BG = Path.home() / ".chorus" / "backgrounds"
+# Resolved through the data-dir mechanism, not hardcoded to $HOME. Every
+# background-handling script had this literal; CHORUS_BACKGROUNDS_DIR applies
+# the legacy ~/.chorus compatibility itself, per kind.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+BG = CHORUS_BACKGROUNDS_DIR
 BACKUP = Path("/data/chorus_data/pre_effect_rebuild")
 
 # Which region set each oracle's new effect null was drawn from, for provenance.

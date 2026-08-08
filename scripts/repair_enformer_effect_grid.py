@@ -53,6 +53,8 @@ import shutil
 import sys
 from pathlib import Path
 
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -91,7 +93,7 @@ def detect_narrow_width(matrix: np.ndarray, counts: np.ndarray) -> int | None:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--npz", default=str(
-        Path.home() / ".chorus" / "backgrounds" / "enformer_pertrack.npz"))
+        CHORUS_BACKGROUNDS_DIR / "enformer_pertrack.npz"))
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--no-backup", action="store_true")
     args = ap.parse_args()

@@ -112,6 +112,8 @@ class BatchResult:
                     row[f"{display}_alt"] = ts.alt_value
                     row[f"{display}_log2fc"] = ts.raw_score
                     row[f"{display}_effect_pctile"] = ts.quantile_score
+                    if ts.effect_exceedance is not None:
+                        row[f"{display}_vs_null_max"] = ts.effect_exceedance
                     row[f"{display}_activity_pctile"] = ts.ref_signal_percentile
                 else:
                     row[f"{display}_ref"] = None
@@ -211,7 +213,9 @@ class BatchResult:
                     sign = "+" if ts.raw_score >= 0 else ""
                     fc_str = f"{sign}{ts.raw_score:.3f}"
                     from chorus.analysis.variant_report import _fmt_percentile
-                    pct_str = _fmt_percentile(ts.quantile_score)
+                    pct_str = _fmt_percentile(
+                        ts.quantile_score, ts.effect_exceedance, layer=ts.layer,
+                    )
                     row += f" {ref_str} | {alt_str} | {fc_str} | {pct_str} |"
                 else:
                     row += " — | — | — | — |"
@@ -360,7 +364,9 @@ class BatchResult:
                     sign = "+" if ts.raw_score >= 0 else ""
                     cls = "gain" if ts.raw_score > 0.1 else ("loss" if ts.raw_score < -0.1 else "neutral")
                     from chorus.analysis.variant_report import _fmt_percentile
-                    pct_str = _fmt_percentile(ts.quantile_score)
+                    pct_str = _fmt_percentile(
+                        ts.quantile_score, ts.effect_exceedance, layer=ts.layer,
+                    )
                     parts.append(f"<td>{ref_str}</td><td>{alt_str}</td>"
                                  f"<td class='{cls}'>{sign}{ts.raw_score:.3f}</td>"
                                  f"<td>{pct_str}</td>")
@@ -407,6 +413,7 @@ class BatchResult:
                         "alt_value": ts.alt_value,
                         "raw_score": ts.raw_score,
                         "quantile_score": ts.quantile_score,
+                        "effect_exceedance": ts.effect_exceedance,
                         "ref_signal_percentile": ts.ref_signal_percentile,
                     }
                     for tid, ts in s.track_scores.items()

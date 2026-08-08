@@ -51,6 +51,12 @@ class TrackScore:
     alt_value: float | None
     raw_score: float | None
     quantile_score: float | None = None
+    # Set only when the effect lands at or beyond the most extreme effect in this
+    # track's background, which is exactly when ``quantile_score`` pins at 1.0 (or
+    # -1.0) and stops discriminating. The ratio to that bound is what the
+    # percentile can no longer say: 1.11 means 11% past the largest of ~10k
+    # sampled background effects. See PerTrackNormalizer.effect_exceedance.
+    effect_exceedance: float | None = None
     ref_signal_percentile: float | None = None
     description: str | None = None  # human-readable track description
     note: str | None = None
@@ -74,6 +80,8 @@ class TrackScore:
             d["description"] = self.description
         if self.quantile_score is not None:
             d["quantile_score"] = self.quantile_score
+        if self.effect_exceedance is not None:
+            d["effect_exceedance"] = self.effect_exceedance
         if self.ref_signal_percentile is not None:
             d["ref_signal_percentile"] = self.ref_signal_percentile
         if self.note is not None:
@@ -160,6 +168,7 @@ class VariantReport:
                     alt_value=td.get("alt_value"),
                     raw_score=td.get("raw_score"),
                     quantile_score=td.get("quantile_score"),
+                    effect_exceedance=td.get("effect_exceedance"),
                     ref_signal_percentile=td.get("ref_signal_percentile"),
                     description=td.get("description"),
                     note=td.get("note"),
@@ -243,6 +252,7 @@ class VariantReport:
                     "alt_value": ts.alt_value,
                     "raw_score": ts.raw_score,
                     "quantile_score": ts.quantile_score,
+                    "effect_exceedance": ts.effect_exceedance,
                     "ref_signal_percentile": ts.ref_signal_percentile,
                     "note": ts.note,
                 })
@@ -422,7 +432,8 @@ class VariantReport:
                     cols = [track_label, ref_str, alt_str, score_str]
                     if has_quantile:
                         cols.append(
-                            _fmt_percentile(ts.quantile_score)
+                            _fmt_percentile(ts.quantile_score, ts.effect_exceedance,
+                                            layer=ts.layer)
                         )
                     if has_baseline:
                         cols.append(
@@ -450,6 +461,16 @@ class VariantReport:
                     "- **Effect %ile**: Variant effect ranked against ~10K random SNPs. "
                     "0.95 = stronger than 95% of random variants."
                 )
+                if any(ts.effect_exceedance is not None for ts in scores):
+                    lines.append(
+                        "- **`N× null max`**: the effect exceeded *every* sampled "
+                        "background effect for that track, so the percentile is "
+                        "clamped and cannot rank it further. The multiplier gives the "
+                        "distance to that ceiling — `1.11×` is 11% beyond the most "
+                        "extreme of ~10K background effects. Common for variants that "
+                        "create or destroy a complete transcription-factor motif, "
+                        "which random genomic positions rarely do."
+                    )
             if has_baseline:
                 lines.append(
                     "- **Activity %ile**: Reference signal ranked genome-wide against "
@@ -552,7 +573,11 @@ def _sort_layer_scores(layer_scores: list["TrackScore"]) -> list["TrackScore"]:
 # ---------------------------------------------------------------------------
 
 
-def _fmt_percentile(q: float | None) -> str:
+def _fmt_percentile(
+    q: float | None,
+    exceedance: float | None = None,
+    layer: str | None = None,
+) -> str:
     """Format a quantile score for display, avoiding misleading precision.
 
     ``None`` means the percentile was suppressed because ``|raw_score|``
@@ -561,14 +586,68 @@ def _fmt_percentile(q: float | None) -> str:
     background that's also mostly near-zero. We render ``near-zero``
     (rather than a cryptic em-dash) so users don't interpret it as
     missing data.
+
+    *exceedance* annotates the top (and, for signed layers, bottom) bucket with
+    how far past the null's most extreme sample the effect actually lies. Where it
+    is set, the percentile is **clamped** and carries no ordering information: a
+    motif-creating change scoring 11% beyond its null's maximum is arithmetically
+    identical to one scoring 10× beyond, because both saturate at the same end of
+    the same CDF row. There the bucket label is the honest rendering and the ratio
+    is the only thing that can separate them — more decimal places would be
+    fabricated precision.
+
+    Where it is **not** set, the effect is inside the null's support, so the
+    percentile is a genuine rank and 0.9998 really does order above 0.9995. This
+    function used to bucket those too, and that was right while the nulls were
+    thinned: the sampler discarded the population maximum at rate *m/N*, so the
+    top of the scale was an artefact of a subsample and the fourth decimal was
+    noise. With exact retention it is signal, and bucketing threw it away —
+    measured at **127 committed rows collapsing 81 distinct values**, including
+    the C/EBP vignette where CEBPA (0.9998) outranks CEBPB (0.9995) on a *smaller*
+    raw effect. That contrast is the whole point of the example, and it was
+    invisible in the HTML while being present in the JSON.
+
+    So the rule is now "bucket exactly when the number is not real", rather than
+    "bucket the ends of the scale". Four decimals in the tails because that is
+    where percentiles bunch and where two decimals cannot separate anything; two
+    in the body, where they can.
+
+    *layer* decides which end counts as a tail, and omitting it used to produce a
+    wrong answer rather than an imprecise one. Unsigned layers span [0, 1], so both
+    ends are tails. **Signed** layers span [-1, 1] — direction is the sign,
+    unusualness is the magnitude — so `q` near zero is the *body*, not the bottom
+    percentile. The old `q <= 0.01` test therefore captured the entire negative
+    half of every signed layer: the C/EBP vignette rendered nine `gene_expression`
+    rows as "≤1st" whose real percentiles were -0.74 to -0.96, i.e. moderately to
+    strongly *down*, not bottom-1%. Reading "≤1st" there and "≥99th" three rows
+    above suggests a variant that both strongly represses and is barely
+    distinguishable from noise.
+
+    Without a *layer* the function cannot tell -0.74 (signed, mid-body) from 0.005
+    (unsigned, genuine low tail) — the two need opposite treatment and look
+    identical to a magnitude test. So it falls back to the unsigned reading, which
+    is what the majority of layers are, and callers that have a layer should pass
+    it.
     """
     if q is None:
         return "near-zero"
-    if q >= 0.99:
-        return "≥99th"
-    if q <= 0.01:
-        return "≤1st"
-    return f"{q:.2f}"
+
+    signed = False
+    if layer:
+        cfg = LAYER_CONFIGS.get(layer)
+        signed = bool(getattr(cfg, "signed", False)) if cfg is not None else False
+
+    if exceedance is not None:
+        # Past the edge of support: clamped, unorderable, ratio-separated. Which
+        # edge depends on the range, and the midpoint differs: an unsigned layer
+        # clamps low at q == 0.0, a signed one at q == -1.0. Testing ``q >= 0``
+        # for both would label an unsigned bottom-clamp as "≥99th".
+        high = q >= 0 if signed else q >= 0.5
+        label = "≥99th" if high else "≤1st"
+        return f"{label} ({exceedance:.2f}× null max)"
+
+    in_tail = abs(q) >= 0.99 if signed else (q >= 0.99 or q <= 0.01)
+    return f"{q:.4f}" if in_tail else f"{q:.2f}"
 
 
 def _interpret_score(
@@ -777,6 +856,14 @@ def _apply_normalization(
         if ts.raw_score is not None and not in_noise_floor:
             raw_for_norm = ts.raw_score if use_signed else abs(ts.raw_score)
             ts.quantile_score = normalizer.effect_percentile(
+                oracle_name, assay_id, raw_for_norm, signed=use_signed,
+            )
+            # Computed unconditionally rather than only when quantile_score == 1.0:
+            # the two are derived from the same row, and gating on the pinned value
+            # would make the field's presence depend on a float equality against a
+            # clamp. effect_exceedance returns None on its own when the effect is
+            # inside the null's support.
+            ts.effect_exceedance = normalizer.effect_exceedance(
                 oracle_name, assay_id, raw_for_norm, signed=use_signed,
             )
         # else: leave ts.quantile_score at its default None
@@ -1617,7 +1704,9 @@ def _build_html_report(report: "VariantReport") -> str:
                 )
 
                 if has_quantile:
-                    q_str = _fmt_percentile(ts.quantile_score)
+                    q_str = _fmt_percentile(
+                        ts.quantile_score, ts.effect_exceedance, layer=ts.layer,
+                    )
                     parts.append(f"<td>{q_str}</td>")
 
                 if has_baseline:

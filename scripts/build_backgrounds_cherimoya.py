@@ -69,7 +69,9 @@ from chorus.oracles.cherimoya_source.scoring import (  # noqa: E402
     score_window_sum,
 )
 
-from chorus.analysis.background_sampling import (  # noqa: E402
+from chorus.analysis.background_sampling import abort_if_nothing_loads  # noqa: E402
+from chorus.analysis.background_sampling import (
+    sampling_block,  # noqa: E402
     ReservoirSampler,
     StagedSamples,
 )
@@ -109,6 +111,16 @@ parser.add_argument("--n-dhs-variants", type=int, default=10000)
 parser.add_argument("--n-dhs-peaks", type=int, default=5000)
 parser.add_argument("--dhs-path", default=None)
 parser.add_argument("--reservoir-size", type=int, default=50000)
+parser.add_argument("--perbin-tail-k", type=int, default=21763,
+                    help="Exact top/bottom K values kept per track for the perbin "
+                         "layer, which cannot be retained whole (1,088,128 offered per track). Derived as "
+                         "ceil(200 * N_expected / 10000) so at least 200 of the "
+                         "10,000 grid slots are true order statistics; a single fixed "
+                         "K silently gives ChromBPNet only 91.")
+parser.add_argument("--exact-capacity", type=int, default=4000000,
+                    help="Reservoir capacity for the effect and summary layers. Large "
+                         "enough to retain every offered value, so their ceilings are "
+                         "population maxima rather than draws from a subsample.")
 parser.add_argument("--n-cdf-points", type=int, default=10000)
 parser.add_argument("--batch-size", type=int, default=512)
 parser.add_argument("--reference", default=os.path.join(REPO_ROOT, "genomes/hg38.fa"))
@@ -131,7 +143,15 @@ args = parser.parse_args()
 # Must happen before torch is imported anywhere, which is why it sits here
 # rather than inside build().
 if args.gpu is not None:
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+    # An explicit CUDA_VISIBLE_DEVICES wins. This used to assign unconditionally, so
+    # `CUDA_VISIBLE_DEVICES=1 python build_...py` silently ran on GPU 0 anyway. Two
+    # arms of an ablation launched that way both landed on GPU 0; the first grabbed
+    # 78 GB, the second could not allocate a cuBLAS handle, and EVERY position was
+    # dropped with "Attempting to perform BLAS operation using StreamExecutor without
+    # BLAS support". A fleet rebuild sharded across GPUs by env var would have
+    # serialised onto one device the same way.
+    if os.environ.get("CUDA_VISIBLE_DEVICES") in (None, ""):
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
 log_dir = os.path.join(REPO_ROOT, "logs")
 os.makedirs(log_dir, exist_ok=True)
@@ -164,7 +184,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-CACHE_DIR = os.path.expanduser("~/.chorus/backgrounds")
+# Honour the data-dir mechanism rather than hardcoding $HOME. All eight
+# builders had this literal, so a chorus installed with
+# CHORUS_DATA_DIR=/data/... still wrote its backgrounds into the home
+# directory the data dir exists to avoid. CHORUS_BACKGROUNDS_DIR applies
+# the legacy ~/.chorus compatibility itself, per kind.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+CACHE_DIR = os.environ.get("CHORUS_BUILD_CACHE_DIR") or str(CHORUS_BACKGROUNDS_DIR)
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 PERBIN_BINS_PER_POSITION = 32
@@ -477,9 +503,9 @@ def build(do_variants: bool, do_baselines: bool):
         logger.warning("No tracks to score; nothing to do.")
         return
 
-    effect_res = ReservoirSampler(n_tracks, args.reservoir_size) if do_variants else None
-    summary_res = ReservoirSampler(n_tracks, args.reservoir_size) if do_baselines else None
-    perbin_res = ReservoirSampler(n_tracks, args.reservoir_size) if do_baselines else None
+    effect_res = ReservoirSampler(n_tracks, capacity=args.exact_capacity) if do_variants else None
+    summary_res = ReservoirSampler(n_tracks, capacity=args.exact_capacity) if do_baselines else None
+    perbin_res = ReservoirSampler(n_tracks, capacity=args.reservoir_size, tail_k=args.perbin_tail_k) if do_baselines else None
 
     # ── assemble the sequence sets ──
     ref_seqs, alt_seqs = [], []
@@ -537,6 +563,8 @@ def build(do_variants: bool, do_baselines: bool):
 
     track_ids = [s["track_id"] for s in specs]
     loop_start = time.time()
+    _n_attempted = _n_loaded = 0
+    name_for_abort = 'cherimoya'
     for idx, spec in enumerate(specs):
         t0 = time.time()
         logger.info("=" * 60)
@@ -547,7 +575,12 @@ def build(do_variants: bool, do_baselines: bool):
                 assay=spec["assay"], encode_id=spec["encode_id"], fold=args.fold)
         except Exception as exc:
             logger.warning("Failed to load %s: %s", spec["track_id"], str(exc)[:200])
+            _n_attempted += 1
+            abort_if_nothing_loads(_n_attempted, _n_loaded,
+                                   label=f"{name_for_abort}.load")
             continue
+        _n_attempted += 1
+        _n_loaded += 1
 
         model = oracle.model
         # One try spans the variant pass AND the baseline pass for this track, so
@@ -603,6 +636,7 @@ def build(do_variants: bool, do_baselines: bool):
             track_ids=numpy.array(track_ids, dtype="U"),
             effect_cdfs=effect_res.to_cdf_matrix(args.n_cdf_points).astype(numpy.float32),
             effect_counts=effect_res.get_counts(),
+            effect_retained=effect_res.retained_counts(),
             signed_flags=numpy.zeros(n_tracks, dtype=bool),
             build_config=numpy.array([config]),
         )
@@ -615,8 +649,10 @@ def build(do_variants: bool, do_baselines: bool):
             track_ids=numpy.array(track_ids, dtype="U"),
             summary_cdfs=summary_res.to_cdf_matrix(args.n_cdf_points).astype(numpy.float32),
             summary_counts=summary_res.get_counts(),
+            summary_retained=summary_res.retained_counts(),
             perbin_cdfs=perbin_res.to_cdf_matrix(args.n_cdf_points).astype(numpy.float32),
             perbin_counts=perbin_res.get_counts(),
+            perbin_retained=perbin_res.retained_counts(),
             build_config=numpy.array([config]),
         )
         logger.info("Saved %s", path)
@@ -640,7 +676,10 @@ def merge(incremental: bool = False):
     base_path = os.path.join(CACHE_DIR, f"{NPZ_STEM}_baseline_cdfs_interim.npz")
     if not (os.path.exists(eff_path) and os.path.exists(base_path)):
         logger.error("Missing interim files -- run --part both first.")
-        return
+        raise SystemExit(1)  # A missing interim is a FAILED merge, not a no-op. Returning here exited 0,
+        # so a driver keying off exit codes recorded "rc=0" for a step that wrote
+        # nothing -- the same report-success-after-failure shape as the all-zero
+        # interim and the guard nobody wired up.
 
     eff = numpy.load(eff_path, allow_pickle=False)
     base = numpy.load(base_path, allow_pickle=False)
@@ -678,6 +717,8 @@ def merge(incremental: bool = False):
             perbin_counts=base["perbin_counts"],
             cache_dir=CACHE_DIR,
             n_points=args.n_cdf_points,
+            sampling=sampling_block(eff, base,
+                                    tail_k={"perbin": args.perbin_tail_k}),
         )
 
     path = Path(path)

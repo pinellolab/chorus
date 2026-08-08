@@ -458,6 +458,11 @@ class TrackEffect:
     ref_value: float
     alt_value: float
     effect_pctile: float | None = None
+    # Ratio to the null's most extreme sampled effect, set only when the effect
+    # crossed it and effect_pctile is therefore clamped. Ranking here is by
+    # ranking_score (from abs_score), not by the percentile, so this does not
+    # change any ordering -- it makes the clamp visible in the emitted dicts.
+    effect_exceedance: float | None = None
     activity_pctile: float | None = None
     # Score used to rank this effect (depends on ranking_metric). Set by
     # _score_all_tracks; surfaced in layer_rankings output.
@@ -583,6 +588,9 @@ def _score_all_tracks(
                 te.activity_pctile = normalizer.activity_percentile(
                     oracle_name, assay_id, ref_v,
                 )
+                te.effect_exceedance = normalizer.effect_exceedance(
+                    oracle_name, assay_id, raw_for_norm, signed=use_signed,
+                )
             else:
                 bg_key = QuantileNormalizer.background_key(oracle_name, layer)
                 te.effect_pctile = normalizer.normalize(bg_key, raw_for_norm, signed=use_signed)
@@ -664,6 +672,7 @@ def _rank_cell_types(
             "ranking_score": best.ranking_score,
             "low_baseline_warning": best.low_baseline_warning,
             "effect_pctile": best.effect_pctile,
+            "effect_exceedance": best.effect_exceedance,
             "n_tracks": len(ct_effects),
             "layers_affected": list({e.layer for e in ct_effects if e.abs_score > 0.01}),
         })
@@ -885,6 +894,7 @@ def discover_variant_effects(
                     "ranking_score": te.ranking_score,
                     "low_baseline_warning": te.low_baseline_warning,
                     "effect_pctile": te.effect_pctile,
+                    "effect_exceedance": te.effect_exceedance,
                     "activity_pctile": te.activity_pctile,
                 }
                 for te in sorted(effects, key=lambda e: e.ranking_score, reverse=True)[:top_n_per_layer * 3]

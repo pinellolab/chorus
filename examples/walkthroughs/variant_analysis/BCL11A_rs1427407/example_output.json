@@ -29,8 +29,8 @@
             "alt_value": 10.048881530761719,
             "raw_score": 0.1447046116023959,
             "description": "DNASE:K562",
-            "quantile_score": 0.9022,
-            "ref_signal_percentile": 0.4868
+            "quantile_score": 0.9003,
+            "ref_signal_percentile": 0.4805
           }
         ],
         "tf_binding": [
@@ -43,8 +43,8 @@
             "alt_value": 387.0,
             "raw_score": 0.12013257815802787,
             "description": "CHIP:GATA1:K562",
-            "quantile_score": 0.9471,
-            "ref_signal_percentile": 0.8047,
+            "quantile_score": 0.9497,
+            "ref_signal_percentile": 0.8038,
             "low_effective_bins": true
           },
           {
@@ -56,8 +56,8 @@
             "alt_value": 398.5,
             "raw_score": 0.14819624368715423,
             "description": "CHIP:TAL1:K562",
-            "quantile_score": 0.9656,
-            "ref_signal_percentile": 0.8582,
+            "quantile_score": 0.9653,
+            "ref_signal_percentile": 0.8517,
             "low_effective_bins": true
           }
         ],
@@ -71,8 +71,8 @@
             "alt_value": 1183.75,
             "raw_score": 0.025181778812272692,
             "description": "CHIP:H3K27ac:K562",
-            "quantile_score": 0.8605,
-            "ref_signal_percentile": 0.5612
+            "quantile_score": 0.8565,
+            "ref_signal_percentile": 0.5526
           }
         ],
         "tss_activity": [
@@ -85,8 +85,8 @@
             "alt_value": 0.13953983783721924,
             "raw_score": 0.015892844388265708,
             "description": "CAGE:K562",
-            "quantile_score": 0.6216,
-            "ref_signal_percentile": 0.3696,
+            "quantile_score": 0.6177,
+            "ref_signal_percentile": 0.3587,
             "region_label": "variant site"
           },
           {
@@ -98,8 +98,8 @@
             "alt_value": 2.0273101329803467,
             "raw_score": 0.017963466811924116,
             "description": "CAGE:K562",
-            "quantile_score": 0.6481,
-            "ref_signal_percentile": 0.8062,
+            "quantile_score": 0.6447,
+            "ref_signal_percentile": 0.8045,
             "region_label": "BCL11A TSS"
           },
           {
@@ -111,7 +111,7 @@
             "alt_value": 2575.494140625,
             "raw_score": -0.0014887727962680968,
             "description": "CAGE:K562",
-            "quantile_score": 0.1686,
+            "quantile_score": 0.1617,
             "ref_signal_percentile": 0.9804,
             "region_label": "PAPOLG TSS"
           },
@@ -124,8 +124,8 @@
             "alt_value": 1840.018310546875,
             "raw_score": -0.0017505520928210918,
             "description": "CAGE:K562",
-            "quantile_score": 0.1893,
-            "ref_signal_percentile": 0.9757,
+            "quantile_score": 0.1825,
+            "ref_signal_percentile": 0.9765,
             "region_label": "REL TSS"
           },
           {
@@ -137,8 +137,8 @@
             "alt_value": 1.9353151321411133,
             "raw_score": 0.08884501712821727,
             "description": "CAGE:K562",
-            "quantile_score": 0.9036,
-            "ref_signal_percentile": 0.7943,
+            "quantile_score": 0.9008,
+            "ref_signal_percentile": 0.7971,
             "region_label": "variant site"
           },
           {
@@ -150,8 +150,8 @@
             "alt_value": 389.3375244140625,
             "raw_score": 0.025042634891577476,
             "description": "CAGE:K562",
-            "quantile_score": 0.7173,
-            "ref_signal_percentile": 0.9595,
+            "quantile_score": 0.7124,
+            "ref_signal_percentile": 0.9622,
             "region_label": "BCL11A TSS"
           },
           {
@@ -163,8 +163,8 @@
             "alt_value": 18.694255828857422,
             "raw_score": 0.002010324077906263,
             "description": "CAGE:K562",
-            "quantile_score": 0.2137,
-            "ref_signal_percentile": 0.9112,
+            "quantile_score": 0.2027,
+            "ref_signal_percentile": 0.9155,
             "region_label": "PAPOLG TSS"
           },
           {
@@ -176,8 +176,8 @@
             "alt_value": 66.15167999267578,
             "raw_score": 0.0017875714572322312,
             "description": "CAGE:K562",
-            "quantile_score": 0.1947,
-            "ref_signal_percentile": 0.939,
+            "quantile_score": 0.1846,
+            "ref_signal_percentile": 0.9426,
             "region_label": "REL TSS"
           }
         ]
@@ -192,8 +192,8 @@
           "alt_value": 10.048881530761719,
           "raw_score": 0.1447046116023959,
           "description": "DNASE:K562",
-          "quantile_score": 0.9022,
-          "ref_signal_percentile": 0.4868
+          "quantile_score": 0.9003,
+          "ref_signal_percentile": 0.4805
         },
         {
           "assay_id": "CHIP_TF/EFO:0002067 TF ChIP-seq GATA1/.",
@@ -204,8 +204,8 @@
           "alt_value": 387.0,
           "raw_score": 0.12013257815802787,
           "description": "CHIP:GATA1:K562",
-          "quantile_score": 0.9471,
-          "ref_signal_percentile": 0.8047,
+          "quantile_score": 0.9497,
+          "ref_signal_percentile": 0.8038,
           "low_effective_bins": true
         },
         {
@@ -217,8 +217,8 @@
           "alt_value": 398.5,
           "raw_score": 0.14819624368715423,
           "description": "CHIP:TAL1:K562",
-          "quantile_score": 0.9656,
-          "ref_signal_percentile": 0.8582,
+          "quantile_score": 0.9653,
+          "ref_signal_percentile": 0.8517,
           "low_effective_bins": true
         },
         {
@@ -230,8 +230,8 @@
           "alt_value": 1183.75,
           "raw_score": 0.025181778812272692,
           "description": "CHIP:H3K27ac:K562",
-          "quantile_score": 0.8605,
-          "ref_signal_percentile": 0.5612
+          "quantile_score": 0.8565,
+          "ref_signal_percentile": 0.5526
         },
         {
           "assay_id": "CAGE/hCAGE EFO:0002067/+",
@@ -242,8 +242,8 @@
           "alt_value": 0.13953983783721924,
           "raw_score": 0.015892844388265708,
           "description": "CAGE:K562",
-          "quantile_score": 0.6216,
-          "ref_signal_percentile": 0.3696,
+          "quantile_score": 0.6177,
+          "ref_signal_percentile": 0.3587,
           "region_label": "variant site"
         },
         {
@@ -255,8 +255,8 @@
           "alt_value": 2.0273101329803467,
           "raw_score": 0.017963466811924116,
           "description": "CAGE:K562",
-          "quantile_score": 0.6481,
-          "ref_signal_percentile": 0.8062,
+          "quantile_score": 0.6447,
+          "ref_signal_percentile": 0.8045,
           "region_label": "BCL11A TSS"
         },
         {
@@ -268,7 +268,7 @@
           "alt_value": 2575.494140625,
           "raw_score": -0.0014887727962680968,
           "description": "CAGE:K562",
-          "quantile_score": 0.1686,
+          "quantile_score": 0.1617,
           "ref_signal_percentile": 0.9804,
           "region_label": "PAPOLG TSS"
         },
@@ -281,8 +281,8 @@
           "alt_value": 1840.018310546875,
           "raw_score": -0.0017505520928210918,
           "description": "CAGE:K562",
-          "quantile_score": 0.1893,
-          "ref_signal_percentile": 0.9757,
+          "quantile_score": 0.1825,
+          "ref_signal_percentile": 0.9765,
           "region_label": "REL TSS"
         },
         {
@@ -294,8 +294,8 @@
           "alt_value": 1.9353151321411133,
           "raw_score": 0.08884501712821727,
           "description": "CAGE:K562",
-          "quantile_score": 0.9036,
-          "ref_signal_percentile": 0.7943,
+          "quantile_score": 0.9008,
+          "ref_signal_percentile": 0.7971,
           "region_label": "variant site"
         },
         {
@@ -307,8 +307,8 @@
           "alt_value": 389.3375244140625,
           "raw_score": 0.025042634891577476,
           "description": "CAGE:K562",
-          "quantile_score": 0.7173,
-          "ref_signal_percentile": 0.9595,
+          "quantile_score": 0.7124,
+          "ref_signal_percentile": 0.9622,
           "region_label": "BCL11A TSS"
         },
         {
@@ -320,8 +320,8 @@
           "alt_value": 18.694255828857422,
           "raw_score": 0.002010324077906263,
           "description": "CAGE:K562",
-          "quantile_score": 0.2137,
-          "ref_signal_percentile": 0.9112,
+          "quantile_score": 0.2027,
+          "ref_signal_percentile": 0.9155,
           "region_label": "PAPOLG TSS"
         },
         {
@@ -333,8 +333,8 @@
           "alt_value": 66.15167999267578,
           "raw_score": 0.0017875714572322312,
           "description": "CAGE:K562",
-          "quantile_score": 0.1947,
-          "ref_signal_percentile": 0.939,
+          "quantile_score": 0.1846,
+          "ref_signal_percentile": 0.9426,
           "region_label": "REL TSS"
         }
       ]
@@ -348,6 +348,6 @@
     "tracks_requested": "6 K562 tracks",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-05 05:02 UTC"
+    "generated_at": "2026-08-08 04:24 UTC"
   }
 }

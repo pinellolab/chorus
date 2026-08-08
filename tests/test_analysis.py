@@ -2792,15 +2792,25 @@ class TestFmtPercentile:
         # render "near-zero" (not "—") so users don't read it as missing data.
         assert _fmt_percentile(None) == "near-zero"
 
-    def test_saturated_high(self):
+    def test_high_tail_gets_four_decimals_not_a_bucket(self):
         from chorus.analysis.variant_report import _fmt_percentile
-        assert _fmt_percentile(1.0) == "≥99th"
-        assert _fmt_percentile(0.995) == "≥99th"
+        # Un-clamped percentiles in the tail are real ranks. Bucketing them was
+        # correct while the nulls were thinned (the ceiling was a subsample
+        # artefact); with exact retention the fourth decimal is signal.
+        assert _fmt_percentile(1.0) == "1.0000"
+        assert _fmt_percentile(0.995) == "0.9950"
 
-    def test_saturated_low(self):
+    def test_low_tail_gets_four_decimals_not_a_bucket(self):
         from chorus.analysis.variant_report import _fmt_percentile
-        assert _fmt_percentile(0.0) == "≤1st"
-        assert _fmt_percentile(0.005) == "≤1st"
+        assert _fmt_percentile(0.0) == "0.0000"
+        assert _fmt_percentile(0.005) == "0.0050"
+
+    def test_the_bucket_survives_only_where_the_value_is_clamped(self):
+        from chorus.analysis.variant_report import _fmt_percentile
+        # An exceedance is set only past the edge of the null's support, where the
+        # percentile saturates and cannot order anything.
+        assert _fmt_percentile(1.0, 1.11) == "≥99th (1.11× null max)"
+        assert _fmt_percentile(0.0, 1.11) == "≤1st (1.11× null max)"
 
     def test_middle_range(self):
         from chorus.analysis.variant_report import _fmt_percentile
@@ -3326,8 +3336,16 @@ class TestMultiOracleReport:
         html = moracle.to_html()
         assert "CHIP:CEBPA:HepG2" in html
         assert "TF ChIP-seq CEBPA genetically modified" not in html
-        # Also: percentile format must match the rest of chorus ("≥99th"
-        # via _fmt_percentile), not the old "+100.0%" format.
-        assert "≥99th" in html
+        # Also: percentile format must match the rest of chorus (via
+        # _fmt_percentile), not the old "+100.0%" format. This used to assert the
+        # literal "≥99th", which stopped being the rendering of an un-clamped
+        # percentile -- those now show their real value, so asserting the bucket
+        # was asserting the old regime rather than "the shared helper was used".
         assert "%ile +100.0%" not in html
         assert "%ile -100.0%" not in html
+        assert "+100.0%" not in html
+        # A percentile is rendered in one of the helper's four shapes.
+        import re
+        assert re.search(r"≥99th|≤1st|near-zero|\d\.\d{2,4}", html), (
+            "no percentile rendered in any _fmt_percentile shape"
+        )

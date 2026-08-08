@@ -54,7 +54,7 @@
           "ref_value": 660.1571044921875,
           "alt_value": 1666.310546875,
           "raw_score": 1.3345,
-          "quantile_score": 0.9976,
+          "quantile_score": 0.9964,
           "description": "DNASE:HepG2"
         },
         "tf_binding": {
@@ -64,7 +64,7 @@
           "ref_value": 1077.0,
           "alt_value": 10732.0,
           "raw_score": 3.3156,
-          "quantile_score": 0.9999,
+          "quantile_score": 0.9995,
           "description": "CHIP:CEBPB:HepG2"
         },
         "histone_marks": {
@@ -74,7 +74,7 @@
           "ref_value": 15052.0,
           "alt_value": 35816.0,
           "raw_score": 1.2506,
-          "quantile_score": 0.9995,
+          "quantile_score": 0.9992,
           "description": "CHIP:H3K27ac:HepG2"
         },
         "tss_activity": {
@@ -84,7 +84,7 @@
           "ref_value": 25.224143981933594,
           "alt_value": 73.28700256347656,
           "raw_score": 1.5022,
-          "quantile_score": 0.9988,
+          "quantile_score": 0.9983,
           "description": "CAGE:HepG2"
         }
       }
@@ -121,7 +121,7 @@
           "ref_value": 108.65505981445312,
           "alt_value": 109.81362915039062,
           "raw_score": 0.0152,
-          "quantile_score": 0.4537,
+          "quantile_score": 0.4469,
           "description": "DNASE:HepG2"
         },
         "tf_binding": {
@@ -131,7 +131,7 @@
           "ref_value": 442.0,
           "alt_value": 444.0,
           "raw_score": 0.0065,
-          "quantile_score": 0.2761,
+          "quantile_score": 0.2589,
           "description": "CHIP:CEBPA:HepG2"
         },
         "histone_marks": {
@@ -141,7 +141,7 @@
           "ref_value": 12962.0,
           "alt_value": 12988.0,
           "raw_score": 0.0029,
-          "quantile_score": 0.3432,
+          "quantile_score": 0.3356,
           "description": "CHIP:H3K27ac:HepG2"
         },
         "tss_activity": {
@@ -151,7 +151,7 @@
           "ref_value": 12.425483703613281,
           "alt_value": 11.506854057312012,
           "raw_score": -0.1023,
-          "quantile_score": 0.9146,
+          "quantile_score": 0.9177,
           "description": "CAGE:HepG2"
         }
       }
@@ -188,7 +188,7 @@
           "ref_value": 70.03326416015625,
           "alt_value": 76.79891967773438,
           "raw_score": 0.1313,
-          "quantile_score": 0.9149,
+          "quantile_score": 0.9115,
           "description": "DNASE:HepG2"
         },
         "tf_binding": {
@@ -198,7 +198,7 @@
           "ref_value": 396.5,
           "alt_value": 406.5,
           "raw_score": 0.0358,
-          "quantile_score": 0.7508,
+          "quantile_score": 0.7442,
           "description": "CHIP:CEBPA:HepG2"
         },
         "histone_marks": {
@@ -208,7 +208,7 @@
           "ref_value": 11414.0,
           "alt_value": 11674.0,
           "raw_score": 0.0325,
-          "quantile_score": 0.8807,
+          "quantile_score": 0.8753,
           "description": "CHIP:H3K27ac:HepG2"
         },
         "tss_activity": {
@@ -218,7 +218,7 @@
           "ref_value": 1.446681022644043,
           "alt_value": 1.6010942459106445,
           "raw_score": 0.0883,
-          "quantile_score": 0.9027,
+          "quantile_score": 0.9036,
           "description": "CAGE:HepG2"
         }
       }
@@ -255,7 +255,7 @@
           "ref_value": 136.76522827148438,
           "alt_value": 131.630859375,
           "raw_score": -0.0548,
-          "quantile_score": 0.7964,
+          "quantile_score": 0.7933,
           "description": "DNASE:HepG2"
         },
         "tf_binding": {
@@ -265,7 +265,7 @@
           "ref_value": 904.0,
           "alt_value": 910.0,
           "raw_score": 0.0095,
-          "quantile_score": 0.3759,
+          "quantile_score": 0.3553,
           "description": "CHIP:CEBPA:HepG2"
         },
         "histone_marks": {
@@ -275,7 +275,7 @@
           "ref_value": 17864.0,
           "alt_value": 17586.0,
           "raw_score": -0.0226,
-          "quantile_score": 0.8327,
+          "quantile_score": 0.8272,
           "description": "CHIP:H3K27ac:HepG2"
         },
         "tss_activity": {
@@ -285,7 +285,7 @@
           "ref_value": 19.458351135253906,
           "alt_value": 18.595413208007812,
           "raw_score": -0.0622,
-          "quantile_score": 0.8641,
+          "quantile_score": 0.8632,
           "description": "CAGE:HepG2"
         }
       }
@@ -322,7 +322,7 @@
           "ref_value": 407.78802490234375,
           "alt_value": 408.41796875,
           "raw_score": 0.0022,
-          "quantile_score": 0.0792,
+          "quantile_score": 0.081,
           "description": "DNASE:HepG2"
         },
         "tf_binding": {
@@ -332,7 +332,7 @@
           "ref_value": 631.0,
           "alt_value": 641.0,
           "raw_score": 0.0226,
-          "quantile_score": 0.6362,
+          "quantile_score": 0.6248,
           "description": "CHIP:CEBPA:HepG2"
         },
         "histone_marks": {
@@ -342,7 +342,7 @@
           "ref_value": 15856.0,
           "alt_value": 15816.0,
           "raw_score": -0.0036,
-          "quantile_score": 0.4049,
+          "quantile_score": 0.3953,
           "description": "CHIP:H3K27ac:HepG2"
         },
         "tss_activity": {
@@ -352,7 +352,7 @@
           "ref_value": 11.119659423828125,
           "alt_value": 11.275745391845703,
           "raw_score": 0.0185,
-          "quantile_score": 0.676,
+          "quantile_score": 0.6697,
           "description": "CAGE:HepG2"
         }
       }
@@ -389,7 +389,7 @@
           "ref_value": 74.12393188476562,
           "alt_value": 71.10427856445312,
           "raw_score": -0.0592,
-          "quantile_score": 0.8121,
+          "quantile_score": 0.8075,
           "description": "DNASE:HepG2"
         },
         "tf_binding": {
@@ -399,7 +399,7 @@
           "ref_value": 410.0,
           "alt_value": 408.0,
           "raw_score": -0.007,
-          "quantile_score": 0.2958,
+          "quantile_score": 0.279,
           "description": "CHIP:CEBPA:HepG2"
         },
         "histone_marks": {
@@ -409,7 +409,7 @@
           "ref_value": 11746.0,
           "alt_value": 11550.0,
           "raw_score": -0.0243,
-          "quantile_score": 0.8432,
+          "quantile_score": 0.8375,
           "description": "CHIP:H3K27ac:HepG2"
         },
         "tss_activity": {
@@ -419,7 +419,7 @@
           "ref_value": 1.9219770431518555,
           "alt_value": 1.8556604385375977,
           "raw_score": -0.0331,
-          "quantile_score": 0.7739,
+          "quantile_score": 0.7727,
           "description": "CAGE:HepG2"
         }
       }
@@ -456,7 +456,7 @@
           "ref_value": 20.428150177001953,
           "alt_value": 21.597219467163086,
           "raw_score": 0.0766,
-          "quantile_score": 0.8509,
+          "quantile_score": 0.8489,
           "description": "DNASE:HepG2"
         },
         "tf_binding": {
@@ -466,7 +466,7 @@
           "ref_value": 224.25,
           "alt_value": 229.25,
           "raw_score": 0.0317,
-          "quantile_score": 0.7232,
+          "quantile_score": 0.7141,
           "description": "CHIP:CEBPA:HepG2"
         },
         "histone_marks": {
@@ -476,7 +476,7 @@
           "ref_value": 3748.5,
           "alt_value": 3764.75,
           "raw_score": 0.0062,
-          "quantile_score": 0.5486,
+          "quantile_score": 0.5371,
           "description": "CHIP:H3K27ac:HepG2"
         },
         "tss_activity": {
@@ -486,7 +486,7 @@
           "ref_value": 0.2764752507209778,
           "alt_value": 0.28218168020248413,
           "raw_score": 0.0064,
-          "quantile_score": 0.4809,
+          "quantile_score": 0.4699,
           "description": "CAGE:HepG2"
         }
       }
@@ -523,7 +523,7 @@
           "ref_value": 27.7869873046875,
           "alt_value": 27.017127990722656,
           "raw_score": -0.0391,
-          "quantile_score": 0.7229,
+          "quantile_score": 0.7223,
           "description": "DNASE:HepG2"
         },
         "tf_binding": {
@@ -533,7 +533,7 @@
           "ref_value": 303.5,
           "alt_value": 299.0,
           "raw_score": -0.0215,
-          "quantile_score": 0.6129,
+          "quantile_score": 0.6102,
           "description": "CHIP:CEBPB:HepG2"
         },
         "histone_marks": {
@@ -543,7 +543,7 @@
           "ref_value": 3630.25,
           "alt_value": 3620.25,
           "raw_score": -0.004,
-          "quantile_score": 0.4286,
+          "quantile_score": 0.419,
           "description": "CHIP:H3K27ac:HepG2"
         },
         "tss_activity": {
@@ -553,7 +553,7 @@
           "ref_value": 0.20012778043746948,
           "alt_value": 0.20453715324401855,
           "raw_score": 0.0053,
-          "quantile_score": 0.4495,
+          "quantile_score": 0.4365,
           "description": "CAGE:HepG2"
         }
       }
@@ -590,7 +590,7 @@
           "ref_value": 7.986789226531982,
           "alt_value": 7.837434768676758,
           "raw_score": -0.0242,
-          "quantile_score": 0.5941,
+          "quantile_score": 0.5929,
           "description": "DNASE:HepG2"
         },
         "tf_binding": {
@@ -600,7 +600,7 @@
           "ref_value": 130.25,
           "alt_value": 129.0,
           "raw_score": -0.0138,
-          "quantile_score": 0.4859,
+          "quantile_score": 0.4736,
           "description": "CHIP:CEBPA:HepG2"
         },
         "histone_marks": {
@@ -610,7 +610,7 @@
           "ref_value": 2976.0,
           "alt_value": 2994.25,
           "raw_score": 0.0088,
-          "quantile_score": 0.6444,
+          "quantile_score": 0.629,
           "description": "CHIP:H3K27ac:HepG2"
         },
         "tss_activity": {
@@ -620,7 +620,7 @@
           "ref_value": 1.9455933570861816,
           "alt_value": 2.0667784214019775,
           "raw_score": 0.0582,
-          "quantile_score": 0.8547,
+          "quantile_score": 0.8549,
           "description": "CAGE:HepG2"
         }
       }
@@ -657,7 +657,7 @@
           "ref_value": 14.47409439086914,
           "alt_value": 14.403816223144531,
           "raw_score": -0.0066,
-          "quantile_score": 0.2282,
+          "quantile_score": 0.2248,
           "description": "DNASE:HepG2"
         },
         "tf_binding": {
@@ -667,7 +667,7 @@
           "ref_value": 245.0,
           "alt_value": 240.0,
           "raw_score": -0.0296,
-          "quantile_score": 0.7143,
+          "quantile_score": 0.7083,
           "description": "CHIP:CEBPB:HepG2"
         },
         "histone_marks": {
@@ -687,7 +687,7 @@
           "ref_value": 9.39813232421875,
           "alt_value": 10.094979286193848,
           "raw_score": 0.0936,
-          "quantile_score": 0.9086,
+          "quantile_score": 0.909,
           "description": "CAGE:HepG2"
         }
       }
@@ -724,7 +724,7 @@
           "ref_value": 15.511296272277832,
           "alt_value": 15.41858196258545,
           "raw_score": -0.0081,
-          "quantile_score": 0.2731,
+          "quantile_score": 0.2703,
           "description": "DNASE:HepG2"
         },
         "tf_binding": {
@@ -734,7 +734,7 @@
           "ref_value": 257.5,
           "alt_value": 256.0,
           "raw_score": -0.0084,
-          "quantile_score": 0.3056,
+          "quantile_score": 0.2993,
           "description": "CHIP:CEBPB:HepG2"
         },
         "histone_marks": {
@@ -754,7 +754,7 @@
           "ref_value": 2.672851324081421,
           "alt_value": 2.6387438774108887,
           "raw_score": -0.0135,
-          "quantile_score": 0.6196,
+          "quantile_score": 0.6137,
           "description": "CAGE:HepG2"
         }
       }
@@ -770,6 +770,6 @@
       "HepG2"
     ],
     "notes": [],
-    "generated_at": "2026-08-05 04:59 UTC"
+    "generated_at": "2026-08-08 03:49 UTC"
   }
 }

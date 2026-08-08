@@ -31,8 +31,8 @@
             "alt_value": 114.60205078125,
             "raw_score": -0.013762969082908562,
             "description": "DNASE:HepG2",
-            "quantile_score": 0.4257,
-            "ref_signal_percentile": 0.9029
+            "quantile_score": 0.4184,
+            "ref_signal_percentile": 0.9033
           },
           {
             "assay_id": "ATAC/EFO:0001187 ATAC-seq/.",
@@ -43,8 +43,8 @@
             "alt_value": 80.75822448730469,
             "raw_score": -0.03458482355688101,
             "description": "ATAC:HepG2",
-            "quantile_score": 0.6246,
-            "ref_signal_percentile": 0.8439
+            "quantile_score": 0.6171,
+            "ref_signal_percentile": 0.844
           }
         ],
         "tf_binding": [
@@ -57,8 +57,8 @@
             "alt_value": 589.0,
             "raw_score": -0.11735695063815874,
             "description": "CHIP:CEBPA:HepG2",
-            "quantile_score": 0.9131,
-            "ref_signal_percentile": 0.8753,
+            "quantile_score": 0.9142,
+            "ref_signal_percentile": 0.8772,
             "low_effective_bins": true
           },
           {
@@ -70,8 +70,8 @@
             "alt_value": 291.0,
             "raw_score": -0.009847785956347178,
             "description": "CHIP:CEBPB:HepG2",
-            "quantile_score": 0.3529,
-            "ref_signal_percentile": 0.6149,
+            "quantile_score": 0.3445,
+            "ref_signal_percentile": 0.6135,
             "low_effective_bins": true
           }
         ],
@@ -85,8 +85,8 @@
             "alt_value": 8089.0,
             "raw_score": -0.027642234395574367,
             "description": "CHIP:H3K27ac:HepG2",
-            "quantile_score": 0.86,
-            "ref_signal_percentile": 0.9107
+            "quantile_score": 0.8543,
+            "ref_signal_percentile": 0.9068
           }
         ],
         "tss_activity": [
@@ -99,8 +99,8 @@
             "alt_value": 3.726459503173828,
             "raw_score": -0.1515978868502889,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.9472,
-            "ref_signal_percentile": 0.8641,
+            "quantile_score": 0.9475,
+            "ref_signal_percentile": 0.8638,
             "region_label": "variant site"
           },
           {
@@ -112,8 +112,8 @@
             "alt_value": 4584.7275390625,
             "raw_score": 0.002690171437675048,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.3293,
-            "ref_signal_percentile": 0.9886,
+            "quantile_score": 0.3137,
+            "ref_signal_percentile": 0.9905,
             "region_label": "FTO TSS"
           },
           {
@@ -125,8 +125,8 @@
             "alt_value": 4503.4658203125,
             "raw_score": 0.002671062844767251,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.3278,
-            "ref_signal_percentile": 0.9884,
+            "quantile_score": 0.3126,
+            "ref_signal_percentile": 0.9903,
             "region_label": "RPGRIP1L TSS"
           },
           {
@@ -138,8 +138,8 @@
             "alt_value": 2.204030990600586,
             "raw_score": -0.0035841711235974284,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.3806,
-            "ref_signal_percentile": 0.8369,
+            "quantile_score": 0.3641,
+            "ref_signal_percentile": 0.8331,
             "region_label": "AKTIP TSS"
           },
           {
@@ -151,8 +151,8 @@
             "alt_value": 2770.477294921875,
             "raw_score": 0.0010918415815430532,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.1954,
-            "ref_signal_percentile": 0.9812,
+            "quantile_score": 0.1786,
+            "ref_signal_percentile": 0.9824,
             "region_label": "RBL2 TSS"
           },
           {
@@ -164,8 +164,8 @@
             "alt_value": 75.42941284179688,
             "raw_score": 0.003916726512754294,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.3966,
-            "ref_signal_percentile": 0.9431,
+            "quantile_score": 0.3801,
+            "ref_signal_percentile": 0.9423,
             "region_label": "IRX3 TSS"
           },
           {
@@ -177,8 +177,8 @@
             "alt_value": 0.8591547012329102,
             "raw_score": -0.037419931439074995,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.7939,
-            "ref_signal_percentile": 0.7721,
+            "quantile_score": 0.7928,
+            "ref_signal_percentile": 0.7704,
             "region_label": "variant site"
           },
           {
@@ -190,8 +190,8 @@
             "alt_value": 1225.0384521484375,
             "raw_score": -0.0037351592983162064,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.3908,
-            "ref_signal_percentile": 0.9692,
+            "quantile_score": 0.3729,
+            "ref_signal_percentile": 0.9703,
             "region_label": "FTO TSS"
           },
           {
@@ -203,8 +203,8 @@
             "alt_value": 1226.9853515625,
             "raw_score": -0.00372795767343857,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.3903,
-            "ref_signal_percentile": 0.9692,
+            "quantile_score": 0.3725,
+            "ref_signal_percentile": 0.9703,
             "region_label": "RPGRIP1L TSS"
           },
           {
@@ -216,8 +216,8 @@
             "alt_value": 1233.52490234375,
             "raw_score": 0.006019712138644923,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.47,
-            "ref_signal_percentile": 0.9692,
+            "quantile_score": 0.4579,
+            "ref_signal_percentile": 0.9703,
             "region_label": "AKTIP TSS"
           },
           {
@@ -229,7 +229,7 @@
             "alt_value": 6.259029388427734,
             "raw_score": -9.021722087740303e-05,
             "description": "CAGE:HepG2",
-            "ref_signal_percentile": 0.8751,
+            "ref_signal_percentile": 0.8805,
             "region_label": "RBL2 TSS"
           },
           {
@@ -241,8 +241,8 @@
             "alt_value": 1276.1383056640625,
             "raw_score": 0.0030873095071881004,
             "description": "CAGE:HepG2",
-            "quantile_score": 0.3555,
-            "ref_signal_percentile": 0.9695,
+            "quantile_score": 0.3407,
+            "ref_signal_percentile": 0.9708,
             "region_label": "IRX3 TSS"
           }
         ]
@@ -257,8 +257,8 @@
           "alt_value": 114.60205078125,
           "raw_score": -0.013762969082908562,
           "description": "DNASE:HepG2",
-          "quantile_score": 0.4257,
-          "ref_signal_percentile": 0.9029
+          "quantile_score": 0.4184,
+          "ref_signal_percentile": 0.9033
         },
         {
           "assay_id": "ATAC/EFO:0001187 ATAC-seq/.",
@@ -269,8 +269,8 @@
           "alt_value": 80.75822448730469,
           "raw_score": -0.03458482355688101,
           "description": "ATAC:HepG2",
-          "quantile_score": 0.6246,
-          "ref_signal_percentile": 0.8439
+          "quantile_score": 0.6171,
+          "ref_signal_percentile": 0.844
         },
         {
           "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
@@ -281,8 +281,8 @@
           "alt_value": 589.0,
           "raw_score": -0.11735695063815874,
           "description": "CHIP:CEBPA:HepG2",
-          "quantile_score": 0.9131,
-          "ref_signal_percentile": 0.8753,
+          "quantile_score": 0.9142,
+          "ref_signal_percentile": 0.8772,
           "low_effective_bins": true
         },
         {
@@ -294,8 +294,8 @@
           "alt_value": 291.0,
           "raw_score": -0.009847785956347178,
           "description": "CHIP:CEBPB:HepG2",
-          "quantile_score": 0.3529,
-          "ref_signal_percentile": 0.6149,
+          "quantile_score": 0.3445,
+          "ref_signal_percentile": 0.6135,
           "low_effective_bins": true
         },
         {
@@ -307,8 +307,8 @@
           "alt_value": 8089.0,
           "raw_score": -0.027642234395574367,
           "description": "CHIP:H3K27ac:HepG2",
-          "quantile_score": 0.86,
-          "ref_signal_percentile": 0.9107
+          "quantile_score": 0.8543,
+          "ref_signal_percentile": 0.9068
         },
         {
           "assay_id": "CAGE/hCAGE EFO:0001187/+",
@@ -319,8 +319,8 @@
           "alt_value": 3.726459503173828,
           "raw_score": -0.1515978868502889,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.9472,
-          "ref_signal_percentile": 0.8641,
+          "quantile_score": 0.9475,
+          "ref_signal_percentile": 0.8638,
           "region_label": "variant site"
         },
         {
@@ -332,8 +332,8 @@
           "alt_value": 4584.7275390625,
           "raw_score": 0.002690171437675048,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.3293,
-          "ref_signal_percentile": 0.9886,
+          "quantile_score": 0.3137,
+          "ref_signal_percentile": 0.9905,
           "region_label": "FTO TSS"
         },
         {
@@ -345,8 +345,8 @@
           "alt_value": 4503.4658203125,
           "raw_score": 0.002671062844767251,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.3278,
-          "ref_signal_percentile": 0.9884,
+          "quantile_score": 0.3126,
+          "ref_signal_percentile": 0.9903,
           "region_label": "RPGRIP1L TSS"
         },
         {
@@ -358,8 +358,8 @@
           "alt_value": 2.204030990600586,
           "raw_score": -0.0035841711235974284,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.3806,
-          "ref_signal_percentile": 0.8369,
+          "quantile_score": 0.3641,
+          "ref_signal_percentile": 0.8331,
           "region_label": "AKTIP TSS"
         },
         {
@@ -371,8 +371,8 @@
           "alt_value": 2770.477294921875,
           "raw_score": 0.0010918415815430532,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.1954,
-          "ref_signal_percentile": 0.9812,
+          "quantile_score": 0.1786,
+          "ref_signal_percentile": 0.9824,
           "region_label": "RBL2 TSS"
         },
         {
@@ -384,8 +384,8 @@
           "alt_value": 75.42941284179688,
           "raw_score": 0.003916726512754294,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.3966,
-          "ref_signal_percentile": 0.9431,
+          "quantile_score": 0.3801,
+          "ref_signal_percentile": 0.9423,
           "region_label": "IRX3 TSS"
         },
         {
@@ -397,8 +397,8 @@
           "alt_value": 0.8591547012329102,
           "raw_score": -0.037419931439074995,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.7939,
-          "ref_signal_percentile": 0.7721,
+          "quantile_score": 0.7928,
+          "ref_signal_percentile": 0.7704,
           "region_label": "variant site"
         },
         {
@@ -410,8 +410,8 @@
           "alt_value": 1225.0384521484375,
           "raw_score": -0.0037351592983162064,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.3908,
-          "ref_signal_percentile": 0.9692,
+          "quantile_score": 0.3729,
+          "ref_signal_percentile": 0.9703,
           "region_label": "FTO TSS"
         },
         {
@@ -423,8 +423,8 @@
           "alt_value": 1226.9853515625,
           "raw_score": -0.00372795767343857,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.3903,
-          "ref_signal_percentile": 0.9692,
+          "quantile_score": 0.3725,
+          "ref_signal_percentile": 0.9703,
           "region_label": "RPGRIP1L TSS"
         },
         {
@@ -436,8 +436,8 @@
           "alt_value": 1233.52490234375,
           "raw_score": 0.006019712138644923,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.47,
-          "ref_signal_percentile": 0.9692,
+          "quantile_score": 0.4579,
+          "ref_signal_percentile": 0.9703,
           "region_label": "AKTIP TSS"
         },
         {
@@ -449,7 +449,7 @@
           "alt_value": 6.259029388427734,
           "raw_score": -9.021722087740303e-05,
           "description": "CAGE:HepG2",
-          "ref_signal_percentile": 0.8751,
+          "ref_signal_percentile": 0.8805,
           "region_label": "RBL2 TSS"
         },
         {
@@ -461,8 +461,8 @@
           "alt_value": 1276.1383056640625,
           "raw_score": 0.0030873095071881004,
           "description": "CAGE:HepG2",
-          "quantile_score": 0.3555,
-          "ref_signal_percentile": 0.9695,
+          "quantile_score": 0.3407,
+          "ref_signal_percentile": 0.9708,
           "region_label": "IRX3 TSS"
         }
       ]
@@ -476,6 +476,6 @@
     "tracks_requested": "7 HepG2 tracks",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-05 05:05 UTC"
+    "generated_at": "2026-08-08 04:27 UTC"
   }
 }
