@@ -270,7 +270,22 @@ class LegNetOracle(OracleBase):
             query_interval=query_interval,
             prediction_interval=prediction_interval,
             input_interval=input_interval,
-            resolution=self.bin_size,
+            # Declare the resolution the array ACTUALLY has, not the sliding
+            # stride. self.bin_size is the step (default 50), which is right for
+            # a multi-window query -- a 300 bp region yields 6 values at stride
+            # 50 -- but wrong for the single-window case, and that case is the
+            # default conversational/MCP path: base.py widens a point query to
+            # exactly 200 bp, LegNet returns ONE scalar, and declaring
+            # resolution 50 over a 200 bp interval implies 4 bins that do not
+            # exist. pos2bin then returned 2 for a length-1 array, so
+            # score_region and score_variant_effect(at_variant=True) both
+            # answered None, and the IGV feature was drawn 50 bp wide and 76 bp
+            # left-shifted. mcp/server.py documents this arithmetic in two places
+            # and adds an explanatory note rather than fixing it; this is the fix.
+            #
+            # 200//1 = 200 for one window; 300//6 = 50 and 400//8 = 50, so
+            # multi-window behaviour is unchanged.
+            resolution=max(1, len(prediction_interval) // max(1, len(preds))),
             values=preds,
             metadata=None,
             preferred_aggregation='mean',
