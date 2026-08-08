@@ -12,6 +12,13 @@ move:
   move means something other than the intended change happened.
 * the ceiling must not fall. More positions from the same populations can only raise
   max(union), and removing thinning can only raise it further.
+
+  **That premise is specific to a position/retention rebuild, and does not hold for a
+  MODEL change.** Averaging CATv1's five folds reduces variance, so the ensemble's tails
+  are legitimately narrower than any single fold's -- a ceiling drop there is the expected
+  consequence of a better estimator, not a defect. Pass ``--model-change ORACLE=REASON``
+  to switch that oracle onto a bounded gate. It refuses an empty reason, so it cannot be
+  used as a silent bypass, and it prints the reason beside every relaxed check.
 * no track may be thinned on an exact layer, and a hybrid layer must keep at least
   MIN_EXACT_TAIL_SLOTS exact grid slots.
 * the file must still load and resolve through the real query path -- a background no
@@ -31,6 +38,12 @@ import numpy as np
 # Below this, a median over per-track maxima is one or two draws of an extreme order
 # statistic and cannot support a pass/fail gate. LegNet has 3 tracks, Sei 40.
 MIN_TRACKS_FOR_CEILING_GATE = 25
+
+# Under --model-change, how far the ceiling may fall before it is a failure rather than an
+# expected consequence of a better estimator. Averaging k replicates shrinks the sampling
+# spread of an extreme order statistic; halving the ceiling is far more than that accounts
+# for and indicates something else changed.
+MODEL_CHANGE_MIN_CEILING_RATIO = 0.50
 
 ORACLES = ["alphagenome", "borzoi", "enformer", "chrombpnet",
            "cherimoya", "sei", "legnet", "epinformerseq"]
@@ -104,7 +117,8 @@ def pinning_rate(oracle: str, new: dict, old: dict) -> "tuple[int, int, int] | N
     return (n, pin_old, pin_new) if n else None
 
 
-def verify(oracle: str, new_path: Path, old_path: Path, *, strict: bool) -> list[str]:
+def verify(oracle: str, new_path: Path, old_path: Path, *, strict: bool,
+           model_change: str | None = None) -> list[str]:
     from chorus.analysis.background_sampling import (
         MIN_EXACT_TAIL_SLOTS,
         thinning_violations,
@@ -272,7 +286,22 @@ def verify(oracle: str, new_path: Path, old_path: Path, *, strict: bool) -> list
                     # distribution windows for a 200 bp promoter model, where erratic
                     # large effects inflate the null's upper body. Dropping them makes
                     # the null more correct and narrower at once.
-                    if n_tracks >= MIN_TRACKS_FOR_CEILING_GATE:
+                    if model_change:
+                        # A different MODEL, not more positions. Averaging k folds
+                        # reduces the variance of every statistic including the
+                        # maximum, so a narrower tail is what a better estimator
+                        # looks like. Still bounded: a halving is not variance
+                        # reduction, it is a bug.
+                        if r < MODEL_CHANGE_MIN_CEILING_RATIO:
+                            problems.append(
+                                f"{oracle}: effect ceiling fell to {r:.2f}x, past the "
+                                f"{MODEL_CHANGE_MIN_CEILING_RATIO:.2f}x floor allowed for "
+                                f"a model change ({model_change}). Variance reduction "
+                                f"does not halve a ceiling -- check the averaging")
+                        else:
+                            print(f"  ACCEPTED: ceiling {r:.2f}x under --model-change "
+                                  f"({model_change}); averaging reduces tail variance")
+                    elif n_tracks >= MIN_TRACKS_FOR_CEILING_GATE:
                         problems.append(
                             f"{oracle}: effect ceiling fell to {r:.2f}x across "
                             f"{n_tracks} tracks. Adding positions and removing thinning "
@@ -282,7 +311,18 @@ def verify(oracle: str, new_path: Path, old_path: Path, *, strict: bool) -> list
                         print(f"  ADVISORY: ceiling {r:.2f}x on only {n_tracks} "
                               f"tracks -- too few for a median max to mean anything; "
                               f"judge this oracle on p50/p90/p99")
-    got = pinning_rate(oracle, new, old) if old is not None else None
+    if model_change:
+        # NOT measurable yet, and reporting it would mislead. pinning_rate ranks the
+        # raw scores committed in examples/**/example_output.json -- which this oracle
+        # produced with the OLD model -- against the NEW null. Under a model change the
+        # numerator moves too, so that comparison is apples to oranges in the direction
+        # that flatters or damns arbitrarily. It becomes meaningful only after the
+        # artefacts are regenerated through the new model, which happens after the swap.
+        print(f"  pinning: not compared -- committed effects come from the previous "
+              f"model ({model_change}). Re-measure after regenerating artefacts.")
+        got = None
+    else:
+        got = pinning_rate(oracle, new, old) if old is not None else None
     if got:
         n, po, pn = got
         print(f"  pinned on {n} committed effects: {po} ({po / n:.1%}) -> "
@@ -304,7 +344,25 @@ def main() -> int:
                     help="Treat a missing *_retained array as a failure rather than a "
                          "warning. Off by default so an oracle rebuilt before the "
                          "field existed can still be verified.")
+    ap.add_argument("--model-change", nargs="*", default=None, metavar="ORACLE=REASON",
+                    help="Oracles whose MODEL changed, not just their positions or "
+                         "retention. Switches the ceiling gate to a bounded one and "
+                         "skips the pinning comparison, which is invalid until artefacts "
+                         "are regenerated. A non-empty REASON is required.")
     args = ap.parse_args()
+
+    model_changes: dict[str, str] = {}
+    for spec in (args.model_change or []):
+        if "=" not in spec:
+            print(f"--model-change needs ORACLE=REASON, got {spec!r}")
+            return 2
+        name, _, reason = spec.partition("=")
+        name, reason = name.strip(), reason.strip()
+        if not reason:
+            print(f"--model-change {name}: a REASON is required. This flag relaxes a "
+                  f"real gate; an unexplained relaxation is how a bad build ships.")
+            return 2
+        model_changes[name] = reason
 
     staged, backups = Path(args.staged), Path(args.backups)
     todo = args.oracles or [o for o in ORACLES
@@ -317,7 +375,8 @@ def main() -> int:
     for o in todo:
         all_problems += verify(o, staged / f"{o}_pertrack.npz",
                                backups / f"{o}_pertrack.npz",
-                               strict=args.strict_retention)
+                               strict=args.strict_retention,
+                               model_change=model_changes.get(o))
 
     print(f"\n{'=' * 68}")
     if all_problems:
