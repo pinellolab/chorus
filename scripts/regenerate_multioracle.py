@@ -218,7 +218,12 @@ def run_chrombpnet():
     # stays the canonical narrow-window number.
     seqlen = int(getattr(oracle, "sequence_length", 2114) or 2114)
     half = seqlen // 2
-    region = f"{VARIANT['chrom']}:{VARIANT['position'] - half}-{VARIANT['position'] + half}"
+    # pos-half .. pos+half-1 is `seqlen` bases; pos+half would be seqlen+1.
+    # That extra base matters: a query LONGER than sequence_length pushes
+    # ChromBPNet down its sliding branch (num_windows=2), which tiles the model
+    # twice and leaves values outside the central 1,000 bp populated by a second
+    # window rather than untouched. Same arithmetic slip in both runners.
+    region = f"{VARIANT['chrom']}:{VARIANT['position'] - half}-{VARIANT['position'] + half - 1}"
     report = _build_variant_report(oracle, oracle_name="chrombpnet", region=region)
 
     # ChromBPNet's intrinsic prediction window is 2114 bp.  At the
@@ -288,7 +293,12 @@ def run_cherimoya():
     # effect down, and the table value should be the canonical narrow-window one.
     seqlen = int(getattr(oracle, "sequence_length", 2114) or 2114)
     half = seqlen // 2
-    region = f"{VARIANT['chrom']}:{VARIANT['position'] - half}-{VARIANT['position'] + half}"
+    # pos-half .. pos+half-1 is `seqlen` bases; pos+half would be seqlen+1.
+    # That extra base matters: a query LONGER than sequence_length pushes
+    # ChromBPNet down its sliding branch (num_windows=2), which tiles the model
+    # twice and leaves values outside the central 1,000 bp populated by a second
+    # window rather than untouched. Same arithmetic slip in both runners.
+    region = f"{VARIANT['chrom']}:{VARIANT['position'] - half}-{VARIANT['position'] + half - 1}"
     report = _build_variant_report(oracle, oracle_name="cherimoya", region=region)
 
     # Wide sliding track for IGV display only; scoring above is untouched.

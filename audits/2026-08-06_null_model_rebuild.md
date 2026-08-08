@@ -516,3 +516,132 @@ Not fixed; flagged for a presentation pass rather than silently accepted.
 
 Both are pre-existing and neither affects a number. They are the kind of thing only looking
 finds, which is the point of this addendum.
+
+---
+
+# Addendum E — why two oracles on the same ENCODE experiment disagreed by 33% (2026-08-08)
+
+Prompted by a user question after Cherimoya was added to the SORT1 multi-oracle
+walkthrough: "why cherimoya and chrombnet different, they should give very similar
+results". A fair challenge — they are the same assay, the same biosample and, as it turns
+out, the same ENCODE experiment.
+
+Investigated with five independent hypothesis agents, one synthesis, and three adversarial
+verifiers under different lenses. **0 of 3 lenses refuted the conclusion**, and each
+reproduced the decisive measurement from scratch rather than reusing the diagnostics.
+
+## Answer: not a chorus defect
+
+| oracle | ref | alt | linear ratio | log2FC | percentile |
+|---|---|---|---|---|---|
+| Cherimoya | 603.3 | 2093.2 | 3.469 | +1.793 | 0.9999 |
+| ChromBPNet | 287.2 | 746.9 | 2.600 | +1.376 | 0.9995 |
+| AlphaGenome | 660.2 | 1666.3 | 2.524 | +1.334 | 0.9964 |
+
+Ruled out, each with a measurement:
+
+* **Sequence construction** — REFUTED. Byte-identical model input, one md5 for both
+  2,114 bp windows, variant at 0-based index 1057 in both, forward strand, single
+  substitution. Neutralising the two off-by-ones found (below) moves the ratio by ≤3e-4.
+* **Window/offset mismatch** — REFUTED as stated. Both oracles go through one
+  `LAYER_CONFIGS['chromatin_accessibility']` and one call site, integrating the identical
+  `values[808:1309]`.
+* **Different data or fold** — REFUTED. Both resolve to ENCODE `ENCSR149XIL`
+  (ChromBPNet's mirror manifest → `model.chrombpnet_nobias.fold_0.ENCSR149XIL.h5`;
+  Cherimoya → `models/ENCSR149XIL/cherimoya.fold_0.torch`), and the two projects' fold-0
+  chromosome partitions match exactly — **chr1 is held out for both**.
+* **Count-recovery transform** — REFUTED. Both invert `log(1+count)` with `expm1`. Worst
+  case had one used `exp`: 0.1% of the ratio.
+* **Systematic scale difference** — REFUTED. Over all 18,672 `snps_accessibility`
+  variants, mean signed difference **−0.001 log2**, r = 0.888. Cherimoya is systematically
+  *quieter* (|log2FC| ratio 0.736 at median), i.e. the trend runs **opposite** to this
+  locus.
+
+## Where the gap actually lives
+
+Exact decomposition into a count-head term and a profile-shape term:
+
+| | count-head FC | × shape term | = reported |
+|---|---|---|---|
+| Cherimoya | 3.211 | 1.081 | 3.469 |
+| ChromBPNet | 2.114 | 1.230 | 2.600 |
+
+The count heads disagree by **52%** (total predicted counts over the shared 1,000 bp
+output: ref 755.5 vs 448.9, alt 2425.8 vs 949.0); the shape term pulls **14%** the other
+way. The reported 33% is the residue of two larger, partly cancelling disagreements.
+
+Two contributors, both measured:
+
+1. **They are not predicting the same quantity.** ChromBPNet loads the
+   `chrombpnet_nobias` head — Tn5/DNase enzymatic bias subtracted. CATv1 has no
+   bias-model concept at all (zero hits for "bias" in its source), so it predicts total
+   observed counts. Consistent with the 2.1× difference in absolute ref counts. Measured
+   on a matched ATAC K562 triple, adding the bias component *shrinks* a variant effect by
+   ~20%, so neutralising it **widens** this gap rather than closing it.
+2. **Fold-0 is a sample, not the model.** Cherimoya `ENCSR149XIL` across its own five
+   folds: **3.469** (fold 0, shipped), 2.393, 2.716, 2.765, 2.768 — ChromBPNet's 2.600
+   sits inside that range. Absolute ref counts vary **2.49×** across folds for the
+   identical sequence. The 5-fold ensemble that CATv1's README recommends gives 2.749,
+   closing **80%** of the gap; folds 1–4 close 92%.
+
+## Two claims of mine that were wrong
+
+**"AlphaGenome agrees with ChromBPNet, so Cherimoya is the outlier."** Wrong, and the way
+it is wrong is instructive. The gap is a monotone function of the aggregation window:
+
+| window | Cherimoya | ChromBPNet | AlphaGenome |
+|---|---|---|---|
+| 51 bp | 3.62 | 3.57 | 2.51 |
+| **501 bp** (shipped) | **3.47** | **2.60** | **2.52** |
+| 1001 bp | 3.21 | 2.11 | 2.42 |
+
+At 51 bp the two BPNet-family models agree to 1.6% and **both** disagree with AlphaGenome;
+the curves cross at 47 bp; at 2001 bp ChromBPNet falls *below* AlphaGenome. The apparent
+corroboration is an artefact of where the curves intersect at the window width we happen
+to ship. Any "X is the outlier" conclusion drawn from one window width is unsound.
+
+**"33% is a lot."** It is inside the normal spread for these two models. rs12740374 sits at
+the **83rd percentile** of the |log2FC| ≥ 0.5 stratum, where **18–22% of loci disagree by
+more than 33%**.
+
+## Verification quality note
+
+One verifier found that the `effect_sha256` provenance I had been citing is **circular**:
+`stamp_provenance_v4.py:140` copies it out of the reference-set artefact into every
+oracle's npz post-hoc, so it cannot independently prove two oracles drew the same
+population. The verifier instead regenerated the 18,672-variant set from both builders'
+samplers and confirmed exact identity including order and stratum labels. The conclusion
+held; the evidence I had offered for it was weaker than it looked. Worth fixing the stamp's
+semantics or its documentation.
+
+## Two real defects found on the way
+
+1. **`regenerate_multioracle.py` built a 2,115 bp region** — `pos-half … pos+half` is
+   `seqlen+1` bases. A query longer than `sequence_length` pushes ChromBPNet down its
+   **sliding** branch (`num_windows=2`), tiling the model twice and populating `values`
+   outside the central 1,000 bp with a second window. Present at two sites, including the
+   Cherimoya runner added in this cycle by copying the first. **Fixed.** Effect on the
+   reported score is 4th-decimal (ref 287.2173 → 287.2176, log2FC unchanged); the real
+   effect was on the IGV values array.
+2. **`chorus/core/result.py:275`** computes `(position - prediction_interval.reference.start)
+   // resolution` with a 1-based variant position against a 0-based interval start, so
+   **every** chromatin window is centred 1 bp right of the variant. Identical for both
+   oracles and numerically negligible (~3e-4 on the ratio), so it is not this gap — but it
+   is a genuine off-by-one in core scoring. **Deferred**, batched with the LegNet
+   `resolution` issue, because both are correct-but-move-every-committed-artefact.
+
+## Recommendation, and what was done
+
+**Document, do not "fix".** Narrowing `window_bp` 501 → 51 closes 95% of the gap and is the
+wrong move: it invalidates every 501 bp background CDF and moves both BPNet-family models
+away from AlphaGenome. Curve-fitting to one variant.
+
+Recorded as `docs/BACKGROUND_NULL_PROTOCOL.md` §12, with three rules: never compare
+`ref_value`/`alt_value` across oracles (model-specific depth-normalised scales; only
+`raw_score` and `quantile_score` are comparable, and all three agree here); the aggregation
+window is doing more work than it looks; and a single-fold checkpoint is a sample, not the
+model.
+
+**Open decision for the maintainer:** should Cherimoya use the 5-fold ensemble CATv1
+recommends? It closes 80% of the gap and is the upstream-recommended usage, but the
+background CDFs were built on fold 0, so it carries a rebuild.

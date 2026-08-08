@@ -531,3 +531,91 @@ strong promoter effects.
   motif-creating variants. Irreducible with an empirical ceiling; see §9's last row.
 * `build_config` is still absent on ChromBPNet and a different schema on Cherimoya;
   unifying it to `schema_version 4` with one `build_id` across all 8 is not yet done.
+
+---
+
+## 12. Cross-oracle comparison: what is and is not comparable
+
+Two oracles can be pointed at the same assay, the same biosample and the same ENCODE
+experiment and still disagree substantially. This section records what was measured when
+that happened, because the instinct — "same data, so one of them must be wrong" — sends you
+looking for a bug that is not there.
+
+### The case
+
+At rs12740374, HepG2 DNase accessibility, all three of these are the **same** ENCODE
+experiment `ENCSR149XIL` (ChromBPNet's mirror manifest resolves `DNASE/HepG2/fold_0` to
+`model.chrombpnet_nobias.fold_0.ENCSR149XIL.h5`; Cherimoya loads
+`models/ENCSR149XIL/cherimoya.fold_0.torch`):
+
+| oracle | ref | alt | linear ratio | log2FC | percentile |
+|---|---|---|---|---|---|
+| Cherimoya | 603.3 | 2093.2 | 3.469 | +1.793 | 0.9999 |
+| ChromBPNet | 287.2 | 746.9 | 2.600 | +1.376 | 0.9995 |
+| AlphaGenome | 660.2 | 1666.3 | 2.524 | +1.334 | 0.9964 |
+
+**Nothing on the chorus side accounts for it.** Verified: byte-identical model input (one
+md5 for both 2,114 bp windows, variant at index 1057, forward strand); the same 501 bp span
+`values[808:1309]` through one shared `LAYER_CONFIGS['chromatin_accessibility']` and one
+call site; `expm1` on both count heads; the same fold-0 chromosome partition with **chr1
+held out for both models**.
+
+### Three rules that follow
+
+**1. Never compare `ref_value` / `alt_value` across oracles.** They are model-specific
+depth-normalised scales. Cherimoya's ref is 2.1× ChromBPNet's for the identical sequence,
+and neither is "right". Only `raw_score` (log2FC) and `quantile_score` are cross-comparable,
+and here all three agree: every one places the variant above the 99.6th percentile of its
+own null.
+
+**2. The aggregation window is doing more work than it looks.** The gap is a monotone
+function of `window_bp`:
+
+| window | Cherimoya | ChromBPNet | AlphaGenome |
+|---|---|---|---|
+| 51 bp | 3.62 | 3.57 | 2.51 |
+| **501 bp** (shipped) | **3.47** | **2.60** | **2.52** |
+| 1001 bp | 3.21 | 2.11 | 2.42 |
+
+At 51 bp the two BPNet-family models agree to 1.6% and **both** disagree with AlphaGenome;
+the curves cross at 47 bp. So "ChromBPNet and AlphaGenome corroborate each other, Cherimoya
+is the outlier" is an artefact of where the curves happen to intersect at 501 bp, **not**
+evidence about which model is right. Do not draw the outlier conclusion from a single
+window width.
+
+The gap decomposes exactly into a count-head term and a profile-shape term:
+
+| | count-head FC | × shape term | = reported |
+|---|---|---|---|
+| Cherimoya | 3.211 | 1.081 | 3.469 |
+| ChromBPNet | 2.114 | 1.230 | 2.600 |
+
+The count heads disagree by **52%**; the shape term pulls 14% the other way. ChromBPNet's
+reference profile is broader (64% of its mass inside the central 501 bp vs Cherimoya's 80%),
+so widening the window inflates its denominator faster than its numerator.
+
+**Do not narrow `window_bp` to close a gap.** Going 501 → 51 closes 95% of this one, and it
+(a) invalidates every 501 bp background CDF in `*_pertrack.npz`, and (b) moves both
+BPNet-family models *away* from AlphaGenome. It is curve-fitting to one variant.
+
+**3. A single-fold checkpoint is a sample, not the model.** Cherimoya `ENCSR149XIL` across
+its own five cross-validation folds gives ratios **3.469** (fold 0, which chorus ships),
+2.393, 2.716, 2.765, 2.768 — and ChromBPNet's 2.600 sits inside that range. Absolute
+reference counts vary **2.49×** across folds for the identical sequence. The 5-fold
+ensemble, which CATv1's own README recommends, gives 2.749 and closes **80%** of the gap.
+
+Chorus ships fold 0 for both oracles, and the background CDFs are built on fold 0, so
+switching to an ensemble is a real change with a rebuild attached — see §11.
+
+### Is a given disagreement unusual?
+
+Measure it against the reference set rather than reasoning about it. Over all 18,672
+`snps_accessibility` variants, ChromBPNet vs Cherimoya: mean signed difference **−0.001
+log2**, Pearson **r = 0.888**, and Cherimoya is systematically *quieter* (|log2FC| ratio
+0.736 at the median, 0.934 at q99). rs12740374's +33% sits at the **83rd percentile** of the
+|log2FC| ≥ 0.5 stratum, in which **18–22% of loci disagree by more than 33%** — and it runs
+*opposite* to the systematic trend. So it is inside the normal spread, and there is nothing
+locus-specific to fix.
+
+Full derivation, including the three adversarial verification passes that failed to refute
+it, in `audits/2026-08-06_null_model_rebuild.md` addendum E.

@@ -26,7 +26,7 @@
       "layer": "chromatin_accessibility",
       "oracles": {
         "chrombpnet": {
-          "raw_score": 1.375624605011599,
+          "raw_score": 1.375621207005794,
           "assay_id": "DNASE:HepG2",
           "cell_type": "HepG2",
           "quantile_score": 0.9995,
@@ -140,6 +140,6 @@
     "tracks_requested": "assay_ids as listed in each per-oracle request",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-08 13:02 UTC"
+    "generated_at": "2026-08-08 13:39 UTC"
   }
 }

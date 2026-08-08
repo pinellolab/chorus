@@ -38,9 +38,29 @@ question is answered three independent ways:
 | AlphaGenome | `DNASE:HepG2` | **+1.334** | 0.9964 |
 
 Read that as concordance on the finding and honest uncertainty on the size: a
-2.5–3.5× predicted increase in accessibility, agreed by three models trained
-separately on different data. The percentiles differ more than the raw effects
-do, which is expected — each is a rank against that model's own background.
+2.5–3.5× predicted increase in accessibility, from three models that agree the
+variant is above the 99.6th percentile of their own nulls.
+
+**Three things not to conclude from this table**, each measured rather than
+argued (full workup in `docs/BACKGROUND_NULL_PROTOCOL.md` §12):
+
+- **Do not read `ref`/`alt` across rows.** They are model-specific
+  depth-normalised scales. Cherimoya's reference is 2.1× ChromBPNet's for the
+  *identical* sequence and neither is wrong. Only the log2FC and percentile
+  columns are cross-comparable.
+- **Do not conclude Cherimoya is the outlier.** ChromBPNet and Cherimoya are in
+  fact the *same* ENCODE experiment (`ENCSR149XIL`), with chr1 held out of
+  training for both. The apparent AlphaGenome/ChromBPNet agreement is an artefact
+  of the 501 bp scoring window: at 51 bp the two accessibility specialists agree
+  to 1.6% (3.62 vs 3.57) and *both* disagree with AlphaGenome at 2.51. The curves
+  cross at 47 bp.
+- **Do not read the 1.37× spread as large.** Across all 18,672 reference variants
+  these two models correlate at r = 0.888 with a mean difference of −0.001 log2,
+  and among strong effects 18–22% of loci disagree by more than this one does.
+
+What the spread mostly reflects is that a single cross-validation fold is a
+sample, not the model: Cherimoya's five folds give 3.47 (fold 0, shipped), 2.39,
+2.72, 2.77, 2.77 — and ChromBPNet's 2.60 sits inside that range.
 Cherimoya track ids are `ASSAY:ENCSR` rather than `ASSAY:biosample`, because
 (assay, biosample) is ambiguous for 1,188 of its 1,518 experiments — the
 accession is what identifies a model.
