@@ -420,6 +420,29 @@ but worth knowing about when the guard is the thing you are changing:
   the track count, so it could not see `build_config` (file-level, shape `(1,)`) at all. If
   you add a new array, confirm the preservation check covers its shape class.
 
+### Step 7b — if the model ships cross-validation folds, decide once and wire it BOTH sides
+
+Applies to any oracle distributed as several replicates of the same experiment (CATv1 has
+five; ChromBPNet has folds too). Two rules, both learned the hard way on Cherimoya:
+
+**Whatever you choose, the builder and the query path must do the same thing.** A null built
+on fold 0 under a query path that ensembles is not a null — the numerator and the
+denominator are different statistics, and nothing in the artefact reveals it. Make the
+builder's `--fold` default *be* the oracle's default (`CATV1_DEFAULT_FOLD`) rather than a
+literal, so the two cannot drift, and verify parity on one sequence before spending GPU
+hours: score the same window through the builder's fast path and through
+`oracle.predict()`, and require agreement to ~1e-6.
+
+**Averaging happens on the model's OUTPUT, not its heads.** For a BPNet-family model the
+output is the expected-counts profile; the heads combine non-linearly (softmax and `expm1`),
+so a mean over heads is meaningless. A mean over per-fold *effects* is also a different
+number from a mean over predictions — measured 1.4849 vs 1.4576 on one variant. Read the
+upstream model card for which it recommends; do not infer it.
+
+Cost to budget: *k* folds is *k*× the forward passes for the build and, in
+`use_environment=True` mode, *k* subprocess calls per query. Check the dispatch works in
+**both** execution modes — env mode is the user default and is the easy one to miss.
+
 ### Step 8 — stamp provenance
 
 `scripts/stamp_provenance_v4.py` — schema 4, one `build_id`, read **from the artefacts
@@ -598,14 +621,48 @@ so widening the window inflates its denominator faster than its numerator.
 (a) invalidates every 501 bp background CDF in `*_pertrack.npz`, and (b) moves both
 BPNet-family models *away* from AlphaGenome. It is curve-fitting to one variant.
 
-**3. A single-fold checkpoint is a sample, not the model.** Cherimoya `ENCSR149XIL` across
+**3. A single-fold checkpoint is a sample, not the model — and Cherimoya now ensembles.** Cherimoya `ENCSR149XIL` across
 its own five cross-validation folds gives ratios **3.469** (fold 0, which chorus ships),
 2.393, 2.716, 2.765, 2.768 — and ChromBPNet's 2.600 sits inside that range. Absolute
 reference counts vary **2.49×** across folds for the identical sequence. The 5-fold
 ensemble, which CATv1's own README recommends, gives 2.749 and closes **80%** of the gap.
 
-Chorus ships fold 0 for both oracles, and the background CDFs are built on fold 0, so
-switching to an ensemble is a real change with a rebuild attached — see §11.
+**Resolved 2026-08-08: Cherimoya ships the 5-fold ensemble.** CATv1's model card offers
+both usages — "use a single fold (e.g. `fold_0`), or average the predictions of all five
+folds for a more robust estimate" — and chorus now takes the second. `CATV1_DEFAULT_FOLD`
+is the sentinel `CATV1_ENSEMBLE`; pass `fold=0..4` for one fold explicitly.
+
+Three things about that change are load-bearing, and all three are the kind of detail that
+silently produces a wrong null if got wrong.
+
+**The mean is over the expected-counts PROFILES.** Not over the two raw heads: both enter
+`expected_counts_profile` non-linearly (softmax across positions, `expm1` on the count
+head), so averaging heads computes a different quantity. Not over per-fold log2FCs either.
+Measured at rs12740374/ENCSR149XIL the three give **1.4576** (averaging predictions — what
+the card describes and what ships), — , and **1.4849** (averaging per-fold effects). The
+averaged profile is mapped back onto equivalent heads by
+`scoring.heads_equivalent_to_profile`, which round-trips to ~1e-15, so every caller
+downstream keeps its two-head contract unchanged.
+
+**The builder and the query path must both ensemble, or percentiles mean nothing.** The
+builder called `model(batch)` directly and would have scored fold 0 while queries scored
+five — a null and a numerator that are not the same statistic. `forward_window_sums` now
+takes a **list** of models, and its signature is plural specifically so that mistake cannot
+recur. Verified: builder path 783.983032 vs query path 783.983066 on the same sequence,
+relative difference 4e-8. Averaging profiles then summing the window is identical to
+averaging per-fold window sums (the sum is linear), but `compute_effect` is a log ratio and
+is **not**, so ref and alt must be averaged separately and the effect taken of the averages.
+
+**It must work in both execution modes.** An earlier version dispatched on `self._models`,
+which only the in-process loader populates — so with `use_environment=True`, *the user
+default*, an ensemble request silently returned fold 0 with no warning. Dispatch now keys
+off `model_paths`, which both modes set. Verified bit-identical across modes:
+ref 782.9413, alt 2152.1508, log2FC +1.457632.
+
+Effect on the gap this section is about: ChromBPNet 2.600 vs Cherimoya **3.469 → 2.749**,
+i.e. log2 gap 0.4174 → 0.0820, **80% closed**. Cost: 5× the forward passes (17.9 GPU-hours
+for the 1,518-track rebuild, ~3h across four GPUs) and 5 subprocess calls per env-mode
+query. Checkpoints are 2.4 MB each so disk is not a concern.
 
 ### Is a given disagreement unusual?
 

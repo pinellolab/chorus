@@ -47,12 +47,16 @@ from .cherimoya_source.catv1_globals import (
     CATV1_HF_REPO,
     CATV1_INPUT_LENGTH,
     CATV1_N_FOLDS,
+    CATV1_ENSEMBLE,
     CATV1_OUTPUT_LENGTH,
     CATV1_TRIMMING,
     catv1_track_id,
 )
 from .cherimoya_source.catv1_metadata import get_metadata
-from .cherimoya_source.scoring import expected_counts_profile
+from .cherimoya_source.scoring import (
+    expected_counts_profile,
+    heads_equivalent_to_profile,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +115,9 @@ class CherimoyaOracle(OracleBase):
 
         self.model = None
         self.model_path = None
+        # Every loaded checkpoint. Length > 1 means the 5-fold ensemble;
+        # _forward_windows dispatches on this in BOTH execution modes.
+        self.model_paths = []
         self._model_info = None
 
         # Set by load_pretrained_model.
@@ -182,10 +189,11 @@ class CherimoyaOracle(OracleBase):
         """
         self._check_env_ready()
 
-        if fold not in range(CATV1_N_FOLDS):
+        ensemble = fold == CATV1_ENSEMBLE
+        if not ensemble and fold not in range(CATV1_N_FOLDS):
             raise InvalidAssayError(
-                f"CATv1 fold must be an integer in 0..{CATV1_N_FOLDS - 1}, "
-                f"got {fold}."
+                f"CATv1 fold must be an integer in 0..{CATV1_N_FOLDS - 1} or "
+                f"{CATV1_ENSEMBLE!r}, got {fold!r}."
             )
 
         if weights is not None:
@@ -202,6 +210,7 @@ class CherimoyaOracle(OracleBase):
             resolved_id = encode_id or Path(weights).stem
             resolved_cell_type = cell_type
             self.model_path = str(weights)
+            self.model_paths = [self.model_path]
         else:
             try:
                 resolved_assay, resolved_id = get_metadata().resolve(
@@ -211,7 +220,15 @@ class CherimoyaOracle(OracleBase):
                 raise InvalidAssayError(str(exc)) from exc
             row = get_metadata().describe(resolved_id)
             resolved_cell_type = row["biosample"]
-            self.model_path = self._download_checkpoint(resolved_id, fold)
+            if ensemble:
+                self.model_paths = [
+                    self._download_checkpoint(resolved_id, f)
+                    for f in range(CATV1_N_FOLDS)
+                ]
+                self.model_path = self.model_paths[0]
+            else:
+                self.model_path = self._download_checkpoint(resolved_id, fold)
+                self.model_paths = [self.model_path]
 
         self.assay = resolved_assay
         self.encode_id = resolved_id
@@ -219,14 +236,22 @@ class CherimoyaOracle(OracleBase):
         self.fold = fold
 
         logger.info(
-            "Loading Cherimoya %s (%s, fold %d)...",
-            self.track_id, resolved_cell_type, fold,
+            "Loading Cherimoya %s (%s, %s)...",
+            self.track_id, resolved_cell_type,
+            "5-fold ensemble" if ensemble else f"fold {fold}",
         )
 
         if self.use_environment:
             self._load_in_environment(self.model_path)
         else:
             self._load_direct(self.model_path)
+            self._models = [self.model]
+            for extra in self.model_paths[1:]:
+                self._load_direct(extra)
+                self._models.append(self.model)
+            # self.model stays the FIRST fold so anything reaching past the
+            # oracle API sees a real single model rather than a tuple.
+            self.model = self._models[0]
 
     def _download_checkpoint(self, encode_id: str, fold: int) -> str:
         """Fetch one checkpoint from HuggingFace, returning the cached path."""
@@ -549,9 +574,58 @@ class CherimoyaOracle(OracleBase):
             ``(profile_logits, log_counts)`` with shapes
             ``(n_windows, 1, output_length)`` and ``(n_windows, 1)``.
         """
+        if len(getattr(self, "model_paths", []) or []) > 1:
+            return self._forward_ensemble(windows)
         if self.use_environment:
             return self._forward_in_environment(windows)
         return self._forward_direct(windows)
+
+    def _forward_ensemble(self, windows) -> Tuple[numpy.ndarray, numpy.ndarray]:
+        """Average the expected-counts predictions across the loaded folds.
+
+        CATv1's model card: "use a single fold (e.g. fold_0), or average the
+        predictions of all five folds for a more robust estimate."
+
+        The mean is over the **expected-counts profiles** -- that is what
+        "predictions" means here. Not over the two raw heads: both enter
+        :func:`expected_counts_profile` non-linearly (softmax across positions,
+        ``expm1`` on the count head), so averaging heads computes a different and
+        meaningless quantity. Nor over per-fold log2FCs: measured at
+        rs12740374 / ENCSR149XIL, averaging predictions gives log2FC 1.4576 while
+        averaging per-fold log2FCs gives 1.4849, and only the former is what the
+        card describes.
+
+        The averaged profile is mapped back onto equivalent heads so that every
+        caller downstream keeps the two-head contract -- see
+        :func:`heads_equivalent_to_profile`.
+
+        Both execution modes are handled, and that is deliberate rather than
+        incidental. ``use_environment=True`` is the **default** for users, and an
+        earlier version of this method keyed off ``self._models``, which only the
+        in-process loader populates -- so in env mode the dispatch fell through and
+        an ensemble request silently returned fold 0 alone, with no warning. That
+        is precisely the class of defect this release exists to remove, so the
+        dispatch now keys off ``model_paths``, which both modes set.
+        """
+        if self.use_environment:
+            # The predict template takes `model_weights` per call, so swapping
+            # the path is enough -- no reload. Costs one subprocess per fold.
+            keys, attr, runner = list(self.model_paths), "model_path", self._forward_in_environment
+        else:
+            keys, attr, runner = list(self._models), "model", self._forward_direct
+
+        saved = getattr(self, attr)
+        acc = None
+        try:
+            for key in keys:
+                setattr(self, attr, key)
+                logits, log_counts = runner(windows)
+                profile = expected_counts_profile(logits, log_counts)
+                acc = profile if acc is None else acc + profile
+        finally:
+            setattr(self, attr, saved)
+
+        return heads_equivalent_to_profile(acc / len(keys))
 
     def _forward_in_environment(self, windows: List[str]) -> Tuple[numpy.ndarray, numpy.ndarray]:
         args = {

@@ -56,7 +56,10 @@ sys.path.insert(0, REPO_ROOT)
 os.environ["CHORUS_NO_TIMEOUT"] = "1"
 
 from chorus.oracles.cherimoya_source.catv1_globals import (  # noqa: E402
+    CATV1_DEFAULT_FOLD,
+    CATV1_ENSEMBLE,
     CATV1_INPUT_LENGTH,
+    CATV1_N_FOLDS,
     CATV1_OUTPUT_LENGTH,
     CATV1_SCORING_WINDOW_BP,
     CATV1_TRIMMING,
@@ -98,8 +101,28 @@ parser.add_argument(
          "CLI path fails with 'unrecognized arguments'. Leave unset when "
          "sharding, where CUDA_VISIBLE_DEVICES is set per worker instead.",
 )
-parser.add_argument("--fold", type=int, default=0,
-                    help="CATv1 fold. 0 matches ChromBPNet's default and CDFs.")
+def _fold_arg(v):
+    """0..4, or the ensemble sentinel. A string default with type=int would
+    crash argparse, and silently coercing 'ensemble' to an int would build the
+    wrong null -- so parse it explicitly."""
+    if v == CATV1_ENSEMBLE:
+        return CATV1_ENSEMBLE
+    try:
+        i = int(v)
+    except (TypeError, ValueError):
+        raise argparse.ArgumentTypeError(
+            f"--fold must be 0..{CATV1_N_FOLDS - 1} or {CATV1_ENSEMBLE!r}, got {v!r}")
+    if i not in range(CATV1_N_FOLDS):
+        raise argparse.ArgumentTypeError(
+            f"--fold must be 0..{CATV1_N_FOLDS - 1} or {CATV1_ENSEMBLE!r}, got {v!r}")
+    return i
+
+
+parser.add_argument("--fold", type=_fold_arg, default=CATV1_DEFAULT_FOLD,
+                    help=f"CATv1 fold: 0..{CATV1_N_FOLDS - 1}, or "
+                         f"{CATV1_ENSEMBLE!r} to average all five folds' "
+                         f"predictions. Defaults to the oracle's own default so "
+                         f"the null and the query path cannot diverge.")
 parser.add_argument("--no-dhs", dest="dhs", action="store_false",
                     help="Drop the DHS-proximal SNPs and DHS peak baselines. "
                          "ON by default, because that is what the published "
@@ -389,15 +412,36 @@ def build_sequence_tensor(seqs, device, torch):
 
 # ── Scoring ──────────────────────────────────────────────────────────
 
-def forward_window_sums(model, X, torch, perbin_idx=None):
+def forward_window_sums(models, X, torch, perbin_idx=None):
     """Return (window_sums, perbin_values) for a stack of one-hot inputs.
 
-    The softmax/expm1/window-sum is done on the accelerator for speed, but
-    the first batch of every run is cross-checked against
-    ``scoring.expected_counts_profile`` + ``scoring.score_window_sum`` --
-    the same helpers ``oracle.predict()`` uses -- so the fast path cannot
-    drift from the transform the query side applies.
+    ``models`` is a LIST of loaded checkpoints. With more than one it is the
+    CATv1 5-fold ensemble, and the expected-counts profiles are averaged across
+    folds **before** the window sum -- matching
+    ``CherimoyaOracle._forward_ensemble`` exactly.
+
+    Averaging profiles then summing is identical to averaging the per-fold window
+    sums, because the window sum is linear; the same holds for the per-bin values.
+    What is NOT linear is ``compute_effect`` (a log ratio), so the caller must
+    average ref and alt separately and take the effect of the averages -- never
+    the average of per-fold effects. Measured at rs12740374, the two differ:
+    log2FC 1.4576 vs 1.4849.
+
+    This function used to take a single ``model`` and the caller passed
+    ``oracle.model``. That silently bypassed the oracle's own ensemble dispatch,
+    so an ensemble build would have scored fold 0 while the query path scored
+    five -- a null and a numerator that are not the same quantity, which makes
+    every percentile from it meaningless. The signature is plural to make that
+    mistake impossible to repeat.
+
+    The softmax/expm1/window-sum is done on the accelerator for speed, but the
+    first batch of every run is cross-checked against
+    ``scoring.expected_counts_profile`` + ``scoring.score_window_sum`` -- the same
+    helpers ``oracle.predict()`` uses -- so the fast path cannot drift from the
+    transform the query side applies.
     """
+    if not isinstance(models, (list, tuple)):
+        models = [models]
     centre = CATV1_OUTPUT_LENGTH // 2
     half = CATV1_SCORING_WINDOW_BP // 2
     lo, hi = max(0, centre - half), min(CATV1_OUTPUT_LENGTH, centre + half + 1)
@@ -407,24 +451,38 @@ def forward_window_sums(model, X, torch, perbin_idx=None):
     with torch.no_grad():
         for i in range(0, X.shape[0], args.batch_size):
             batch = X[i:i + args.batch_size]
-            if args.sequences_on_cpu:
-                batch = batch.to(model_device(model, torch))
-            logits, log_counts = model(batch)
-            logits = logits.float()[:, 0, :]
-            probs = torch.softmax(logits - logits.mean(dim=1, keepdim=True), dim=1)
-            counts = torch.expm1(log_counts.float()[:, 0])
-            profiles = probs * counts[:, None]
+            acc = None
+            first_logits = first_counts = None
+            for model in models:
+                b = batch
+                if args.sequences_on_cpu:
+                    b = b.to(model_device(model, torch))
+                logits, log_counts = model(b)
+                logits = logits.float()[:, 0, :]
+                probs = torch.softmax(logits - logits.mean(dim=1, keepdim=True), dim=1)
+                counts = torch.expm1(log_counts.float()[:, 0])
+                profiles = probs * counts[:, None]
+                acc = profiles if acc is None else acc + profiles
+                if first_logits is None:
+                    first_logits, first_counts = logits, log_counts
+            profiles = acc / len(models)
 
             sums.append(profiles[:, lo:hi].sum(dim=1).cpu().numpy())
             if perbin_idx is not None:
                 perbins.append(profiles[:, perbin_idx].cpu().numpy())
 
             if not checked:
+                # Cross-check the single-fold transform against the shared
+                # helpers. With an ensemble the accelerator path and the helper
+                # path are compared on fold 0 only -- the averaging itself is
+                # covered by tests/test_cherimoya_ensemble.py.
                 reference = expected_counts_profile(
-                    logits.cpu().numpy()[:, None, :], log_counts.float().cpu().numpy())
-                mine = profiles.cpu().numpy()
-                numpy.testing.assert_allclose(mine, reference, rtol=1e-4, atol=1e-5)
-                assert abs(score_window_sum(reference[0]) - float(sums[0][0])) < 1e-3
+                    first_logits.cpu().numpy()[:, None, :],
+                    first_counts.float().cpu().numpy())
+                if len(models) == 1:
+                    numpy.testing.assert_allclose(
+                        profiles.cpu().numpy(), reference, rtol=1e-4, atol=1e-5)
+                    assert abs(score_window_sum(reference[0]) - float(sums[0][0])) < 1e-3
                 checked = True
 
     return (numpy.concatenate(sums),
@@ -477,7 +535,10 @@ def enumerate_tracks() -> list:
         specs = specs[:args.limit]
 
     # A silently truncated build reads like a complete one; say so.
-    logger.info("Will score %d tracks (fold %d, dhs=%s)",
+    # %s not %d for fold: it may be the "ensemble" sentinel, and a %d there
+    # raises inside logging, which prints a scary multi-line traceback per call
+    # while the build carries on fine -- pure noise that hides real errors.
+    logger.info("Will score %d tracks (fold %s, dhs=%s)",
                 len(specs), args.fold, args.dhs)
     return specs
 
@@ -568,7 +629,7 @@ def build(do_variants: bool, do_baselines: bool):
     for idx, spec in enumerate(specs):
         t0 = time.time()
         logger.info("=" * 60)
-        logger.info("Track %d/%d: %s (fold %d)", idx + 1, n_tracks,
+        logger.info("Track %d/%d: %s (fold %s)", idx + 1, n_tracks,
                     spec["track_id"], args.fold)
         try:
             oracle.load_pretrained_model(
@@ -582,7 +643,10 @@ def build(do_variants: bool, do_baselines: bool):
         _n_attempted += 1
         _n_loaded += 1
 
-        model = oracle.model
+        # Plural: with fold="ensemble" the oracle holds five checkpoints and
+        # all five must be scored, or the null is fold 0 under an ensemble
+        # query path. getattr keeps single-fold builds working unchanged.
+        models = getattr(oracle, "_models", None) or [oracle.model]
         # One try spans the variant pass AND the baseline pass for this track, so
         # a failure in the second used to leave the first already committed --
         # effect samples present with no matching summary/perbin (#123). Stage
@@ -590,15 +654,15 @@ def build(do_variants: bool, do_baselines: bool):
         staged = StagedSamples()
         try:
             if do_variants and n_var:
-                ref_sums, _ = forward_window_sums(model, X_ref, torch)
-                alt_sums, _ = forward_window_sums(model, X_alt, torch)
+                ref_sums, _ = forward_window_sums(models, X_ref, torch)
+                alt_sums, _ = forward_window_sums(models, X_alt, torch)
                 for r, a in zip(ref_sums, alt_sums):
                     staged.add(idx, abs(compute_effect(float(r), float(a))),
                                reservoir=0)
 
             if do_baselines and len(base_seqs):
                 base_sums, base_bins = forward_window_sums(
-                    model, X_base, torch, perbin_idx=perbin_idx)
+                    models, X_base, torch, perbin_idx=perbin_idx)
                 for s in base_sums:
                     staged.add(idx, float(s), reservoir=1)
                 staged.add_batch(idx, base_bins.reshape(-1), reservoir=2)

@@ -36,7 +36,26 @@ CATV1_TRIMMING = (CATV1_INPUT_LENGTH - CATV1_OUTPUT_LENGTH) // 2
 # partition as the ENCODE ChromBPNet annotations, so the correspondence
 # is exact rather than approximate.
 CATV1_N_FOLDS = 5
-CATV1_DEFAULT_FOLD = 0
+
+# Sentinel for `fold=`: average the expected-counts predictions of all five
+# folds. CATv1's model card offers both usages -- "use a single fold (e.g.
+# fold_0), or average the predictions of all five folds for a more robust
+# estimate" -- and the ensemble is what chorus ships, because a single fold is a
+# sample rather than the model. Measured at rs12740374, ENCSR149XIL: the five
+# folds give linear ratios 3.469 / 2.393 / 2.716 / 2.765 / 2.768 and absolute
+# reference counts spanning 2.49x for the identical sequence, so which fold you
+# pick moves the answer more than most things chorus guards against.
+#
+# NOTE the mean is over the expected-counts PROFILES, not over the two raw heads
+# and not over per-fold log2FCs -- see scoring.heads_equivalent_to_profile. The
+# three give different answers (1.4588 / -- / 1.4849 log2FC at rs12740374) and
+# only the first is "average the predictions".
+CATV1_ENSEMBLE = "ensemble"
+# The shipped default. Must match what the background CDFs were built with:
+# a query scored one way against a null built the other way is not a
+# percentile of anything. build_backgrounds_cherimoya.py --fold defaults here
+# too, and tests/test_cherimoya_ensemble.py pins the two together.
+CATV1_DEFAULT_FOLD = CATV1_ENSEMBLE
 
 # CATv1 is human-only.  Unlike ChromBPNet (which also ships mouse
 # developmental models), every CATv1 experiment is GRCh38.
