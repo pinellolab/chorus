@@ -645,3 +645,87 @@ model.
 **Open decision for the maintainer:** should Cherimoya use the 5-fold ensemble CATv1
 recommends? It closes 80% of the gap and is the upstream-recommended usage, but the
 background CDFs were built on fold 0, so it carries a rebuild.
+
+---
+
+# Addendum F — the release audit's last eight findings, and a flake I had misdiagnosed (2026-08-09)
+
+Closes the 12-dimension release audit. The eight remaining findings are recorded in full in
+the commit message of `db4f312`; the short version is that **seven of the eight were reports
+or tools describing something other than what they had actually done**, which is the same
+failure mode as the headline sampler defect at the top of this document:
+
+| # | what it claimed | what was true |
+|---|---|---|
+| 1 | summary box named the subject gene's effect | the winning track's region label was stripped; `region_swap` (subject SORT1) reported **−7.96** — the *GSTM2* TSS row, while SORT1's own TSS is **+0.752**, opposite sign. 8 of 13 rehydratable reports affected → 0 of 13 |
+| 2 | batch detail rows reconcile with the headline | `track_scores` keyed on `assay_id` alone, dropping the per-gene CAGE rows from the detail while they still counted toward `max_effect`. rs7528419's headline cited a row its own file gives as the opposite sign |
+| 3 | `score_ism` succeeded | returned an all-zero motif profile as SUCCESS when every substitution failed |
+| 4 | "no score available" | a false note on **every** call — an allele-keyed dict indexed by assay id, so the guard always fell through. Enformer shipped `{ref 2.07, alt 2.46, effect 0.39}` beside "no score" |
+| 5 | `--verify-against` verified content | a cardinality check: 5 fake track_ids with all-zero CDFs and no `build_config` earned "VERIFIED". **I had been citing this as proof of population identity** |
+| 6 | one activity population, 31,500 positions | false for 5 of 8 oracles, and arithmetically impossible from the artefact alone (chrombpnet offered 34,004, sei 29,004). Now three derived populations with their own hashes |
+| 7–8 | three notebook figures | one printed "Max signal: 1.0000" (true by construction) beside a raw 22.46; one compared two panels of **the same data** in different units; one **inverted** its own Sei ranking, rendering the 2.76 tracks flat and the 0.35 tracks full-height |
+
+Each fix was re-measured by an independent checker that also reverted it in a scratch copy to
+confirm the new test fails without it: 8 of 8 hold, 8 of 8 have load-bearing tests, 0
+out-of-remit edits. All 14 walkthroughs, 4 multi-oracle passes and 6 notebooks regenerated on
+GPU (13 of 13 steps rc=0, 0 notebook errors). The 21 unique pinned rows that remain all carry
+an exceedance ratio, which is the intended end state.
+
+## A flake I had misdiagnosed, twice over
+
+`test_cherimoya_integration.py::test_predict_matches_direct_window_scoring` was the single
+failure in the final 1,482-test sweep. Its committed docstring blamed **concurrent GPU load**
+and instructed the reader not to loosen the tolerance, citing "on a quiet machine it passes
+repeatedly (3/3 verified)".
+
+That explanation was wrong. On an **idle** GPU the test fails about half the time — 4 runs
+gave pass, pass, then max *relative* differences of **5.6e-4** and **4.2e-4** against
+`rtol=1e-5`. Everything the docstring offered as mechanism was then ruled out:
+
+- **Not the CPU fallback** — the `_last_device` assert passed on every run.
+- **Not cross-process nondeterminism as such** — three consecutive `_forward_windows` calls,
+  each five fresh subprocesses, agreed **bit-exactly** (0.0e+00).
+- **Not batch shape or window cutting** — `_window_sequences` returns one window identical to
+  the query sequence, so both paths submit the same input.
+- **Not a persistent-worker warm-up** — there is no worker; every call is a fresh subprocess.
+- **In-process the two paths agree exactly** — 0.0e+00 on both the per-position profile and
+  the 501 bp sum, 6/6 iterations.
+
+A mirrored probe localised it: iteration 0 differed at 8.5e-5 and iterations 1–3 were
+bit-identical. So the residual is **sporadic, low-amplitude non-reproducibility inside
+Cherimoya's Triton path across fresh processes** (≤5.6e-4 relative observed), landing on
+whichever call happens to hit it. `rtol=1e-5` was asserting cross-process bit reproducibility
+that this path does not provide — a coin flip presented as a gate.
+
+**Fix: two arms rather than one loosened one.**
+
+1. The env-mode test — the mode users get by default — keeps its full structure at
+   `rtol=5e-3`, ~9× the measured noise floor. This does not blind it: averaging per-fold
+   log2FCs instead of profiles moves rs12740374 by ~2%, `exp` for `expm1` shifts the sum by
+   exactly 1.0 count, and a trim-offset error is gross. 4 of 4 runs pass.
+2. A new `test_predict_matches_direct_window_scoring_in_process` asserts the invariant where
+   it is exactly true, at `rtol=1e-7`. `chorus-cherimoya` has no `pytest` and installing dev
+   deps into a pinned oracle env was refused, so the comparison runs *there* as a subprocess
+   and is asserted *here* — the same split `_pinned_device` already used. It therefore runs in
+   the ordinary base-env sweep, in 17 s, rather than being an exactness claim nothing executes.
+   Negative control: a 1 bp trim shift trips it at **6.6e-1**, six orders above the noise floor.
+
+Two notes on scope. The builder is single-process and was separately verified bit-reproducible
+(`b0d4ae6`), so this does not implicate the shipped CDFs. And this is the **second** time in
+this cycle I attributed a test failure to GPU contention that was not GPU contention —
+`3b9e98d` corrected the first, where 7 failures were `test_mcp.py` leaving the state singleton
+holding `reference_fasta=None`. Both times the real cause was reachable in under an hour of
+measurement. The pattern to distrust is *"the machine was busy"* as a first explanation.
+
+## Still open at the end of this cycle
+
+- **Two HuggingFace tokens need rotating by the maintainer** — they were pasted into a session
+  transcript in plaintext. The authenticated token ("Integration chorus", write, `lucapinello`)
+  was never pasted and is clean. The LDlink token was additionally printed by the code path
+  fixed in `edc344c`, so it was exposed in any transcript where an LDlink call failed.
+- **The documented test command is red while CI is green**, because CI deselects the
+  integration tests. That is a real inconsistency in what "the tests pass" means, and it is a
+  maintainer decision whether to change the docs or the CI selection.
+- `effect_sha256` remains circular (Addendum E) — the stamp is copied post-hoc, so it cannot
+  independently prove two oracles drew the same population. The conclusion it was cited for
+  was separately re-established; the stamp's semantics or its documentation should be fixed.
