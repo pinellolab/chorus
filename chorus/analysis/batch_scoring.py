@@ -225,7 +225,8 @@ class BatchResult:
         lines += [
             "",
             "Each track shows: **Ref** (reference allele prediction), **Alt** (alternate allele prediction), "
-            "**log2FC** (log2 fold-change alt/ref), **Effect %ile** (ranked against ~10K random SNPs).",
+            "**log2FC** (log2 fold-change alt/ref), **Effect %ile** (ranked against a "
+            "per-track background of ~18,000 variants in assay-matched regulatory regions).",
             "",
             "**Track identifiers** (for tracing back to oracle data):",
             "",
@@ -379,7 +380,8 @@ class BatchResult:
                      "<b>Alt</b> (alternate allele prediction), "
                      "<b>Effect</b> (signed effect — formula shown in the chip next "
                      "to each track's header; see the glossary at the top of the "
-                     "page), <b>Effect %ile</b> (ranked against ~10K random SNPs). "
+                     "page), <b>Effect %ile</b> (ranked against a per-track background "
+                     "of ~18,000 variants in assay-matched regulatory regions). "
                      "Green = gain, red = loss.</p>")
 
     # ── JSON ────────────────────────────────────────────────────────────

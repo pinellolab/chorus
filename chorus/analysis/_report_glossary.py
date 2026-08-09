@@ -174,9 +174,11 @@ def render_how_to_read(
     if include_percentile:
         parts.append(
             "<dt>Effect %ile</dt><dd>How unusual is this variant's effect? "
-            "Ranked against ~10,000 random SNPs scored genome-wide. "
-            "<code>95%</code> means the effect is larger than 95% of random "
-            "variants. Range [0,1] for unsigned layers (chromatin, TF, histone, "
+            "Ranked against the effects of ~18,000 variants sampled from the "
+            "regulatory regions this assay measures \u2014 cCREs, DHS summits, "
+            "promoters and gene features, not uniformly random positions. "
+            "<code>95%</code> means the effect is larger than 95% of that "
+            "background. Range [0,1] for unsigned layers (chromatin, TF, histone, "
             "TSS, splicing); [−1,1] for signed layers (gene expression, MPRA).</dd>"
         )
 

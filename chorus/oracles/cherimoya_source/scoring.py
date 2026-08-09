@@ -141,9 +141,22 @@ def heads_equivalent_to_profile(
 
     with numpy.errstate(divide="ignore"):
         logits = numpy.log(probs)
-    # log(0) -> -inf is correct (softmax sends it to 0) but propagates nan if a
-    # whole row is -inf, which the uniform fallback above already prevents.
-    logits = numpy.where(numpy.isfinite(logits), logits, -745.0)
+
+    # log(0) is -inf, which softmax would map to 0 correctly -- but
+    # expected_counts_profile MEAN-CENTRES before exponentiating, so a single
+    # absolute floor blows up. With a floor of -745 and a maximally peaked profile
+    # (one non-zero bin) the row mean is about -743, centring lifts the peak to
+    # +743, and exp overflows to inf: the round-trip returns nan for a profile that
+    # is merely sparse. Found by tests/test_cherimoya_ensemble.py, which feeds
+    # exactly that shape.
+    #
+    # So floor RELATIVE to the row's own maximum. exp(-60) is 9e-27, which softmax
+    # sends to zero for any realistic profile length, while bounding the centred
+    # spread to ~60 and keeping exp safe whatever the sparsity.
+    finite_max = numpy.where(numpy.isfinite(logits), logits, -numpy.inf).max(
+        axis=1, keepdims=True)
+    floor = numpy.where(numpy.isfinite(finite_max), finite_max - 60.0, 0.0)
+    logits = numpy.where(numpy.isfinite(logits), logits, numpy.broadcast_to(floor, logits.shape))
 
     log_counts = numpy.log1p(total)
     return logits[:, None, :], log_counts[:, None]

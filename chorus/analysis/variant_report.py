@@ -458,8 +458,11 @@ class VariantReport:
             lines.append("**Score guide:**")
             if has_quantile:
                 lines.append(
-                    "- **Effect %ile**: Variant effect ranked against ~10K random SNPs. "
-                    "0.95 = stronger than 95% of random variants."
+                    "- **Effect %ile**: Variant effect ranked against a per-track "
+                    "background of ~18,000 variants sampled from the regulatory "
+                    "regions this assay measures (cCREs, DHS summits, promoters, gene "
+                    "features) \u2014 not uniformly random positions. 0.95 = stronger "
+                    "than 95% of that background."
                 )
                 if any(ts.effect_exceedance is not None for ts in scores):
                     lines.append(
@@ -467,9 +470,9 @@ class VariantReport:
                         "background effect for that track, so the percentile is "
                         "clamped and cannot rank it further. The multiplier gives the "
                         "distance to that ceiling — `1.11×` is 11% beyond the most "
-                        "extreme of ~10K background effects. Common for variants that "
-                        "create or destroy a complete transcription-factor motif, "
-                        "which random genomic positions rarely do."
+                        "extreme background effect for that track. Common for variants "
+                        "that create or destroy a complete transcription-factor motif, "
+                        "which even a regulatory-region background rarely contains."
                     )
             if has_baseline:
                 lines.append(
@@ -1670,7 +1673,11 @@ def _build_html_report(report: "VariantReport") -> str:
             parts.append(f"<th>Track</th><th>Cell Type</th>"
                          f"<th>Ref</th><th>Alt</th><th>{effect_header}</th>")
             if has_quantile:
-                parts.append('<th title="Variant effect percentile vs random SNPs">Effect %ile</th>')
+                parts.append(
+                    '<th title="Variant effect percentile against a per-track background '
+                    'of ~18,000 variants in assay-matched regulatory regions">'
+                    'Effect %ile</th>'
+                )
             if has_baseline:
                 parts.append('<th title="Reference signal activity percentile genome-wide">Activity %ile</th>')
             parts.append("<th>Interpretation</th></tr></thead><tbody>")

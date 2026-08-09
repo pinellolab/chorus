@@ -38,7 +38,20 @@ WALKTHROUGHS = Path(__file__).resolve().parent.parent / "examples" / "walkthroug
 
 # A signed decimal with at least two fraction digits: +1.376, -0.111, +3.316.
 # Two digits minimum keeps out version strings, section numbers and p-values.
-_EFFECT = re.compile(r"(?<![\w.])([+-]\d+\.\d{2,})(?![\w])")
+#
+# The sign class must include U+2212 MINUS SIGN, not just ASCII hyphen-minus. Markdown
+# written by a human -- or pasted from a rendered table -- routinely uses the typographic
+# minus, and an ASCII-only class silently sees NOTHING: this test reported
+# SKIPPED "no effect-size claims" for region_swap/README.md, a file that is *entirely* a
+# table of five effect claims, all of them stale, all written with U+2212. A guard that
+# skips a file is indistinguishable from a guard that passes it.
+_MINUS = "\u2212"
+_EFFECT = re.compile(rf"(?<![\w.])([+\-{_MINUS}]\d+\.\d{{2,}})(?![\w])")
+
+
+def _normalise_sign(claim: str) -> str:
+    """U+2212 -> ASCII '-' so float() accepts it."""
+    return claim.replace(_MINUS, "-")
 
 # Numbers that appear in prose for reasons other than quoting this artefact.
 _ALLOWED = {
@@ -91,7 +104,7 @@ def _cases():
 @pytest.mark.parametrize("readme", _cases())
 def test_readme_effect_sizes_appear_in_the_artefacts(readme: Path):
     claims = [c for c in _EFFECT.findall(readme.read_text())
-              if c[:5] not in _ALLOWED]
+              if _normalise_sign(c)[:5] not in _ALLOWED]
     if not claims:
         pytest.skip("no effect-size claims")
 
@@ -111,7 +124,7 @@ def test_readme_effect_sizes_appear_in_the_artefacts(readme: Path):
 
     stale = []
     for claim in claims:
-        want = float(claim)
+        want = float(_normalise_sign(claim))
         if not any(abs(want - got) <= _TOLERANCE for got in available):
             stale.append(claim)
 
