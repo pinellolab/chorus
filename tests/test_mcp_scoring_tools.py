@@ -20,8 +20,22 @@ full window maps to bin 0.
 
 This is the fabricated-`resolution` hazard the repo already documents elsewhere ("the
 field fabricated as 1 for the track that caused the 131 MB incident"), in a second place.
-Rather than change LegNet's declared geometry — which would move its background and every
-committed artefact — the tools now explain the null.
+
+**RESOLVED 2026-08-09, and the resolution reversed the decision recorded here.** The
+original call was: "rather than change LegNet's declared geometry — which would move its
+background and every committed artefact — the tools now explain the null." The premise was
+false. `resolution = 50` is LegNet's sliding STEP, correct for a multi-window query and
+wrong for the single-window case; deriving it from the array
+(`len(prediction_interval) // len(preds)`) gives 200 for one window and leaves 50 for six
+or eight. No committed artefact moved — the shipped LegNet pkl already carried
+`resolution = 200`, because `regenerate_multioracle.py` sets `step = win = 200` itself, and
+a full sweep confirmed no artefact diff.
+
+So the sub-region path now WORKS rather than explaining itself, and the tests below assert
+that. `test_legnets_declared_geometry_disagrees_with_its_values` was written to trip exactly
+when this happened — "a deliberate coupling: the explanation and the defect must change
+together" — and it did. The null-explanation machinery is still exercised, on a region that
+genuinely does not overlap, which is a real null rather than a manufactured one.
 """
 from __future__ import annotations
 
@@ -78,19 +92,26 @@ def test_the_full_window_scores(loaded):
     assert "score_notes" not in out, "a successful score must not carry a null note"
 
 
-def test_a_null_score_explains_itself_rather_than_reading_as_success(loaded):
-    """The defect. A populated `scores` key with None inside reads as success."""
+def test_a_sub_region_now_scores_instead_of_returning_a_null(loaded):
+    """What the geometry fix bought.
+
+    This asserted `scores[TRACK] is None` plus a well-crafted note explaining why.
+    A good response to a defect that was believed unfixable; the defect turned out to
+    be one line. LegNet's single 200 bp value now maps to bin 0 for any sub-region of
+    its window, so the tool returns the number.
+    """
     out = _call("score_prediction_region", oracle_name="legnet", region=REGION,
                 assay_ids=[TRACK], score_region="chr1:109274918-109275018")
-    assert out["scores"][TRACK] is None
-    note = out.get("score_notes", {}).get(TRACK)
-    assert note, (
-        "score is None with no note — an agent cannot tell this from a real zero. "
-        f"response keys: {sorted(out)}"
+    score = out["scores"][TRACK]
+    assert score is not None, (
+        f"sub-region scoring regressed to None; notes={out.get('score_notes')}"
     )
-    # The note must name the arithmetic, not just say "failed".
-    assert "value(s)" in note and "implies" in note, note
-    assert "score the full window" in note.lower() or "whole window" in note.lower()
+    assert isinstance(score, (int, float)) and score == score  # not NaN
+    # And no leftover explanation for a null that no longer happens.
+    assert not out.get("score_notes", {}).get(TRACK), (
+        f"a null-explanation note survives on a successful score: "
+        f"{out['score_notes'][TRACK]!r}"
+    )
 
 
 def test_a_non_overlapping_region_is_reported_as_such(loaded):
@@ -114,10 +135,12 @@ def test_both_variant_scoring_modes_explain_a_null(loaded, mode):
               else {"score_region": "chr1:109274918-109275018"})
     out = _call("score_variant_effect_at_region", **kw)
     inner = out["scores"]["alt_1"][TRACK]
-    assert inner["ref_score"] is None and inner["effect"] is None
-    note = out.get("score_notes", {}).get(TRACK)
-    assert note, f"{mode}: all scores null with no note; keys {sorted(out)}"
-    assert "no positional resolution" in note or "implies" in note, note
+    assert inner["ref_score"] is not None, (
+        f"{mode}: ref_score is still None; notes={out.get('score_notes')}"
+    )
+    assert inner["alt_score"] is not None and inner["effect"] is not None
+    # effect must be the difference the payload claims, not an independent number.
+    assert abs((inner["alt_score"] - inner["ref_score"]) - inner["effect"]) < 1e-9, inner
 
 
 def test_the_variant_tool_returns_the_variant_it_was_asked_about(loaded):
@@ -134,25 +157,29 @@ def test_the_variant_tool_returns_the_variant_it_was_asked_about(loaded):
 # ---------------------------------------------------------------------------
 
 
-def test_legnets_declared_geometry_disagrees_with_its_values(loaded):
-    """Pinned so the tools' notes stay truthful, and so a fix trips this test.
+def test_legnets_declared_geometry_agrees_with_its_values(loaded):
+    """The inverse of what this test used to assert, and that is the point.
 
-    If LegNet's declared resolution is ever corrected to the full window span, this
-    fails — at which point the notes above are wrong and the sub-region path should
-    start working. That is a deliberate coupling: the explanation and the defect must
-    change together.
+    It previously pinned the DEFECT (`implied == 4` bins against 1 value) with a note
+    saying a fix should trip it, "a deliberate coupling: the explanation and the defect
+    must change together". The fix came, this tripped, and the coupling worked as
+    designed — so it now pins the corrected geometry instead.
+
+    `n_values * resolution == len(prediction_interval)` is the invariant that makes
+    `positions`, `pos2bin` and every IGV span mean anything.
     """
     import chorus.mcp.server as server
     from chorus.mcp.server import _parse_region
 
     oracle = server._state().get_oracle("legnet")
-    pred = oracle.predict(_parse_region(REGION), [TRACK])
-    tr = pred[TRACK]
+    tr = oracle.predict(_parse_region(REGION), [TRACK])[TRACK]
     iv = tr.prediction_interval.reference
-    implied = (iv.end - iv.start) // tr.resolution
-    assert len(tr.values) == 1
-    assert implied == 4, implied
-    assert len(tr.values) != implied, (
-        "LegNet's declared geometry now agrees with its values — the sub-region path "
-        "should work, and the null-explanation notes need revisiting"
+    span = iv.end - iv.start
+    assert len(tr.values) == 1, "a 200 bp query should give LegNet one value"
+    assert tr.resolution == span, (
+        f"resolution {tr.resolution} over a {span} bp interval holding "
+        f"{len(tr.values)} value(s) implies {span // tr.resolution} bins that do not "
+        f"exist. Derive it from the array, not from the sliding step."
     )
+    assert len(tr.values) * tr.resolution == span
+    assert tr.pos2bin("chr1", 109_274_968) == 0

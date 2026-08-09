@@ -35,6 +35,8 @@ import pytest
 
 from chorus.oracles.cherimoya import CherimoyaOracle
 from chorus.oracles.cherimoya_source.catv1_globals import (
+    CATV1_ENSEMBLE,
+    CATV1_N_FOLDS,
     CATV1_INPUT_LENGTH,
     CATV1_OUTPUT_LENGTH,
     CATV1_TRIMMING,
@@ -129,7 +131,13 @@ def test_default_resolution_is_the_chrombpnet_matched_experiment(oracle):
     assert oracle.assay == "DNASE"
     assert oracle.cell_type == "K562"
     assert oracle.track_id == TEST_TRACK
-    assert oracle.fold == 0
+    # The default is the 5-fold ensemble, not fold 0. CATv1's model card offers
+    # either; chorus takes the ensemble because a single checkpoint is a sample
+    # rather than the model -- at rs12740374 the five folds span accessibility
+    # ratios 2.39-3.47 for the identical sequence -- and the background CDFs are
+    # built to match. See tests/test_cherimoya_ensemble.py.
+    assert oracle.fold == CATV1_ENSEMBLE
+    assert len(oracle.model_paths) == CATV1_N_FOLDS
     assert oracle.loaded
 
 
@@ -154,7 +162,10 @@ def test_predict_returns_finite_values(oracle, prediction_values):
     assert track.cell_type == "K562"
     assert track.resolution == 1
     assert track.metadata["encode_id"] == TEST_ACCESSION
-    assert track.metadata["fold"] == 0
+    assert track.metadata["fold"] == CATV1_ENSEMBLE
+    # assay_id must be the canonical ASSAY:ENCSR, which is how the background rows
+    # are keyed; a bare accession resolves to no CDF row and loses both percentiles.
+    assert track.assay_id == TEST_TRACK
 
 
 def test_predicted_window_lands_at_the_trim_offset(prediction_values):
