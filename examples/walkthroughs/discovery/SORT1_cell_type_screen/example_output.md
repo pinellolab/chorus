@@ -22,7 +22,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: top 30 tracks for HepG2
 - **Cell types**: HepG2
-- **Generated**: 2026-08-09 13:02 UTC
+- **Generated**: 2026-08-09 17:06 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -31,7 +31,7 @@
 **Gene**: SORT1
 **Other nearby genes**: PSRC1, CELSR2, MYBPHL, SARS1
 
-**Summary**: TSS activity (CAGE/PRO-CAP): very strong increase (+1.50, CAGE:HepG2); Chromatin accessibility (DNASE/ATAC): very strong opening (+1.33, DNASE:HepG2); Histone modifications (ChIP-Histone): very strong mark gain (+1.25, CHIP:H3K27ac:HepG2); Transcription factor binding (ChIP-TF): very strong binding gain (+1.02, CHIP:ARID3A:HepG2); Gene expression (RNA-seq): strong increase (+0.47, RNA:HepG2).
+**Summary**: Strongest effect per layer anywhere in the prediction window (not necessarily SORT1's own track). TSS activity (CAGE/PRO-CAP): very strong increase (+1.50, CAGE:HepG2 — variant site); Chromatin accessibility (DNASE/ATAC): very strong opening (+1.33, DNASE:HepG2); Histone modifications (ChIP-Histone): very strong mark gain (+1.25, CHIP:H3K27ac:HepG2); Transcription factor binding (ChIP-TF): very strong binding gain (+1.02, CHIP:ARID3A:HepG2); Gene expression (RNA-seq): strong increase (+0.47, RNA:HepG2 — PSRC1 (exons)).
 
 #### Chromatin accessibility (DNASE/ATAC)
 
@@ -120,7 +120,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: top 6 tracks for MCF 10A
 - **Cell types**: MCF 10A
-- **Generated**: 2026-08-09 13:02 UTC
+- **Generated**: 2026-08-09 17:07 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -129,7 +129,7 @@
 **Gene**: SORT1
 **Other nearby genes**: PSRC1, CELSR2, MYBPHL, SARS1
 
-**Summary**: Chromatin accessibility (DNASE/ATAC): very strong opening (+1.44, DNASE:MCF 10A); Gene expression (RNA-seq): moderate increase (+0.15, RNA:MCF 10A).
+**Summary**: Strongest effect per layer anywhere in the prediction window (not necessarily SORT1's own track). Chromatin accessibility (DNASE/ATAC): very strong opening (+1.44, DNASE:MCF 10A); Gene expression (RNA-seq): moderate increase (+0.15, RNA:MCF 10A — PSRC1 (exons)).
 
 #### Chromatin accessibility (DNASE/ATAC)
 
@@ -183,7 +183,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: top 3 tracks for amniotic epithelial cell
 - **Cell types**: amniotic epithelial cell
-- **Generated**: 2026-08-09 13:02 UTC
+- **Generated**: 2026-08-09 17:07 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -192,7 +192,7 @@
 **Gene**: SORT1
 **Other nearby genes**: PSRC1, CELSR2, MYBPHL, SARS1
 
-**Summary**: Chromatin accessibility (DNASE/ATAC): very strong opening (+2.90, DNASE:amniotic epithelial cell); TSS activity (CAGE/PRO-CAP): strong decrease (-0.61, CAGE:amniotic epithelial cell).
+**Summary**: Strongest effect per layer anywhere in the prediction window (not necessarily SORT1's own track). Chromatin accessibility (DNASE/ATAC): very strong opening (+2.90, DNASE:amniotic epithelial cell); TSS activity (CAGE/PRO-CAP): strong decrease (-0.61, CAGE:amniotic epithelial cell — variant site).
 
 #### Chromatin accessibility (DNASE/ATAC)
 

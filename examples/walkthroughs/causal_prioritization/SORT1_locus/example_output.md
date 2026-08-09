@@ -7,7 +7,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: 6 HepG2 tracks
 - **Cell types**: HepG2
-- **Generated**: 2026-08-09 13:03 UTC
+- **Generated**: 2026-08-09 17:08 UTC
 
 ## Causal Variant Prioritization Report
 
@@ -20,7 +20,7 @@
 **Top candidate**: rs12740374 (composite=0.970, max_effect=+3.316, 4 layers affected, convergence=1.00)
 The sentinel SNP itself is the top candidate.
 
-| Rank | Variant | r² | DNASE:HepG2 | CHIP:CEBPA:HepG2 | CHIP:CEBPB:HepG2 | CHIP:H3K27ac:HepG2 | CAGE:HepG2 (+) | CAGE:HepG2 (-) | Composite |
+| Rank | Variant | r² | DNASE:HepG2 | CHIP:CEBPA:HepG2 | CHIP:CEBPB:HepG2 | CHIP:H3K27ac:HepG2 | CAGE:HepG2 (+) — variant site | CAGE:HepG2 (-) — variant site | Composite |
 |------|---------|-----|---|---|---|---|---|---|-----------|
 | 1 | rs12740374 ★ | 1.00 | +1.334 (0.9964) | +2.945 (0.9998) | +3.316 (0.9995) | +1.251 (0.9992) | +1.203 (0.9979) | +1.502 (0.9983) | 0.970 |
 | 2 | rs142678968 | 0.95 | +0.015 (0.45) | +0.006 (0.26) | -0.002 (0.07) | +0.003 (0.34) | -0.102 (0.92) | -0.086 (0.90) | 0.408 |

@@ -5,7 +5,7 @@
 - **Tool**: `analyze_region_swap`
 - **Oracle**: alphagenome
 - **Tracks requested**: 4 K562 tracks
-- **Generated**: 2026-08-09 13:03 UTC
+- **Generated**: 2026-08-09 17:07 UTC
 
 ## Region Swap Analysis Report
 
@@ -16,7 +16,7 @@
 **Modification**: Replaced 1,000 bp region (chr1:109,274,501-109,275,500) with a 630 bp custom sequence
 **Modified region**: chr1:109,274,501-109,275,500 (1,000 bp)
 
-**Summary**: TSS activity (CAGE/PRO-CAP): very strong decrease (-7.96, CAGE:K562); Chromatin accessibility (DNASE/ATAC): very strong closing (-3.30, DNASE:K562); Histone modifications (ChIP-Histone): very strong mark loss (-1.48, CHIP:H3K27ac:K562).
+**Summary**: Strongest effect per layer anywhere in the prediction window (not necessarily SORT1's own track). TSS activity (CAGE/PRO-CAP): very strong decrease (-7.96, CAGE:K562 — GSTM2 TSS); Chromatin accessibility (DNASE/ATAC): very strong closing (-3.30, DNASE:K562); Histone modifications (ChIP-Histone): very strong mark loss (-1.48, CHIP:H3K27ac:K562).
 
 #### Chromatin accessibility (DNASE/ATAC)
 

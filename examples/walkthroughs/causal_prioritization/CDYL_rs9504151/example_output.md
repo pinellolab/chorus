@@ -7,7 +7,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: 21 lung-fibroblast (CL:0002553) tracks
 - **Cell types**: fibroblast of lung, lung fibroblast
-- **Generated**: 2026-08-09 13:04 UTC
+- **Generated**: 2026-08-09 17:08 UTC
 
 ## Causal Variant Prioritization Report
 
@@ -20,7 +20,7 @@
 **Top candidate**: rs9504151 (composite=0.999, max_effect=-1.368, 3 layers affected, convergence=1.00)
 The sentinel SNP itself is the top candidate.
 
-| Rank | Variant | r² | CAGE:lung fibroblast (+) | CAGE:lung fibroblast (-) | CHIP:H2AFZ:fibroblast of lung | CHIP:H3K27ac:fibroblast of lung | CHIP:H3K27me3:fibroblast of lung | CHIP:H3K36me3:fibroblast of lung | CHIP:H3K4me2:fibroblast of lung | CHIP:H3K4me3:fibroblast of lung | CHIP:H3K79me2:fibroblast of lung | CHIP:H3K9ac:fibroblast of lung | CHIP:CTCF:fibroblast of lung | DNASE:fibroblast of lung | RNA:fibroblast of lung (+) | RNA:fibroblast of lung (-) | RNA:fibroblast of lung | RNA:fibroblast of lung (+) | RNA:fibroblast of lung (-) | SPLICE_SITES:fibroblast of lung (+) | SPLICE_SITES:fibroblast of lung (-) | SPLICE_SITES:fibroblast of lung (+) | SPLICE_SITES:fibroblast of lung (-) | Composite |
+| Rank | Variant | r² | CAGE:lung fibroblast (+) — variant site | CAGE:lung fibroblast (-) — variant site | CHIP:H2AFZ:fibroblast of lung | CHIP:H3K27ac:fibroblast of lung | CHIP:H3K27me3:fibroblast of lung | CHIP:H3K36me3:fibroblast of lung | CHIP:H3K4me2:fibroblast of lung | CHIP:H3K4me3:fibroblast of lung | CHIP:H3K79me2:fibroblast of lung | CHIP:H3K9ac:fibroblast of lung | CHIP:CTCF:fibroblast of lung | DNASE:fibroblast of lung | RNA:fibroblast of lung (+) — PRP4K (exons) | RNA:fibroblast of lung (-) — PRP4K (exons) | RNA:fibroblast of lung — PRP4K (exons) | RNA:fibroblast of lung (+) — PRP4K (exons) | RNA:fibroblast of lung (-) — PRP4K (exons) | SPLICE_SITES:fibroblast of lung (+) | SPLICE_SITES:fibroblast of lung (-) | SPLICE_SITES:fibroblast of lung (+) | SPLICE_SITES:fibroblast of lung (-) | Composite |
 |------|---------|-----|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|-----------|
 | 1 | rs9504151 ★ | 1.00 | -0.127 (0.95) | -0.027 (0.68) | -0.111 (0.97) | -1.194 (0.9991) | +0.375 (0.9981) | +0.003 (0.36) | -0.443 (0.9928) | -0.337 (0.9942) | -0.021 (0.86) | -0.372 (0.9979) | -0.011 (0.42) | -1.368 (0.9924) | -0.002 (-0.83) | -0.000 | -0.002 (-0.83) | -0.001 (-0.75) | -0.000 | -0.000 | -0.000 | -0.000 | -0.000 | 0.999 |
 | 2 | rs658325 | 1.00 | +0.020 (0.58) | -0.043 (0.80) | +0.004 (0.29) | -0.177 (0.97) | +0.024 (0.87) | +0.017 (0.88) | -0.202 (0.97) | -0.062 (0.93) | +0.004 (0.41) | -0.032 (0.92) | -0.027 (0.68) | -1.105 (0.99) | +0.001 | +0.000 | +0.000 | +0.001 | +0.000 | -0.000 | -0.000 | -0.000 | -0.000 | 0.691 |

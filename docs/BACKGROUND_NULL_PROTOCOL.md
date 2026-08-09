@@ -5,6 +5,13 @@ All 8 oracles rebuilt, verified and swapped into place on 2026-08-07; provenance
 schema 4. §10 records the final state and what remains open. Update this document in the
 same commit as any change it describes.
 
+⚠️ **The stamped activity population was corrected on 2026-08-09 and the shipped
+backgrounds must be re-stamped** (`python scripts/stamp_provenance_v4.py`) before that
+correction reaches a reader. The stamper had written `regions_genome_dominated`, 31,500
+positions, plus that artefact's sha256 into all eight files unconditionally; it is true for
+three of them. There is **one activity population per builder, not one for the fleet** —
+see §4 and §10.
+
 Every percentile chorus reports is a rank against a *background null* — a per-track
 distribution of what the same statistic looks like at positions the variant is not at.
 This document is the protocol: what the nulls are, which regions and SNPs go into them,
@@ -130,16 +137,23 @@ half was first tried that way, TF saturation went 25% → 92%.
 ## 4. Baseline (summary / perbin) regions
 
 **Composition is frozen; only scale was harmonised.** Genome-dominated, because the
-question is genome-wide activity:
+question is genome-wide activity. There are **three mixtures, not one** — read off each
+builder's sampling block, and each one confirmed against the summary sample count the
+corresponding NPZ carries:
 
-| oracle | composition | positions |
-|---|---|---|
-| enformer, borzoi | random 15,000 ∪ cCRE 11,500 ∪ TSS 3,000 ∪ gene-body 2,000 | 31,500 |
-| **alphagenome** | same proportions | **10,500 → 31,500** (harmonised 2026-08-06) |
-| chrombpnet | random ∪ cCRE ∪ DHS | unchanged |
-| cherimoya | random ∪ cCRE ∪ TSS ∪ DHS | unchanged |
-| sei, legnet | random 15,000 ∪ cCRE | unchanged |
-| epinformerseq | random ∪ cCRE ∪ TSS ∪ DHS | unchanged |
+| oracle | composition | positions | offered per track |
+|---|---|---|---|
+| enformer, borzoi | random 15,000 ∪ cCRE 11,500 ∪ TSS 3,000 ∪ gene-body 2,000 | 31,500 | 31,005 / 30,986 |
+| **alphagenome** | same, same proportions | **10,500 → 31,500** (harmonised 2026-08-06) | 30,868 |
+| chrombpnet, cherimoya | random 15,000 ∪ cCRE 11,500 ∪ TSS 3,000 ∪ **DHS 5,000**, no gene body | 34,500 | 34,004 |
+| epinformerseq | same | 34,500 | 34,002 |
+| sei, legnet | random 15,000 ∪ cCRE 11,500 ∪ TSS 3,000, **no gene body, no DHS** | 29,500 | 29,004 / 29,002 |
+
+The rightmost column is `max(summary_counts)` from the shipped NPZ, and it is the reason the
+mixtures cannot be conflated: a reservoir offered 34,004 samples per track did not draw them
+from a 31,500-position set. (ChromBPNet's 753 tracks offer up to 68,008 because its profile
+head is two-stranded and both strands are scored; AlphaGenome's RNA tracks offer 319,642
+because they emit one row per gene in the window. See §7 for the guard.)
 
 AlphaGenome's baseline was a third the size of the two oracles printed beside it in
 multi-oracle reports, so its activity percentiles were ranked against a smaller null. The
@@ -147,6 +161,13 @@ proportions were already identical, so this is a pure count increase.
 
 Baseline positions out of margin are **dropped and counted** in `drop_reasons`, not
 clamped — see §5.
+
+**Why three mixtures and not one.** Nobody chose this: each builder grew its own sampling
+block and no builder reads `reference_sets/` (§4b) — they all resample from the same seeds,
+so a difference in the block is a difference in the population, silently. It is recorded
+rather than harmonised because harmonising it means rebuilding five backgrounds, and
+**no composition change ships without a two-arm measurement** (§9). What is fixed is that
+each file now names the mixture it actually used.
 
 ---
 
@@ -197,6 +218,24 @@ distributional verifier:
 3,000 · gene-body 2,000, with its own four RNG streams (789 / 456 / 111 / 222) and a
 **10 Mb** random-position margin, wider than the SNP sets' 5 Mb. Reproduces what the
 enformer, borzoi and AlphaGenome baselines logged exactly.
+
+It is the **only** region set in the artefact, and only those three builders sample all of
+it (§4). The other five are recorded as **derivations** of it, so their populations still
+have a content hash a reader can recompute from shipped inputs:
+
+| activity population | derivation | positions | sha256 |
+|---|---|---|---|
+| `regions_genome_dominated` | the set, verbatim | 31,500 | `86ea592d46c4` |
+| `regions_genome_dominated_minus_gene_body` | drop `gene_body` | 29,500 | `ddbc4b246ab3` |
+| `regions_genome_dominated_minus_gene_body_plus_dhs` | drop `gene_body`, add 5,000 DHS summits (`sample_dhs_positions`, seed 567) | 34,500 | `ec3070d6a361` |
+
+The first two are derivable from the artefact alone; the third additionally needs
+`annotations/dhs_vocabulary_hg38.txt.gz`, and without it the stamper records **no** activity
+hash and says why, rather than claiming one. The derivation is checked against itself before
+any hash is published: recomputing the full set's sha256 from the artefact's own rows must
+reproduce the sha256 the artefact records, or nothing is stamped. Verified 2026-08-09 by
+replaying Sei's sampling block position for position — 29,500 rows hashing `ddbc4b246ab3`,
+bit-identical to the artefact minus `gene_body`.
 
 Uniform positions are the largest stratum **on purpose**: most of the genome is silent for
 most tracks, and that is what makes a real peak land as a high percentile. Tests assert
@@ -334,7 +373,15 @@ Every one of these exists because something passed all the *other* checks.
 | `abort_if_nothing_loads` | a per-track loader that has attempted 25 models and loaded none | build loop |
 | stratum-name `ValueError` | a stratum with no sampler branch | sampling |
 | annotation round-trip | positions that do not match the annotation their tag names | test |
+| `check_counts_fit_the_population` | a stamped activity population too small to have produced the samples the file carries: `max(counts) ≤ n_positions × per-position × fan-out`, per layer | stamp time + test |
 | `verify_rebuilt_backgrounds.py` | track-set changes, body drift, falling ceilings, missing retention, and **more real effects pinning than before** | before swap |
+
+`check_counts_fit_the_population` is one-sided, and that limit is worth knowing: it catches a
+population declared too **small** (chrombpnet's 68,008 summary samples against 31,500 × 2 =
+63,000; cherimoya's 34,004 and epinformerseq's 34,002 against 31,500) but not one declared
+too **large**. Sei and legnet drew a strict *subset* of what they claimed, 29,004 under
+31,500, and no inequality can see that. That side is held by `ACTIVITY_POPULATIONS` naming
+what each builder samples, which is why the two mechanisms ship together.
 
 **Where the guards were insufficient**, recorded because the pattern recurs: ChromBPNet
 once built 9 of 753 tracks and passed *every* quality gate — `rc=0`, 100% yield, exact
@@ -369,6 +416,13 @@ Add an `assay_type` branch; do not invent a layer without a statistic.
 Use the genome-dominated mixture (§4) at 31,500 positions unless the assay demands
 otherwise. **Do not** reuse the effect positions (§1).
 
+If the assay does demand otherwise, say so where the stamper can read it: add an entry to
+`ACTIVITY_POPULATIONS` in `scripts/stamp_provenance_v4.py` describing your mixture as a
+derivation of `regions_genome_dominated` (§4b). It is the only place the population is
+recorded — no builder reads the reference artefact — and a missing entry is a hard error
+rather than an inherited default, because inheriting somebody else's population is exactly
+how five oracles shipped a false one.
+
 ### Step 4 — retention
 
 Compute `N_expected = n_positions × fan_out` per layer, then:
@@ -395,9 +449,17 @@ the family that matches Step 2:
 | `snps_accessibility` | 18,672 | chrombpnet, cherimoya |
 
 This is not bookkeeping. It is what lets
-`build_reference_position_sets.py --verify-against ORACLE --backgrounds-dir DIR` prove the
-built file drew from the **same** population as its family, rather than a
-similar-looking one. A ChromBPNet run in this cycle exited 0, reported 100% yield and
+`build_reference_position_sets.py --verify-against ORACLE --backgrounds-dir DIR [--strict]`
+compare the built file with its family. Be precise about what that compares, because it
+was over-claimed here until 2026-08-09: it checks the **cardinality** of the offered SNPs
+(always), and the file's `build_config["reference_sets"]` stamp against the artefact's
+recomputed content hash and strata (when stamped — `--strict` refuses a file that is not).
+The stamp is copied out of the artefact by `stamp_provenance_v4.py`, so a match pins the
+artefact *revision* the file was stamped against; nothing in a background records the
+positions it scored, so this is **not** proof of population identity, and the closing line
+names which comparisons actually ran.
+
+A ChromBPNet run in this cycle exited 0, reported 100% yield and
 exact retention, and had built **9 of 753 tracks** — a population comparison was the only
 check that caught it. If the new oracle needs a family that does not exist, add it to the
 builder and give it a sha256, so the same comparison is possible for the next one.
@@ -450,6 +512,11 @@ rather than the build logs**. Logs describe what a run intended; artefacts descr
 produced, and AlphaGenome once shipped a stamped claim contradicted by a stale measurement
 sitting in the same file.
 
+Read from the artefacts, but *checked* against them too — a hardcoded constant is neither.
+The activity population is derived per oracle (§4b) and `check_counts_fit_the_population`
+refuses to write a stamp the file's own count arrays contradict (§7). A refusal fails that
+oracle and leaves it unstamped, with a non-zero exit code; the other seven still stamp.
+
 ---
 
 ## 9. Decision log
@@ -466,6 +533,7 @@ sitting in the same file.
 | 2026-08-06 | percentiles stay **strictly empirical** | GPD overshoots the far tail 3.8×, exponential undershoots 0.27×, empirical max within 13% |
 | 2026-08-06 | vectorising Algorithm R **not** done | measured 2.4M values/s ≈ 19% of a pass; saves <1 h fleet-wide while changing every retained sample |
 | 2026-08-07 | motif-anchored ChIP null **deferred** | cost is per-TF scoring (240 TFs × ~6,000 passes), not motif lookup; and peak/attribution-derived positions cannot contain motif-*creating* variants, which is the saturating case |
+| 2026-08-09 | activity population **recorded per builder** (three mixtures), not harmonised to one | harmonising means rebuilding five backgrounds, and the three mixtures are 29,500 / 31,500 / 34,500 positions — a composition change, so §9's two-arm rule applies. Recording it is free and makes the difference legible; the stamp had asserted one 31,500-position set for all eight, false for five |
 
 ## 10. The converged state (2026-08-07)
 
@@ -476,16 +544,26 @@ restores them, applying the same read-back check to the backup.
 
 ### What each oracle now draws from
 
+One effect population per family — and, as of the 2026-08-09 correction, **three** activity
+populations, because the builders' baseline blocks were never harmonised the way their
+effect blocks were (§4):
+
 | oracle | effect population | activity population | retention |
 |---|---|---|---|
-| enformer, borzoi, alphagenome, sei, epinformerseq | `snps_gene_anchored` 17,909 | `regions_genome_dominated` 31,500 | effect+summary exact, perbin capped + exact tail |
-| legnet | `snps_promoter` 17,805 | same | exact |
-| chrombpnet, cherimoya | `snps_accessibility` 18,672 | same | effect+summary exact, perbin capped + exact tail |
+| enformer, borzoi, alphagenome | `snps_gene_anchored` 17,909 | `regions_genome_dominated` 31,500 | effect+summary exact, perbin capped + exact tail |
+| sei | `snps_gene_anchored` 17,909 | `…_minus_gene_body` **29,500** | effect+summary exact |
+| epinformerseq | `snps_gene_anchored` 17,909 | `…_minus_gene_body_plus_dhs` **34,500** | effect+summary exact |
+| legnet | `snps_promoter` 17,805 | `…_minus_gene_body` **29,500** | exact |
+| chrombpnet, cherimoya | `snps_accessibility` 18,672 | `…_minus_gene_body_plus_dhs` **34,500** | effect+summary exact, perbin capped + exact tail |
 
 Every file records the **content sha256** of both populations, so "which reference class is
 this?" is answerable from the artefact. Tests assert the stamp matches the artefact on
-disk, that all gene-anchored oracles share one effect hash, and that all 8 share one
-activity hash.
+disk, that all gene-anchored oracles share one effect hash, and that oracles built by the
+same baseline block share one activity hash **and that the three blocks' hashes differ** —
+because until 2026-08-09 they were asserted to be identical, and that assertion passed only
+because the stamper wrote one hash into all eight regardless of what each had sampled. An
+oracle carrying no hashed activity population now fails the test rather than dropping out of
+it.
 
 ### The measured outcome
 
@@ -547,6 +625,17 @@ strong promoter effects.
 * The **effect** and **summary/perbin** layers of an oracle are built by separate passes,
   so a partial rebuild can still put them on different populations. `unified_build: true`
   plus the two sha256 fields make that detectable; nothing yet *prevents* it.
+* **The shipped `*_pertrack.npz` still carry the pre-2026-08-09 activity stamp** and need
+  `python scripts/stamp_provenance_v4.py` re-run (append-in-place, no rebuild) before the
+  correction reaches a reader. Until then
+  `tests/test_provenance_is_read.py::test_the_stamped_activity_population_is_the_one_the_builder_sampled`
+  fails for chrombpnet, cherimoya, epinformerseq, sei and legnet — which is the test working.
+* **Activity percentiles are ranked against three different populations** (29,500 / 31,500 /
+  34,500 positions, §4), so a `summary` percentile is only strictly comparable across
+  oracles that share a mixture. The mixtures overlap heavily — two are subsets of the third
+  in all but the DHS stratum — so the practical effect is expected to be small, but it has
+  **not been measured**, and §9's two-arm rule means it should be before anyone harmonises
+  them or claims they are equivalent.
 * LegNet declares `resolution = 50` over a 200 bp window while holding **one** value, so
   every sub-region score returns `None`. The tools now explain it; the geometry is not
   fixed, because that would move its background and every committed artefact.

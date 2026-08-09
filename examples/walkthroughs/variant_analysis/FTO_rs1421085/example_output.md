@@ -6,7 +6,7 @@
 - **Oracle**: alphagenome
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: 7 HepG2 tracks
-- **Generated**: 2026-08-09 13:10 UTC
+- **Generated**: 2026-08-09 17:15 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -15,7 +15,7 @@
 **Gene**: FTO
 **Other nearby genes**: RPGRIP1L, AKTIP, RBL2, IRX3
 
-**Summary**: TSS activity (CAGE/PRO-CAP): moderate decrease (-0.15, CAGE:HepG2); Transcription factor binding (ChIP-TF): moderate binding loss (-0.12, CHIP:CEBPA:HepG2).
+**Summary**: Strongest effect per layer anywhere in the prediction window (not necessarily FTO's own track). TSS activity (CAGE/PRO-CAP): moderate decrease (-0.15, CAGE:HepG2 — variant site); Transcription factor binding (ChIP-TF): moderate binding loss (-0.12, CHIP:CEBPA:HepG2).
 
 #### Chromatin accessibility (DNASE/ATAC)
 

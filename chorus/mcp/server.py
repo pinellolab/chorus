@@ -976,16 +976,37 @@ def score_variant_effect_at_region(
     # Same rule as score_prediction_region: an all-null score must say why. This tool
     # returned {"ref_score": None, "alt_score": None, "effect": None} for LegNet in BOTH
     # modes -- at_variant and score_region -- with no error field, which reads as success.
+    #
+    # The note must also stay silent when there IS a score, and for one release it did
+    # not: `_score_ve` returns {allele: {assay_id: {ref,alt,effect}}} (result.py) and the
+    # lookup below was `scores_obj.get(aid)` at the TOP level, i.e. against allele names.
+    # It never hit, `flat` was always empty, and the guard fell through -- so every call
+    # carried "no score: the scored slice spans fewer than one 128 bp bin" next to
+    # Enformer's ref 2.0686 / alt 2.4550 / effect 0.3864 (audit 2026-08-09). Iterate the
+    # allele dicts, and derive the assay ids from the payload rather than from the
+    # request, because an oracle may rename them (ChromBPNet answers a requested "ATAC"
+    # as "ATAC:K562", see base.py).
+    def _scored_assay_ids(scores_obj) -> list:
+        aids: dict = {}
+        if isinstance(scores_obj, dict):
+            for per_assay in scores_obj.values():
+                if isinstance(per_assay, dict):
+                    aids.update({aid: None for aid in per_assay})
+        return list(aids)
+
     def _null_note(scores_obj) -> dict:
         notes: dict = {}
         try:
             ref_pred = variant_result.get("predictions", {}).get("reference")
-            for aid in list(assay_ids):
-                vals = scores_obj.get(aid) if isinstance(scores_obj, dict) else None
+            var_chrom, var_pos = _parse_position(position)
+            for aid in _scored_assay_ids(scores_obj):
                 flat = []
-                if isinstance(vals, dict):
-                    for v in vals.values():
-                        flat.extend(v.values() if isinstance(v, dict) else [v])
+                for per_assay in scores_obj.values():
+                    vals = per_assay.get(aid) if isinstance(per_assay, dict) else None
+                    if isinstance(vals, dict):
+                        flat.extend(vals.values())
+                    elif vals is not None:
+                        flat.append(vals)
                 if flat and not all(x is None for x in flat):
                     continue
                 if ref_pred is None or aid not in ref_pred:
@@ -994,13 +1015,32 @@ def score_variant_effect_at_region(
                 iv = tr.prediction_interval.reference
                 n_vals, res = len(tr.values), max(tr.resolution, 1)
                 implied = max((iv.end - iv.start) // res, 1)
-                if n_vals != implied:
+                if score_region is not None and (
+                        sc_chrom != iv.chrom or sc_end <= iv.start or sc_start >= iv.end):
+                    # The branch score_prediction_region already had: a null that is
+                    # only null because the caller asked about somewhere else.
+                    notes[aid] = (
+                        f"score_region {score_region} does not overlap the prediction "
+                        f"window {iv.chrom}:{iv.start}-{iv.end}")
+                elif n_vals != implied:
+                    # Ordered BEFORE the at_variant branch below, because a track
+                    # whose declared resolution overstates its sampling also makes
+                    # pos2bin return None (it bounds-checks the derived index, see
+                    # result.py), for a variant that is plainly inside the window.
+                    # Blaming that null on the variant's position names the wrong
+                    # cause and reads as a contradiction: measured on a 1-value
+                    # track declared at 128 bp over 640 bp, the note said
+                    # "chr1:1000300 maps outside chr1:1000000-1000640".
                     notes[aid] = (
                         f"no score: this track carries {n_vals} value(s) but its "
                         f"declared resolution ({res} bp over {iv.end - iv.start} bp) "
                         f"implies {implied} bins, so the scored slice falls outside the "
                         f"values array. This oracle has no positional resolution to "
                         f"slice; score the whole window instead.")
+                elif at_variant and tr.pos2bin(var_chrom, var_pos) is None:
+                    notes[aid] = (
+                        f"no score: variant position {position} maps outside this "
+                        f"track's prediction window {iv.chrom}:{iv.start}-{iv.end}")
                 else:
                     notes[aid] = (
                         f"no score: the scored slice spans fewer than one {res} bp bin")
@@ -1023,12 +1063,22 @@ def score_variant_effect_at_region(
         ref_pred = variant_result["predictions"].get("reference")
         if ref_pred is not None:
             percentiles = {}
-            for assay_id in scores:
-                allele_scores = scores[assay_id]
-                ref_val = allele_scores.get("reference") if isinstance(allele_scores, dict) else None
+            # Same {allele: {assay_id: ...}} shape as above, and the same slip: this
+            # iterated allele names and asked each per-assay dict for a "reference"
+            # key, so ref_val was always None and `ref_activity_percentiles` never
+            # appeared. The ref score is identical across alleles -- take the first
+            # allele that carries the assay.
+            for assay_id in _scored_assay_ids(scores):
+                ref_val = None
+                for per_assay in scores.values():
+                    vals = per_assay.get(assay_id) if isinstance(per_assay, dict) else None
+                    if isinstance(vals, dict) and vals.get("ref_score") is not None:
+                        ref_val = vals["ref_score"]
+                        break
                 if ref_val is not None:
-                    track = ref_pred.get(assay_id)
-                    if track:
+                    # OraclePrediction has no .get(); membership + [] is the accessor.
+                    track = ref_pred[assay_id] if assay_id in ref_pred else None
+                    if track is not None:
                         layer = classify_track_layer(track)
                         if isinstance(normalizer, PerTrackNormalizer):
                             pctile = normalizer.activity_percentile(oracle_name, assay_id, ref_val)
@@ -1279,7 +1329,12 @@ def score_ism(
 
     Returns:
         Dict with ``ref_seq``, ``positions``, ``scores`` ([W][4] signed log2FC),
-        ``importance`` ([W]), ``assay_id``, ``window`` — render as a motif logo.
+        ``importance`` ([W]), ``assay_id``, ``window`` — render as a motif logo —
+        plus ``n_attempted``/``n_scored``/``n_failed``/``first_error``. A cell that
+        could not be scored is ``null``, never 0.0 (0.0 means "no effect"), so
+        check ``n_failed`` before reading a flat position as uninformative. If
+        nothing scored at all, an ``error``/``error_type`` dict is returned with
+        no ``scores`` or ``importance`` key.
     """
     from chorus.analysis.saturation import saturation_mutagenesis
     state = _state()

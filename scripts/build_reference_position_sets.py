@@ -26,10 +26,15 @@ What this buys, concretely:
   * the content sha256 makes "which reference class is this background?" answerable from
     the file rather than from a build log.
 
-It must REPRODUCE what the shipped builds used. ``--verify`` checks the realised strata
-counts against a built oracle's provenance, and the generator replicates each builder's
+It must REPRODUCE what the shipped builds used, and the generator replicates each builder's
 exact call sequence (``random.seed(42)`` before iterating, ref base from the FASTA, alt
 chosen from the three others in position order) rather than re-implementing it.
+
+``--verify-against ORACLE`` compares a built background with this artefact. Read
+``verify``'s docstring before quoting its result: what it can compare depends on what the
+built file carries, the strongest available comparison is named in its closing line, and
+on the shipped files that comparison is NOT proof that the oracle sampled these positions.
+``--strict`` refuses a file that offers nothing but its counts.
 """
 from __future__ import annotations
 
@@ -312,8 +317,36 @@ def build(out_path: Path) -> dict:
     return prov
 
 
-def verify(out_path: Path, oracle: str, bg_dir: "Path | None" = None) -> int:
-    """Check the artefact reproduces what a BUILT oracle actually sampled."""
+def verify(out_path: Path, oracle: str, bg_dir: "Path | None" = None, *,
+           strict: bool = False) -> int:
+    """Compare a BUILT oracle's background against this artefact.
+
+    Three comparisons are possible and they are NOT equally strong. Which ones actually
+    ran is named in the closing line, because a check that reports more than it measured
+    is worse than no check -- a hand-written NPZ carrying five fake track ids, all-zero
+    CDFs, no ``build_config`` and ``effect_counts == 17909`` used to be told "VERIFIED:
+    the reference set reproduces sei's sampled population", rc 0.
+
+      1. **cardinality** -- ``effect_counts.min()`` against the family's SNP count, with a
+         tolerance for window-level N rejection. Always available, and blind to
+         composition: any file whose counts happen to match passes it.
+      2. **the provenance stamp** -- ``build_config["reference_sets"]``, compared against
+         the artefact's RECOMPUTED content hash and realised strata. This detects that the
+         artefact has moved since the oracle was stamped. It is NOT proof the oracle
+         sampled these positions: scripts/stamp_provenance_v4.py copies that hash out of
+         this artefact post-hoc, so its agreement is a statement about which artefact
+         REVISION the file was stamped against, and nothing more. Nothing in a background
+         records the positions themselves, so no stronger check is available from the file.
+      3. **the build log** -- ``build_config["effect_region_set_as_logged"]``, written by
+         the builder from what it actually sampled and therefore the only independent
+         evidence of composition. No shipped file carries it (schema 4 replaced
+         ``build_config`` wholesale), which is exactly why 2 must be reported as what it is.
+
+    ``strict=True`` returns non-zero when neither 2 nor 3 is available, i.e. when only the
+    cardinality check could run. It is off by default because the legitimate mid-rebuild
+    case -- an ``*_effect_cdfs_interim.npz``, which is written before any stamping -- has
+    no ``build_config`` at all.
+    """
     from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
 
     # Default to the LIVE dir, but a staged rebuild has to be checkable before it is
@@ -337,6 +370,16 @@ def verify(out_path: Path, oracle: str, bg_dir: "Path | None" = None) -> int:
         snps = d[key]
         logger.info("%s draws from the %r family", oracle, family)
 
+    ref_meta = prov["sets"][key]
+    ref_strata = {k: int(v) for k, v in ref_meta["strata_realised"].items()}
+    # Hash the ARRAY, not the provenance field. `sets[key]["sha256"]` is a claim the
+    # generator wrote beside the data; recomputing it here is what makes the hash a
+    # content check rather than a string comparison, and it is the only part of the
+    # comparison below that cannot be satisfied by copying a value around.
+    ref_sha = _sha256_of(zip(snps["chrom"].tolist(), snps["pos"].tolist(),
+                             snps["ref"].tolist(), snps["alt"].tolist(),
+                             snps["stratum"].tolist()))
+
     bg = bg_root / f"{oracle}_pertrack.npz"
     if not bg.exists():
         alt = bg_root / f"{oracle}_effect_cdfs_interim.npz"
@@ -357,9 +400,18 @@ def verify(out_path: Path, oracle: str, bg_dir: "Path | None" = None) -> int:
     problems = []
     n_ref = len(snps)
     n_min = int(counts.min())
-    logger.info("reference SNP set: %d SNPs", n_ref)
+    logger.info("reference SNP set: %d SNPs, content sha256 %s", n_ref, ref_sha)
     logger.info("%s effect_counts: min=%d max=%d (%d distinct)",
                 oracle, n_min, int(counts.max()), len(set(counts.tolist())))
+
+    # The artefact has to hash to its own claim before its hash can be quoted at anything
+    # else. A mismatch means the arrays were edited or re-saved after generation, in which
+    # case every oracle stamped from it carries a hash that no longer describes the file.
+    if ref_sha != ref_meta.get("sha256"):
+        problems.append(
+            f"reference artefact {out_path.name} does not hash to its own provenance: "
+            f"{key} content is {ref_sha}, recorded {ref_meta.get('sha256')}. Regenerate it; "
+            f"until then every stamp derived from it is unverifiable.")
 
     # The SNP SET is shared; the retained SUBSET is oracle-specific, because a window
     # whose N content exceeds max_n_fraction is rejected and window sizes differ by an
@@ -389,19 +441,84 @@ def verify(out_path: Path, oracle: str, bg_dir: "Path | None" = None) -> int:
         problems.append(
             f"{oracle} effect_counts form a consecutive run {distinct} -- the #123 "
             f"partial-credit fingerprint, not a fan-out")
+
+    # ---- composition, in decreasing strength. `compared` is what the closing line may
+    # claim; everything absent from it was NOT measured.
+    compared: list[str] = []
+
+    # The builder's own log of what it sampled -- independent of this artefact, so the
+    # only evidence here that a copied value cannot manufacture.
     logged = (cfg.get("effect_region_set_as_logged") or {}).get("strata_counts")
     if logged:
-        ref_strata = prov["sets"][key]["strata_realised"]
-        if {k: int(v) for k, v in logged.items()} != {k: int(v) for k, v in ref_strata.items()}:
+        if {k: int(v) for k, v in logged.items()} != ref_strata:
             problems.append(
                 f"{oracle} logged strata {logged} != reference {ref_strata}")
         else:
             logger.info("strata match the build log exactly: %s", ref_strata)
+            compared.append("realised strata against the builder's own log")
+
+    # The provenance stamp. stamp_provenance_v4.py copies effect_sha256/effect_strata OUT
+    # of this artefact and into the background, so agreement here says "stamped against
+    # this revision of the artefact" -- it does NOT say the oracle sampled these SNPs, and
+    # the closing line must not imply that it does. Disagreement is still worth catching:
+    # because ref_sha is recomputed from the arrays, it fires when the artefact's content
+    # has moved since the stamp was written, which silently redefines the reference class.
+    stamp = cfg.get("reference_sets") or {}
+    stamped_sha = stamp.get("effect_sha256")
+    stamped_strata = stamp.get("effect_strata")
+    stamped_family = stamp.get("effect_family")
+    if stamped_family and stamped_family != family:
+        problems.append(
+            f"{oracle} is stamped with effect_family={stamped_family!r} but ORACLE_SNP_SET "
+            f"maps it to {family!r} -- one of the two is stale; re-stamp or fix the map")
+    if stamped_sha or stamped_strata:
+        stamp_ok = True
+        if stamped_sha and stamped_sha != ref_sha:
+            stamp_ok = False
+            problems.append(
+                f"{oracle} is stamped with effect_sha256={stamped_sha} but {key} now hashes "
+                f"to {ref_sha} -- it was stamped against a DIFFERENT revision of the "
+                f"reference set, so its percentiles rank against another population")
+        if stamped_strata:
+            got = {k: int(v) for k, v in stamped_strata.items()}
+            if got != ref_strata:
+                stamp_ok = False
+                problems.append(
+                    f"{oracle} is stamped with effect_strata {got} != reference {ref_strata}")
+        if stamp_ok:
+            logger.info("stamp matches the artefact: sha256 %s, strata %s",
+                        (stamped_sha or "-")[:12], ref_strata)
+            compared.append("content sha256 + strata against the file's provenance stamp "
+                            "(which was copied FROM this artefact, so this pins the "
+                            "artefact revision, not the sampled positions)")
+    elif not logged:
+        # Nothing in the file says anything about composition. Say so in one line that
+        # cannot be mistaken for a population check, because this is the shape the audit's
+        # fabricated NPZ had -- and it was passed as VERIFIED.
+        logger.warning(
+            "strata/hash comparison SKIPPED -- counts only: %s carries no "
+            "build_config['reference_sets'] and no effect_region_set_as_logged, so nothing "
+            "in it constrains WHICH positions were used. Re-run with --strict to refuse.",
+            bg.name)
+
     for p in problems:
         logger.error(p)
     if problems:
         return 1
-    logger.info("VERIFIED: the reference set reproduces %s's sampled population", oracle)
+    if not compared:
+        if strict:
+            logger.error(
+                "--strict: %s offers no composition evidence, so only its SNP COUNT was "
+                "checked. That is a cardinality match, not population identity.", bg.name)
+            return 1
+        logger.info(
+            "OK (counts only): %s offered %d SNPs, matching the %d in reference set %r. "
+            "Population identity was NOT checked -- see the SKIPPED line above.",
+            oracle, n_min, n_ref, key)
+        return 0
+    logger.info("OK: %s is consistent with reference set %r (%s)", oracle, key, ref_sha[:12])
+    for c in compared:
+        logger.info("  compared: %s", c)
     return 0
 
 
@@ -415,10 +532,15 @@ def main() -> int:
                     help="where to look for that oracle's background; defaults to the "
                          "live CHORUS_BACKGROUNDS_DIR. Point it at a staging directory "
                          "to check a rebuild BEFORE it is swapped.")
+    ap.add_argument("--strict", action="store_true",
+                    help="fail when the background carries no composition evidence, so "
+                         "that only its SNP count could be compared. Use this wherever the "
+                         "result is quoted as provenance; leave it off for a mid-rebuild "
+                         "interim, which has no build_config yet.")
     args = ap.parse_args()
     out = Path(args.out)
     if args.verify_against:
-        return verify(out, args.verify_against, args.backgrounds_dir)
+        return verify(out, args.verify_against, args.backgrounds_dir, strict=args.strict)
     build(out)
     return 0
 

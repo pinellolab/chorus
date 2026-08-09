@@ -9,8 +9,12 @@ only knew three of the eight oracles.
 Everything here is read from something checkable instead:
 
   * the reference position sets   -> which populations, their strata, their sha256
+                                     (the ACTIVITY population per oracle, derived -- see
+                                     ACTIVITY_POPULATIONS; the artefact carries one region
+                                     set and only three builders sample all of it)
   * the NPZ's own arrays          -> track count, per-layer offered/retained/tail_k,
-                                     signed fraction, which layers exist
+                                     signed fraction, which layers exist, and a ceiling
+                                     on the activity population they can have come from
   * LAYER_CONFIGS                 -> window, aggregation, formula, pseudocount per layer
   * the repo and the genome       -> git sha, fai sha256, FASTA sha256 prefix
 
@@ -50,6 +54,72 @@ GEOMETRY = {
     "legnet":        dict(input_length=200, resolution=None),
 }
 
+# The 5,000-position DHS-summit stratum the three accessibility-family builders add on top
+# of the shared region mixture. It is NOT one of the reference artefact's sets, so it is
+# reproduced here from the same sampler, file and seed the builders call.
+DHS_STRATUM = dict(
+    n=5_000, seed=567,
+    sampler="chorus.utils.annotations.sample_dhs_positions",
+    source="annotations/dhs_vocabulary_hg38.txt.gz",
+)
+
+# Which ACTIVITY (summary/perbin) population each oracle's builder actually samples.
+#
+# No builder reads reference_sets/ -- each resamples from the same seeds -- so the
+# population is a property of the builder's own sampling block, and those blocks differ.
+# Until 2026-08-09 this file stamped `regions_genome_dominated` (31,500 positions) into all
+# eight unconditionally. That was false for five of them, and arithmetically impossible for
+# three from the artefacts alone: chrombpnet and cherimoya offered 34,004 summary samples
+# per track against a claimed 31,500-position set, epinformerseq 34,002, while sei and
+# legnet offered 29,004/29,002 -- a strict SUBSET, missing the gene_body stratum.
+#
+# Each entry is therefore a DERIVATION of the one region set the artefact does carry, so
+# the population still has a content hash a reader can recompute from shipped inputs:
+#   drop -- strata of `regions_genome_dominated` this builder never samples
+#   add  -- strata it samples that the artefact does not carry
+# Verified by replaying each builder's sampling block against the artefact: sei/legnet's
+# 29,500 positions hash ddbc4b246ab3..., bit-identical to the artefact minus gene_body,
+# and the accessibility trio's 34,500 hash ec3070d6a361... .
+_GENOME_DOMINATED = dict(name="regions_genome_dominated", drop=(), add={})
+_NO_GENE_BODY = dict(name="regions_genome_dominated_minus_gene_body",
+                     drop=("gene_body",), add={})
+_NO_GENE_BODY_PLUS_DHS = dict(name="regions_genome_dominated_minus_gene_body_plus_dhs",
+                              drop=("gene_body",), add={"dhs": DHS_STRATUM})
+ACTIVITY_POPULATIONS = {
+    # build_backgrounds_{enformer,borzoi}.py and _alphagenome.py: random + cCRE + TSS +
+    # gene-body midpoints, which is what the artefact's set was built to replicate.
+    "alphagenome":   _GENOME_DOMINATED,
+    "borzoi":        _GENOME_DOMINATED,
+    "enformer":      _GENOME_DOMINATED,
+    # build_backgrounds_{sei,legnet}.py: the same three streams, no gene-body block.
+    "sei":           _NO_GENE_BODY,
+    "legnet":        _NO_GENE_BODY,
+    # build_backgrounds_{chrombpnet,cherimoya}.py and _epinformerseq_v2_percell.py: those
+    # three streams plus DHS summits, no gene-body block.
+    "chrombpnet":    _NO_GENE_BODY_PLUS_DHS,
+    "cherimoya":     _NO_GENE_BODY_PLUS_DHS,
+    "epinformerseq": _NO_GENE_BODY_PLUS_DHS,
+}
+
+# Rows offered per activity POSITION, per track: one window statistic for `summary`, and
+# PERBIN_BINS_PER_POSITION random bins for `perbin` (32 in every builder that writes one).
+OBS_PER_POSITION = {"summary": 1, "perbin": 32}
+
+# ...times a fan-out, for the three builders that emit more than one row per position.
+# Everything not listed here is 1, which makes the ceiling below TIGHT for it.
+FAN_OUT = {
+    # ChromBPNet's profile head is (L, n_strands) and BOTH strands are scored
+    # (`for strand in range(prof.shape[-1])`), so 744 of its 753 tracks see 2 rows.
+    ("chrombpnet", None): {"summary": 2, "perbin": 2},
+    # AlphaGenome and Borzoi emit one RNA summary row per (GENE, track), matching a query
+    # that emits an RNA row per gene near the variant (#144 inst. 3). The multiplier is
+    # the mean number of genes with a TSS in the input window -- measured 10.35 at 1 Mb
+    # and 2.42 at 524 kb, so these bounds carry ~55%/65% headroom. `perbin` stays POOLED
+    # across genes and capped at PERBIN_BINS_PER_POSITION, so it does not fan out.
+    ("alphagenome", "gene_expression"): {"summary": 16, "perbin": 1},
+    ("borzoi", "gene_expression"): {"summary": 4, "perbin": 1},
+}
+
 
 def _sha_file(p: Path, limit: int | None = None) -> str:
     h, n = hashlib.sha256(), 0
@@ -60,6 +130,128 @@ def _sha_file(p: Path, limit: int | None = None) -> str:
             if limit and n >= limit:
                 break
     return h.hexdigest()
+
+
+_DHS_CACHE: dict = {}
+
+
+def _dhs_rows(spec: dict) -> list:
+    """The added DHS stratum, from the same sampler/file/seed the builders call.
+
+    Cached: it reads a 90 MB vocabulary and costs ~6.5 s, and three oracles want it.
+    """
+    key = (spec["n"], spec["seed"])
+    if key not in _DHS_CACHE:
+        from chorus.utils.annotations import sample_dhs_positions
+        src = REPO / spec["source"]
+        if not src.exists():
+            raise FileNotFoundError(src)
+        _DHS_CACHE[key] = [(str(c), int(p), "dhs") for c, p in
+                           sample_dhs_positions(spec["n"], dhs_path=str(src),
+                                                seed=spec["seed"])]
+    return _DHS_CACHE[key]
+
+
+def activity_population(oracle: str, brps, ref_arrays: dict, ref_prov: dict) -> dict:
+    """The activity population this oracle's builder sampled, content-hashed.
+
+    Returns the `activity_*` half of `reference_sets`. The hash is recomputed over the
+    derived (chrom, pos, stratum) tuples with the reference generator's own `_sha256_of`,
+    so it is comparable with the artefact's hashes and reproducible by any reader holding
+    the same inputs.
+
+    The derivation is checked against itself first: recomputing the hash of the FULL
+    artefact set must reproduce the sha256 the artefact records. If that fails, the
+    hashing convention has drifted and no derived hash from it means anything, so nothing
+    is stamped rather than something unverifiable.
+    """
+    spec = ACTIVITY_POPULATIONS.get(oracle)
+    if spec is None:
+        raise ValueError(f"{oracle} has no entry in ACTIVITY_POPULATIONS; add one "
+                         f"describing what its builder samples")
+
+    base = "regions_genome_dominated"
+    rows = [(str(c), int(p), str(s)) for c, p, s in ref_arrays[base]]
+    if brps._sha256_of(rows) != ref_prov["sets"][base]["sha256"]:
+        raise ValueError(
+            f"recomputing {base} from the artefact's own rows does not reproduce its "
+            f"recorded sha256 -- the hashing convention moved, so no derived population "
+            f"hash is trustworthy")
+
+    rows = [r for r in rows if r[2] not in spec["drop"]]
+    unavailable = None
+    for name, add in spec["add"].items():
+        try:
+            rows += _dhs_rows(add)
+        except FileNotFoundError as exc:
+            # State nothing rather than state it falsely: without the source we cannot
+            # reproduce the stratum, so the mixture has no hash we are entitled to claim.
+            unavailable = (f"{name} stratum needs {add['source']}, absent here ({exc}); "
+                           f"the composition below is from the builder, unhashed")
+
+    strata: dict = {}
+    for _c, _p, s in rows:
+        strata[s] = strata.get(s, 0) + 1
+    if unavailable:
+        for name, add in spec["add"].items():
+            strata[name] = add["n"]
+
+    out = {
+        "activity_set": spec["name"],
+        "activity_sha256": None if unavailable else brps._sha256_of(rows),
+        "activity_strata": strata,
+        "activity_derivation": {
+            "from": base,
+            "from_sha256": ref_prov["sets"][base]["sha256"],
+            "drop_strata": list(spec["drop"]),
+            "add_strata": {k: dict(v) for k, v in spec["add"].items()},
+            "hash": "sorted (chrom, pos, stratum) tuples, "
+                    "scripts/build_reference_position_sets.py:_sha256_of",
+        },
+    }
+    if unavailable:
+        out["activity_sha256_unavailable"] = unavailable
+    return out
+
+
+def check_counts_fit_the_population(oracle: str, payload: dict, n_positions: int) -> None:
+    """A reservoir cannot be offered more samples than the build had positions to offer.
+
+    `max(counts) <= n_positions * rows_per_position` is the one inequality that catches a
+    misdeclared activity population from the artefact alone, and it is not tautological:
+    both sides come from different files. It is what the false `regions_genome_dominated`
+    stamp tripped on -- chrombpnet's 68,008 summary samples against 31,500 * 2 = 63,000,
+    cherimoya's 34,004 and epinformerseq's 34,002 against 31,500 * 1.
+
+    One-sided on purpose. A build that sampled FEWER positions than declared satisfies it
+    (sei and legnet's 29,004/29,002 sat under the claimed 31,500 for two months); that side
+    is pinned by ACTIVITY_POPULATIONS naming what each builder samples, not by arithmetic.
+    """
+    lay = np.asarray(payload["layers_per_row"]) if "layers_per_row" in payload else None
+    for stat, per_position in OBS_PER_POSITION.items():
+        ck = f"{stat}_counts"
+        if ck not in payload:
+            continue
+        counts = np.asarray(payload[ck])
+        if lay is not None and len(lay) == len(counts):
+            groups = [(L, counts[lay == L]) for L in sorted({str(x) for x in lay.tolist()})]
+        else:
+            groups = [(None, counts)]
+        for layer, c in groups:
+            if c.size == 0:
+                continue
+            # layer-specific entry, else the oracle-wide one, else no fan-out. The fallback
+            # matters: chrombpnet ships no `layers_per_row` today, and gaining one must not
+            # silently drop its two-strand multiplier.
+            fan = (FAN_OUT.get((oracle, layer))
+                   or FAN_OUT.get((oracle, None)) or {}).get(stat, 1)
+            ceiling = n_positions * per_position * fan
+            if int(c.max()) > ceiling:
+                raise ValueError(
+                    f"{oracle}: {stat}_counts.max()={int(c.max()):,} for "
+                    f"{layer or 'all tracks'} exceeds {n_positions:,} activity positions "
+                    f"x {per_position} per position x {fan} fan-out = {ceiling:,}. The "
+                    f"stamped activity population cannot be the one this build sampled")
 
 
 def build_config(oracle: str, payload: dict) -> dict:
@@ -76,6 +268,11 @@ def build_config(oracle: str, payload: dict) -> dict:
     family = brps.ORACLE_SNP_SET.get(oracle)
     with np.load(REF, allow_pickle=False) as d:
         ref_prov = json.loads(str(d["provenance"][0]))
+        ref_arrays = {k: d[k] for k in d.files if k != "provenance"}
+
+    activity = activity_population(oracle, brps, ref_arrays, ref_prov)
+    check_counts_fit_the_population(oracle, payload,
+                                    sum(activity["activity_strata"].values()))
 
     # per-layer sampling, read from the arrays the build actually wrote
     sampling: dict = {}
@@ -159,14 +356,16 @@ def build_config(oracle: str, payload: dict) -> dict:
             "effect_sha256": (ref_prov["sets"].get(f"snps_{family}", {}) or {}).get("sha256"),
             "effect_strata": (ref_prov["sets"].get(f"snps_{family}", {}) or {}).get(
                 "strata_realised"),
-            "activity_set": "regions_genome_dominated",
-            "activity_sha256": ref_prov["sets"]["regions_genome_dominated"]["sha256"],
-            "activity_strata": ref_prov["sets"]["regions_genome_dominated"]["strata_realised"],
+            **activity,
             "seeds": ref_prov["seeds"],
         },
         "notes": [
             "Effect and activity nulls are DIFFERENT reference classes and must not be "
             "unified; see docs/BACKGROUND_NULL_PROTOCOL.md section 1.",
+            "The activity population is PER BUILDER: only enformer, borzoi and "
+            "alphagenome sample the whole of regions_genome_dominated. The rest are "
+            "recorded as derivations of it (reference_sets.activity_derivation), because "
+            "no builder reads the reference artefact -- each resamples from the seeds.",
             "Percentiles are strictly empirical: above the sampled maximum the value is "
             "clamped and PerTrackNormalizer.effect_exceedance reports the ratio to that "
             "ceiling. No tail is extrapolated.",
@@ -209,11 +408,20 @@ def main() -> int:
             continue
         with np.load(p, allow_pickle=True) as d:
             payload = {k: d[k] for k in d.files}
-        cfg = build_config(o, payload)
-        n_layers = len(cfg["statistics_per_layer"])
+        try:
+            cfg = build_config(o, payload)
+        except ValueError as exc:
+            # Refuse this one and carry on: a stamp that contradicts the file is worse
+            # than no stamp, but it is no reason to leave the other seven unstamped.
+            print(f"  {o:14s} NOT STAMPED -- {exc}")
+            rc = 1
+            continue
+        rs, n_layers = cfg["reference_sets"], len(cfg["statistics_per_layer"])
         print(f"  {o:14s} schema {cfg['schema_version']}  {cfg['n_tracks']:5d} tracks  "
               f"{len(cfg['sampling'])} layers sampled, {n_layers} statistics, "
-              f"family={cfg['reference_sets']['effect_family']}")
+              f"family={rs['effect_family']}, activity={rs['activity_set']} "
+              f"({sum(rs['activity_strata'].values()):,} positions, "
+              f"{(rs['activity_sha256'] or 'UNHASHED')[:12]})")
         if args.dry_run:
             continue
         payload["build_config"] = np.array([json.dumps(cfg, sort_keys=True)])

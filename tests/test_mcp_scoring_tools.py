@@ -141,6 +141,13 @@ def test_both_variant_scoring_modes_explain_a_null(loaded, mode):
     assert inner["alt_score"] is not None and inner["effect"] is not None
     # effect must be the difference the payload claims, not an independent number.
     assert abs((inner["alt_score"] - inner["ref_score"]) - inner["effect"]) < 1e-9, inner
+    # ...and the payload must not contradict itself. The null-explanation guard looked
+    # `assay_id` up at the top level of a {allele: {assay_id: ...}} dict, so it never
+    # saw a score and stapled "no score" onto every call, real numbers included
+    # (audit 2026-08-09). tests/test_mcp_variant_score_notes.py covers this model-free.
+    assert "score_notes" not in out, (
+        f"{mode}: non-null scores carry a null explanation: {out['score_notes']}"
+    )
 
 
 def test_the_variant_tool_returns_the_variant_it_was_asked_about(loaded):

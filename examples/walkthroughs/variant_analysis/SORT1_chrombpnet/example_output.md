@@ -6,7 +6,7 @@
 - **Oracle**: chrombpnet
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: DNASE:HepG2
-- **Generated**: 2026-08-09 13:15 UTC
+- **Generated**: 2026-08-09 17:19 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -15,7 +15,7 @@
 **Gene**: SORT1
 **Other nearby genes**: CELSR2
 
-**Summary**: Chromatin accessibility (DNASE/ATAC): very strong opening (+1.38, DNASE:HepG2).
+**Summary**: Strongest effect per layer anywhere in the prediction window (not necessarily SORT1's own track). Chromatin accessibility (DNASE/ATAC): very strong opening (+1.38, DNASE:HepG2).
 
 #### Chromatin accessibility (DNASE/ATAC)
 

@@ -5,7 +5,7 @@
 - **Tool**: `simulate_integration`
 - **Oracle**: alphagenome
 - **Tracks requested**: 3 K562 tracks
-- **Generated**: 2026-08-09 13:03 UTC
+- **Generated**: 2026-08-09 17:07 UTC
 
 ## Integration Simulation Report
 
@@ -16,7 +16,7 @@
 **Modification**: Inserted 378 bp construct at chr19:55,115,001
 **Modified region**: chr19:55,115,001-55,115,378 (378 bp)
 
-**Summary**: TSS activity (CAGE/PRO-CAP): very strong decrease (-8.96, CAGE:K562); Chromatin accessibility (DNASE/ATAC): very strong opening (+4.26, DNASE:K562); Histone modifications (ChIP-Histone): very strong mark gain (+1.30, CHIP:H3K27ac:K562).
+**Summary**: Strongest effect per layer anywhere in the prediction window (not necessarily PPP1R12C's own track). TSS activity (CAGE/PRO-CAP): very strong decrease (-8.96, CAGE:K562 — RPL28 TSS); Chromatin accessibility (DNASE/ATAC): very strong opening (+4.26, DNASE:K562); Histone modifications (ChIP-Histone): very strong mark gain (+1.30, CHIP:H3K27ac:K562).
 
 #### Chromatin accessibility (DNASE/ATAC)
 

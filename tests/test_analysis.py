@@ -3050,6 +3050,127 @@ class TestVariantReportFormulaChips:
         assert "K562" not in summary
 
 
+# ── Summary provenance: region labels ───────────────────────────────────
+
+
+class TestSummaryRegionProvenance:
+    """The Summary box must name the *row* it quotes, not just the track.
+
+    CAGE and RNA layers emit many rows per track (one per gene TSS / exon
+    set) sharing one ``description``, and the max-|effect| row is often a
+    neighbouring gene with the opposite sign to the report's subject.  The
+    committed region_swap report is exactly that case: winner ``GSTM2 TSS``
+    at -7.96 while ``SORT1 TSS`` is +0.75, both labelled ``CAGE:K562``.
+    """
+
+    def _sort1_region_swap_shaped_report(self, gene_name="SORT1"):
+        from chorus.analysis.variant_report import TrackScore, VariantReport
+        mk = lambda region, score: TrackScore(  # noqa: E731
+            assay_id="CAGE:K562", assay_type="CAGE", cell_type="K562",
+            description="CAGE:K562", layer="tss_activity",
+            ref_value=10.0, alt_value=1.0, raw_score=score,
+            region_label=region,
+        )
+        return VariantReport(
+            chrom="chr1", position=109_274_968,
+            ref_allele="G", alt_alleles=["T"],
+            oracle_name="alphagenome", gene_name=gene_name,
+            allele_scores={"T": [
+                mk("GSTM2 TSS", -7.957),
+                mk("SORT1 TSS", 0.752),
+                mk("variant site", -1.2),
+            ]},
+        )
+
+    def _summary_of(self, report):
+        html = report.to_html()
+        start = html.index("<b>Summary:</b>")
+        return html[start:html.index("</p>", start)]
+
+    def test_summary_names_region_of_winning_row(self):
+        summary = self._summary_of(self._sort1_region_swap_shaped_report())
+        # The winning row is identifiable: same " — {region}" form as the tables.
+        assert "CAGE:K562 — GSTM2 TSS" in summary
+        assert "-7.96" in summary
+        # And it is NOT silently presented as the subject gene's own row.
+        assert "SORT1 TSS" not in summary
+
+    def test_summary_states_it_reports_the_window_max(self):
+        """Attributing a neighbour's row is only defensible if labelled as such."""
+        summary = self._summary_of(self._sort1_region_swap_shaped_report())
+        assert "prediction window" in summary
+        assert "not necessarily SORT1&#x27;s own track" in summary
+
+    def test_summary_lead_in_omits_gene_clause_when_no_subject_gene(self):
+        from chorus.analysis.variant_report import _build_summary
+        report = self._sort1_region_swap_shaped_report(gene_name=None)
+        summary = _build_summary(report.allele_scores, report.gene_name)
+        assert "prediction window" in summary
+        assert "not necessarily" not in summary
+
+    def test_region_label_survives_the_description_length_cap(self):
+        """The 60-char cap trims the assay label, never the disambiguator."""
+        from chorus.analysis.variant_report import TrackScore, _build_summary
+        long_desc = "RNA:" + "x" * 200
+        summary = _build_summary({"T": [TrackScore(
+            assay_id="RNA:HepG2", assay_type="RNA", cell_type="HepG2",
+            description=long_desc, layer="gene_expression",
+            ref_value=1.0, alt_value=2.0, raw_score=0.465,
+            region_label="PSRC1 (exons)",
+        )]}, "SORT1")
+        assert "PSRC1 (exons)" in summary
+        assert "…" in summary  # description itself was truncated
+
+    def test_summary_unchanged_for_tracks_without_a_region_label(self):
+        """Single-row layers (DNASE/ChIP) must not grow a stray em-dash."""
+        from chorus.analysis.variant_report import TrackScore, _build_summary
+        summary = _build_summary({"G": [TrackScore(
+            assay_id="DNASE:HepG2", assay_type="DNASE", cell_type="HepG2",
+            description="DNASE:HepG2", layer="chromatin_accessibility",
+            ref_value=4.1, alt_value=5.7, raw_score=0.468,
+        )]}, "SORT1")
+        assert "(+0.47, DNASE:HepG2)" in summary
+
+
+class TestUnscoredTrackNote:
+    """A track with no LAYER_CONFIGS entry is not "outside the window"."""
+
+    def test_note_names_assay_type_when_no_scoring_config_exists(self):
+        """Sei's 21,907 chromatin-profile tracks land here (assay_type
+        'H3K4me3' → layer 'other' → no LAYER_CONFIGS entry), and used to be
+        reported as out of window when the window was never even consulted."""
+        from chorus.analysis.variant_report import build_variant_report
+
+        vals = {"H3K4me3:K562": np.ones(1000, dtype=np.float32)}
+        alt = {"H3K4me3:K562": np.ones(1000, dtype=np.float32) * 2.0}
+        report = build_variant_report(
+            _make_variant_result(vals, alt), oracle_name="sei",
+        )
+        ts = report.allele_scores["G"][0]
+        assert ts.layer == "other"
+        assert ts.raw_score is None
+        assert ts.note == "No scoring config for assay type H3K4me3 (layer 'other')"
+        assert "window" not in ts.note
+
+    def test_note_still_says_outside_window_when_that_is_the_real_reason(self):
+        """Guard against over-correcting: a configured layer whose variant
+        falls outside the prediction interval must keep the window wording."""
+        from chorus.analysis.variant_report import build_variant_report
+
+        vals = {"DNASE:K562": np.ones(1000, dtype=np.float32)}
+        alt = {"DNASE:K562": np.ones(1000, dtype=np.float32) * 2.0}
+        # Prediction interval is chr1:1,000,000-1,001,000; put the variant
+        # 1 Mb away so score_centered_window() genuinely can't reach it.
+        report = build_variant_report(
+            _make_variant_result(vals, alt, position="chr1:2000500"),
+            oracle_name="test_oracle",
+        )
+        ts = report.allele_scores["G"][0]
+        assert ts.layer == "chromatin_accessibility"
+        assert ts.raw_score is None
+        assert ts.note == "Outside scoring window"
+
+
 # ── Multi-oracle validation report ──────────────────────────────────────
 
 class TestMultiOracleReport:

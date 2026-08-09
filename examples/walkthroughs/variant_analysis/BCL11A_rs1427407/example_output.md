@@ -6,7 +6,7 @@
 - **Oracle**: alphagenome
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: 6 K562 tracks
-- **Generated**: 2026-08-09 13:07 UTC
+- **Generated**: 2026-08-09 17:12 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -15,7 +15,7 @@
 **Gene**: BCL11A
 **Other nearby genes**: PAPOLG, REL, PUS10
 
-**Summary**: Transcription factor binding (ChIP-TF): moderate binding gain (+0.15, CHIP:TAL1:K562); Chromatin accessibility (DNASE/ATAC): moderate opening (+0.14, DNASE:K562).
+**Summary**: Strongest effect per layer anywhere in the prediction window (not necessarily BCL11A's own track). Transcription factor binding (ChIP-TF): moderate binding gain (+0.15, CHIP:TAL1:K562); Chromatin accessibility (DNASE/ATAC): moderate opening (+0.14, DNASE:K562).
 
 #### Chromatin accessibility (DNASE/ATAC)
 

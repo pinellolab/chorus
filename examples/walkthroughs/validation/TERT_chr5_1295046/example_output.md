@@ -6,7 +6,7 @@
 - **Oracle**: alphagenome
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: all tracks (discovery mode)
-- **Generated**: 2026-08-09 13:07 UTC
+- **Generated**: 2026-08-09 17:11 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -15,7 +15,7 @@
 **Gene**: TERT
 **Other nearby genes**: CLPTM1L, SLC6A18, SLC6A19, SLC6A3
 
-**Summary**: Histone modifications (ChIP-Histone): very strong mark gain (+1.48, CHIP:H3K4me3:skeletal muscle cell); TSS activity (CAGE/PRO-CAP): very strong increase (+1.46, CAGE:K562); Chromatin accessibility (DNASE/ATAC): very strong opening (+1.15, ATAC:effector memory CD8-positive, alpha-beta T cell); Transcription factor binding (ChIP-TF): very strong binding gain (+1.04, CHIP:POLR2G:K562).
+**Summary**: Strongest effect per layer anywhere in the prediction window (not necessarily TERT's own track). Histone modifications (ChIP-Histone): very strong mark gain (+1.48, CHIP:H3K4me3:skeletal muscle cell); TSS activity (CAGE/PRO-CAP): very strong increase (+1.46, CAGE:K562 — TERT TSS); Chromatin accessibility (DNASE/ATAC): very strong opening (+1.15, ATAC:effector memory CD8-positive, alpha-beta T cell); Transcription factor binding (ChIP-TF): very strong binding gain (+1.04, CHIP:POLR2G:K562).
 
 #### Chromatin accessibility (DNASE/ATAC)
 

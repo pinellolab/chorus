@@ -6,7 +6,7 @@
 - **Oracle**: alphagenome
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: 7 HepG2 tracks
-- **Generated**: 2026-08-09 13:04 UTC
+- **Generated**: 2026-08-09 17:09 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -15,7 +15,7 @@
 **Gene**: SORT1
 **Other nearby genes**: PSRC1, CELSR2, MYBPHL, SARS1
 
-**Summary**: Transcription factor binding (ChIP-TF): very strong binding gain (+3.32, CHIP:CEBPB:HepG2); TSS activity (CAGE/PRO-CAP): very strong increase (+1.50, CAGE:HepG2); Chromatin accessibility (DNASE/ATAC): very strong opening (+1.33, DNASE:HepG2); Histone modifications (ChIP-Histone): very strong mark gain (+1.25, CHIP:H3K27ac:HepG2).
+**Summary**: Strongest effect per layer anywhere in the prediction window (not necessarily SORT1's own track). Transcription factor binding (ChIP-TF): very strong binding gain (+3.32, CHIP:CEBPB:HepG2); TSS activity (CAGE/PRO-CAP): very strong increase (+1.50, CAGE:HepG2 — variant site); Chromatin accessibility (DNASE/ATAC): very strong opening (+1.33, DNASE:HepG2); Histone modifications (ChIP-Histone): very strong mark gain (+1.25, CHIP:H3K27ac:HepG2).
 
 #### Chromatin accessibility (DNASE/ATAC)
 
