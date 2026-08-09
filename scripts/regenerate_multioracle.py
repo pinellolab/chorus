@@ -286,7 +286,11 @@ def run_cherimoya():
     # use_environment=False: we are already inside chorus-cherimoya via mamba
     # run, and predict_sliding needs to reach self.model directly.
     oracle = CherimoyaOracle(use_environment=False, reference_fasta=GENOME_REF)
-    oracle.load_pretrained_model(encode_id="ENCSR149XIL", fold=0)
+    # No explicit fold: take the oracle default, which is the 5-fold ensemble the
+    # background CDFs are now built on. Pinning fold=0 here (as this line did) makes
+    # the artefact a fold-0 numerator ranked against an ensemble null -- exactly the
+    # mismatch verify_rebuilt_backgrounds --model-change exists to stop shipping.
+    oracle.load_pretrained_model(encode_id="ENCSR149XIL")
 
     # Native window centred on the variant, for the same reason as ChromBPNet:
     # tiling a 2,114 bp model across the 1 Mb multi-oracle locus averages the

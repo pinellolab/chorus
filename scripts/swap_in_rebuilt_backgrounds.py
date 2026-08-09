@@ -67,11 +67,13 @@ def _readable_and_resolvable(path: Path, oracle: str) -> tuple[bool, str]:
     return True, f"{len(ids)} tracks"
 
 
-def verify_all(staged: Path, backups: Path, strict: bool) -> list[str]:
+def verify_all(staged: Path, backups: Path, strict: bool,
+               model_changes: dict | None = None) -> list[str]:
     """Every gate, on every oracle. Returns the list of failures."""
     import importlib.util
 
     fails: list[str] = []
+    model_changes = model_changes or {}
     spec = importlib.util.spec_from_file_location(
         "vrb", REPO / "scripts" / "verify_rebuilt_backgrounds.py")
     vrb = importlib.util.module_from_spec(spec)
@@ -83,12 +85,16 @@ def verify_all(staged: Path, backups: Path, strict: bool) -> list[str]:
     spec2.loader.exec_module(brps)
     ref = REPO / "reference_sets" / "chorus_reference_positions_v1.npz"
 
-    for o in ORACLES:
+    present = [o for o in ORACLES if (staged / f"{o}_pertrack.npz").exists()]
+    if not present:
+        fails.append(f"no rebuilt files found in {staged}")
+    # Only the oracles ACTUALLY staged. A partial swap is legitimate -- the Cherimoya
+    # ensemble rebuild restaged one oracle -- and demanding all eight would either block
+    # it or invite someone to point --staged at the live directory to satisfy the check.
+    for o in present:
         src = staged / f"{o}_pertrack.npz"
-        if not src.exists():
-            fails.append(f"{o}: no rebuilt file at {src}")
-            continue
-        probs = vrb.verify(o, src, backups / f"{o}_pertrack.npz", strict=strict)
+        probs = vrb.verify(o, src, backups / f"{o}_pertrack.npz", strict=strict,
+                           model_change=model_changes.get(o))
         fails += probs
         ok, msg = _readable_and_resolvable(src, o)
         if not ok:
@@ -108,7 +114,17 @@ def swap(staged: Path, live: Path, backups: Path, dry_run: bool) -> int:
                                   capture_output=True, text=True).stdout.strip(),
         "oracles": {},
     }
-    for o in ORACLES:
+    # Only what is staged. A partial restage is legitimate (the Cherimoya ensemble
+    # rebuild restaged one oracle); iterating all eight crashed on the first absent
+    # file, which would push someone toward the far worse workaround of pointing
+    # --staged at the live directory to make the loop find something everywhere.
+    present = [o for o in ORACLES if (staged / f"{o}_pertrack.npz").exists()]
+    manifest["oracles_swapped"] = present
+    manifest["oracles_untouched"] = [o for o in ORACLES if o not in present]
+    print(f"  swapping {len(present)} of {len(ORACLES)}: {', '.join(present)}")
+    if manifest["oracles_untouched"]:
+        print(f"  leaving untouched: {', '.join(manifest['oracles_untouched'])}")
+    for o in present:
         src, dst = staged / f"{o}_pertrack.npz", live / f"{o}_pertrack.npz"
         bak = backups / f"{o}_pertrack.npz"
         if not bak.exists() and dst.exists():
@@ -178,7 +194,24 @@ def main() -> int:
     ap.add_argument("--no-strict-retention", action="store_true",
                     help="allow an oracle with no *_retained array. Off by default: "
                          "without it, thinning is not checkable from the shipped file.")
+    ap.add_argument("--model-change", nargs="*", default=None, metavar="ORACLE=REASON",
+                    help="Forwarded to verify_rebuilt_backgrounds.verify for oracles whose "
+                         "MODEL changed rather than their positions. Without it the pinning "
+                         "check ranks OLD-model committed effects against the NEW null and "
+                         "can fail, or pass, for reasons that mean nothing. REASON required.")
     args = ap.parse_args()
+
+    model_changes: dict[str, str] = {}
+    for spec in (args.model_change or []):
+        if "=" not in spec:
+            print(f"--model-change needs ORACLE=REASON, got {spec!r}")
+            return 2
+        name, _, reason = spec.partition("=")
+        if not reason.strip():
+            print(f"--model-change {name.strip()}: a REASON is required. This relaxes a "
+                  f"real gate; an unexplained relaxation is how a bad build ships.")
+            return 2
+        model_changes[name.strip()] = reason.strip()
 
     from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
 
@@ -190,7 +223,8 @@ def main() -> int:
         return rollback(live, backups)
 
     print(f"verifying {staged} against {backups}\n")
-    fails = verify_all(staged, backups, strict=not args.no_strict_retention)
+    fails = verify_all(staged, backups, strict=not args.no_strict_retention,
+                       model_changes=model_changes)
     if fails:
         print(f"\nREFUSING THE SWAP -- {len(fails)} problem(s):")
         for f in fails:
@@ -199,7 +233,9 @@ def main() -> int:
               "two different reference classes side by side in multi-oracle reports, "
               "with nothing in the output saying so.")
         return 1
-    print(f"\nall {len(ORACLES)} oracles pass every gate")
+    checked = [o for o in ORACLES if (staged / f"{o}_pertrack.npz").exists()]
+    print(f"\nall {len(checked)} staged background(s) pass every gate: "
+          f"{', '.join(checked)}")
     print(f"\n{'DRY RUN — ' if args.dry_run else ''}swapping into {live}")
     return swap(staged, live, backups, args.dry_run)
 

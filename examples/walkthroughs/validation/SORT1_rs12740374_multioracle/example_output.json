@@ -34,10 +34,10 @@
           "description": "DNASE:HepG2"
         },
         "cherimoya": {
-          "raw_score": 1.7929634212041239,
+          "raw_score": 1.4576318169650866,
           "assay_id": "DNASE:ENCSR149XIL",
           "cell_type": "HepG2",
-          "quantile_score": 0.9999,
+          "quantile_score": 0.9997,
           "effect_exceedance": null,
           "description": "DNASE:HepG2"
         },
@@ -54,8 +54,8 @@
       "agreement": "consensus_gain",
       "spread": {
         "min": 1.3344578086817067,
-        "max": 1.7929634212041239,
-        "range": 0.45850561252241717,
+        "max": 1.4576318169650866,
+        "range": 0.12317400828337988,
         "n_oracles": 3
       }
     },
@@ -140,6 +140,6 @@
     "tracks_requested": "assay_ids as listed in each per-oracle request",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-08 13:39 UTC"
+    "generated_at": "2026-08-09 01:28 UTC"
   }
 }

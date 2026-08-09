@@ -31,11 +31,11 @@ instead of merely adjacent. They agree here on direction and differ on
 magnitude — and because AlphaGenome also carries a HepG2 DNase track, the same
 question is answered three independent ways:
 
-| Oracle | HepG2 DNase track | raw log2FC | percentile |
-| --- | --- | --- | --- |
-| Cherimoya | `DNASE:ENCSR149XIL` | **+1.793** | 0.9999 |
-| ChromBPNet | `DNASE:HepG2` | **+1.376** | 0.9995 |
-| AlphaGenome | `DNASE:HepG2` | **+1.334** | 0.9964 |
+| Oracle | HepG2 DNase track | raw log2FC | linear ratio | percentile |
+| --- | --- | --- | --- | --- |
+| Cherimoya (5-fold ensemble) | `DNASE:ENCSR149XIL` | **+1.458** | 2.749 | 0.9997 |
+| ChromBPNet | `DNASE:HepG2` | **+1.376** | 2.600 | 0.9995 |
+| AlphaGenome | `DNASE:HepG2` | **+1.334** | 2.524 | 0.9964 |
 
 Read that as concordance on the finding and honest uncertainty on the size: a
 2.5–3.5× predicted increase in accessibility, from three models that agree the
@@ -58,9 +58,14 @@ argued (full workup in `docs/BACKGROUND_NULL_PROTOCOL.md` §12):
   these two models correlate at r = 0.888 with a mean difference of −0.001 log2,
   and among strong effects 18–22% of loci disagree by more than this one does.
 
-What the spread mostly reflects is that a single cross-validation fold is a
-sample, not the model: Cherimoya's five folds give 3.47 (fold 0, shipped), 2.39,
-2.72, 2.77, 2.77 — and ChromBPNet's 2.60 sits inside that range.
+Cherimoya reports the **average of its five cross-validation folds**, which is
+what CATv1's model card recommends for a robust estimate. That matters here:
+scored on fold 0 alone it read 3.469, because a single checkpoint is a sample
+rather than the model — the five folds give 3.47 / 2.39 / 2.72 / 2.77 / 2.77 and
+their absolute reference counts span 2.49× for the identical sequence.
+Ensembling narrowed the three-way spread from 2.52–3.47 to **2.52–2.75**, i.e.
+0.459 → **0.123** in log2 units. The background CDFs are built the same way, so
+the percentile still ranks like against like.
 Cherimoya track ids are `ASSAY:ENCSR` rather than `ASSAY:biosample`, because
 (assay, biosample) is ambiguous for 1,188 of its 1,518 experiments — the
 accession is what identifies a model.
@@ -75,8 +80,8 @@ accession is what identifies a model.
 
    **It compares direction only** — literally the sign of each oracle's effect —
    so it is shown alongside the magnitude spread rather than on its own. The
-   accessibility row here reads `✅ all ↑ · 3 oracles, +1.33…+1.79`: unanimous on
-   direction, and differing by 1.37× in linear fold change between the extremes.
+   accessibility row here reads `✅ all ↑ · 3 oracles, +1.33…+1.46`: unanimous on
+   direction, and differing by 1.09× in linear fold change between the extremes.
    Without the spread, that renders identically to three oracles agreeing exactly,
    and a reader has no way to tell which they are looking at.
 2. **Cross-oracle genome browser** — one unified IGV instance stacks every

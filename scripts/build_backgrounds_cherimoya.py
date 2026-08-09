@@ -828,7 +828,18 @@ def merge_shards():
         logger.error("Missing shards %s of %d", missing, total)
         return
 
+    # Carry the RETAINED counts through, not just the offered ones. The shards have
+    # them; an earlier version of this function collected only *_counts, so the merged
+    # file shipped with effect_retained / summary_retained / perbin_retained /
+    # perbin_tail_k missing, and whether any track had been thinned became
+    # unanswerable from the published artefact -- the exact question this release
+    # exists to make answerable. build_and_save logged
+    #   "written WITHOUT a sampling= block: thinning cannot be checked"
+    # for two of three layers and wrote the file anyway. Third recurrence of
+    # "arrays lost between interim and final" in this cycle; see
+    # docs/BACKGROUND_NULL_PROTOCOL.md §8 step 7.
     ids, eff_c, sum_c, pb_c, sg, ec, sc, pc = [], [], [], [], [], [], [], []
+    er, sr, pr = [], [], []
     for i in range(total):
         e = numpy.load(shards[i][0], allow_pickle=False)
         b = numpy.load(shards[i][1], allow_pickle=False)
@@ -837,6 +848,24 @@ def merge_shards():
         pb_c.append(b["perbin_cdfs"]); sg.append(e["signed_flags"])
         ec.append(e["effect_counts"]); sc.append(b["summary_counts"])
         pc.append(b["perbin_counts"])
+        # Fall back to offered when a shard predates the field, so an old shard set
+        # still merges -- but that path cannot silently claim exact retention: the
+        # sampling block below is built from these arrays and thinning_violations
+        # will compare them.
+        er.append(e["effect_retained"] if "effect_retained" in e.files else e["effect_counts"])
+        sr.append(b["summary_retained"] if "summary_retained" in b.files else b["summary_counts"])
+        pr.append(b["perbin_retained"] if "perbin_retained" in b.files else b["perbin_counts"])
+
+    ec_all, sc_all, pc_all = (numpy.concatenate(ec), numpy.concatenate(sc),
+                              numpy.concatenate(pc))
+    er_all, sr_all, pr_all = (numpy.concatenate(er), numpy.concatenate(sr),
+                              numpy.concatenate(pr))
+    sampling = {
+        "effect": {"offered": ec_all, "retained": er_all, "tail_k": None},
+        "summary": {"offered": sc_all, "retained": sr_all, "tail_k": None},
+        "perbin": {"offered": pc_all, "retained": pr_all,
+                   "tail_k": int(args.perbin_tail_k) if args.perbin_tail_k else None},
+    }
 
     path = Path(PerTrackNormalizer.build_and_save(
         oracle_name="cherimoya",
@@ -845,11 +874,12 @@ def merge_shards():
         summary_cdfs=numpy.concatenate(sum_c),
         perbin_cdfs=numpy.concatenate(pb_c),
         signed_flags=numpy.concatenate(sg),
-        effect_counts=numpy.concatenate(ec),
-        summary_counts=numpy.concatenate(sc),
-        perbin_counts=numpy.concatenate(pc),
+        effect_counts=ec_all,
+        summary_counts=sc_all,
+        perbin_counts=pc_all,
         cache_dir=CACHE_DIR,
         n_points=args.n_cdf_points,
+        sampling=sampling,
     ))
     if not args.dhs:
         target = path.with_name("cherimoya_pertrack.no-dhs.npz")
