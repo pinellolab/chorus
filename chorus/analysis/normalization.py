@@ -1519,6 +1519,29 @@ _HF_REPO = os.environ.get("CHORUS_BACKGROUNDS_REPO", "lucapinello/chorus-backgro
 MIN_ARTEFACT_SCHEMA = 4
 
 
+def _hf_endpoint_reachable(timeout: float = 5.0) -> "tuple[bool, str]":
+    """Can we open a TCP connection to the HuggingFace endpoint within *timeout*?
+
+    Deliberately a socket connect rather than an HTTP request: the failure being
+    guarded against is a silently-dropping firewall, where the connect never
+    completes and every higher-level timeout is applied to a request that has not
+    started. Returns ``(ok, detail)`` with *detail* naming the host and the reason,
+    so the caller's message can say which host and why rather than "download failed".
+    """
+    import socket
+    from urllib.parse import urlparse
+
+    endpoint = os.environ.get("HF_ENDPOINT", "https://huggingface.co")
+    parsed = urlparse(endpoint if "//" in endpoint else f"https://{endpoint}")
+    host = parsed.hostname or "huggingface.co"
+    port = parsed.port or (80 if parsed.scheme == "http" else 443)
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True, f"{host}:{port}"
+    except OSError as exc:
+        return False, f"{host}:{port} — {type(exc).__name__}: {exc}"
+
+
 def _cached_artefact_is_superseded(path: Path) -> str | None:
     """Why this cached NPZ should be refetched, or None if it is current.
 
@@ -1624,6 +1647,33 @@ def download_pertrack_backgrounds(
         logger.warning(
             "huggingface_hub not installed — cannot download backgrounds. "
             "Install it with: pip install huggingface_hub"
+        )
+        return 0
+
+    # Bound the wait BEFORE handing off to huggingface_hub. Its timeout settings
+    # (HF_HUB_ETAG_TIMEOUT / HF_HUB_DOWNLOAD_TIMEOUT) do not cover the TCP connect and
+    # are multiplied by an internal retry loop, so on a network that DROPS packets to
+    # huggingface.co -- the ordinary firewalled-cluster case -- this sat in SYN-SENT
+    # indefinitely. Measured: still connecting after 18 minutes with one log line and
+    # no diagnostic, and setting both env vars did not bound it either (still running
+    # at a 300 s cap). The cost is also paid repeatedly, because get_normalizer()
+    # retries and `chorus setup` loops over every oracle, so the user sees an apparent
+    # hang for hours with nothing saying the host is unreachable.
+    #
+    # A short TCP preflight converts that into a clear failure in seconds. Set the env
+    # defaults too, for the case where the host answers but then stalls mid-transfer.
+    for var, default in (("HF_HUB_ETAG_TIMEOUT", "10"),
+                         ("HF_HUB_DOWNLOAD_TIMEOUT", "30")):
+        os.environ.setdefault(var, default)
+
+    reachable, detail = _hf_endpoint_reachable()
+    if not reachable:
+        logger.warning(
+            "Cannot reach the HuggingFace endpoint (%s), so %s was not downloaded. "
+            "Percentiles need this file: analyses will return raw scores with no "
+            "percentile columns until it is present. Fetch it on a connected machine "
+            "and copy it into %s, or set HF_ENDPOINT to a reachable mirror.",
+            detail, fname, bg_dir,
         )
         return 0
 
