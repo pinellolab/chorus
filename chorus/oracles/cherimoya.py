@@ -513,7 +513,20 @@ class CherimoyaOracle(OracleBase):
 
         track = OraclePredictionTrack.create(
             source_model="cherimoya",
-            assay_id=self.encode_id,
+            # The CANONICAL id, ASSAY:ENCSR -- which is what the background CDF
+            # rows are keyed on, and what this module's docstring says a Cherimoya
+            # track id is. A bare accession here silently loses BOTH percentiles:
+            # PerTrackNormalizer looks up by assay_id, and 'ENCSR149XIL' matches no
+            # row, so effect_percentile and activity_percentile both return None
+            # with no warning. Verified: 'ENCSR149XIL' -> None/None,
+            # 'DNASE:ENCSR149XIL' -> 0.9997/0.947.
+            #
+            # The committed walkthrough hid this because its runner passes the
+            # prefixed id in assay_ids explicitly; a user calling predict() or
+            # predict_variant_effect() without naming tracks got no percentiles at
+            # all. self.track_id is the same catv1_track_id() value the dict key
+            # already uses.
+            assay_id=self.track_id,
             track_id=None,
             assay_type=self.assay,
             cell_type=self.cell_type,
@@ -818,7 +831,20 @@ class CherimoyaOracle(OracleBase):
 
         track = OraclePredictionTrack.create(
             source_model="cherimoya",
-            assay_id=self.encode_id,
+            # The CANONICAL id, ASSAY:ENCSR -- which is what the background CDF
+            # rows are keyed on, and what this module's docstring says a Cherimoya
+            # track id is. A bare accession here silently loses BOTH percentiles:
+            # PerTrackNormalizer looks up by assay_id, and 'ENCSR149XIL' matches no
+            # row, so effect_percentile and activity_percentile both return None
+            # with no warning. Verified: 'ENCSR149XIL' -> None/None,
+            # 'DNASE:ENCSR149XIL' -> 0.9997/0.947.
+            #
+            # The committed walkthrough hid this because its runner passes the
+            # prefixed id in assay_ids explicitly; a user calling predict() or
+            # predict_variant_effect() without naming tracks got no percentiles at
+            # all. self.track_id is the same catv1_track_id() value the dict key
+            # already uses.
+            assay_id=self.track_id,
             track_id=None,
             assay_type=self.assay,
             cell_type=self.cell_type,
