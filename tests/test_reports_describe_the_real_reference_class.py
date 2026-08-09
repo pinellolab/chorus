@@ -111,8 +111,18 @@ def test_the_committed_artefacts_do_not_carry_the_retired_claim():
             txt = p.read_text(errors="replace")
         except OSError:
             continue
-        if re.search(r"~?10K random SNPs|~?10,000 random SNPs|vs random SNPs", txt, re.I):
-            stale.append(str(p.relative_to(REPO)))
+        for m in re.finditer(r"~?10K random SNPs|~?10,000 random SNPs|vs random SNPs",
+                             txt, re.I):
+            # A README documenting that the claim WAS wrong is doing the right thing;
+            # SORT1_rs12740374/README.md quotes it inside exactly such a correction.
+            ls = txt.rfind("\n", 0, m.start()) + 1
+            le = txt.find("\n", m.end())
+            line = txt[ls:le if le > 0 else len(txt)]
+            if re.search(r"were wrong|was wrong|not\b|never|retired|earlier revision"
+                         r"|used to|previously", line, re.I):
+                continue
+            stale.append(f"{p.relative_to(REPO)}: {line.strip()[:90]}")
+            break
     assert not stale, (
         f"{len(stale)} committed artefact(s) still describe the old reference class; "
         f"regenerate them. First few: {stale[:5]}"

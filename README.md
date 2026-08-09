@@ -1289,13 +1289,18 @@ report = build_variant_report(
 )
 ```
 
-Or pre-download all seven oracles' backgrounds once:
+Or pre-download all eight oracles' backgrounds once:
 
 ```python
 from chorus.analysis.normalization import download_pertrack_backgrounds
-for o in ["alphagenome", "enformer", "borzoi", "chrombpnet", "sei", "legnet", "epinformerseq"]:
+for o in ["alphagenome", "enformer", "borzoi", "chrombpnet", "cherimoya",
+          "sei", "legnet", "epinformerseq"]:
     download_pertrack_backgrounds(o)
 ```
+
+This is also how you pick up a rebuilt background: `download_pertrack_backgrounds`
+checks a cached file and refetches it if it predates the current provenance schema,
+rather than keeping whatever is on disk.
 
 #### Using backgrounds via MCP / Claude
 

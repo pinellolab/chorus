@@ -56,9 +56,11 @@ transcription-factor motif, which is precisely what this variant does. See
 ## Cross-oracle comparison
 
 Compare with the [AlphaGenome focused HepG2 analysis](../SORT1_rs12740374/)
-(+0.449 DNASE:HepG2, +0.387 CEBPA:HepG2) and the [ChromBPNet 1bp analysis](../SORT1_chrombpnet/)
-(−0.111 ATAC:HepG2 — opposite direction, see the ChromBPNet README for
-why). Enformer's discovery-mode panorama complements the other two.
+(+1.334 DNASE:HepG2, +2.945 CEBPA:HepG2) and the
+[ChromBPNet analysis](../SORT1_chrombpnet/) (+1.376 DNASE:HepG2). All three
+open in the same direction and to a similar degree; Enformer's discovery-mode
+panorama complements the other two by scanning every track rather than a
+chosen panel.
 
 ## Output files
 

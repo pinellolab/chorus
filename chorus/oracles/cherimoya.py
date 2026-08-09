@@ -176,9 +176,15 @@ class CherimoyaOracle(OracleBase):
             cell_type: Biosample term name, e.g. ``'K562'``.
             encode_id: ENCODE experiment accession, e.g. ``'ENCSR000EOT'``.
                 Overrides ``cell_type``.
-            fold: Cross-validation fold, 0–4. Default 0, matching
-                ChromBPNet's default and the fold its background CDFs were
-                built at.
+            fold: Cross-validation fold ``0``–``4``, or ``CATV1_ENSEMBLE``
+                (``"ensemble"``) to average the predictions of all five, which is
+                the **default** and what the shipped background CDFs are built on.
+                CATv1's model card offers both; the ensemble is used because one
+                checkpoint is a sample rather than the model — at rs12740374 the
+                five folds give accessibility ratios spanning 2.39–3.47 for the
+                identical sequence. Pinning a single fold ranks it against an
+                ensemble-built null, so prefer the default unless you are
+                deliberately comparing folds.
             weights: Path to a local ``.torch`` checkpoint, bypassing
                 HuggingFace. ``assay`` is still required so the emitted
                 track gets the right type; ``encode_id`` names the track.

@@ -6,7 +6,7 @@
 - **Oracle**: enformer
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: all Enformer tracks (discovery mode)
-- **Generated**: 2026-08-08 04:31 UTC
+- **Generated**: 2026-08-09 13:14 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -83,6 +83,6 @@
 
 ---
 **Score guide:**
-- **Effect %ile**: Variant effect ranked against ~10K random SNPs. 0.95 = stronger than 95% of random variants.
-- **`N× null max`**: the effect exceeded *every* sampled background effect for that track, so the percentile is clamped and cannot rank it further. The multiplier gives the distance to that ceiling — `1.11×` is 11% beyond the most extreme of ~10K background effects. Common for variants that create or destroy a complete transcription-factor motif, which random genomic positions rarely do.
+- **Effect %ile**: Variant effect ranked against a per-track background of ~18,000 variants sampled from the regulatory regions this assay measures (cCREs, DHS summits, promoters, gene features) — not uniformly random positions. 0.95 = stronger than 95% of that background.
+- **`N× null max`**: the effect exceeded *every* sampled background effect for that track, so the percentile is clamped and cannot rank it further. The multiplier gives the distance to that ceiling — `1.11×` is 11% beyond the most extreme background effect for that track. Common for variants that create or destroy a complete transcription-factor motif, which even a regulatory-region background rarely contains.
 - **Activity %ile**: Reference signal ranked genome-wide against ENCODE SCREEN cCREs + random regions. 0.95 = more active than 95% of genomic positions.

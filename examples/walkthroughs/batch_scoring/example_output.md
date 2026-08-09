@@ -6,7 +6,7 @@
 - **Oracle**: alphagenome
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: 6 HepG2 tracks
-- **Generated**: 2026-08-08 03:49 UTC
+- **Generated**: 2026-08-09 13:03 UTC
 
 ## Batch Variant Scoring Results
 
@@ -20,7 +20,7 @@
 | chr1:109279175 G>A | rs4970836 | 7.99 | 7.84 | -0.024 | 0.59 | 130 | 129 | -0.014 | 0.47 | 138 | 137 | -0.003 | 0.10 | 2.98e+03 | 2.99e+03 | +0.009 | 0.63 | 39.7 | 39.6 | -0.003 | 0.31 | 4.14e+03 | 4.13e+03 | -0.003 | 0.36 |
 | chr1:109275216 T>C | rs660240 | 408 | 408 | +0.002 | 0.08 | 631 | 641 | +0.023 | 0.62 | 443 | 449 | +0.019 | 0.57 | 1.59e+04 | 1.58e+04 | -0.004 | 0.40 | 38.3 | 38.4 | +0.004 | 0.37 | 4.01e+03 | 4.02e+03 | +0.003 | 0.32 |
 
-Each track shows: **Ref** (reference allele prediction), **Alt** (alternate allele prediction), **log2FC** (log2 fold-change alt/ref), **Effect %ile** (ranked against ~10K random SNPs).
+Each track shows: **Ref** (reference allele prediction), **Alt** (alternate allele prediction), **log2FC** (log2 fold-change alt/ref), **Effect %ile** (ranked against a per-track background of ~18,000 variants in assay-matched regulatory regions).
 
 **Track identifiers** (for tracing back to oracle data):
 

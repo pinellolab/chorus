@@ -108,11 +108,32 @@ def test_readme_effect_sizes_appear_in_the_artefacts(readme: Path):
     if not claims:
         pytest.skip("no effect-size claims")
 
+    text = readme.read_text()
+
     # A leaf README is checked against its own artefact; a category README against
     # the union over its subdirectories, since it summarises all of them.
     dirs = [readme.parent]
     if not (readme.parent / "example_output.json").exists():
         dirs = [p.parent for p in readme.parent.rglob("example_output.json")]
+
+    # ... PLUS any walkthrough this one links to. A "Cross-oracle comparison" section
+    # legitimately quotes a SIBLING's numbers ("compare with the ChromBPNet analysis
+    # (+1.376 DNASE:HepG2)"), and those live in the sibling's artefact, not this one.
+    # Following the link is the point: it makes a cross-reference checkable rather
+    # than exempt, so a stale one still fails. SORT1_enformer had asserted
+    # "-0.111 ATAC:HepG2" about a sibling whose own README said that figure was stale
+    # prose -- two files disagreeing, with nothing checking either.
+    for m in re.finditer(r"\]\(((?:\.\./)+[A-Za-z0-9_./-]+)\)", text):
+        target = (readme.parent / m.group(1)).resolve()
+        if not target.is_dir():
+            target = target.parent
+        try:
+            target.relative_to(WALKTHROUGHS.resolve())
+        except ValueError:
+            continue  # points outside the walkthroughs tree
+        dirs += [q.parent for q in target.rglob("example_output.json")]
+
+    dirs = list(dict.fromkeys(dirs))
     if not dirs:
         pytest.skip("no artefact to check against")
 
@@ -122,11 +143,44 @@ def test_readme_effect_sizes_appear_in_the_artefacts(readme: Path):
     if not available:
         pytest.skip("artefacts carry no numbers")
 
+    # A line that explicitly documents a number as HISTORICAL is doing the right
+    # thing, and rewriting it would erase the correction. Recognised narrowly:
+    # the line must say so in words, so it cannot be used to park a live claim.
+    _HISTORY = re.compile(
+        r"earlier version|earlier revision|used to|previously|was wrong|were wrong"
+        r"|no longer|stale prose|audit's recorded|before this|superseded",
+        re.I,
+    )
+
+    def _is_history(claim: str) -> bool:
+        """True only if EVERY occurrence is marked historical.
+
+        Two markers count. A line saying so in words, and an ``old -> new`` arrow,
+        where the value on the left of the arrow is by construction the superseded
+        one -- "composite 0.995 -> 0.999, alt effect -1.363 -> -1.368" documents a
+        change, and demanding the left side exist in the current artefact would make
+        it impossible to record one.
+        """
+        for m in re.finditer(re.escape(claim), text):
+            ls = text.rfind("\n", 0, m.start()) + 1
+            le = text.find("\n", m.end())
+            line = text[ls:le if le > 0 else len(text)]
+            after = text[m.end():m.end() + 12]
+            if _HISTORY.search(line):
+                continue
+            if re.match(r"\s*(\u2192|->|=>)", after):   # left side of old -> new
+                continue
+            return False   # at least one LIVE use of this number
+        return True
+
     stale = []
     for claim in claims:
         want = float(_normalise_sign(claim))
-        if not any(abs(want - got) <= _TOLERANCE for got in available):
-            stale.append(claim)
+        if any(abs(want - got) <= _TOLERANCE for got in available):
+            continue
+        if _is_history(claim):
+            continue
+        stale.append(claim)
 
     assert not stale, (
         f"{readme.relative_to(WALKTHROUGHS.parent.parent)} quotes "

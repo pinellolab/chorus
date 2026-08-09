@@ -22,7 +22,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: top 30 tracks for HepG2
 - **Cell types**: HepG2
-- **Generated**: 2026-08-08 03:47 UTC
+- **Generated**: 2026-08-09 13:02 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -105,7 +105,7 @@
 
 ---
 **Score guide:**
-- **Effect %ile**: Variant effect ranked against ~10K random SNPs. 0.95 = stronger than 95% of random variants.
+- **Effect %ile**: Variant effect ranked against a per-track background of ~18,000 variants sampled from the regulatory regions this assay measures (cCREs, DHS summits, promoters, gene features) — not uniformly random positions. 0.95 = stronger than 95% of that background.
 - **Activity %ile**: Reference signal ranked genome-wide against ENCODE SCREEN cCREs + random regions. 0.95 = more active than 95% of genomic positions.
 
 
@@ -120,7 +120,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: top 6 tracks for MCF 10A
 - **Cell types**: MCF 10A
-- **Generated**: 2026-08-08 03:48 UTC
+- **Generated**: 2026-08-09 13:02 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -168,7 +168,7 @@
 
 ---
 **Score guide:**
-- **Effect %ile**: Variant effect ranked against ~10K random SNPs. 0.95 = stronger than 95% of random variants.
+- **Effect %ile**: Variant effect ranked against a per-track background of ~18,000 variants sampled from the regulatory regions this assay measures (cCREs, DHS summits, promoters, gene features) — not uniformly random positions. 0.95 = stronger than 95% of that background.
 - **Activity %ile**: Reference signal ranked genome-wide against ENCODE SCREEN cCREs + random regions. 0.95 = more active than 95% of genomic positions.
 
 
@@ -183,7 +183,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: top 3 tracks for amniotic epithelial cell
 - **Cell types**: amniotic epithelial cell
-- **Generated**: 2026-08-08 03:48 UTC
+- **Generated**: 2026-08-09 13:02 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -218,6 +218,6 @@
 
 ---
 **Score guide:**
-- **Effect %ile**: Variant effect ranked against ~10K random SNPs. 0.95 = stronger than 95% of random variants.
+- **Effect %ile**: Variant effect ranked against a per-track background of ~18,000 variants sampled from the regulatory regions this assay measures (cCREs, DHS summits, promoters, gene features) — not uniformly random positions. 0.95 = stronger than 95% of that background.
 - **Activity %ile**: Reference signal ranked genome-wide against ENCODE SCREEN cCREs + random regions. 0.95 = more active than 95% of genomic positions.
 
