@@ -369,6 +369,9 @@ class PerTrackNormalizer:
         self.cache_dir = Path(cache_dir)
         # Keyed by oracle name
         self._loaded: dict[str, dict] = {}  # oracle -> {track_ids, effect_cdfs, ...}
+        # Oracles already warned about a superseded artefact, so the message is
+        # emitted once rather than on every percentile lookup.
+        self._warned_superseded: set[str] = set()
 
     # ------------------------------------------------------------------
     # File naming
@@ -406,6 +409,23 @@ class PerTrackNormalizer:
             if alias:
                 return self._ensure_loaded(alias)
             return None
+        # Say something when the artefact predates the retention rebuild. The
+        # downloader now refuses to keep a superseded cache, but a user who
+        # obtained the file another way -- a copy, a pinned mirror, a restored
+        # backup -- would otherwise get silently wrong ceilings. Warned once per
+        # oracle per process, not per call.
+        if oracle_name not in self._warned_superseded:
+            why = _cached_artefact_is_superseded(path)
+            if why:
+                self._warned_superseded.add(oracle_name)
+                logger.warning(
+                    "%s background at %s is superseded (%s). Effect ceilings are "
+                    "draws from a uniform subsample, so strong effects will stay "
+                    "clamped at percentile 1.0 with an inflated exceedance ratio. "
+                    "Delete the file and re-run to refetch.",
+                    oracle_name, path, why,
+                )
+
         data = np.load(str(path), allow_pickle=False)
         entry = {
             "track_ids": [str(x) for x in data["track_ids"]],
@@ -1494,6 +1514,41 @@ def get_pertrack_normalizer(
 _HF_REPO = os.environ.get("CHORUS_BACKGROUNDS_REPO", "lucapinello/chorus-backgrounds")
 
 
+# Artefacts below this provenance schema predate the retention rebuild, so their
+# ceilings are draws from a uniform subsample rather than population maxima.
+MIN_ARTEFACT_SCHEMA = 4
+
+
+def _cached_artefact_is_superseded(path: Path) -> str | None:
+    """Why this cached NPZ should be refetched, or None if it is current.
+
+    Deliberately conservative: an unreadable or unrecognised file is reported as
+    superseded rather than trusted, because the failure mode of accepting a bad
+    cache is silent wrong percentiles, while the failure mode of refetching a good
+    one is a download.
+    """
+    import json as _json
+
+    try:
+        with np.load(path, allow_pickle=True) as d:
+            files = set(d.files)
+            layers = [k[:-len("_cdfs")] for k in files if k.endswith("_cdfs")]
+            missing = [f"{lay}_retained" for lay in layers
+                       if f"{lay}_retained" not in files]
+            if missing:
+                return f"no {', '.join(sorted(missing))} -- predates the retention rebuild"
+            if "build_config" not in files:
+                return "no build_config"
+            cfg = _json.loads(str(d["build_config"][0]))
+    except Exception as exc:  # unreadable, truncated, or not an NPZ
+        return f"unreadable ({type(exc).__name__})"
+
+    schema = cfg.get("schema_version")
+    if not isinstance(schema, int) or schema < MIN_ARTEFACT_SCHEMA:
+        return f"provenance schema {schema!r} < {MIN_ARTEFACT_SCHEMA}"
+    return None
+
+
 def download_pertrack_backgrounds(
     oracle_name: str,
     cache_dir: str | None = None,
@@ -1504,7 +1559,31 @@ def download_pertrack_backgrounds(
     ``lucapinello/chorus-backgrounds`` dataset repo and saves it to
     *cache_dir* (default ``~/.chorus/backgrounds/``).
 
-    Returns 1 if downloaded, 0 if already exists or not available.
+    Returns 1 if downloaded, 0 if already usable-as-cached or not available.
+
+    A cached file is NOT automatically accepted. "The file exists" was the only
+    check here, and it is the wrong one for any release that changes artefact
+    CONTENT rather than adding a new oracle: publishing rebuilt CDFs would then
+    reach nobody who had ever run ``chorus setup``, silently and permanently.
+
+    Demonstrated before this guard existed: a pre-2026-08 ``legnet_pertrack.npz``
+    dropped into an empty cache made this function return 0 and the normalizer
+    load it without a word, with a K562 effect ceiling of 0.9057 against the
+    rebuilt 0.7887. Percentiles in the body barely move, so nothing looks wrong —
+    the damage is at the clamp, where the strong motif-creating variants this
+    release exists to un-pin keep reading 1.0 with an exceedance multiplier
+    inflated by up to 10x.
+
+    So the cache is checked for the two properties that distinguish a rebuilt
+    artefact from a superseded one, and a stale file is moved aside and refetched:
+
+    * ``{layer}_retained`` present — added by the retention rebuild, and the only
+      way to answer "was any track thinned" from the artefact;
+    * ``build_config.schema_version >= MIN_ARTEFACT_SCHEMA``.
+
+    Neither is a substitute for a published checksum manifest, which is the real
+    fix and does not exist yet — but both are derivable from the file itself,
+    which means this works without any new infrastructure or server round-trip.
     """
     if cache_dir is None:
         cache_dir = str(CHORUS_BACKGROUNDS_DIR)
@@ -1520,7 +1599,24 @@ def download_pertrack_backgrounds(
     fname = PerTrackNormalizer.npz_filename(oracle_name)
     local_path = bg_dir / fname
     if local_path.exists():
-        return 0  # already cached
+        stale = _cached_artefact_is_superseded(local_path)
+        if not stale:
+            return 0  # cached and current
+        aside = local_path.with_suffix(".npz.superseded")
+        logger.warning(
+            "Cached %s is superseded (%s); moving it to %s and refetching. "
+            "A superseded background ranks against the wrong null -- percentiles "
+            "in the body look normal while extreme effects stay clamped.",
+            fname, stale, aside.name,
+        )
+        try:
+            local_path.replace(aside)
+        except OSError as exc:
+            logger.error(
+                "Could not move the superseded %s aside (%s). Delete it manually "
+                "and re-run, or percentiles will be computed against it.", fname, exc,
+            )
+            return 0
 
     try:
         from huggingface_hub import hf_hub_download
@@ -1540,6 +1636,20 @@ def download_pertrack_backgrounds(
             local_dir=str(bg_dir),
         )
         logger.info("Downloaded %s", fname)
+        # If what we just fetched is ALSO superseded, the published dataset is behind
+        # the code. Say so plainly instead of re-downloading it on every call: a
+        # silent loop would look like a slow start-up, and a silent accept would give
+        # wrong ceilings. Keep the file (it is the best available) and keep the
+        # superseded copy aside so nothing is destroyed.
+        why = _cached_artefact_is_superseded(local_path)
+        if why:
+            logger.warning(
+                "The PUBLISHED %s is itself superseded (%s). The dataset at %s is "
+                "behind this version of chorus, so effect ceilings will be draws from "
+                "a uniform subsample until it is republished. Percentiles in the body "
+                "are unaffected; strong effects will stay clamped at 1.0.",
+                fname, why, _HF_REPO,
+            )
         return 1
     except Exception as exc:
         logger.warning("Failed to download %s: %s", fname, exc)

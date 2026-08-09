@@ -107,6 +107,23 @@ def build_config(oracle: str, payload: dict) -> dict:
                   for L in (layers or []) if L in LAYER_CONFIGS}
 
     sf = np.asarray(payload["signed_flags"]).astype(bool) if "signed_flags" in payload else None
+
+    # Carry forward the checkpoint identity the BUILDER recorded. The stamp replaces
+    # build_config wholesale, so anything the builder knew and the stamper does not is
+    # lost -- and "which checkpoints produced this null" is exactly what provenance is
+    # for. Cherimoya's first stamp after the 5-fold ensemble swap dropped
+    # fold="ensemble", leaving an artefact that could not say whether it was built from
+    # one fold or five, which is a 33% difference in the statistic it ranks against.
+    prior: dict = {}
+    if "build_config" in payload:
+        try:
+            prior = json.loads(str(payload["build_config"][0]))
+        except Exception:
+            prior = {}
+    carried = {k: prior[k] for k in ("fold", "folds", "ensemble", "model_variant",
+                                     "checkpoint_template")
+               if k in prior and prior[k] is not None}
+
     cfg = {
         "schema_version": SCHEMA_VERSION,
         "oracle": oracle,
@@ -123,6 +140,8 @@ def build_config(oracle: str, payload: dict) -> dict:
         "layers_present": layers,
         "statistics_per_layer": statistics,
         "signed_fraction": None if sf is None else round(float(sf.mean()), 4),
+        # Builder-recorded checkpoint identity, preserved across the stamp.
+        **carried,
         # Kept for compatibility with the schema-2/3 readers and with
         # tests/test_provenance_is_read.py, which guards the #122 substance: histone ChIP
         # is scored over 2001 bp and everything else over 501, and a background built with
