@@ -8,6 +8,27 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 _Nothing yet._
 
+## [0.7.1] — 2026-08-10
+
+Bookkeeping release. **No CDF changed** — the matrices are byte-identical to 0.7.0 — so no
+percentile moves. Append-in-place, no rebuild, no GPU.
+
+**Background artefacts.** Pinned to dataset revision [`backgrounds-2026-08-10-layers`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds/tree/backgrounds-2026-08-10-layers). Identical CDFs to `backgrounds-2026-08-06-schema4`; the only difference is the per-row layer array and `build_config.layers_present`. The 0.7.0 revision is left intact, so 0.7.0 stays reproducible.
+
+### Fixed
+- **`layers_per_row` shipped on three oracles of eight, and ChromBPNet was one of the five without it.** AlphaGenome (6 distinct layers), Borzoi (5) and Enformer (4) carried the array because their builders construct `track_info` with a `'layer'` key; Cherimoya, ChromBPNet, EPInformer-seq, LegNet and Sei never had that concept in their builders, so the array was absent and `build_config.layers_present` was `null`. For four of the five that costs nothing — they are single-layer, so the array carries no information. ChromBPNet is not: its **753 rows span ATAC (4), DNASE (5) and CHIP (744)**, accessibility *and* TF binding, and code keying on the array had to fall back to re-deriving each row's layer from the track-id string.
+
+  Now stamped on all eight. Every value is produced by the same `classify_track_layer` the query path calls — on a shim carrying the assay_type that oracle emits — and then asserted equal to it, because a stored array that disagreed with the query path would be worse than no array. What had to be supplied per oracle is only the assay_type, since the ids do not all carry one: from the id prefix for ChromBPNet, Cherimoya and EPInformer-seq, and as a constant for Sei (`sequence-class`) and LegNet (whose ids are bare, e.g. `K562`). Result: ChromBPNet 9 + 744, Cherimoya 1,518 accessibility, EPInformer-seq 33 enhancer activity, LegNet 3 promoter activity, Sei 40 regulatory classification.
+
+  Verified against values recorded before the stamp: all three CDFs bit-match for Cherimoya `DNASE:ENCSR149XIL` and ChromBPNet `DNASE:HepG2`.
+
+  It stayed invisible because `tests/test_canonical_layer_vocabulary.py` validates the array *when present* and never required presence — a shape of test worth naming, since it reads like coverage and is not. `tests/test_every_background_carries_its_layers.py` now requires presence, per-row length, canonical values, no `'other'`, agreement with `build_config.layers_present`, and equality with what `classify_track_layer` computes.
+
+  One defect introduced and fixed on the way, recorded because the tag moved: the first stamp wrote `build_config` as a **0-d** array where every artefact stores shape `(1,)`, which raises `IndexError` in any reader doing `build_config[0]` — it broke `test_the_shipped_null_records_that_it_was_built_from_the_ensemble` on five artefacts at once. The stamper's own reader tolerated both shapes, which is exactly why it did not notice. Repaired, and `test_build_config_storage_shape_is_uniform` now asserts the shape rather than tolerating it. The `backgrounds-2026-08-10-layers` dataset tag was deleted and recreated at the corrected head; nothing referenced it yet, and `backgrounds-2026-08-06-schema4` was untouched throughout, so 0.7.0 stays reproducible.
+
+### Changed
+- **Five GitHub Releases told users to run a command that has never worked.** v0.5.2 through v0.5.6 ended with `pip install --upgrade chorus-genomics`. Chorus is not on PyPI: `chorus-genomics` is unregistered and the `chorus` name belongs to an unrelated chemistry package. All five release bodies now give the source install, with a note saying what was corrected and why. Found by verifying the fix rather than trusting the first three I had read — the check turned up two more.
+
 ## [0.7.0] — 2026-08-10
 
 **Effect percentiles change, and are not comparable with any earlier release.** The
@@ -663,7 +684,8 @@ HTML report generation with embedded IGV, and the `chorus` CLI
 
 ---
 
-[Unreleased]: https://github.com/pinellolab/chorus/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/pinellolab/chorus/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/pinellolab/chorus/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/pinellolab/chorus/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/pinellolab/chorus/compare/v0.5.6...v0.6.0
 [0.5.6]: https://github.com/pinellolab/chorus/compare/v0.5.5...v0.5.6
