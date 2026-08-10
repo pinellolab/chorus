@@ -18,21 +18,26 @@ window sum is linear, so Cherimoya's log2FC 1.4576 vs ChromBPNet's 1.3756 was ri
 all along.
 
 The fix is not a cleverer predicate. Two candidate universal rules were measured and
-both are wrong:
+both fail to express the intent:
 
-  * ``resolution <= 1`` would also flip AlphaGenome, which emits DNase at 1 bp too
-    (its panel has the same 3,005 features at a 349 bp step). It must not flip: a
-    point profile is sparse on a near-zero floor (Cherimoya p50 0.075, p99 3.38) so
-    max recovers the peak without lifting the floor, while AlphaGenome's 1 bp DNase
-    is dense coverage (p50 0.020, p99 0.285) where max over 349 dense bins inflates
-    the whole track.
-  * "spikiness" from the artefact points the wrong way: perbin max/p99 is 22 for
-    Cherimoya and 65 for AlphaGenome.
+  * ``resolution <= 1`` happens to select the right set today only because of which
+    oracles exist; it carries no statement about *why*, so the next oracle inherits a
+    coincidence rather than a decision.
+  * "spikiness" read off the shipped artefact points the wrong way: perbin max/p99 is
+    22 for Cherimoya against 65 for AlphaGenome.
 
-So pooling is a declared per-oracle fact, and this test is the thing that keeps the
-declaration honest: an oracle that is neither a declared point-profile model nor a
-declared coverage model fails here, at the moment it is added, rather than silently
-rendering at a fifth of its height.
+So pooling is a declared per-oracle fact, and this test is what keeps the declaration
+honest: an oracle that is neither declared base-resolution nor declared coverage fails
+here, at the moment it is added, rather than silently rendering at a fifth of its height.
+
+AlphaGenome was initially left on mean-pooling on the argument that its 1 bp output is
+dense coverage, where max over a 349 bp bin lifts the baseline as well as the peak. That
+argument is still true and is now measured
+(:func:`test_alphagenome_max_pools_by_maintainer_decision` has the table), but the
+maintainer decided on 2026-08-10 to max-pool it anyway, so that every panel in a
+cross-oracle report is computed the same way. Recorded here because the earlier revision
+of this docstring asserted the opposite, and a test file arguing against its own
+assertions is worse than either choice.
 """
 from __future__ import annotations
 
@@ -106,11 +111,15 @@ def test_cherimoya_and_chrombpnet_agree_on_aggregation():
 
 
 def test_coverage_oracles_still_mean_pool():
-    """AlphaGenome must NOT be swept up by the fix.
+    """The pre-binned oracles stay on mean, and that is not an oversight.
 
-    It emits 1 bp DNase like the profile models, so a resolution-keyed rule would
-    catch it. Max-pooling dense coverage over a 349 bp bin lifts the whole track
-    toward the ceiling rather than recovering a peak.
+    Enformer (128 bp) and Borzoi (32 bp) have already integrated over their own bin, so
+    a display bin collapses only 2-11 native bins; max there adds noise without
+    recovering anything. Sei and EPInformer-seq emit a window statistic rather than a
+    profile.
+
+    AlphaGenome used to be in this set and is deliberately no longer: see
+    ``test_alphagenome_max_pools_by_maintainer_decision``.
     """
     for oracle in sorted(_COVERAGE_ORACLES):
         _, aggregation = _calculate_track_bin_size(
@@ -119,6 +128,53 @@ def test_coverage_oracles_still_mean_pool():
         assert aggregation == "mean", (
             f"{oracle} is declared coverage but pools by {aggregation}"
         )
+
+
+def test_alphagenome_max_pools_by_maintainer_decision():
+    """AlphaGenome is max-pooled, and the trade it makes is pinned here.
+
+    It emits DNase/CAGE at 1 bp, so mean-pooling divided a one-base feature by the
+    display bin width exactly as it did for Cherimoya. Maintainer decision on
+    2026-08-10 was to treat it like the BPNet-family models so that every panel in a
+    cross-oracle report is computed the same way.
+
+    It is NOT the same case as ChromBPNet/Cherimoya, and the measurement is recorded so
+    the trade is visible rather than discovered later. A BPNet profile is sparse spikes
+    on a near-zero floor (Cherimoya null p50 0.075, p99 3.38), so max recovers the peak
+    and leaves the floor. AlphaGenome's 1 bp output is dense coverage (p50 0.020,
+    p99 0.285), so the max of ~349 dense samples lands near the upper tail almost
+    everywhere. Measured on the committed SORT1 panel, 1,048,396 bp window:
+
+                          peak            bins > 1.0        mean displayed
+        DNASE:HepG2   2.918 -> 3.000   1.96% -> 32.61%     0.0800 -> 0.9915
+        CAGE:HepG2    2.567 -> 3.000   1.40% -> 22.06%     0.0630 -> 0.6417
+        H3K27ac       3.000 -> 3.000   2.08% ->  2.39%     0.0709 -> 0.0838
+
+    So the peak became comparable and the baseline rose by more than 12x on DNase. The
+    128 bp histone tracks are effectively untouched, which is the control: it confirms
+    the effect comes from collapsing many native bins, not from the pooling choice per se.
+
+    If this reads badly in review, the revert is moving two names between the two
+    frozensets -- this test is what makes that a deliberate act rather than a silent one.
+    """
+    for oracle in ("alphagenome", "alphagenome_pt"):
+        for window_bp in (2_114, 1_048_396):
+            _, aggregation = _calculate_track_bin_size(
+                resolution=1, window_bp=window_bp, source_oracle=oracle,
+            )
+            assert aggregation == "max", (
+                f"{oracle} at window {window_bp} pools by {aggregation}; it is declared "
+                f"a base-resolution track and must match ChromBPNet/Cherimoya"
+            )
+
+    # The 128 bp tracks collapse only 2 native bins, which is why they barely move.
+    bin_size, _ = _calculate_track_bin_size(
+        resolution=128, window_bp=1_048_396, source_oracle="alphagenome",
+    )
+    assert bin_size // 128 == 2, (
+        f"expected a 128 bp AlphaGenome track to collapse 2 native bins at this window, "
+        f"got {bin_size // 128}; the docstring's histone control assumes it"
+    )
 
 
 def test_mean_pooling_a_point_profile_is_what_it_would_cost():

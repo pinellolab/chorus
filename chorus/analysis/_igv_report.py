@@ -149,23 +149,48 @@ _HIGH_RES_ORACLES = ["chrombpnet", "legnet"] # for visualization mean vs max poo
 # 100 MiB file limit that no realistic report can approach it. See issue #129.
 _MAX_FEATURES_PER_TRACK = 4_000
 
-#: Oracles whose output is a base-resolution **point profile** -- counts spread
-#: across single bases, giving sparse spikes on a near-zero floor. These must be
-#: max-pooled for display; mean-pooling a one-base peak across a wide display bin
-#: dilutes it by the bin width. Every other oracle emits coverage already
-#: integrated over its own bin, where mean is the faithful summary.
+#: Oracles max-pooled for display: those emitting a base-resolution track, where
+#: mean-pooling a one-base feature across a wide display bin divides it by the bin
+#: width. Everything else emits coverage already integrated over its own bin (128 bp
+#: for Enformer, 32 bp for Borzoi), where mean is the faithful summary and max over
+#: 2-11 native bins would only add noise.
 #:
-#: Cherimoya was missing here, which is the whole defect: on the SORT1 multi-oracle
-#: panel its peak rendered at 0.547 instead of 3.000 (5.5x), on the same 0-3 axis as
-#: ChromBPNet, in a report whose purpose is cross-oracle comparison.
+#: Cherimoya was missing here, which is the defect that started this: on the SORT1
+#: multi-oracle panel its peak rendered at 0.547 instead of 3.000 (5.5x), on the same
+#: 0-3 axis as ChromBPNet, in a report whose purpose is cross-oracle comparison.
+#:
+#: AlphaGenome is here by maintainer decision (2026-08-10), and the tradeoff is worth
+#: recording because it is not the same case as the BPNet-family models. It does emit
+#: DNase/CAGE at 1 bp, so it was suffering the same bin-width division. But a BPNet
+#: profile is sparse spikes on a near-zero floor (Cherimoya's null: p50 0.075, p99 3.38)
+#: where max recovers the peak and leaves the floor alone, whereas AlphaGenome's 1 bp
+#: output is dense coverage (p50 0.020, p99 0.285) where max over a 349 bp bin also
+#: lifts the baseline. Measured on the SORT1 panel over a 1,048,396 bp window, and the
+#: baseline effect is large -- larger than estimated before it was run:
+#:
+#:                      peak          bins > 1.0 (its own p99)     MEAN displayed
+#:   DNASE:HepG2   2.918 -> 3.000       1.96% -> 32.61%          0.0800 -> 0.9915
+#:   CAGE:HepG2    2.567 -> 3.000       1.40% -> 22.06%          0.0630 -> 0.6417
+#:   H3K27ac       3.000 -> 3.000       2.08% ->  2.39%          0.0709 -> 0.0838
+#:
+#: The peak is now comparable with ChromBPNet and Cherimoya on the shared axis, which is
+#: what was asked for. The cost is that the *average* displayed bin on the 1 bp tracks
+#: now sits at roughly the genome-wide p99, because the max of 349 dense samples lands
+#: near the upper tail almost everywhere -- so those panels read as broadly hot rather
+#: than as peaks against a floor. The 128 bp histone tracks are unaffected (max over 2
+#: native bins). If that trade turns out to be the wrong one, moving these two names
+#: back to _COVERAGE_ORACLES is the whole revert.
+#:
 #: See tests/test_igv_pooling_is_declared_per_oracle.py.
-_POINT_PROFILE_ORACLES = frozenset({"chrombpnet", "cherimoya"})
+_POINT_PROFILE_ORACLES = frozenset({
+    "chrombpnet", "cherimoya", "alphagenome", "alphagenome_pt",
+})
 
 #: Oracles deliberately left on mean-pooling, recorded explicitly so that the test
-#: above can tell "decided: coverage" apart from "never considered".
-_COVERAGE_ORACLES = frozenset({
-    "alphagenome", "alphagenome_pt", "enformer", "borzoi", "sei", "epinformerseq",
-})
+#: above can tell "decided: coverage" apart from "never considered". All three emit
+#: pre-binned coverage: Enformer 128 bp, Borzoi 32 bp, Sei/EPInformer-seq a window
+#: statistic rather than a profile.
+_COVERAGE_ORACLES = frozenset({"enformer", "borzoi", "sei", "epinformerseq"})
 
 
 def rescale_for_display(
@@ -345,22 +370,18 @@ def _calculate_track_bin_size(
     # window sum is linear and identical either way (log2FC 1.4576 vs
     # ChromBPNet's 1.3756).
     #
-    # The criterion is NOT resolution alone, and that was measured rather than
-    # assumed. AlphaGenome also emits DNase at 1 bp -- its committed panel has the
-    # same 3,005 features at a 349 bp step, which only happens when
-    # bins_per == 349 -- so a bare `resolution <= 1` rule would flip it too. It
-    # should not be flipped: a point profile is sparse spikes on a near-zero floor
-    # (Cherimoya's own null: p50 0.075, p99 3.38), so max-pooling recovers the peak
-    # without lifting the floor, whereas AlphaGenome's 1 bp DNase is dense coverage
-    # (p50 0.020, p99 0.285) where max over 349 dense bins would inflate the whole
-    # track toward the ceiling. Nor does "spikiness" separate them from the artefact:
-    # max/p99 is 22 for Cherimoya and 65 for AlphaGenome, i.e. the wrong way round.
+    # The criterion is base resolution, and the membership is declared rather than
+    # predicated, because no predicate got it right. `resolution <= 1` catches the
+    # right set today only by accident of which oracles exist; "spikiness" read off
+    # the artefact points the wrong way (perbin max/p99 is 22 for Cherimoya against
+    # 65 for AlphaGenome). Both were measured before being rejected.
     #
-    # So this is a genuine per-oracle modelling fact, and it is written as one. The
-    # protection against it drifting again is not a cleverer predicate -- it is
+    # So membership is a per-oracle decision, written as one. The protection against
+    # it drifting is not a cleverer predicate -- it is
     # tests/test_igv_pooling_is_declared_per_oracle.py, which enumerates the oracle
-    # registry and fails when an oracle is neither listed here nor explicitly
-    # recorded as coverage. A silent fall-through is what broke Cherimoya.
+    # registry and fails when an oracle is neither listed as a base-resolution track
+    # nor explicitly recorded as coverage. A silent fall-through is what broke
+    # Cherimoya, which rendered at a fifth of its height for exactly that reason.
     if source_oracle in _POINT_PROFILE_ORACLES:
         # BPNet-family: base-resolution point profiles, sparse and one base wide.
         # ChromBPNet keeps its deliberate 20 bp preference (PR #79); the budget

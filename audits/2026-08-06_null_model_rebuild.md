@@ -890,3 +890,33 @@ noting what the blank-panel test bought here: it did not merely catch a bad figu
 showcase silently comparing a liver model against erythroid models at an erythroid locus — and
 the first, plausible fix did not move the measurement past the threshold, which is exactly the
 outcome a pixel-level assertion is for.
+
+## Addendum G.1 — AlphaGenome max-pooling, by decision rather than by measurement
+
+The pooling fix above deliberately excluded AlphaGenome, and I recommended keeping it excluded:
+its 1 bp output is dense coverage, so max-pooling a 349 bp display bin lifts the baseline as well
+as the peak. The maintainer chose consistency instead — every panel in a cross-oracle report
+computed the same way — which is a legitimate call the measurement does not settle.
+
+Done, and measured, because the numbers turned out larger than my qualitative warning implied:
+
+| AlphaGenome track, SORT1 panel, 1,048,396 bp | peak | bins > 1.0 | mean displayed |
+|---|---|---|---|
+| `DNASE:HepG2` | 2.918 → 3.000 | 1.96% → **32.61%** | 0.0800 → **0.9915** (12.4×) |
+| `CAGE:HepG2` | 2.567 → 3.000 | 1.40% → 22.06% | 0.0630 → 0.6417 |
+| `CHIP:H3K27ac:HepG2` (128 bp) | 3.000 → 3.000 | 2.08% → 2.39% | 0.0709 → 0.0838 |
+| Cherimoya / ChromBPNet (control) | unchanged | unchanged | **bit-identical** |
+
+The mechanism is not subtle: the display bin collapses 349 native bins, so max samples near the
+99.7th percentile of the local distribution, and the floor-rescale maps that above the genome-wide
+p99 nearly everywhere. The 128 bp histone tracks collapse only 2 native bins and barely move,
+which is the control confirming the effect is the collapse factor rather than the pooling operator.
+
+**What this costs and what it buys.** It buys peak comparability on the shared 0–3 axis — the thing
+the cross-oracle report exists for. It costs the visual distinction between "peak" and "floor" on
+AlphaGenome's 1 bp tracks. A middle option exists and was not taken because it was not asked for:
+pooling by a high percentile of the bin (say the 95th) rather than the max recovers most of the
+peak height while suppressing the baseline lift, at the price of a third convention in the
+renderer.
+
+Recorded as a decision, not a finding, and the revert is two names between two frozensets.

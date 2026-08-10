@@ -95,7 +95,17 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
   Two candidate universal rules were measured and both are wrong, so the fix does not pretend one exists. `resolution <= 1` would also flip AlphaGenome, which emits DNase at 1 bp as well — it must not flip, because a point profile is sparse on a near-zero floor (Cherimoya's null: p50 0.075, p99 3.38) where max recovers the peak without lifting the floor, whereas AlphaGenome's 1 bp DNase is dense coverage (p50 0.020, p99 0.285) where max over 349 dense bins would inflate the whole track. And artefact "spikiness" points the wrong way: per-bin max/p99 is 22 for Cherimoya against 65 for AlphaGenome. So pooling is now a **declared per-oracle property**, with `tests/test_igv_pooling_is_declared_per_oracle.py` failing for any oracle that is neither declared a point-profile nor declared coverage — a silent fall-through is what caused this.
 
-  Both affected artefacts regenerated. AlphaGenome, ChromBPNet and LegNet feature values are bit-identical across the change.
+  Both affected artefacts regenerated. ChromBPNet and LegNet feature values are bit-identical across the change.
+
+- **AlphaGenome is now max-pooled for display too, by maintainer decision, and the trade is measured.** The rule above initially kept AlphaGenome on mean-pooling: it emits DNase/CAGE at 1 bp and so was suffering the same bin-width division as Cherimoya, but its 1 bp output is *dense coverage* (per-bin null p50 0.020, p99 0.285) rather than sparse spikes on a near-zero floor (Cherimoya p50 0.075, p99 3.38), so the max of ~349 dense samples lands near the upper tail almost everywhere and lifts the baseline as well as the peak. The maintainer's call was to treat it like the BPNet-family models anyway, so that every panel in a cross-oracle report is computed the same way. Measured on the SORT1 panel over a 1,048,396 bp window:
+
+  | AlphaGenome track | peak | bins above 1.0 (its own genome-wide p99) | mean displayed |
+  |---|---|---|---|
+  | `DNASE:HepG2` | 2.918 → 3.000 | 1.96% → **32.61%** | 0.0800 → **0.9915** |
+  | `CAGE:HepG2` | 2.567 → 3.000 | 1.40% → 22.06% | 0.0630 → 0.6417 |
+  | `CHIP:H3K27ac:HepG2` (128 bp) | 3.000 → 3.000 | 2.08% → 2.39% | 0.0709 → 0.0838 |
+
+  So the peaks became comparable with ChromBPNet and Cherimoya on the shared axis, which is what was wanted, and the average displayed bin on the 1 bp tracks rose to roughly the genome-wide p99 — those panels now read as broadly hot rather than as peaks against a floor. The 128 bp histone tracks are effectively untouched, which is the control: the effect comes from collapsing many native bins, not from the pooling choice as such. Reverting is moving two names between two frozensets in `_igv_report.py`; `tests/test_igv_pooling_is_declared_per_oracle.py` carries the table so the trade stays visible.
 
 - **The background sampler was throwing away the tail it existed to measure.** Every percentile Chorus reports is a rank against a per-track empirical null, and `effect_percentile` is `min(rank/denominator, 1.0)` — so it clamps the moment an effect reaches the largest *sampled* background value. That ceiling had been patched three times (re-anchoring, union-at-2N, the read-side `effect_exceedance` ratio). None of them addressed the cause, because the cause was a defect, not a limitation:
 
