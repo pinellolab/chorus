@@ -6,74 +6,25 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.7.0] — 2026-08-10
+
+**Effect percentiles change, and are not comparable with any earlier release.** The
+background sampler was discarding the tail it exists to measure: a uniform *m*-of-*N*
+reservoir subsample retains the population maximum with probability exactly *m*/*N*, and
+that maximum is what a percentile clamps against. 9 of 19 (oracle, layer) reservoir pairs
+were thinned, 1.36x to 43.5x; AlphaGenome `gene_expression` ceilings were understated by up
+to **8.3x** while p99 stayed right to 0.6%, which is why no percentile test caught it.
+
+**Background artefacts.** This release is pinned to dataset revision [`backgrounds-2026-08-06-schema4`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds/tree/backgrounds-2026-08-06-schema4) of `lucapinello/chorus-backgrounds`. `schema_version 4`, one `build_id` across all eight oracles. Older cached copies are moved aside and refetched automatically. This is the first release to pin a revision at all — see the *Added* entry below for why that matters.
+
+### Added
+- **A release now names the artefact revision it was verified against.** A percentile is a function of *(code, artefacts)*, and the artefacts live in a separate HuggingFace dataset whose `main` moves independently — so until now the same chorus commit produced different numbers depending on when the user happened to download. That is demonstrated rather than hypothetical: the 2026-08-10 upload replaced every file in place, which silently changed the behaviour of every already-released version that fetched afterwards. Both states are now tagged on the dataset (`backgrounds-2026-08-01-preunified`, `backgrounds-2026-08-06-schema4`), every download and listing call passes `revision=`, and `CHORUS_BACKGROUNDS_REVISION` overrides it for anyone developing a new oracle's background — with a note saying what that costs. `tests/test_artefact_revision_is_pinned.py` fails if a call site loses the pin or the pin stops matching the artefacts on disk.
+
 ### Changed
-
-- **Every oracle's variant-effect null is now drawn from the regions its assay actually measures.** The effect null answers "how unusual is this effect, compared to what?", and for a localised assay a uniformly random genomic position is the wrong comparison: it carries almost no signal, so the pseudocount damps its log-ratio toward zero and the null's body collapses below where real regulatory effects live.
-
-  Five of the eight oracles already anchored on peaks — ChromBPNet drew 10,000 DHS-summit variants alongside 10,000 uniform, Cherimoya unioned `random + dhs` explicitly. The other three did not, **even though two of them already used cCREs for their baseline pass** — an asymmetry inside a single oracle, which is harder to defend than any difference between oracles. That is now closed, 8 of 8:
-
-  | oracle | effect reference population | tracks |
-  |---|---|---|
-  | AlphaGenome, Enformer, Borzoi, Sei, EPInformer-seq | gene-anchored ∪ ENCODE SCREEN cCREs | 18,165 |
-  | LegNet | promoter-anchored (TSS ±250 bp, PLS, pELS) | 3 |
-  | ChromBPNet, Cherimoya | uniform ∪ DHS summits (unchanged) | 2,271 |
-
-  Measured per track, as the ratio of the new null's tail to the old one's — median over tracks, and the share of tracks that got wider:
-
-  | oracle | tracks | p99 | p99.9 | wider |
-  |---|---|---|---|---|
-  | Sei | 40 | **2.05×** | 1.80× | 100% |
-  | EPInformer-seq | 33 | 1.38× | 1.28× | 76% |
-  | LegNet | 3 | 1.30× | 1.17× | 67% |
-  | Enformer | 5,313 | 1.26× | 1.33× | 84% |
-  | Borzoi | 7,611 | 1.19× | 1.19× | 82% |
-
-  The concrete win: at SORT1, **half of Enformer's chromatin-accessibility rows had a percentile pinned at exactly 1.0000** — the column had stopped discriminating precisely where it mattered. That is now zero.
-
-- **It is a union at doubled N, not a mixture — and the difference is the whole finding.** The first attempt held the position count fixed and gave cCRE 25% of it. It made things *worse*. The statistic that decides whether a percentile still discriminates is the null **maximum**, and a maximum grows with the number of draws, so splitting a fixed budget shortens *every* component's tail. Measured on one Enformer accessibility track and one TF track:
-
-  | reference set | accessibility | tf_binding |
-  |---|---|---|
-  | gene-anchored, 5,949 positions | 1.653 | 3.539 |
-  | cCRE-only, 5,986 positions | 2.754 | 3.301 |
-  | 25/75 mixture, 5,962 total | 1.697 | **2.937** ← below both |
-
-  TF saturation went from 25% of rows to 92%. Keeping each component at full size instead makes the union's maximum exactly `max(max_gene, max_cCRE)`, so it is **provably never worse than the better component for any layer**. The gene-anchored half reproduces the previously shipped counts exactly (1,200 / 1,200 / 1,980 / 720), so the 6,000 cCRE positions are purely additive: nothing that already worked can get worse.
-
-- **Calibration held.** Against strong TSS-proximal liver eQTLs (GTEx v8, tissue-matched tracks), the median AlphaGenome effect percentile moved from 0.781 to **0.778** for RNA and 0.659 to **0.625** for CAGE — both inside the acceptance band, both 0% saturated. The tail widened for the peak layers without disturbing the layers that were already well calibrated.
-
-- **Not fixed, and not claimed to be.** AlphaGenome `histone_marks` and Enformer `tf_binding` keep whatever their better component gives (20% and 25% of rows still pinned at 1.0). Both would need a *per-track* reference population — that mark's own broad domains, that factor's own ChIP peaks — which is a different design, not a different fraction.
-
-- **Weaker evidence for three of the eight, stated as such.** Sei, LegNet and EPInformer-seq have no committed walkthrough rows and no positive set (there is no eQTL equivalent for MPRA activity or Sei sequence classes). Unlike the accessibility fix, where saturation was measured at 50% and dropped to 0%, those three are justified by tail width and by matching the assay's biology — **not** by a calibration check.
-
-
-- **Three backgrounds rebuilt against a gene-anchored effect region set (AlphaGenome, Borzoi, Enformer).** The shipped effect nulls were drawn from uniformly random genomic positions, which is the wrong reference class for a TSS-localised assay: a random position has essentially no CAGE signal, so the `+1` pseudocount damps its log-ratio toward zero and the null's body sits far below where real regulatory effects live. Positions are now sampled per stratum from protein-coding annotation (GENCODE v48 basic) — 20 % within ±1 kb of a TSS, 20 % at 1–10 kb, 33 % within ±100 bp of an exon/intron boundary, 12 % elsewhere in a gene body, 15 % uniformly random. The random tail is deliberate: without near-zero mass, genuinely small effects would receive artificially *low* percentiles, the mirror of the failure being fixed. All three oracles drew from one seeded region set — each build logged an identical `tss_near 1200, tss_far 1200, junction 1980, gene_body 720, random 849` of 6,000 sampled positions — so the three are directly comparable. New `build_config` provenance is stamped into each NPZ.
-
-  Measured against strong TSS-proximal liver eQTLs from GTEx v8 (`|slope| >= 0.5`, `maf >= 0.05`, `p <= 1e-10`), scored in tissue-matched tracks:
-
-  | layer | eQTL percentile p50, before | after | saturated |
-  |---|---|---|---|
-  | RNA (232 rows, 8 tracks) | 0.899 | **0.781** | 0 % |
-  | CAGE (100 rows, 4 tracks) | 0.857 | **0.659** | 0 % |
-
-  Both moved down, which is the intended direction — the reference class now contains variants that actually perturb these assays, so a given eQTL is less extreme against it. (These are the figures after the gene-anchored rebuild. The cCRE union that followed moved them again, to 0.778 and 0.625 — see the entry above for the final values.)
-
-- **Effect of the whole cycle on the committed examples.** Across the four AlphaGenome/Enformer variant walkthroughs, saturated rows (percentile pinned at exactly 1.0000, where the column has stopped discriminating) fell from **47 to 16** with row counts unchanged at 369 and distinct percentile values up from 280 to 284.
-
-  Attribution, and the honest limits of it. These were measured separately and are attributable:
-
-  | change | measured effect |
-  |---|---|
-  | RNA denominator: exon *intervals* → bins actually summed (#149) | numerator was overstated 251–1736×; median \|effect percentile\| 0.99+ → 0.062 on the unchanged population |
-  | Enformer `effect_cdfs` grid repair (#143) | reachable percentile ceiling 0.9605 → 0.9998; the top 4 % of the scale did not previously exist |
-  | Cross-process determinism (#127, #145) | a full report is now bit-exact: 603 numeric fields, 0 differing, 0 sign flips, worst relative delta 0.0 — against 454 differing fields with 36 sign flips before |
-  | Gene-anchored null (this entry) | the eQTL table above |
-
-  The per-layer walkthrough diff is a **combined** effect of all of the above plus the CHIP window classifier (#122/#146) and window-span parity (#147/#148); it is not decomposed per change, because doing so honestly would require re-running each rebuild in isolation. It is reported as a fused diff rather than split by guesswork.
-
-- **One layer did not improve in this step.** Enformer `chromatin_accessibility` at SORT1 went from 4/12 saturated to **6/12**, median percentile 0.960 → 1.000. That was not a new regression: 0.960 *was* the padded-grid artefact ceiling (#143), so those rows were already pinned and the repair only made the pinning visible instead of disguising it as a plausible 0.96. The underlying fact was that Enformer's accessibility effect null was genuinely too narrow for a variant this strong.
-
-  **Fixed later in the same release** by the cCRE union described in the entry above — that layer is now 0/12 saturated. The two entries are sequential, not contradictory: this one records the state after the gene-anchored rebuild, and the entry above records the state after the union.
+- **`pytest` now means the same thing for a contributor, for CI and in the audit checklist.** `pytest.ini` set no `addopts`, so a bare `pytest tests/` collected the integration tests — which spawn oracle subprocesses and download weights — and failed on any machine without the per-oracle environments, while CI stayed green by passing `-m "not integration"` *and* `--ignore=tests/test_smoke_predict.py`. Both flags were working around defects: the exclusion now lives in `pytest.ini`, and the smoke tests are marked `integration` (which they always were in substance) with prerequisite guards so a machine without the envs gets skips instead of a wall of fixture ERRORs. Default suite 1,443 passed in 5:23 against 28:49 for the everything run.
+- **The build documentation described the defect this release fixed as the design.** `scripts/README.md`, which README and API_DOCUMENTATION both cite as the pipeline reference, predated the rebuild: it documented capacity-50,000 reservoir subsampling as intended behaviour, listed 6 oracles of 8, gave ChromBPNet as "24 models, 2.4 MB" against a real 753 tracks and 79.5 MB, described one baseline mixture where there are three, and pointed at a build-script path that does not resolve for EPInformer-seq. Rewritten from values read out of the artefacts. README also claimed the downloader "will not overwrite local files — it only fetches when the file is missing", which is exactly the behaviour that would have made this release's corrected backgrounds reach nobody.
 
 ### Fixed
 
@@ -175,6 +126,87 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 - **A test left the MCP state singleton unable to resolve the reference genome, breaking seven later tests.** `OracleStateManager` is a singleton that resolves hg38 exactly once, in `__init__`. Seven tests in `test_mcp.py` need one built under a mocked `GenomeManager`, so each sets `_instance = None` and reconstructs inside the patch — where `is_genome_downloaded()` returns False. The rebuilt singleton takes `_reference_fasta = None` and **keeps it after the patch lifts**, because nothing saved the old value. That field is what the state manager hands an oracle as `reference_fasta`, so every subsequent test scoring a genomic interval raised `ValueError: Reference FASTA required for genomic coordinates`. Fixed with an autouse snapshot/restore fixture in a new `tests/conftest.py`, covering any future test that reaches for the same pattern rather than the seven current call sites. It restores the same object rather than resetting to None, so module-scoped fixtures that loaded an oracle into the singleton keep seeing it instead of reloading a model per test. Worth recording for how it presented: the seven failures appeared only in the full suite, passed in isolation, and the box happened to be sharing GPUs with another job — so they were initially and wrongly written off as contention. Bisecting the file list identified `test_mcp.py` as the sole cause. Three tests now guard the fixture and were verified to fail without it.
 
+## [0.6.0] — 2026-08-05
+
+Retroactive tag for the 66 commits that landed on `main` between v0.5.6 and 2026-08-05 and
+were never released. Cut on 2026-08-10 at `3e7990a` so that the state users had before the
+0.7.0 rebuild has a name.
+
+**Effect percentiles change.** Every oracle's effect null moved onto the regions its assay
+actually measures, so no effect percentile from this release is comparable with 0.5.x.
+
+**Background artefacts.** This release is pinned to dataset revision [`backgrounds-2026-08-01-preunified`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds/tree/backgrounds-2026-08-01-preunified) of `lucapinello/chorus-backgrounds`. Those artefacts predate `schema_version 4` and carry the reservoir-thinned ceilings 0.7.0 corrected. The tag exists because the dataset was overwritten in place on 2026-08-10; without it this release would silently produce 0.7.0 numbers from 0.6.0 code. 0.6.0 itself does not pin the revision — the pinning arrived in 0.7.0 — so reproducing it exactly needs `CHORUS_BACKGROUNDS_REVISION=backgrounds-2026-08-01-preunified`.
+
+### Changed
+
+- **Every oracle's variant-effect null is now drawn from the regions its assay actually measures.** The effect null answers "how unusual is this effect, compared to what?", and for a localised assay a uniformly random genomic position is the wrong comparison: it carries almost no signal, so the pseudocount damps its log-ratio toward zero and the null's body collapses below where real regulatory effects live.
+
+  Five of the eight oracles already anchored on peaks — ChromBPNet drew 10,000 DHS-summit variants alongside 10,000 uniform, Cherimoya unioned `random + dhs` explicitly. The other three did not, **even though two of them already used cCREs for their baseline pass** — an asymmetry inside a single oracle, which is harder to defend than any difference between oracles. That is now closed, 8 of 8:
+
+  | oracle | effect reference population | tracks |
+  |---|---|---|
+  | AlphaGenome, Enformer, Borzoi, Sei, EPInformer-seq | gene-anchored ∪ ENCODE SCREEN cCREs | 18,145 |
+  | LegNet | promoter-anchored (TSS ±250 bp, PLS, pELS) | 3 |
+  | ChromBPNet, Cherimoya | uniform ∪ DHS summits (unchanged) | 2,271 |
+
+  Measured per track, as the ratio of the new null's tail to the old one's — median over tracks, and the share of tracks that got wider:
+
+  | oracle | tracks | p99 | p99.9 | wider |
+  |---|---|---|---|---|
+  | Sei | 40 | **2.05×** | 1.80× | 100% |
+  | EPInformer-seq | 33 | 1.38× | 1.28× | 76% |
+  | LegNet | 3 | 1.30× | 1.17× | 67% |
+  | Enformer | 5,313 | 1.26× | 1.33× | 84% |
+  | Borzoi | 7,611 | 1.19× | 1.19× | 82% |
+
+  The concrete win: at SORT1, **half of Enformer's chromatin-accessibility rows had a percentile pinned at exactly 1.0000** — the column had stopped discriminating precisely where it mattered. That is now zero.
+
+- **It is a union at doubled N, not a mixture — and the difference is the whole finding.** The first attempt held the position count fixed and gave cCRE 25% of it. It made things *worse*. The statistic that decides whether a percentile still discriminates is the null **maximum**, and a maximum grows with the number of draws, so splitting a fixed budget shortens *every* component's tail. Measured on one Enformer accessibility track and one TF track:
+
+  | reference set | accessibility | tf_binding |
+  |---|---|---|
+  | gene-anchored, 5,949 positions | 1.653 | 3.539 |
+  | cCRE-only, 5,986 positions | 2.754 | 3.301 |
+  | 25/75 mixture, 5,962 total | 1.697 | **2.937** ← below both |
+
+  TF saturation went from 25% of rows to 92%. Keeping each component at full size instead makes the union's maximum exactly `max(max_gene, max_cCRE)`, so it is **provably never worse than the better component for any layer**. The gene-anchored half reproduces the previously shipped counts exactly (1,200 / 1,200 / 1,980 / 720), so the 6,000 cCRE positions are purely additive: nothing that already worked can get worse.
+
+- **Calibration held.** Against strong TSS-proximal liver eQTLs (GTEx v8, tissue-matched tracks), the median AlphaGenome effect percentile moved from 0.781 to **0.778** for RNA and 0.659 to **0.625** for CAGE — both inside the acceptance band, both 0% saturated. The tail widened for the peak layers without disturbing the layers that were already well calibrated.
+
+- **Not fixed, and not claimed to be.** AlphaGenome `histone_marks` and Enformer `tf_binding` keep whatever their better component gives (20% and 25% of rows still pinned at 1.0). Both would need a *per-track* reference population — that mark's own broad domains, that factor's own ChIP peaks — which is a different design, not a different fraction.
+
+- **Weaker evidence for three of the eight, stated as such.** Sei, LegNet and EPInformer-seq have no committed walkthrough rows and no positive set (there is no eQTL equivalent for MPRA activity or Sei sequence classes). Unlike the accessibility fix, where saturation was measured at 50% and dropped to 0%, those three are justified by tail width and by matching the assay's biology — **not** by a calibration check.
+
+- **Three backgrounds rebuilt against a gene-anchored effect region set (AlphaGenome, Borzoi, Enformer).** The shipped effect nulls were drawn from uniformly random genomic positions, which is the wrong reference class for a TSS-localised assay: a random position has essentially no CAGE signal, so the `+1` pseudocount damps its log-ratio toward zero and the null's body sits far below where real regulatory effects live. Positions are now sampled per stratum from protein-coding annotation (GENCODE v48 basic) — 20 % within ±1 kb of a TSS, 20 % at 1–10 kb, 33 % within ±100 bp of an exon/intron boundary, 12 % elsewhere in a gene body, 15 % uniformly random. The random tail is deliberate: without near-zero mass, genuinely small effects would receive artificially *low* percentiles, the mirror of the failure being fixed. All three oracles drew from one seeded region set — each build logged an identical `tss_near 1200, tss_far 1200, junction 1980, gene_body 720, random 849` of 6,000 sampled positions — so the three are directly comparable. New `build_config` provenance is stamped into each NPZ.
+
+  Measured against strong TSS-proximal liver eQTLs from GTEx v8 (`|slope| >= 0.5`, `maf >= 0.05`, `p <= 1e-10`), scored in tissue-matched tracks:
+
+  | layer | eQTL percentile p50, before | after | saturated |
+  |---|---|---|---|
+  | RNA (232 rows, 8 tracks) | 0.899 | **0.781** | 0 % |
+  | CAGE (100 rows, 4 tracks) | 0.857 | **0.659** | 0 % |
+
+  Both moved down, which is the intended direction — the reference class now contains variants that actually perturb these assays, so a given eQTL is less extreme against it. (These are the figures after the gene-anchored rebuild. The cCRE union that followed moved them again, to 0.778 and 0.625 — see the entry above for the final values.)
+
+- **Effect of the whole cycle on the committed examples.** Across the four AlphaGenome/Enformer variant walkthroughs, saturated rows (percentile pinned at exactly 1.0000, where the column has stopped discriminating) fell from **47 to 16** with row counts unchanged at 369 and distinct percentile values up from 280 to 284.
+
+  Attribution, and the honest limits of it. These were measured separately and are attributable:
+
+  | change | measured effect |
+  |---|---|
+  | RNA denominator: exon *intervals* → bins actually summed (#149) | numerator was overstated 251–1736×; median \|effect percentile\| 0.99+ → 0.062 on the unchanged population |
+  | Enformer `effect_cdfs` grid repair (#143) | reachable percentile ceiling 0.9605 → 0.9998; the top 4 % of the scale did not previously exist |
+  | Cross-process determinism (#127, #145) | a full report is now bit-exact: 603 numeric fields, 0 differing, 0 sign flips, worst relative delta 0.0 — against 454 differing fields with 36 sign flips before |
+  | Gene-anchored null (this entry) | the eQTL table above |
+
+  The per-layer walkthrough diff is a **combined** effect of all of the above plus the CHIP window classifier (#122/#146) and window-span parity (#147/#148); it is not decomposed per change, because doing so honestly would require re-running each rebuild in isolation. It is reported as a fused diff rather than split by guesswork.
+
+- **One layer did not improve in this step.** Enformer `chromatin_accessibility` at SORT1 went from 4/12 saturated to **6/12**, median percentile 0.960 → 1.000. That was not a new regression: 0.960 *was* the padded-grid artefact ceiling (#143), so those rows were already pinned and the repair only made the pinning visible instead of disguising it as a plausible 0.96. The underlying fact was that Enformer's accessibility effect null was genuinely too narrow for a variant this strong.
+
+  **Fixed later in the same release** by the cCRE union described in the entry above — that layer is now 0/12 saturated. The two entries are sequential, not contradictory: this one records the state after the gene-anchored rebuild, and the entry above records the state after the union.
+
+### Fixed
+
 - **Walkthrough TSVs silently dropped every per-gene row after the first.** `scripts/regenerate_remaining_examples.py` carried its own report flattener that de-duplicated on `(allele, assay_id, layer)` — a key omitting the region. RNA and CAGE emit one row per *gene* per track, so all but one gene were discarded: `validation/TERT_chr5_1295046` shipped 18 rows where its JSON had 99 (one `tss_activity` row where there were fifteen, one per nearby gene TSS), `discovery/SORT1_cell_type_screen` 39 of 347, `sequence_engineering/region_swap` 4 of 32, `integration_simulation` 3 of 55. The same writer also put `region_label` in a column named `description`, which already means the *track* description in `to_dict()` — one name for two things across two artefacts of the same report. Fixed by deletion rather than repair: everything now routes through `report.to_dataframe()`, the canonical writer `scripts/regenerate_examples.py` already used. All 14 walkthrough (JSON, TSV) pairs now agree on both counts and row identities, pinned by `tests/test_json_tsv_parity.py`. Long-standing rather than a regression — the counts were identical before and after the rebuild.
 
 - **Docs overstated AlphaGenome's usable track count by 563.** Ten places across `README.md`, `docs/variant_analysis_framework.md`, `docs/MCP_WALKTHROUGH.md` and `docs/API_DOCUMENTATION.md` advertised **5,731 tracks**, including the README's headline sentence. That is the row count of AlphaGenome's metadata table; 563 of those rows are `padding` placeholders whose only purpose is keeping `local_index` aligned with the model's output array. They carry no assay, `iter_tracks()` skips them, and the shipped background has no row for any of them. The queryable count is **5,168** — verified both directions: 5,168 metadata tracks have a background row and 0 do not, and 5,168 + 563 = 5,731 exactly. `tests/test_documented_track_counts.py` now compares live-doc prose against the shipped NPZs so this cannot drift again. (An earlier entry below claims this was "disambiguated inline"; it was not, in any of the four live docs.)
@@ -182,6 +214,106 @@ project adheres to [Semantic Versioning](https://semver.org/).
 - **The background grid guard blocked a healthy rebuild.** The `distinct == count` fingerprint — reported as perfect, 5,313/5,313 with zero false positives — fired on AlphaGenome `effect_cdfs` row 3966 (CHIP_TF ARID3A) and refused an 11-hour merge. That row is not padded: 913 of its 5,949 samples are exact zeros, so interpolating the remainder lands on exactly 5,949 distinct values by coincidence, and its maximum first appears at index 9998 — precisely where `np.interp` puts it, where padding would put it at 5,948. The raising condition is now the mechanical one alone (`first_max == n - 1`, unreachable by `np.interp`, whose `source_q` stops at `(n-1)/n`); `distinct == count` is a `logger.warning` that says outright it is usually coincidence. Tally before the demotion was three false positives to one true catch.
 
 - **ChromBPNet recovers counts with `expm1`, not `exp`.** ChromBPNet's count head is trained against `log(1 + count)` (upstream `batchgen_generator.py` feeds `np.log(1+batch_cts.sum(-1, keepdims=True))` as the target), but chorus inverted it with `np.exp`, so every recovered count was high by exactly +1 — negligible at a peak (~0.1 % at 1,000 counts) but up to 100 % at a low-activity site, which is precisely the regime the activity CDFs are built from. Corrected at the three count-inversion sites: `oracles/chrombpnet.py:579` (`_transform_predictions_to_tracks`), `oracles/chrombpnet.py:802` (`predict_sliding`), and `scripts/build_backgrounds_chrombpnet.py:348` (`predict_profiles_batch`). The profile softmax `np.exp` calls at `:577`, `:801` and `:347` are a different transform and are unchanged. The bug was self-consistent — oracle and CDF builder made the same error — so ChromBPNet percentiles were internally valid, which is why it went unnoticed; raw counts and cross-oracle comparability were not. Cherimoya already did this correctly (`cherimoya_source/scoring.py`) and is unaffected. New regression suite `tests/test_chrombpnet_counts.py` covers all three sites, including an oracle/builder consistency check so the two cannot drift apart again.
+
+## [0.5.6] — 2026-05-15
+
+*Per-walkthrough reproduction notebooks.* No library code touched; 389 passed, 2 skipped.
+
+### Added
+- **Every walkthrough ships a `notebook.ipynb`** that reproduces the same result as the matching MCP query — 13 of them, generated by one declarative script, `scripts/generate_walkthrough_notebooks.py`, whose `WALKTHROUGHS` list holds the path, MCP tool, oracle and arguments per spec. Eight cell-template builders cover the seven distinct MCP-tool flows plus multi-oracle consolidation.
+- Notebook contract: a single imports cell, no `pip install` cells, one logical step per cell, all arguments explicit, and a dedicated save cell writing `example_output.md` / `.json` / `.tsv` / HTML. Top-to-bottom execution reproduces the MCP output.
+- `nbformat>=5.0` made explicit in the dev extras.
+
+### Changed
+- `use_environment=True` throughout the notebooks, so they stay in the base `chorus` kernel and each oracle delegates its model load to its own mamba env by subprocess — no notebook-level env switching.
+- The causal-prioritization notebook inlines 11 LD proxies so it has no LDlink network dependency, with a commented-out `fetch_ld_variants` block for fresh proxies. The multi-oracle notebook is the only one that runs three oracles end to end (ChromBPNet → LegNet → AlphaGenome).
+
+## [0.5.5] — 2026-05-14
+
+*Indel and multi-allelic variant prioritization.* 389 passed, 2 skipped (+10 tests).
+
+### Added
+- **`predict_variant_effect` accepts indels everywhere.** The SNV-only gate at `chorus/core/base.py:415-424` was the only thing blocking them — `apply_variant`, `Interval.replace` and `parse_ld_response` already supported any-length swaps but never saw them. Replaced with a permissive validator backed by `normalize_allele` (`-` / `None` / case-folded ACGTN), auto-widening the internal region to fit `len(ref)`.
+- **`get_centered_window` returns a `length`-bp window for any variant kind** — SNV, insertion, deletion, MNV, VCF-style anchored. For deletions it fetches extra right flank so `len(alt_seq) == length`.
+- **LDlink parsing fans out `Correlated_Alleles`.** A row with `Alleles=(CT/-)` and `T=CT,A=-` now emits **two** LDVariant records, one per `SENT=PROXY` pair, both at the same coordinate and both scored. Multi-allelic alts in `(A/G,T)` fan out too. `LDVariant.kind` classifies each.
+- **`snvs_only` filter** on `fetch_ld_variants`, `prioritize_causal_variants` and the MCP `fine_map_causal_variant` tool, defaulting to `False`.
+- `CausalVariantScore.kind` surfaced in `to_dict()` and the markdown ranking table.
+
+### Changed
+- **Backward-compatible only if you opt in.** Callers that relied on `InvalidRegionError("…single-nucleotide variant…")` to filter indels will now have them scored instead. Migration: pass `snvs_only=True`.
+
+## [0.5.4] — 2026-05-13
+
+*Collaborator round 2: rsID input, LDlink config, AlphaGenome example IDs.* 379 passed, 2 skipped.
+
+### Added
+- **rsID input** in `analyze_variant_multilayer`, `discover_variant` and `discover_variant_cell_types`: a `position` starting with `rs` is resolved via LDlink (sentinel-only fetch, no full proxy lookup), with new `ldlink_token` and `genome_build` parameters. `score_variant_batch` deliberately excluded — its contract takes explicit coordinates per row for the VCF case.
+- `fine_map_causal_variant` takes `ldlink_timeout` (default 30.0) and `genome_build`, which accepts `hg19` / `grch37` / `GRCh37` / `hg38` / `grch38` / `GRCh38`; it had been hardcoded to `grch38`.
+
+### Fixed
+- **Four walkthrough READMEs used display-name assay ids** (`"DNASE:HepG2"`) that raise `ValueError("Assay ID not found in metadata")` at runtime. Replaced with real AlphaGenome identifiers (`"DNASE/EFO:0001187 DNase-seq/."`) plus an inline comment showing the `metadata.search_tracks()` lookup.
+
+### Known limitations
+- **AlphaGenome normalization is over-optimistic**, confirmed by direct CDF inspection: at effect 0.05 the mean percentile is already 0.896 (ATAC), 0.884 (DNASE), 0.720 (CHIP_HISTONE). Deferred to #83 with three implementation options rather than patched — it is the problem the 0.6.0 region re-anchoring exists to address.
+
+## [0.5.3] — 2026-05-12
+
+*Collaborator-audit followups.* Eight findings plus a ranking sweep; two re-shaped on verification.
+
+### Added
+- `TrackScore.low_effective_bins` — a diagnostic flag when scoring window / native bin resolution < 8. Fires on AlphaGenome CHIP-TF (501 bp / 128 bp ≈ 4 bins). **No window change**, deliberately: widening `tf_binding` would invalidate every published CDF *and* dilute narrow TF footprints, so the quantization risk is surfaced instead of silently traded away.
+- `AlphaGenomeMetadata.iter_tracks()`, a public iterator excluding padding rows; `_tracks` documented as internal (kept for output-array index alignment).
+- `chorus.oracles.bpnet` exposing `load_bpnet_model`, `encode_sequence`, `predict_bpnet`, encapsulating the `sys.path` + `BPNet.arch` + `tasks.json` + bias-tensor recipe.
+- `chorus.analysis.normalization.is_ready_for_oracle(name)`, unified across both normalizer layouts and honouring `_CDF_ALIASES`.
+- `chorus.utils.get_centered_window(...)` — 1-based-safe centred ref/alt window with strict ref-base validation.
+
+### Changed
+- `discover_variant` / `discover_variant_effects` / `_score_all_tracks` / `_rank_and_select` / `_rank_cell_types` all default to `ranking_metric="alt_x_abs_effect"`, matching `discover_variant_cell_types`. Ranking outputs now carry `ref_value`, `alt_value`, `ranking_score`, `ranking_metric` and `low_baseline_warning`.
+
+### Fixed
+- **A wrong-class normalizer failed silently.** `build_variant_report`'s type hint said `QuantileNormalizer | None` when `PerTrackNormalizer` is what IGV rescale requires. Now widened, raising `TypeError` on anything else and warning clearly when a `QuantileNormalizer` is passed (tables score, IGV will not).
+- **MCP `analyze_variant_multilayer` crashed with `StopIteration`.** The docstring invited `assay_ids=[]` to mean "all tracks" but `_predict()` only handled `None`, so an empty list gave empty predictions and `next(iter(...))` blew up. Fixed in all three multi-track oracles; new `EmptyPredictionsError` replaces the opaque failure.
+- **`VariantReport.to_html()` silently stripped IGV above 50 tracks.** Now truncates to the top 50 by `|effect|` with a warning and an HTML callout; the table still shows every track.
+
+## [0.5.2] — 2026-05-11
+
+*Test-only release closing #81 (AlphaGenome JAX vs PyTorch equivalence).* No production code changed. 379 passed, 2 skipped.
+
+### Fixed
+- **The equivalence test's absolute bound was measuring bf16 quantization, not model drift.** `max(|pt - jax|) < 0.1` failed on Mac Metal (0.9963) and Linux/CUDA (0.4760), but per-track Pearson correlation is **1.0000** and mean absolute difference over 1M positions × 3 tracks is 0.0005–0.0008. JAX runs `params=float32,compute=bfloat16,output=bfloat16`; at signal magnitude ~55 adjacent bf16 values are 0.25 apart, so ~0.4 peak differences are intrinsic. The PR #62 baseline of <0.05 had been measured on a lower-magnitude window — the peaks grew, the model did not drift. Replaced with Pearson > 0.99, `max(|Δ|)/peak < 2%`, and `mean(|Δ|)/mean(|jax|) < 5%`.
+
+## [0.5.1] — 2026-05-10
+
+*Patch: three findings from the v0.5.0 scorched-earth audit.* 375 passed on macOS Metal.
+
+### Fixed
+- **ChromBPNet wide-window `predict` crashed in the base env** with `ModuleNotFoundError: No module named 'tensorflow'` — two of the three shipped notebooks hit it. The v0.5.0 auto-route to `predict_sliding` was the cause; the env-runner template path was already correct. Also fixed a parallel bug in `_predict_direct` that used `// sequence_length` where it needed `// output_length`, undersizing `one_hot` and crashing on inputs above 2,114 bp.
+- **`chorus setup --oracle alphagenome_pt` logged a 404 and then "✓ ready".** It aliases to AlphaGenome's CDFs at lookup time, but `download_pertrack_backgrounds` still tried to fetch a separate NPZ. Now short-circuits for anything in `_CDF_ALIASES` with an alias-aware message.
+- `chorus backgrounds status` omitted `alphagenome_pt` from its hardcoded oracle list.
+
+### Known limitations
+- AlphaGenome JAX vs PyTorch backend drift at SORT1 confirmed pre-existing (`git log v0.4.0..v0.5.0 -- alphagenome*` is empty) and platform-amplified: 0.476 max absolute difference on Linux/CUDA, 0.996 on macOS Metal. Diagnosed and closed in 0.5.2 as bf16 quantization.
+
+## [0.5.0] — 2026-05-10
+
+*Unified track rescale and a DHS-augmented ChromBPNet CDF.* 376 tests pass cold; fresh-install end-to-end verified from a wiped machine (~33 min); 18 walkthrough HTMLs inspected.
+
+### Added
+- **One rescale helper for every rendering path.** `chorus.analysis._igv_report.rescale_for_display()` now drives IGV, matplotlib, CoolBox and the notebooks, so `track.get_coolbox_representation()` with no arguments gives CDF-rescaled output; `normalize=False` opts out. *(This default is what later made a low-signal synthetic-sequence panel render blank on a 0–3 axis — see 0.7.0.)*
+- **Symmetric signed rescale** for Borzoi RNA, Sei and LentiMPRA: negative values render on `[-3, +3]` against `p99(|cdf|)` instead of clipping to 0.
+- **`predict_sliding` for ChromBPNet**, so the multi-oracle IGV panel shows it across AlphaGenome's full 1 Mb window rather than a 0.2% stripe.
+- **Max-pooling for high-resolution oracles** (ChromBPNet, LegNet) so 1 bp peaks survive zoom-out — carries forward and corrects PR #79. *(Keyed on oracle name, which is how Cherimoya was later missed; fixed in 0.7.0.)*
+- **DHS vocabulary mirrored to HuggingFace** with auto-fetch in `load_dhs_vocabulary()`, removing the `gdown` step for anyone rebuilding CDFs.
+- Per-layer CDF sampling guide in `docs/NORMALIZATION_GUIDE.md`.
+
+### Changed
+- **ChromBPNet CDF rebuilt DHS-augmented** (786 tracks at the time): ~10K SNPs at random offsets within ±150 bp of Meuleman 2020 DHS summits, making percentiles more discriminating for cell-type-specific peaks.
+- Per-layer display floors lowered so a peak's base and shoulder stay visible: `chromatin_accessibility` 0.95 → 0.90, `promoter_activity` 0.95 → 0.85.
+
+### Fixed
+- `OraclePrediction.add()` backfills `track.assay_id` from the dict key, fixing silent `None` assay_ids on ChromBPNet.
+- `is_signed()` and `_match_track_id()` share fuzzy matching including CHIP `:+`/`:-` strand-suffix stripping, so `LentiMPRA:HepG2` resolves.
+- `_predict()` auto-routes wide queries to `predict_sliding`, also fixing a pre-existing `IndexError` in `_predict_direct`'s sliding formula.
 
 ## [0.4.0] — 2026-04-30
 
@@ -528,3 +660,20 @@ deep-learning oracles (Enformer, Borzoi, ChromBPNet, Sei, LegNet,
 AlphaGenome). Per-oracle conda envs, per-track CDF normalization,
 HTML report generation with embedded IGV, and the `chorus` CLI
 (`setup`, `list`, `health`, `validate`, `remove`, `genome`).
+
+---
+
+[Unreleased]: https://github.com/pinellolab/chorus/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/pinellolab/chorus/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/pinellolab/chorus/compare/v0.5.6...v0.6.0
+[0.5.6]: https://github.com/pinellolab/chorus/compare/v0.5.5...v0.5.6
+[0.5.5]: https://github.com/pinellolab/chorus/compare/v0.5.4...v0.5.5
+[0.5.4]: https://github.com/pinellolab/chorus/compare/v0.5.3...v0.5.4
+[0.5.3]: https://github.com/pinellolab/chorus/compare/v0.5.2...v0.5.3
+[0.5.2]: https://github.com/pinellolab/chorus/compare/v0.5.1...v0.5.2
+[0.5.1]: https://github.com/pinellolab/chorus/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/pinellolab/chorus/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/pinellolab/chorus/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/pinellolab/chorus/compare/v0.2.1...v0.3.0
+[0.2.1]: https://github.com/pinellolab/chorus/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/pinellolab/chorus/releases/tag/v0.2.0

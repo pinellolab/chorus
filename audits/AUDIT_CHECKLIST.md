@@ -310,6 +310,49 @@ Many scientific compute environments cut outbound internet after setup. Once ins
 
 ---
 
+## 19. Cutting a release
+
+Added 2026-08-10, because two things had drifted silently: v0.5.0–v0.5.6 were tagged and
+published as GitHub Releases with **no CHANGELOG sections** (the notes lived only in the
+Releases UI for three months), and 66 commits sat on `main` with **no tag at all** —
+including one that moved every effect percentile, so the state users had was nameless.
+`tests/test_release_bookkeeping.py` now fails on both, but a check is not a procedure.
+
+**A release is a pair: (code tag, artefact revision).** Percentiles are a function of both,
+and the artefacts live in a repo whose `main` moves. Skipping the second half is how the
+2026-08-10 upload silently changed the behaviour of every already-released version.
+
+- [ ] Decide the bump from **what moves for a user**, not from diff size. Any change to a
+      null, a region set, a retention rule or an oracle's default fold moves percentiles →
+      minor at least. Say so in the first line of the section, e.g. *"Effect percentiles
+      change and are not comparable with any earlier release."* **P0**
+- [ ] `[Unreleased]` → `## [X.Y.Z] — YYYY-MM-DD`, leaving `[Unreleased]` genuinely empty.
+      If the branch and `main` both wrote to `[Unreleased]`, split by which bullets are
+      already present in `git show origin/main:CHANGELOG.md`. **P0**
+- [ ] Each section carries, in order: the **numbers-changed banner**, the **artefact
+      revision** it pairs with, the Keep-a-Changelog buckets, and **Known limitations** —
+      this project states its negatives and they must not be dropped at release time. **P1**
+- [ ] Bump **both** `setup.py` and `chorus/__init__.py`. **P0**
+- [ ] Tag the dataset repo at the revision this release was verified against, named
+      `backgrounds-<date>-<slug>`, and set `_HF_REVISION` in
+      `chorus/analysis/normalization.py` to it. Verify the tag resolves to the expected
+      *content* (compare file sizes) — creating an HF tag makes a commit on the tag ref, so
+      the sha you passed is not the sha you get back. **P0**
+- [ ] Add the compare link to the footer. **P2**
+- [ ] Both suites green on the commit being tagged — `pytest tests/ -q` **and**
+      `pytest tests/ -q -m integration`. The second is the one that carries the release
+      gates, and it is the one easy to forget. **P0**
+- [ ] Annotated tag + a GitHub Release whose body is that CHANGELOG section. **P1**
+- [ ] `tests/test_release_bookkeeping.py` and `tests/test_artefact_revision_is_pinned.py`
+      pass, including the `[Unreleased]`-is-empty check, which only activates once HEAD is
+      tagged. **P0**
+
+Retroactive tags are legitimate and better than leaving a state nameless — v0.6.0 was cut
+this way at `3e7990a` five days after the fact. Say in the section that it is retroactive
+and give the commit.
+
+---
+
 ## Appendix — artefacts to produce per audit
 
 A full audit should leave behind, in `audits/YYYY-MM-DD_vNN_<label>/`:

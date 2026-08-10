@@ -1518,6 +1518,27 @@ _HF_REPO = os.environ.get("CHORUS_BACKGROUNDS_REPO", "lucapinello/chorus-backgro
 # ceilings are draws from a uniform subsample rather than population maxima.
 MIN_ARTEFACT_SCHEMA = 4
 
+#: Dataset revision this release of chorus was verified against.
+#:
+#: A percentile is a function of (code, artefacts), and the artefacts live in a separate
+#: repo whose ``main`` moves. Without a pin, the same chorus commit gives different numbers
+#: depending on when the user happened to download -- which is precisely what a version tag
+#: is supposed to rule out. Demonstrated rather than hypothetical: the 2026-08-10 upload
+#: replaced every file in place, so a v0.6.0 checkout silently changed behaviour that day.
+#:
+#: Pinned to a dataset **tag**, not a commit sha, so the pairing reads as a decision.
+#: Release ↔ revision:
+#:
+#:   chorus ≤ 0.6.0   backgrounds-2026-08-01-preunified   (schema < 4, thinned ceilings)
+#:   chorus 0.7.0     backgrounds-2026-08-06-schema4      (exact effect/summary retention)
+#:
+#: Override with ``CHORUS_BACKGROUNDS_REVISION`` -- set it to ``main`` to track the
+#: dataset's head, which is what you want while developing a new oracle's background and
+#: not what you want in an analysis you intend to reproduce.
+_HF_REVISION = os.environ.get(
+    "CHORUS_BACKGROUNDS_REVISION", "backgrounds-2026-08-06-schema4"
+)
+
 
 def _hf_endpoint_reachable(timeout: float = 5.0) -> "tuple[bool, str]":
     """Can we open a TCP connection to the HuggingFace endpoint within *timeout*?
@@ -1683,6 +1704,7 @@ def download_pertrack_backgrounds(
             _HF_REPO,
             filename=fname,
             repo_type="dataset",
+            revision=_HF_REVISION,
             local_dir=str(bg_dir),
         )
         logger.info("Downloaded %s", fname)
@@ -1735,7 +1757,11 @@ def download_backgrounds(
 
     api = HfApi()
     try:
-        files = api.list_repo_files(_HF_REPO, repo_type="dataset")
+        # Same revision as the download below. Listing `main` while fetching a tag would
+        # ask for files that need not exist at that revision.
+        files = api.list_repo_files(
+            _HF_REPO, repo_type="dataset", revision=_HF_REVISION,
+        )
     except Exception as exc:
         logger.warning("Failed to list backgrounds on HuggingFace: %s", exc)
         return downloaded
@@ -1755,6 +1781,7 @@ def download_backgrounds(
                 _HF_REPO,
                 filename=fname,
                 repo_type="dataset",
+                revision=_HF_REVISION,
                 local_dir=str(bg_dir),
             )
             downloaded += 1
