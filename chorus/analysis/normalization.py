@@ -1531,12 +1531,13 @@ MIN_ARTEFACT_SCHEMA = 4
 #:
 #:   chorus ≤ 0.6.0   backgrounds-2026-08-01-preunified   (schema < 4, thinned ceilings)
 #:   chorus 0.7.0     backgrounds-2026-08-06-schema4      (exact effect/summary retention)
+#:   chorus 0.7.1     backgrounds-2026-08-10-layers        (+ layers_per_row on all eight)
 #:
 #: Override with ``CHORUS_BACKGROUNDS_REVISION`` -- set it to ``main`` to track the
 #: dataset's head, which is what you want while developing a new oracle's background and
 #: not what you want in an analysis you intend to reproduce.
 _HF_REVISION = os.environ.get(
-    "CHORUS_BACKGROUNDS_REVISION", "backgrounds-2026-08-06-schema4"
+    "CHORUS_BACKGROUNDS_REVISION", "backgrounds-2026-08-10-layers"
 )
 
 
