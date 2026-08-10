@@ -615,6 +615,26 @@ checked in `validation/SORT1_rs12740374_multioracle`), but it is a composition e
 n=3 and should be re-measured if LegNet ever gains tracks or a committed walkthrough with
 strong promoter effects.
 
+## 10b. What changed after the 2026-08-07 converged state
+
+§10 froze a snapshot; the release continued for three more days. Recorded here so the
+document does not describe a state that has been superseded — the failure mode this whole
+release was about.
+
+| date | change | evidence |
+|---|---|---|
+| 2026-08-08 | Cherimoya switched to the 5-fold CATv1 **ensemble**, nulls rebuilt to match (§7b) | three-way HepG2 DNase spread 2.52–3.47 → **2.52–2.75** |
+| 2026-08-09 | Activity provenance **derived** per oracle instead of stamped uniformly | three populations, 31,500 / 29,500 / 34,500, each with its own sha256 (§4b) |
+| 2026-08-09 | All 8 artefacts re-stamped: `schema_version 4`, one `build_id` (`2026-08-06 unified rebuild`), per-layer `sampling` block | verified present on all 8; `build_config` now exists on ChromBPNet and matches Cherimoya's schema |
+| 2026-08-09 | LegNet's declared `resolution` computed from the array it actually holds | `chorus/oracles/legnet.py`; sub-region scores no longer return `None` |
+| 2026-08-10 | Artefacts published to `lucapinello/chorus-backgrounds` | remote LFS sha256 verified against local on 8/8 |
+
+Retention as shipped, read from the artefacts rather than asserted: `effect` and `summary`
+are **exact** for all eight oracles; `perbin` is capped with an exact tail. No layer of any
+oracle is thinned.
+
+---
+
 ## 11. ⚠️ Open
 
 * AlphaGenome's `perbin` carries **199** exact tail slots against an intended 200,
@@ -625,24 +645,14 @@ strong promoter effects.
 * The **effect** and **summary/perbin** layers of an oracle are built by separate passes,
   so a partial rebuild can still put them on different populations. `unified_build: true`
   plus the two sha256 fields make that detectable; nothing yet *prevents* it.
-* **The shipped `*_pertrack.npz` still carry the pre-2026-08-09 activity stamp** and need
-  `python scripts/stamp_provenance_v4.py` re-run (append-in-place, no rebuild) before the
-  correction reaches a reader. Until then
-  `tests/test_provenance_is_read.py::test_the_stamped_activity_population_is_the_one_the_builder_sampled`
-  fails for chrombpnet, cherimoya, epinformerseq, sei and legnet — which is the test working.
 * **Activity percentiles are ranked against three different populations** (29,500 / 31,500 /
   34,500 positions, §4), so a `summary` percentile is only strictly comparable across
   oracles that share a mixture. The mixtures overlap heavily — two are subsets of the third
   in all but the DHS stratum — so the practical effect is expected to be small, but it has
   **not been measured**, and §9's two-arm rule means it should be before anyone harmonises
   them or claims they are equivalent.
-* LegNet declares `resolution = 50` over a 200 bp window while holding **one** value, so
-  every sub-region score returns `None`. The tools now explain it; the geometry is not
-  fixed, because that would move its background and every committed artefact.
 * AlphaGenome `histone_marks` and Enformer `tf_binding` remain ~20%/25% pinned on
   motif-creating variants. Irreducible with an empirical ceiling; see §9's last row.
-* `build_config` is still absent on ChromBPNet and a different schema on Cherimoya;
-  unifying it to `schema_version 4` with one `build_id` across all 8 is not yet done.
 
 ---
 

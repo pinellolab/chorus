@@ -1345,7 +1345,7 @@ A high effect percentile with very low activity is usually noise (small absolute
 
 #### Reproducing or extending the backgrounds
 
-Each oracle has a build script at `scripts/build_backgrounds_<oracle>.py`. Each takes ~4–22 GPU-hours per oracle depending on the track count and output window. To rebuild a single oracle:
+Each oracle has a build script under `scripts/` — `build_backgrounds_<oracle>.py` for seven of the eight, and `build_backgrounds_epinformerseq_v2_percell.py` for EPInformer-seq. Each takes ~4–22 GPU-hours per oracle depending on the track count and output window. To rebuild a single oracle:
 
 ```bash
 mamba run -n chorus-alphagenome python scripts/build_backgrounds_alphagenome.py --part variants  --gpu 0
@@ -1355,4 +1355,4 @@ mamba run -n chorus              python scripts/build_backgrounds_alphagenome.py
 
 The variants and baselines parts can run in parallel on separate GPUs. The merge step runs CPU-only and combines the interim NPZ files into the final `{oracle}_pertrack.npz`. See [`scripts/README.md`](scripts/README.md) for the full per-oracle commands and runtimes.
 
-If you've rebuilt a background and want to share it: drop the resulting `{oracle}_pertrack.npz` into `~/.chorus/backgrounds/`. The downloader will not overwrite local files — it only fetches when the file is missing.
+If you've rebuilt a background and want to share it: drop the resulting `{oracle}_pertrack.npz` into your data directory (`chorus config data-dir` shows which one resolved — it defaults to the install tree, not `$HOME`). The downloader leaves a local file alone **unless** its provenance says it has been superseded by a newer published build, in which case it is moved to `*.npz.superseded` and refetched. That behaviour is deliberate: the earlier "only fetch when missing" rule meant a corrected background could be published and reach nobody who already had the old one.
