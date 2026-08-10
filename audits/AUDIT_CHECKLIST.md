@@ -210,18 +210,42 @@ grep -rn 'LegNet.*230 bp\|input_size_bp.*230' chorus/ scripts/ --include='*.py' 
 
 ## 11. Test suite
 
-The marker filter is required: `pytest.ini` sets no `addopts` and there is no
-`conftest.py`, so without it the "fast" suite also collects the 15
-`integration` tests and hits HuggingFace/ENCODE. This matches what CI runs
-(`.github/workflows/tests.yml`).
+No marker filter is needed any more, and that is the point: `pytest.ini` now sets
+`addopts = -m "not integration"`, so one command means the same thing for a
+contributor, for CI, and here.
+
+It used to take two extra flags. `pytest.ini` set no `addopts`, so the "fast" suite
+collected the integration tests and hit HuggingFace/ENCODE — red on any machine without
+the per-oracle envs — while CI stayed green by passing `-m "not integration"` **and**
+`--ignore=tests/test_smoke_predict.py`, whose fixtures were unmarked and unguarded and
+so raised rather than skipped. Fixed at the source (2026-08-10): the smoke tests are
+marked `integration` and guard their prerequisites, and
+`tests/test_default_pytest_run_excludes_integration.py` fails if pytest.ini, the
+workflow and this section ever drift apart again.
 
 ```
-mamba run -n chorus python -m pytest tests/ -m "not integration" -q
+mamba run -n chorus python -m pytest tests/ -q          # the fast suite (default)
+mamba run -n chorus python -m pytest tests/ -q -m integration   # needs the oracle envs
+mamba run -n chorus python -m pytest tests/ -q -m ""            # everything, no filter
 ```
 
-- [ ] Fast suite **≥ 477 pass, ≤ 4 skip, 0 error**. The 4 skips are import/weights-gated by design (alphagenome_pytorch absent, torch absent in the base env for epinformerseq, per-cell epinformerseq weights). `≤ 1 skip` is no longer reachable. Note `test_smoke_predict.py` **errors** rather than skips when the oracle envs are not built — run `chorus setup` before reading anything into it.
-- [ ] `pytest -m integration` on a release host: SEI/LegNet CDF download, ChromBPNet fresh model download, MCP E2E all pass.
-- [ ] CI workflow at `.github/workflows/tests.yml` runs green on the PR. Its header comment still says "303-test" — stale, update it with the count above.
+- [ ] Fast suite green, **0 fail, 0 error**. Current counts: **1,463 selected of 1,535**
+      collected (72 deselected as `integration`), and the last full run was
+      **1,501 passed / 33 skipped / 1 xfailed** with `-m ""`. Skips are
+      import/weights-gated by design (alphagenome_pytorch absent, torch absent in the
+      base env for epinformerseq, per-cell epinformerseq weights) plus the oracle-env
+      gated integration tests when run on a machine without `chorus setup`.
+- [ ] **Release gating needs both runs.** Excluding `integration` by default makes the
+      common command honest; it does not retire the suite. `pytest -m integration` on a
+      release host: SEI/LegNet CDF download, ChromBPNet fresh model download, MCP E2E,
+      the 6 oracle smoke tests and the Cherimoya builder-vs-query invariant all pass.
+- [ ] CI workflow at `.github/workflows/tests.yml` runs green on the PR. It still passes
+      a redundant `-m "not integration"` and `--ignore=tests/test_smoke_predict.py`;
+      both are now unnecessary (the filter lives in `pytest.ini`, and the smoke tests are
+      marked and guarded) but harmless. **Open tidy-up:** deleting them needs a push with
+      the GitHub `workflow` OAuth scope. Its header comment also still claims a "303-test"
+      suite. `tests/test_default_pytest_run_excludes_integration.py` asserts only that CI
+      never *widens* the selection, which is the property that matters.
 - [ ] Coverage of new code paths: any new oracle / normalizer / tool needs its own test.
 
 ## 12. Reproducibility
@@ -283,6 +307,49 @@ Many scientific compute environments cut outbound internet after setup. Once ins
 - [ ] `LICENSE` file at repo root matches the license Chorus claims. **P0**
 - [ ] Each oracle's model weights + third-party code is attributed somewhere reachable from the README (Enformer → DeepMind, ChromBPNet → Kundaje lab, AlphaGenome → Google DeepMind, etc.) — a single `docs/THIRD_PARTY.md` is fine. **P1**
 - [ ] Bundled vendor JS (`chorus/analysis/static/igv.min.js`) carries its upstream license header. **P1**
+
+---
+
+## 19. Cutting a release
+
+Added 2026-08-10, because two things had drifted silently: v0.5.0–v0.5.6 were tagged and
+published as GitHub Releases with **no CHANGELOG sections** (the notes lived only in the
+Releases UI for three months), and 66 commits sat on `main` with **no tag at all** —
+including one that moved every effect percentile, so the state users had was nameless.
+`tests/test_release_bookkeeping.py` now fails on both, but a check is not a procedure.
+
+**A release is a pair: (code tag, artefact revision).** Percentiles are a function of both,
+and the artefacts live in a repo whose `main` moves. Skipping the second half is how the
+2026-08-10 upload silently changed the behaviour of every already-released version.
+
+- [ ] Decide the bump from **what moves for a user**, not from diff size. Any change to a
+      null, a region set, a retention rule or an oracle's default fold moves percentiles →
+      minor at least. Say so in the first line of the section, e.g. *"Effect percentiles
+      change and are not comparable with any earlier release."* **P0**
+- [ ] `[Unreleased]` → `## [X.Y.Z] — YYYY-MM-DD`, leaving `[Unreleased]` genuinely empty.
+      If the branch and `main` both wrote to `[Unreleased]`, split by which bullets are
+      already present in `git show origin/main:CHANGELOG.md`. **P0**
+- [ ] Each section carries, in order: the **numbers-changed banner**, the **artefact
+      revision** it pairs with, the Keep-a-Changelog buckets, and **Known limitations** —
+      this project states its negatives and they must not be dropped at release time. **P1**
+- [ ] Bump **both** `setup.py` and `chorus/__init__.py`. **P0**
+- [ ] Tag the dataset repo at the revision this release was verified against, named
+      `backgrounds-<date>-<slug>`, and set `_HF_REVISION` in
+      `chorus/analysis/normalization.py` to it. Verify the tag resolves to the expected
+      *content* (compare file sizes) — creating an HF tag makes a commit on the tag ref, so
+      the sha you passed is not the sha you get back. **P0**
+- [ ] Add the compare link to the footer. **P2**
+- [ ] Both suites green on the commit being tagged — `pytest tests/ -q` **and**
+      `pytest tests/ -q -m integration`. The second is the one that carries the release
+      gates, and it is the one easy to forget. **P0**
+- [ ] Annotated tag + a GitHub Release whose body is that CHANGELOG section. **P1**
+- [ ] `tests/test_release_bookkeeping.py` and `tests/test_artefact_revision_is_pinned.py`
+      pass, including the `[Unreleased]`-is-empty check, which only activates once HEAD is
+      tagged. **P0**
+
+Retroactive tags are legitimate and better than leaving a state nameless — v0.6.0 was cut
+this way at `3e7990a` five days after the fact. Say in the section that it is retroactive
+and give the commit.
 
 ---
 

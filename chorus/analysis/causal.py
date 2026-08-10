@@ -332,7 +332,11 @@ class CausalResult:
                     cell = f"{sign}{ts.raw_score:.3f}"
                     if ts.quantile_score is not None:
                         from chorus.analysis.variant_report import _fmt_percentile
-                        cell += f" ({_fmt_percentile(ts.quantile_score)})"
+                        cell += (
+                            " (" + _fmt_percentile(
+                                ts.quantile_score, ts.effect_exceedance, layer=ts.layer,
+                            ) + ")"
+                        )
                     row += f" {cell} |"
                 else:
                     row += " — |"
@@ -686,6 +690,7 @@ def _extract_component_scores(
                 "alt_value": ts.alt_value,
                 "raw_score": ts.raw_score,
                 "quantile_score": ts.quantile_score,
+                "effect_exceedance": ts.effect_exceedance,
                 "description": ts.description or "",
             }
 
@@ -1535,7 +1540,8 @@ def _build_causal_html(result: CausalResult) -> str:
                 ref_str = f"{ref_v:.3g}" if ref_v is not None else "—"
                 alt_str = f"{alt_v:.3g}" if alt_v is not None else "—"
                 q = info.get("quantile_score")
-                q_str = _fmt_percentile(q) if q is not None else "—"
+                q_str = (_fmt_percentile(q, layer=info.get("layer"))
+                         if q is not None else "—")
                 p.append(f'<tr>'
                          f'<td>{html_mod.escape(name)}</td>'
                          f'<td><span class="formula-chip">{formula}</span></td>'

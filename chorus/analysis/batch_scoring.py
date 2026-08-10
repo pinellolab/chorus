@@ -43,8 +43,35 @@ class BatchVariantScore:
     cell_type: str = ""
     max_quantile: float | None = None
 
-    # Per-track detail — keyed by assay_id
+    # Per-track detail — keyed by _track_key(ts), i.e. (assay_id, region_label)
     track_scores: dict[str, TrackScore] = field(default_factory=dict)
+
+
+# Separates the assay from the region it was scored over in a track_scores key.
+# Spaced so it survives a glance at a long assay_id, and absent from every
+# region_label variant_report builds ("<gene> (exons)", "<gene> TSS", "variant
+# site") — but to_dict() also emits assay_id and region_label as their own fields
+# so no consumer has to rely on splitting the key.
+_REGION_SEP = " :: "
+
+
+def _track_key(ts: TrackScore) -> str:
+    """Identity of one scored row: the assay *and* the region it was scored over.
+
+    ``assay_id`` alone is NOT an identity. RNA and CAGE tracks emit several rows
+    per assay_id — one per nearby gene (exons for RNA, most-active TSS for CAGE)
+    plus, for CAGE, a variant-site row — distinguished only by ``region_label``.
+
+    Keying on assay_id alone kept just the last of them while the aggregates
+    below still ranked over the full row population, so the detail rows could not
+    reconcile with the headline they were printed beside: the committed
+    batch_scoring example reported ``max_effect=-0.062`` on a CAGE track whose
+    one surviving row read +0.0016 — opposite sign, 39x smaller — and its TSV
+    showed -0.002 where the winning gene-TSS row was +1.20.
+    """
+    if ts.region_label:
+        return f"{ts.assay_id}{_REGION_SEP}{ts.region_label}"
+    return ts.assay_id
 
 
 def _track_display_name(ts: TrackScore) -> str:
@@ -53,19 +80,27 @@ def _track_display_name(ts: TrackScore) -> str:
     When two tracks share the same description (e.g. CAGE+/CAGE- have
     `description='CAGE:HepG2'` but different assay_ids ending in `/+` vs
     `/-`), a strand suffix is appended so table columns remain unique.
+
+    The ``region_label`` is appended for the same reason: it is the only thing
+    telling one CAGE gene-TSS row from another, and every renderer derives its
+    column name from this string — two rows sharing a name means one of them is
+    overwritten in the dataframe and lost.
     """
     desc = ts.description or ""
     if not desc and ts.assay_type and ts.cell_type:
         desc = f"{ts.assay_type}:{ts.cell_type}"
     if not desc:
-        return ts.assay_id
-    # Append strand suffix when the assay_id carries one (common for
-    # CAGE, PRO-CAP, splicing) to distinguish otherwise-identical labels.
-    aid = ts.assay_id or ""
-    if aid.endswith("/+"):
-        return f"{desc} (+)"
-    if aid.endswith("/-"):
-        return f"{desc} (-)"
+        desc = ts.assay_id
+    else:
+        # Append strand suffix when the assay_id carries one (common for
+        # CAGE, PRO-CAP, splicing) to distinguish otherwise-identical labels.
+        aid = ts.assay_id or ""
+        if aid.endswith("/+"):
+            desc = f"{desc} (+)"
+        elif aid.endswith("/-"):
+            desc = f"{desc} (-)"
+    if ts.region_label:
+        desc = f"{desc} — {ts.region_label}"
     return desc
 
 
@@ -83,14 +118,18 @@ class BatchResult:
         ``_effect_pctile``, and ``_activity_pctile`` suffixes."""
         import pandas as pd
 
-        # Collect the union of all track IDs across all variants
+        # Collect the union of all track keys across all variants, resolving each
+        # key's column label ONCE. A variant that lacks a row must still write to
+        # the same columns as the variants that have it; labelling per row meant a
+        # missing row fell back to the raw key and opened a second, all-null set
+        # of columns for the same track.
         all_track_ids: list[str] = []
-        seen: set[str] = set()
+        col_labels: dict[str, str] = {}
         for s in self.scores:
-            for tid in s.track_scores:
-                if tid not in seen:
+            for tid, ts in s.track_scores.items():
+                if tid not in col_labels:
                     all_track_ids.append(tid)
-                    seen.add(tid)
+                    col_labels[tid] = _track_display_name(ts)
 
         rows = []
         for s in self.scores:
@@ -106,12 +145,14 @@ class BatchResult:
             }
             for tid in all_track_ids:
                 ts = s.track_scores.get(tid)
-                display = _track_display_name(ts) if ts else tid
+                display = col_labels[tid]
                 if ts and ts.raw_score is not None:
                     row[f"{display}_ref"] = ts.ref_value
                     row[f"{display}_alt"] = ts.alt_value
                     row[f"{display}_log2fc"] = ts.raw_score
                     row[f"{display}_effect_pctile"] = ts.quantile_score
+                    if ts.effect_exceedance is not None:
+                        row[f"{display}_vs_null_max"] = ts.effect_exceedance
                     row[f"{display}_activity_pctile"] = ts.ref_signal_percentile
                 else:
                     row[f"{display}_ref"] = None
@@ -181,15 +222,15 @@ class BatchResult:
     def _markdown_per_track(self, lines: list[str], mode: str) -> str:
         """Per-track table: each column is one assay (by_assay) or one cell type (by_cell_type)."""
         # Build ordered column list from all variants' track_scores
-        col_order: list[str] = []  # assay_ids in order
-        col_labels: dict[str, str] = {}  # assay_id → display name
-        seen: set[str] = set()
+        col_order: list[str] = []  # track keys in order
+        col_labels: dict[str, str] = {}  # track key → display name
+        col_assays: dict[str, str] = {}  # track key → assay_id, for the footnote
         for s in self.scores:
             for tid, ts in s.track_scores.items():
-                if tid not in seen:
+                if tid not in col_labels:
                     col_order.append(tid)
                     col_labels[tid] = _track_display_name(ts)
-                    seen.add(tid)
+                    col_assays[tid] = ts.assay_id
 
         # Header — one group of columns per track: Ref | Alt | log2FC | %ile
         header = "| Variant | ID |"
@@ -211,7 +252,9 @@ class BatchResult:
                     sign = "+" if ts.raw_score >= 0 else ""
                     fc_str = f"{sign}{ts.raw_score:.3f}"
                     from chorus.analysis.variant_report import _fmt_percentile
-                    pct_str = _fmt_percentile(ts.quantile_score)
+                    pct_str = _fmt_percentile(
+                        ts.quantile_score, ts.effect_exceedance, layer=ts.layer,
+                    )
                     row += f" {ref_str} | {alt_str} | {fc_str} | {pct_str} |"
                 else:
                     row += " — | — | — | — |"
@@ -221,13 +264,17 @@ class BatchResult:
         lines += [
             "",
             "Each track shows: **Ref** (reference allele prediction), **Alt** (alternate allele prediction), "
-            "**log2FC** (log2 fold-change alt/ref), **Effect %ile** (ranked against ~10K random SNPs).",
+            "**log2FC** (log2 fold-change alt/ref), **Effect %ile** (ranked against a "
+            "per-track background of ~18,000 variants in assay-matched regulatory regions).",
             "",
             "**Track identifiers** (for tracing back to oracle data):",
             "",
         ]
+        # The footnote quotes the assay_id rather than the column key, because the
+        # assay_id is what traces back to oracle data — the region half of the key
+        # is already visible in the label.
         for tid in col_order:
-            lines.append(f"- {col_labels[tid]}: `{tid}`")
+            lines.append(f"- {col_labels[tid]}: `{col_assays[tid]}`")
         lines.append("")
         return "\n".join(lines)
 
@@ -360,7 +407,9 @@ class BatchResult:
                     sign = "+" if ts.raw_score >= 0 else ""
                     cls = "gain" if ts.raw_score > 0.1 else ("loss" if ts.raw_score < -0.1 else "neutral")
                     from chorus.analysis.variant_report import _fmt_percentile
-                    pct_str = _fmt_percentile(ts.quantile_score)
+                    pct_str = _fmt_percentile(
+                        ts.quantile_score, ts.effect_exceedance, layer=ts.layer,
+                    )
                     parts.append(f"<td>{ref_str}</td><td>{alt_str}</td>"
                                  f"<td class='{cls}'>{sign}{ts.raw_score:.3f}</td>"
                                  f"<td>{pct_str}</td>")
@@ -373,7 +422,8 @@ class BatchResult:
                      "<b>Alt</b> (alternate allele prediction), "
                      "<b>Effect</b> (signed effect — formula shown in the chip next "
                      "to each track's header; see the glossary at the top of the "
-                     "page), <b>Effect %ile</b> (ranked against ~10K random SNPs). "
+                     "page), <b>Effect %ile</b> (ranked against a per-track background "
+                     "of ~18,000 variants in assay-matched regulatory regions). "
                      "Green = gain, red = loss.</p>")
 
     # ── JSON ────────────────────────────────────────────────────────────
@@ -398,15 +448,21 @@ class BatchResult:
                 "per_layer_scores": s.per_layer_scores,
             }
             if s.track_scores:
+                # assay_id and region_label are written out explicitly so a reader
+                # never has to split the composite key to recover the identity
+                # (assay_id, layer, region_label) the rest of the artefacts use.
                 entry["track_scores"] = {
                     tid: {
                         "description": _track_display_name(ts),
+                        "assay_id": ts.assay_id,
+                        "region_label": ts.region_label,
                         "layer": ts.layer,
                         "cell_type": ts.cell_type,
                         "ref_value": ts.ref_value,
                         "alt_value": ts.alt_value,
                         "raw_score": ts.raw_score,
                         "quantile_score": ts.quantile_score,
+                        "effect_exceedance": ts.effect_exceedance,
                         "ref_signal_percentile": ts.ref_signal_percentile,
                     }
                     for tid, ts in s.track_scores.items()
@@ -494,8 +550,22 @@ def score_variant_batch(
                 allele_key = keys[0] if keys else alt
 
             for ts in report.allele_scores.get(allele_key, []):
-                # Store every track score
-                track_scores[ts.assay_id] = ts
+                # Store every track score. The aggregates below range over this
+                # same full population, so the key must be as fine-grained as the
+                # population is — see _track_key.
+                key = _track_key(ts)
+                if key in track_scores:
+                    # Unreachable as variant_report stands (region labels come from
+                    # a dict of genes, so they are unique per assay). Suffixed
+                    # rather than overwritten anyway: dropping a row here is the
+                    # exact defect this keying replaced, and it left no trace.
+                    n = 2
+                    while f"{key} #{n}" in track_scores:
+                        n += 1
+                    logger.warning("Duplicate track identity %s for %s — kept as #%d",
+                                   key, vid, n)
+                    key = f"{key} #{n}"
+                track_scores[key] = ts
 
                 if ts.raw_score is None:
                     continue
@@ -503,7 +573,9 @@ def score_variant_batch(
                 if abs_score > abs(max_effect):
                     max_effect = ts.raw_score
                     top_layer = ts.layer
-                    top_track = ts.assay_id
+                    # The key, not the bare assay_id: the headline has to name a
+                    # row the reader can find in the detail table below it.
+                    top_track = key
                     top_cell_type = ts.cell_type or ""
                 if ts.quantile_score is not None:
                     if max_quantile is None or abs(ts.quantile_score) > abs(max_quantile):

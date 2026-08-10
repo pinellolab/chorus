@@ -27,15 +27,15 @@ from the cassette.
 | Chromatin (DNASE:K562) | +4.256 log2FC | Very strong opening |
 | Histone H3K27ac:K562 | +1.097 log2FC | Very strong mark gain |
 | CAGE — RPL28 TSS | −8.957 log2FC | Very strong decrease |
-| CAGE — ZNF628 TSS | −7.988 log2FC | Very strong decrease |
-| CAGE — KMT5C TSS | −6.598 log2FC | Very strong decrease |
+| CAGE — ZNF628 TSS | −8.066 log2FC | Very strong decrease |
+| CAGE — KMT5C TSS | −6.628 log2FC | Very strong decrease |
 
 **Key findings:**
 - **Strong new chromatin opening** (DNASE +4.26): the inserted CMV
   promoter creates a large nuclease-sensitive region at the site
 - **H3K27ac gain** (+1.10): active chromatin marks accumulate at the
   construct, consistent with an active CMV promoter
-- **Nearby TSS silencing** (CAGE −8.96 at RPL28, −7.99 at ZNF628):
+- **Nearby TSS silencing** (CAGE −8.96 at RPL28, −8.07 at ZNF628):
   the construct appears to hijack local transcriptional resources
   and disrupt neighbouring gene expression
 

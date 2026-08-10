@@ -14,10 +14,11 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
 
 logger = logging.getLogger(__name__)
 
-_BG_DIR = Path.home() / ".chorus" / "backgrounds"
+_BG_DIR = CHORUS_BACKGROUNDS_DIR
 
 # Oracles that have per-track NPZ backgrounds.  alphagenome_pt aliases
 # to alphagenome's NPZ at lookup time (`PerTrackNormalizer._CDF_ALIASES`),

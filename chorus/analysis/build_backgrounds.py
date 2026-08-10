@@ -34,11 +34,12 @@ import numpy as np
 from .normalization import BackgroundDistribution, QuantileNormalizer
 from .scorers import LAYER_CONFIGS, classify_track_layer
 from .variant_report import build_variant_report
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
 
 logger = logging.getLogger(__name__)
 
 # Default cache location
-_DEFAULT_CACHE = Path.home() / ".chorus" / "backgrounds"
+_DEFAULT_CACHE = CHORUS_BACKGROUNDS_DIR
 
 
 # ---------------------------------------------------------------------------

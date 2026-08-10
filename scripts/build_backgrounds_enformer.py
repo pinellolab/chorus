@@ -34,7 +34,8 @@ from chorus.utils.annotations import (  # noqa: E402
     sample_gene_anchored_positions,
 )
 from chorus.analysis.scorers import canonical_layer  # noqa: E402
-from chorus.analysis.background_sampling import (  # noqa: E402
+from chorus.analysis.background_sampling import (
+    sampling_block,  # noqa: E402
     ReservoirSampler,
     StagedSamples,
     centered_bin_span,
@@ -54,9 +55,27 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--part", choices=["variants", "baselines", "merge", "both", "all"], default="all")
 parser.add_argument("--gpu", type=int, default=0)
 parser.add_argument("--n-variants", type=int, default=10000)
+parser.add_argument("--no-dhs", action="store_true",
+                    help="Ablation: drop DHS and rescale the remaining strata. Used to "
+                         "test whether DHS helps the tf_binding layer specifically -- "
+                         "the layer that saturates, and the one the DHS proposal was "
+                         "about. Sei's ablation covered chromatin-state classes only.")
+parser.add_argument("--with-dhs", type=float, default=0.0,
+                    help="Ablation: give DHS this fraction of the mixture, rescaling "
+                         "the rest proportionally. 0 = the shipped composition.")
 parser.add_argument("--n-random-positions", type=int, default=5000)
 parser.add_argument("--reservoir-size", type=int, default=50000,
                     help="Max samples per track before compaction to 10K CDF")
+parser.add_argument("--perbin-tail-k", type=int, default=19844,
+                    help="Exact top/bottom K values kept per track for the perbin "
+                         "layer, which cannot be retained whole (992,160 offered per track). Derived as "
+                         "ceil(200 * N_expected / 10000) so at least 200 of the "
+                         "10,000 grid slots are true order statistics; a single fixed "
+                         "K silently gives ChromBPNet only 91.")
+parser.add_argument("--exact-capacity", type=int, default=4000000,
+                    help="Reservoir capacity for the effect and summary layers. Large "
+                         "enough to retain every offered value, so their ceilings are "
+                         "population maxima rather than draws from a subsample.")
 parser.add_argument("--n-cdf-points", type=int, default=10000,
                     help="Final CDF resolution (points per track)")
 parser.add_argument("--effect-regions", choices=["gene-anchored", "ccre"],
@@ -120,7 +139,13 @@ LAYER_SPEC = {
     'CHIP_HIST':(2001, 'log2fc', 1.0, False),
 }
 
-cache_dir = os.path.expanduser("~/.chorus/backgrounds")
+# Honour the data-dir mechanism rather than hardcoding $HOME. All eight
+# builders had this literal, so a chorus installed with
+# CHORUS_DATA_DIR=/data/... still wrote its backgrounds into the home
+# directory the data dir exists to avoid. CHORUS_BACKGROUNDS_DIR applies
+# the legacy ~/.chorus compatibility itself, per kind.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+cache_dir = os.environ.get("CHORUS_BUILD_CACHE_DIR") or str(CHORUS_BACKGROUNDS_DIR)
 os.makedirs(cache_dir, exist_ok=True)
 
 
@@ -138,7 +163,15 @@ os.makedirs(cache_dir, exist_ok=True)
 
 def load_model_and_metadata():
     """Load Enformer model and track metadata. Returns (predict_fn, track_info)."""
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+    # An explicit CUDA_VISIBLE_DEVICES wins. This used to assign unconditionally, so
+    # `CUDA_VISIBLE_DEVICES=1 python build_...py` silently ran on GPU 0 anyway. Two
+    # arms of an ablation launched that way both landed on GPU 0; the first grabbed
+    # 78 GB, the second could not allocate a cuBLAS handle, and EVERY position was
+    # dropped with "Attempting to perform BLAS operation using StreamExecutor without
+    # BLAS support". A fleet rebuild sharded across GPUs by env var would have
+    # serialised onto one device the same way.
+    if os.environ.get("CUDA_VISIBLE_DEVICES") in (None, ""):
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
     # Pre-load nvidia CUDA libs
     try:
@@ -280,7 +313,7 @@ def build_variant_backgrounds():
     logger.info("PER-TRACK VARIANT BACKGROUNDS: %d SNPs x %d tracks", args.n_variants, n_tracks)
     logger.info("=" * 60)
 
-    effect_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size)
+    effect_reservoir = ReservoirSampler(n_tracks, capacity=args.exact_capacity)
 
     # Gene-anchored SNPs, not uniformly random ones.
     #
@@ -302,8 +335,15 @@ def build_variant_backgrounds():
             args.n_variants, chrom_sizes=_sizes, seed=42,
         )
     else:
+        _strata = None
+        if args.with_dhs > 0:
+            from chorus.utils.annotations import DEFAULT_REGION_STRATA
+            _rest = 1.0 - args.with_dhs
+            _strata = {k: v * _rest for k, v in DEFAULT_REGION_STRATA.items()}
+            _strata["dhs"] = args.with_dhs
+            logger.info("ABLATION --with-dhs=%.3f: %s", args.with_dhs, _strata)
         sampled = sample_gene_anchored_positions(
-            args.n_variants, chrom_sizes=_sizes, seed=42,
+            args.n_variants, chrom_sizes=_sizes, seed=42, strata=_strata,
         )
     snps = []
     strata_counts = defaultdict(int)
@@ -424,6 +464,7 @@ def build_variant_backgrounds():
                             track_ids=np.array(track_ids, dtype='U'),
                             effect_cdfs=effect_matrix.astype(np.float32),
                             effect_counts=effect_reservoir.get_counts(),
+                            effect_retained=effect_reservoir.retained_counts(),
                             signed_flags=signed_flags,
                             layers_per_row=layers_per_row)
     logger.info("Saved interim effect CDFs: %s (%.1f MB)",
@@ -446,8 +487,8 @@ def build_baseline_backgrounds():
     logger.info("  %d tracks, %d bins/position for perbin", n_tracks, PERBIN_BINS_PER_POSITION)
     logger.info("=" * 60)
 
-    summary_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size)
-    perbin_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size)
+    summary_reservoir = ReservoirSampler(n_tracks, capacity=args.exact_capacity)
+    perbin_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size, tail_k=args.perbin_tail_k)
 
     # RNG for random bin sampling (perbin CDF)
     rng_bins = np.random.RandomState(999)
@@ -620,8 +661,10 @@ def build_baseline_backgrounds():
                         track_ids=np.array(track_ids, dtype='U'),
                         summary_cdfs=summary_matrix.astype(np.float32),
                         summary_counts=summary_reservoir.get_counts(),
+                        summary_retained=summary_reservoir.retained_counts(),
                         perbin_cdfs=perbin_matrix.astype(np.float32),
-                        perbin_counts=perbin_reservoir.get_counts())
+                        perbin_counts=perbin_reservoir.get_counts(),
+                        perbin_retained=perbin_reservoir.retained_counts())
     logger.info("Saved interim baseline CDFs: %s (%.1f MB)",
                 interim_path, os.path.getsize(interim_path) / (1024 * 1024))
 
@@ -687,6 +730,16 @@ def merge_to_final():
         summary_counts=summary_counts,
         perbin_counts=perbin_counts,
         cache_dir=cache_dir,
+        sampling=sampling_block(effect_data, baseline_data, tail_k={"perbin": args.perbin_tail_k}),
+            # Carry the per-row layer through to the FINAL file. The effect interim has
+            # it and build_and_save forwards only its canonical keys, so omitting it here
+            # dropped it from every rebuilt pertrack.npz -- breaking per-layer analysis
+            # entirely (compose_layers SystemExits without it, and the before/after table
+            # generator KeyErrors). This is the SECOND time this field has been lost in
+            # this cycle: c8ece2a fixed union_shards dropping it, and the merge dropped it
+            # again one step later.
+        per_row=({'layers_per_row': effect_data['layers_per_row']}
+                 if 'layers_per_row' in effect_data else None),
     )
 
     # Verify the file loads correctly

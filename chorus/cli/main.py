@@ -17,8 +17,43 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def _persist_data_dir(path: str) -> None:
+    """Record an install-time --data-dir so every later run resolves to it.
+
+    Written into the installation directory rather than into the data directory
+    itself, because it is what TELLS chorus where the data directory is -- storing
+    the pointer inside the thing it points at would be circular.
+    """
+    from chorus.core.globals import CHORUS_ROOT, DATA_DIR_MARKER
+
+    target = Path(path).expanduser().resolve()
+    try:
+        target.mkdir(parents=True, exist_ok=True)
+        probe = target / ".chorus-write-probe"
+        probe.touch()
+        probe.unlink()
+    except Exception as exc:
+        logger.error("--data-dir %s is not writable: %s", target, exc)
+        raise SystemExit(1)
+    marker = CHORUS_ROOT / DATA_DIR_MARKER
+    try:
+        marker.write_text(f"{target}\n")
+    except Exception as exc:
+        logger.error(
+            "could not record the data directory in %s: %s. Set CHORUS_DATA_DIR=%s "
+            "in your environment instead.", marker, exc, target)
+        raise SystemExit(1)
+    logger.info("Data directory set to %s (recorded in %s)", target, marker)
+    logger.warning(
+        "This process already resolved its paths at import time, so re-run the "
+        "command for the new location to take effect."
+    )
+
+
 def setup_environments(args):
     """Set up oracle environments + pre-download weights, backgrounds, genome."""
+    if getattr(args, "data_dir", None):
+        _persist_data_dir(args.data_dir)
     manager = EnvironmentManager()
 
     if args.oracle == "base":
@@ -435,6 +470,17 @@ def main(argv: Optional[List[str]] = None):
         help='Specific oracle to set up, or "all" to set up every oracle (default: all if omitted)'
     )
     setup_parser.add_argument(
+        '--data-dir',
+        metavar='PATH',
+        help=(
+            'Where to store downloaded data (backgrounds, weights, genomes, '
+            'annotations, HF cache). Defaults to the chorus installation '
+            'directory. Recorded in <install>/chorus_data_dir.txt so every later '
+            'run uses it. Use this on shared machines, or when $HOME is too small. '
+            'The CHORUS_DATA_DIR environment variable overrides it at runtime.'
+        ),
+    )
+    setup_parser.add_argument(
         '--force',
         action='store_true',
         help='Force recreation of existing environments'
@@ -609,6 +655,10 @@ def main(argv: Optional[List[str]] = None):
     from ._backgrounds import register_backgrounds_subcommand
     bg_parser = register_backgrounds_subcommand(subparsers)
 
+    # Config command (data directory)
+    from ._datadir import register_config_subcommand
+    config_parser = register_config_subcommand(subparsers)
+
     # Cleanup command
     from ._cleanup import cleanup_resources
     cleanup_parser = subparsers.add_parser(
@@ -672,6 +722,10 @@ def main(argv: Optional[List[str]] = None):
         return 0
 
     # Handle backgrounds subcommand without action
+    if args.command == 'config' and not hasattr(args, 'func'):
+        config_parser.print_help()
+        return 0
+
     if args.command == 'backgrounds' and not hasattr(args, 'func'):
         bg_parser.print_help()
         return 0

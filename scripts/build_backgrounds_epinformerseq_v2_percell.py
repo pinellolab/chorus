@@ -54,6 +54,7 @@ from chorus.utils.annotations import (  # noqa: E402
     load_chrom_sizes,
     sample_gene_anchored_positions,
 )
+from chorus.analysis.background_sampling import sampling_block  # noqa: E402
 from chorus.analysis.background_sampling import ReservoirSampler  # noqa: E402
 _CHORUS_PERCELL_ROOT = str(CHORUS_DOWNLOADS_DIR / "epinformerseq")
 V2_PERCELL_DIR_DEFAULT = os.path.join(_CHORUS_PERCELL_ROOT, "per_cell_widewin")
@@ -105,7 +106,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-cache_dir = os.path.expanduser("~/.chorus/backgrounds")
+# Honour the data-dir mechanism rather than hardcoding $HOME. All eight
+# builders had this literal, so a chorus installed with
+# CHORUS_DATA_DIR=/data/... still wrote its backgrounds into the home
+# directory the data dir exists to avoid. CHORUS_BACKGROUNDS_DIR applies
+# the legacy ~/.chorus compatibility itself, per kind.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+cache_dir = os.environ.get("CHORUS_BUILD_CACHE_DIR") or str(CHORUS_BACKGROUNDS_DIR)
 os.makedirs(cache_dir, exist_ok=True)
 
 V2_WINDOW = 1024
@@ -321,6 +328,7 @@ def build_baseline_backgrounds():
         track_ids=np.array(track_ids, dtype="U"),
         summary_cdfs=summary_matrix.astype(np.float32),
         summary_counts=reservoir.counts.copy(),
+        summary_retained=reservoir.retained_counts(),
     )
     logger.info("Saved baseline interim: %s", interim)
     for i, tid in enumerate(track_ids):
@@ -426,6 +434,7 @@ def build_variant_backgrounds():
         track_ids=np.array(track_ids, dtype="U"),
         effect_cdfs=effect_matrix.astype(np.float32),
         effect_counts=reservoir.counts.copy(),
+        effect_retained=reservoir.retained_counts(),
         signed_flags=np.zeros(n_tracks, dtype=bool),  # unsigned |log2fc|
     )
     logger.info("Saved effect interim: %s", interim)
@@ -442,7 +451,10 @@ def merge_to_final():
     baseline_path = os.path.join(cache_dir, f"epinformerseq_{INTERIM_TAG}baseline_cdfs_interim.npz")
     if not os.path.exists(baseline_path):
         logger.error("Missing baseline interim: %s — run --part baselines first.", baseline_path)
-        return
+        raise SystemExit(1)  # A missing interim is a FAILED merge, not a no-op. Returning here exited 0,
+        # so a driver keying off exit codes recorded "rc=0" for a step that wrote
+        # nothing -- the same report-success-after-failure shape as the all-zero
+        # interim and the guard nobody wired up.
     have_effect = os.path.exists(effect_path)
     if not have_effect:
         logger.warning("Missing effect interim: %s — final NPZ will only have summary_cdfs.",
@@ -469,6 +481,7 @@ def merge_to_final():
         effect_counts=(effect["effect_counts"] if have_effect else None),
         summary_counts=baseline["summary_counts"],
         cache_dir=cache_dir,
+        sampling=sampling_block(effect if have_effect else None, baseline),
     )
     size_mb = path.stat().st_size / 1e6
     logger.info("DONE — wrote %s  (%.2f MB)", path, size_mb)

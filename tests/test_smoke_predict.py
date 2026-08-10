@@ -1,20 +1,51 @@
 """Smoke tests: instantiate each oracle, load a model, and run predict().
 
 These tests require:
-  - All 5 conda environments set up (chorus setup --oracle <name>)
+  - The per-oracle conda environments (``chorus setup --oracle <name>``)
   - Reference genome at genomes/hg38.fa
   - Pretrained model weights downloaded for chrombpnet, sei, and legnet
 
-Run with: pytest tests/test_smoke_predict.py -v -s
+Run with: pytest tests/test_smoke_predict.py -v -s -m integration
 (Use -s to see live output from environment subprocesses.)
+
+Marked ``integration``, which it always was in substance: every test here spawns an
+oracle subprocess and downloads weights. It was not marked, so it landed in the fast
+suite, and because its fixtures called ``load_pretrained_model`` with no prerequisite
+check they raised rather than skipped on a machine without the envs -- producing a wall
+of ERRORs. CI worked around both facts with ``--ignore=tests/test_smoke_predict.py``,
+which meant the documented command and the CI command were different commands. Marking
+it and guarding it removes the need for the workaround; see ``_require_oracle`` below.
 """
+
+import os
 
 import pytest
 import numpy as np
 import chorus
 
+pytestmark = pytest.mark.integration
 
 REFERENCE_FASTA = "genomes/hg38.fa"
+
+
+def _require_oracle(name: str) -> None:
+    """Skip with an actionable message instead of erroring in a fixture.
+
+    A missing environment is a property of the machine, not a failure of the code, and
+    the difference has to be visible in the report -- an ERROR here reads as "chorus is
+    broken" when it means "run chorus setup".
+    """
+    from chorus.core.environment import EnvironmentManager
+
+    if not os.path.exists(REFERENCE_FASTA):
+        pytest.skip(
+            f"{REFERENCE_FASTA} not found -- run `chorus genome get hg38` or symlink a "
+            f"GRCh38 FASTA there."
+        )
+    if not EnvironmentManager().environment_exists(name):
+        pytest.skip(
+            f"chorus-{name} environment missing -- run `chorus setup --oracle {name}`."
+        )
 
 # Genomic regions on chr1 sized to each oracle's input window
 REGIONS = {
@@ -29,6 +60,7 @@ REGIONS = {
 
 @pytest.fixture(scope="module")
 def chrombpnet_oracle():
+    _require_oracle('chrombpnet')
     oracle = chorus.create_oracle(
         "chrombpnet", use_environment=True, reference_fasta=REFERENCE_FASTA
     )
@@ -38,6 +70,7 @@ def chrombpnet_oracle():
 
 @pytest.fixture(scope="module")
 def enformer_oracle():
+    _require_oracle('enformer')
     oracle = chorus.create_oracle(
         "enformer", use_environment=True, reference_fasta=REFERENCE_FASTA
     )
@@ -47,6 +80,7 @@ def enformer_oracle():
 
 @pytest.fixture(scope="module")
 def borzoi_oracle():
+    _require_oracle('borzoi')
     oracle = chorus.create_oracle(
         "borzoi", use_environment=True, reference_fasta=REFERENCE_FASTA
     )
@@ -56,6 +90,7 @@ def borzoi_oracle():
 
 @pytest.fixture(scope="module")
 def sei_oracle():
+    _require_oracle('sei')
     oracle = chorus.create_oracle(
         "sei", use_environment=True, reference_fasta=REFERENCE_FASTA
     )
@@ -65,6 +100,7 @@ def sei_oracle():
 
 @pytest.fixture(scope="module")
 def legnet_oracle():
+    _require_oracle('legnet')
     oracle = chorus.create_oracle(
         "legnet", use_environment=True, reference_fasta=REFERENCE_FASTA,
         cell_type="K562",
@@ -132,6 +168,7 @@ class TestSmokeLegnet:
 
 @pytest.fixture(scope="module")
 def alphagenome_oracle():
+    _require_oracle('alphagenome')
     oracle = chorus.create_oracle(
         "alphagenome", use_environment=True, reference_fasta=REFERENCE_FASTA
     )

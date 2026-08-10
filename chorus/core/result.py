@@ -265,6 +265,39 @@ class OraclePredictionTrack:
         raise ValueError(f"Unknown scoring strategy: {scoring_strategy}")
 
     def pos2bin(self, chrom: str, position: int) -> int | None:
+        """Index into ``values`` for a 1-based genomic ``position``.
+
+        Two things worth knowing before changing this.
+
+        **The returned bin is one to the right of the base the caller names.**
+        ``position`` arrives 1-based (see ``base.py`` — "1-based inclusive,
+        matching dbSNP/UCSC/IGV") while ``reference.start`` is 0-based, and this
+        does not convert. For rs12740374 in a 2,114 bp ChromBPNet window it
+        returns 1058 where the variant's own array index is 1057.
+
+        **That is deliberate to leave alone, because the background builders
+        carry the identical slip.** Every builder's ``get_sequence`` fetches
+        ``(pos - half, pos + half)`` with a 1-based ``pos`` against 0-based
+        pysam, then centres its scoring window on ``L // 2``. Measured in
+        genomic coordinates the two windows are the same span:
+
+            builder null window : [109274718, 109275219)   [-249, +252)
+            query window here   : [109274718, 109275219)   [-249, +252)
+
+        so a percentile is a rank of the same statistic. "Fixing" only this
+        function would move the query off its null by 1 bp and make every
+        percentile slightly wrong — worse than the cosmetic inconsistency it
+        removes. If the convention is ever corrected it has to be one commit
+        touching both sides. Measured cost of doing it: ~0.03% on ref/alt,
+        ~2e-4 on log2FC, across 15 committed artefacts.
+
+        The bounds check below is the part that was genuinely missing: the guards
+        are on genomic coordinates only, so a track whose declared ``resolution``
+        overstates its sampling returned an index past the end of ``values``.
+        LegNet did exactly that — 1 value over a 200 bp interval declared at
+        resolution 50 yielded bin 2 for a length-1 array, and callers turned that
+        into a silent ``None`` result rather than an error.
+        """
         if chrom != self.prediction_interval.reference.chrom:
             return None
         if position < self.prediction_interval.reference.start:
@@ -272,7 +305,10 @@ class OraclePredictionTrack:
         if position > self.prediction_interval.reference.end:
             return None
 
-        return (position - self.prediction_interval.reference.start) // self.resolution
+        idx = (position - self.prediction_interval.reference.start) // self.resolution
+        if idx < 0 or idx >= len(self.values):
+            return None
+        return idx
 
     @property
     def positions(self) ->np.ndarray[int]:

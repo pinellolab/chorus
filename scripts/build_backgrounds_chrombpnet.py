@@ -25,7 +25,9 @@ import numpy as np
 
 import os; REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..')); sys.path.insert(0, REPO_ROOT)
 
-from chorus.analysis.background_sampling import (  # noqa: E402
+from chorus.analysis.background_sampling import abort_if_nothing_loads  # noqa: E402
+from chorus.analysis.background_sampling import (
+    sampling_block,  # noqa: E402
     ReservoirSampler,
     StagedSamples,
     compute_effect as _shared_compute_effect,
@@ -71,6 +73,16 @@ parser.add_argument("--n-dhs-peaks", type=int, default=5000,
 parser.add_argument("--dhs-path", type=str, default=None,
     help="Path to dhs_vocabulary_hg38.txt.gz. Defaults to annotations/ in repo root.")
 parser.add_argument("--reservoir-size", type=int, default=50000)
+parser.add_argument("--perbin-tail-k", type=int, default=43526,
+                    help="Exact top/bottom K values kept per track for the perbin "
+                         "layer, which cannot be retained whole (2,176,256 offered per track). Derived as "
+                         "ceil(200 * N_expected / 10000) so at least 200 of the "
+                         "10,000 grid slots are true order statistics; a single fixed "
+                         "K silently gives ChromBPNet only 91.")
+parser.add_argument("--exact-capacity", type=int, default=4000000,
+                    help="Reservoir capacity for the effect and summary layers. Large "
+                         "enough to retain every offered value, so their ceilings are "
+                         "population maxima rather than draws from a subsample.")
 parser.add_argument("--n-cdf-points", type=int, default=10000)
 parser.add_argument("--batch-size", type=int, default=64)
 parser.add_argument(
@@ -134,7 +146,13 @@ PERBIN_BINS_PER_POSITION = 32
 FORMULA = 'log2fc'
 PSEUDOCOUNT = 1.0
 
-cache_dir = os.path.expanduser("~/.chorus/backgrounds")
+# Honour the data-dir mechanism rather than hardcoding $HOME. All eight
+# builders had this literal, so a chorus installed with
+# CHORUS_DATA_DIR=/data/... still wrote its backgrounds into the home
+# directory the data dir exists to avoid. CHORUS_BACKGROUNDS_DIR applies
+# the legacy ~/.chorus compatibility itself, per kind.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+cache_dir = os.environ.get("CHORUS_BUILD_CACHE_DIR") or str(CHORUS_BACKGROUNDS_DIR)
 os.makedirs(cache_dir, exist_ok=True)
 
 
@@ -190,7 +208,15 @@ def _interim_suffix() -> str:
 
 def load_models_and_setup():
     """Load reference, set up GPU, return (oracle, models_to_score, ref)."""
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+    # An explicit CUDA_VISIBLE_DEVICES wins. This used to assign unconditionally, so
+    # `CUDA_VISIBLE_DEVICES=1 python build_...py` silently ran on GPU 0 anyway. Two
+    # arms of an ablation launched that way both landed on GPU 0; the first grabbed
+    # 78 GB, the second could not allocate a cuBLAS handle, and EVERY position was
+    # dropped with "Attempting to perform BLAS operation using StreamExecutor without
+    # BLAS support". A fleet rebuild sharded across GPUs by env var would have
+    # serialised onto one device the same way.
+    if os.environ.get("CUDA_VISIBLE_DEVICES") in (None, ""):
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
     try:
         import nvidia
@@ -216,6 +242,34 @@ def load_models_and_setup():
     ref = pysam.FastaFile(ref_path)
 
     models_to_score = _enumerate_models(args.assay)
+
+    # Scope preflight, before any model is loaded. --assay defaults to ATAC_DNASE, so a
+    # rebuild launched without it enumerates 9 of the 753 shipped tracks, scores all 9
+    # perfectly, and writes a background that replaces the whole file. Every other guard
+    # passes in that case, because nothing else asks whether the right tracks were
+    # attempted.
+    try:
+        import numpy as _np
+
+        from chorus.analysis.background_sampling import scope_violations
+        from chorus.core.globals import CHORUS_BACKGROUNDS_DIR as _BG
+        _shipped = _BG / "chrombpnet_pertrack.npz"
+        _n_shipped = None
+        if _shipped.exists():
+            with _np.load(_shipped, allow_pickle=True) as _d:
+                _n_shipped = len(_d["track_ids"])
+        logger.info("scope preflight: --assay=%s enumerates %d models; shipped "
+                    "background has %s tracks", args.assay, len(models_to_score),
+                    _n_shipped)
+        _probs = scope_violations(len(models_to_score),
+                                 label=f"chrombpnet(--assay={args.assay})",
+                                 n_shipped=_n_shipped)
+        if _probs:
+            raise SystemExit("refusing to build:\n  " + "\n  ".join(_probs))
+    except SystemExit:
+        raise
+    except Exception as _exc:                      # never let the preflight itself fail
+        logger.warning("scope preflight could not run: %s", _exc)
 
     # Optional incremental mode: skip models already present in the NPZ.
     if args.only_missing:
@@ -364,9 +418,9 @@ def build_all_models(do_variants: bool, do_baselines: bool):
         logger.info("Track IDs: %d entries (first 5: %s ... last 5: %s)",
                     len(track_ids), track_ids[:5], track_ids[-5:])
 
-    effect_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size) if do_variants else None
-    summary_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size) if do_baselines else None
-    perbin_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size) if do_baselines else None
+    effect_reservoir = ReservoirSampler(n_tracks, capacity=args.exact_capacity) if do_variants else None
+    summary_reservoir = ReservoirSampler(n_tracks, capacity=args.exact_capacity) if do_baselines else None
+    perbin_reservoir = ReservoirSampler(n_tracks, capacity=args.reservoir_size, tail_k=args.perbin_tail_k) if do_baselines else None
 
     rng_bins = np.random.RandomState(999)
 
@@ -493,6 +547,7 @@ def build_all_models(do_variants: bool, do_baselines: bool):
                     len(tss_list), len(dhs_baseline))
 
     # Iterate over models
+    _n_attempted = _n_loaded = 0
     for model_idx, spec in enumerate(models_to_score):
         tid = _track_id_for(spec)
         logger.info("=" * 60)
@@ -511,7 +566,11 @@ def build_all_models(do_variants: bool, do_baselines: bool):
             )
         except Exception as exc:
             logger.warning("Failed to load %s: %s", tid, str(exc)[:200])
+            _n_attempted += 1
+            abort_if_nothing_loads(_n_attempted, _n_loaded, label="chrombpnet.load")
             continue
+        _n_attempted += 1
+        _n_loaded += 1
 
         model = oracle.model
 
@@ -619,6 +678,7 @@ def build_all_models(do_variants: bool, do_baselines: bool):
             track_ids=np.array(track_ids, dtype='U'),
             effect_cdfs=effect_matrix.astype(np.float32),
             effect_counts=effect_reservoir.get_counts(),
+            effect_retained=effect_reservoir.retained_counts(),
             signed_flags=signed_flags,
         )
         logger.info("Saved effect interim: %s", interim_path)
@@ -632,8 +692,10 @@ def build_all_models(do_variants: bool, do_baselines: bool):
             track_ids=np.array(track_ids, dtype='U'),
             summary_cdfs=summary_matrix.astype(np.float32),
             summary_counts=summary_reservoir.get_counts(),
+            summary_retained=summary_reservoir.retained_counts(),
             perbin_cdfs=perbin_matrix.astype(np.float32),
             perbin_counts=perbin_reservoir.get_counts(),
+            perbin_retained=perbin_reservoir.retained_counts(),
         )
         logger.info("Saved baseline interim: %s", interim_path)
 
@@ -646,7 +708,10 @@ def merge_to_final():
 
     if not os.path.exists(effect_path) or not os.path.exists(baseline_path):
         logger.error("Missing interim files")
-        return
+        raise SystemExit(1)  # A missing interim is a FAILED merge, not a no-op. Returning here exited 0,
+        # so a driver keying off exit codes recorded "rc=0" for a step that wrote
+        # nothing -- the same report-success-after-failure shape as the all-zero
+        # interim and the guard nobody wired up.
 
     effect_data = np.load(effect_path, allow_pickle=False)
     baseline_data = np.load(baseline_path, allow_pickle=False)
@@ -666,6 +731,7 @@ def merge_to_final():
         summary_counts=baseline_data["summary_counts"] if "summary_counts" in baseline_data else None,
         perbin_counts=baseline_data["perbin_counts"] if "perbin_counts" in baseline_data else None,
         cache_dir=cache_dir,
+        sampling=sampling_block(effect_data, baseline_data, tail_k={"perbin": args.perbin_tail_k}),
     )
     logger.info("DONE — final file: %s (%.1f MB)", path, path.stat().st_size / 1e6)
 
@@ -688,7 +754,10 @@ def merge_to_final_incremental():
 
     if not os.path.exists(effect_path) or not os.path.exists(baseline_path):
         logger.error("Missing interim files — run with --only-missing --part both first")
-        return
+        raise SystemExit(1)  # A missing interim is a FAILED merge, not a no-op. Returning here exited 0,
+        # so a driver keying off exit codes recorded "rc=0" for a step that wrote
+        # nothing -- the same report-success-after-failure shape as the all-zero
+        # interim and the guard nobody wired up.
 
     effect_data = np.load(effect_path, allow_pickle=False)
     baseline_data = np.load(baseline_path, allow_pickle=False)

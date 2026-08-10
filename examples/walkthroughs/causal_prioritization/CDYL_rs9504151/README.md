@@ -39,21 +39,21 @@ one H100.
 
 ## Result
 
-rs9504151 ranks **#1 of 56**, composite **0.991**, largest effect **−1.362** on
+rs9504151 ranks **#1 of 56**, composite **0.999**, largest effect **−1.368** on
 `DNASE:fibroblast of lung`. The sentinel is also the top candidate, which is the
 interesting outcome for a credible set where 27 of the 56 variants sit at
 r² = 1.00 and so cannot be separated by LD at all.
 
 | Rank | Variant | r² | Composite | Largest effect |
 |---|---|---|---|---|
-| 1 | **rs9504151** ★ | 1.00 | 0.991 | −1.362 · DNASE |
+| 1 | **rs9504151** ★ | 1.00 | 0.999 | −1.368 · DNASE |
 | 2 | rs658325 | 1.00 | 0.686 | −1.109 · DNASE |
 | 3 | rs386522231 | 0.87 | 0.652 | −1.035 · DNASE |
 | 4 | rs62384944 | 0.93 | 0.441 | +0.293 · DNASE |
 | 5 | rs9504169 | 0.83 | 0.421 | +0.005 · RNA |
 
 It reproduces the audit's recorded AlphaGenome figures closely — composite
-0.995 → **0.991**, alt effect −1.363 → **−1.362** — so those numbers were right;
+0.995 → **0.999**, alt effect −1.363 → **−1.368** — so those numbers were right;
 they simply could not be checked by anyone until now.
 
 ## Reading it carefully

@@ -186,8 +186,21 @@ class LegNetOracle(OracleBase):
         return ["LentiMPRA"]
 
     def list_cell_types(self) -> List[str]:
-        """Return LegNet's cell types."""       
-        return [self.cell_type]
+        """Every cell type LegNet has weights for — not just the loaded one.
+
+        This used to return ``[self.cell_type]``, i.e. whichever single line the
+        instance happened to be constructed with. All three are reachable via
+        ``LegNetOracle(cell_type=...)`` and all three ship a background row, so
+        returning one of them made the other two undiscoverable: an agent asking
+        "what cell types does LegNet cover?" through the MCP layer would be told
+        HepG2 and never find K562 or WTC11.
+
+        ``LEGNET_AVAILABLE_CELLTYPES`` was already the authoritative list; this
+        method simply was not using it.
+        """
+        from .legnet_source.legnet_globals import LEGNET_AVAILABLE_CELLTYPES
+
+        return list(LEGNET_AVAILABLE_CELLTYPES)
  
     def _validate_loaded(self):
         """Check if model is loaded."""
@@ -257,7 +270,22 @@ class LegNetOracle(OracleBase):
             query_interval=query_interval,
             prediction_interval=prediction_interval,
             input_interval=input_interval,
-            resolution=self.bin_size,
+            # Declare the resolution the array ACTUALLY has, not the sliding
+            # stride. self.bin_size is the step (default 50), which is right for
+            # a multi-window query -- a 300 bp region yields 6 values at stride
+            # 50 -- but wrong for the single-window case, and that case is the
+            # default conversational/MCP path: base.py widens a point query to
+            # exactly 200 bp, LegNet returns ONE scalar, and declaring
+            # resolution 50 over a 200 bp interval implies 4 bins that do not
+            # exist. pos2bin then returned 2 for a length-1 array, so
+            # score_region and score_variant_effect(at_variant=True) both
+            # answered None, and the IGV feature was drawn 50 bp wide and 76 bp
+            # left-shifted. mcp/server.py documents this arithmetic in two places
+            # and adds an explanatory note rather than fixing it; this is the fix.
+            #
+            # 200//1 = 200 for one window; 300//6 = 50 and 400//8 = 50, so
+            # multi-window behaviour is unchanged.
+            resolution=max(1, len(prediction_interval) // max(1, len(preds))),
             values=preds,
             metadata=None,
             preferred_aggregation='mean',

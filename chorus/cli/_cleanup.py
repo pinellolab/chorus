@@ -8,8 +8,9 @@ from typing import List, Tuple
 
 from ..core.globals import CHORUS_DOWNLOADS_DIR, CHORUS_GENOMES_DIR
 from ..core.weights_probe import SETUP_MARKER_NAME
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
 
-_BACKGROUNDS_DIR = Path.home() / ".chorus" / "backgrounds"
+_BACKGROUNDS_DIR = CHORUS_BACKGROUNDS_DIR
 
 # Keep in sync with chorus.oracles.ORACLES (hardcoded here so cleanup stays
 # lightweight and does not import the oracle classes / heavy deps).

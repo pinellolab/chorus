@@ -1,0 +1,61 @@
+{
+  "variant": {
+    "chrom": "chr1",
+    "position": 109274968,
+    "ref_allele": "G",
+    "alt_alleles": [
+      "T"
+    ]
+  },
+  "oracle": "cherimoya",
+  "gene_name": "SORT1",
+  "nearby_genes": [
+    "SORT1",
+    "CELSR2"
+  ],
+  "report_title": "Multi-Layer Variant Effect Report",
+  "alleles": {
+    "alt_1": {
+      "scores_by_layer": {
+        "chromatin_accessibility": [
+          {
+            "assay_id": "DNASE:ENCSR149XIL",
+            "assay_type": "DNASE",
+            "cell_type": "HepG2",
+            "layer": "chromatin_accessibility",
+            "ref_value": 782.9505585391711,
+            "alt_value": 2152.1705061957346,
+            "raw_score": 1.457627993006423,
+            "description": "DNASE:HepG2",
+            "quantile_score": 0.9997,
+            "ref_signal_percentile": 0.9573
+          }
+        ]
+      },
+      "all_scores": [
+        {
+          "assay_id": "DNASE:ENCSR149XIL",
+          "assay_type": "DNASE",
+          "cell_type": "HepG2",
+          "layer": "chromatin_accessibility",
+          "ref_value": 782.9505585391711,
+          "alt_value": 2152.1705061957346,
+          "raw_score": 1.457627993006423,
+          "description": "DNASE:HepG2",
+          "quantile_score": 0.9997,
+          "ref_signal_percentile": 0.9573
+        }
+      ]
+    }
+  },
+  "analysis_request": {
+    "user_prompt": "Validate rs12740374 (the classic SORT1 LDL-cholesterol causal variant) by scoring it with three independent deep-learning oracles: ChromBPNet for chromatin accessibility, LegNet for MPRA promoter activity, and AlphaGenome as a generalist model covering ChIP, histones and CAGE. A new user should be able to see at a glance whether the three oracles agree on direction, and which assay/cell type drove each call.",
+    "tool_name": "analyze_variant_multilayer",
+    "oracle_name": "cherimoya",
+    "normalizer_name": "chorus per-track v1",
+    "tracks_requested": "1 tracks",
+    "cell_types": [],
+    "notes": [],
+    "generated_at": "2026-08-10 00:20 UTC"
+  }
+}

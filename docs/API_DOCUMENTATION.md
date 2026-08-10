@@ -580,8 +580,11 @@ share a common scale (rescale) or each has its own (raw autoscale).
 
 ### Building per-track CDFs
 
-Use the standalone scripts in `scripts/build_backgrounds_<oracle>.py`.
-See `scripts/README.md` for the full pipeline.
+Use the standalone scripts under `scripts/` (`build_backgrounds_<oracle>.py` for
+seven of the eight oracles; EPInformer-seq's is
+`build_backgrounds_epinformerseq_v2_percell.py`). See
+[`scripts/README.md`](../scripts/README.md) for the pipeline mechanics and
+[`docs/BACKGROUND_NULL_PROTOCOL.md`](BACKGROUND_NULL_PROTOCOL.md) for the design.
 
 ```bash
 mamba run -n chorus-enformer python scripts/build_backgrounds_enformer.py --part variants  --gpu 0
@@ -589,9 +592,12 @@ mamba run -n chorus-enformer python scripts/build_backgrounds_enformer.py --part
 mamba run -n chorus              python scripts/build_backgrounds_enformer.py --part merge
 ```
 
-The scripts use ~30K positions (random + cCREs + TSSs + gene bodies) and
-collect 32 random bins per position per track. RNA-seq tracks (Borzoi,
-AlphaGenome) use exon-precise sampling.
+Position counts and mixtures are **not** uniform across oracles: there are three
+activity populations (31,500 / 29,500 / 34,500 positions — `gene_body` is dropped for
+some, DHS summits added for others) and three effect-null families. The per-oracle
+assignment is recorded in each NPZ's `build_config` and tabulated in
+[`scripts/README.md`](../scripts/README.md). RNA-seq tracks (Borzoi, AlphaGenome) use
+exon-precise sampling.
 
 ### Automatic download
 

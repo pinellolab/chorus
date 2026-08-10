@@ -27,7 +27,11 @@ import numpy as np
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
-BG = Path.home() / ".chorus" / "backgrounds"
+# Resolved through the data-dir mechanism, not hardcoded to $HOME. Every
+# background-handling script had this literal; CHORUS_BACKGROUNDS_DIR applies
+# the legacy ~/.chorus compatibility itself, per kind.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+BG = CHORUS_BACKGROUNDS_DIR
 README = REPO / "README.md"
 
 BEGIN = "<!-- BEGIN GENERATED: background-table -->"
@@ -77,7 +81,20 @@ def build_table() -> str:
         # Read the stamp; fall back only to facts, never to a guess. Defaulting to
         # "uniform random" mislabelled AlphaGenome, whose stamp records the
         # gene-anchored rule under an older key.
-        region = cfg.get("effect_region_set")
+        # Schema 4 records the reference population by FAMILY plus a content hash, which
+        # is strictly better than the old free-text field: it names one of three known
+        # populations and can be checked against the artefact on disk. Read that first.
+        region = None
+        rs = cfg.get("reference_sets") or {}
+        fam = rs.get("effect_family")
+        if fam:
+            n_pos = sum((rs.get("effect_strata") or {}).values()) or None
+            label = {"gene_anchored": "gene-anchored + cCRE",
+                     "promoter": "promoter-anchored",
+                     "accessibility": "uniform + DHS summits"}.get(fam, fam)
+            region = f"{label} ({n_pos:,})" if n_pos else label
+        if not region:
+            region = cfg.get("effect_region_set")
         if not region and cfg.get("effect_region_rule"):
             rule = str(cfg["effect_region_rule"])
             region = "gene-anchored" if "gene-anchored" in rule else rule[:40]

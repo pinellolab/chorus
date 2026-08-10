@@ -51,6 +51,12 @@ class TrackScore:
     alt_value: float | None
     raw_score: float | None
     quantile_score: float | None = None
+    # Set only when the effect lands at or beyond the most extreme effect in this
+    # track's background, which is exactly when ``quantile_score`` pins at 1.0 (or
+    # -1.0) and stops discriminating. The ratio to that bound is what the
+    # percentile can no longer say: 1.11 means 11% past the largest of ~10k
+    # sampled background effects. See PerTrackNormalizer.effect_exceedance.
+    effect_exceedance: float | None = None
     ref_signal_percentile: float | None = None
     description: str | None = None  # human-readable track description
     note: str | None = None
@@ -74,6 +80,8 @@ class TrackScore:
             d["description"] = self.description
         if self.quantile_score is not None:
             d["quantile_score"] = self.quantile_score
+        if self.effect_exceedance is not None:
+            d["effect_exceedance"] = self.effect_exceedance
         if self.ref_signal_percentile is not None:
             d["ref_signal_percentile"] = self.ref_signal_percentile
         if self.note is not None:
@@ -160,6 +168,7 @@ class VariantReport:
                     alt_value=td.get("alt_value"),
                     raw_score=td.get("raw_score"),
                     quantile_score=td.get("quantile_score"),
+                    effect_exceedance=td.get("effect_exceedance"),
                     ref_signal_percentile=td.get("ref_signal_percentile"),
                     description=td.get("description"),
                     note=td.get("note"),
@@ -243,6 +252,7 @@ class VariantReport:
                     "alt_value": ts.alt_value,
                     "raw_score": ts.raw_score,
                     "quantile_score": ts.quantile_score,
+                    "effect_exceedance": ts.effect_exceedance,
                     "ref_signal_percentile": ts.ref_signal_percentile,
                     "note": ts.note,
                 })
@@ -346,7 +356,7 @@ class VariantReport:
         lines.append("")
 
         # Summary
-        summary = _build_summary(self.allele_scores)
+        summary = _build_summary(self.allele_scores, self.gene_name)
         lines.append(f"**Summary**: {summary}")
         lines.append("")
 
@@ -422,7 +432,8 @@ class VariantReport:
                     cols = [track_label, ref_str, alt_str, score_str]
                     if has_quantile:
                         cols.append(
-                            _fmt_percentile(ts.quantile_score)
+                            _fmt_percentile(ts.quantile_score, ts.effect_exceedance,
+                                            layer=ts.layer)
                         )
                     if has_baseline:
                         cols.append(
@@ -447,9 +458,22 @@ class VariantReport:
             lines.append("**Score guide:**")
             if has_quantile:
                 lines.append(
-                    "- **Effect %ile**: Variant effect ranked against ~10K random SNPs. "
-                    "0.95 = stronger than 95% of random variants."
+                    "- **Effect %ile**: Variant effect ranked against a per-track "
+                    "background of ~18,000 variants sampled from the regulatory "
+                    "regions this assay measures (cCREs, DHS summits, promoters, gene "
+                    "features) \u2014 not uniformly random positions. 0.95 = stronger "
+                    "than 95% of that background."
                 )
+                if any(ts.effect_exceedance is not None for ts in scores):
+                    lines.append(
+                        "- **`N× null max`**: the effect exceeded *every* sampled "
+                        "background effect for that track, so the percentile is "
+                        "clamped and cannot rank it further. The multiplier gives the "
+                        "distance to that ceiling — `1.11×` is 11% beyond the most "
+                        "extreme background effect for that track. Common for variants "
+                        "that create or destroy a complete transcription-factor motif, "
+                        "which even a regulatory-region background rarely contains."
+                    )
             if has_baseline:
                 lines.append(
                     "- **Activity %ile**: Reference signal ranked genome-wide against "
@@ -465,18 +489,34 @@ class VariantReport:
 # Summary builder
 # ---------------------------------------------------------------------------
 
-def _build_summary(allele_scores: dict[str, list["TrackScore"]]) -> str:
+def _build_summary(
+    allele_scores: dict[str, list["TrackScore"]],
+    gene_name: str | None = None,
+) -> str:
     """Build a plain-English summary of the top effects across all layers.
 
     For each layer, the single track with the largest |effect| is identified
-    and its ``assay_id`` / ``cell_type`` are quoted alongside the number.
-    Previously the summary hid this provenance, forcing a reader to scan
-    the per-layer tables to find out which track drove each headline figure.
+    and its ``assay_id`` / ``cell_type`` / ``region_label`` are quoted
+    alongside the number.  Previously the summary hid this provenance,
+    forcing a reader to scan the per-layer tables to find out which track
+    drove each headline figure.
+
+    ``region_label`` is not cosmetic here.  Expression-like layers emit
+    *many* rows per track — one per gene TSS (CAGE) or per gene exon set
+    (RNA) — which share an identical ``description``, so without the region
+    the citation is unresolvable: all 29 CAGE rows of the SORT1 region-swap
+    report read ``CAGE:K562``.  Worse, the max-|effect| row often belongs to
+    a *neighbouring* gene rather than the report's subject, and can carry the
+    opposite sign (region_swap SORT1: winner ``GSTM2 TSS`` at -7.96 while
+    ``SORT1 TSS`` is +0.75).  8 of the 13 committed example JSONs had at
+    least one summary line quoting a row whose region was dropped.  Naming
+    the region is what makes that attribution readable instead of wrong;
+    *gene_name* is used to say so out loud in the lead-in.
     """
     # Collect the *winning track* per layer across all alleles, not just
-    # its score.  We also keep cell_type + a short label (description if it
-    # exists, else assay_id) so the summary can cite which assay produced
-    # the effect.
+    # its score.  We also keep cell_type, region_label and a short label
+    # (description if it exists, else assay_id) so the summary can cite
+    # exactly which row produced the effect.
     best_per_layer: dict[str, dict] = {}
     for _, scores in allele_scores.items():
         for ts in scores:
@@ -496,6 +536,7 @@ def _build_summary(allele_scores: dict[str, list["TrackScore"]]) -> str:
                     "score": ts.raw_score,
                     "track_label": short,
                     "cell_type": ts.cell_type or "",
+                    "region_label": ts.region_label or "",
                     "interp": _interpret_score(ts.raw_score, ts.quantile_score, layer),
                 }
 
@@ -515,10 +556,19 @@ def _build_summary(allele_scores: dict[str, list["TrackScore"]]) -> str:
         layer_name = cfg.description if cfg else layer
         sign = "+" if score >= 0 else ""
         # Provenance suffix: keep short but unambiguous.  Prefer the short
-        # track label (description over assay_id) and append cell_type only
-        # when it isn't already embedded in the label.
+        # track label (description over assay_id), append the region_label in
+        # the same " — {region}" form the tables use so a summary citation can
+        # be matched to a table row by eye, and append cell_type only when it
+        # isn't already embedded in the label.
         provenance_bits: list[str] = []
         label = info["track_label"]
+        region = info["region_label"]
+        if region:
+            # The region is the disambiguator, so it is exempt from the
+            # 60-char cap applied to the description above — truncating it
+            # would defeat the point.  Region labels are short by
+            # construction ("GSTM2 TSS", "PSRC1 (exons)", "variant site").
+            label = f"{label} — {region}" if label else region
         if label:
             provenance_bits.append(label)
         ct = info["cell_type"]
@@ -535,7 +585,16 @@ def _build_summary(allele_scores: dict[str, list["TrackScore"]]) -> str:
     if not strong_effects:
         return "No strong regulatory effects detected across any layer."
 
-    return "; ".join(strong_effects) + "."
+    # State the real semantics: these are per-layer maxima over every track
+    # in the prediction window, which is not the same thing as the subject
+    # gene's own track and may disagree with it in sign.
+    # Separated with a full stop rather than an em dash: the em dash is spoken
+    # for by the " — {region}" provenance suffix above, and reusing it here
+    # would put two differently-scoped dashes in one sentence.
+    lead_in = "Strongest effect per layer anywhere in the prediction window"
+    if gene_name:
+        lead_in += f" (not necessarily {gene_name}'s own track)"
+    return f"{lead_in}. " + "; ".join(strong_effects) + "."
 
 
 def _sort_layer_scores(layer_scores: list["TrackScore"]) -> list["TrackScore"]:
@@ -552,7 +611,11 @@ def _sort_layer_scores(layer_scores: list["TrackScore"]) -> list["TrackScore"]:
 # ---------------------------------------------------------------------------
 
 
-def _fmt_percentile(q: float | None) -> str:
+def _fmt_percentile(
+    q: float | None,
+    exceedance: float | None = None,
+    layer: str | None = None,
+) -> str:
     """Format a quantile score for display, avoiding misleading precision.
 
     ``None`` means the percentile was suppressed because ``|raw_score|``
@@ -561,14 +624,68 @@ def _fmt_percentile(q: float | None) -> str:
     background that's also mostly near-zero. We render ``near-zero``
     (rather than a cryptic em-dash) so users don't interpret it as
     missing data.
+
+    *exceedance* annotates the top (and, for signed layers, bottom) bucket with
+    how far past the null's most extreme sample the effect actually lies. Where it
+    is set, the percentile is **clamped** and carries no ordering information: a
+    motif-creating change scoring 11% beyond its null's maximum is arithmetically
+    identical to one scoring 10× beyond, because both saturate at the same end of
+    the same CDF row. There the bucket label is the honest rendering and the ratio
+    is the only thing that can separate them — more decimal places would be
+    fabricated precision.
+
+    Where it is **not** set, the effect is inside the null's support, so the
+    percentile is a genuine rank and 0.9998 really does order above 0.9995. This
+    function used to bucket those too, and that was right while the nulls were
+    thinned: the sampler discarded the population maximum at rate *m/N*, so the
+    top of the scale was an artefact of a subsample and the fourth decimal was
+    noise. With exact retention it is signal, and bucketing threw it away —
+    measured at **127 committed rows collapsing 81 distinct values**, including
+    the C/EBP vignette where CEBPA (0.9998) outranks CEBPB (0.9995) on a *smaller*
+    raw effect. That contrast is the whole point of the example, and it was
+    invisible in the HTML while being present in the JSON.
+
+    So the rule is now "bucket exactly when the number is not real", rather than
+    "bucket the ends of the scale". Four decimals in the tails because that is
+    where percentiles bunch and where two decimals cannot separate anything; two
+    in the body, where they can.
+
+    *layer* decides which end counts as a tail, and omitting it used to produce a
+    wrong answer rather than an imprecise one. Unsigned layers span [0, 1], so both
+    ends are tails. **Signed** layers span [-1, 1] — direction is the sign,
+    unusualness is the magnitude — so `q` near zero is the *body*, not the bottom
+    percentile. The old `q <= 0.01` test therefore captured the entire negative
+    half of every signed layer: the C/EBP vignette rendered nine `gene_expression`
+    rows as "≤1st" whose real percentiles were -0.74 to -0.96, i.e. moderately to
+    strongly *down*, not bottom-1%. Reading "≤1st" there and "≥99th" three rows
+    above suggests a variant that both strongly represses and is barely
+    distinguishable from noise.
+
+    Without a *layer* the function cannot tell -0.74 (signed, mid-body) from 0.005
+    (unsigned, genuine low tail) — the two need opposite treatment and look
+    identical to a magnitude test. So it falls back to the unsigned reading, which
+    is what the majority of layers are, and callers that have a layer should pass
+    it.
     """
     if q is None:
         return "near-zero"
-    if q >= 0.99:
-        return "≥99th"
-    if q <= 0.01:
-        return "≤1st"
-    return f"{q:.2f}"
+
+    signed = False
+    if layer:
+        cfg = LAYER_CONFIGS.get(layer)
+        signed = bool(getattr(cfg, "signed", False)) if cfg is not None else False
+
+    if exceedance is not None:
+        # Past the edge of support: clamped, unorderable, ratio-separated. Which
+        # edge depends on the range, and the midpoint differs: an unsigned layer
+        # clamps low at q == 0.0, a signed one at q == -1.0. Testing ``q >= 0``
+        # for both would label an unsigned bottom-clamp as "≥99th".
+        high = q >= 0 if signed else q >= 0.5
+        label = "≥99th" if high else "≤1st"
+        return f"{label} ({exceedance:.2f}× null max)"
+
+    in_tail = abs(q) >= 0.99 if signed else (q >= 0.99 or q <= 0.01)
+    return f"{q:.4f}" if in_tail else f"{q:.2f}"
 
 
 def _interpret_score(
@@ -777,6 +894,14 @@ def _apply_normalization(
         if ts.raw_score is not None and not in_noise_floor:
             raw_for_norm = ts.raw_score if use_signed else abs(ts.raw_score)
             ts.quantile_score = normalizer.effect_percentile(
+                oracle_name, assay_id, raw_for_norm, signed=use_signed,
+            )
+            # Computed unconditionally rather than only when quantile_score == 1.0:
+            # the two are derived from the same row, and gating on the pinned value
+            # would make the field's presence depend on a float equality against a
+            # clamp. effect_exceedance returns None on its own when the effect is
+            # inside the null's support.
+            ts.effect_exceedance = normalizer.effect_exceedance(
                 oracle_name, assay_id, raw_for_norm, signed=use_signed,
             )
         # else: leave ts.quantile_score at its default None
@@ -1155,7 +1280,24 @@ def build_variant_report(
                 low_effective_bins=low_bins,
             )
             if result is None:
-                ts.note = "Outside scoring window"
+                # score_track_effect() returns None for two unrelated reasons,
+                # and conflating them mislabels whole oracles.  When there is
+                # no LAYER_CONFIGS entry for the classified layer it bails out
+                # *before* touching a coordinate (scorers.py:353), so the
+                # window was never consulted — saying "outside scoring window"
+                # there is simply false, and it sends the reader hunting for a
+                # coordinate problem that doesn't exist.  This is the common
+                # case, not a corner one: all 21,907 of Sei's chromatin-profile
+                # target tracks carry bare assay strings (1,176 distinct —
+                # 'H3K4me3' alone is 2,350 tracks) that classify_track_layer
+                # maps to 'other', for which LAYER_CONFIGS has no entry.
+                if cfg is None:
+                    ts.note = (
+                        f"No scoring config for assay type "
+                        f"{at or 'unknown'} (layer '{layer}')"
+                    )
+                else:
+                    ts.note = "Outside scoring window"
             _apply_normalization(ts, normalizer, oracle_name, layer, assay_id=assay_id)
             scores.append(ts)
 
@@ -1520,7 +1662,7 @@ def _build_html_report(report: "VariantReport") -> str:
                      f'{report.chrom}:{s+1:,}-{e:,} ({e-s:,} bp)</p>')
 
     # Summary
-    summary = _build_summary(report.allele_scores)
+    summary = _build_summary(report.allele_scores, report.gene_name)
     parts.append(f'<p class="meta" style="margin-top:0.5rem;padding:0.6rem 0.8rem;'
                  f'background:#f0f7ff;border-left:3px solid #3b82f6;border-radius:4px">'
                  f'<b>Summary:</b> {html_mod.escape(summary)}</p>')
@@ -1583,7 +1725,11 @@ def _build_html_report(report: "VariantReport") -> str:
             parts.append(f"<th>Track</th><th>Cell Type</th>"
                          f"<th>Ref</th><th>Alt</th><th>{effect_header}</th>")
             if has_quantile:
-                parts.append('<th title="Variant effect percentile vs random SNPs">Effect %ile</th>')
+                parts.append(
+                    '<th title="Variant effect percentile against a per-track background '
+                    'of ~18,000 variants in assay-matched regulatory regions">'
+                    'Effect %ile</th>'
+                )
             if has_baseline:
                 parts.append('<th title="Reference signal activity percentile genome-wide">Activity %ile</th>')
             parts.append("<th>Interpretation</th></tr></thead><tbody>")
@@ -1617,7 +1763,9 @@ def _build_html_report(report: "VariantReport") -> str:
                 )
 
                 if has_quantile:
-                    q_str = _fmt_percentile(ts.quantile_score)
+                    q_str = _fmt_percentile(
+                        ts.quantile_score, ts.effect_exceedance, layer=ts.layer,
+                    )
                     parts.append(f"<td>{q_str}</td>")
 
                 if has_baseline:
