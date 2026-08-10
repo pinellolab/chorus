@@ -653,16 +653,6 @@ oracle is thinned.
   them or claims they are equivalent.
 * AlphaGenome `histone_marks` and Enformer `tf_binding` remain ~20%/25% pinned on
   motif-creating variants. Irreducible with an empirical ceiling; see §9's last row.
-* **`layers_per_row` ships on only 3 of the 8 oracles** — alphagenome (6 distinct layers),
-  borzoi (5), enformer (4). Absent, with `layers_present: null`, on cherimoya, chrombpnet,
-  epinformerseq, legnet and sei. Four of those five are effectively single-layer so the
-  array carries no information, but **ChromBPNet is not**: its 753 rows span `ATAC` (4),
-  `DNASE` (5) and `CHIP` (744), i.e. accessibility and ChIP, and downstream code that keys
-  on the array has to re-derive the layer from the track-id string instead. It is derivable
-  without a rebuild — a `stamp_provenance_v4.py`-style append-in-place pass would do it —
-  but that changes the sha256 of files already published, so it is a follow-up rather than
-  something to slip in. `tests/test_canonical_layer_vocabulary.py` validates the array
-  *when present* and does not require presence, which is why this was invisible.
 * **One AlphaGenome MCP end-to-end test never runs on an authenticated machine.**
   `tests/test_integration.py:196` gates on the `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN`
   environment variables, but `huggingface_hub` also authenticates from the stored token on
