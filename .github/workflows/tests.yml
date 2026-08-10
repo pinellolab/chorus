@@ -1,14 +1,26 @@
 name: tests
 
-# Fast CI — runs the 303-test non-integration suite on every PR and on
-# pushes to main-line branches. Deliberately does NOT run:
-#   - tests/test_smoke_predict.py (needs ~10 GB of oracle models — won't
-#     fit on the 14 GB GitHub runner disk)
-#   - tests/test_integration.py (marked `integration` — hits HF, ENCODE,
-#     and spawns chorus-mcp; 5–10 min per test)
-# Those are runnable manually by maintainers with:
-#   pytest tests/test_smoke_predict.py -v   # full 6-oracle smoke
-#   pytest -m integration -v                # CDF/ChromBPNet/MCP E2E
+# Fast CI — runs the non-integration suite on every PR and on pushes to
+# main-line branches: 1,451 selected of 1,525 collected, the other 74 being
+# marked `integration`.
+#
+# The exclusion is NOT configured here. `pytest.ini` sets
+# `addopts = -m "not integration"`, so the command below is byte-for-byte the
+# one a contributor runs and the one audits/AUDIT_CHECKLIST.md section 11
+# documents. That was not true until 2026-08-10: this job carried
+# `-m "not integration"` and `--ignore=tests/test_smoke_predict.py`, so CI was
+# green while the documented command was red, and the difference was invisible
+# unless you read this file.
+#
+# Excluded by the marker, and why they cannot run on a GitHub runner:
+#   - tests/test_smoke_predict.py — needs ~10 GB of oracle models against a
+#     14 GB runner disk. Marked `integration` now, and its fixtures skip
+#     cleanly when the envs are absent, so no --ignore is required.
+#   - the rest of the integration suite — hits HuggingFace and ENCODE and
+#     spawns chorus-mcp; 5–10 min each.
+# Maintainers run those on a release host:
+#   pytest -m integration -v     # smoke, CDF download, ChromBPNet, MCP E2E
+#   pytest -m "" -v              # everything, no marker filter
 
 on:
   push:
@@ -52,13 +64,13 @@ jobs:
           python -c "import sys; print('python', sys.version)"
           pytest --version
 
-      - name: Run fast suite (non-integration, non-smoke)
+      - name: Run fast suite
         run: |
-          pytest tests/ \
-            --ignore=tests/test_smoke_predict.py \
-            -m "not integration" \
-            -q \
-            --durations=10
+          # No marker filter and no --ignore, on purpose: pytest.ini owns the
+          # exclusion, so this is the same command a contributor runs.
+          # tests/test_default_pytest_run_excludes_integration.py fails if
+          # either flag comes back or if the two ever drift apart.
+          pytest tests/ -q --durations=10
 
       - name: pip-audit (supply-chain — non-blocking advisory)
         continue-on-error: true

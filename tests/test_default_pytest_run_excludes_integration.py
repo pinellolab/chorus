@@ -21,12 +21,10 @@ Both halves are now fixed at the source rather than at the call site:
 This file is the drift guard: if the ``addopts`` line goes away, if the smoke tests lose
 their marker or a fixture loses its guard, or if CI widens its selection, these fail.
 
-One loose end, recorded rather than hidden: the workflow still passes
-``-m "not integration"`` and ``--ignore=tests/test_smoke_predict.py``. Both are now
-redundant -- the marker filter is in pytest.ini and the smoke tests skip cleanly -- but
-deleting them requires pushing ``.github/workflows/tests.yml``, which needs the GitHub
-``workflow`` OAuth scope that this checkout's credentials lack. Redundancy is harmless
-here; the test below fails only if CI ever *widens* the selection instead.
+CI now runs the bare command too -- no marker filter, no ``--ignore`` -- so the three
+statements of what "the tests" means (pytest.ini, the workflow, the checklist) cannot
+disagree. The tests below fail if a filter or an ignore comes back, or if CI widens its
+selection.
 """
 from __future__ import annotations
 
@@ -73,16 +71,13 @@ def test_integration_is_a_declared_marker():
     )
 
 
-def test_ci_does_not_widen_the_selection():
-    """CI must not run the integration tests, whichever way it says so.
+def test_ci_runs_the_same_command_a_contributor_runs():
+    """No marker filter and no --ignore in the workflow.
 
-    This deliberately checks equivalence rather than exact flags. The workflow still
-    carries a redundant ``-m "not integration"`` and an ``--ignore`` of the smoke file;
-    both are now unnecessary -- the exclusion lives in pytest.ini and the smoke tests are
-    marked and guarded -- but removing them needs a push with the GitHub ``workflow``
-    OAuth scope, which the tooling here does not have. Redundant is harmless; what would
-    be harmful is CI *widening* the selection back to something the documented command
-    does not run, so that is what fails here.
+    Neither is wrong in itself; both are wrong because they can drift from pytest.ini
+    silently, which is exactly what happened -- CI green, documented command red, and the
+    difference visible only to someone reading the workflow file. Also fails if CI
+    *widens* the selection to something the documented command does not run.
     """
     if not WORKFLOW.exists():
         pytest.skip("no CI workflow in this checkout")
@@ -91,15 +86,21 @@ def test_ci_does_not_widen_the_selection():
         line.strip() for line in body.splitlines()
         if "pytest" in line and not line.strip().startswith("#")
     ]
-    widened = [
-        line for line in run_lines
-        if re.search(r'-m\s+(["\']?)integration\1', line)
-        or re.search(r'-m\s+(""|\'\')', line)
+    filtered = [line for line in run_lines if "-m " in line]
+    assert not filtered, (
+        f"the CI workflow passes its own marker filter: {filtered}. The exclusion lives in "
+        f"pytest.ini so that CI, the docs and a bare `pytest` cannot disagree; if CI "
+        f"genuinely needs a different selection, say so in the checklist and here."
+    )
+
+    ignored = [
+        line.strip() for line in body.splitlines()
+        if "--ignore" in line and not line.strip().startswith("#")
     ]
-    assert not widened, (
-        f"the CI workflow selects integration tests: {widened}. CI runs on a 14 GB "
-        f"runner with no oracle environments; those tests need ~10 GB of models and "
-        f"spawn subprocesses. Keep CI on the default selection."
+    assert not ignored, (
+        f"CI ignores test files: {ignored}. --ignore was needed only because the smoke "
+        f"fixtures raised instead of skipping without the oracle envs; they are marked and "
+        f"guarded now, so an --ignore here hides whatever actually broke."
     )
 
 
