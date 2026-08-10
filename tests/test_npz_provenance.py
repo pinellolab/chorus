@@ -215,9 +215,33 @@ def test_borzoi_layers_are_recoverable_today_but_only_by_joining(tmp_path):
     by_id = dict(zip(frame["identifier"].astype(str), frame["description"].astype(str)))
     with np.load(npz, allow_pickle=True) as data:
         ids = [str(t) for t in data["track_ids"]]
-        has_layer = "layer" in data.files
+        has_layer = "layers_per_row" in data.files
 
     unresolved = [t for t in ids if t not in by_id]
     assert not unresolved, f"{len(unresolved)} track_ids do not resolve"
-    if not has_layer:
-        pytest.xfail("shipped borzoi NPZ predates per-row layer; rebuild adds it")
+
+    # This used to end in
+    #     if not has_layer: pytest.xfail("shipped borzoi NPZ predates per-row layer;
+    #                                     rebuild adds it")
+    # which could never clear, because it tested `"layer" in data.files` while the array
+    # is called `layers_per_row`. So it xfailed unconditionally, and its message told the
+    # reader the rebuild would fix something the rebuild had already fixed. The 2026-08
+    # rebuild does ship per-row layers for Borzoi: 7,611 rows over 5 distinct layers.
+    assert has_layer, (
+        "the shipped borzoi NPZ has no layers_per_row, so the only way to recover a "
+        "row's layer is joining against whatever borzoi_metadata.py is on disk -- the "
+        "dependency this test exists to document. It was present as of the 2026-08 "
+        "rebuild; if it has gone, the merge dropped it again (see c8ece2a)."
+    )
+    with np.load(npz, allow_pickle=True) as data:
+        layers = [str(x) for x in data["layers_per_row"]]
+    assert len(layers) == len(ids), (
+        f"layers_per_row has {len(layers)} entries against {len(ids)} track_ids; a "
+        f"per-row array that is not per-row is worse than none"
+    )
+    from chorus.analysis.scorers import canonical_layer
+    non_canonical = sorted({x for x in layers if canonical_layer(x) != x})
+    assert not non_canonical, (
+        f"layers_per_row holds non-canonical values {non_canonical}; downstream code "
+        f"keys on this array, so a synonym here silently misroutes a whole layer"
+    )

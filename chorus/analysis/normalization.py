@@ -23,7 +23,8 @@ Two kinds of background are supported:
 **2. Baseline signal backgrounds** (``{oracle}_{layer}_baseline.npy``)
     Maps raw predicted signal levels to genome-wide activity percentiles [0, 1].
 
-Background distributions are cached to ``~/.chorus/backgrounds/`` for reuse.
+Background distributions are cached under ``CHORUS_BACKGROUNDS_DIR`` for reuse
+(the installation directory by default; see ``chorus/core/globals.py``).
 """
 
 import hashlib
@@ -34,7 +35,12 @@ from typing import Optional
 
 import numpy as np
 
-from chorus.analysis.background_sampling import cdf_grid_violations
+from chorus.analysis.background_sampling import (
+    cdf_grid_violations,
+    thinning_violations,
+    yield_violations,
+)
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -164,7 +170,7 @@ class QuantileNormalizer:
 
     def __init__(self, cache_dir: Optional[str] = None):
         if cache_dir is None:
-            cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+            cache_dir = str(CHORUS_BACKGROUNDS_DIR)
         self.cache_dir = Path(cache_dir)
         self._distributions: dict[str, BackgroundDistribution] = {}
 
@@ -359,10 +365,13 @@ class PerTrackNormalizer:
 
     def __init__(self, cache_dir: Optional[str] = None):
         if cache_dir is None:
-            cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+            cache_dir = str(CHORUS_BACKGROUNDS_DIR)
         self.cache_dir = Path(cache_dir)
         # Keyed by oracle name
         self._loaded: dict[str, dict] = {}  # oracle -> {track_ids, effect_cdfs, ...}
+        # Oracles already warned about a superseded artefact, so the message is
+        # emitted once rather than on every percentile lookup.
+        self._warned_superseded: set[str] = set()
 
     # ------------------------------------------------------------------
     # File naming
@@ -400,6 +409,23 @@ class PerTrackNormalizer:
             if alias:
                 return self._ensure_loaded(alias)
             return None
+        # Say something when the artefact predates the retention rebuild. The
+        # downloader now refuses to keep a superseded cache, but a user who
+        # obtained the file another way -- a copy, a pinned mirror, a restored
+        # backup -- would otherwise get silently wrong ceilings. Warned once per
+        # oracle per process, not per call.
+        if oracle_name not in self._warned_superseded:
+            why = _cached_artefact_is_superseded(path)
+            if why:
+                self._warned_superseded.add(oracle_name)
+                logger.warning(
+                    "%s background at %s is superseded (%s). Effect ceilings are "
+                    "draws from a uniform subsample, so strong effects will stay "
+                    "clamped at percentile 1.0 with an inflated exceedance ratio. "
+                    "Delete the file and re-run to refetch.",
+                    oracle_name, path, why,
+                )
+
         data = np.load(str(path), allow_pickle=False)
         entry = {
             "track_ids": [str(x) for x in data["track_ids"]],
@@ -731,6 +757,82 @@ class PerTrackNormalizer:
         """
         return self._lookup(oracle_name, track_id, "effect_cdfs", raw_score, signed=signed)
 
+    def effect_null_support(
+        self,
+        oracle_name: str,
+        track_id: str,
+    ) -> tuple[float, float] | None:
+        """The (most negative, most positive) effect the null actually contains.
+
+        These are the first and last entries of the track's ``effect_cdfs`` row —
+        the smallest and largest of the sampled background effects. They are
+        already in the shipped artefacts, so nothing here needs a rebuild.
+
+        Unsigned rows start at 0.0 (the row holds ``abs`` effects); signed rows —
+        every Sei and LegNet track, 12.9% of AlphaGenome's and 20.3% of Borzoi's —
+        run negative, so **both** ends are live and a caller must not assume the
+        maximum is the only bound that can be crossed.
+        """
+        entry = self._ensure_loaded(oracle_name)
+        if entry is None:
+            return None
+        cdf_matrix = entry.get("effect_cdfs")
+        if cdf_matrix is None:
+            return None
+        idx = self._resolve_row(track_id, entry)
+        if idx is None or not self._has_samples(entry, "effect_cdfs", idx):
+            return None
+        row = np.asarray(cdf_matrix[idx])
+        if row.size == 0:
+            return None
+        return (float(row[0]), float(row[-1]))
+
+    def effect_exceedance(
+        self,
+        oracle_name: str,
+        track_id: str,
+        raw_score: float,
+        signed: bool = False,
+    ) -> float | None:
+        """How far past the null's most extreme sample an effect lies, as a ratio.
+
+        ``effect_percentile`` is ``min(rank / denominator, 1.0)``, so it reaches
+        exactly 1.0 the moment the effect reaches the largest of the ~10–12k
+        sampled background effects, and stays there however much further it goes.
+        At rs12740374, ``CHIP:HepG2:CEBPA:+`` scores +1.865 against a null maximum
+        of 1.682: it pins at 1.0, indistinguishable from an effect ten times
+        larger. That is a real loss of information, and it is not fixable by
+        resampling — the ceiling is a single extreme order statistic, so its
+        position carries large sampling variance. Measured across Enformer's 12
+        ``tf_binding`` tracks after re-anchoring, 12 of 12 got a *wider* p99
+        (+63%) while 11 of 12 reported a *lower* maximum.
+
+        So report the distance instead. Returns ``|raw| / |bound|`` where *bound*
+        is the end of the support the effect crossed, or ``None`` when the effect
+        is inside the support and the percentile is already exact. A returned
+        1.11 means "11% beyond the most extreme background effect sampled for
+        this track".
+
+        This is deliberately **not** an extrapolated percentile. Fitting a
+        generalised Pareto tail to Enformer's TF nulls gives shape c = −0.190,
+        i.e. a *bounded* tail whose endpoint (4.245) sits above the empirical
+        maximum (2.956) but still below the observed effect (4.372) — so the
+        fitted model calls the measurement impossible. Forcing an exponential
+        tail (c = 0) does extrapolate monotonically and never saturates, but it
+        turns a measurement into a modelling assumption and prints it to eight
+        decimal places. The ratio is a fact about the sample.
+        """
+        support = self.effect_null_support(oracle_name, track_id)
+        if support is None:
+            return None
+        lo, hi = support
+        value = raw_score if signed else abs(raw_score)
+        if value > hi and hi > 0:
+            return float(value / hi)
+        if signed and value < lo and lo < 0:
+            return float(value / lo)
+        return None
+
     def activity_percentile(
         self,
         oracle_name: str,
@@ -970,6 +1072,7 @@ class PerTrackNormalizer:
         n_points: int = 10_000,
         provenance: dict | None = None,
         per_row: dict | None = None,
+        sampling: dict | None = None,
     ) -> Path:
         """Save per-track CDF matrices to a compressed ``.npz`` file.
 
@@ -1014,7 +1117,7 @@ class PerTrackNormalizer:
             (#124).
         """
         if cache_dir is None:
-            cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+            cache_dir = str(CHORUS_BACKGROUNDS_DIR)
         out_dir = Path(cache_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1050,6 +1153,14 @@ class PerTrackNormalizer:
                         oracle_name, name, matrix.shape[1], n_points, matrix.shape[1],
                     )
                 if counts is not None:
+                    problems = yield_violations(
+                        np.asarray(counts), label=f"{oracle_name}.{name}"
+                    )
+                    if problems:
+                        raise ValueError(
+                            "refusing to write a background where almost every "
+                            "position failed:\n  " + "\n  ".join(problems)
+                        )
                     problems = cdf_grid_violations(
                         matrix, np.asarray(counts), label=f"{oracle_name}.{name}"
                     )
@@ -1059,6 +1170,55 @@ class PerTrackNormalizer:
                             "been produced by ReservoirSampler.to_cdf_matrix:\n  "
                             + "\n  ".join(problems)
                         )
+
+                # A SECOND, independent check: was the sample thinned before it was
+                # gridded? cdf_grid_violations cannot answer that -- it is handed the
+                # OFFERED count while the geometry it validates is set by the RETAINED
+                # count, and it skips every row with n >= n_points. Offered is always
+                # >= n_points for a real build, so it skipped every thinned row, which
+                # is how AlphaGenome shipped 667 RNA ceilings drawn from a 33.7%
+                # subsample (median 1.33x understated, worst 8.34x).
+                layer_key = name.replace("_cdfs", "")
+                spec = (sampling or {}).get(layer_key)
+                if spec is not None:
+                    problems = thinning_violations(
+                        np.asarray(spec["offered"]),
+                        np.asarray(spec["retained"]),
+                        n_points=matrix.shape[1],
+                        tail_k=spec.get("tail_k"),
+                        label=f"{oracle_name}.{name}",
+                    )
+                    if problems:
+                        raise ValueError(
+                            "refusing to write a CDF matrix whose top grid slots came "
+                            "from a thinned sample -- the row maximum would be a draw "
+                            "from a subsample, and that maximum is what "
+                            "effect_percentile clamps against:\n  "
+                            + "\n  ".join(problems)
+                        )
+                if spec is not None:
+                    # Persist retention INTO the shipped file, not just the interim.
+                    # Only the offered count was ever stored, so "was this track's tail
+                    # thinned?" was unanswerable from a published background -- which is
+                    # precisely why AlphaGenome's 2.97x thinning went unnoticed through
+                    # a republish. One extra int64 per track per layer.
+                    arrays[f"{layer_key}_retained"] = np.asarray(
+                        spec["retained"], dtype=np.int64
+                    )
+                    if spec.get("tail_k"):
+                        arrays[f"{layer_key}_tail_k"] = np.int64(spec["tail_k"])
+
+                elif counts is not None and np.any(np.asarray(counts) > 0):
+                    # Loud, not silent. A builder that forgets to pass `sampling` gets
+                    # NO thinning protection at all, and "a guard nobody wired up" is
+                    # how both the padded enformer grid and the AlphaGenome thinning
+                    # reached users past guards that already existed.
+                    logger.error(
+                        "%s.%s written WITHOUT a sampling= block: thinning cannot be "
+                        "checked for this matrix. Pass sampling={%r: {'offered': ..., "
+                        "'retained': ..., 'tail_k': ...}} from the builder.",
+                        oracle_name, name, layer_key,
+                    )
                 arrays[name] = matrix.astype(np.float32)
 
         if signed_flags is not None:
@@ -1137,7 +1297,7 @@ class PerTrackNormalizer:
             of tracks that were actually appended (after dedup).
         """
         if cache_dir is None:
-            cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+            cache_dir = str(CHORUS_BACKGROUNDS_DIR)
         out_dir = Path(cache_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         npz_path = out_dir / PerTrackNormalizer.npz_filename(oracle_name)
@@ -1326,7 +1486,7 @@ def get_pertrack_normalizer(
     no per-track CDFs exist for *oracle_name*.
     """
     if cache_dir is None:
-        cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+        cache_dir = str(CHORUS_BACKGROUNDS_DIR)
     norm = PerTrackNormalizer(cache_dir=cache_dir)
     if norm.has_oracle(oracle_name):
         norm._ensure_loaded(oracle_name)
@@ -1354,6 +1514,85 @@ def get_pertrack_normalizer(
 _HF_REPO = os.environ.get("CHORUS_BACKGROUNDS_REPO", "lucapinello/chorus-backgrounds")
 
 
+# Artefacts below this provenance schema predate the retention rebuild, so their
+# ceilings are draws from a uniform subsample rather than population maxima.
+MIN_ARTEFACT_SCHEMA = 4
+
+#: Dataset revision this release of chorus was verified against.
+#:
+#: A percentile is a function of (code, artefacts), and the artefacts live in a separate
+#: repo whose ``main`` moves. Without a pin, the same chorus commit gives different numbers
+#: depending on when the user happened to download -- which is precisely what a version tag
+#: is supposed to rule out. Demonstrated rather than hypothetical: the 2026-08-10 upload
+#: replaced every file in place, so a v0.6.0 checkout silently changed behaviour that day.
+#:
+#: Pinned to a dataset **tag**, not a commit sha, so the pairing reads as a decision.
+#: Release ↔ revision:
+#:
+#:   chorus ≤ 0.6.0   backgrounds-2026-08-01-preunified   (schema < 4, thinned ceilings)
+#:   chorus 0.7.0     backgrounds-2026-08-06-schema4      (exact effect/summary retention)
+#:
+#: Override with ``CHORUS_BACKGROUNDS_REVISION`` -- set it to ``main`` to track the
+#: dataset's head, which is what you want while developing a new oracle's background and
+#: not what you want in an analysis you intend to reproduce.
+_HF_REVISION = os.environ.get(
+    "CHORUS_BACKGROUNDS_REVISION", "backgrounds-2026-08-06-schema4"
+)
+
+
+def _hf_endpoint_reachable(timeout: float = 5.0) -> "tuple[bool, str]":
+    """Can we open a TCP connection to the HuggingFace endpoint within *timeout*?
+
+    Deliberately a socket connect rather than an HTTP request: the failure being
+    guarded against is a silently-dropping firewall, where the connect never
+    completes and every higher-level timeout is applied to a request that has not
+    started. Returns ``(ok, detail)`` with *detail* naming the host and the reason,
+    so the caller's message can say which host and why rather than "download failed".
+    """
+    import socket
+    from urllib.parse import urlparse
+
+    endpoint = os.environ.get("HF_ENDPOINT", "https://huggingface.co")
+    parsed = urlparse(endpoint if "//" in endpoint else f"https://{endpoint}")
+    host = parsed.hostname or "huggingface.co"
+    port = parsed.port or (80 if parsed.scheme == "http" else 443)
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True, f"{host}:{port}"
+    except OSError as exc:
+        return False, f"{host}:{port} — {type(exc).__name__}: {exc}"
+
+
+def _cached_artefact_is_superseded(path: Path) -> str | None:
+    """Why this cached NPZ should be refetched, or None if it is current.
+
+    Deliberately conservative: an unreadable or unrecognised file is reported as
+    superseded rather than trusted, because the failure mode of accepting a bad
+    cache is silent wrong percentiles, while the failure mode of refetching a good
+    one is a download.
+    """
+    import json as _json
+
+    try:
+        with np.load(path, allow_pickle=True) as d:
+            files = set(d.files)
+            layers = [k[:-len("_cdfs")] for k in files if k.endswith("_cdfs")]
+            missing = [f"{lay}_retained" for lay in layers
+                       if f"{lay}_retained" not in files]
+            if missing:
+                return f"no {', '.join(sorted(missing))} -- predates the retention rebuild"
+            if "build_config" not in files:
+                return "no build_config"
+            cfg = _json.loads(str(d["build_config"][0]))
+    except Exception as exc:  # unreadable, truncated, or not an NPZ
+        return f"unreadable ({type(exc).__name__})"
+
+    schema = cfg.get("schema_version")
+    if not isinstance(schema, int) or schema < MIN_ARTEFACT_SCHEMA:
+        return f"provenance schema {schema!r} < {MIN_ARTEFACT_SCHEMA}"
+    return None
+
+
 def download_pertrack_backgrounds(
     oracle_name: str,
     cache_dir: str | None = None,
@@ -1364,10 +1603,34 @@ def download_pertrack_backgrounds(
     ``lucapinello/chorus-backgrounds`` dataset repo and saves it to
     *cache_dir* (default ``~/.chorus/backgrounds/``).
 
-    Returns 1 if downloaded, 0 if already exists or not available.
+    Returns 1 if downloaded, 0 if already usable-as-cached or not available.
+
+    A cached file is NOT automatically accepted. "The file exists" was the only
+    check here, and it is the wrong one for any release that changes artefact
+    CONTENT rather than adding a new oracle: publishing rebuilt CDFs would then
+    reach nobody who had ever run ``chorus setup``, silently and permanently.
+
+    Demonstrated before this guard existed: a pre-2026-08 ``legnet_pertrack.npz``
+    dropped into an empty cache made this function return 0 and the normalizer
+    load it without a word, with a K562 effect ceiling of 0.9057 against the
+    rebuilt 0.7887. Percentiles in the body barely move, so nothing looks wrong —
+    the damage is at the clamp, where the strong motif-creating variants this
+    release exists to un-pin keep reading 1.0 with an exceedance multiplier
+    inflated by up to 10x.
+
+    So the cache is checked for the two properties that distinguish a rebuilt
+    artefact from a superseded one, and a stale file is moved aside and refetched:
+
+    * ``{layer}_retained`` present — added by the retention rebuild, and the only
+      way to answer "was any track thinned" from the artefact;
+    * ``build_config.schema_version >= MIN_ARTEFACT_SCHEMA``.
+
+    Neither is a substitute for a published checksum manifest, which is the real
+    fix and does not exist yet — but both are derivable from the file itself,
+    which means this works without any new infrastructure or server round-trip.
     """
     if cache_dir is None:
-        cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+        cache_dir = str(CHORUS_BACKGROUNDS_DIR)
     bg_dir = Path(cache_dir)
     bg_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1380,7 +1643,24 @@ def download_pertrack_backgrounds(
     fname = PerTrackNormalizer.npz_filename(oracle_name)
     local_path = bg_dir / fname
     if local_path.exists():
-        return 0  # already cached
+        stale = _cached_artefact_is_superseded(local_path)
+        if not stale:
+            return 0  # cached and current
+        aside = local_path.with_suffix(".npz.superseded")
+        logger.warning(
+            "Cached %s is superseded (%s); moving it to %s and refetching. "
+            "A superseded background ranks against the wrong null -- percentiles "
+            "in the body look normal while extreme effects stay clamped.",
+            fname, stale, aside.name,
+        )
+        try:
+            local_path.replace(aside)
+        except OSError as exc:
+            logger.error(
+                "Could not move the superseded %s aside (%s). Delete it manually "
+                "and re-run, or percentiles will be computed against it.", fname, exc,
+            )
+            return 0
 
     try:
         from huggingface_hub import hf_hub_download
@@ -1391,15 +1671,57 @@ def download_pertrack_backgrounds(
         )
         return 0
 
+    # Bound the wait BEFORE handing off to huggingface_hub. Its timeout settings
+    # (HF_HUB_ETAG_TIMEOUT / HF_HUB_DOWNLOAD_TIMEOUT) do not cover the TCP connect and
+    # are multiplied by an internal retry loop, so on a network that DROPS packets to
+    # huggingface.co -- the ordinary firewalled-cluster case -- this sat in SYN-SENT
+    # indefinitely. Measured: still connecting after 18 minutes with one log line and
+    # no diagnostic, and setting both env vars did not bound it either (still running
+    # at a 300 s cap). The cost is also paid repeatedly, because get_normalizer()
+    # retries and `chorus setup` loops over every oracle, so the user sees an apparent
+    # hang for hours with nothing saying the host is unreachable.
+    #
+    # A short TCP preflight converts that into a clear failure in seconds. Set the env
+    # defaults too, for the case where the host answers but then stalls mid-transfer.
+    for var, default in (("HF_HUB_ETAG_TIMEOUT", "10"),
+                         ("HF_HUB_DOWNLOAD_TIMEOUT", "30")):
+        os.environ.setdefault(var, default)
+
+    reachable, detail = _hf_endpoint_reachable()
+    if not reachable:
+        logger.warning(
+            "Cannot reach the HuggingFace endpoint (%s), so %s was not downloaded. "
+            "Percentiles need this file: analyses will return raw scores with no "
+            "percentile columns until it is present. Fetch it on a connected machine "
+            "and copy it into %s, or set HF_ENDPOINT to a reachable mirror.",
+            detail, fname, bg_dir,
+        )
+        return 0
+
     try:
         logger.info("Downloading %s from HuggingFace ...", fname)
         hf_hub_download(
             _HF_REPO,
             filename=fname,
             repo_type="dataset",
+            revision=_HF_REVISION,
             local_dir=str(bg_dir),
         )
         logger.info("Downloaded %s", fname)
+        # If what we just fetched is ALSO superseded, the published dataset is behind
+        # the code. Say so plainly instead of re-downloading it on every call: a
+        # silent loop would look like a slow start-up, and a silent accept would give
+        # wrong ceilings. Keep the file (it is the best available) and keep the
+        # superseded copy aside so nothing is destroyed.
+        why = _cached_artefact_is_superseded(local_path)
+        if why:
+            logger.warning(
+                "The PUBLISHED %s is itself superseded (%s). The dataset at %s is "
+                "behind this version of chorus, so effect ceilings will be draws from "
+                "a uniform subsample until it is republished. Percentiles in the body "
+                "are unaffected; strong effects will stay clamped at 1.0.",
+                fname, why, _HF_REPO,
+            )
         return 1
     except Exception as exc:
         logger.warning("Failed to download %s: %s", fname, exc)
@@ -1420,7 +1742,7 @@ def download_backgrounds(
     exist locally.
     """
     if cache_dir is None:
-        cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+        cache_dir = str(CHORUS_BACKGROUNDS_DIR)
     bg_dir = Path(cache_dir)
     bg_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1435,7 +1757,11 @@ def download_backgrounds(
 
     api = HfApi()
     try:
-        files = api.list_repo_files(_HF_REPO, repo_type="dataset")
+        # Same revision as the download below. Listing `main` while fetching a tag would
+        # ask for files that need not exist at that revision.
+        files = api.list_repo_files(
+            _HF_REPO, repo_type="dataset", revision=_HF_REVISION,
+        )
     except Exception as exc:
         logger.warning("Failed to list backgrounds on HuggingFace: %s", exc)
         return downloaded
@@ -1455,6 +1781,7 @@ def download_backgrounds(
                 _HF_REPO,
                 filename=fname,
                 repo_type="dataset",
+                revision=_HF_REVISION,
                 local_dir=str(bg_dir),
             )
             downloaded += 1
@@ -1487,7 +1814,7 @@ def get_normalizer(
     don't need to branch.
     """
     if cache_dir is None:
-        cache_dir = str(Path.home() / ".chorus" / "backgrounds")
+        cache_dir = str(CHORUS_BACKGROUNDS_DIR)
     bg_dir = Path(cache_dir)
 
     # ── 1. Try the per-track NPZ first (new format, auto-downloaded from HF).

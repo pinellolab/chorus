@@ -120,18 +120,29 @@ Screen of rs12740374 across all available cell types.
 
 | Rank | Cell Type | Effect (log2FC) | Tracks |
 |------|-----------|----------------|--------|
-| 1 | LNCaP clone FGC | +1.914 | 3 |
-| 2 | Epithelial cell of proximal tubule | +1.604 | 9 |
-| 3 | Renal cortical epithelial cell | +1.451 | 7 |
+| 1 | HepG2 | +1.334 | 562 |
+| 2 | MCF 10A | +1.440 | 6 |
+| 3 | amniotic epithelial cell | +2.898 | 3 |
+
+Ranked by `alt × |effect|`, **not** by log2FC — which is why the order does not
+follow the effect column. Weighting by the alternate-allele signal favours a site
+that is both responsive and actually active, so HepG2 leads despite the smallest
+fold change of the three, and it carries **562** tracks against 3–6 for the
+others.
 
 Outputs include:
-- `cell_type_ranking.json` — ranked list of 100+ cell types with effect scores
-- `discovery_summary.json` — structured results for top 3
-- `rs12740374_SORT1_*_alphagenome_report.html` — full multi-layer HTML reports for each top cell type
+- `discovery_summary.json` — structured results for the top 3, including the
+  ranking metric and the best track per cell type
+- `example_output.{json,md,tsv}` — all scored rows across the screened cell types
+- `chr1_109274968_G_T_SORT1_alphagenome_<cell_type>_report.html` — full
+  multi-layer HTML report for each of the top 3
 
-**Interpreting these results**: The top hits are prostate (LNCaP) and kidney
-epithelial cell types. This variant (rs12740374) is a known liver eQTL — the
-fact that non-liver cell types also show strong chromatin effects demonstrates
-that regulatory variants can have cross-tissue impact. The deep-dive reports
-for each cell type reveal which additional layers (TF binding, histone marks,
-TSS activity) are affected beyond chromatin accessibility.
+**Interpreting these results**: the strongest chromatin response is in **HepG2**,
+a liver line — which is the expected answer, since rs12740374 is a known liver
+eQTL acting through a C/EBP site. That the screen recovers it without being told
+to look at liver is the point of running a discovery sweep at all. The two
+non-liver hits (amniotic epithelial cell, MCF 10A) show larger raw log2FC on
+3 and 6 tracks respectively; treat those as leads rather than conclusions, both
+because the evidence is thinner and because a large fold change on a low-signal
+track is easy to come by. The deep-dive reports show which additional layers
+(TF binding, histone marks, TSS activity) move beyond chromatin accessibility.

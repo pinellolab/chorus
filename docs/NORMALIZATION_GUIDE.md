@@ -38,7 +38,7 @@ For each track in each oracle, we store three empirical CDFs:
 
 | CDF | What it normalizes | How it's built | Output range |
 |-----|--------------------|----------------|--------------|
-| **effect_cdfs** | Variant effect scores | Score ~10K random SNPs sampled uniformly across chr1–chr22 | [0, 1] or [-1, 1] |
+| **effect_cdfs** | Variant effect scores | Score ~18K variants sampled from **assay-matched regulatory regions** (cCREs, DHS summits, promoters, gene features) — *not* uniformly random. See [BACKGROUND_NULL_PROTOCOL.md](BACKGROUND_NULL_PROTOCOL.md) §3 | [0, 1] or [-1, 1] |
 | **summary_cdfs** | Baseline signal levels | Predict ~30K genomic positions (random + cCREs + TSS) | [0, 1] |
 | **perbin_cdfs** | Per-bin signal values | Same positions, per-bin (oracle-dependent resolution) | [0, 1] |
 
@@ -386,7 +386,9 @@ can override only the splicing tracks.
 The CDF build pipeline for each oracle follows the same pattern:
 
 ```
-1. Sample variant positions (~10K common SNPs from gnomAD)
+1. Sample variant positions (~18K, per-family strata — gene-anchored ∪ cCRE, promoter,
+   or random ∪ DHS-summit depending on the assay; NOT gnomAD, and no code samples gnomAD.
+   See BACKGROUND_NULL_PROTOCOL.md §3 for the exact strata and the measurements behind them)
 2. Sample baseline positions (~30K: random + cCREs + TSS-proximal)
 3. For each track/model:
    a. Score all variants → collect |effect| values via reservoir sampling
@@ -459,7 +461,7 @@ oracle.load_pretrained_model(
 
 ### Step 3: Build the per-track CDF for your model
 
-The CDF needs ~10K random SNPs (effect rows) and ~30K baseline positions
+The CDF needs ~18K assay-matched regulatory variants (effect rows) and ~30K baseline positions
 (summary + perbin rows) through your model. Rough wall-clock per model:
 ~22 min for ChromBPNet on Apple M3 Ultra Metal, ~5 min on a CUDA A100;
 BPNet (smaller architecture) is ~2× faster either way. The

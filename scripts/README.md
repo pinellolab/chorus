@@ -1,185 +1,207 @@
-# Per-Track Background Distribution Scripts
+# Per-track background distribution scripts
 
-These scripts build the **per-track CDFs** consumed by `PerTrackNormalizer`
-for variant effect interpretation and IGV visualization. Each oracle gets a
-single `~/.chorus/backgrounds/{oracle}_pertrack.npz` file containing three
-CDF matrices:
+These scripts build the **per-track CDFs** consumed by `PerTrackNormalizer` for variant
+effect interpretation and IGV visualization.
 
-| CDF | Shape | Used for |
-|-----|-------|----------|
-| `effect_cdfs` | `(n_tracks, 10000)` | Variant effect %ile (table column) |
-| `summary_cdfs` | `(n_tracks, 10000)` | Activity %ile (table column) |
-| `perbin_cdfs` | `(n_tracks, 10000)` | IGV per-bin visualization |
+**This file documents the mechanics: which script, which env, which flag. It is not the
+authority on the design.** For which regions are sampled and why, which SNPs, how each
+layer's statistic is defined, the guard inventory, and the dated decision log, read
+[`docs/BACKGROUND_NULL_PROTOCOL.md`](../docs/BACKGROUND_NULL_PROTOCOL.md) — and update it
+in the same commit as any change it describes.
 
-For scalar-output oracles (Sei, LegNet), only `effect_cdfs` and
-`summary_cdfs` are stored — `perbin_cdfs` is omitted.
+> **Rewritten 2026-08-10.** The previous revision predated the August rebuild and had
+> drifted badly: it listed 6 oracles of 8, gave ChromBPNet as "24 models, 2.4 MB" when it
+> is 753 tracks and 79.5 MB, described the baseline as one 31,500-position mixture when
+> there are three, said the effect null was "10,000 random SNPs" when it is a versioned
+> stratified set, and — worst — documented capacity-50,000 reservoir subsampling as the
+> design when that was the defect the rebuild existed to fix. Since README.md and
+> docs/API_DOCUMENTATION.md both point here for "the full pipeline", it was the most
+> load-bearing stale document in the repo.
+
+## Where the output goes
+
+Bulk data follows one switch, resolved in this order:
+`CHORUS_DATA_DIR` → `<install>/chorus_data_dir.txt` → the install directory →
+`~/.chorus` (only if the install tree is not writable). It is **not** `$HOME` by default
+any more. `chorus config data-dir` prints what resolved and why.
+
+```
+$CHORUS_DATA_DIR/backgrounds/{oracle}_pertrack.npz
+```
+
+## The eight builds
+
+| Script | Oracle | Tracks | NPZ | Env |
+|---|---|---|---|---|
+| `build_backgrounds_alphagenome.py` | AlphaGenome | 5,168 | 279.0 MB | `chorus-alphagenome` |
+| `build_backgrounds_borzoi.py` | Borzoi | 7,611 | 803.9 MB | `chorus-borzoi` |
+| `build_backgrounds_enformer.py` | Enformer | 5,313 | 556.7 MB | `chorus-enformer` |
+| `build_backgrounds_cherimoya.py` | Cherimoya (CATv1) | 1,518 | 161.7 MB | `chorus-cherimoya` |
+| `build_backgrounds_chrombpnet.py` | ChromBPNet | 753 | 79.5 MB | `chorus-chrombpnet` |
+| `build_backgrounds_sei.py` | Sei | 40 | 2.9 MB | `chorus-sei` |
+| `build_backgrounds_epinformerseq_v2_percell.py` | EPInformer-seq | 33 | 2.3 MB | `chorus-epinformerseq` |
+| `build_backgrounds_legnet.py` | LegNet | 3 | 0.2 MB | `chorus-legnet` |
+
+Note the EPInformer-seq script does **not** follow the
+`build_backgrounds_<oracle>.py` pattern the other docs quote. ChromBPNet's 753 are
+per-track CDFs (9 human ATAC/DNASE + 744 ChIP); its 33 mouse mm10 models were dropped on
+2026-08-01 because their backgrounds had been built on hg38. Sei's are regulatory
+classes, LegNet's are MPRA cell types.
+
+Approximate cost for the full fleet is ~63 GPU-hours, dominated by AlphaGenome (~39 h).
+ChromBPNet is ~8 h; Cherimoya, Sei, LegNet and EPInformer-seq are ~1 h between them.
 
 ## Quick start
 
 ```bash
-# Build all backgrounds for one oracle (multi-GPU recommended)
 mamba run -n chorus-enformer python scripts/build_backgrounds_enformer.py --part variants  --gpu 0
 mamba run -n chorus-enformer python scripts/build_backgrounds_enformer.py --part baselines --gpu 1
-mamba run -n chorus              python scripts/build_backgrounds_enformer.py --part merge
+mamba run -n chorus          python scripts/build_backgrounds_enformer.py --part merge
 ```
 
-The `--part variants` and `--part baselines` steps run in parallel on
-separate GPUs, then `--part merge` (no GPU needed) combines the interim
-files into the final `enformer_pertrack.npz`.
+`variants` and `baselines` run in parallel on separate GPUs; `merge` needs no GPU and
+combines the interim files into `{oracle}_pertrack.npz`.
 
-Use `--part all` to run everything sequentially on a single GPU.
+### Flags that differ per script, and the traps
 
-## Available scripts
+* **`--part`** — `variants` / `baselines` / `merge` / `both` / `all`. Most scripts accept
+  `both`; **Cherimoya defaults to `all`** and additionally offers `merge-incremental` and
+  `merge-shards`. Check `--help` rather than assuming.
+* **`--gpu N`** — pass it explicitly on the five scripts that take it. They used to
+  *overwrite* `CUDA_VISIBLE_DEVICES` with the `--gpu` default of 0, so two processes
+  launched with different env values both landed on GPU 0: the first took 78 GB and the
+  second failed every forward pass with `Attempting to perform BLAS operation using
+  StreamExecutor without BLAS support`, silently dropping all 5,968 positions. An explicit
+  env var now wins, but `--gpu` is unambiguous. **LegNet and EPInformer-seq have only
+  `--device`**, so they do need the env var.
+* **`--fold`** — Cherimoya and ChromBPNet ship cross-validation folds. Cherimoya's default
+  is `CATV1_DEFAULT_FOLD`, i.e. the 5-fold **ensemble**, deliberately the same default the
+  oracle uses. A null built on fold 0 under a query path that ensembles is not a null; see
+  protocol §7b.
+* **`--shard` / `--shard-of`** — position sharding for the long builds. Merge from a
+  staging directory, not in place.
+* **`conda run` buffers stdout**, so a 14-hour job's log stays empty until it exits. Use
+  `conda run --no-capture-output ... python -u` when you need progress, and key failure
+  detection off the exit code rather than off log contents.
+* **Run each build inside its oracle's env.** Cherimoya's builder imports the `cherimoya`
+  package, which exists only in `chorus-cherimoya`; elsewhere it logs `Failed to load
+  <track>` once per track and carries on, so a 1,518-track run spent 75 minutes loading
+  nothing before dying at the provenance step.
 
-| Script | Oracle | Tracks | Env | Runtime (single GPU) |
-|--------|--------|--------|-----|---------------------|
-| `build_backgrounds_enformer.py` | Enformer | 5,313 | `chorus-enformer` | ~4h variants + ~7h baselines |
-| `build_backgrounds_borzoi.py` | Borzoi | 7,611 | `chorus-borzoi` | ~4h + ~9h |
-| `build_backgrounds_alphagenome.py` | AlphaGenome | ~5,168 | `chorus-alphagenome` | ~10h + ~12h |
-| `build_backgrounds_chrombpnet.py` | ChromBPNet | 24 (per-model) | `chorus-chrombpnet` | ~25 min total |
-| `build_backgrounds_sei.py` | Sei | 40 classes | `chorus-sei` | ~6h + ~8h |
-| `build_backgrounds_legnet.py` | LegNet | 3 cell types | `chorus-legnet` | ~16h (CPU) |
+## What lands in the NPZ
 
-ChromBPNet's "tracks" are individual cell-type-specific models. Sei's
-"tracks" are regulatory classes. LegNet's "tracks" are MPRA cell types.
+| Array | Shape | Used for |
+|---|---|---|
+| `track_ids` | `(n_tracks,)` unicode | row identity; the key the query path looks up |
+| `effect_cdfs` | `(n_tracks, 10000)` | variant effect percentile |
+| `summary_cdfs` | `(n_tracks, 10000)` | activity percentile |
+| `perbin_cdfs` | `(n_tracks, 10000)` | IGV per-bin display scaling |
+| `{layer}_counts` | `(n_tracks,)` | offered sample count per track |
+| `{layer}_retained` | `(n_tracks,)` | **retained** count — the thinning check reads this |
+| `perbin_tail_k` | scalar | size of the exact tail buffer |
+| `signed_flags` | `(n_tracks,)` bool | signed layers (RNA, MPRA, Sei) |
+| `build_config` | JSON string | provenance, schema 4 |
+
+`perbin_cdfs` is omitted for the three oracles with no per-bin profile: **Sei, LegNet and
+EPInformer-seq**.
+
+## Retention — exact, or capped with an exact tail
+
+This is the part the old revision got wrong, so it is stated plainly.
+
+A percentile is a rank against the sampled null, and it clamps at the largest sampled
+value. **A uniform *m*-of-*N* reservoir subsample retains the population maximum with
+probability exactly *m*/*N***, so capping the reservoir silently discarded the statistic
+the clamp is computed against — measured up to **8.3×** understated on AlphaGenome's
+`gene_expression` ceilings while p99 stayed right to 0.6%.
+
+| Layer | Retention now |
+|---|---|
+| `effect` | **exact** — every offered value kept |
+| `summary` | **exact** |
+| `perbin` | capped at 50,000 **plus an exact top/bottom `tail_k`** — exact retention would be ~244 GB for Borzoi alone |
+
+`tail_k` is derived, never picked:
+`ceil(MIN_EXACT_TAIL_SLOTS * N_expected / n_points)`. `build_and_save` raises unless a
+layer is exact or its exact-tail slots are sufficient, and a builder that omits the
+`sampling=` argument logs an error by name — silence is how the original defect shipped
+past a guard that already existed.
+
+## Seeds
+
+Region sampling `42`; DHS pools `43`; DHS summits in the activity population `567`;
+reservoir `DEFAULT_SEED = 12345`; baseline sub-populations `789` (random), `111` (TSS),
+`222` (gene body). All fixed: **a rebuild of an oracle whose inputs have not changed must
+be bit-identical**, verified 2026-08-06 on Cherimoya, 1,518/1,518 rows.
+
+## Positions: three activity populations, three effect families
+
+Not one mixture. The populations are versioned artefacts in
+`reference_sets/chorus_reference_positions_v1.npz`, each with its own sha256, and the
+stamper *derives* which one an oracle used rather than assuming:
+
+| Activity population | Positions | Oracles |
+|---|---|---|
+| `regions_genome_dominated` | 31,500 | alphagenome, borzoi, enformer |
+| `…_minus_gene_body` | 29,500 | sei, legnet |
+| `…_minus_gene_body_plus_dhs` | 34,500 | chrombpnet, cherimoya, epinformerseq |
+
+Effect nulls come in three families, also stratified: `gene_anchored` (enformer, borzoi,
+alphagenome, sei, epinformerseq), `accessibility` (chrombpnet, cherimoya — `dhs` 9,063 +
+`random` 9,609), and `promoter` (legnet — `tss_promoter` 7,200, `ccre_pls` 5,400,
+`ccre_pels` 2,700, `random` 2,505). Protocol §3 and §4 give the reasoning; §9 records
+what was measured before each composition was changed.
+
+## Provenance
+
+Stamp after building:
+
+```bash
+python scripts/stamp_provenance_v4.py
+```
+
+Appends in place, no rebuild. Schema 4 carries one `build_id` across all eight oracles,
+the per-layer `sampling` block (`mode`, `offered`, `retained`, `thinned_tracks`,
+`tail_k`), the reference-set hashes, and the derived activity population.
+`tests/test_npz_provenance.py` reads it back; `tests/test_no_reservoir_thinning.py`
+asserts the retention claim from the artefact alone.
+
+## Publishing
+
+```bash
+python -c "
+from huggingface_hub import HfApi
+HfApi().upload_file(path_or_fileobj='<file>', path_in_repo='<file>',
+                    repo_id='lucapinello/chorus-backgrounds', repo_type='dataset')"
+```
+
+Verify by comparing the remote LFS sha256 against the local file rather than trusting the
+upload. Users auto-download on first use; a cached copy that has been superseded is now
+moved aside and refetched, so publishing a fix does reach existing installs.
 
 ## Other public scripts
 
 | Script | Purpose |
-|--------|---------|
-| `regenerate_examples.py` | Regenerate all variant_analysis/validation example outputs (AlphaGenome, Enformer, ChromBPNet). Run inside the matching conda env; model loads once. |
-| `regenerate_remaining_examples.py` | Regenerate discovery, causal, batch, sequence_engineering examples. Run in chorus-alphagenome env. |
-| `screenshot_report.py` | Take a full-page screenshot of an HTML variant report using headless Chrome (requires selenium). |
+|---|---|
+| `regenerate_examples.py` | walkthrough outputs for alphagenome / enformer / chrombpnet (`--oracle`, `--gpu`, `--dry-run`) |
+| `regenerate_remaining_examples.py` | discovery, causal, region_swap, integration, batch, TERT (`--only`) |
+| `regenerate_multioracle.py` | per-oracle passes (`--oracle`) and the unified IGV (`--consolidate`, which re-renders from the pickles) |
+| `generate_walkthrough_notebooks.py` | codegen for `examples/walkthroughs/*/notebook.ipynb` |
+| `rerender_examples.py` | re-render HTML from stored JSON — **lossy for IGV**, it drops the per-bin arrays |
+| `stamp_provenance_v4.py` | provenance, append-in-place |
 
-Internal/maintenance scripts (not for end users) live in `scripts/internal/`.
+Internal/maintenance scripts live in `scripts/internal/`.
 
-## How positions are sampled
+## Validating a build
 
-The build scripts use a shared sampling strategy that approximates the
-genome-wide distribution. Each baseline build uses ~31,500 positions:
+Cheapest first, and none of these needs a GPU:
 
-| Position type | Count | Purpose |
-|--------------|-------|---------|
-| Random intergenic | 15,000 | Genome-wide null (most genome is silent) |
-| SCREEN cCREs (per-category) | ~11,500 | PLS, dELS, pELS, CA-CTCF, CA-TF, TF, CA-H3K4me3, CA |
-| Protein-coding TSSs | 3,000 | Sharp signals: CAGE, H3K4me3, promoter activity |
-| Gene body midpoints (>10kb genes) | 2,000 | RNA-seq, H3K36me3, broad gene-body marks |
-
-For the **perbin CDF**, each position contributes 32 random bins from the
-full output window of the prediction. This captures the full per-bin
-distribution at each track's native resolution.
-
-**CAGE summary routing**: CAGE tracks skip cCRE positions for the
-summary CDF (since CAGE biology lives at TSSs, not regulatory elements).
-
-**RNA-seq exon-precise sampling** (Borzoi, AlphaGenome): RNA tracks only
-collect bins overlapping protein-coding exons (loaded from GENCODE v48
-basic). Implementation uses a per-chromosome merged exon interval list.
-
-## Variant effect sampling
-
-10,000 random SNPs across chr1–22, well away from chromosome edges. For
-each SNP:
-1. Predict ref + alt allele full output
-2. For each track, score the variant effect using its layer formula
-   (`log2fc` for unsigned signals, `logfc`/`diff` for signed layers)
-3. Add abs effect (unsigned) or raw effect (signed) to the track's
-   reservoir
-
-## Output file structure
-
-```
-~/.chorus/backgrounds/
-  enformer_pertrack.npz       # 5,313 tracks, ~550 MB
-  borzoi_pertrack.npz         # 7,611 tracks
-  alphagenome_pertrack.npz    # ~5,168 tracks
-  chrombpnet_pertrack.npz     # 24 models, 2.4 MB
-  sei_pertrack.npz            # 40 classes
-  legnet_pertrack.npz         # 3 cell types
+```bash
+python -m pytest tests/test_npz_provenance.py tests/test_no_reservoir_thinning.py \
+                 tests/test_background_grid_integrity.py -q -m integration
 ```
 
-Each `.npz` contains:
-- `track_ids`: Unicode array, one identifier per track row
-- `effect_cdfs`: `(n_tracks, 10000)` float32 — sorted variant effects per track
-- `summary_cdfs`: `(n_tracks, 10000)` float32 — sorted window-sum signals per track
-- `perbin_cdfs`: `(n_tracks, 10000)` float32 — sorted per-bin values per track (omitted for scalar oracles)
-- `effect_counts`, `summary_counts`, `perbin_counts`: actual sample counts per track
-- `signed_flags`: bool array — True for signed layers (RNA, MPRA, Sei)
-
-## Reservoir sampling
-
-To keep memory bounded, each track's data is collected via Algorithm R
-reservoir sampling with capacity 50,000. After collection, the reservoir
-is compacted to 10,000 evenly-spaced percentile points for storage.
-
-## Auto-discovery
-
-After building, files are auto-discovered by:
-
-```python
-from chorus.analysis.normalization import get_pertrack_normalizer
-
-norm = get_pertrack_normalizer("enformer")
-# norm is a PerTrackNormalizer ready for use in variant analysis
-```
-
-Or via the MCP state manager (used by chorus MCP server tools):
-
-```python
-from chorus.mcp.state import OracleStateManager
-state = OracleStateManager()
-state._auto_load_normalizer("enformer")
-norm = state.get_normalizer("enformer")  # PerTrackNormalizer
-```
-
-## Reproducibility
-
-All scripts use the same random seeds:
-- Seed 42: random SNP generation
-- Seed 456: cCRE category sampling
-- Seed 789: random intergenic positions
-- Seed 111: TSS sampling
-- Seed 222: gene body midpoint sampling
-- Seed 999 (numpy): per-position random bin selection
-- Seed 12345: reservoir sampler tie-breaking
-
-This ensures the same genomic positions are scored across all oracles
-(modulo each oracle's input window size).
-
-## Adding a new oracle
-
-To build per-track CDFs for a new oracle:
-
-1. Copy the closest existing script as a template (Borzoi for multi-track,
-   ChromBPNet for per-model, Sei for scalar-output)
-2. Update model loading and prediction to match the new oracle's API
-3. Build a `track_info` list with `{idx, identifier, layer, window, formula,
-   pseudocount, signed}` per track
-4. Use `ReservoirSampler` for memory-bounded collection
-5. Save interim NPZ files for variants and baselines separately
-6. The merge step calls `PerTrackNormalizer.build_and_save()` to produce
-   the final `{oracle}_pertrack.npz`
-
-## Validation
-
-After building, verify with the SORT1 rs12740374 variant:
-
-```python
-from chorus.oracles.enformer import EnformerOracle
-from chorus.analysis.normalization import get_pertrack_normalizer
-from chorus.analysis.discovery import discover_variant_effects
-
-oracle = EnformerOracle(use_environment=True, reference_fasta='hg38.fa')
-oracle.load_pretrained_model()
-norm = get_pertrack_normalizer('enformer')
-
-result = discover_variant_effects(
-    oracle, oracle_name='enformer',
-    variant_position='chr1:109274968', alleles=['G', 'T'],
-    gene_name='SORT1', normalizer=norm,
-    output_path='/tmp/sort1_validation/',
-)
-```
-
-The HTML report uses the layer-aware floor rescale for the IGV browser.
-Pass `igv_raw=True` to use raw autoscale instead.
+Then check that real effects still land where they should — `tests/test_release_gates.py`
+pins the measured percentiles — and that every shipped track is reachable through the
+query path (`tests/test_every_shipped_track_is_reachable.py`, which is what caught Sei's
+40 rows being unreachable). Protocol §8 step 7 has the full pre-ship list.

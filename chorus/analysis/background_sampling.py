@@ -66,6 +66,12 @@ DEFAULT_PSEUDOCOUNT = 1.0
 # Seeded so a rebuild is reproducible. Every builder used 12345 for the
 # reservoir; kept rather than randomised.
 DEFAULT_SEED = 12345
+# How many of a CDF row's TOP grid slots must be exact order statistics rather than
+# estimates from a subsample. 200 of 10,000 is the top 2%, which covers p98 upward --
+# the region where effect_percentile saturates and where effect_exceedance divides by
+# the row's maximum. Below this, the ceiling is a random draw: a uniform m-of-N
+# subsample keeps the population maximum with probability only m/N.
+MIN_EXACT_TAIL_SLOTS = 200
 
 logger = logging.getLogger(__name__)
 
@@ -90,12 +96,32 @@ class ReservoirSampler:
         n_tracks: int,
         capacity: int = DEFAULT_CAPACITY,
         seed: int = DEFAULT_SEED,
+        tail_k: "int | None" = None,
     ):
         self.n_tracks = n_tracks
         self.capacity = capacity
         self.data: list[list[float]] = [[] for _ in range(n_tracks)]
         self.counts = np.zeros(n_tracks, dtype=np.int64)
         self._rng = random.Random(seed)
+        # Optional EXACT extremes, kept alongside the uniform body.
+        #
+        # Opt-in (``tail_k=None`` by default) so that constructing a sampler the way
+        # every builder does today gives byte-identical behaviour. The uniform body is
+        # unbiased for the middle of the distribution but its *maximum* is a draw:
+        # a uniform m-of-N subsample keeps the population max with probability m/N
+        # only, which is how AlphaGenome's RNA ceilings came to be understated by a
+        # median 1.33x. Where the union does not fit in memory -- the ``perbin``
+        # layer, offering up to 2,176,256 values per track against a 50,000 capacity,
+        # a 43.5x thinning -- retaining the exact top and bottom K is what keeps the
+        # part of the grid that percentiles actually saturate in truthful.
+        #
+        # Both ends, not just the top: 12.9% of AlphaGenome's rows and 20.3% of
+        # Borzoi's are signed, and for those a strongly repressive effect crosses the
+        # LOWER bound. Tracking only the maximum would leave exactly those rows with
+        # an estimated floor.
+        self.tail_k = int(tail_k) if tail_k else None
+        self._top: list[list[float]] = [[] for _ in range(n_tracks)]
+        self._bot: list[list[float]] = [[] for _ in range(n_tracks)]
 
     def add(self, track_idx: int, value: float) -> None:
         n = self.counts[track_idx]
@@ -106,6 +132,40 @@ class ReservoirSampler:
             if j < self.capacity:
                 self.data[track_idx][j] = value
         self.counts[track_idx] += 1
+        if self.tail_k is not None:
+            self._offer_tail(track_idx, (value,))
+
+    def _offer_tail(self, track_idx: int, values) -> None:
+        """Keep the exact largest and smallest ``tail_k`` values for one track.
+
+        Buffered then trimmed rather than heap-maintained. A heapq touched once per
+        value would be O(N log K) Python-level operations, and the perbin layer offers
+        7.1e9 values across the fleet; trimming a bounded buffer with np.partition is
+        O(K) and happens only when the buffer fills, so the amortised cost is one
+        append per value.
+        """
+        k = self.tail_k
+        if not k:
+            return
+        top, bot = self._top[track_idx], self._bot[track_idx]
+        top.extend(values)
+        bot.extend(values)
+        if len(top) > 4 * k:
+            arr = np.partition(np.asarray(top, dtype=np.float64), -k)[-k:]
+            self._top[track_idx] = arr.tolist()
+        if len(bot) > 4 * k:
+            arr = np.partition(np.asarray(bot, dtype=np.float64), k - 1)[:k]
+            self._bot[track_idx] = arr.tolist()
+
+    def exact_tail(self, track_idx: int) -> "tuple[np.ndarray, np.ndarray]":
+        """``(smallest_k_sorted, largest_k_sorted)`` for one track."""
+        k = self.tail_k
+        if not k:
+            empty = np.empty(0, dtype=np.float64)
+            return empty, empty
+        top = np.sort(np.asarray(self._top[track_idx], dtype=np.float64))[-k:]
+        bot = np.sort(np.asarray(self._bot[track_idx], dtype=np.float64))[:k]
+        return bot, top
 
     def add_batch(self, track_idx: int, values) -> None:
         """Offer many values to one track, vectorised where it is safe to be.
@@ -157,6 +217,8 @@ class ReservoirSampler:
                 if j < cap:
                     target[j] = float(v)
             self.counts[track_idx] += n_new
+        if self.tail_k is not None:
+            self._offer_tail(track_idx, values)
 
     def _add_batch_reference(self, track_idx: int, values) -> None:
         """The plain loop, kept so the equivalence test has something to compare to.
@@ -183,6 +245,68 @@ class ReservoirSampler:
         arr.sort()
         return arr
 
+    def _row_with_exact_tail(
+        self, track_idx: int, body: np.ndarray, offered: int, n_points: int,
+    ) -> np.ndarray:
+        """One grid row spliced from an exact tail and a uniform body, by population rank.
+
+        Built by mapping each grid slot to the POPULATION rank it represents, rather
+        than by concatenating the tail onto the body and re-gridding. Concatenating
+        would double-count every value present in both, and would place the tail's
+        order statistics at the wrong quantiles -- the top K of N belong at the top
+        ``K/N`` of the grid, not at the top ``K/(len(body)+K)``.
+
+        Properties, each pinned by a test:
+
+        * non-decreasing by construction, since both pieces are sorted and the
+          exact bounds are the join points;
+        * EXACT in the top and bottom ``K * n_points / N`` slots, so the maximum the
+          percentile clamps against and the bound ``effect_exceedance`` divides by are
+          population values, not draws;
+        * identical to the plain gridding in the interior, which is the same uniform
+          sample it has always been;
+        * never reached when ``offered == len(body)`` -- the caller takes the original
+          path then, so an unthinned build is byte-for-byte what it was before.
+
+        The one approximation: ties exactly at a join bound make the count of body
+        values below it slightly biased, which shifts the interior estimate within the
+        tie region only. ``_rank_with_tie_breaking`` already spreads ranks across ties
+        downstream.
+        """
+        k = int(self.tail_k or 0)
+        bot, top = self.exact_tail(track_idx)
+        k = min(k, len(bot), len(top))
+        if k == 0 or offered < 4 * k:
+            # Not enough room for two disjoint exact ends plus an interior; fall back
+            # to gridding whatever the body holds rather than inventing structure.
+            idx = np.linspace(0, len(body) - 1, n_points, dtype=int)
+            return body[idx]
+
+        lo_bound, hi_bound = float(bot[-1]), float(top[0])
+        interior = body[(body > lo_bound) & (body < hi_bound)]
+        m = len(interior)
+
+        row = np.empty(n_points, dtype=np.float64)
+        ranks = np.rint(np.arange(n_points) * (offered - 1) / (n_points - 1)).astype(
+            np.int64
+        )
+        for slot, j in enumerate(ranks):
+            if j < k:
+                row[slot] = bot[j]
+            elif j >= offered - k:
+                row[slot] = top[j - (offered - k)]
+            elif m:
+                # Population ranks k .. offered-k-1 are represented by the interior
+                # sample, mapped proportionally.
+                frac = (j - k) / max(offered - 2 * k - 1, 1)
+                row[slot] = interior[min(int(round(frac * (m - 1))), m - 1)]
+            else:
+                row[slot] = lo_bound
+        # Sorted by construction, but assert cheaply rather than trust the arithmetic:
+        # a non-monotone CDF row silently corrupts every searchsorted downstream.
+        np.maximum.accumulate(row, out=row)
+        return row
+
     def to_cdf_matrix(self, n_points: int = DEFAULT_CDF_POINTS) -> np.ndarray:
         """Project every track's reservoir onto a fixed ``n_points`` grid.
 
@@ -203,6 +327,11 @@ class ReservoirSampler:
             arr = self.get_sorted(i)
             n = len(arr)
             if n == 0:
+                continue
+            offered = int(self.counts[i])
+            if self.tail_k and offered > n:
+                # Thinned AND an exact tail was kept: splice by POPULATION rank.
+                matrix[i] = self._row_with_exact_tail(i, arr, offered, n_points)
                 continue
             if n >= n_points:
                 indices = np.linspace(0, n - 1, n_points, dtype=int)
@@ -256,7 +385,7 @@ class ReservoirSampler:
         }
 
     @classmethod
-    def from_flat_samples(cls, *parts, capacity: int = DEFAULT_CAPACITY,
+    def from_flat_samples(cls, *parts, capacity: "int | None",
                           seed: int = DEFAULT_SEED) -> "ReservoirSampler":
         """Rebuild one sampler from the union of several shards' samples.
 
@@ -265,6 +394,28 @@ class ReservoirSampler:
         subsampled deterministically rather than by re-running Algorithm R, since
         every retained value is already a uniform draw from its own shard and the
         shards are equal-sized by construction.
+
+        ``capacity`` is **keyword-only with no default, deliberately.** This method
+        used to default to ``DEFAULT_CAPACITY`` (50,000), and
+        ``scripts/merge_effect_shards.py`` called it positionally without one. Every
+        AlphaGenome ``gene_expression`` track offers 148,367 effect values, so the
+        union was silently thinned to a uniform 50,000-subsample — 2.97x — and the
+        shipped grid's *maximum* became the max of that subsample. A uniform
+        m-of-N subsample retains the true maximum with probability exactly m/N:
+        50,000/148,367 = 0.337, and 33.9% of the 667 RNA rows were measured to have
+        kept it. The damage was a median 1.33x understated ceiling, up to 8.34x,
+        while p99 stayed correct to 0.6% — which is why no percentile test noticed,
+        and why the effect null pinned earlier than it should have.
+
+        Passing ``capacity=None`` means **exact retention**: keep every value, so the
+        grid's top slot is the true maximum over all offered positions. Use it
+        whenever the union fits in memory, which for every current oracle it does.
+
+        Neither the builders' ``capacity`` argument nor the write-time
+        ``cdf_grid_violations`` guard could have prevented this: no *shard* exceeded
+        its capacity (each offered ~18.5k), and the guard is fed the *offered* count
+        while checking geometry set by the *retained* count, then skips every row
+        with ``n >= n_points``. See ``thinning_violations``.
         """
         if not parts:
             raise ValueError("no shards given")
@@ -274,26 +425,46 @@ class ReservoirSampler:
                 raise ValueError(
                     f"shard track counts disagree: {n_tracks} vs {int(p['n_tracks'])}"
                 )
+
+        totals = np.zeros(n_tracks, dtype=np.int64)
+        for p in parts:
+            totals += np.asarray(p["counts"]).astype(np.int64)
+
+        if capacity is None:
+            # Size the reservoir to the largest stream, so nothing is subsampled AND
+            # the returned object stays internally consistent if a caller offers it
+            # more values later (``add``/``add_batch`` compare against self.capacity).
+            capacity = int(totals.max()) if n_tracks else 0
+
         merged = cls(n_tracks=n_tracks, capacity=capacity, seed=seed)
         rng = np.random.default_rng(seed)
         for i in range(n_tracks):
             pieces = []
-            total = 0
             for p in parts:
                 off = np.asarray(p["offsets"])
                 lo, hi = int(off[i]), int(off[i + 1])
                 if hi > lo:
                     pieces.append(np.asarray(p["values"])[lo:hi])
-                total += int(np.asarray(p["counts"])[i])
             if pieces:
                 vals = np.concatenate(pieces)
                 if len(vals) > capacity:
                     keep = rng.choice(len(vals), capacity, replace=False)
                     keep.sort()
                     vals = vals[keep]
-                merged.data[i] = [float(v) for v in vals]
-            merged.counts[i] = total
+                # .tolist() rather than a float() comprehension: same result, and
+                # this path now moves ~150M values for an exact AlphaGenome union.
+                merged.data[i] = vals.tolist()
+            merged.counts[i] = int(totals[i])
         return merged
+
+    def retained_counts(self) -> np.ndarray:
+        """How many values each track actually holds, as opposed to was offered.
+
+        ``counts`` is the offered count. The difference between the two is exactly
+        the thinning that went unnoticed for AlphaGenome's RNA tracks, and it is not
+        recoverable from a shipped NPZ today because only ``counts`` is written.
+        """
+        return np.array([len(d) for d in self.data], dtype=np.int64)
 
     def total_samples(self) -> int:
         return int(self.counts.sum())
@@ -324,6 +495,285 @@ def expected_first_max_index(n_samples: int, n_points: int) -> int:
     if n_samples >= n_points:
         return n_points - 1
     return math.ceil((n_points - 1) * (n_samples - 1) / n_samples)
+
+
+def derive_tail_k(
+    n_expected: int,
+    *,
+    n_points: int = DEFAULT_CDF_POINTS,
+    min_slots: int = MIN_EXACT_TAIL_SLOTS,
+) -> int:
+    """How large an exact tail a layer needs, derived rather than picked.
+
+    The top ``K`` of ``N`` values occupy the top ``K * n_points / N`` grid slots, so to
+    keep ``min_slots`` of them exact you need ``K >= min_slots * N / n_points``. A
+    single fixed K cannot work across layers because ``N`` spans two orders of
+    magnitude: at ``K = 20,000`` the same choice gives AlphaGenome's perbin 202 exact
+    slots but ChromBPNet's only **91** (2,176,256 offered) and Cherimoya's **183**
+    (1,088,128) -- silently below the bar on exactly the two oracles with the most
+    thinning.
+
+    ``n_expected`` is knowable before the first forward pass: it is
+    ``n_positions x fan_out``, where fan_out is 1, the number of bins per position, the
+    number of strands, or the per-gene fan-out for RNA. That is what makes this a
+    preflight check rather than a post-mortem.
+    """
+    if n_expected <= 0:
+        return 0
+    # +2% margin. n_expected is an ESTIMATE (n_positions x fan_out), and being even
+    # slightly low costs a whole grid slot: AlphaGenome's perbin was estimated at 986,976
+    # against an actual 987,776 (+0.08%), and the resulting tail_k=19,740 delivered 199
+    # slots where 200 were required. 16 more values per track would have covered it. The
+    # margin costs nothing measurable and removes a class of one-slot failures discovered
+    # only after a 14 GPU-hour build.
+    k = -(-int(min_slots) * int(n_expected) * 102 // (int(n_points) * 100))
+    return max(k, int(n_points))
+
+
+def sampler_preflight(
+    label: str,
+    *,
+    n_expected: int,
+    capacity: "int | None",
+    tail_k: "int | None",
+    n_points: int = DEFAULT_CDF_POINTS,
+) -> dict:
+    """Log, and refuse, a sampling configuration that would thin the tail.
+
+    Called BEFORE any forward pass. The AlphaGenome thinning cost 25 GPU-hours of a
+    build whose ceiling was wrong on 667 tracks; every input to this check is known in
+    advance, so there is no reason to discover it afterwards.
+    """
+    exact = capacity is None or n_expected <= capacity
+    slots = n_points if exact else int(
+        min(tail_k or 0, n_expected) * n_points // max(n_expected, 1)
+    )
+    info = {
+        "label": label, "n_expected": int(n_expected),
+        "capacity": None if capacity is None else int(capacity),
+        "tail_k": None if not tail_k else int(tail_k),
+        "mode": "exact" if exact else "hybrid",
+        "exact_top_slots": int(slots),
+    }
+    logger.info(
+        "sampler preflight %s: n_expected=%d capacity=%s tail_k=%s mode=%s "
+        "exact_top_slots=%d", label, info["n_expected"], info["capacity"],
+        info["tail_k"], info["mode"], info["exact_top_slots"],
+    )
+    if slots < MIN_EXACT_TAIL_SLOTS:
+        raise ValueError(
+            f"sampler preflight FAILED for {label}: only {slots} of {n_points} grid "
+            f"slots would be exact (need >= {MIN_EXACT_TAIL_SLOTS}). n_expected="
+            f"{n_expected}, capacity={capacity}, tail_k={tail_k}. Raise the capacity "
+            f"or pass tail_k>={derive_tail_k(n_expected, n_points=n_points)}."
+        )
+    return info
+
+
+def sampling_block(*interims, tail_k: "dict | int | None" = None) -> dict:
+    """Assemble ``build_and_save(sampling=...)`` from whatever the interims recorded.
+
+    One helper rather than the same seven lines in seven builders. Each interim NPZ may
+    carry ``{effect,summary,perbin}_counts`` (offered) and ``*_retained``; a layer is
+    included only when both are present, so an interim written before retention was
+    tracked degrades to "no claim" instead of a false one.
+
+    Omitting the block entirely is what ``build_and_save`` logs an error about: without
+    it there is no thinning check at all, and a guard nobody wired up is how both the
+    padded enformer grid and the AlphaGenome thinning reached users.
+    """
+    block: dict = {}
+    for data in interims:
+        if data is None:
+            continue
+        keys = set(getattr(data, "files", None) or data.keys())
+        for layer in ("effect", "summary", "perbin"):
+            ck, rk = f"{layer}_counts", f"{layer}_retained"
+            if ck not in keys or rk not in keys:
+                continue
+            k = tail_k.get(layer) if isinstance(tail_k, dict) else tail_k
+            block[layer] = {
+                "offered": np.asarray(data[ck]),
+                "retained": np.asarray(data[rk]),
+                "tail_k": int(k) if k else None,
+            }
+    return block
+
+
+def abort_if_nothing_loads(
+    n_attempted: int, n_loaded: int, *, label: str, min_attempts: int = 25,
+) -> None:
+    """Stop a per-track builder that has failed to load every model so far.
+
+    Cherimoya and ChromBPNet load one model per track inside a
+    ``try/except: logger.warning(...); continue`` loop. That tolerance is right -- a
+    single missing checkpoint should not lose a whole run -- but with no floor it also
+    tolerates loading NOTHING. Run in an env without the ``cherimoya`` package, the
+    builder logged "Failed to load <track>" 1,518 times over 75 minutes, then died at
+    the provenance step. Had that step not happened to import the missing package, it
+    would have written an all-zero background.
+
+    A run that has attempted ``min_attempts`` tracks and loaded none is misconfigured,
+    not unlucky: raise while it has cost a minute rather than an hour.
+    """
+    if n_attempted >= min_attempts and n_loaded == 0:
+        raise RuntimeError(
+            f"{label}: attempted {n_attempted} tracks and loaded NONE. This is a "
+            f"configuration failure, not bad luck -- check the conda env has the "
+            f"oracle's package (cherimoya lives only in chorus-cherimoya) and that "
+            f"the weights are present. Aborting rather than building an empty null."
+        )
+
+
+def scope_violations(
+    n_planned: int, *, label: str, n_shipped: "int | None" = None,
+    min_fraction: float = 0.9,
+) -> list[str]:
+    """Refuse a build that covers far fewer tracks than the background it replaces.
+
+    ``yield_violations`` asks "did the tracks we attempted produce samples?" and cannot
+    ask "did we attempt the right tracks?". ChromBPNet's ``--assay`` defaults to
+    ATAC_DNASE, so a rebuild launched without it enumerated 9 models, scored all 9
+    successfully, and wrote a 1.0 MB background to replace a 753-track 80 MB one --
+    dropping every CHIP track, which is the layer the saturation work is about. Every
+    guard passed: rc=0, 9 of 9 tracks with data, 100% yield, exact retention, and a
+    perbin tail with 400 exact slots. The build was flawless and 1.2% of the job.
+
+    So this is a check on SCOPE, made before the GPU time is spent, against the track
+    count of the background actually on disk.
+    """
+    if not n_shipped or n_planned >= min_fraction * n_shipped:
+        return []
+    return [
+        f"{label}: planning {n_planned} tracks against {n_shipped} in the shipped "
+        f"background ({n_planned / n_shipped:.1%}). A build that covers a fraction of "
+        f"the tracks still succeeds on every other measure and then replaces the whole "
+        f"file -- check the assay/cell selection flags before spending the GPU time."
+    ]
+
+
+def yield_violations(
+    counts: np.ndarray,
+    *,
+    label: str = "cdf",
+    min_fraction: float = 0.5,
+) -> list[str]:
+    """Refuse a build whose positions almost all failed.
+
+    An enformer ablation launched two TensorFlow processes onto the same GPU by
+    accident. The second could not allocate a cuBLAS handle, so every single forward
+    pass raised ``InternalError: Attempting to perform BLAS operation using
+    StreamExecutor without BLAS support`` -- and the builder, whose per-position
+    try/except is there so one bad locus cannot lose a whole run, dutifully dropped all
+    5,968 of them and wrote a perfectly well-formed interim: 5,313 tracks, every row
+    all-zero, every count 0.
+
+    That file would have merged cleanly. ``_has_samples`` would then suppress those
+    tracks' percentiles at query time, so the symptom would have been an oracle that
+    silently stopped ranking anything -- the same failure shape as Sei's dark 40 rows,
+    reached by a different route.
+
+    The per-position tolerance is right; what was missing is a floor on the total. A
+    build that retained less than ``min_fraction`` of its tracks' samples is a failed
+    build, not a partial one.
+    """
+    counts = np.asarray(counts)
+    if counts.size == 0:
+        return [f"{label}: no tracks at all"]
+    with_data = int((counts > 0).sum())
+    frac = with_data / counts.size
+    if frac >= min_fraction:
+        return []
+    return [
+        f"{label}: only {with_data} of {counts.size} tracks have any samples "
+        f"({frac:.1%}, floor {min_fraction:.0%}). Every position was probably rejected "
+        f"-- check the drop-reason tally in the build log before trusting this file. "
+        f"An all-zero interim merges cleanly and then silently disables the oracle."
+    ]
+
+
+def thinning_violations(
+    offered: np.ndarray,
+    retained: np.ndarray,
+    *,
+    n_points: int = DEFAULT_CDF_POINTS,
+    tail_k: "int | None" = None,
+    label: str = "cdf",
+    max_report: int = 5,
+) -> list[str]:
+    """Rows whose TOP grid slots came from a thinned sample rather than the population.
+
+    A separate check from ``cdf_grid_violations``, deliberately, because that function
+    is about row *geometry* and is structurally unable to see this. It is handed the
+    **offered** count while the geometry it validates is set by the **retained** count,
+    and its first act is ``if n >= n_points: continue`` -- offered is always >= 10,000
+    for a real build, so every thinned row is skipped. Its docstring promises it
+    "refuses to write a CDF matrix that could not have been produced by
+    ``to_cdf_matrix``", and that promise is false whenever retained < offered.
+
+    What went wrong without it: ``merge_effect_shards.py`` unioned AlphaGenome's 8
+    shards without passing a capacity, inheriting 50,000, against 148,367 offered
+    values per ``gene_expression`` track. The body of the null was unaffected --
+    reservoir sampling is unbiased -- but the *maximum* became the max of a 33.7%
+    subsample, understating the ceiling by a median 1.33x and up to 8.34x. Since the
+    ceiling is exactly what ``effect_percentile`` clamps against, the null pinned
+    earlier than it should have, and nothing detected it because every calibration
+    gate measures the body.
+
+    Passes a row when EITHER:
+
+    * ``retained == offered`` -- nothing was discarded, so every grid slot is a true
+      order statistic; or
+    * the row keeps an exact top-K tail wide enough to fill at least
+      ``MIN_EXACT_TAIL_SLOTS`` grid slots, i.e.
+      ``floor(min(tail_k, offered) * n_points / offered) >= MIN_EXACT_TAIL_SLOTS``.
+
+    ``tail_k=None`` means no exact tail is kept, so any thinning is a violation.
+    """
+    offered = np.asarray(offered, dtype=np.int64)
+    retained = np.asarray(retained, dtype=np.int64)
+    if offered.shape != retained.shape:
+        raise ValueError(
+            f"{label}: offered/retained shape mismatch {offered.shape} vs "
+            f"{retained.shape}"
+        )
+    # MIN_EXACT_TAIL_SLOTS expresses an INTENT -- "the top 2% of the grid is exact" --
+    # not a magic integer. Enforcing it as an exact count is false precision: a build
+    # delivering 199 slots achieves the top 1.99%, and there is no sense in which p98.01
+    # is acceptable and p98.00 is not. AlphaGenome's perbin landed on exactly that edge
+    # because n_expected was estimated 0.08% low.
+    #
+    # This is deliberately NOT open-ended. The tolerance is 1% of the floor (2 slots),
+    # enough to absorb an estimation error and nothing more, and derive_tail_k now carries
+    # a 2% margin so the tolerance should never be reached. A build that misses by more
+    # than this is not suffering rounding -- it is misconfigured, and still fails.
+    floor = MIN_EXACT_TAIL_SLOTS - max(1, MIN_EXACT_TAIL_SLOTS // 100)
+    problems: list[str] = []
+    for i, (n_off, n_ret) in enumerate(zip(offered, retained)):
+        if n_off <= 0 or n_ret >= n_off:
+            continue
+        if tail_k:
+            exact_slots = int(min(tail_k, n_off) * n_points // n_off)
+            if exact_slots >= floor:
+                continue
+            problems.append(
+                f"{label} row {i}: offered {n_off}, retained {n_ret}, exact top-K "
+                f"tail fills only {exact_slots} of {n_points} grid slots "
+                f"(need >= {floor}, intent {MIN_EXACT_TAIL_SLOTS}) -- the row's maximum "
+                f"is a draw "
+                f"from a subsample, not the population maximum"
+            )
+        else:
+            problems.append(
+                f"{label} row {i}: offered {n_off} values but retained only {n_ret} "
+                f"({n_off / max(n_ret, 1):.2f}x thinned) with no exact tail kept. A "
+                f"uniform subsample retains the population maximum with probability "
+                f"{n_ret / n_off:.3f}, so this row's ceiling is a random draw."
+            )
+        if len(problems) >= max_report:
+            problems.append(f"{label}: ... and more")
+            break
+    return problems
 
 
 def cdf_grid_violations(

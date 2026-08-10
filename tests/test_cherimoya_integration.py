@@ -35,6 +35,8 @@ import pytest
 
 from chorus.oracles.cherimoya import CherimoyaOracle
 from chorus.oracles.cherimoya_source.catv1_globals import (
+    CATV1_ENSEMBLE,
+    CATV1_N_FOLDS,
     CATV1_INPUT_LENGTH,
     CATV1_OUTPUT_LENGTH,
     CATV1_TRIMMING,
@@ -129,7 +131,13 @@ def test_default_resolution_is_the_chrombpnet_matched_experiment(oracle):
     assert oracle.assay == "DNASE"
     assert oracle.cell_type == "K562"
     assert oracle.track_id == TEST_TRACK
-    assert oracle.fold == 0
+    # The default is the 5-fold ensemble, not fold 0. CATv1's model card offers
+    # either; chorus takes the ensemble because a single checkpoint is a sample
+    # rather than the model -- at rs12740374 the five folds span accessibility
+    # ratios 2.39-3.47 for the identical sequence -- and the background CDFs are
+    # built to match. See tests/test_cherimoya_ensemble.py.
+    assert oracle.fold == CATV1_ENSEMBLE
+    assert len(oracle.model_paths) == CATV1_N_FOLDS
     assert oracle.loaded
 
 
@@ -154,7 +162,10 @@ def test_predict_returns_finite_values(oracle, prediction_values):
     assert track.cell_type == "K562"
     assert track.resolution == 1
     assert track.metadata["encode_id"] == TEST_ACCESSION
-    assert track.metadata["fold"] == 0
+    assert track.metadata["fold"] == CATV1_ENSEMBLE
+    # assay_id must be the canonical ASSAY:ENCSR, which is how the background rows
+    # are keyed; a bare accession resolves to no CDF row and loses both percentiles.
+    assert track.assay_id == TEST_TRACK
 
 
 def test_predicted_window_lands_at_the_trim_offset(prediction_values):
@@ -173,6 +184,37 @@ def test_predict_matches_direct_window_scoring(
     Scoring the prediction the way the builder will (501 bp central window
     sum) must equal scoring the raw head outputs through the shared
     helper.  If these diverge, every percentile is silently wrong.
+
+    **The tolerance here is loose on purpose, and the strict version of this
+    test is** :func:`test_predict_matches_direct_window_scoring_in_process`
+    **below.** An earlier revision of this docstring asserted rtol=1e-5 and
+    blamed the resulting flake on "concurrent GPU load". That explanation was
+    wrong and the measurements are recorded here so it is not re-derived:
+
+    * On an **idle** GPU (0% on the device under test) the env-mode form fails
+      about half the time: 4 runs gave pass, pass, then max **relative**
+      differences of 5.6e-4 and 4.2e-4 against rtol=1e-5.
+    * It is not the CPU fallback -- the device assert below passed each time.
+    * It is not cross-process nondeterminism *per se*: three consecutive
+      ``_forward_windows`` calls, each five fresh subprocesses, agreed
+      **bit-exactly** (0.0e+00), and so did runs 1-3 of the mirrored comparison.
+    * It is not batch shape or window cutting: ``_window_sequences`` returns one
+      window identical to the query sequence, so both paths submit the same input.
+    * **In-process, the two paths agree exactly** -- 0.0e+00 on both the
+      per-position profile and the 501 bp sum, 6/6 iterations.
+
+    So the residual is sporadic, low-amplitude non-reproducibility inside
+    Cherimoya's Triton path across fresh processes (≤5.6e-4 relative observed),
+    landing on whichever call happens to hit it. rtol=1e-5 asserts bit-level
+    cross-process reproducibility that this path does not provide, which makes
+    the assertion a coin flip rather than a gate.
+
+    Loosening it does **not** blind the test, and that is the point of choosing
+    the number from measurement. Every real defect in this class is orders of
+    magnitude larger: averaging per-fold log2FCs instead of profiles moves
+    rs12740374 by ~2% (1.4849 vs 1.4576); ``exp`` instead of ``expm1`` shifts the
+    sum by exactly 1.0 count; a window or trim-offset error is a gross
+    mismatch. 5e-3 is ~9x the observed noise floor and still catches all of them.
     """
     # Path A: through the oracle's public predict().
     profile_from_predict = prediction_values[
@@ -190,10 +232,122 @@ def test_predict_matches_direct_window_scoring(
     assert oracle._last_device == _pinned_device()
 
     numpy.testing.assert_allclose(
-        profile_from_predict, profile_direct, rtol=1e-5, atol=1e-6,
+        profile_from_predict, profile_direct, rtol=5e-3, atol=1e-4,
     )
-    assert via_predict == pytest.approx(via_scoring, rel=1e-6)
+    # The window sum averages the per-position noise down by ~an order of
+    # magnitude (measured 7.6e-6 on the run whose profile was 8.5e-5), so it
+    # carries the tighter bound. It is also the quantity the CDFs are built from.
+    assert via_predict == pytest.approx(via_scoring, rel=1e-3)
     assert via_predict > 0
+
+
+def test_predict_matches_direct_window_scoring_in_process(reference_sequence):
+    """The strict form of the invariant above: same process, exact agreement.
+
+    Env mode cannot be asserted at kernel strictness (see the previous test's
+    docstring for the measurements). In-process it can be, and is -- so the gate
+    that actually catches a divergence between the builder's scoring and the
+    query path's scoring lives here, at rtol=1e-7 rather than 5e-3.
+
+    In-process mode needs ``cherimoya`` importable, which is true only inside
+    ``chorus-cherimoya``, and that env has no ``pytest``. Rather than install dev
+    deps into a pinned oracle env, the comparison runs *there* as a subprocess and
+    is asserted *here* -- the same split ``_pinned_device`` already uses. So this
+    test runs in the ordinary base-env sweep, which is the point: an exactness
+    claim nothing executes is not a gate.
+
+    The loose env-mode test above is kept rather than replaced. It exercises the
+    execution mode users actually get by default, and still catches every
+    realistic defect; this one pins exactness where exactness is achievable.
+    """
+    _require_prerequisites()
+
+    import json
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    from chorus.core.environment import EnvironmentManager
+
+    repo_root = str(Path(__file__).resolve().parent.parent)
+    payload = {
+        "repo_root": repo_root,
+        "fasta": str(Path(REFERENCE_FASTA).resolve()),
+        "sequence": reference_sequence,
+        "region": list(TEST_REGION),
+        "track": TEST_TRACK,
+    }
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".json", delete=False,
+    ) as handle:
+        json.dump(payload, handle)
+        args_path = handle.name
+
+    probe = f'''
+import json, sys
+with open({args_path!r}) as fh:
+    a = json.load(fh)
+sys.path.insert(0, a["repo_root"])
+import numpy
+from chorus.oracles.cherimoya import CherimoyaOracle
+from chorus.oracles.cherimoya_source.scoring import (
+    expected_counts_profile, score_window_sum,
+)
+from chorus.oracles.cherimoya_source.catv1_globals import (
+    CATV1_TRIMMING, CATV1_OUTPUT_LENGTH,
+)
+
+oracle = CherimoyaOracle(
+    use_environment=False, reference_fasta=a["fasta"], device="cuda",
+)
+oracle.load_pretrained_model(assay="DNASE", cell_type="K562")
+
+chrom, start, end = a["region"]
+values = oracle.predict((chrom, start, end))[a["track"]].values
+from_predict = values[CATV1_TRIMMING:CATV1_TRIMMING + CATV1_OUTPUT_LENGTH]
+
+logits, log_counts = oracle._forward_windows([a["sequence"]])
+direct = expected_counts_profile(logits, log_counts)[0]
+
+scale = max(float(numpy.abs(direct).max()), 1e-12)
+print("CHORUS_RESULT " + json.dumps({{
+    "n_folds": len(oracle.model_paths),
+    "profile_max_rel": float(numpy.abs(from_predict - direct).max() / scale),
+    "sum_from_predict": float(score_window_sum(from_predict)),
+    "sum_direct": float(score_window_sum(direct)),
+}}))
+'''
+
+    python_exe = EnvironmentManager().get_python_executable("cherimoya")
+    completed = subprocess.run(
+        [python_exe, "-c", probe],
+        capture_output=True, text=True, timeout=1800,
+    )
+    marker = [
+        line for line in completed.stdout.splitlines()
+        if line.startswith("CHORUS_RESULT ")
+    ]
+    if not marker:
+        pytest.fail(
+            "in-process probe produced no result.\n"
+            f"exit={completed.returncode}\n"
+            f"stdout tail:\n{completed.stdout[-2000:]}\n"
+            f"stderr tail:\n{completed.stderr[-2000:]}"
+        )
+    got = json.loads(marker[-1][len("CHORUS_RESULT "):])
+
+    # Guard the guard: if this silently ran one fold, exactness would be trivial.
+    assert got["n_folds"] == CATV1_N_FOLDS, got
+
+    assert got["profile_max_rel"] <= 1e-7, (
+        f"in-process the two scoring paths must agree exactly; got max relative "
+        f"difference {got['profile_max_rel']:.3e}. Measured 0.0e+00 over 6 "
+        f"iterations when this was written, so a nonzero value here is a real "
+        f"divergence rather than the cross-process noise the env-mode test above "
+        f"tolerates."
+    )
+    assert got["sum_from_predict"] == pytest.approx(got["sum_direct"], rel=1e-9)
+    assert got["sum_from_predict"] > 0
 
 
 def test_counts_are_recovered_with_expm1(oracle, reference_sequence):

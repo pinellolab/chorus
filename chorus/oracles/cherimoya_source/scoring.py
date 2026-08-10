@@ -35,6 +35,7 @@ rebuild that followed.
 """
 
 import math
+from typing import Tuple
 
 import numpy
 
@@ -92,6 +93,73 @@ def expected_counts_profile(
     total = numpy.expm1(counts)
 
     return probs * total[:, None]
+
+
+def heads_equivalent_to_profile(
+    profile: numpy.ndarray,
+) -> Tuple[numpy.ndarray, numpy.ndarray]:
+    """Invert :func:`expected_counts_profile`: profile -> ``(logits, log_counts)``.
+
+    Why this exists. CATv1 ships five cross-validation folds per experiment, and
+    its model card says to "average the predictions of all five folds for a more
+    robust estimate". The prediction is the **expected-counts profile**, and
+    :func:`expected_counts_profile` is non-linear in both heads (softmax over
+    positions, ``expm1`` over the count head), so averaging the raw heads across
+    folds is *not* averaging the predictions. The mean has to be taken on the
+    output.
+
+    But every caller downstream of ``_forward_windows`` expects the two-head
+    shape. Rather than fork the call path, this maps an already-averaged profile
+    back onto the unique heads that reproduce it exactly:
+
+        logits     = log(P / T)        so softmax(logits) == P / T
+        log_counts = log1p(T)          so expm1(log_counts) == T
+
+    and therefore ``expected_counts_profile(*heads_equivalent_to_profile(P)) == P``
+    to floating-point round-trip. The mean-centring inside
+    :func:`expected_counts_profile` is a no-op on the softmax, so the additive
+    freedom in ``logits`` does not matter.
+
+    Args:
+        profile: ``(N, L)`` expected counts per base pair.
+
+    Returns:
+        ``(profile_logits, log_counts)`` shaped ``(N, 1, L)`` and ``(N, 1)``,
+        matching what a real forward pass returns.
+    """
+    p = numpy.asarray(profile, dtype=numpy.float64)
+    if p.ndim != 2:
+        raise ValueError(f"Expected an (N, L) profile, got shape {p.shape}.")
+
+    total = p.sum(axis=1)
+    # A window whose expected counts are all zero has no shape to recover. Emit
+    # a uniform distribution scaled to zero total, which round-trips to zeros
+    # rather than producing nan from log(0)/0.
+    safe_total = numpy.where(total > 0, total, 1.0)
+    probs = p / safe_total[:, None]
+    probs = numpy.where(total[:, None] > 0, probs, 1.0 / p.shape[1])
+
+    with numpy.errstate(divide="ignore"):
+        logits = numpy.log(probs)
+
+    # log(0) is -inf, which softmax would map to 0 correctly -- but
+    # expected_counts_profile MEAN-CENTRES before exponentiating, so a single
+    # absolute floor blows up. With a floor of -745 and a maximally peaked profile
+    # (one non-zero bin) the row mean is about -743, centring lifts the peak to
+    # +743, and exp overflows to inf: the round-trip returns nan for a profile that
+    # is merely sparse. Found by tests/test_cherimoya_ensemble.py, which feeds
+    # exactly that shape.
+    #
+    # So floor RELATIVE to the row's own maximum. exp(-60) is 9e-27, which softmax
+    # sends to zero for any realistic profile length, while bounding the centred
+    # spread to ~60 and keeping exp safe whatever the sparsity.
+    finite_max = numpy.where(numpy.isfinite(logits), logits, -numpy.inf).max(
+        axis=1, keepdims=True)
+    floor = numpy.where(numpy.isfinite(finite_max), finite_max - 60.0, 0.0)
+    logits = numpy.where(numpy.isfinite(logits), logits, numpy.broadcast_to(floor, logits.shape))
+
+    log_counts = numpy.log1p(total)
+    return logits[:, None, :], log_counts[:, None]
 
 
 def score_window_sum(

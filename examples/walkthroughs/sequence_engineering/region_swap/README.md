@@ -23,11 +23,11 @@ CRISPR knock-in or reporter-assay scenario.
 
 | Layer | Effect | Interpretation |
 |-------|--------|----------------|
-| Chromatin (DNASE:K562) | −3.289 log2FC | Very strong closing |
-| Histone H3K27ac:K562 | −1.350 log2FC | Very strong mark loss |
-| Histone H3K4me3:K562 | −1.032 log2FC | Very strong mark loss |
-| CAGE — GSTM2 TSS | −8.110 log2FC | Very strong decrease |
-| CAGE — GNAI3 TSS | −7.380 log2FC | Very strong decrease |
+| Chromatin (DNASE:K562) | −3.299 log2FC | Very strong closing |
+| Histone H3K27ac:K562 | −1.477 log2FC | Very strong mark loss |
+| Histone H3K4me3:K562 | −1.091 log2FC | Very strong mark loss |
+| CAGE — GSTM2 TSS | −7.958 log2FC | Very strong decrease |
+| CAGE — GNAI3 TSS | −7.401 log2FC | Very strong decrease |
 
 Replacing a functional enhancer with arbitrary reporter sequence
 produces coherent loss across all regulatory layers: chromatin closes,

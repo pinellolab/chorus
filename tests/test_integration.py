@@ -116,6 +116,29 @@ def test_chrombpnet_fresh_single_model_download(tmp_path):
             "TensorFlow in the base env (not installed by default)."
         )
 
+    # This test exists to exercise the ENCODE tarball path specifically, so it is
+    # the one test in the suite that hard-depends on encodeproject.org. When that
+    # portal is down the failure surfaces 60 s later as a bare
+    # "TimeoutError: The read operation timed out" from urllib, which reads like a
+    # broken download helper -- and a release gate that goes red because a third
+    # party is offline is a gate people learn to wave through.
+    #
+    # So separate the conditions the way the two skips above already do: an
+    # unreachable portal is a skip that names the portal; a reachable portal plus
+    # a failed download is a real failure. Observed 2026-08-08, ENCODE returning
+    # HTTP 000 on a 25 s budget while huggingface.co answered in 33 ms.
+    import urllib.error
+    import urllib.request
+    try:
+        urllib.request.urlopen("https://www.encodeproject.org/", timeout=20).close()
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        pytest.skip(
+            f"encodeproject.org unreachable ({type(exc).__name__}: {exc}) — this test "
+            f"deliberately downloads a ~500 MB ENCODE tarball to cover the fallback "
+            f"path the HF slim mirror bypasses, so it cannot run offline. The download "
+            f"helper itself is covered by tests/test_error_recovery.py."
+        )
+
     oracle = chorus.create_oracle(
         "chrombpnet", use_environment=True, reference_fasta=reference_fasta,
     )

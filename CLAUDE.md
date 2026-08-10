@@ -32,9 +32,77 @@ mamba run -n chorus-sei          # PyTorch
 mamba run -n chorus-legnet       # PyTorch
 ```
 
+The list above is **incomplete** — `conda env list` shows more, and two of the missing
+ones are needed:
+
+```bash
+mamba run -n chorus-cherimoya      # PyTorch 2.13 + the `cherimoya` package
+mamba run -n chorus-epinformerseq  # PyTorch
+```
+
+Both builders `import torch`, and cherimoya additionally imports the `cherimoya`
+package itself, which exists **only** in `chorus-cherimoya`. Running it elsewhere does
+not fail fast: it logs `Failed to load <track>` once per track and carries on, so a
+1,518-track run spent 75 minutes loading nothing before dying at the provenance step.
+Always check `conda env list` rather than trusting this section.
+
+Pass `--gpu N` to the five builders that accept it rather than relying on
+`CUDA_VISIBLE_DEVICES` alone. They used to *overwrite* the env var with the `--gpu`
+default of 0, so two processes launched with different env values both landed on GPU 0 —
+the first took 78 GB and the second failed every forward pass with `Attempting to
+perform BLAS operation using StreamExecutor without BLAS support`, silently dropping all
+5,968 positions. An explicit env var now wins, but `--gpu` is unambiguous. `legnet` and
+`epinformerseq` have only `--device`, so they do need the env var.
+
+`--part` differs: most take `both`, but **epinformerseq takes `all`**.
+
+`conda run` **buffers stdout**, so a long build's log stays 0 bytes until the process
+exits — during the 2026-08-06 rebuild that meant no progress visibility on a 14-hour
+job. Use `conda run --no-capture-output ... python -u` when you need to watch a build,
+and key failure detection off the exit code rather than off log contents.
+
 `CUDA_VISIBLE_DEVICES=0|1` respected across all envs. Per-track CDFs
 auto-download from
 `huggingface.co/datasets/lucapinello/chorus-backgrounds` on first use.
+
+## Where downloaded data goes
+
+Bulk data defaults to the **chorus installation directory**, not `$HOME`.
+Backgrounds used to land in `~/.chorus/backgrounds/` (7.8 GB) and model
+weights in `~/.cache/huggingface/` (12 GB, because nothing set `HF_HOME`);
+both now follow one switch:
+
+```bash
+export CHORUS_DATA_DIR=/data/chorus_data          # per-shell, highest priority
+chorus config data-dir --set /data/chorus_data    # persist for this install
+chorus setup --data-dir /data/chorus_data         # choose at install time
+chorus config data-dir                            # show what resolved, and why
+chorus config data-dir --set PATH --migrate       # move existing backgrounds
+```
+
+Resolution order: `CHORUS_DATA_DIR` > `<install>/chorus_data_dir.txt` >
+the install dir > `~/.chorus` (only if the install tree is not writable,
+e.g. a pip install into system site-packages).
+
+Two things deliberately do NOT follow it: **credentials**
+(`~/.chorus/config.toml`, the HF token) stay with the user, because a shared
+data dir is the wrong place for a personal token; and **conda environments**
+stay with the installation.
+
+## Background nulls
+
+Every percentile is a rank against a per-track background null. Before changing a region
+set, a sampling rule, a retention policy or adding an oracle, read:
+
+- **[`docs/BACKGROUND_NULL_PROTOCOL.md`](docs/BACKGROUND_NULL_PROTOCOL.md)** — which
+  regions and why, how they are sampled, which SNPs, how the CDFs are computed
+  (stratified or not), the guard inventory, a step-by-step for adding a new oracle, and a
+  dated decision log with the measurement behind each call.
+
+It is a LIVING document: update it in the same commit as any change it describes. Two
+rules it exists to enforce — the effect and baseline nulls are different reference classes
+and must not be unified, and **no composition change ships without a two-arm measurement**
+(every unmeasured composition guess in this project was wrong).
 
 ## Regeneration
 

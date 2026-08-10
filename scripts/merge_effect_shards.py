@@ -52,21 +52,37 @@ import numpy as np
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
-BG = Path.home() / ".chorus" / "backgrounds"
+# Resolved through the data-dir mechanism, not hardcoded to $HOME. Every
+# background-handling script had this literal; CHORUS_BACKGROUNDS_DIR applies
+# the legacy ~/.chorus compatibility itself, per kind.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+BG = CHORUS_BACKGROUNDS_DIR
 GENE_ANCHORED_BACKUP = Path("/data/chorus_data/interims_gene_anchored")
 # A count ratio outside this band means the two sources are not comparable and the
 # composed file would mix a well-estimated tail with a poorly-estimated one.
 _MAX_COUNT_RATIO = 1.15
 
 
+# Overridable so a STAGED rebuild can be merged without reading or writing the live
+# directory. Without this the union would have read the 8 stale `.shard*of8.npz` files
+# left in the live dir by the 2026-08-05 build and written its output over the live
+# interim -- reading the wrong inputs and mutating data that is deliberately untouched
+# until the swap.
+_DIR: "Path | None" = None
+
+
 def _effect_path(oracle: str, suffix: str = "") -> Path:
-    return BG / f"{oracle}_effect_cdfs_interim{suffix}.npz"
+    return (_DIR or BG) / f"{oracle}_effect_cdfs_interim{suffix}.npz"
 
 
-def union_shards(oracle: str, n_shards: int, n_points: int) -> Path:
-    from chorus.analysis.background_sampling import ReservoirSampler
+def union_shards(oracle: str, n_shards: int, n_points: int,
+                 exact: bool = True) -> Path:
+    from chorus.analysis.background_sampling import (
+        DEFAULT_CAPACITY,
+        ReservoirSampler,
+    )
 
-    parts, ids, flags = [], None, None
+    parts, ids, flags, layers = [], None, None, None
     for k in range(n_shards):
         p = _effect_path(oracle, f".shard{k}of{n_shards}")
         if not p.exists():
@@ -81,31 +97,67 @@ def union_shards(oracle: str, n_shards: int, n_points: int) -> Path:
             parts.append({k2: d[k2] for k2 in ("values", "offsets", "counts", "n_tracks")})
             shard_ids = [str(x) for x in d["track_ids"]]
             shard_flags = d["signed_flags"] if "signed_flags" in d.files else None
+            shard_layers = (d["layers_per_row"] if "layers_per_row" in d.files
+                            else None)
         if ids is None:
             ids, flags = shard_ids, shard_flags
+            layers = shard_layers
         elif shard_ids != ids:
             raise SystemExit(f"shard {k} track_ids disagree with shard 0")
         print(f"  shard {k}: {int(np.asarray(parts[-1]['counts']).max())} samples/track")
 
-    merged = ReservoirSampler.from_flat_samples(*parts)
+    # capacity=None keeps EVERY value. The previous call passed no capacity at all
+    # and silently inherited DEFAULT_CAPACITY=50,000, which thinned every
+    # AlphaGenome RNA track's 148,367 samples down to a 50,000 uniform subsample and
+    # understated its ceiling by a median 1.33x (up to 8.34x). See
+    # ReservoirSampler.from_flat_samples.
+    merged = ReservoirSampler.from_flat_samples(
+        *parts, capacity=None if exact else DEFAULT_CAPACITY)
     counts = merged.get_counts()
+    retained = merged.retained_counts()
+    thinned = int((retained < counts).sum())
     print(f"  union: {len(ids)} tracks, counts min={counts.min()} max={counts.max()}, "
           f"{int((counts > 0).sum())} tracks with data")
+    print(f"  retention: {'EXACT' if exact else f'capped at {DEFAULT_CAPACITY}'}; "
+          f"{thinned} of {len(ids)} tracks thinned "
+          f"(retained min={retained.min()} max={retained.max()})")
+    if exact and thinned:
+        raise SystemExit(
+            f"--exact was requested but {thinned} tracks are still thinned; refusing "
+            f"to write a background whose ceiling is a subsample"
+        )
 
     matrix = merged.to_cdf_matrix(n_points=n_points)
-    from chorus.analysis.background_sampling import cdf_grid_violations
+    from chorus.analysis.background_sampling import (
+        cdf_grid_violations,
+        thinning_violations,
+    )
     problems = cdf_grid_violations(matrix, counts, label=f"{oracle}.effect_cdfs")
+    problems += thinning_violations(counts, retained, n_points=n_points,
+                                    label=f"{oracle}.effect_cdfs")
     if problems:
         raise SystemExit("refusing to write: " + "\n".join(problems[:3]))
 
     out = _effect_path(oracle)
     payload = dict(track_ids=np.array(ids, dtype="U"),
                    effect_cdfs=matrix.astype(np.float32),
-                   effect_counts=counts)
+                   effect_counts=counts,
+                   # Retention alongside the offered count, so "was this thinned?" is
+                   # answerable from the file. Its absence is exactly why the
+                   # AlphaGenome thinning was invisible: only `counts` (offered) was
+                   # ever written, and offered == retained is the thing that matters.
+                   effect_retained=retained)
     if flags is not None:
         payload["signed_flags"] = flags
+    if layers is not None:
+        # Carried through from the shards. Dropping it here is exactly what made
+        # every rebuilt background ship WITHOUT a per-row layer, while the guard
+        # test skipped itself because the field was absent -- a guard that protects
+        # nothing. The union is the only place the field can be lost.
+        payload["layers_per_row"] = np.asarray(layers)
     np.savez_compressed(out, **payload)
-    print(f"  wrote {out} ({out.stat().st_size / 1e6:.1f} MB)")
+    print(f"  wrote {out} ({out.stat().st_size / 1e6:.1f} MB)"
+          + ("" if layers is not None else "  [WARNING: no layers_per_row]"))
     return out
 
 
@@ -191,11 +243,27 @@ def main() -> int:
                     help="Take peak-layer rows from the cCRE interim and the rest "
                          "from the backed-up gene-anchored interim.")
     ap.add_argument("--n-points", type=int, default=10_000)
+    ap.add_argument("--dir", default=None,
+                    help="Directory holding the shards, and where the union is written. "
+                         "Defaults to the live CHORUS_BACKGROUNDS_DIR. Point it at a "
+                         "staging directory when merging a rebuild that has not been "
+                         "swapped in -- otherwise stale shards from an earlier build "
+                         "with a different shard count are silently in scope.")
+    ap.add_argument("--capped", action="store_true",
+                    help="Subsample the union to DEFAULT_CAPACITY instead of keeping "
+                         "every value. This reproduces the pre-2026-08-06 behaviour "
+                         "that thinned AlphaGenome's RNA ceilings; it exists only so "
+                         "the defect can be reproduced in a test.")
     args = ap.parse_args()
+    global _DIR
+    if args.dir:
+        _DIR = Path(args.dir)
+        print(f"[shards] reading and writing {_DIR}")
 
     if args.shards:
         print(f"[{args.oracle}] unioning {args.shards} position shards")
-        union_shards(args.oracle, args.shards, args.n_points)
+        union_shards(args.oracle, args.shards, args.n_points,
+                     exact=not args.capped)
     if args.compose_layers:
         print(f"[{args.oracle}] composing per-layer reference sets")
         compose_layers(args.oracle)

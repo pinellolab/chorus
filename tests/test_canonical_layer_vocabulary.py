@@ -153,3 +153,36 @@ def test_any_stored_layers_per_row_is_canonical(path: Path):
         f"silently, which is how Enformer's 5,313 rows were skipped while "
         f"AlphaGenome's 472 were swapped."
     )
+
+
+# ---------------------------------------------------------------------------
+# Presence, not just correctness
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("oracle", BUILDERS)
+def test_rebuilt_backgrounds_actually_CARRY_a_per_row_layer(oracle):
+    """The field must be PRESENT, not merely canonical when present.
+
+    The correctness test above skips when ``layers_per_row`` is absent, which is
+    right for the four oracles that predate the field — but it meant every rebuilt
+    background shipped without it and the suite stayed green. ``union_shards`` read
+    the field from each shard and never wrote it to the union, so it was lost at the
+    one step between the builder that produces it and the file that needs it.
+
+    A guard that skips on absence protects nothing. This one fails.
+    """
+    from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+
+    path = CHORUS_BACKGROUNDS_DIR / f"{oracle}_pertrack.npz"
+    if not path.exists():
+        pytest.skip(f"no downloaded background for {oracle}")
+    with np.load(path, allow_pickle=True) as data:
+        assert "layers_per_row" in data.files, (
+            f"{oracle}_pertrack.npz has no layers_per_row. It was rebuilt by a "
+            f"builder that writes the field, so it was dropped in transit — check "
+            f"scripts/merge_effect_shards.py::union_shards and "
+            f"scripts/apply_effect_rebuild.py."
+        )
+        n_tracks = len(data["track_ids"])
+        assert len(data["layers_per_row"]) == n_tracks

@@ -87,9 +87,12 @@ memorise the table below before opening an example.
 - 0.3–0.7: Strong — likely functional
 - \> 0.7: Very strong — high-confidence regulatory effect
 
-**Effect percentile** (when shown): compares a variant's effect against
-~10,000 random SNPs scored on the same oracle. A percentile of 0.95 means
-the effect is larger than 95% of random variants.
+**Effect percentile** (when shown): compares a variant's effect against a
+per-track background of ~18,000 variants sampled from the regulatory regions
+that assay measures — ENCODE cCREs, DHS summits, promoters and gene features,
+*not* uniformly random positions. A percentile of 0.95 means the effect is
+larger than 95% of that background. The strata, and the measurements behind
+them, are in [`docs/BACKGROUND_NULL_PROTOCOL.md`](../../docs/BACKGROUND_NULL_PROTOCOL.md) §3.
 
 **Activity percentile** (when shown): ranks the reference signal at the
 variant site against ~30,000 genome-wide positions including ENCODE cCREs.

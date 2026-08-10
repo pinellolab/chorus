@@ -99,13 +99,13 @@ Now ask, in any Claude Code prompt:
 
 > *"Replace the 200 bp endogenous enhancer at chrX:48,782,929–48,783,129 with this synthetic sequence and predict accessibility in HepG2, K562, and GM12878."*
 
-That's it. No more boilerplate, no juggling oracle APIs — chorus exposes **22 MCP tools** ([full list](#mcp-server)) covering prediction, variant effects, region swaps, multi-layer analysis, gene-TSS lookups, and cell-type discovery, and Claude picks the right one for the question.
+That's it. No more boilerplate, no juggling oracle APIs — chorus exposes **24 MCP tools** ([full list](#mcp-server)) covering prediction, variant effects, region swaps, multi-layer analysis, in-silico mutagenesis, gene-TSS lookups, and cell-type discovery, and Claude picks the right one for the question.
 
 ### What to read next
 
 - [Notebooks](#notebooks--three-sittings-zero-to-confident) — three end-to-end tutorials you can follow start-to-finish (start here)
 - [Worked application examples](#worked-application-examples--seven-things-you-can-do-today) — driven by natural-language prompts; the *what can chorus do?* tour
-- [MCP server](#mcp-server--chorus-but-you-talk-to-claude) — full Claude Code + Claude Desktop setup with all 22 tools
+- [MCP server](#mcp-server--chorus-but-you-talk-to-claude) — full Claude Code + Claude Desktop setup with all 24 tools
 - [Python API](#python-api) — 9 runnable recipes (region replacement, gene expression, sub-region scoring, variant-to-gene, …)
 - [Pick an oracle](#pick-an-oracle) — hardware matrix, which one to start with
 - [Troubleshooting](#troubleshooting)
@@ -160,7 +160,7 @@ Start with one or two oracles and add more with `chorus setup --oracle <name>` l
 | **Enformer** | 8 GB | optional | ~10 s (GPU) / ~1 min (CPU) | lightweight multi-track, CPU-friendly starter |
 | **Borzoi** | 12 GB | recommended | ~30 s (GPU) | distal gene-expression effects, longer context |
 | **ChromBPNet** | 4 GB | optional | ~1 s (CPU ok) | base-pair chromatin / motif disruption |
-| **Cherimoya / CATv1** | 4 GB | recommended | <1 s (GPU) | base-pair chromatin accessibility across 1,518 ENCODE DNase/ATAC experiments — the widest biosample coverage in chorus |
+| **Cherimoya / CATv1** | 4 GB | recommended | ~60 s (GPU, default) — [see note](#cherimoya-timing-depends-on-the-mode-you-run-it-in) | base-pair chromatin accessibility across 1,518 ENCODE DNase/ATAC experiments — the widest biosample coverage in chorus |
 | **LegNet** | 4 GB | optional | <1 s | MPRA / promoter activity |
 | **Sei** | 4 GB | optional | ~2 s | regulatory sequence-class profiling |
 | **EPInformer-seq** | 2 GB | optional | <1 s | per-cell 2-channel enhancer activity (DNase cut-sites + H3K27ac, 3 assays, 11 Roadmap cells, 2114-bp window) |
@@ -168,6 +168,18 @@ Start with one or two oracles and add more with `chorus setup --oracle <name>` l
 | **AlphaGenome (PyTorch backend)** ⓘ | 16 GB | recommended (esp. Apple Silicon) | ~3.8 s @524 kb on Mac MPS / ~2 s @1 MB on CUDA | alternative backend with the same weights; see [Two AlphaGenome backends](#two-alphagenome-backends) below |
 
 **GPU detection is automatic** — every oracle picks CUDA / MPS / CPU based on what's available; pass `device='cuda'` / `'cpu'` / `'mps'` to override, or set `CUDA_VISIBLE_DEVICES` to pin to a specific GPU. The platform-by-oracle support matrix and Apple Silicon nuances live in [Installation — detailed](#installation--detailed).
+
+#### Cherimoya timing depends on the mode you run it in
+
+Cherimoya is the one oracle whose per-call cost is dominated by *how* it is invoked, not by the model — because CATv1's default is the **5-fold ensemble** (the model card's recommendation, and what the shipped background CDFs were built against), and in `use_environment=True` mode each fold is a separate subprocess. Nothing is amortised across calls, so the second prediction costs the same as the first. Measured on one H100, single 2,114 bp window:
+
+| mode | load | 1st predict | 2nd predict |
+|---|---|---|---|
+| `use_environment=True`, 5-fold ensemble — **the default** | 10.2 s | 62.1 s | 64.1 s |
+| `use_environment=True`, `fold=0` | 9.1 s | 12.3 s | 12.1 s |
+| in-process (`use_environment=False`), either | 2.5–3.6 s | 8.0 s | **<0.01 s** |
+
+Read off the arithmetic: env mode costs ~12 s per fold per call, so 5 folds is ~60 s and a ref/alt variant call is two of those. If you are scoring more than a handful of sequences, run in-process inside `chorus-cherimoya` — the first call pays ~8 s of Triton kernel compilation and every call after it is free. Pin `fold=0` only if you accept ranking against a single fold; the five folds give accessibility ratios spanning 2.39–3.47 for the identical sequence.
 
 #### Two AlphaGenome backends
 
@@ -642,10 +654,13 @@ mamba run -n chorus chorus-mcp
 
 #### Available MCP tools
 
-- **Discovery**: `list_oracles`, `list_tracks`, `list_genomes`, `get_genes_in_region`, `get_gene_tss`
+All 24, grouped by what you would reach for them for:
+
+- **Discovery**: `list_oracles`, `list_tracks`, `list_genomes`, `get_genes_in_region`, `get_gene_tss`, `recommend_alphagenome_backend`
 - **Lifecycle**: `load_oracle`, `unload_oracle`, `oracle_status`
 - **Low-level prediction**: `predict`, `predict_variant_effect`, `predict_region_replacement`, `predict_region_insertion`
 - **Scoring primitives**: `score_prediction_region`, `score_variant_effect_at_region`, `predict_variant_effect_on_gene`
+- **Base-resolution attribution**: `score_ism` — in-silico saturation mutagenesis: sweeps every single-base substitution in a window (default 25 bp) around a position and returns a per-position importance profile you can render as a motif logo, so you can see which bases the oracle actually reads. Works with any loaded oracle
 - **Multi-layer analysis (recommended for most users)**:
     - `analyze_variant_multilayer` — score a variant across chromatin, TF, histone, CAGE, RNA, splicing in one call
     - `discover_variant` — find top tracks/cell types for a variant without pre-selecting assays
@@ -1212,14 +1227,17 @@ Result: per-track histograms over real human-genome variant effects.
 
 ##### 2. Activity (window-sum) distribution
 
-~31,500 positions per track sampled to approximate the genome-wide distribution of regulatory activity:
+29,500–34,500 positions per track sampled to approximate the genome-wide distribution of regulatory activity:
 
-| Position type | Count | Purpose |
-|---|---|---|
-| Random intergenic | 15,000 | Genome-wide null (most genome is silent) |
-| ENCODE SCREEN cCREs (per category) | ~11,500 | PLS, dELS, pELS, CA-CTCF, CA-TF, TF, CA-H3K4me3, CA |
-| Protein-coding TSSs | 3,000 | Sharp signals: CAGE, H3K4me3, promoter activity |
-| Gene-body midpoints (>10 kb genes) | 2,000 | RNA-seq, H3K36me3, broad gene-body marks |
+| Position type | Count | Purpose | oracles |
+|---|---|---|---|
+| Random intergenic | 15,000 | Genome-wide null (most genome is silent) | all |
+| ENCODE SCREEN cCREs (per category) | ~11,500 | PLS, dELS, pELS, CA-CTCF, CA-TF, TF, CA-H3K4me3, CA | all |
+| Protein-coding TSSs | 3,000 | Sharp signals: CAGE, H3K4me3, promoter activity | all |
+| Gene-body midpoints (>10 kb genes) | 2,000 | RNA-seq, H3K36me3, broad gene-body marks | AlphaGenome, Enformer, Borzoi |
+| DHS summits (Meuleman vocabulary) | 5,000 | Peak-centric accessibility | ChromBPNet, Cherimoya, EPInformer-seq |
+
+So there are **three activity populations, not one**: 31,500 positions for the three long-context oracles, 34,500 for the accessibility-family ones, 29,500 for Sei and LegNet — which is what the "Activity samples / track" column below is counting. Each background records the content hash of the mixture it used; [`docs/BACKGROUND_NULL_PROTOCOL.md` §4](docs/BACKGROUND_NULL_PROTOCOL.md) has the per-oracle table and what is and is not comparable across them.
 
 For each position, the layer-appropriate window-sum is added to the track's reservoir.
 
@@ -1229,7 +1247,7 @@ For each position, the layer-appropriate window-sum is added to the track's rese
 
 ##### 3. Per-bin distribution (for IGV visualization)
 
-At each of the same ~31,500 positions, **32 random bins** from the full output window are added to the perbin reservoir. This captures the per-bin (not per-window) distribution at the track's native resolution (1 bp for ATAC/CAGE/RNA/PRO-CAP/splice; 128 bp for ChIP-Histone/TF in AlphaGenome).
+At each of the same positions, **32 random bins** from the full output window are added to the perbin reservoir. This captures the per-bin (not per-window) distribution at the track's native resolution (1 bp for ATAC/CAGE/RNA/PRO-CAP/splice; 128 bp for ChIP-Histone/TF in AlphaGenome).
 
 The per-bin CDFs are used by the unified `chorus.analysis._igv_report.rescale_for_display` helper (which all four track-rendering paths — IGV, matplotlib, CoolBox, notebooks — share) to rescale raw bin values onto a uniform `[0, 3.0]` display scale where `1.0` corresponds to the top-1% genome-wide bin value for that track and `3.0` is a hard cap. Signed layers (Borzoi RNA, Sei, LentiMPRA) use the symmetric variant `signed_floor_rescale_batch`, mapping to `[-3.0, +3.0]` with `±1.0 = p99(|effect|)`. This makes overlaid tracks visually comparable across cell types and across renderers.
 
@@ -1238,14 +1256,14 @@ The per-bin CDFs are used by the unified `chorus.analysis._igv_report.rescale_fo
 <!-- BEGIN GENERATED: background-table -->
 | Oracle | Tracks | Effect samples / track | Activity samples / track | Effect reference population | NPZ size |
 |---|---|---|---|---|---|
-| AlphaGenome | 5,168 | 11,934–148,367 | 6,337–104,033 | gene-anchored+ccre | 272 MB |
-| Enformer | 5,313 | 11,933 | 19,549–31,005 | gene-anchored+ccre | 550 MB |
-| Borzoi | 7,611 | 11,934–34,482 | 19,548–75,021 | gene-anchored+ccre | 793 MB |
-| ChromBPNet | 753 | 18,672–37,344 | 34,004–68,008 | uniform + DHS summits | 80 MB |
-| Cherimoya (CATv1) | 1,518 | 18,672 | 34,004 | uniform + DHS summits | 162 MB |
-| Sei | 40 | 11,934 | 29,004 | gene-anchored+ccre | 3 MB |
-| LegNet | 3 | 11,913 | 29,002 | promoter-anchored | 198 KB |
-| EPInformer-seq | 33 | 11,934 | 34,002 | gene-anchored+ccre | 2 MB |
+| AlphaGenome | 5,168 | 17,908–225,253 | 19,504–319,642 | gene-anchored + cCRE (17,909) | 279 MB |
+| Enformer | 5,313 | 17,907 | 19,549–31,005 | gene-anchored + cCRE (17,909) | 557 MB |
+| Borzoi | 7,611 | 17,908–51,831 | 19,548–75,021 | gene-anchored + cCRE (17,909) | 804 MB |
+| ChromBPNet | 753 | 18,672–37,344 | 34,004–68,008 | uniform + DHS summits (18,672) | 79 MB |
+| Cherimoya (CATv1) | 1,518 | 18,672 | 34,004 | uniform + DHS summits (18,672) | 162 MB |
+| Sei | 40 | 17,909 | 29,004 | gene-anchored + cCRE (17,909) | 3 MB |
+| LegNet | 3 | 17,805 | 29,002 | promoter-anchored (17,805) | 200 KB |
+| EPInformer-seq | 33 | 17,909 | 34,002 | gene-anchored + cCRE (17,909) | 2 MB |
 <!-- END GENERATED: background-table -->
 
 Effect and activity reservoirs are converted to 10,000-point CDFs (sorted sample arrays) — so a percentile lookup is a single O(log n) bisect.
@@ -1289,13 +1307,18 @@ report = build_variant_report(
 )
 ```
 
-Or pre-download all seven oracles' backgrounds once:
+Or pre-download all eight oracles' backgrounds once:
 
 ```python
 from chorus.analysis.normalization import download_pertrack_backgrounds
-for o in ["alphagenome", "enformer", "borzoi", "chrombpnet", "sei", "legnet", "epinformerseq"]:
+for o in ["alphagenome", "enformer", "borzoi", "chrombpnet", "cherimoya",
+          "sei", "legnet", "epinformerseq"]:
     download_pertrack_backgrounds(o)
 ```
+
+This is also how you pick up a rebuilt background: `download_pertrack_backgrounds`
+checks a cached file and refetches it if it predates the current provenance schema,
+rather than keeping whatever is on disk.
 
 #### Using backgrounds via MCP / Claude
 
@@ -1322,7 +1345,7 @@ A high effect percentile with very low activity is usually noise (small absolute
 
 #### Reproducing or extending the backgrounds
 
-Each oracle has a build script at `scripts/build_backgrounds_<oracle>.py`. Each takes ~4–22 GPU-hours per oracle depending on the track count and output window. To rebuild a single oracle:
+Each oracle has a build script under `scripts/` — `build_backgrounds_<oracle>.py` for seven of the eight, and `build_backgrounds_epinformerseq_v2_percell.py` for EPInformer-seq. Each takes ~4–22 GPU-hours per oracle depending on the track count and output window. To rebuild a single oracle:
 
 ```bash
 mamba run -n chorus-alphagenome python scripts/build_backgrounds_alphagenome.py --part variants  --gpu 0
@@ -1332,4 +1355,4 @@ mamba run -n chorus              python scripts/build_backgrounds_alphagenome.py
 
 The variants and baselines parts can run in parallel on separate GPUs. The merge step runs CPU-only and combines the interim NPZ files into the final `{oracle}_pertrack.npz`. See [`scripts/README.md`](scripts/README.md) for the full per-oracle commands and runtimes.
 
-If you've rebuilt a background and want to share it: drop the resulting `{oracle}_pertrack.npz` into `~/.chorus/backgrounds/`. The downloader will not overwrite local files — it only fetches when the file is missing.
+If you've rebuilt a background and want to share it: drop the resulting `{oracle}_pertrack.npz` into your data directory (`chorus config data-dir` shows which one resolved — it defaults to the install tree, not `$HOME`). The downloader leaves a local file alone **unless** its provenance says it has been superseded by a newer published build, in which case it is moved to `*.npz.superseded` and refetched. That behaviour is deliberate: the earlier "only fetch when missing" rule meant a corrected background could be published and reach nobody who already had the old one.

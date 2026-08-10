@@ -8,11 +8,35 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Optional
+from chorus.core.globals import CHORUS_CONFIG_PATH
 
 logger = logging.getLogger(__name__)
 
-_LDLINK_CONFIG_PATH = Path.home() / ".chorus" / "config.toml"
+_LDLINK_CONFIG_PATH = CHORUS_CONFIG_PATH
+
+
+def _redact(text: str, *secrets: Optional[str]) -> str:
+    """Remove secrets from a string that is about to be shown to someone.
+
+    ``requests`` builds its exception messages from the FULL request URL, and the
+    LDlink token travels as a query parameter, so every transport error --
+    timeout, 429, 401, a 503 through ``raise_for_status`` -- carried the user's
+    real token verbatim into the message. Those messages reach
+    ``mcp/server.py`` as ``{"error": str(exc)}`` and into
+    ``f"Could not resolve {rsid!r} via LDlink: {exc}"``, i.e. straight into an
+    agent transcript, a notebook output, or a log.
+
+    Belt and braces: the named secret is removed, AND any ``token=`` query
+    parameter is blanked, so a token that arrived by a route this function was
+    not told about is still not printed.
+    """
+    out = text
+    for secret in secrets:
+        if secret:
+            out = out.replace(secret, "<redacted>")
+    return re.sub(r"(?i)([?&]token=)[^&\s'\"]+", r"\1<redacted>", out)
 
 
 def _resolve_ldlink_token(explicit: Optional[str]) -> Optional[str]:
@@ -141,11 +165,14 @@ def fetch_ld_variants(
         resp = requests.get(url, params=params, timeout=timeout)
         resp.raise_for_status()
     except requests.RequestException as exc:
-        raise LDLinkError(f"LDlink API request failed: {exc}") from exc
+        # Redact before interpolating: the message contains the request URL.
+        raise LDLinkError(
+            f"LDlink API request failed: {_redact(str(exc), token)}"
+        ) from exc
 
     text = resp.text
     if "error" in text.lower() and len(text) < 500:
-        raise LDLinkError(f"LDlink API error: {text.strip()}")
+        raise LDLinkError(f"LDlink API error: {_redact(text.strip(), token)}")
 
     variants = parse_ld_response(text, r2_threshold=r2_threshold)
     if snvs_only:

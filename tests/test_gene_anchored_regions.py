@@ -171,21 +171,53 @@ def _nearest(table, chrom, pos):
 
 
 def test_far_more_tss_proximal_than_uniform_random(sampled, anchors, sizes):
-    """The whole point: give CAGE's null some positions where CAGE has signal."""
+    """The whole point: give CAGE's null some positions where CAGE has signal.
+
+    Asserted PER STRATUM plus an aggregate enrichment, not as an aggregate median.
+
+    The median over the whole mixture is not a property additive union preserves. When
+    the DHS third was added, every TSS-anchored count stayed identical (2,400
+    positions at n=18,000) but the aggregate median distance-to-TSS rose from ~21 kb
+    to 32.7 kb, purely because DHS summits are accessibility-general -- measured 3.6%
+    within 1 kb of a TSS, median 68.7 kb, i.e. mostly enhancer-distal. A median
+    threshold therefore failed while the property it was protecting was untouched.
+    This is the same brittleness already documented for the random stratum above:
+    assert the count, not the share.
+    """
     import random
+    from collections import Counter
 
     tss, _ = anchors
     got = np.array([_nearest(tss, c, p) for c, p, _ in sampled])
+    strata = np.array([s for _, _, s in sampled])
 
+    # Sharp and non-flaky: tss_near is defined as within +/- 1 kb, so every one of
+    # its positions must be. Measured 100.0%, median 413 bp. This is the assertion
+    # that actually fails if the stratum breaks.
+    near = got[strata == "tss_near"]
+    assert len(near) > 0
+    assert (near <= 1_001).all(), (
+        f"{(near > 1_001).sum()} of {len(near)} 'tss_near' positions are further "
+        f"than 1 kb from any TSS; worst {near.max():,} bp"
+    )
+
+    # And the mixture as a whole must still be strongly TSS-enriched over uniform.
     rng = random.Random(7)
     usable = [k for k in sizes if sizes[k] > 10_000_000]
     uniform = np.array([
         _nearest(tss, c, rng.randint(5_000_000, sizes[c] - 5_000_000))
         for c in (rng.choice(usable) for _ in range(2_000))
     ])
-
-    assert np.median(got) < np.median(uniform) / 5
-    assert (got <= 1_000).mean() > 8 * (uniform <= 1_000).mean()
+    frac_got, frac_uni = (got <= 1_000).mean(), (uniform <= 1_000).mean()
+    # Measured 13.60% vs 1.40% = 10x. The threshold is 5x rather than 8x because the
+    # uniform baseline is ~28 of 2,000 positions, so the ratio itself carries a few
+    # points of sampling noise.
+    assert frac_got > 5 * frac_uni, (
+        f"only {frac_got:.2%} of sampled positions are within 1 kb of a TSS against "
+        f"{frac_uni:.2%} for uniform draws ({frac_got / max(frac_uni, 1e-9):.1f}x)"
+    )
+    counts = Counter(strata)
+    assert counts["tss_near"] + counts["tss_far"] >= 0.13 * len(sampled)
 
 
 def test_far_more_junction_proximal_than_uniform_random(sampled, anchors, sizes):
@@ -200,7 +232,16 @@ def test_far_more_junction_proximal_than_uniform_random(sampled, anchors, sizes)
         _nearest(junctions, c, rng.randint(5_000_000, sizes[c] - 5_000_000))
         for c in (rng.choice(usable) for _ in range(2_000))
     ])
-    assert (got <= 100).mean() > 5 * (uniform <= 100).mean()
+    # Per-stratum first, for the same reason as the TSS test: the aggregate share
+    # legitimately falls when another component is added additively.
+    strata = np.array([s for _, _, s in sampled])
+    j = got[strata == "junction"]
+    assert len(j) > 0
+    assert (j <= 101).all(), (
+        f"{(j > 101).sum()} of {len(j)} 'junction' positions are further than 100 bp "
+        f"from any exon boundary; worst {j.max():,} bp"
+    )
+    assert (got <= 100).mean() > 3 * (uniform <= 100).mean()
 
 
 def test_tss_strata_land_near_a_tss(sampled, anchors):

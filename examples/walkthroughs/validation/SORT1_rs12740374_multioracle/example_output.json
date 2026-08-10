@@ -11,11 +11,13 @@
   "gene_name": "SORT1",
   "oracles": [
     "chrombpnet",
+    "cherimoya",
     "legnet",
     "alphagenome"
   ],
   "per_oracle_report_paths": {
     "chrombpnet": "rs12740374_SORT1_chrombpnet_report.html",
+    "cherimoya": "rs12740374_SORT1_cherimoya_report.html",
     "legnet": "rs12740374_SORT1_legnet_report.html",
     "alphagenome": "rs12740374_SORT1_alphagenome_report.html"
   },
@@ -24,10 +26,19 @@
       "layer": "chromatin_accessibility",
       "oracles": {
         "chrombpnet": {
-          "raw_score": 1.375624605011599,
+          "raw_score": 1.375621207005794,
           "assay_id": "DNASE:HepG2",
           "cell_type": "HepG2",
           "quantile_score": 0.9995,
+          "effect_exceedance": null,
+          "description": "DNASE:HepG2"
+        },
+        "cherimoya": {
+          "raw_score": 1.457627993006423,
+          "assay_id": "DNASE:ENCSR149XIL",
+          "cell_type": "HepG2",
+          "quantile_score": 0.9997,
+          "effect_exceedance": null,
           "description": "DNASE:HepG2"
         },
         "legnet": null,
@@ -35,81 +46,100 @@
           "raw_score": 1.3344578086817067,
           "assay_id": "DNASE/EFO:0001187 DNase-seq/.",
           "cell_type": "HepG2",
-          "quantile_score": 0.9976,
+          "quantile_score": 0.9964,
+          "effect_exceedance": null,
           "description": "DNASE:HepG2"
         }
       },
-      "agreement": "consensus_gain"
+      "agreement": "consensus_gain",
+      "spread": {
+        "min": 1.3344578086817067,
+        "max": 1.457627993006423,
+        "range": 0.12317018432471638,
+        "n_oracles": 3
+      }
     },
     {
       "layer": "promoter_activity",
       "oracles": {
         "chrombpnet": null,
+        "cherimoya": null,
         "legnet": {
           "raw_score": 0.3465881049633026,
           "assay_id": "LentiMPRA:HepG2",
           "cell_type": "HepG2",
-          "quantile_score": 0.9878,
+          "quantile_score": 0.9874,
+          "effect_exceedance": null,
           "description": "LentiMPRA:HepG2"
         },
         "alphagenome": null
       },
-      "agreement": "single_gain"
+      "agreement": "single_gain",
+      "spread": null
     },
     {
       "layer": "tf_binding",
       "oracles": {
         "chrombpnet": null,
+        "cherimoya": null,
         "legnet": null,
         "alphagenome": {
           "raw_score": 2.9454282931023896,
           "assay_id": "CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.",
           "cell_type": "HepG2",
-          "quantile_score": 0.9999,
+          "quantile_score": 0.9998,
+          "effect_exceedance": null,
           "description": "CHIP:CEBPA:HepG2"
         }
       },
-      "agreement": "single_gain"
+      "agreement": "single_gain",
+      "spread": null
     },
     {
       "layer": "histone_marks",
       "oracles": {
         "chrombpnet": null,
+        "cherimoya": null,
         "legnet": null,
         "alphagenome": {
           "raw_score": 1.2505934648002608,
           "assay_id": "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.",
           "cell_type": "HepG2",
-          "quantile_score": 0.9995,
+          "quantile_score": 0.9992,
+          "effect_exceedance": null,
           "description": "CHIP:H3K27ac:HepG2"
         }
       },
-      "agreement": "single_gain"
+      "agreement": "single_gain",
+      "spread": null
     },
     {
       "layer": "tss_activity",
       "oracles": {
         "chrombpnet": null,
+        "cherimoya": null,
         "legnet": null,
         "alphagenome": {
           "raw_score": 1.5022141347796536,
           "assay_id": "CAGE/hCAGE EFO:0001187/-",
           "cell_type": "HepG2",
-          "quantile_score": 0.9988,
+          "quantile_score": 0.9983,
+          "effect_exceedance": null,
           "description": "CAGE:HepG2"
         }
       },
-      "agreement": "single_gain"
+      "agreement": "single_gain",
+      "spread": null
     }
   ],
   "analysis_request": {
     "user_prompt": "Validate rs12740374 (the classic SORT1 LDL-cholesterol causal variant) by scoring it with three independent deep-learning oracles: ChromBPNet for chromatin accessibility, LegNet for MPRA promoter activity, and AlphaGenome as a generalist model covering ChIP, histones and CAGE. A new user should be able to see at a glance whether the three oracles agree on direction, and which assay/cell type drove each call.",
     "tool_name": "MultiOracleReport",
-    "oracle_name": "chrombpnet, legnet, alphagenome",
+    "oracle_name": "chrombpnet, cherimoya, legnet, alphagenome",
     "normalizer_name": "per-oracle chorus per-track v1",
     "tracks_requested": "assay_ids as listed in each per-oracle request",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-05 05:14 UTC"
+    "generated_at": "2026-08-10 11:33 UTC"
   }
 }
