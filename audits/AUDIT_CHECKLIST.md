@@ -239,13 +239,10 @@ mamba run -n chorus python -m pytest tests/ -q -m ""            # everything, no
       common command honest; it does not retire the suite. `pytest -m integration` on a
       release host: SEI/LegNet CDF download, ChromBPNet fresh model download, MCP E2E,
       the 6 oracle smoke tests and the Cherimoya builder-vs-query invariant all pass.
-- [ ] CI workflow at `.github/workflows/tests.yml` runs green on the PR. It still passes
-      a redundant `-m "not integration"` and `--ignore=tests/test_smoke_predict.py`;
-      both are now unnecessary (the filter lives in `pytest.ini`, and the smoke tests are
-      marked and guarded) but harmless. **Open tidy-up:** deleting them needs a push with
-      the GitHub `workflow` OAuth scope. Its header comment also still claims a "303-test"
-      suite. `tests/test_default_pytest_run_excludes_integration.py` asserts only that CI
-      never *widens* the selection, which is the property that matters.
+- [ ] CI workflow at `.github/workflows/tests.yml` runs green on the PR, and runs
+      `pytest tests/ -q --durations=10` with **no** marker filter and **no** `--ignore` —
+      the same command a contributor runs.
+      `tests/test_default_pytest_run_excludes_integration.py` fails if either comes back.
 - [ ] Coverage of new code paths: any new oracle / normalizer / tool needs its own test.
 
 ## 12. Reproducibility
