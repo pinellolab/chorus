@@ -729,3 +729,164 @@ measurement. The pattern to distrust is *"the machine was busy"* as a first expl
 - `effect_sha256` remains circular (Addendum E) — the stamp is copied post-hoc, so it cannot
   independently prove two oracles drew the same population. The conclusion it was cited for
   was separately re-established; the stamp's semantics or its documentation should be fixed.
+
+---
+
+# Addendum G — two notebook defects reported from the rendered output (2026-08-09/10)
+
+Reported by the maintainer while reviewing: *"prediction on synthetic sequences shows a white
+plot, also the analysis of variant in this notebook doesn't show differences"* —
+`examples/notebooks/single_oracle_quickstart.ipynb`. Both reproduce. Neither is a regression
+from this branch, and both are the same failure mode as the rest of this document: **a figure
+or a number that describes something other than what it appears to.**
+
+## Not a regression, and that was checked before anything was changed
+
+Cell 47's panel has been blank since **2026-08-01** — first committed in `b0a5731`, squash-merged
+as `8651432`, which was the first re-execution of the notebook after the 2026-05-08 change
+(`0c2b8e6`) made `normalize=True` with a fixed 0–3 axis the default for
+`get_coolbox_representation`. Ink fraction is **0.07034 at `9cc6587` (2026-04-27) and earlier**,
+where the axes autoscaled to 0–0.10 / 0–0.25 and ~80 spikes were visible, against **0.01066** at
+`8651432`, `049ba77`, the merge-base `3e7990a`, `3599fd2`, `db4f312` and HEAD. The branch's
+re-execution reproduced the same image: ink masks bit-identical, 26 pixels of 1,098,064 differing.
+
+## Example E — the white plot had two stacked causes, and fixing one was not enough
+
+The builder was broken in a way that made its own `element_positions` list fiction. It appended
+blocks of 87 bp, 40 bp or 1,000 bp inside `for i in range(0, context_size, 1000)`, so:
+
+| measured | value |
+|---|---|
+| joined length before truncation | **221,073 bp = 56.2%** of 393,216 → `[:context_size]` never fired |
+| poly-A appended by the padding branch | **172,143 bp = 43.8%** of the final sequence |
+| `ACGT` tandem repeat | 210,000 bp = 53.4% |
+| literal `N` (one-hot encodes to all-zeros) | 7,630 bp = 1.94% |
+| **real motif bases** | **3,443 bp = 0.88%** |
+| drift of the 5th "promoter every 5 kb" | −8,452 bp, reaching −171,054 bp at the last |
+
+The prediction was therefore honest and useless: raw max **0.0983** (DNase) and **0.2468** (CAGE)
+against genome-wide display floors of p90 **0.09101** and p95 **0.21096**, rendering at **0.20%**
+and **1.49%** of a 0–3 axis.
+
+**Fixing the builder alone does not fix the figure**, and an independent arm measured that:
+uniform-random filler, no `N`, no padding, every motif retained still gives a display max of
+**0.367** — still blank. Enformer predicts accessibility from promoter context, not isolated
+motifs. A GATA cluster alone (design C) reproduces the failure exactly: display **0.13**, peak
+408 bins from where it was planted.
+
+What works is a CpG island around the cluster. Four designs were measured; the shipped one is
+a 1 kb CpG island + 20 GATA motifs at 45 bp spacing + a TATA box at the centre of the input,
+because the output window is the central 114,688 bp:
+
+| design | DNase display | CAGE display | peak vs centre |
+|---|---|---|---|
+| GATA cluster only | 0.13 | 1.52 | 408 bins away |
+| CpG island only | 0.32 | 1.05 | 9 / 401 bins |
+| **1 kb CpG + GATA + TATA (shipped)** | **1.71** | **2.93** | **5 / 0 bins** |
+| 2 kb CpG + denser GATA | 0.84 | 3.00 (capped) | 6 / 3 bins |
+
+Robust across five seeds: DNase display 1.71–2.40, CAGE 2.59–3.00, peak always at bin 443 —
+inside the planted island. After re-execution the committed figure peaks at **56.8%** and
+**98.1%** of its axis.
+
+## Example D — the effect was real; the statistic hid it
+
+`np.mean(pred.values)` over all 896 bins × 128 bp = 114,688 bp, differenced between alleles.
+Measured on the old variant (chrX:48786129):
+
+- a real, deterministic local change — DNase ref 3.0744 at the variant bin, Δ **−0.03384**;
+  CAGE ref 129.31 at bin 451, Δ **−0.38765** — reproduced bitwise across two GPU processes;
+- diluted **54×–1307×** by the window mean;
+- **sign-inverted in 5 of 6 (track, allele) combinations** — the notebook printed **+2.57e-4**
+  for DNase C>A while the variant's own bin had *dropped* by 0.0338;
+- the ref/alt overlay separated by **≤0.98 px** on a 280 px axis, i.e. sub-pixel;
+- `variant_results['effect_sizes']` — a per-bin `(896,)` array that is exactly `alt − ref` —
+  fetched in cell 40 and **never used**.
+
+The variant was also close to non-functional (−1.1% of its local peak), so the example taught
+that variants do nothing. A scan of 86 positions replaced it with **chrX:48783008 A>C**, inside
+`TTATCT` at chrX:48783006-48783011 — revcomp `AGATAA`, a canonical WGATAR site — 3.5 kb upstream
+of the *GATA1* TSS. Reference base verified as `A` from hg38 before use. Measured after
+re-execution:
+
+| track | ref at variant bin | Δ | local | largest \|Δ\| |
+|---|---|---|---|---|
+| DNASE:K562 | 11.1984 | **−10.9264** | **−97.6%** | at the variant bin |
+| CAGE:K562 | 24.2055 | −24.1154 | −99.6% | **−29.68 at +3,456 bp** — the *GATA1* promoter, 103.7 → 74 |
+
+The cell now reports the change at the variant bin, the largest per-bin change and its offset,
+and labels the window mean as the diluted summary it is. The figure gained a difference track,
+because an absolute overlay cannot show a small effect at any y-scale.
+
+## The same two defects elsewhere, and what a sweep of all six notebooks found
+
+| notebook | cell | defect | measured |
+|---|---|---|---|
+| `comprehensive_oracle_showcase` | 16 | near-blank panel | 0.49% ink, trace 7.8% of axis; the prediction covers 13,060 bp of a 114,688 bp x-range — **88.6% of the panel empty by construction** |
+| `comprehensive_oracle_showcase` | 35/36/51 | window-mean effect | 132× to **139,130×** understatement; cell 36 *plotted* the diluted value |
+| `advanced_multi_oracle_analysis` | 69 | byte-identical expression | see below — the mean is not diluted here |
+| `epinformerseq_testing` | 29/30 | whole-window sum | +1.067 vs +1.426 log2FC against cell 16 of the *same notebook*, which does it correctly |
+
+## Two things I got wrong, caught by the adversarial reviewers
+
+**1. ChromBPNet's window sum is not a diluted statistic, and I told the fixers it was.** I
+briefed them that `advanced_multi_oracle_analysis` cell 69 "happens to survive because the
+destroyed CTCF peak holds most of the window's signal mass." Two independent reviewers refuted
+it from the source: ChromBPNet emits `softmax(profile) * expm1(counts)`
+(`chorus/oracles/chrombpnet.py:600-612`), and the softmax sums to 1 across positions, so the sum
+over its 1,000 predicted bins **is** `expm1(counts)` — the count head's total-accessibility
+prediction, and ChromBPNet's own published counts readout. A single base moves that scalar and
+rescales **every** bin, which is why the window mean drops ~66% for every alt allele. The prose
+in both notebooks now states the real mechanism; the wrong one would have taught a plausible
+falsehood in the very cell written to prevent one. Also recorded: `Window_mean` divides by all
+2,114 bins while `_insert_into_output` leaves 1,114 of them as structural zeros, so it is ~2.1×
+below a mean over the predicted span; and the largest per-bin change sits **33 bp upstream** at
+−4.76, ~72× the −0.066 in the variant's own bin.
+
+**2. A fix silently redefined a column its own figure labels.** In `epinformerseq_testing` the
+pseudocount change was applied to `linear_fold_change` as well, making it `(alt+1)/(ref+1)` =
+**2.69×** — while cell 27 calls that column "ALT/REF in linear space" and the section-6 figure's
+axis reads "linear ALT/REF fold change", where the true ratio is 7.012/1.983 = **3.54×**. Reverted
+to the plain ratio. The same review caught the comment quoting "2.69×" as if it were that ratio,
+a log2 gap (0.357) computed across two different pseudocount conventions (0.359 held at one,
+0.753 at neither), and cell 27's "log₂-counts for ChromBPNet" becoming false once the statistic
+changed to a central-256-bp max. All corrected.
+
+## The test that was missing
+
+`grep -rl "image/png" tests/` returned **zero files**: nothing in the suite had ever looked at a
+notebook's pixels, and all 13 assertions in the three notebook-figure tests pass against a blank
+panel, because axis limits, titles and normalization flags can all be correct while the trace
+between them is invisible.
+
+`tests/test_notebook_figures_are_not_blank.py` decodes all 41 committed PNGs. Its useful finding
+is that **the obvious check is inverted**: measured ink fractions are 0.0049–0.0107 for the two
+blank panels and 0.0019–0.0038 for four legitimately sparse ones (narrow ChIP/DNase footprints in
+a 100 kb window), so any ink threshold that fails the blanks also fails four correct figures. The
+separating signal is trace peak height as a fraction of its own axis — 0.32%/1.29%/7.80% for the
+blanks against 14.05%–24.59% for the sparse ones — and the threshold is the geometric midpoint of
+that measured gap, `sqrt(0.0780 * 0.1405) = 0.1047`, 1.34× clear on each side. The docstring
+records why an ink threshold cannot work, so it is not "simplified" back into a broken test.
+
+## The second blank panel was the wrong tissue, not a rendering bug
+
+`comprehensive_oracle_showcase.ipynb` cell 16 survived the first fix. Restricting the plot to
+the span the prediction actually covers raised its coloured ink 33× (0.006% → 0.198%) but left
+the trace at **6.72% of its axis** — still under the new test's 10.47% floor, and still unreadable.
+
+The x-range was a real defect but not the cause. The cause is that the notebook profiles the
+*GATA1* locus with **ChromBPNet DNASE:HepG2**, while every other panel in the same notebook uses
+K562 (`enformer_tracks = ['ENCFF413AHU', 'CNhs11250']`, both K562). *GATA1* is erythroid; HepG2
+is a hepatocyte line. A cell-type-specific accessibility model asked about a promoter that is
+closed in its cell type correctly answers "almost nothing":
+
+| ChromBPNet DNASE model over GATA1_REGION | raw mean | raw max | display max | % of a 0–3 axis |
+|---|---|---|---|---|
+| HepG2 (what shipped) | 0.0716 | 1.126 | 0.236 | **7.9%** |
+| **K562 (correct tissue)** | 0.2633 | **6.077** | 0.930 | **31.0%** |
+
+Switched to K562, with the reason written into the cell rather than left as a coincidence. Worth
+noting what the blank-panel test bought here: it did not merely catch a bad figure, it caught a
+showcase silently comparing a liver model against erythroid models at an erythroid locus — and
+the first, plausible fix did not move the measurement past the threshold, which is exactly the
+outcome a pixel-level assertion is for.
