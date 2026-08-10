@@ -77,6 +77,16 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
+- **Cherimoya's IGV track rendered at a fifth of its true height, because display pooling was keyed on oracle *name*.** `_calculate_track_bin_size` max-pooled ChromBPNet and LegNet by name and mean-pooled everything else. Cherimoya is a BPNet-family model with the same 1 bp point-profile output as ChromBPNet, but it was not in the list, so it fell through to mean-pooling — which dilutes a one-base peak by the width of the display bin.
+
+  Measured on the SORT1 multi-oracle panel (`DNASE:ENCSR149XIL`, 1,048,396 bp window, 349 bp bins): the ensemble 1 bp profile peaks at **11.10**, which max-pools to a rendered **3.000** — the same ceiling ChromBPNet reaches — but mean-pooled to **0.547**. A **5.5× display-only dilution**, drawn on the same 0–3 axis as ChromBPNet, in a report whose entire purpose is cross-oracle comparison.
+
+  **No score was ever affected**, and that is worth stating precisely because the panel invited the opposite conclusion: the 501 bp window sum is linear, so Cherimoya's log2FC was `1.4576` against ChromBPNet's `1.3756` throughout, with quantiles 0.9997/0.9995 and Cherimoya's reference window at the *higher* activity percentile (0.957 vs 0.906).
+
+  Two candidate universal rules were measured and both are wrong, so the fix does not pretend one exists. `resolution <= 1` would also flip AlphaGenome, which emits DNase at 1 bp as well — it must not flip, because a point profile is sparse on a near-zero floor (Cherimoya's null: p50 0.075, p99 3.38) where max recovers the peak without lifting the floor, whereas AlphaGenome's 1 bp DNase is dense coverage (p50 0.020, p99 0.285) where max over 349 dense bins would inflate the whole track. And artefact "spikiness" points the wrong way: per-bin max/p99 is 22 for Cherimoya against 65 for AlphaGenome. So pooling is now a **declared per-oracle property**, with `tests/test_igv_pooling_is_declared_per_oracle.py` failing for any oracle that is neither declared a point-profile nor declared coverage — a silent fall-through is what caused this.
+
+  Both affected artefacts regenerated. AlphaGenome, ChromBPNet and LegNet feature values are bit-identical across the change.
+
 - **The background sampler was throwing away the tail it existed to measure.** Every percentile Chorus reports is a rank against a per-track empirical null, and `effect_percentile` is `min(rank/denominator, 1.0)` — so it clamps the moment an effect reaches the largest *sampled* background value. That ceiling had been patched three times (re-anchoring, union-at-2N, the read-side `effect_exceedance` ratio). None of them addressed the cause, because the cause was a defect, not a limitation:
 
   **`ReservoirSampler` keeps a uniform subsample once a track's offered count exceeds its capacity, and a uniform *m*-of-*N* subsample retains the population maximum with probability exactly *m/N*.** The maximum is precisely what the clamp is computed against. So the sampler was, by construction, discarding the statistic the whole mechanism depends on — and doing it silently, at a rate nobody had measured.

@@ -1,6 +1,6 @@
 oracle	allele	layer	assay_id	region_label	assay_type	cell_type	ref_value	alt_value	raw_score	quantile_score	effect_exceedance	ref_signal_percentile	note
 chrombpnet	alt_1	chromatin_accessibility	DNASE:HepG2		DNASE	HepG2	287.2175592780113	746.8658150732517	1.375621207005794	0.9995		0.906	
-cherimoya	alt_1	chromatin_accessibility	DNASE:ENCSR149XIL		DNASE	HepG2	782.9413022669074	2152.150790311165	1.4576318169650866	0.9997		0.9573	
+cherimoya	alt_1	chromatin_accessibility	DNASE:ENCSR149XIL		DNASE	HepG2	782.9505585391711	2152.1705061957346	1.457627993006423	0.9997		0.9573	
 legnet	alt_1	promoter_activity	LentiMPRA:HepG2		LentiMPRA	HepG2	0.37093088030815125	0.7175189852714539	0.3465881049633026	0.9874		0.9154	
 alphagenome	alt_1	chromatin_accessibility	DNASE/EFO:0001187 DNase-seq/.		DNASE	HepG2	660.1571044921875	1666.310546875	1.3344578086817067	0.9964		0.9725	
 alphagenome	alt_1	tf_binding	CHIP_TF/EFO:0001187 TF ChIP-seq CEBPA genetically modified (insertion) using CRISPR targeting H. sapiens CEBPA/.		CHIP	HepG2	2070.0	15952.0	2.9454282931023896	0.9998		0.9862	
