@@ -357,6 +357,79 @@ Measured: a GPD fit overshoots the far tail **3.8×**, an exponential undershoot
 ratio to the ceiling instead — a fact about the sample rather than a modelling
 assumption.
 
+### 6.5 From `perbin_cdfs` to a colour — the display scale
+
+`perbin_cdfs` is the only null whose output is a *picture*, so it is the only one where
+being statistically right is not sufficient — it also has to be legible. Two decisions sit
+between the CDF and the rendered track, and both used to be hardcoded per oracle **name**:
+
+**The band.** `perbin_floor_rescale_batch` maps a raw value to
+`clip((v − floor) / (peak − floor), 0, 3)`, with `floor = cdf[p95]` and `peak = cdf[p99]`,
+so 1.0 always means "genome-wide p99 for this track" and the ceiling is 3.0. That band
+assumes signal decays smoothly out of the background. It is right for accessibility and
+wrong for base-resolution TSS assays, where the distribution is a huge near-zero mass plus a
+tiny population of enormous peaks: AlphaGenome CAGE has p95 = 0.0050 and p99 = 0.0405
+against a maximum of **852**, so every real TSS from strength 1 to 3000 rendered at exactly
+3.00, with 13.1% of the panel's bins pinned at the ceiling.
+
+A track is re-rendered on a log band (`log1p`, anchored p99.5/p99.9) when the linear band is
+measured to clip more than 4% of the bins it will draw. **The trigger is the rendered panel,
+not the CDF** — `perbin_cdfs` cannot answer this question, and four attempts to make it
+answer are recorded here because each looked plausible:
+
+| candidate statistic | must-log | must-stay-linear | verdict |
+|---|---|---|---|
+| `max / p99.9` | down to 172 | **up to 4212** (ChromBPNet ChIP) | overlaps |
+| `p99.9 / p99` | p5 5.7 | p95 8.6 | overlaps |
+| `p99 / p95` | p5 3.0 | p95 8.1 | overlaps |
+| predicted clip fraction | p5 0.0028 | p95 0.0044 | overlaps |
+
+`max/p99.9` at a threshold of 50 looked clean at 41× separation until ChromBPNet's ChIP
+tracks were added to the protected set; it would have log-scaled 104 of them plus 10 Enformer
+and 8 Borzoi CAGE tracks and a Cherimoya DNase track. Note also that on a 10,000-point grid
+`int(0.9999 × n)` is the **last slot**, so "p99.99" is the track maximum and that statistic is
+a ratio to a single extreme order statistic — §6.4's warning applies to it directly.
+
+Two properties of the measurement matter:
+
+* **It is taken as drawn, not natively.** Pooling is what creates saturation. CAGE's native
+  clip rate is 0.005–0.014, indistinguishable from the ChIP tracks at 0.001–0.008; CAGE is
+  1 bp and collapses 349 native bins per display bin where ChIP is 128 bp and collapses 2.
+  Only after pooling do they separate, 0.131 against ≤0.013.
+* **Acceptance is two-sided.** The log band is kept only if saturation falls *and* the
+  strongest feature still reaches 1.0. Without that second test, p99.9/p99.99 anchors
+  "fixed" CAGE by dropping its peak to 1.24 of 3.0 — zero saturation, no track.
+
+So a wrong trigger cannot damage a track: it either changes nothing or it demonstrably
+improves the panel. In practice it fires on AlphaGenome's 1 bp CAGE and splice layers, and
+the reason is **resolution, not assay**: Enformer (128 bp) and Borzoi (32 bp) pre-bin CAGE,
+which smooths the spike away, so their panels never clip enough to trigger. A track with no
+CDF keeps the linear band, because it cannot be rescaled at all.
+
+**The pooling operator.** IGV caps a track at 4,000 features, so a 1 Mb panel draws ~349 bp
+display bins and each one must reduce ~349 native values to one number. Max-pooling can
+never lose a peak; mean-pooling can never lift a floor. Which risk is real is a property of
+the *track*, not the oracle — AlphaGenome needs opposite answers for its own 1 bp and 128 bp
+layers — so `choose_aggregation` max-pools, measures the median of the result, and falls
+back to mean only if the floor actually rose. Five cheaper predictors were measured first
+and every one of them gets the sign backwards on at least one oracle, including two read
+straight off the artefact (perbin `max/p99`, and signal mass above p99).
+
+**Read the saturated fraction, not the ink fraction.** A panel is unreadable when a large
+share of its bins *clip*, not when many of them are non-empty. On the shipped SORT1 panel
+Cherimoya inks 41% of its display bins and reads correctly, because only 1.3% of them
+saturate; CAGE at 13.1% saturated was a solid block. An ink-fraction criterion was tried
+for pooling and flipped Cherimoya and ChromBPNet to mean, re-creating the 5.5× dilution it
+was meant to fix. The two concerns stay separate: **pooling protects the floor, the band
+protects the peaks.**
+
+Scope is pinned by `tests/test_display_scale_is_measured_not_declared.py`, including the
+check that all three duplicated render paths (`_igv_report`, `multi_oracle_report`,
+`causal`) go through the measured decision — patching one of three is how a change here
+came back reporting byte-identical output.
+
+---
+
 ---
 
 ## 7. Guards, and what each one catches
@@ -533,6 +606,9 @@ oracle and leaves it unstamped, with a non-zero exit code; the other seven still
 | 2026-08-06 | percentiles stay **strictly empirical** | GPD overshoots the far tail 3.8×, exponential undershoots 0.27×, empirical max within 13% |
 | 2026-08-06 | vectorising Algorithm R **not** done | measured 2.4M values/s ≈ 19% of a pass; saves <1 h fleet-wide while changing every retained sample |
 | 2026-08-07 | motif-anchored ChIP null **deferred** | cost is per-TF scoring (240 TFs × ~6,000 passes), not motif lookup; and peak/attribution-derived positions cannot contain motif-*creating* variants, which is the saturating case |
+| 2026-08-10 | display **pooling** measured per track, not declared per oracle | Cherimoya (1 bp, BPNet family, absent from the hardcoded list) rendered its peak at 0.547 against ChromBPNet's 3.000 on the same axis — 5.5×, display-only. Five cheaper predictors each get the sign wrong on ≥1 oracle |
+| 2026-08-10 | display **band** log-scaled when the *rendered panel* is measured to clip >4% of its bins | AlphaGenome CAGE p99 = 0.0405 against max 852: 13.1% of display bins pinned at the ceiling, against 0.0–1.3% on the panels that read well. Fixed to 1.3%, peak still 3.00 |
+| 2026-08-11 | the trigger is **not** a genome-wide CDF statistic | all four candidates overlap between must-change and must-not-move; `max/p99.9 > 50` would have log-scaled 104 ChromBPNet ChIP, 10 Enformer + 8 Borzoi CAGE and 1 Cherimoya DNase track. `CHIP:K562:ZBTB11`, which that statistic ranked above CAGE, measures 0.000 saturation as drawn |
 | 2026-08-09 | activity population **recorded per builder** (three mixtures), not harmonised to one | harmonising means rebuilding five backgrounds, and the three mixtures are 29,500 / 31,500 / 34,500 positions — a composition change, so §9's two-arm rule applies. Recording it is free and makes the difference legible; the stamp had asserted one 31,500-position set for all eight, false for five |
 
 ## 10. The converged state (2026-08-07)

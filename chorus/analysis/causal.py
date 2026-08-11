@@ -1197,6 +1197,22 @@ def _build_causal_igv(result: CausalResult) -> str:
                 track_bin_size, agg_method = _calculate_track_bin_size(
                     t_res, window_bp, source_model,
                 )
+                if floor_ok:
+                    # Measure rather than assume: see _igv_report.choose_aggregation.
+                    # Must come after the rescale -- the question is what max-pooling does
+                    # to the floor in DISPLAY units.
+                    from ._igv_report import (
+                        choose_aggregation,
+                        escalate_scale_if_saturated,
+                    )
+                    bins_per = max(1, track_bin_size // t_res)
+                    agg_method = choose_aggregation(ref_vals, bins_per)
+                    if not signed_track:
+                        ref_vals, alt_vals, _used_log = escalate_scale_if_saturated(
+                            normalizer, oracle_name, aid, layer,
+                            ref_t.values, alt_t.values,
+                            ref_vals, alt_vals, bins_per, agg_method,
+                        )
 
                 ref_feats = _downsample_to_features(
                     ref_vals, chrom, t_start, t_res, track_bin_size,

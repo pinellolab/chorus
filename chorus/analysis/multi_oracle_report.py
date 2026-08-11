@@ -400,7 +400,7 @@ class MultiOracleReport:
 
                 from ._igv_report import (
                     _calculate_track_bin_size,
-                    _HIGH_RES_ORACLES
+                    _HIGH_RES_ORACLES,
                 )
                 bin_size, agg_method = _calculate_track_bin_size(
                     t_res, window_bp, ref_t.source_model
@@ -412,6 +412,22 @@ class MultiOracleReport:
                     normalizer, oracle_for_norm, aid, layer,
                     ref_vals, alt_vals,
                 )
+                if floor_ok:
+                    # Measure rather than assume: see _igv_report.choose_aggregation.
+                    # This has to come AFTER the rescale, because the question is what
+                    # max-pooling does to the floor in DISPLAY units.
+                    from ._igv_report import (
+                        choose_aggregation,
+                        escalate_scale_if_saturated,
+                    )
+                    bins_per = max(1, bin_size // t_res)
+                    agg_method = choose_aggregation(ref_vals, bins_per)
+                    if not signed_track:
+                        ref_vals, alt_vals, _used_log = escalate_scale_if_saturated(
+                            normalizer, oracle_for_norm, aid, layer,
+                            ref_t.values, alt_t.values,
+                            ref_vals, alt_vals, bins_per, agg_method,
+                        )
                 ref_features = _downsample_to_features(
                     ref_vals, pred_chrom, t_start, t_res, bin_size,
                     skip_zeros=not (floor_ok or signed_track),
