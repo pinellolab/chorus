@@ -1872,7 +1872,8 @@ def _render_track_figure(
                     'floor (p95) and peak threshold (p99): '
                     '<b>0</b> = noise floor, <b>1.0</b> = top 1% of bins '
                     'genome-wide. Peak shape preserved; tracks comparable '
-                    'across cell types.</p>'
+                    'across cell types. '
+                    'A track marked <b>(log scale)</b> clipped too much of this window on the linear band and was re-rendered on log1p between p99.5 and p99.9, so its <b>1.0</b> is p99.9 rather than p99 and its peak heights are not directly comparable to the linear tracks beside it.</p>'
                 )
             elif report._normalizer is not None:
                 # Legacy QuantileNormalizer powers table scores but cannot

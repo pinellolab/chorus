@@ -26,9 +26,13 @@ both fail to express the intent:
   * "spikiness" read off the shipped artefact points the wrong way: perbin max/p99 is
     22 for Cherimoya against 65 for AlphaGenome.
 
-So pooling is a declared per-oracle fact, and this test is what keeps the declaration
-honest: an oracle that is neither declared base-resolution nor declared coverage fails
-here, at the moment it is added, rather than silently rendering at a fifth of its height.
+So pooling started as a declared per-oracle fact. It is no longer: when a track's values
+are display-scaled, ``choose_aggregation`` measures what max-pooling does to the floor and
+overrides the declaration. The frozensets survive as the **fallback** for un-rescaled tracks,
+which have no display scale to ask the question against -- and this test keeps that fallback
+honest, so an oracle added without a decision fails here rather than silently rendering at a
+fifth of its height. The measured behaviour is pinned in
+tests/test_display_scale_is_measured_not_declared.py.
 
 AlphaGenome was initially left on mean-pooling on the argument that its 1 bp output is
 dense coverage, where max over a 349 bp bin lifts the baseline as well as the peak. That

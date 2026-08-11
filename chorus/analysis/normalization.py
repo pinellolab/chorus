@@ -945,8 +945,16 @@ class PerTrackNormalizer:
         floor_pctile: float = 0.95,
         peak_pctile: float = 0.99,
         max_value: float = 3.0,
+        log_scale: bool = False,
     ) -> np.ndarray | None:
         """Rescale raw bin values using CDF-derived noise floor and peak threshold.
+
+        ``log_scale`` applies ``log1p`` to the values and to both band anchors, for tracks
+        whose linear rendering clips. **Whether** a track needs it is not decided here: it
+        is a property of the rendered panel, not of the CDF, and the caller measures it --
+        see ``chorus.analysis._igv_report.escalate_scale_if_saturated``. Four genome-wide
+        CDF statistics were tried as a proxy first and every one of them overlaps between
+        the tracks that need the log band and the tracks that must not move.
 
         Maps raw values into a [0, max_value] display range using:
 
@@ -986,13 +994,21 @@ class PerTrackNormalizer:
         if cdf is None:
             return None
 
-        # Compute thresholds and rescale
+        # Compute thresholds and rescale.
         n = len(cdf)
         floor = float(cdf[min(int(floor_pctile * n), n - 1)])
         peak = float(cdf[min(int(peak_pctile * n), n - 1)])
-        denom = max(peak - floor, 1e-9)
 
-        out = (raw_values.astype(np.float64) - floor) / denom
+        values = raw_values.astype(np.float64)
+        if log_scale:
+            # Clamp before log1p: this is the unsigned path, so a negative here is a model
+            # artefact rather than repression, and log1p of it is undefined.
+            values = np.log1p(np.maximum(values, 0.0))
+            floor = float(np.log1p(max(floor, 0.0)))
+            peak = float(np.log1p(max(peak, 0.0)))
+
+        denom = max(peak - floor, 1e-9)
+        out = (values - floor) / denom
         return np.clip(out, 0.0, max_value)
 
     def is_signed(self, oracle_name: str, track_id: str) -> bool:
@@ -1517,6 +1533,7 @@ _HF_REPO = os.environ.get("CHORUS_BACKGROUNDS_REPO", "lucapinello/chorus-backgro
 # Artefacts below this provenance schema predate the retention rebuild, so their
 # ceilings are draws from a uniform subsample rather than population maxima.
 MIN_ARTEFACT_SCHEMA = 4
+
 
 #: Dataset revision this release of chorus was verified against.
 #:
