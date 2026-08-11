@@ -30,7 +30,7 @@ chorus/
 │   ├── integration.py           # simulate_integration
 │   ├── normalization.py         # PerTrackNormalizer (CDF-based percentiles)
 │   ├── analysis_request.py      # User-prompt preservation on every report
-│   └── _igv_report.py           # Self-contained IGV browser HTML
+│   └── _igv_report.py           # IGV browser HTML (igv.js inlined; genome fetched, #139)
 ├── mcp/                 # FastMCP server (22 tools)
 │   ├── server.py
 │   ├── state.py

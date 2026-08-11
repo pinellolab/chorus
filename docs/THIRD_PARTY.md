@@ -25,8 +25,12 @@ semantics are those of the original publication.
 
 - **IGV.js** (Integrative Genomics Viewer, Robinson et al., Broad/UCSD) —
   [igv.org](https://igv.org/), [github.com/igvteam/igv.js](https://github.com/igvteam/igv.js),
-  MIT license. Shipped as `chorus/analysis/static/igv.min.js` so HTML
-  reports render offline. Source license at
+  MIT license. Shipped as `chorus/analysis/static/igv.min.js` (1.3 MB, inlined) so a
+  report needs no CDN for the library itself. Note this does **not** make a report fully
+  offline: the browser config names `genome: "hg38"`, which igv.js resolves through its
+  hosted genome registry, so the reference index, cytobands and RefSeq annotation are still
+  fetched at load time — see
+  [#139](https://github.com/pinellolab/chorus/issues/139). Source license at
   [github.com/igvteam/igv.js/blob/master/LICENSE](https://github.com/igvteam/igv.js/blob/master/LICENSE).
 
 ## Per-track background CDFs
