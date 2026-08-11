@@ -172,8 +172,10 @@ Start with one or two oracles and add more with `chorus setup --oracle <name>` l
 #### Cherimoya timing depends on the mode you run it in
 
 Cherimoya is the one oracle whose per-call cost is dominated by *how* it is invoked, not by
-the model — because CATv1's default is the **5-fold ensemble** (the model card's
-recommendation, and what the shipped background CDFs were built against), and in
+the model — because chorus defaults to the **5-fold ensemble**, which is what the shipped
+background CDFs were built against (`fold: ensemble` is stamped in
+`cherimoya_pertrack.npz`'s `build_config`). CATv1's model card offers both, describing the
+five-fold average as "more robust" rather than recommending one over the other. In
 `use_environment=True` mode each fold is a separate subprocess. Nothing is amortised across
 calls there, so the second prediction costs the same as the first. Measured on one H200,
 single 2,114 bp window, `DNASE:ENCSR149XIL`:
