@@ -308,6 +308,12 @@ class CherimoyaOracle(OracleBase):
         """Load in the current interpreter (used by tests and the builder)."""
         try:
             import torch
+
+            # Before `import cherimoya`: the knob is read when Triton's
+            # autotune decorators are evaluated, which happens on import.
+            from .cherimoya_source._triton_autotune import enable_autotune_cache
+            enable_autotune_cache()
+
             from cherimoya import Cherimoya
         except ImportError as exc:
             raise ModelNotLoadedError(
