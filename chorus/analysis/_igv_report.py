@@ -174,22 +174,32 @@ _COVERAGE_ORACLES = frozenset({"enformer", "borzoi", "sei", "epinformerseq"})
 
 #: Displayed-floor above which max-pooling is judged to have cost more than it bought.
 #:
-#: Derived from measurement. Rendering the same profile both ways at the bin size each report
-#: uses, the displayed floor (median) under max-pooling came out:
+#: Derived from measurement. The displayed floor is the MEDIAN of the max-pooled display
+#: values, read off the committed panels at the bin size each report actually uses:
 #:
-#:   cherimoya  DNASE 1 bp   0.000     alphagenome H3K27ac 128 bp  0.000
-#:   enformer         128 bp  0.000     borzoi              32 bp   0.000
-#:   chrombpnet DNASE 1 bp   0.013     alphagenome DNase   1 bp    0.707  <-- the only cost
+#:   keeps max                              flips to mean
+#:     chrombpnet DNASE:HepG2      0.0000     alphagenome DNASE:K562 (BCL11A)  0.1990
+#:     cherimoya  DNASE:HepG2      0.0000     alphagenome DNASE:HepG2 (SORT1)  0.7072
+#:     alphagenome CAGE:K562       0.0000     alphagenome ATAC:HepG2  (SORT1)  0.9056
+#:     alphagenome CAGE:HepG2      0.0229
+#:     alphagenome CAGE:HepG2      0.0644
 #:
-#: Measured gap 0.013 to 0.707; 0.15 sits ~11x above the highest free case and ~5x below the
-#: expensive one.
+#: Measured gap 0.064 to 0.199, and 0.15 sits inside it. Note the margin is NOT symmetric:
+#: 2.3x above the highest track that keeps max, but only 1.33x below the lowest that flips.
+#: An earlier revision of this table claimed a 5x lower margin and recorded ChromBPNet's floor
+#: as 0.013 -- that number is Cherimoya's SATURATION, transcribed into the wrong column; the
+#: pooled median for ChromBPNet is 0.0000, the same as Cherimoya's, so the gap has no lower
+#: edge in the oracles that matter and the constant is bounded from above only.
 #:
 #: NOTE the statistic is the MEDIAN, and two alternatives were tried and are wrong. An "ink
 #: fraction" flips Cherimoya and ChromBPNet to mean -- Cherimoya inks 41% of its display bins
 #: and still reads well, so ink cannot distinguish "many real peaks" from "inflated floor".
 #: Saturation is what makes a panel unreadable, but saturation is fixed by the display SCALE
-#: (see normalization._BIMODAL_TAIL_JUMP), not by the pooling operator. Keep the two concerns
-#: separate: pooling protects the floor, the scale protects the peaks.
+#: (see :func:`escalate_scale_if_saturated` below), not by the pooling operator. Keep the two
+#: concerns separate: pooling protects the floor, the scale protects the peaks.
+#:
+#: This limit is NOT applied to signed tracks -- "does max lift the floor" is meaningless for a
+#: track with no floor at zero; see the call sites.
 _MAX_POOL_FLOOR_LIMIT = 0.15
 
 
@@ -208,7 +218,7 @@ def choose_aggregation(display_values, bins_per, *, limit=_MAX_POOL_FLOOR_LIMIT)
     from the artefact, the artefact's signal mass above p99, profile density, and
     density x collapse factor. Each got the sign wrong on at least one oracle. The two
     clearest counterexamples: AlphaGenome and Cherimoya both emit DNase at 1 bp and both
-    collapse 349 native bins per display bin, yet max lifts AlphaGenome's floor to 0.494
+    collapse 349 native bins per display bin, yet max lifts AlphaGenome's floor to 0.707
     and Cherimoya's to 0.000 -- and *Cherimoya* is the denser of the two by every density
     measure tried. And AlphaGenome needs opposite answers for its own 1 bp and 128 bp
     tracks, which no per-oracle rule can express at all.
@@ -399,18 +409,40 @@ def apply_floor_rescale(
 #: AlphaGenome CAGE to saturation 0.013 with its peak still at 3.00 -- the same regime as
 #: Cherimoya. p99.9/p99.99 looked right from the CDF alone and is wrong: it drops the peak
 #: to 1.24 and erases the track.
+#: Appended to a track's label when it was re-rendered on the log band, so the reader knows
+#: this panel's 1.0 is genome-wide p99.9 rather than p99.
+_LOG_SCALE_LABEL = " (log scale)"
+
 _LOG_FLOOR_PCTILE = 0.995
 _LOG_PEAK_PCTILE = 0.999
 
 #: Fraction of DISPLAYED bins allowed to sit at the ceiling before a track is re-rendered
 #: on the log band.
 #:
-#: Saturation -- not ink -- is what makes a panel unreadable. Measured on the shipped SORT1
-#: multi-oracle panel, the tracks that read correctly clip 0.000-0.013 of their display bins
-#: while the two that did not clipped 0.090 (AlphaGenome DNase) and 0.131 (CAGE). This sits
-#: in that 6.9x gap. Cherimoya *inks* 41% of its bins and looks right, which is why ink was
-#: tried as a criterion and failed.
-_MAX_DISPLAY_SATURATION = 0.04
+#: Saturation -- not ink -- is what makes a panel unreadable. Cherimoya *inks* 41% of its bins
+#: and looks right, which is why an ink criterion was tried and failed.
+#:
+#: CALIBRATED ON THE CORPUS, NOT ON ONE PANEL. An earlier value of 0.04 came from the
+#: geometric midpoint of a single panel's gap (that panel's readable tracks clip <=0.013, its
+#: two broken ones 0.090 and 0.131). Measured instead across all 346 subtracks of the 19
+#: committed IGV panels at the released baseline, 0.04 cuts through the middle of the
+#: population -- 45 subtracks (13%) exceed it, including seven Enformer CAGE tracks at
+#: 0.042-0.063 that nobody has ever complained about and whose peaks the log band would
+#: compress. The real gap is higher up:
+#:
+#:     #20-22   0.0899   alphagenome DNASE:HepG2         SORT1 panels
+#:     ------------------ nothing between 0.0656 and 0.0899 ------------------
+#:     #23-24   0.0656   alphagenome ATAC:HepG2          FTO panel
+#:     #25-26   0.0625   enformer CAGE substantia nigra  SORT1 enformer panel
+#:
+#: The 22 subtracks above that gap are exactly the AlphaGenome CAGE/ATAC/DNase panels at the
+#: SORT1 locus -- the ones this work exists to fix. This limit sits inside the gap, so the
+#: Enformer and Borzoi panels are left alone and stay valid.
+#:
+#: The calibration is conservative in the right direction: it was measured under the OLD
+#: pooling, and the pooling fix lowers saturation for exactly these dense 1 bp tracks (DNase
+#: max-pooled 0.090 -> mean-pooled 0.000), so fewer tracks escalate than this table implies.
+_MAX_DISPLAY_SATURATION = 0.075
 
 
 def _display_saturation(values, bins_per: int, aggregation: str) -> tuple[float, float]:
@@ -459,21 +491,25 @@ def escalate_scale_if_saturated(
     ceiling. Four genome-wide CDF statistics were tried as a proxy for that and every one of
     them overlaps between the tracks that need the log band and the tracks that must not move:
 
-        max/p99.9        must-log down to 172, must-stay-linear up to 4212  (ChromBPNet ChIP)
-        p99.9/p99        must-log p5 5.7, must-stay-linear p95 8.6
-        p99/p95          must-log p5 3.0, must-stay-linear p95 8.1
-        predicted clip   must-log p5 0.0028, must-stay-linear p95 0.0044
+        max/p99.9        must-log p5 697, down to 172; must-stay p95 20.5, max 4212 (cbp ChIP)
+        p99.9/p99        must-log p5 5.7;  must-stay p95 15.6
+        p99/p95          must-log p5 3.0;  must-stay p95 10.0
+        predicted clip   must-log p5 0.0028; must-stay p95 0.0045
 
     ``max/p99.9`` looked clean at 41x separation until ChromBPNet's ChIP tracks were included
     in the protected set; on a 10,000-point grid ``p99.99`` IS the maximum, so that statistic
     is a ratio to a single extreme order statistic -- the exact thing the null protocol warns
-    against. There is no threshold on it that fixes CAGE without also log-scaling 104
-    ChromBPNet ChIP tracks, 10 Enformer and 8 Borzoi CAGE tracks, and a Cherimoya DNase track.
+    against. There is no threshold on it that fixes CAGE without also log-scaling 130
+    other tracks: 102 ChromBPNet ChIP, 10 Enformer and 8 Borzoi CAGE, 7 AlphaGenome TF-ChIP,
+    2 ChromBPNet DNase and 1 Cherimoya DNase -- AlphaGenome's own ChIP tracks included.
 
     ACCEPTANCE IS TWO-SIDED, so a wrong trigger cannot damage a track: the log band is kept
-    only if it both brings saturation under the limit AND leaves the strongest feature at or
-    above 1.0 (genome-wide p99). That guard is what an earlier attempt lacked -- p99.9/p99.99
-    anchors dropped CAGE's peak to 1.24 of 3.0, "fixing" saturation by erasing the signal.
+    only if it leaves the strongest feature at or above 1.0 (genome-wide p99) AND either
+    clears the saturation limit or at least halves the clipping. The peak half is what an
+    earlier attempt lacked -- p99.9/p99.99 anchors dropped CAGE's peak to 1.24 of 3.0,
+    "fixing" saturation by erasing the signal. The halving half is what stops an epsilon
+    improvement from counting as a fix, and a degenerate band that collapses the track to a
+    two-level barcode is rejected outright.
     """
     sat, _ = _display_saturation(disp_ref, bins_per, aggregation)
     if sat <= _MAX_DISPLAY_SATURATION:
@@ -486,7 +522,21 @@ def escalate_scale_if_saturated(
         return disp_ref, disp_alt, False
 
     log_sat, log_peak = _display_saturation(log_ref, bins_per, aggregation)
-    if log_sat < sat and log_peak >= 1.0:
+
+    # A log band whose anchors collapsed renders a two-level barcode -- every value a hair
+    # above the floor at exactly 3.0, everything else at exactly 0.0 -- and it would pass
+    # both tests below, because clipping guarantees peak 3.0. Reachable from real data:
+    # chrombpnet CHIP:HEK293:ZNF24 has p99.5 = -7.4e-07 and p99.9 = -3.3e-10, which the
+    # log path's ``max(x, 0.0)`` maps to the same 0.0, leaving denom pinned at 1e-9.
+    if np.unique(np.asarray(log_ref, dtype=np.float64)).size < 3:
+        return disp_ref, disp_alt, False
+
+    # Acceptance is two-sided AND the improvement has to be real. ``log_sat < sat`` alone is
+    # satisfied by an epsilon: a track going 0.550 -> 0.500 would be re-rendered, relabelled,
+    # and still ship with half the panel pinned -- having paid the full cost of the log band
+    # (compressed peaks, floor moved from p95 to p99.5) for five percentage points. So the
+    # band must either clear the limit outright or at least halve the clipping.
+    if log_peak >= 1.0 and (log_sat <= _MAX_DISPLAY_SATURATION or log_sat <= 0.5 * sat):
         return log_ref, log_alt, True
     return disp_ref, disp_alt, False
 
@@ -670,6 +720,7 @@ def build_igv_html(
         # Apply layer-aware floor-subtract + rescale when available
         floor_ok = False
         signed_track = False
+        used_log = False
         if use_floor:
             floor_ok, ref_vals, alt_vals, signed_track = apply_floor_rescale(
                 normalizer, oracle_name, assay_id, layer, ref_vals, alt_vals,
@@ -683,9 +734,18 @@ def build_igv_html(
             # assumed. Un-rescaled tracks keep the static preference above: without a
             # display scale, "does the floor rise" has no reference to be asked against.
             bins_per = max(1, track_bin_size // t_res)
-            agg_method = choose_aggregation(ref_vals, bins_per)
+            # Signed tracks are excluded from BOTH measured decisions, deliberately.
+            # ``choose_aggregation`` asks whether max-pooling lifts the floor, which has no
+            # meaning for a track with no floor at zero: max over a bin holding a strong
+            # repression and a weak activation returns the activation, so the repressive
+            # half of the panel simply disappears. Measured on borzoi ENCFF734OLC+ (signed,
+            # 32 bp, 11 native bins per display bin) the measured choice flips mean -> max
+            # and takes displayed saturation 0.000 -> 0.138. 2,253 tracks are signed
+            # (borzoi 1,543, alphagenome 667, sei 40, legnet 3), so they keep the static
+            # geometry-based choice, which is what shipped and works.
             if not signed_track:
-                ref_vals, alt_vals, _used_log = escalate_scale_if_saturated(
+                agg_method = choose_aggregation(ref_vals, bins_per)
+                ref_vals, alt_vals, used_log = escalate_scale_if_saturated(
                     normalizer, oracle_name, assay_id, layer, raw_ref, raw_alt,
                     ref_vals, alt_vals, bins_per, agg_method,
                 )
@@ -711,7 +771,13 @@ def build_igv_html(
             name_suffix = ""
         elif floor_ok:
             scale_cfg = {"min": 0, "max": _DISPLAY_MAX, "autoscale": False}
-            name_suffix = ""
+            # Disclose the transform. 1.0 means genome-wide p99 on a linear track and
+            # p99.9 on a log one, so two same-assay panels in one report can legitimately
+            # sit on different bands -- BCL11A's two CAGE:K562 tracks measured 0.053 and
+            # 0.036, and only the first escalated. The axis was always per-track (1.0 is
+            # *this* track's percentile, not a shared raw value), so mixing is not new;
+            # leaving it unlabelled would be. Follows the ``(per-track norm)`` precedent.
+            name_suffix = _LOG_SCALE_LABEL if used_log else ""
         else:
             scale_cfg = {"autoscale": True, "autoscaleGroup": group_id}
             name_suffix = ""
