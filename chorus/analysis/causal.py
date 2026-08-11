@@ -1184,6 +1184,7 @@ def _build_causal_igv(result: CausalResult) -> str:
                 display = track_display.get(aid, aid)
 
                 layer = classify_track_layer(ref_t)
+                used_log = False
                 floor_ok, ref_vals, alt_vals, signed_track = apply_floor_rescale(
                     normalizer, oracle_name, aid, layer,
                     ref_t.values, alt_t.values,
@@ -1197,6 +1198,37 @@ def _build_causal_igv(result: CausalResult) -> str:
                 track_bin_size, agg_method = _calculate_track_bin_size(
                     t_res, window_bp, source_model,
                 )
+                if floor_ok:
+                    # Measure rather than assume: see _igv_report.choose_aggregation.
+                    # Must come after the rescale -- the question is what max-pooling does
+                    # to the floor in DISPLAY units.
+                    from ._igv_report import (
+                        choose_aggregation,
+                        escalate_scale_if_saturated,
+                    )
+                    bins_per = max(1, track_bin_size // t_res)
+                # Signed tracks are excluded from BOTH measured decisions, deliberately.
+                # ``choose_aggregation`` asks whether max-pooling lifts the floor, which has no
+                # meaning for a track with no floor at zero: max over a bin holding a strong
+                # repression and a weak activation returns the activation, so the repressive
+                # half of the panel simply disappears. Measured on borzoi ENCFF734OLC+ (signed,
+                # 32 bp, 11 native bins per display bin) the measured choice flips mean -> max
+                # and takes displayed saturation 0.000 -> 0.138. 2,253 tracks are signed
+                # (borzoi 1,543, alphagenome 667, sei 40, legnet 3), so they keep the static
+                # geometry-based choice, which is what shipped and works.
+                    if not signed_track:
+                        agg_method = choose_aggregation(ref_vals, bins_per)
+                        ref_vals, alt_vals, used_log = escalate_scale_if_saturated(
+                            normalizer, oracle_name, aid, layer,
+                            ref_t.values, alt_t.values,
+                            ref_vals, alt_vals, bins_per, agg_method,
+                        )
+
+                if used_log:
+                    # This panel's 1.0 is p99.9, not p99 -- say so, as legnet does for its
+                    # per-track normalization.
+                    from ._igv_report import _LOG_SCALE_LABEL
+                    display = f"{display}{_LOG_SCALE_LABEL}"
 
                 ref_feats = _downsample_to_features(
                     ref_vals, chrom, t_start, t_res, track_bin_size,
@@ -1366,7 +1398,8 @@ def _build_causal_html(result: CausalResult) -> str:
                 "floor (p95) and peak threshold (p99): "
                 '<b>0</b> = noise floor, <b>1.0</b> = top 1% of bins '
                 'genome-wide. Peak shape preserved; tracks comparable '
-                'across cell types.</p>'
+                'across cell types. '
+                'A track marked <b>(log scale)</b> clipped too much of this window on the linear band and was re-rendered on log1p between p99.5 and p99.9, so its <b>1.0</b> is p99.9 rather than p99 and its peak heights are not directly comparable to the linear tracks beside it.</p>'
             )
             p.append(igv_html)
     except Exception as exc:

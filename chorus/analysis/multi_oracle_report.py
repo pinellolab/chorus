@@ -39,6 +39,17 @@ from .variant_report import TrackScore, VariantReport, _CSS, _fmt_percentile
 logger = logging.getLogger(__name__)
 
 
+#: Appended to every IGV legend, because the 0-3 axis no longer means one thing for every
+#: track: an escalated track's 1.0 is p99.9 on a log band, not p99 on a linear one. The
+#: legend used to assert p95/p99 for all tracks unconditionally.
+_LOG_SCALE_LEGEND = (
+    "A track marked <b>(log scale)</b> clipped too much of this window on the "
+    "linear band and was re-rendered on log1p between p99.5 and p99.9, so its "
+    "<b>1.0</b> is p99.9 rather than p99 and its peak heights are not directly "
+    "comparable to the linear tracks beside it."
+)
+
+
 # ---------------------------------------------------------------------------
 # Data model
 # ---------------------------------------------------------------------------
@@ -400,7 +411,7 @@ class MultiOracleReport:
 
                 from ._igv_report import (
                     _calculate_track_bin_size,
-                    _HIGH_RES_ORACLES
+                    _HIGH_RES_ORACLES,
                 )
                 bin_size, agg_method = _calculate_track_bin_size(
                     t_res, window_bp, ref_t.source_model
@@ -408,10 +419,36 @@ class MultiOracleReport:
 
                 ref_vals = ref_t.values
                 alt_vals = alt_t.values
+                used_log = False
                 floor_ok, ref_vals, alt_vals, signed_track = apply_floor_rescale(
                     normalizer, oracle_for_norm, aid, layer,
                     ref_vals, alt_vals,
                 )
+                if floor_ok:
+                    # Measure rather than assume: see _igv_report.choose_aggregation.
+                    # This has to come AFTER the rescale, because the question is what
+                    # max-pooling does to the floor in DISPLAY units.
+                    from ._igv_report import (
+                        choose_aggregation,
+                        escalate_scale_if_saturated,
+                    )
+                    bins_per = max(1, bin_size // t_res)
+                # Signed tracks are excluded from BOTH measured decisions, deliberately.
+                # ``choose_aggregation`` asks whether max-pooling lifts the floor, which has no
+                # meaning for a track with no floor at zero: max over a bin holding a strong
+                # repression and a weak activation returns the activation, so the repressive
+                # half of the panel simply disappears. Measured on borzoi ENCFF734OLC+ (signed,
+                # 32 bp, 11 native bins per display bin) the measured choice flips mean -> max
+                # and takes displayed saturation 0.000 -> 0.138. 2,253 tracks are signed
+                # (borzoi 1,543, alphagenome 667, sei 40, legnet 3), so they keep the static
+                # geometry-based choice, which is what shipped and works.
+                    if not signed_track:
+                        agg_method = choose_aggregation(ref_vals, bins_per)
+                        ref_vals, alt_vals, used_log = escalate_scale_if_saturated(
+                            normalizer, oracle_for_norm, aid, layer,
+                            ref_t.values, alt_t.values,
+                            ref_vals, alt_vals, bins_per, agg_method,
+                        )
                 ref_features = _downsample_to_features(
                     ref_vals, pred_chrom, t_start, t_res, bin_size,
                     skip_zeros=not (floor_ok or signed_track),
@@ -440,6 +477,10 @@ class MultiOracleReport:
                 if oracle_name == "legnet":
                     # LentiMPRA uses per-track normalization (no per-bin background distribution).
                     panel_label = f"{panel_label} (per-track norm)"
+                if used_log:
+                    # Same reason as the suffix above: this panel's 1.0 is p99.9, not p99.
+                    from ._igv_report import _LOG_SCALE_LABEL
+                    panel_label = f"{panel_label}{_LOG_SCALE_LABEL}"
 
                 source_model = ref_t.source_model
                 tracks.append({
@@ -794,7 +835,7 @@ def _build_multioracle_html(report: "MultiOracleReport") -> str:
             "using each track's genome-wide noise floor (p95) and peak "
             "threshold (p99): <b>0</b> = noise floor, <b>1.0</b> = top "
             "1% of bins genome-wide. Peak shape preserved; tracks "
-            "comparable across cell types.</p>"
+            "comparable across cell types. " + _LOG_SCALE_LEGEND + "</p>"
         )
         p.append(igv_html)
 
