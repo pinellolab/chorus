@@ -23,6 +23,15 @@ elif device and device.startswith("cuda:"):
 
 import torch
 
+# Populate/reuse Triton's on-disk autotune cache; see the note in
+# predict_template.py and cherimoya_source/_triton_autotune.py.  Must
+# precede `import cherimoya`.
+try:
+    from triton import knobs
+    knobs.autotuning.cache = True
+except (ImportError, AttributeError):
+    pass
+
 from cherimoya import Cherimoya
 
 if device in (None, "", "auto"):
