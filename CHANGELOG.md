@@ -6,6 +6,20 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- **Cherimoya is 3.6× faster in its default mode, and 17× faster in-process** — contributed by [@jmschrei](https://github.com/jmschrei) in [#165](https://github.com/pinellolab/chorus/pull/165). Triton benchmarks its `autotune` candidates the first time a kernel sees a shape, which is right for training but was being re-run in *every* subprocess to serve a single forward pass, because `run_code_in_environment` spawns a fresh process per call. Chorus now enables Triton's on-disk autotune cache before importing `cherimoya`, so the winner is reused across processes. Measured on one H200, `DNASE:ENCSR149XIL`, single 2,114 bp window:
+
+  | mode | before | after | |
+  |---|---|---|---|
+  | `use_environment=True`, 5-fold ensemble — the default | 89.5 s | 25.0 s | 3.6× |
+  | in-process (`use_environment=False`) | 13.6 s | 0.79 s | 17.3× |
+
+  **Predictions are bit-identical**, verified in both modes rather than assumed: the ensemble window sum is 954.37564392006766 and the peak 11.103147742142609 before and after, to the last digit. It reuses the config `autotune` already chose; an unseen shape still falls back to benchmarking. The cherimoya integration suite got 3–4× faster on its own as corroboration (`test_variant_effect_runs_end_to_end` 178 s → 50 s).
+
+### Added
+- **The Cherimoya documentation gaps are filled** — contributed by [@jmschrei](https://github.com/jmschrei) in [#166](https://github.com/pinellolab/chorus/issues/166), landed via [#170](https://github.com/pinellolab/chorus/pull/170). Cherimoya was missing from the `chorus setup --oracle` list and from the `download_pertrack_backgrounds` pre-download loop, so a reader following the README could not have set it up; it was also absent from `docs/THIRD_PARTY.md` attribution, the `CLAUDE.md` env list and `examples/notebooks/README.md`. Adds the macOS caveat (Cherimoya is CPU-only on Apple Silicon: no MPS path in the model, and its `triton>=3.5.1` pin ships no macOS wheel) and corrects the background size to ~162 MB. Verified against the artefacts: 1,518 tracks = 369 ATAC + 1,149 DNASE, `cherimoya_pertrack.npz` 161.7 MB.
+- **The README's Cherimoya timing table is re-measured**, because #165 invalidated it — its "~12 s per fold per call" *was* the autotune benchmark that change removes. The headline row moves from ~60 s to ~25 s. The section now also states, with numbers, why pinning a single fold is not a cheaper approximation of the default: on one window the five fold peaks are 8.24 / 15.47 / 15.34 / 11.08 / 7.65 against an ensemble peak of 11.10, so they disagree by 2.02× among themselves and any one lands between 0.69× and 1.39× of the ensemble — and the shipped background CDFs were built against the ensemble, so a single fold would be ranked against the wrong null.
+
 ### Fixed
 - **Two IGV display decisions were hardcoded per oracle name, and both were wrong for at least one track.** They are now measured per track from the data being drawn.
 
