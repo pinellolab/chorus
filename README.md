@@ -167,21 +167,49 @@ Start with one or two oracles and add more with `chorus setup --oracle <name>` l
 | **AlphaGenome** | 16 GB | strongly recommended | ~30 s (GPU) / 2–5 min (CPU) | comprehensive multi-layer (5,168 tracks, 1 Mb window) |
 | **AlphaGenome (PyTorch backend)** ⓘ | 16 GB | recommended (esp. Apple Silicon) | ~3.8 s @524 kb on Mac MPS / ~2 s @1 MB on CUDA | alternative backend with the same weights; see [Two AlphaGenome backends](#two-alphagenome-backends) below |
 
-⁑ **The Cherimoya figures are the inference step only** — model load, FASTA extraction and (under `use_environment=True`) subprocess startup are excluded, unlike the cold-predict numbers on the other rows. Measured on one H200 vs 8 CPU threads: **1.2 ms GPU / 10.5 ms CPU** for the single 2,114 bp window a 1 kb query needs. The GPU margin widens sharply with query width, because the GPU batches windows while CPU per-window cost climbs: **8.5×** at 1 kb (1 window), **45×** at 10 kb (8 windows), **150×** at 100 kb (98 windows — 18 ms GPU vs 2.8 s CPU). CPU is therefore comfortable for single-locus work and impractical for wide scans. Note also that the CPU path diverges from the Triton GPU path by ~1e-2 relative on the logits (r = 0.99999), so don't mix devices inside one comparison.
-
 **GPU detection is automatic** — every oracle picks CUDA / MPS / CPU based on what's available; pass `device='cuda'` / `'cpu'` / `'mps'` to override, or set `CUDA_VISIBLE_DEVICES` to pin to a specific GPU. The platform-by-oracle support matrix and Apple Silicon nuances live in [Installation — detailed](#installation--detailed).
 
 #### Cherimoya timing depends on the mode you run it in
 
-Cherimoya is the one oracle whose per-call cost is dominated by *how* it is invoked, not by the model — because CATv1's default is the **5-fold ensemble** (the model card's recommendation, and what the shipped background CDFs were built against), and in `use_environment=True` mode each fold is a separate subprocess. Nothing is amortised across calls, so the second prediction costs the same as the first. Measured on one H100, single 2,114 bp window:
+Cherimoya is the one oracle whose per-call cost is dominated by *how* it is invoked, not by
+the model — because CATv1's default is the **5-fold ensemble** (the model card's
+recommendation, and what the shipped background CDFs were built against), and in
+`use_environment=True` mode each fold is a separate subprocess. Nothing is amortised across
+calls there, so the second prediction costs the same as the first. Measured on one H200,
+single 2,114 bp window, `DNASE:ENCSR149XIL`:
 
 | mode | load | 1st predict | 2nd predict |
 |---|---|---|---|
-| `use_environment=True`, 5-fold ensemble — **the default** | 10.2 s | 62.1 s | 64.1 s |
-| `use_environment=True`, `fold=0` | 9.1 s | 12.3 s | 12.1 s |
-| in-process (`use_environment=False`), either | 2.5–3.6 s | 8.0 s | **<0.01 s** |
+| `use_environment=True`, 5-fold ensemble — **the default** | 5.8 s | 25.8 s | 25.8 s |
+| `use_environment=True`, `fold=0` | 4.4 s | 5.1 s | 5.2 s |
+| in-process (`use_environment=False`), either | 3.8 s | 0.86 s | **0.027 s** |
 
-Read off the arithmetic: env mode costs ~12 s per fold per call, so 5 folds is ~60 s and a ref/alt variant call is two of those. If you are scoring more than a handful of sequences, run in-process inside `chorus-cherimoya` — the first call pays ~8 s of Triton kernel compilation and every call after it is free. Pin `fold=0` only if you accept ranking against a single fold; the five folds give accessibility ratios spanning 2.39–3.47 for the identical sequence.
+Env mode costs ~5 s per fold per call, so the 5-fold default is ~26 s and a ref/alt variant
+call is two of those. If you are scoring more than a handful of sequences, run in-process
+inside `chorus-cherimoya`: the first call pays ~0.9 s and every call after it is ~0.03 s.
+
+These numbers are ~3.6× better than they were before v0.7.2. Triton benchmarks its autotune
+candidates the first time a kernel sees a shape, which is the right default for training but
+was being re-run in *every* subprocess to serve one forward pass — about 12 s of the old
+~62 s. Chorus now enables Triton's on-disk autotune cache before importing `cherimoya`, so
+the winner is reused across processes ([#165](https://github.com/pinellolab/chorus/pull/165),
+thanks @jmschrei). Predictions are bit-identical either way: it reuses the config `autotune`
+already chose, and an unseen shape still falls back to benchmarking.
+
+**Do not pin a single fold to save time.** The saving is now small and the cost is not.
+On the window above:
+
+| fold | 0 | 1 | 2 | 3 | 4 | ensemble |
+|---|---|---|---|---|---|---|
+| peak | 8.24 | 15.47 | 15.34 | 11.08 | 7.65 | **11.10** |
+
+The folds disagree by **2.02×** among themselves, and any one of them lands between 0.69×
+and 1.39× of the ensemble peak — so `fold=0` is not a cheaper approximation of the default,
+it is a different answer. The shipped background CDFs were also built against the ensemble,
+so a single fold is ranked against the wrong null. Pin one only if you have a reason
+beyond speed.
+
+**GPU vs CPU, inference step only** (model load, FASTA extraction and subprocess startup excluded). Measured on one H200 vs 8 CPU threads: **1.2 ms GPU / 10.5 ms CPU** for the single 2,114 bp window a 1 kb query needs. The GPU margin widens sharply with query width, because the GPU batches windows while CPU per-window cost climbs: **8.5×** at 1 kb (1 window), **45×** at 10 kb (8 windows), **150×** at 100 kb (98 windows — 18 ms GPU vs 2.8 s CPU). CPU is therefore comfortable for single-locus work and impractical for wide scans. Note also that the CPU path diverges from the Triton GPU path by ~1e-2 relative on the logits (r = 0.99999), so don't mix devices inside one comparison.
 
 #### Two AlphaGenome backends
 
