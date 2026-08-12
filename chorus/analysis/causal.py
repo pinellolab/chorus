@@ -1141,6 +1141,7 @@ def _build_causal_igv(result: CausalResult) -> str:
                 _DISPLAY_MAX,
                 _REF_COLOR,
                 _HIGH_RES_ORACLES,
+                browser_window_function,
                 _calculate_track_bin_size,
                 _downsample_to_features,
                 apply_floor_rescale,
@@ -1250,7 +1251,10 @@ def _build_causal_igv(result: CausalResult) -> str:
                     scale_cfg = {"autoscale": True, "autoscaleGroup": group_id}
 
                 rank_label = _TOP_VARIANT_COLORS[vi]["label"] if vi < len(_TOP_VARIANT_COLORS) else f"#{vi+1}"
-                wf = "max" if source_model in _HIGH_RES_ORACLES else "mean"
+                # max for every track: the browser collapses only 2-3 already-pooled
+                # features per pixel, where mean costs up to 2.33x of peak height and
+                # max barely lifts a floor. See _igv_report._IGV_WINDOW_FUNCTION.
+                wf = browser_window_function(used_log)
                 tracks.append({
                     "name": f"{display} ({rank_label} {top_s.variant_id})",
                     "type": "merged",
