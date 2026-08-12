@@ -6,7 +6,17 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- **Every committed report is now opened in a real browser and checked that it paints ([#135](https://github.com/pinellolab/chorus/issues/135)).** Nothing in the suite had ever loaded one: the checks were on bytes and JSON, so a report could be regenerated, sized, diffed, committed and shipped while rendering a blank page. `tests/test_committed_reports_render_in_a_browser.py` loads all 19 in headless Chromium and asserts every canvas IGV laid out has ink, with no console errors and no uncaught exceptions. Marked `integration`; skips cleanly where Chromium is unavailable.
+
+  Three things had to be got right, each of which produces a failure indistinguishable from a broken panel. **IGV renders inside a shadow root**, so `document.querySelectorAll('canvas')` returns 0 for a panel that is painting perfectly — which is what led #139 to report "the panel never renders", and to the conclusion that headless Chromium cannot be used as an oracle for this. It can; the query just has to pierce shadow boundaries. **Chromium's shared libraries are scattered across conda envs** (`libgbm`/`libatk` only in `chorus-browsertest`, `libXcomposite`/`libcups` only in the oracle and base envs), so the path is assembled in the harness and passed to the browser process rather than exported by whoever runs pytest. And **"loaded" is not "painted"**: polling until the canvas count stops changing reported 61/62 and 39/42 on reports that reach 64/64 and 44/44 a second later, so the harness polls to convergence instead.
+
+  Calibrated rather than guessed: "painted" is **any** non-white pixel, because a 0.05% floor was too high — the causal report's point tracks are ~20 marks across a 3288 px canvas (0.000238 of it) and were being reported as blank while drawing exactly what they should. And the check is shown to work: three mutations of a real report (features emptied, genome name broken, config truncated) are each caught by a different one of the three channels.
+
+- **The CDYL fine-map report ships its IGV panel** — `examples/walkthroughs/causal_prioritization/CDYL_rs9504151/rs9504151_CDYL_locus_causal_report.html`, 25.7 MiB and now the largest artefact in the repo. It was the one example with no browser panel, skipped behind `CHORUS_WRITE_LARGE_HTML=1`, because 21 lung-fibroblast tracks × 2 alleles exceeded a 20 MiB ceiling that had been chosen as "headroom over today's largest artefact" rather than derived from any failure. Adding it moved no numbers: regenerating the example produced a JSON differing from the committed one in **1 of 4,001 leaf values**, and that one is the timestamp.
+
+### Changed
+- **Report size is no longer a proxy for report health.** The ceiling stands at 50 MiB — GitHub's advisory threshold, under its hard 100 MiB wall — and it now exists alongside a check that actually loads the file. Measured across the corpus, size barely predicts load time: **20× the bytes costs 1.3× the wait** (25.7 MiB → 11.3 s; 1.3 MiB → 8.8 s), because most of those seconds go on ~14 network round-trips for genome resources ([#139](https://github.com/pinellolab/chorus/issues/139)) rather than on parsing the payload. `CHORUS_WRITE_LARGE_HTML` is gone.
 
 ## [0.7.2] — 2026-08-12
 
