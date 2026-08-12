@@ -863,9 +863,26 @@ def _parse_cell_type_from_description(description: str, assay_type: str = "") ->
 NOISE_FLOOR_RAW_SCORE = 1e-3
 
 
+def _track_fold(track):
+    """The model fold a prediction was made with, from its own metadata.
+
+    Cherimoya stamps ``metadata["fold"]`` on every TrackPrediction, so the report never has to
+    be told which fold it is scoring -- it reads it off the prediction. Returns None for
+    oracles that have no folds, which resolves to their single null.
+    """
+    meta = getattr(track, "metadata", None)
+    return meta.get("fold") if isinstance(meta, dict) else None
+
+
+def _normalization_key(oracle_name: str, fold=None) -> str:
+    from .normalization import normalization_key
+
+    return normalization_key(oracle_name, fold=fold)
+
+
 def _apply_normalization(
     ts: TrackScore, normalizer, oracle_name: str, layer: str,
-    assay_id: str | None = None,
+    assay_id: str | None = None, fold=None,
 ):
     """Apply quantile normalization to a TrackScore in place.
 
@@ -890,6 +907,10 @@ def _apply_normalization(
     )
 
     if isinstance(normalizer, PerTrackNormalizer) and assay_id is not None:
+        # A percentile is a rank against a null, so the null has to come from the same model.
+        # Cherimoya ships one null per fold mode, and ``fold`` selects between them; every
+        # other oracle resolves to its own name. See normalization.normalization_key.
+        oracle_name = _normalization_key(oracle_name, fold=fold)
         # Per-track normalization
         if ts.raw_score is not None and not in_noise_floor:
             raw_for_norm = ts.raw_score if use_signed else abs(ts.raw_score)
@@ -1166,7 +1187,8 @@ def build_variant_report(
                     )
                     if result is None:
                         ts.note = f"{gn} exons outside prediction window"
-                    _apply_normalization(ts, normalizer, oracle_name, layer, assay_id=assay_id)
+                    _apply_normalization(ts, normalizer, oracle_name, layer, assay_id=assay_id,
+                                         fold=_track_fold(ref_track))
                     scores.append(ts)
                     scored_any = True
                 if not scored_any:
@@ -1194,7 +1216,8 @@ def build_variant_report(
                 )
                 if result is None:
                     ts.note = "Outside scoring window"
-                _apply_normalization(ts, normalizer, oracle_name, layer, assay_id=assay_id)
+                _apply_normalization(ts, normalizer, oracle_name, layer, assay_id=assay_id,
+                                         fold=_track_fold(ref_track))
                 scores.append(ts)
 
                 # 2) Per-gene TSS rows (pick the most active TSS per gene).
@@ -1243,7 +1266,8 @@ def build_variant_report(
                                     region_label=f"{gn} TSS",
                                 )
                     if best_ts is not None:
-                        _apply_normalization(best_ts, normalizer, oracle_name, layer, assay_id=assay_id)
+                        _apply_normalization(best_ts, normalizer, oracle_name, layer,
+                                             assay_id=assay_id, fold=_track_fold(ref_track))
                         scores.append(best_ts)
                 continue
 
@@ -1298,7 +1322,8 @@ def build_variant_report(
                     )
                 else:
                     ts.note = "Outside scoring window"
-            _apply_normalization(ts, normalizer, oracle_name, layer, assay_id=assay_id)
+            _apply_normalization(ts, normalizer, oracle_name, layer, assay_id=assay_id,
+                                         fold=_track_fold(ref_track))
             scores.append(ts)
 
         allele_scores[allele_name] = scores

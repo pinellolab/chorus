@@ -50,9 +50,22 @@ from chorus.oracles.cherimoya_source.scoring import (
 # ---------------------------------------------------------------------------
 
 
-def test_the_shipped_default_is_the_ensemble():
-    assert CATV1_DEFAULT_FOLD == CATV1_ENSEMBLE
+def test_the_shipped_default_is_fold_0_and_the_ensemble_is_opt_in():
+    """Reversed on 2026-08-11, with CATv1's author.
+
+    This used to assert the ensemble was the default. It is fold 0 now, so Cherimoya's
+    scores are comparable with ChromBPNet -- which also defaults to fold 0, and whose null is
+    built on the same reference sets (both reproduce effect_counts=18672 and
+    summary_counts=34004). That comparison is the point of the cross-oracle report, and
+    jmschrei's view was that five models complicate and slow most analyses, so fold 0 is the
+    right default for an interactive tool.
+
+    The ensemble is still reachable and still has its own null; see
+    tests/test_fold_selects_its_own_null.py for the selection and mismatch guards.
+    """
+    assert CATV1_DEFAULT_FOLD == 0
     assert CATV1_N_FOLDS == 5
+    assert CATV1_ENSEMBLE == "ensemble", "the opt-in sentinel must still exist"
 
 
 def test_the_builder_defaults_to_the_oracle_default_not_a_literal():
@@ -168,9 +181,13 @@ def test_averaging_predictions_differs_from_averaging_per_fold_effects():
 # ---------------------------------------------------------------------------
 
 
-def test_the_shipped_null_records_that_it_was_built_from_the_ensemble():
-    """Provenance must answer "one fold or five?" -- a 33% difference in the
-    statistic every cherimoya percentile ranks against."""
+def test_the_shipped_null_records_the_fold_it_was_built_from():
+    """Provenance must answer "which fold?" -- the folds disagree by 2.02x on the same
+    sequence, so a null built on the wrong one produces plausible wrong percentiles.
+
+    The file under the plain name must be the DEFAULT fold's null; the ensemble's lives at
+    cherimoya_ensemble_pertrack.npz. The load-time guard enforces the pairing, and this test
+    checks the artefact on disk actually satisfies it."""
     import json
 
     from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
@@ -181,7 +198,7 @@ def test_the_shipped_null_records_that_it_was_built_from_the_ensemble():
     with np.load(path, allow_pickle=True) as d:
         assert "build_config" in d.files, "cherimoya ships no build_config"
         cfg = json.loads(str(d["build_config"][0]))
-    assert cfg.get("fold") == CATV1_ENSEMBLE, (
+    assert cfg.get("fold") == CATV1_DEFAULT_FOLD, (
         f"the shipped cherimoya null records fold={cfg.get('fold')!r}. If it really was "
         f"built from one fold, the oracle default must match it; if it was built from "
         f"five, the stamper dropped the field (it replaces build_config wholesale)."

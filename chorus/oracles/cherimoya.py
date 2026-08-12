@@ -152,6 +152,26 @@ class CherimoyaOracle(OracleBase):
 
     # ── model loading ────────────────────────────────────────────────
 
+    @property
+    def normalization_key(self) -> str:
+        """Which per-track CDF key ranks predictions from this oracle's current fold.
+
+        A percentile is a rank against a null, so the null has to come from the same model.
+        chorus ships two Cherimoya artefacts -- ``cherimoya_pertrack.npz`` built on fold 0
+        (the default) and ``cherimoya_ensemble_pertrack.npz`` built on the 5-fold mean -- and
+        this is how a caller asks for the right one:
+
+            get_normalizer(oracle.normalization_key)
+
+        Returning a *key* rather than threading a ``variant=`` argument through every call
+        site is deliberate: ``PerTrackNormalizer`` is already keyed by a name that need not be
+        an oracle (see ``_CDF_ALIASES``, where ``alphagenome_pt`` resolves to
+        ``alphagenome``'s CDF), so this rides an existing seam instead of widening twenty
+        signatures. The load-time guard in ``_ensure_loaded`` then checks the artefact's
+        stamped fold against the key, so a stale or mislabelled file fails loudly.
+        """
+        return "cherimoya_ensemble" if self.fold == CATV1_ENSEMBLE else "cherimoya"
+
     def load_pretrained_model(
         self,
         assay: Optional[str] = None,
@@ -200,6 +220,21 @@ class CherimoyaOracle(OracleBase):
             raise InvalidAssayError(
                 f"CATv1 fold must be an integer in 0..{CATV1_N_FOLDS - 1} or "
                 f"{CATV1_ENSEMBLE!r}, got {fold!r}."
+            )
+        if not ensemble and fold != 0:
+            # Refused rather than allowed-with-a-warning, because the failure would be a
+            # silently wrong number rather than a missing one: a percentile is a rank against
+            # a null, chorus ships nulls for fold 0 and the ensemble only, and the folds are
+            # not interchangeable -- on DNASE:ENCSR149XIL their peaks span 7.65 to 15.47
+            # (2.02x). Ranking fold 3 against fold 0's null returns a percentile that looks
+            # perfectly normal and is wrong.
+            raise InvalidAssayError(
+                f"CATv1 fold {fold} has no matching background null, so its percentiles "
+                f"would be ranked against a different model's distribution. chorus ships "
+                f"nulls for fold 0 (the default) and {CATV1_ENSEMBLE!r} only. The five folds "
+                f"disagree by ~2x on the same sequence, so this is not an approximation. "
+                f"To use fold {fold}, build its null first: "
+                f"scripts/build_backgrounds_cherimoya.py --fold {fold}"
             )
 
         if weights is not None:

@@ -160,7 +160,7 @@ Start with one or two oracles and add more with `chorus setup --oracle <name>` l
 | **Enformer** | 8 GB | optional | ~10 s (GPU) / ~1 min (CPU) | lightweight multi-track, CPU-friendly starter |
 | **Borzoi** | 12 GB | recommended | ~30 s (GPU) | distal gene-expression effects, longer context |
 | **ChromBPNet** | 4 GB | optional | ~1 s (CPU ok) | base-pair chromatin / motif disruption |
-| **Cherimoya / CATv1** | 4 GB | recommended | ~25 s (GPU, default) — [see note](#cherimoya-timing-depends-on-the-mode-you-run-it-in) | base-pair chromatin accessibility across 1,518 ENCODE DNase/ATAC experiments — the widest biosample coverage in chorus |
+| **Cherimoya / CATv1** | 4 GB | recommended | ~5 s (GPU, default) — [see note](#cherimoya-timing-depends-on-the-mode-you-run-it-in) | base-pair chromatin accessibility across 1,518 ENCODE DNase/ATAC experiments — the widest biosample coverage in chorus |
 | **LegNet** | 4 GB | optional | <1 s | MPRA / promoter activity |
 | **Sei** | 4 GB | optional | ~2 s | regulatory sequence-class profiling |
 | **EPInformer-seq** | 2 GB | optional | <1 s | per-cell 2-channel enhancer activity (DNase cut-sites + H3K27ac, 3 assays, 11 Roadmap cells, 2114-bp window) |
@@ -171,45 +171,51 @@ Start with one or two oracles and add more with `chorus setup --oracle <name>` l
 
 #### Cherimoya timing depends on the mode you run it in
 
-Cherimoya is the one oracle whose per-call cost is dominated by *how* it is invoked, not by
-the model — because chorus defaults to the **5-fold ensemble**, which is what the shipped
-background CDFs were built against (`fold: ensemble` is stamped in
-`cherimoya_pertrack.npz`'s `build_config`). CATv1's model card offers both, describing the
-five-fold average as "more robust" rather than recommending one over the other. In
-`use_environment=True` mode each fold is a separate subprocess. Nothing is amortised across
-calls there, so the second prediction costs the same as the first. Measured on one H200,
-single 2,114 bp window, `DNASE:ENCSR149XIL`:
+Cherimoya's per-call cost depends on *how many models you ask for*. chorus defaults to
+**fold 0** — one model — and CATv1's 5-fold mean is available as `fold="ensemble"`, which costs
+five forward passes and, in `use_environment=True` mode, five subprocesses. Measured on one
+H200, single 2,114 bp window, `DNASE:ENCSR149XIL`:
 
 | mode | load | 1st predict | 2nd predict |
 |---|---|---|---|
-| `use_environment=True`, 5-fold ensemble — **the default** | 5.8 s | 25.8 s | 25.8 s |
-| `use_environment=True`, `fold=0` | 4.4 s | 5.1 s | 5.2 s |
-| in-process (`use_environment=False`), either | 3.8 s | 0.86 s | **0.027 s** |
+| `use_environment=True`, `fold=0` — **the default** | 4.4 s | 5.1 s | 5.2 s |
+| `use_environment=True`, `fold="ensemble"` | 5.8 s | 25.8 s | 25.8 s |
+| in-process (`use_environment=False`), fold 0 | 3.8 s | 0.86 s | **0.027 s** |
 
-Env mode costs ~5 s per fold per call, so the 5-fold default is ~26 s and a ref/alt variant
-call is two of those. If you are scoring more than a handful of sequences, run in-process
-inside `chorus-cherimoya`: the first call pays ~0.9 s and every call after it is ~0.03 s.
+Nothing is amortised across calls in env mode, so the second prediction costs the same as the
+first; if you are scoring more than a handful of sequences, run in-process inside
+`chorus-cherimoya`. These numbers are ~3.6× better than before v0.7.2, because Triton was
+re-benchmarking its autotune candidates in *every* subprocess to serve one forward pass; chorus
+now enables Triton's on-disk autotune cache ([#165](https://github.com/pinellolab/chorus/pull/165),
+thanks @jmschrei). Predictions are bit-identical either way.
 
-These numbers are ~3.6× better than they were before v0.7.2. Triton benchmarks its autotune
-candidates the first time a kernel sees a shape, which is the right default for training but
-was being re-run in *every* subprocess to serve one forward pass — about 12 s of the old
-~62 s. Chorus now enables Triton's on-disk autotune cache before importing `cherimoya`, so
-the winner is reused across processes ([#165](https://github.com/pinellolab/chorus/pull/165),
-thanks @jmschrei). Predictions are bit-identical either way: it reuses the config `autotune`
-already chose, and an unseen shape still falls back to benchmarking.
+**Which fold to use.** fold 0 is the default because it matches ChromBPNet's default fold — so
+the two are comparable at the percentile level, both nulls being built on the same reference
+sets — and because handling five models complicates and slows most analyses, which is CATv1's
+author's own recommendation for an interactive tool. The ensemble renders a little cleaner and
+is one argument away.
 
-**Do not pin a single fold to save time.** The saving is now small and the cost is not.
-On the window above:
+They are not interchangeable, and each has **its own background null**, selected automatically
+from the fold a prediction was made with. A percentile is a rank against a background, so a null
+built from one model cannot rank predictions from another; asking for a fold with no null raises
+rather than returning a plausible wrong number. On the window above:
 
 | fold | 0 | 1 | 2 | 3 | 4 | ensemble |
 |---|---|---|---|---|---|---|
 | peak | 8.24 | 15.47 | 15.34 | 11.08 | 7.65 | **11.10** |
 
-The folds disagree by **2.02×** among themselves, and any one of them lands between 0.69×
-and 1.39× of the ensemble peak — so `fold=0` is not a cheaper approximation of the default,
-it is a different answer. The shipped background CDFs were also built against the ensemble,
-so a single fold is ranked against the wrong null. Pin one only if you have a reason
-beyond speed.
+The folds disagree by 2.02× among themselves, so `fold=N` is a different answer, not a cheaper
+approximation. chorus ships nulls for fold 0 and the ensemble; build one for another fold with
+`scripts/build_backgrounds_cherimoya.py --fold N`.
+
+⚠️ **Cherimoya and ChromBPNet are not comparable at raw magnitude.** chorus loads ChromBPNet as
+`chrombpnet_nobias`, which predicts the *bias-corrected* accessibility profile — ChromBPNet
+trains a Tn5/DNase bias model first and regresses its effect out. CATv1 does no such correction
+(`n_control_tracks: 0` in its checkpoints, `controls = None` in its training config, GC-matched
+negatives in place of a control track). Measured over four shared DNase experiments, CATv1 tracks
+**bias-aware** ChromBPNet to 1.02× on peak while differing from `chrombpnet_nobias` by 3.40×.
+Profile shape agrees either way (rank correlation 0.95). Compare the two through
+**percentiles**, which are unaffected because each oracle is ranked against its own null.
 
 **GPU vs CPU, inference step only** (model load, FASTA extraction and subprocess startup excluded). Measured on one H200 vs 8 CPU threads: **1.2 ms GPU / 10.5 ms CPU** for the single 2,114 bp window a 1 kb query needs. The GPU margin widens sharply with query width, because the GPU batches windows while CPU per-window cost climbs: **8.5×** at 1 kb (1 window), **45×** at 10 kb (8 windows), **150×** at 100 kb (98 windows — 18 ms GPU vs 2.8 s CPU). CPU is therefore comfortable for single-locus work and impractical for wide scans. Note also that the CPU path diverges from the Triton GPU path by ~1e-2 relative on the logits (r = 0.99999), so don't mix devices inside one comparison.
 

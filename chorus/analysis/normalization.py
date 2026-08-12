@@ -398,6 +398,15 @@ class PerTrackNormalizer:
     # Oracles that share an identical CDF with another oracle.
     _CDF_ALIASES: dict[str, str] = {"alphagenome_pt": "alphagenome"}
 
+    #: CDF keys that are not oracles, and the fold each one's artefact must be built on.
+    #:
+    #: Cherimoya ships two nulls because a percentile is a rank against a null and the folds
+    #: are not interchangeable -- on DNASE:ENCSR149XIL the five fold peaks span 7.65 to 15.47
+    #: (2.02x), and any single fold lands between 0.69x and 1.39x of the ensemble. fold 0 is
+    #: the default and takes the plain filename; the ensemble is a separate key.
+    #: ``CherimoyaOracle.normalization_key`` is how a caller picks.
+    _EXPECTED_FOLD: dict[str, object] = {"cherimoya": 0, "cherimoya_ensemble": "ensemble"}
+
     def _ensure_loaded(self, oracle_name: str) -> dict | None:
         """Lazy-load the NPZ for *oracle_name*.  Returns the data dict or None."""
         if oracle_name in self._loaded:
@@ -409,6 +418,29 @@ class PerTrackNormalizer:
             if alias:
                 return self._ensure_loaded(alias)
             return None
+        # Refuse an artefact built on a different fold than the key promises.
+        #
+        # This is the guard that makes a fold mismatch impossible to ship silently. The
+        # failure it prevents is not a crash: it is a percentile that looks entirely normal
+        # and is ranked against a different model's distribution. It is reachable three ways
+        # -- a cache from before fold 0 became the default (that file holds ensemble CDFs
+        # under the plain name), a hand-copied or mirrored artefact, or a caller that asks
+        # for the wrong key. Checked here rather than at the call sites because there is one
+        # loader and about twenty callers.
+        expected = self._EXPECTED_FOLD.get(oracle_name)
+        if expected is not None:
+            got = _stamped_fold(path)
+            if got is not None and got != expected:
+                raise BackgroundFoldMismatch(
+                    f"{path.name} was built on CATv1 fold {got!r} but the "
+                    f"'{oracle_name}' CDF key requires fold {expected!r}. A percentile is a "
+                    f"rank against a null, so using this file would rank predictions from "
+                    f"one model against another model's distribution -- the folds disagree "
+                    f"by ~2x on the same sequence. If this is a cache from before fold 0 "
+                    f"became the default, delete it and let chorus re-download: "
+                    f"rm {path}"
+                )
+
         # Say something when the artefact predates the retention rebuild. The
         # downloader now refuses to keep a superseded cache, but a user who
         # obtained the file another way -- a copy, a pinned mirror, a restored
@@ -1554,7 +1586,7 @@ MIN_ARTEFACT_SCHEMA = 4
 #: dataset's head, which is what you want while developing a new oracle's background and
 #: not what you want in an analysis you intend to reproduce.
 _HF_REVISION = os.environ.get(
-    "CHORUS_BACKGROUNDS_REVISION", "backgrounds-2026-08-10-layers"
+    "CHORUS_BACKGROUNDS_REVISION", "backgrounds-2026-08-12-cherimoya-fold0"
 )
 
 
@@ -1579,6 +1611,64 @@ def _hf_endpoint_reachable(timeout: float = 5.0) -> "tuple[bool, str]":
             return True, f"{host}:{port}"
     except OSError as exc:
         return False, f"{host}:{port} — {type(exc).__name__}: {exc}"
+
+
+def normalization_key(oracle_name: str, track=None, fold=None) -> str:
+    """Which CDF key ranks a prediction from *oracle_name*, given its fold.
+
+    A percentile is a rank against a null, so the null must come from the same model. Only
+    Cherimoya has more than one: ``cherimoya`` (fold 0, the default) and
+    ``cherimoya_ensemble`` (the 5-fold mean). Every other oracle returns its own name.
+
+    The fold is read from the prediction's own metadata when a track is given -- every
+    Cherimoya ``TrackPrediction`` stamps ``metadata["fold"]`` -- so a caller that already has
+    the track does not need to know about folds at all. Pass ``fold=`` directly when only the
+    oracle instance is in scope (``oracle.fold``).
+
+    Getting this wrong is not a crash: it is a percentile that looks entirely normal and is
+    ranked against a different model's distribution. The folds disagree by ~2x on the same
+    sequence. ``tests/test_fold_selects_its_own_null.py`` enumerates the lookup sites so a new
+    one cannot skip this resolution silently.
+    """
+    if oracle_name not in ("cherimoya", "cherimoya_ensemble"):
+        return oracle_name
+    if fold is None and track is not None:
+        meta = getattr(track, "metadata", None)
+        if isinstance(meta, dict):
+            fold = meta.get("fold")
+    return "cherimoya_ensemble" if fold == "ensemble" else "cherimoya"
+
+
+class BackgroundFoldMismatch(ValueError):
+    """An artefact was built on a different model fold than the CDF key requires.
+
+    Deliberately NOT swallowed by ``get_normalizer``'s legacy fallback. Every other reason a
+    per-track artefact fails to load means "no percentiles available", which is a degradation.
+    This one means "the percentiles would be wrong" -- ranked against a different model's
+    distribution -- and silently falling back would hide the one condition the guard exists
+    to surface.
+    """
+
+
+def _stamped_fold(path) -> object | None:
+    """CATv1 fold recorded in an artefact's ``build_config``, or None if unstamped.
+
+    Opened lazily and defensively: an unreadable or unstamped file must not break loading,
+    because only Cherimoya has a fold at all and every other oracle's artefact has no such
+    key. Returns None in that case so the caller skips the check rather than failing.
+    """
+    try:
+        import json
+
+        with np.load(str(path), allow_pickle=True) as z:
+            if "build_config" not in z.files:
+                return None
+            raw = z["build_config"]
+            raw = raw.item() if getattr(raw, "shape", None) == () else raw[0]
+            cfg = json.loads(str(raw)) if isinstance(raw, (str, np.str_)) else raw
+        return cfg.get("fold") if isinstance(cfg, dict) else None
+    except Exception:
+        return None
 
 
 def _cached_artefact_is_superseded(path: Path) -> str | None:
@@ -1840,6 +1930,10 @@ def get_normalizer(
         pertrack = get_pertrack_normalizer(oracle_name, cache_dir=cache_dir)
         if pertrack is not None and pertrack.n_tracks(oracle_name) > 0:
             return pertrack
+    except BackgroundFoldMismatch:
+        # Not a "no percentiles available" condition -- a "the percentiles would be wrong"
+        # condition. Let it out.
+        raise
     except Exception as exc:
         logger.debug(
             "Per-track normalizer unavailable for %s (%s); falling back to legacy .npy scan.",
