@@ -582,11 +582,18 @@ def _score_all_tracks(
             raw_for_norm = abs(raw_score) if not use_signed else raw_score
 
             if isinstance(normalizer, PerTrackNormalizer):
+                # A percentile is a rank against a null, so the null must come from the same
+                # model. Cherimoya ships one per fold mode and the prediction records which
+                # fold made it; every other oracle resolves to its own name.
+                from .normalization import normalization_key
+                from .variant_report import _track_fold
+
+                norm_key = normalization_key(oracle_name, fold=_track_fold(ref_track))
                 te.effect_pctile = normalizer.effect_percentile(
-                    oracle_name, assay_id, raw_for_norm, signed=use_signed,
+                    norm_key, assay_id, raw_for_norm, signed=use_signed,
                 )
                 te.activity_pctile = normalizer.activity_percentile(
-                    oracle_name, assay_id, ref_v,
+                    norm_key, assay_id, ref_v,
                 )
                 te.effect_exceedance = normalizer.effect_exceedance(
                     oracle_name, assay_id, raw_for_norm, signed=use_signed,

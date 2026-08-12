@@ -55,7 +55,21 @@ CATV1_ENSEMBLE = "ensemble"
 # a query scored one way against a null built the other way is not a
 # percentile of anything. build_backgrounds_cherimoya.py --fold defaults here
 # too, and tests/test_cherimoya_ensemble.py pins the two together.
-CATV1_DEFAULT_FOLD = CATV1_ENSEMBLE
+#: Fold chorus loads when the caller doesn't say.
+#:
+#: fold_0, not the ensemble. Decided with CATv1's author (jmschrei) on 2026-08-11: he
+#: normally doesn't use five folds because handling five models complicates and slows most
+#: analyses, and suggested that for an interactive setting like chorus the right shape is to
+#: start at fold_0 and let the user opt into the full ensemble when they want to dig deeper.
+#: The ensemble does render a little cleaner, so it stays available as ``fold="ensemble"``.
+#:
+#: A percentile is a rank against a null, so each mode needs its OWN null -- the two are not
+#: interchangeable. On DNASE:ENCSR149XIL at chr1:109,274,968 the five fold peaks are
+#: 8.24 / 15.47 / 15.34 / 11.08 / 7.65 against an ensemble peak of 11.10: the folds disagree
+#: by 2.02x among themselves and any single one lands between 0.69x and 1.39x of the
+#: ensemble. So chorus ships two artefacts and selects between them by fold; see
+#: ``chorus.analysis.normalization`` and ``CherimoyaOracle.normalization_key``.
+CATV1_DEFAULT_FOLD = 0
 
 # CATv1 is human-only.  Unlike ChromBPNet (which also ships mouse
 # developmental models), every CATv1 experiment is GRCh38.

@@ -33,7 +33,7 @@ question is answered three independent ways:
 
 | Oracle | HepG2 DNase track | raw log2FC | linear ratio | percentile |
 | --- | --- | --- | --- | --- |
-| Cherimoya (5-fold ensemble) | `DNASE:ENCSR149XIL` | **+1.458** | 2.749 | 0.9997 |
+| Cherimoya (fold 0, the default) | `DNASE:ENCSR149XIL` | **+1.793** | 3.463 | 0.9999 |
 | ChromBPNet | `DNASE:HepG2` | **+1.376** | 2.600 | 0.9995 |
 | AlphaGenome | `DNASE:HepG2` | **+1.334** | 2.524 | 0.9964 |
 
@@ -80,8 +80,8 @@ accession is what identifies a model.
 
    **It compares direction only** — literally the sign of each oracle's effect —
    so it is shown alongside the magnitude spread rather than on its own. The
-   accessibility row here reads `✅ all ↑ · 3 oracles, +1.33…+1.46`: unanimous on
-   direction, and differing by 1.09× in linear fold change between the extremes.
+   accessibility row here reads `✅ all ↑ · 3 oracles, +1.33…+1.79`: unanimous on
+   direction, and differing by 1.37× in linear fold change between the extremes.
    Without the spread, that renders identically to three oracles agreeing exactly,
    and a reader has no way to tell which they are looking at.
 2. **Cross-oracle genome browser** — one unified IGV instance stacks every
