@@ -7,11 +7,28 @@ project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
-- **Cherimoya is 3.6× faster in its default mode, and 17× faster in-process** — contributed by [@jmschrei](https://github.com/jmschrei) in [#165](https://github.com/pinellolab/chorus/pull/165). Triton benchmarks its `autotune` candidates the first time a kernel sees a shape, which is right for training but was being re-run in *every* subprocess to serve a single forward pass, because `run_code_in_environment` spawns a fresh process per call. Chorus now enables Triton's on-disk autotune cache before importing `cherimoya`, so the winner is reused across processes. Measured on one H200, `DNASE:ENCSR149XIL`, single 2,114 bp window:
+- **⚠️ Cherimoya now uses fold 0 by default instead of the 5-fold ensemble, so its scores move.** Anyone comparing numbers against 0.7.1 will see Cherimoya percentiles and log2FCs differ. This is the default model changing, not a regression.
+
+  Agreed with CATv1's author, [@jmschrei](https://github.com/jmschrei): five models complicate and slow most analyses, so fold 0 is the right default for an interactive tool and the ensemble is there when you want to dig deeper. Fold 0 also matches ChromBPNet's default fold, and the two nulls are built on the same reference sets — the Cherimoya null reproduces ChromBPNet's `effect_counts=18672` and `summary_counts=34004` exactly — so a **percentile** from one means what a percentile from the other means. Raw magnitudes are *not* comparable; see the bias note below.
+
+  The 5-fold mean stays available as `fold="ensemble"` and has its own null (`cherimoya_ensemble_pertrack.npz`); a percentile is a rank against a background, so each mode is ranked against a background built with the same model. Selection is automatic — every Cherimoya prediction records its fold — and a mismatch raises rather than returning a plausible wrong number.
+
+  Folds 1–4 now raise: no null ships for them, and ranking one against another fold's null returns a plausible wrong number rather than an approximation.
+
+- **Documented: Cherimoya and ChromBPNet are not comparable at raw magnitude, because one is bias-corrected and the other is not.** chorus loads ChromBPNet as `chrombpnet_nobias`, the "TF Model" that predicts the *bias-corrected* accessibility profile — ChromBPNet trains a Tn5/DNase bias model first and regresses its effect out. CATv1 does no such correction: the shipped checkpoints carry `n_control_tracks: 0`, its training config has `controls = None`, and its ATAC recipe uses GC-matched negatives with no control file. Measured on the four shared DNase experiments, fold 0 both sides:
+
+  | CATv1 vs | window sum | peak | peak/sum |
+  |---|---|---|---|
+  | `chrombpnet_nobias` (what chorus loads) | 1.32× | **3.40×** | **2.19×** |
+  | `chrombpnet` (bias-aware) | 1.14× | **1.02×** | **0.80×** |
+
+  So CATv1 tracks the bias-*aware* model almost exactly and differs from the bias-corrected one by ~3.4× on peak height. Profile shape agrees regardless (rank correlation 0.95, peaks 18 bp apart) — it is height and sharpness that separate. **Percentiles are unaffected**, since each oracle is ranked against its own null (0.9325 vs 0.9550 at the SORT1 locus), which is why the cross-oracle panel reads consistently. This asymmetry is pre-existing, not introduced here, and switching the panel to bias-aware ChromBPNet is deliberately left as separate work.
+
+- **Cherimoya is 3.6× faster on the 5-fold ensemble, and 17× faster in-process** — contributed by [@jmschrei](https://github.com/jmschrei) in [#165](https://github.com/pinellolab/chorus/pull/165). Triton benchmarks its `autotune` candidates the first time a kernel sees a shape, which is right for training but was being re-run in *every* subprocess to serve a single forward pass, because `run_code_in_environment` spawns a fresh process per call. Chorus now enables Triton's on-disk autotune cache before importing `cherimoya`, so the winner is reused across processes. Measured on one H200, `DNASE:ENCSR149XIL`, single 2,114 bp window:
 
   | mode | before | after | |
   |---|---|---|---|
-  | `use_environment=True`, 5-fold ensemble — the default | 89.5 s | 25.0 s | 3.6× |
+  | `use_environment=True`, 5-fold ensemble | 89.5 s | 25.0 s | 3.6× |
   | in-process (`use_environment=False`) | 13.6 s | 0.79 s | 17.3× |
 
   **Predictions are bit-identical**, verified in both modes rather than assumed: the ensemble window sum is 954.37564392006766 and the peak 11.103147742142609 before and after, to the last digit. It reuses the config `autotune` already chose; an unseen shape still falls back to benchmarking. The cherimoya integration suite got 3–4× faster on its own as corroboration (`test_variant_effect_runs_end_to_end` 178 s → 50 s).

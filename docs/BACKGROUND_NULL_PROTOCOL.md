@@ -463,6 +463,63 @@ came back reporting byte-identical output.
 
 ---
 
+### 6.6 One oracle, two nulls — Cherimoya's folds
+
+A percentile is a rank against a null, so the null must come from the *same model* that made
+the prediction. CATv1 ships five cross-validation folds and chorus exposes two modes, so it
+ships two nulls:
+
+| artefact | built on | used when |
+|---|---|---|
+| `cherimoya_pertrack.npz` | fold 0 | the default |
+| `cherimoya_ensemble_pertrack.npz` | the 5-fold mean | `fold="ensemble"` |
+
+They are **not** interchangeable. On `DNASE:ENCSR149XIL` at chr1:109,274,968 the five fold
+peaks are 8.24 / 15.47 / 15.34 / 11.08 / 7.65 against an ensemble peak of 11.10 — a 2.02×
+spread, with any single fold landing between 0.69× and 1.39× of the ensemble. Ranking a fold-0
+prediction against the ensemble's null does not return an approximation; it returns a number
+that looks entirely normal and is wrong.
+
+Both nulls are built on the **same reference sets** — each reproduces `effect_counts=18672`
+and `summary_counts=34004`, the counts the published ChromBPNet CDFs use, which is the
+builder's own proof that the variant and region sets are shared. The two differ *only* in which
+model scored them.
+
+Selection is automatic: every Cherimoya `TrackPrediction` stamps `metadata["fold"]`, and
+`normalization.normalization_key()` resolves the CDF key from it. Two guards back that up —
+a load-time check that refuses an artefact whose stamped `fold` disagrees with the key asking
+for it (`BackgroundFoldMismatch`, deliberately *not* swallowed by the legacy fallback, because
+every other load failure means "no percentiles" while this one means "wrong percentiles"), and
+`tests/test_fold_selects_its_own_null.py`, which enumerates the percentile call sites so a new
+one cannot pass a bare oracle name. A fold with no null raises rather than being approximated.
+
+**Why fold 0 is the default.** It matches ChromBPNet's default fold, and with both nulls on
+shared reference sets that makes the two oracles comparable *at the percentile level* — 0.9325
+for ChromBPNet against 0.9550 for Cherimoya at the SORT1 locus. Decided with CATv1's author
+(2026-08-11), whose view is that handling five models complicates and slows most analyses, so
+fold 0 suits an interactive tool with the ensemble one argument away.
+
+⚠️ **Raw magnitudes are NOT comparable between the two oracles, and that is about bias, not
+folds.** chorus loads ChromBPNet as `chrombpnet_nobias` — the "TF Model" predicting the
+*bias-corrected* accessibility profile, since ChromBPNet trains a Tn5/DNase bias model first
+and regresses its effect out. CATv1 does no such correction: `n_control_tracks: 0` in the
+shipped checkpoints, `controls = None` in its training config, GC-matched negatives in place of
+a control track. Measured over four shared DNase experiments, fold 0 both sides:
+
+| CATv1 vs | window sum | peak | peak/sum |
+|---|---|---|---|
+| `chrombpnet_nobias` (what chorus loads) | 1.32× | **3.40×** | **2.19×** |
+| `chrombpnet` (bias-aware) | 1.14× | **1.02×** | **0.80×** |
+
+CATv1 tracks the bias-*aware* model almost exactly. Profile shape agrees either way (rank
+correlation 0.95, peaks 18 bp apart) — it is height and sharpness that separate, and both
+collapse when the bias model is left in. Percentiles are unaffected because each oracle is
+ranked against its own null, which is why the cross-oracle panel reads consistently. The
+asymmetry is pre-existing rather than introduced by the fold change; switching the panel to
+bias-aware ChromBPNet is deliberately left as separate work.
+
+---
+
 ## 7. Guards, and what each one catches
 
 Every one of these exists because something passed all the *other* checks.
@@ -639,6 +696,8 @@ oracle and leaves it unstamped, with a non-zero exit code; the other seven still
 | 2026-08-07 | motif-anchored ChIP null **deferred** | cost is per-TF scoring (240 TFs × ~6,000 passes), not motif lookup; and peak/attribution-derived positions cannot contain motif-*creating* variants, which is the saturating case |
 | 2026-08-10 | display **pooling** measured per track, not declared per oracle | Cherimoya (1 bp, BPNet family, absent from the hardcoded list) rendered its peak at 0.547 against ChromBPNet's 3.000 on the same axis — 5.5×, display-only. Five cheaper predictors each get the sign wrong on ≥1 oracle |
 | 2026-08-10 | display **band** log-scaled when the *rendered panel* is measured to clip >4% of its bins | AlphaGenome CAGE p99 = 0.0405 against max 852: 13.1% of display bins pinned at the ceiling, against 0.0–1.3% on the panels that read well. Fixed to 1.3%, peak still 3.00 |
+| 2026-08-12 | Cherimoya default fold 0, with a second null for the ensemble | folds disagree 2.02x on the same sequence, so one null cannot rank the other's predictions; fold 0 matches ChromBPNet's default, making percentiles comparable (0.9325 vs 0.9550). Agreed with CATv1's author |
+| 2026-08-12 | ChromBPNet↔Cherimoya compared at percentile level only | CATv1 has no bias model (`n_control_tracks: 0`, `controls = None`); it tracks bias-*aware* ChromBPNet at 1.02x on peak and differs from `chrombpnet_nobias` by 3.40x |
 | 2026-08-11 | the trigger is **not** a genome-wide CDF statistic | all four candidates overlap between must-change and must-not-move; `max/p99.9 > 50` would have log-scaled 130 tracks: 102 ChromBPNet ChIP, 10 Enformer + 8 Borzoi CAGE, 7 AlphaGenome TF-ChIP, 2 ChromBPNet DNase, 1 Cherimoya DNase. `CHIP:K562:ZBTB11`, which that statistic ranked above CAGE, measures 0.000 saturation as drawn |
 | 2026-08-09 | activity population **recorded per builder** (three mixtures), not harmonised to one | harmonising means rebuilding five backgrounds, and the three mixtures are 29,500 / 31,500 / 34,500 positions — a composition change, so §9's two-arm rule applies. Recording it is free and makes the difference legible; the stamp had asserted one 31,500-position set for all eight, false for five |
 
