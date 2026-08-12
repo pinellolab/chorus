@@ -123,7 +123,9 @@ def test_a_saturated_track_escalates_to_the_log_band():
             return False
 
         def perbin_floor_rescale_batch(self, _o, _t, values, floor_pctile=0.95,
-                                       peak_pctile=0.99, max_value=3.0, log_scale=False):
+                                       peak_pctile=0.99, max_value=None, log_scale=False):
+            from chorus.analysis._igv_report import _DISPLAY_MAX
+            max_value = _DISPLAY_MAX if max_value is None else max_value
             floor, peak = (0.005, 0.0405) if not log_scale else (5.0, 25.0)
             v = np.asarray(values, dtype=float)
             if log_scale:
@@ -166,7 +168,7 @@ def test_a_readable_track_is_left_alone():
     # ``[::bins_per * 7]``, which is one clipped bin in every 7th DISPLAY bin -- 14%, and it
     # (correctly) triggered.
     for i in (11, 250):
-        disp[i * bins_per + 5] = 3.0
+        disp[i * bins_per + 5] = ig._DISPLAY_MAX
 
     calls = []
 
@@ -216,7 +218,9 @@ def test_the_log_band_is_rejected_when_it_erases_the_track():
         def perbin_floor_rescale_batch(self, _o, _t, values, log_scale=False, **_kw):
             v = np.asarray(values, dtype=float)
             # a band so high that everything lands near zero
-            return np.clip(v / 1e6, 0.0, 3.0) if log_scale else np.full(v.size, 3.0)
+            from chorus.analysis._igv_report import _DISPLAY_MAX
+            return (np.clip(v / 1e6, 0.0, _DISPLAY_MAX) if log_scale
+                    else np.full(v.size, _DISPLAY_MAX))
 
     out, _alt, used_log = ig.escalate_scale_if_saturated(
         _Erasing(), "alphagenome", "CAGE:HepG2", "tss_activity", raw, raw,
@@ -235,11 +239,14 @@ def test_saturation_is_measured_as_drawn_not_natively():
     """
     from chorus.analysis import _igv_report as ig
 
+    # Uses _DISPLAY_MAX rather than a literal: this fixture silently stopped reaching the
+    # ceiling when the axis moved 3.0 -> 4.0, which is the same hardcoded-literal failure the
+    # mutation review found in the limits themselves.
     bins_per = 349
     v = np.zeros(300 * bins_per)
-    v[::bins_per] = 3.0                            # one clipped native bin per display bin
+    v[::bins_per] = ig._DISPLAY_MAX               # one clipped native bin per display bin
 
-    native = float((v >= 3.0 - 1e-3).mean())
+    native = float((v >= ig._DISPLAY_MAX - 1e-3).mean())
     drawn, _ = ig._display_saturation(v, bins_per, "max")
     assert native < 0.01 < drawn, (
         f"native {native:.4f} vs drawn {drawn:.4f}: max-pooling must be what the "
@@ -376,7 +383,8 @@ def test_an_epsilon_improvement_is_not_accepted_as_a_fix():
     bins_per = 1
     n = 2000
     raw = np.linspace(0.0, 10.0, n)
-    lin = np.full(n, 3.0)
+    from chorus.analysis._igv_report import _DISPLAY_MAX as _DM
+    lin = np.full(n, _DM)
     lin[: int(n * 0.45)] = 0.5                     # linear: 55% clipped
 
     class _Marginal(PerTrackNormalizer):
@@ -390,7 +398,7 @@ def test_an_epsilon_improvement_is_not_accepted_as_a_fix():
             v = np.asarray(values, dtype=float)
             if not log_scale:
                 return lin.copy()
-            out = np.full(v.size, 3.0)
+            out = np.full(v.size, _DM)
             out[: int(v.size * 0.50)] = 0.5        # log: 50% clipped -- barely better
             return out
 
@@ -420,7 +428,8 @@ def test_a_collapsed_log_band_is_rejected_rather_than_shipped_as_a_barcode():
     bins_per, n = 1, 1000
     raw = np.zeros(n)
     raw[::10] = np.linspace(1.0, 500.0, raw[::10].size)
-    lin = np.full(n, 3.0)
+    from chorus.analysis._igv_report import _DISPLAY_MAX as _DM2
+    lin = np.full(n, _DM2)
     lin[: int(n * 0.85)] = 0.0                     # 15% clipped -> triggers
 
     class _Collapsed(PerTrackNormalizer):
@@ -435,7 +444,7 @@ def test_a_collapsed_log_band_is_rejected_rather_than_shipped_as_a_barcode():
             if not log_scale:
                 return lin.copy()
             # denom collapsed: a two-level barcode, and 13% clipped so saturation "improved"
-            return np.where(v > 3e-9, 3.0, 0.0)
+            return np.where(v > 3e-9, _DM2, 0.0)
 
     out, _alt, used_log = ig.escalate_scale_if_saturated(
         _Collapsed(), "chrombpnet", "CHIP:HEK293:ZNF24", "tf_binding", raw, raw,
@@ -450,11 +459,10 @@ def test_the_limit_leaves_the_committed_enformer_and_borzoi_panels_alone():
     Measured over all 346 subtracks of the 19 committed IGV panels at the released baseline
     there is a clean gap with nothing in it:
 
-        0.0899   alphagenome DNASE:HepG2        <- the 22 subtracks at/above here are all
-                                                  AlphaGenome SORT1 CAGE/ATAC/DNase
-        ------ gap ------
-        0.0656   alphagenome ATAC:HepG2  (FTO panel)
-        0.0625   enformer CAGE substantia nigra
+        0.1085   alphagenome CAGE, linear band as drawn   <- must escalate
+        ------ gap, 2.49x ------
+        0.0435   enformer CAGE substantia nigra           <- must not move (corpus top)
+        0.0022   corpus median
 
     A limit of 0.04 sat below that gap and would have escalated 45 subtracks (13%), including
     seven Enformer CAGE tracks at 0.042-0.063 that render acceptably -- silently invalidating
@@ -462,8 +470,11 @@ def test_the_limit_leaves_the_committed_enformer_and_borzoi_panels_alone():
     """
     from chorus.analysis._igv_report import _MAX_DISPLAY_SATURATION
 
-    HIGHEST_ACCEPTABLE_MEASURED = 0.0656     # alphagenome ATAC, FTO panel
-    LOWEST_BROKEN_MEASURED = 0.0899          # alphagenome DNase, SORT1 panels
+    # Re-measured 2026-08-12 for the 4.0 display ceiling; the previous pair (0.0656 / 0.0899)
+    # was measured at 3.0 and no longer describes the axis. CAGE's trigger value has to come
+    # from a fresh linear-band rescale because the committed panels show it post-escalation.
+    HIGHEST_ACCEPTABLE_MEASURED = 0.0435     # enformer CAGE substantia nigra, SORT1 panel
+    LOWEST_BROKEN_MEASURED = 0.1085          # alphagenome CAGE, linear band as drawn
     assert HIGHEST_ACCEPTABLE_MEASURED < _MAX_DISPLAY_SATURATION < LOWEST_BROKEN_MEASURED, (
         f"_MAX_DISPLAY_SATURATION={_MAX_DISPLAY_SATURATION} is outside the measured gap "
         f"({HIGHEST_ACCEPTABLE_MEASURED}, {LOWEST_BROKEN_MEASURED}); below it the committed "
@@ -619,3 +630,79 @@ def test_the_real_log_band_is_exercised_end_to_end():
             assert not np.allclose(finite, finite[0], rtol=1e-6), (
                 "the log band is an affine rescale of the linear one, so log1p was dropped"
             )
+
+
+def test_the_browser_reduction_is_max_for_every_track():
+    """igv.js re-reduces features to pixels, and that stage wants max everywhere.
+
+    This is the SECOND pooling stage, and it takes the opposite default from the first because
+    the collapse factors differ by two orders of magnitude. The feature stage reduces ~349
+    native bins per display bin, where max lifted AlphaGenome DNase's floor to 0.707 and so has
+    to be measured per track. igv.js collapses only 2-3 of those already-pooled features per
+    pixel, where max barely lifts a floor but mean still dilutes a sharp peak.
+
+    Measured on the committed SORT1 panel at the browser's 3:1 ratio, peak lost by using mean:
+    legnet 2.33x, alphagenome DNase 1.56x, chrombpnet 1.38x, CAGE 1.31x, cherimoya 1.14x.
+    Mean also costs UNEQUALLY -- 1.38x for ChromBPNet against 1.14x for Cherimoya is a 1.2x
+    relative distortion between the two tracks a cross-oracle panel exists to compare -- and it
+    cancels signed tracks against themselves, which is why LegNet is worst.
+
+    It used to be ``"max" if source_model in _HIGH_RES_ORACLES else "mean"``, a two-name list
+    that gave Cherimoya and AlphaGenome CAGE ``mean`` in the browser right after the feature
+    stage had measured them into ``max`` -- the original 5.5x dilution, one stage further down.
+    """
+    import re
+    from pathlib import Path as _P
+
+    from chorus.analysis._igv_report import _IGV_WINDOW_FUNCTION
+
+    from chorus.analysis._igv_report import browser_window_function
+    assert _IGV_WINDOW_FUNCTION == "max"
+    # max for every track EXCEPT a log-scaled one, where the compressed top means max
+    # promotes many near-ceiling bins over it: CAGE's saturation went 0.003 -> 0.023 (7.7x)
+    # and the clipped flat tops read as coverage rather than TSS peaks.
+    assert browser_window_function(False) == "max"
+    assert browser_window_function(True) == "mean"
+
+    root = _P(__file__).resolve().parent.parent / "chorus" / "analysis"
+    offenders = []
+    for name in ("_igv_report.py", "multi_oracle_report.py", "causal.py"):
+        src = (root / name).read_text()
+        for m in re.finditer(r'"windowFunction"\s*:\s*([^,\n]+)', src):
+            val = m.group(1).strip()
+            if val not in ("_IGV_WINDOW_FUNCTION", "wf",
+                           "browser_window_function(used_log)"):
+                offenders.append(f"{name}:{src[:m.start()].count(chr(10)) + 1} -> {val}")
+        # and the per-oracle list must not be what decides it
+        if re.search(r'"windowFunction".{0,60}_HIGH_RES_ORACLES', src, re.S):
+            offenders.append(f"{name}: windowFunction keyed on _HIGH_RES_ORACLES again")
+    assert not offenders, (
+        f"these emit a browser reduction that is not the single measured default: {offenders}. "
+        f"A per-oracle name list here is how Cherimoya got mean-reduced in the browser "
+        f"immediately after the feature stage measured it into max."
+    )
+
+
+def test_the_axis_and_the_saturation_limit_stay_coupled():
+    """Changing the display ceiling invalidates the saturation calibration. Say so loudly.
+
+    ``_MAX_DISPLAY_SATURATION`` is a fraction of bins sitting AT ``_DISPLAY_MAX``, so its value
+    is only meaningful for one ceiling. When the ceiling moved 3.0 -> 4.0 the previously measured
+    gap (0.0656 -> 0.0899) silently became wrong, and three fixtures in this file quietly stopped
+    reaching the ceiling at all -- passing for the wrong reason. Mutation testing showed the
+    ceiling was free to move with every test green, which is what let that happen.
+
+    So this pins the pair. If you change the ceiling, re-derive the limit: regenerate the panels,
+    re-measure saturation across every committed subtrack, and re-measure the escalating track's
+    LINEAR-band value separately (the panels show it post-escalation, so it cannot be read off
+    them). Then update this test and the constant's docstring table together.
+    """
+    from chorus.analysis._igv_report import _DISPLAY_MAX, _MAX_DISPLAY_SATURATION
+
+    assert _DISPLAY_MAX == 4.0, (
+        f"_DISPLAY_MAX is {_DISPLAY_MAX}, but _MAX_DISPLAY_SATURATION={_MAX_DISPLAY_SATURATION} "
+        f"was calibrated against a 4.0 ceiling (measured gap: enformer CAGE 0.0435 against "
+        f"alphagenome CAGE 0.1085 on the linear band). Every saturation figure scales with the "
+        f"ceiling, so the limit must be re-derived before this change is safe -- see the "
+        f"docstring on _MAX_DISPLAY_SATURATION for the procedure."
+    )

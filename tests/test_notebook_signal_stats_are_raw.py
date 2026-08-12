@@ -150,11 +150,15 @@ def test_display_rescale_flattens_minmax_input(tmp_path):
     """The figure-4 mechanism, measured.
 
     A raw DNase peak of 22 is 26x the track's genome-wide p99 and clips at the
-    3.0 display cap. Min-max first maps that peak to 1.0, which the same
-    rescaler reads as a raw 1.0 — below the p99 threshold — so the tallest bin
-    in the panel ends up at 0.75 of 3.0, a quarter of the axis.
+    display cap. Min-max first maps that peak to 1.0, which the same rescaler
+    reads as a raw 1.0 — below the p99 threshold — so the tallest bin in the
+    panel ends up at ~0.75 in band units, a small fraction of the axis.
+
+    Reads the cap from ``_DISPLAY_MAX`` rather than hardcoding it: this test asserted 3.0 and
+    broke when the axis moved to 4.0 in v0.7.2, which is the right kind of break (the axis is
+    load-bearing here) but the number belongs in one place.
     """
-    from chorus.analysis._igv_report import rescale_for_display
+    from chorus.analysis._igv_report import _DISPLAY_MAX, rescale_for_display
     from chorus.core.result import minmax
 
     normalizer = _one_track_normalizer(tmp_path, _ENCFF413AHU_P90, _ENCFF413AHU_P99)
@@ -169,8 +173,8 @@ def test_display_rescale_flattens_minmax_input(tmp_path):
         oracle_name="minmaxtest", assay_id="ENCFF413AHU",
     )
 
-    assert cfg["rescaled"] and (cfg["ymin"], cfg["ymax"]) == (0.0, 3.0)
-    assert from_raw.max() == pytest.approx(3.0)          # clipped at the cap
+    assert cfg["rescaled"] and (cfg["ymin"], cfg["ymax"]) == (0.0, _DISPLAY_MAX)
+    assert from_raw.max() == pytest.approx(_DISPLAY_MAX)  # clipped at the cap
     expected = (1.0 - _ENCFF413AHU_P90) / (_ENCFF413AHU_P99 - _ENCFF413AHU_P90)
     assert from_minmax.max() == pytest.approx(expected, abs=1e-3)  # 0.7506
     assert from_raw.max() / from_minmax.max() > 3.9

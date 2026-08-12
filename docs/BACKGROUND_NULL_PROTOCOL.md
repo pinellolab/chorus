@@ -364,7 +364,7 @@ being statistically right is not sufficient — it also has to be legible. Two d
 between the CDF and the rendered track, and both used to be hardcoded per oracle **name**:
 
 **The band.** `perbin_floor_rescale_batch` maps a raw value to
-`clip((v − floor) / (peak − floor), 0, 3)`, with `floor = cdf[p95]` and `peak = cdf[p99]`,
+`clip((v − floor) / (peak − floor), 0, 4)`, with `floor = cdf[p95]` and `peak = cdf[p99]`,
 so 1.0 always means "genome-wide p99 for this track" and the ceiling is 3.0. That band
 assumes signal decays smoothly out of the background. It is right for accessibility and
 wrong for base-resolution TSS assays, where the distribution is a huge near-zero mass plus a
@@ -425,10 +425,23 @@ regenerated. Three properties of the measurement matter:
   0.138. 2,253 shipped tracks are signed (borzoi 1,543, alphagenome 667, sei 40, legnet 3).
 
 So a wrong trigger cannot damage a track: it either changes nothing or it demonstrably
-improves the panel. A re-rendered track is labelled `(log scale)`, because its 1.0 is p99.9
+improves the panel.
+
+**There are two pooling stages, and they take opposite defaults.** The feature stage above
+reduces ~349 native bins into each display bin, so max can lift a floor and the choice is
+measured per track. igv.js then reduces those already-pooled features to pixels — about 3:1 on
+a 1 Mb panel — and there `max` is right for everything, because 3 chances cannot meaningfully
+promote background while mean still dilutes a sharp peak. Measured at the browser's ratio, the
+peak height mean costs: LegNet 2.33×, AlphaGenome DNase 1.56×, ChromBPNet 1.38×, CAGE 1.31×,
+Cherimoya 1.14×. It costs *unequally*, which is the disqualifying part — 1.38× against 1.14×
+is a 1.2× relative distortion between the two tracks the cross-oracle panel compares — and it
+cancels signed tracks against themselves. Mirroring the feature stage's per-track choice is
+also wrong here: it would send AlphaGenome DNase and the ChIP tracks to mean for floor
+protection a 3:1 collapse does not need. A re-rendered track is labelled `(log scale)`, because its 1.0 is p99.9
 rather than p99 — two same-assay panels in one report can legitimately differ (BCL11A's two
 CAGE:K562 tracks measured 0.053 and 0.036 and only the first escalated). This is disclosure,
-not a new inconsistency: the 0–3 axis has always been per-track.
+not a new inconsistency: the display axis (0–4 since v0.7.2, 0–3 before) has always
+been per-track.
 
 The escalation is deliberately confined to the IGV render paths. The matplotlib and CoolBox
 figures share `rescale_for_display` but mean-smooth instead of max-pooling, so they cannot

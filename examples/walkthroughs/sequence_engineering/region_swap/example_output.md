@@ -5,7 +5,7 @@
 - **Tool**: `analyze_region_swap`
 - **Oracle**: alphagenome
 - **Tracks requested**: 4 K562 tracks
-- **Generated**: 2026-08-11 04:38 UTC
+- **Generated**: 2026-08-12 04:05 UTC
 
 ## Region Swap Analysis Report
 
