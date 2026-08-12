@@ -6,6 +6,7 @@ from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..core.interval import Interval, GenomeRef, Sequence
 from ..core.exceptions import ModelNotLoadedError, InvalidAssayError
 from ..core.globals import CHORUS_DOWNLOADS_DIR
+from ..core.count_head import counts_from_log, expected_counts_profile
 from .chrombpnet_source.chrombpnet_globals import CHROMBPNET_MODELS_DICT
 
 from typing import List, Tuple, Optional, ClassVar
@@ -602,12 +603,11 @@ class ChromBPNetOracle(OracleBase):
         # Allocate space for output tensor
         out = np.zeros(seq_len)
 
-        # Predictions should represent probabilities and should be multiplied 
-        # by the predicted log counts
-        norm_prob = probabilities - np.mean(probabilities, axis=1, keepdims=True)
-        softmax_probs = np.exp(norm_prob) / np.sum(np.exp(norm_prob), axis=1, keepdims=True)
-
-        predictions = softmax_probs * (np.expand_dims(np.expm1(counts)[:, 0], axis=1)) # (B, 1000)
+        # softmax(centred logits) * expm1(counts), from the one implementation of it.
+        # This was four inlined operations, and it is the DNASE/ATAC path -- single track,
+        # so n_tracks=1 and the inverse is expm1. See chorus.core.count_head for the three
+        # count-head conventions and which models use which (#125).
+        predictions = expected_counts_profile(probabilities, counts, n_tracks=1)
 
         return self._insert_into_output(predictions, seq_len)
 
@@ -655,9 +655,7 @@ class ChromBPNetOracle(OracleBase):
         i.e. it is off by ``+n_tracks`` in the other direction; the target
         construction above is the authority, not that CLI.
         """
-        if n_tracks == 1:
-            return np.expm1(counts)
-        return np.exp(counts) - n_tracks
+        return counts_from_log(counts, n_tracks)
 
     def _zero_bias_inputs(self, batch_size: int) -> list:
         """Zero-filled bias inputs matching the model's *declared* shapes.
@@ -711,12 +709,10 @@ class ChromBPNetOracle(OracleBase):
         the two could not be reconciled by rescaling.
         """
         n_strands = probabilities.shape[-1]
-        flat = probabilities.reshape(probabilities.shape[0], -1)  # (B, L*strands)
-        norm = flat - np.mean(flat, axis=1, keepdims=True)
-        joint = np.exp(norm) / np.sum(np.exp(norm), axis=1, keepdims=True)
-        totals = self._counts_from_log(counts, n_strands)
-        scaled = joint * np.expand_dims(totals[:, 0], axis=1)
-        scaled = scaled.reshape(probabilities.shape[0], -1, n_strands)
+        # Joint softmax over the flattened both-strand vector, scaled by exp(C) - n_strands.
+        # One implementation, shared with the DNASE path above and with the background
+        # builder, because these three disagreeing is the whole of #125.
+        scaled = expected_counts_profile(probabilities, counts, n_tracks=n_strands)
 
         return (
             self._insert_into_output(scaled[..., 0], seq_len),
@@ -950,9 +946,9 @@ class ChromBPNetOracle(OracleBase):
                     profile = (sm * total).reshape(p.shape)[..., 0]
                     all_profiles.append(profile)
                     continue
-                norm_p = p - np.mean(p)
-                sm = np.exp(norm_p) / np.sum(np.exp(norm_p))
-                profile = sm * np.expm1(counts[b][0])
+                profile = expected_counts_profile(
+                    p.reshape(1, -1), np.asarray([[counts[b][0]]]), n_tracks=1,
+                ).reshape(p.shape)
                 all_profiles.append(profile)
 
         # Stitch central outputs.  Window k's central output covers the

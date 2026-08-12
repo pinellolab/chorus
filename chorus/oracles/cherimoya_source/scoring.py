@@ -77,22 +77,23 @@ def expected_counts_profile(
     elif logits.ndim != 2:
         raise ValueError(f"Unsupported profile logits shape {logits.shape}.")
 
+    # Both arrays are promoted to float64 HERE, not in the shared helper. CATv1 has always
+    # computed this in double precision, while ChromBPNet has always used whatever
+    # TensorFlow returned, so the shared function preserves its caller's dtype and each
+    # caller keeps the precision it had. Promoting log_counts is not cosmetic: leaving it
+    # float32 moved this example's ref_value from 603.3464052301788 to 603.3464123072064,
+    # a 1.2e-8 relative shift with no reason behind it.
     counts = numpy.asarray(log_counts, dtype=numpy.float64)
-    if counts.ndim == 2:
-        counts = counts[:, 0]
-    elif counts.ndim != 1:
-        raise ValueError(f"Unsupported log-count shape {counts.shape}.")
 
-    # Mean-centre before exponentiating for numerical stability; this is
-    # a no-op on the resulting softmax.
-    centred = logits - logits.mean(axis=1, keepdims=True)
-    exp_centred = numpy.exp(centred)
-    probs = exp_centred / exp_centred.sum(axis=1, keepdims=True)
+    # The arithmetic is chorus.core.count_head: softmax over the centred logits, scaled by
+    # expm1 of the count head (CATv1 is single-track, so n_tracks=1). This function keeps
+    # its own shape validation -- the (N, 1, L) form and the single-output-track check are
+    # CATv1 specifics -- and delegates the four operations, which ChromBPNet, BPNet CHIP and
+    # two background builders also need. Three of those disagreed at once, in three
+    # different ways, which is #125.
+    from ...core.count_head import expected_counts_profile as _shared
 
-    # expm1, NOT exp -- the count head predicts log(count + 1).
-    total = numpy.expm1(counts)
-
-    return probs * total[:, None]
+    return _shared(logits, counts, n_tracks=1)
 
 
 def heads_equivalent_to_profile(

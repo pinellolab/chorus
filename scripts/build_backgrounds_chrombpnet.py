@@ -357,29 +357,35 @@ def predict_profiles_batch(model, seqs):
     if probabilities.ndim == 2:
         probabilities = probabilities[..., None]      # (B, L) → (B, L, 1)
 
-    # Softmax JOINTLY over all strands, so the strands together sum to
-    # expm1(counts) — identical to the oracle's
-    # ChromBPNetOracle._transform_chip_strands, which is the whole point:
-    # a CDF is only meaningful if it was built from the same quantity
-    # predict() returns.
-    #
-    # This previously summed the two strands' LOGITS and took a single
-    # softmax, which is a geometric-mean-like blend of the strand profiles
-    # and corresponds to no observable the oracle emits; its 501 bp window
-    # sum drifted 0.98-1.30x versus the per-strand values across five test
-    # loci, i.e. sequence-dependently, so the mismatch could not be undone
-    # by rescaling.
-    n_seq, length, n_strands = probabilities.shape
-    flat = probabilities.reshape(n_seq, length * n_strands)
-    norm_prob = flat - np.mean(flat, axis=1, keepdims=True)
-    joint = np.exp(norm_prob) / np.sum(np.exp(norm_prob), axis=1, keepdims=True)
-    # exp(C) - n_strands, not expm1: the count target is a per-track log1p
-    # pooled across a task's tracks with logsumexp, i.e. log(n_tracks + total).
-    # Reduces to expm1 for the single-track ATAC/DNASE models. See
-    # ChromBPNetOracle._counts_from_log.
-    totals = np.expm1(counts[:, 0:1]) if n_strands == 1 else np.exp(counts[:, 0:1]) - n_strands
-    profiles = (joint * totals).reshape(n_seq, length, n_strands)
-    return profiles
+    return profiles_from_heads(probabilities, counts)
+
+
+def profiles_from_heads(probabilities, counts):
+    """Heads -> expected-count profiles, split out so it can be tested without TF.
+
+    It was inline in ``predict_profiles_batch`` above, which needs a live TensorFlow model,
+    so the only way to check it against the oracle was to grep both files for matching
+    source text. That is how ``exp`` vs ``expm1`` survived four call sites. Now it is a
+    function, and ``tests/test_count_head_copies_agree.py`` feeds it the same inputs as the
+    oracle and compares the numbers (#125).
+
+    The arithmetic itself is ``chorus.core.count_head``: a softmax taken JOINTLY over all
+    strands so they together sum to the predicted total, scaled by ``exp(C) - n_strands``.
+    Both properties are load-bearing and both were once wrong here:
+
+    * this previously summed the two strands' LOGITS before one softmax, which is a
+      geometric-mean-like blend corresponding to no observable the oracle emits; its 501 bp
+      window sum drifted 0.98-1.30x versus the per-strand values across five test loci, i.e.
+      sequence-dependently, so the mismatch could not be undone by rescaling;
+    * ``expm1`` on a two-track CHIP target leaves exactly one read of inflation.
+
+    A CDF is only meaningful if it was built from the quantity ``predict()`` returns, which
+    is why this shares an implementation with the oracle rather than mirroring it.
+    """
+    from chorus.core.count_head import expected_counts_profile
+
+    n_strands = probabilities.shape[-1]
+    return expected_counts_profile(probabilities, counts, n_tracks=n_strands)
 
 
 def score_window_sum(profile):

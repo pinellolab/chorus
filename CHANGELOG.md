@@ -6,7 +6,16 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Changed
+- **The BPNet-family count-head arithmetic now has one implementation ([#125](https://github.com/pinellolab/chorus/issues/125)).** Turning a profile head and a count head into a per-position expected-count track is four operations — centre the logits, softmax, invert the count head, scale — and it existed in five places at once. All three defects fixed on 2026-07-31 were two of those copies disagreeing: `exp` vs `expm1` across four call sites (+1 read, ~0.1% at a peak but up to **100%** at a quiet site, which is the regime the activity CDFs are built from); per-strand vs joint softmax (the two emitted tracks together claimed **2.00×** the predicted counts); and a count bias hardcoded `(N, 1)` that Keras broadcast silently (every log-count shifted by 0.5885, i.e. 1.80× low at a peak and 3.04× at a quiet site). None crashed; each produced a plausible number and each shipped.
+
+  `chorus/core/count_head.py` is now the only implementation, used by `ChromBPNetOracle`'s three paths, Cherimoya's `scoring.py`, and the ChromBPNet background builder — the last of which had to be factored into a `profiles_from_heads()` function, because its arithmetic was inline in a TensorFlow-dependent routine and could therefore only ever be compared against the oracle by grepping both files for matching source text. That is exactly the check `exp`/`expm1` walked past four times.
+
+  **No number moved, and that was verified rather than assumed.** The pre-extraction expressions are written out verbatim in the tests and compared with `array_equal`, not `allclose`, in both float32 and float64. End to end, regenerating the ChromBPNet and Cherimoya examples produced JSON and HTML differing from the committed files **only in the timestamp**, so no example needed re-committing and the shipped CDFs are untouched.
+
+  The one thing that did drift was caught by that end-to-end run and by no unit test: the two copies disagreed about *precision* — Cherimoya cast to float64 before doing anything, ChromBPNet used whatever TensorFlow returned. The shared helper therefore preserves its caller's dtype, and Cherimoya promotes on the way in; without that, leaving `log_counts` in float32 moved the SORT1 example's `ref_value` from 603.3464052301788 to 603.3464123072064 — 1.2e-8, and with nothing behind it. Whether ChromBPNet *should* compute this in float64 is a real question and deliberately a separate one.
+
+  **Two copies stay where they are, on purpose, with their equivalence pinned.** The torch expression in `build_backgrounds_cherimoya.py` runs on the accelerator inside the batch loop, where a numpy round-trip per batch would be charged to a multi-hour job — verified in `chorus-cherimoya` (torch 2.13.0+cu130) at a **1.25e-07** maximum relative difference. And **EPInformer-seq is not routed through here at all**: it scales by `10 ** log_count`, a different convention from a differently-trained model, and at a log-count of 2.5 the two differ by **26×** — so a tidy-up that unified them would be the same class of mistake as the three above, in the opposite direction. A test pins that difference rather than leaving it to be noticed.
 
 ## [0.7.2] — 2026-08-12
 
