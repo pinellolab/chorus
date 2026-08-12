@@ -78,6 +78,12 @@ setup(
             "oracles/enformer_source/*.txt",
             "analysis/data/*.bed",
             "analysis/static/*.js",  # bundled IGV.js for inline HTML reports
+            # The hg38 cytoband table, which supplies both the ideogram and the
+            # chromosome lengths a report inlines instead of fetching (#139).
+            # Globbed by extension rather than named: `*.js` alone silently
+            # dropped this file from the wheel, and the symptom would have been a
+            # pip-installed chorus quietly falling back to igv.org's registry.
+            "analysis/static/*.txt.gz",
         ],
     },
     data_files=[
