@@ -131,13 +131,16 @@ def test_default_resolution_is_the_chrombpnet_matched_experiment(oracle):
     assert oracle.assay == "DNASE"
     assert oracle.cell_type == "K562"
     assert oracle.track_id == TEST_TRACK
-    # The default is the 5-fold ensemble, not fold 0. CATv1's model card offers
-    # either; chorus takes the ensemble because a single checkpoint is a sample
-    # rather than the model -- at rs12740374 the five folds span accessibility
-    # ratios 2.39-3.47 for the identical sequence -- and the background CDFs are
-    # built to match. See tests/test_cherimoya_ensemble.py.
-    assert oracle.fold == CATV1_ENSEMBLE
-    assert len(oracle.model_paths) == CATV1_N_FOLDS
+    # The default is fold 0, not the 5-fold ensemble -- reversed on 2026-08-11 with CATv1's
+    # author. Fold 0 matches ChromBPNet's default fold, which makes the two comparable at the
+    # percentile level, and handling five models complicates and slows most analyses. The
+    # ensemble is still reachable as fold="ensemble" and has its own null. See
+    # tests/test_fold_selects_its_own_null.py.
+    assert oracle.fold == 0
+    # One checkpoint for a single fold, CATV1_N_FOLDS for the ensemble. Asserted as a
+    # relationship rather than a literal so it still catches a real regression (a fold mode
+    # loading the wrong number of models) after the default changed.
+    assert len(oracle.model_paths) == (CATV1_N_FOLDS if oracle.fold == CATV1_ENSEMBLE else 1)
     assert oracle.loaded
 
 
@@ -162,7 +165,7 @@ def test_predict_returns_finite_values(oracle, prediction_values):
     assert track.cell_type == "K562"
     assert track.resolution == 1
     assert track.metadata["encode_id"] == TEST_ACCESSION
-    assert track.metadata["fold"] == CATV1_ENSEMBLE
+    assert track.metadata["fold"] == 0   # the default; see above
     # assay_id must be the canonical ASSAY:ENCSR, which is how the background rows
     # are keyed; a bare accession resolves to no CDF row and loses both percentiles.
     assert track.assay_id == TEST_TRACK
@@ -337,7 +340,8 @@ print("CHORUS_RESULT " + json.dumps({{
     got = json.loads(marker[-1][len("CHORUS_RESULT "):])
 
     # Guard the guard: if this silently ran one fold, exactness would be trivial.
-    assert got["n_folds"] == CATV1_N_FOLDS, got
+    # 1 for the fold-0 default, CATV1_N_FOLDS when the ensemble is requested.
+    assert got["n_folds"] == 1, got
 
     assert got["profile_max_rel"] <= 1e-7, (
         f"in-process the two scoring paths must agree exactly; got max relative "

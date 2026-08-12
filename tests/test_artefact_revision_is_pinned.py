@@ -113,9 +113,14 @@ def test_the_pinned_revision_still_resolves():
     except HfHubHTTPError as exc:  # pragma: no cover - network/gating dependent
         pytest.skip(f"cannot reach {_HF_REPO}: {exc}")
     npz = sorted(f for f in files if f.endswith("_pertrack.npz"))
-    assert len(npz) == 8, (
-        f"the pinned revision {_HF_REVISION} holds {len(npz)} per-track files, expected 8: "
-        f"{npz}"
+    # Nine, not eight: Cherimoya ships one null per fold mode since v0.7.2 --
+    # cherimoya_pertrack.npz (fold 0, the default) and cherimoya_ensemble_pertrack.npz.
+    # A percentile is a rank against a null, so each mode needs a null built by the same
+    # model; the folds disagree by 2.02x on the same sequence. See
+    # tests/test_fold_selects_its_own_null.py.
+    assert len(npz) == 9, (
+        f"the pinned revision {_HF_REVISION} holds {len(npz)} per-track files, expected 9 "
+        f"(eight oracles, plus a second Cherimoya null for the ensemble fold mode): {npz}"
     )
 
 
