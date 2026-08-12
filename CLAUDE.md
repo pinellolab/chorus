@@ -107,6 +107,27 @@ and must not be unified, and **no composition change ships without a two-arm mea
 
 ## Regeneration
 
+**Which script, which oracle, which env.** Getting this wrong is the single most common way a
+regeneration silently does nothing: the wrong env raises `ModuleNotFoundError` per oracle and the
+script carries on, and an invalid `--oracle` is an argparse error that scrolls past in a tail'd
+log. Established by trial 2026-08-12:
+
+| artefact | script | valid `--oracle` | env |
+|---|---|---|---|
+| walkthroughs | `regenerate_examples.py` | `alphagenome`, `enformer`, `chrombpnet`, `all` | `chorus` (these use `use_environment=True`) |
+| per-oracle multioracle | `regenerate_multioracle.py --oracle X` | `chrombpnet`, `cherimoya`, `legnet`, `alphagenome` — **no enformer** | `chorus-X` (each uses `use_environment=False`) |
+| unified IGV panel | `regenerate_multioracle.py --consolidate` | — | `chorus` (reads cached per-oracle reports) |
+| discovery, causal, region_swap, integration, batch, TERT | `regenerate_remaining_examples.py --only all` | — | `chorus-alphagenome` (`use_environment=False`) |
+
+Enformer has no `--oracle enformer` in the multioracle script; its single-oracle report comes
+from `regenerate_examples.py`.
+
+Do **not** write `mamba run -n X --no-capture-output ...` — the flag after `-n` makes the wrapper
+die with `exec: --: invalid option` before the script starts, which reads as a completed stage in
+a tail'd log. Either put the flag first or call the env's python directly
+(`/home/nvidia/miniforge3/envs/chorus-X/bin/python`).
+
+
 After any correctness fix (e.g. the ref-allele off-by-one) every
 committed example output drifts. Regenerate with:
 

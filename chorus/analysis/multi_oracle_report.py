@@ -412,6 +412,7 @@ class MultiOracleReport:
                 from ._igv_report import (
                     _calculate_track_bin_size,
                     _HIGH_RES_ORACLES,
+                    browser_window_function,
                 )
                 bin_size, agg_method = _calculate_track_bin_size(
                     t_res, window_bp, ref_t.source_model
@@ -492,7 +493,7 @@ class MultiOracleReport:
                             "type": "wig",
                             "name": f"{panel_label} ref",
                             "color": f"rgb({_REF_COLOR})",
-                            "windowFunction": "max" if source_model in _HIGH_RES_ORACLES else "mean",
+                            "windowFunction": browser_window_function(used_log),
                             **scale_cfg,
                             "features": ref_features,
                         },
@@ -500,7 +501,7 @@ class MultiOracleReport:
                             "type": "wig",
                             "name": f"{panel_label} alt",
                             "color": f"rgb({rgb})",
-                            "windowFunction": "max" if source_model in _HIGH_RES_ORACLES else "mean",
+                            "windowFunction": browser_window_function(used_log),
                             **scale_cfg,
                             "features": alt_features,
                         },

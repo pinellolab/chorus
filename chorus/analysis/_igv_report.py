@@ -137,8 +137,97 @@ _DEFAULT_FLOOR_PCTILE = 0.95
 # saturating most bins.  1.0 = p99 (top 1% threshold), so 3.0 captures
 # 3x stronger than the genome-wide top 1%.  Bins above 3.0 clip but
 # this is rare for real biology.
-_DISPLAY_MAX = 3.0
+#: Top of the display axis, in units where 1.0 is the track's genome-wide p99.
+#:
+#: 4.0, raised from 3.0. This does NOT rescale anything: the band is still
+#: ``(v - floor) / (peak - floor)``, so 1.0 still means p99 and every value below 3.0 is the
+#: number it always was. It only moves where clipping starts, which reveals the bins that were
+#: being flattened onto the old ceiling. Measured share of each track's clipped mass that a
+#: ceiling of 4.0 recovers:
+#:
+#:   chrombpnet DNASE   43%      alphagenome H3K27ac  33%
+#:   cherimoya  DNASE   41%      alphagenome DNASE    24%
+#:                               alphagenome CAGE     25%
+#:
+#: The cost is uniform: a value of 3.0 now occupies 75% of the axis instead of 100%, so every
+#: track looks correspondingly shorter. Uniform is the important part -- raising the ceiling for
+#: everything preserves cross-oracle comparability exactly, whereas a per-track ceiling would
+#: destroy the one property that makes stacked panels readable together.
+#:
+#: Going much higher does not help. To clip nothing at all a track needs its genome-wide
+#: maximum on the axis, and that is ~196 for chrombpnet DNase and ~160 for AlphaGenome DNase in
+#: band units; at that ceiling a p99-level peak occupies 0.5% of the height and every panel
+#: reads as flat. Above 4.0 the remaining clipped mass is a long thin tail, so the trade turns
+#: bad quickly.
+_DISPLAY_MAX = 4.0
 _HIGH_RES_ORACLES = ["chrombpnet", "legnet"] # for visualization mean vs max pooling
+
+#: igv.js re-reduces the emitted features to pixels with this function, and it is ``max`` for
+#: every track.
+#:
+#: This is the SECOND pooling stage and it wants the opposite default from the first, because
+#: the collapse factors differ by two orders of magnitude. The feature stage reduces ~349 native
+#: bins into one display bin, where max lifted AlphaGenome DNase's floor to 0.707 and so has to
+#: be decided per track (see :func:`choose_aggregation`). igv.js then collapses only 2-3 of those
+#: already-pooled features per pixel on a 1 Mb panel, where max has almost no opportunity to
+#: promote background but mean still dilutes a sharp peak.
+#:
+#: Measured on the committed SORT1 multi-oracle panel, collapsing 3:1 as the browser does:
+#:
+#:                       peak lost by mean      floor under max      saturation under max
+#:   legnet LentiMPRA         2.33x             -0.645 -> -0.500      0.000 -> 0.000
+#:   alphagenome DNASE        1.56x              0.015 ->  0.028      0.000 -> 0.000
+#:   chrombpnet DNASE         1.38x              0.000 ->  0.000      0.003 -> 0.008
+#:   alphagenome CAGE         1.31x              0.000 ->  0.000      0.013 -> 0.032
+#:   cherimoya  DNASE         1.14x              0.000 ->  0.074      0.010 -> 0.025
+#:   alphagenome H3K27ac      1.00x              0.000 ->  0.000      0.005 -> 0.007
+#:
+#: So max costs one small floor lift (Cherimoya, 0.074 of a 0-3 axis) and roughly doubles
+#: saturation while staying well under the 0.075 readability limit, and it loses no peak
+#: anywhere. Mean was worse in two ways: it cost up to 2.33x of peak height, and it cost
+#: *unequally* -- 1.38x for ChromBPNet against 1.14x for Cherimoya introduces a 1.2x relative
+#: distortion between the two tracks a cross-oracle panel exists to compare. It also cancels
+#: signed tracks against themselves, which is why LegNet is the worst case.
+#:
+#: Mirroring the feature stage's per-track choice was considered and is also wrong here: it
+#: would send AlphaGenome DNase and the ChIP tracks to mean, costing 1.1-1.6x of peak for floor
+#: protection that a 3:1 collapse does not need.
+_IGV_WINDOW_FUNCTION = "max"
+
+
+def browser_window_function(used_log: bool) -> str:
+    """Which function igv.js should use to reduce features to pixels for this track.
+
+    ``max`` for everything except a log-scaled track, which gets ``mean``.
+
+    WHY max IS THE DEFAULT. This is the second pooling stage and it wants the opposite answer
+    from the first, because the collapse factors differ by two orders of magnitude. The feature
+    stage reduces ~349 native bins per display bin, where max lifted AlphaGenome DNase's floor
+    to 0.707 and so has to be measured per track (:func:`choose_aggregation`). igv.js then
+    collapses only 2-3 of those already-pooled features per pixel, where max has almost no
+    opportunity to promote background but mean still dilutes a sharp peak. Measured on the
+    SORT1 panel at 3:1, the peak height mean costs: legnet 2.33x, alphagenome DNase 1.56x,
+    chrombpnet 1.38x, CAGE 1.31x, cherimoya 1.14x. It costs *unequally*, which is the
+    disqualifying part -- 1.38x against 1.14x is a 1.2x relative distortion between the two
+    tracks a cross-oracle panel exists to compare -- and it cancels signed tracks against
+    themselves, which is why LegNet is worst.
+
+    WHY A LOG-SCALED TRACK IS THE EXCEPTION. The log band compresses the top of the range, so
+    many more bins sit just under the ceiling; max then promotes them over it, and clipped flat
+    tops read as coverage rather than as peaks. Measured on AlphaGenome CAGE, the only
+    log-scaled track: saturation 0.003 under mean against 0.023 under max at 2:1, a 7.7x rise
+    that made the track look like RNA-seq gene-body signal instead of TSS spikes. Ink barely
+    moved (0.186 -> 0.192), so it is the ceiling and not the density that does the damage. Mean
+    costs that track 1.31x of peak height, which is the cheaper of the two harms.
+
+    Raising ``_DISPLAY_MAX`` instead was considered and rejected: eliminating clipping on the
+    linear tracks needs a ceiling near 200 (chrombpnet DNase reaches 196.5 in band units), at
+    which point a p99-level peak occupies 0.5% of the axis, and a per-track ceiling would break
+    the shared 0-3 axis that makes heights comparable across oracles in the first place.
+    """
+    return "mean" if used_log else _IGV_WINDOW_FUNCTION
+
+
 
 # Hard ceiling on the JSON features one IGV track may emit, enforced in
 # _calculate_track_bin_size for every oracle. IGV cannot usefully draw more
@@ -422,26 +511,28 @@ _LOG_PEAK_PCTILE = 0.999
 #: Saturation -- not ink -- is what makes a panel unreadable. Cherimoya *inks* 41% of its bins
 #: and looks right, which is why an ink criterion was tried and failed.
 #:
-#: CALIBRATED ON THE CORPUS, NOT ON ONE PANEL. An earlier value of 0.04 came from the
-#: geometric midpoint of a single panel's gap (that panel's readable tracks clip <=0.013, its
-#: two broken ones 0.090 and 0.131). Measured instead across all 346 subtracks of the 19
-#: committed IGV panels at the released baseline, 0.04 cuts through the middle of the
-#: population -- 45 subtracks (13%) exceed it, including seven Enformer CAGE tracks at
-#: 0.042-0.063 that nobody has ever complained about and whose peaks the log band would
-#: compress. The real gap is higher up:
+#: CALIBRATED ON THE CORPUS, NOT ON ONE PANEL, AND RE-VERIFIED WHENEVER THE AXIS MOVES.
+#: An earlier value of 0.04 came from the geometric midpoint of a single panel's gap. Measured
+#: instead across all 346 subtracks of the committed IGV panels, 0.04 cuts through the middle of
+#: the population and would escalate Enformer CAGE tracks that render acceptably.
 #:
-#:     #20-22   0.0899   alphagenome DNASE:HepG2         SORT1 panels
-#:     ------------------ nothing between 0.0656 and 0.0899 ------------------
-#:     #23-24   0.0656   alphagenome ATAC:HepG2          FTO panel
-#:     #25-26   0.0625   enformer CAGE substantia nigra  SORT1 enformer panel
+#: Re-derived on 2026-08-12 after :data:`_DISPLAY_MAX` moved 3.0 -> 4.0, which lowers every
+#: saturation figure and so invalidated the previous calibration. Same method, new axis:
 #:
-#: The 22 subtracks above that gap are exactly the AlphaGenome CAGE/ATAC/DNase panels at the
-#: SORT1 locus -- the ones this work exists to fix. This limit sits inside the gap, so the
-#: Enformer and Borzoi panels are left alone and stay valid.
+#:   must escalate      alphagenome CAGE, linear band as drawn      0.1085 - 0.1308
+#:   ------------------------- gap, 2.49x -------------------------
+#:   must NOT move      enformer CAGE substantia nigra (the top)    0.0435
+#:                      corpus median 0.0022, p90 0.0101
 #:
-#: The calibration is conservative in the right direction: it was measured under the OLD
-#: pooling, and the pooling fix lowers saturation for exactly these dense 1 bp tracks (DNase
-#: max-pooled 0.090 -> mean-pooled 0.000), so fewer tracks escalate than this table implies.
+#: 0.075 sits inside that gap, so the constant is unchanged and no escalation decision flips:
+#: CAGE still escalates, Enformer's CAGE tracks still do not. Note CAGE's linear saturation
+#: barely moved with the ceiling (0.131 -> 0.1308) because its band is p95=0.0050 to p99=0.0405
+#: against a maximum of 852 -- almost all real TSS signal is far above 4x the band, so a taller
+#: axis does not unclip it. That is the whole reason the log band exists for this layer.
+#:
+#: The committed panels show CAGE POST-escalation (log band), so its trigger value cannot be read
+#: off them; it has to be measured by rescaling a fresh prediction on the linear band. Every
+#: other track in the corpus did not escalate, so those panel values are the linear values.
 _MAX_DISPLAY_SATURATION = 0.075
 
 
@@ -805,7 +896,7 @@ def build_igv_html(
                     "type": "wig",
                     "name": f"{display_name} ref",
                     "color": f"rgb({_REF_COLOR})",
-                    "windowFunction": "max" if source_model in _HIGH_RES_ORACLES else "mean",
+                    "windowFunction": browser_window_function(used_log),
                     **scale_cfg,
                     "features": ref_features,
                 },
@@ -813,7 +904,7 @@ def build_igv_html(
                     "type": "wig",
                     "name": f"{display_name} alt",
                     "color": f"rgb({rgb})",
-                    "windowFunction": "max" if source_model in _HIGH_RES_ORACLES else "mean",
+                    "windowFunction": browser_window_function(used_log),
                     **scale_cfg,
                     "features": alt_features,
                 },
