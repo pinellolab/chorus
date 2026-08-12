@@ -205,7 +205,12 @@ def load_model_and_metadata():
     metadata = EnformerMetadata()
 
     import pysam
+
+    from chorus.analysis.background_sampling import require_reference_assembly
+    from chorus.oracles.enformer import EnformerOracle
+
     ref_path = os.path.join(REPO_ROOT, "genomes/hg38.fa")
+    require_reference_assembly(ref_path, EnformerOracle, label="enformer background")
     ref = pysam.FastaFile(ref_path)
 
     logger.info("Model loaded in %.1f seconds", time.time() - t_load)

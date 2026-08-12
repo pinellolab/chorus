@@ -6,7 +6,24 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+- **The genome assembly is now asserted rather than assumed ([#124](https://github.com/pinellolab/chorus/issues/124)).** Chorus is human hg38 everywhere, and until now that held *by accident*: Enformer and Borzoi exclude their 1,643 and 2,608 mouse tracks because someone selected `enformer_human_targets.txt` / `borzoi_human_targets.txt`, AlphaGenome because `Organism.HOMO_SAPIENS` is hardcoded in its metadata loader. Those are file and literal choices, not assertions — nothing connected any of them to `genomes/hg38.fa`, which every builder opens, so nothing would have caught a future `*_mouse_targets.txt`. ChromBPNet, whose registry had no organism field at all, is where it actually went wrong: 33 mm10 models were scored against hg38 sequence using the hg38 DHS vocabulary, removed in [#121](https://github.com/pinellolab/chorus/issues/121).
+
+  A hard failure rather than a warning, because there is no symptom to notice: mm10 `chr1:1,000,000` exists in hg38 too, so every coordinate resolves, every prediction returns, and every percentile lands in [0, 1]. The answer is simply about a different piece of DNA. Four mechanisms:
+
+  - every oracle **declares** `training_genome` on its own class — deliberately not inherited, since `OracleBase` defaulting to `"hg38"` would be one more silent choice, and a test enumerates the subclasses to make sure a new oracle says;
+  - all 8 builders **check** it against the FASTA they open, at all 10 open sites, via `require_reference_assembly` — at preflight, so a 14-hour build fails in its first second;
+  - both stamp scripts **observe** the assembly from the reference's chromosome lengths instead of writing `"genome": "hg38"` as a literal, which had made that field a restatement of the stamper's own assumption;
+  - the loader **refuses** an artefact declaring a genome chorus does not rank against, as `BackgroundGenomeMismatch`.
+
+  Identity comes from chr1's length, which is provider-independent: UCSC, Ensembl and GENCODE disagree about chromosome naming, line width and scaffolds but agree on chromosome lengths, where the `fasta_sha256_prefix64mb` the artefacts already carry would reject a correct Ensembl GRCh38 as loudly as it rejects mm10. An *unrecognised* reference warns and proceeds — refusing it would break anyone on a legitimate custom build to enforce a lookup table's completeness — while a recognised, wrong one raises. A typo in the expected value (`"GRCh38"` for `"hg38"`) also raises, so it cannot silently disable the check it was added to perform.
+
+  **No published number changes and no artefact was re-uploaded.** All nine shipped backgrounds already declared `genome: hg38`, and all nine are; the fix is that this is now checked at both ends rather than asserted at neither. Deliberately *not* done: the per-row `genome` field the issue also proposed, which would mean re-stamping and re-uploading all nine artefacts and re-cutting the pinned dataset tag, and only earns its keep if chorus ever ships mixed-species artefacts.
+
+- **`BackgroundGenomeMismatch` and `BackgroundFoldMismatch` now share a `BackgroundArtefactMismatch` base**, and `get_normalizer` re-raises the base class. Every *other* reason a per-track artefact fails to load means "no percentiles available", which its legacy `.npy` fallback is right to absorb; these mean "the percentiles would be **wrong**", ranked against a different distribution than they name. Catching the family rather than listing subclasses means the next guard of this kind inherits the non-swallowing contract instead of depending on someone remembering to widen the clause.
+
+### Changed
+- **⚠️ `AlphaGenomeOracle(organism="mouse")` now raises instead of being silently ignored ([#124](https://github.com/pinellolab/chorus/issues/124)).** The parameter was accepted, assigned to `self.organism`, and read by nothing — the metadata loader hardcodes `Organism.HOMO_SAPIENS` and the PyTorch port passes `organism_index=0` — so the one oracle whose upstream API genuinely supports mouse had a switch that looked functional and returned human predictions under a mouse label. Same fix on `AlphaGenomePTOracle`. `organism="human"` (any capitalisation, plus `homo_sapiens`) is unchanged; anything else raises `NotImplementedError` naming what mouse would actually require. Of make-it-work / remove-it / raise, only raising is both honest and affordable: mouse needs an mm10 reference in the genome manager, an mm10 reference class for the background null (SCREEN publishes mm10 cCREs; the Meuleman DHS index has no mouse equivalent), and a background pass over ~4,300 further tracks.
 
 ## [0.7.2] — 2026-08-12
 

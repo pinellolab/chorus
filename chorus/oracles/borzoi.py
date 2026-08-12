@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 class BorzoiOracle(OracleBase):
     """Borzoi oracle with automatic environment management."""
+
+    #: Weights are trained on GRCh38. Enforced, not assumed -- see #124.
+    training_genome = "hg38"
     
     def __init__(self, 
                  use_environment: bool = True, 
