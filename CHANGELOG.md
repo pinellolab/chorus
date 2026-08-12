@@ -6,6 +6,10 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.7.2] — 2026-08-12
+
 ### Changed
 - **⚠️ Cherimoya now uses fold 0 by default instead of the 5-fold ensemble, so its scores move.** Anyone comparing numbers against 0.7.1 will see Cherimoya percentiles and log2FCs differ. This is the default model changing, not a regression.
 
