@@ -12,13 +12,13 @@ what a user types in natural language and what Claude returns.
    ```
 
 2. MCP configured (one-time). Pick one of the two paths the README
-   documents in [§MCP server](../README.md#mcp-server):
+   documents in [§MCP server](../README.md#mcp-server--chorus-but-you-talk-to-claude):
 
    - **Per-project** — drop a `.mcp.json` into the repo you're working in.
      Best when you want chorus available only inside that project.
    - **Global** — add it once to Claude Code's CLI config:
      ```bash
-     claude mcp add chorus -- mamba run -n chorus chorus-mcp
+     claude mcp add -s user chorus -- mamba run -n chorus chorus-mcp
      ```
      Best when you use chorus from many directories.
 

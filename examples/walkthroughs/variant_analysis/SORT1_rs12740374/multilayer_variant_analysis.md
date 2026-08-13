@@ -184,7 +184,7 @@ df = report.to_dataframe()    # For programmatic analysis
 d = report.to_dict()          # JSON-serializable
 
 # With quantile normalization (when backgrounds are pre-computed)
-normalizer = get_normalizer("alphagenome")  # loads from ~/.chorus/backgrounds/
+normalizer = get_normalizer("alphagenome")  # loads from <data-dir>/backgrounds/
 report = build_variant_report(
     variant_result,
     oracle_name="alphagenome",

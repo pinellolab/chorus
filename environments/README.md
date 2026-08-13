@@ -27,6 +27,11 @@ This directory contains conda environment definitions for each oracle in the Cho
 - `chorus-sei.yml`: Environment for Sei (PyTorch-based)
 - `chorus-legnet.yml`: Environment for LegNet (PyTorch-based)
 - `chorus-alphagenome.yml`: Environment for AlphaGenome (JAX-based)
+- `chorus-alphagenome_pt.yml`: Environment for the AlphaGenome **PyTorch** backend — installed by
+  default alongside the JAX one, so Apple Silicon gets MPS
+- `chorus-cherimoya.yml`: Environment for Cherimoya / CATv1 (PyTorch + Triton; CUDA on Linux,
+  CPU-only on macOS)
+- `chorus-epinformerseq.yml`: Environment for EPInformer-seq (PyTorch)
 
 ## Usage
 
@@ -93,6 +98,9 @@ To add a new oracle with its own environment:
 | Sei | PyTorch | Bundled CUDA (automatic) |
 | LegNet | PyTorch | Bundled CUDA (automatic) |
 | AlphaGenome | JAX | Bundled CUDA (automatic) |
+| AlphaGenome (`alphagenome_pt`) | PyTorch | Bundled CUDA (automatic); MPS on Apple Silicon |
+| Cherimoya / CATv1 | PyTorch + Triton | Bundled CUDA on Linux. **CPU-only on macOS** — the model has no MPS path and the `triton>=3.5.1` pin ships no macOS wheel |
+| EPInformer-seq | PyTorch | Bundled CUDA (automatic) |
 
 **PyTorch/JAX oracles** detect GPUs automatically — no extra setup needed.
 

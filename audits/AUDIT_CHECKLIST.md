@@ -291,7 +291,8 @@ Many scientific compute environments cut outbound internet after setup. Once ins
 
 `HF_TOKEN` and other secrets should never land in logs, notebook outputs, or HTML reports.
 
-- [ ] `grep -rn 'hf_[a-zA-Z0-9]\{20,\}' examples/ audits/ docs/ chorus/` returns nothing — no real tokens committed. **P0**
+- [ ] `pytest tests/test_no_committed_credentials.py` passes. **P0** — run the test, do **not** hand-roll a grep. Four consecutive audits reported "0 `hf_…` tokens, 0 AWS keys" while a live **LDlink** token sat in `audits/2026-04-23_v23_scorched_earth/report.md:299` for nearly four months. It was unmissable to a human and unmatchable by every sweep run, because an LDlink token is twelve **bare hex characters with no prefix** and every sweep searched for prefixes. A clean prefixed grep means "no secrets of the shapes we grep for", which is not the same claim. The test covers prefixed shapes *and* the contextual unprefixed case (a hex/base62 run within 40 characters of the word token/secret/api-key/password), and is mutation-tested against the wording that actually leaked.
+- [ ] If a credential is found: **rotate it**. Redacting the file does not undo exposure — the value stays in git history, and history rewriting is the maintainer's call. Record the rotation, not just the redaction. **P0**
 - [ ] Committed notebook outputs and test fixtures don't contain `HF_TOKEN=hf_…` or AWS-style keys. Known benign: per-machine absolute paths in shipped notebook outputs — documented as cosmetic in v16. Both forms occur: `/srv/local/<user>/…` (advanced_multi_oracle, comprehensive_showcase) and macOS `/Users/<user>/…`. Re-executing a notebook simply swaps in the current host's paths. **P1**
 
 ## 17. Dependency supply chain

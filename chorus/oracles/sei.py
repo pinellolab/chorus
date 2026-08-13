@@ -80,7 +80,7 @@ class SeiOracle(OracleBase):
         # NB: the 3.3 GB Zenodo tarball is no longer pulled at construction
         # time. Loading the weights (via load_pretrained_model) now triggers
         # the download if necessary; this keeps SeiOracle() itself cheap
-        # and consistent with the other 5 oracles. `chorus setup sei`
+        # and consistent with the other 5 oracles. `chorus setup --oracle sei`
         # pre-downloads the archive so users don't hit the delay
         # on their first predict call.
 

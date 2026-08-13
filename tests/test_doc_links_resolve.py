@@ -44,6 +44,19 @@ def _in_page_links(text: str) -> list[tuple[str, str]]:
             for m in re.finditer(r"\[([^\]]*)\]\(#([^)]+)\)", text)]
 
 
+def _cross_file_links(text: str) -> list[tuple[str, str, str]]:
+    """(relative_path, anchor, label) for every `](other.md#anchor)` link.
+
+    The first draft of this file matched only same-page `](#anchor)`, so a dead
+    `](../README.md#mcp-search)` was structurally invisible to it — and one was live:
+    `docs/MCP_WALKTHROUGH.md:15` pointed at `../README.md#mcp-server`, the same slug that had
+    already been fixed *inside* README. A guard blind to a whole link shape reads as coverage it
+    does not have.
+    """
+    return [(m.group(2), m.group(3), m.group(1))
+            for m in re.finditer(r"\[([^\]]*)\]\(([^)#\s]+\.md)#([^)\s]+)\)", text)]
+
+
 @pytest.mark.parametrize("doc", DOCS, ids=lambda p: p.name)
 def test_every_in_page_anchor_points_at_a_real_heading(doc: Path):
     if not doc.exists():
@@ -57,6 +70,35 @@ def test_every_in_page_anchor_points_at_a_real_heading(doc: Path):
         + "\n  ".join(dead)
         + "\nA dead anchor renders as normal text and silently does nothing when clicked."
     )
+
+
+#: Every markdown file that may contain a cross-file anchor, not just the curated DOCS list —
+#: the dead one that shipped was in a file the original list did not even include.
+ALL_MARKDOWN = [p for p in sorted(REPO.rglob("*.md"))
+                if not any(part in {".git", "node_modules", "build", "audits"}
+                           for part in p.relative_to(REPO).parts)]
+
+
+@pytest.mark.parametrize("doc", ALL_MARKDOWN, ids=lambda p: str(p.relative_to(REPO)))
+def test_every_cross_file_anchor_points_at_a_real_heading(doc: Path):
+    """`](other.md#anchor)` must resolve in the file it names."""
+    dead = []
+    for rel, anchor, label in _cross_file_links(doc.read_text()):
+        target = (doc.parent / rel).resolve()
+        if not target.is_file():
+            dead.append(f"[{label}]({rel}#{anchor}) — {rel} does not exist")
+            continue
+        if anchor not in _headings(target.read_text()):
+            dead.append(f"[{label}]({rel}#{anchor}) — no such heading in {rel}")
+    assert not dead, (
+        f"{doc.relative_to(REPO)} links to anchors that do not exist:\n  " + "\n  ".join(dead)
+    )
+
+
+def test_the_guard_sees_cross_file_links_at_all():
+    """Guards the guard: the shape that was invisible in the first draft."""
+    found = _cross_file_links("see [§MCP server](../README.md#mcp-server) for details")
+    assert found == [("../README.md", "mcp-server", "§MCP server")], found
 
 
 def test_the_slug_rules_match_githubs():

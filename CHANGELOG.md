@@ -64,6 +64,8 @@ report rendering and two real defects — see the banner on each entry.
 
 
 ### Changed
+- **`docs/BACKGROUND_NULL_PROTOCOL.md` is current with the count-head extraction ([#186](https://github.com/pinellolab/chorus/pull/186)).** The protocol is the living document a new oracle's background build is written against, and §8 said nothing about which quantity a CDF must be built from — the distinction #125 exists to enforce. It now carries §8 Step 2b (use `chorus.core.count_head.expected_counts_profile` from **both** the oracle and the builder, because a CDF is only meaningful if it was built from the quantity `predict()` returns), the three count-head conventions side by side (`log1p` per track → `expm1`; `log1p` pooled → `exp(C) − n_tracks`; `log10` → `10**C`, which differ by 26× at log-count 2.5), a §7 equivalence-guard row, and a §9 decision-log entry.
+
 - **CI renders reports on every PR now, a reduced set of them.** The full 19-report browser suite stays on the release host, but running none of it in CI is how a blank panel reaches `main` between audits — which is the gap that let a size ceiling stand in for a rendering check in the first place. `CHORUS_BROWSER_SMOKE=1` selects the two smallest IGV reports plus the panel-less table: 12 tests instead of 46, enough to catch the failures that hit every report at once.
 
   This needed `test_ci_runs_the_same_command_a_contributor_runs` narrowed, since it correctly refused the new job. Its property is about the run that stands for "the tests pass" — a whole-suite invocation must carry no selection of its own — so a single-file job with an explicit marker is now allowed while a widened one still fails. Mutation-tested three ways.
@@ -117,7 +119,7 @@ report rendering and two real defects — see the banner on each entry.
     Now `-s user`.
   - **`chorus cleanup --all` leaves the HuggingFace cache**, which is where most weights live (~20 GB),
     while the docs called it "Remove everything".
-  - **`~/.chorus/backgrounds/` was wrong in 20 live places**, including two CLI help strings and four
+  - **`~/.chorus/backgrounds/` was wrong in every live place it appeared** — 32 lines across 30 files, including two CLI help strings and four
     `normalization.py` docstrings stating it as the default. The data directory has defaulted to the
     *installation tree* since 2026-08; `CHORUS_DATA_DIR` — the one switch that relocates all 85 GB —
     appeared in no user-facing doc at all, and now has its own section, including the legacy
