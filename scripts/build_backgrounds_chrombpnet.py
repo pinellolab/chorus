@@ -805,7 +805,7 @@ def merge_shards():
     Run on whichever machine you've ``rsync``'d all the shards onto.
     Expects ``chrombpnet_effect_cdfs_interim.shard*ofM.npz`` and
     ``chrombpnet_baseline_cdfs_interim.shard*ofM.npz`` files at
-    ``~/.chorus/backgrounds/``. M is auto-detected from filenames.
+    ``<data-dir>/backgrounds/``. M is auto-detected from filenames.
     """
     import glob
     import re

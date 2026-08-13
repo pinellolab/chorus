@@ -68,7 +68,7 @@ EPINFORMERSEQ_MODELS_DIR.mkdir(exist_ok=True, parents=True)
 class EPInformerSeqOracle(OracleBase):
     """EPInformer-seq per-cell oracle: profile output + bias-correction.
 
-    Layout under ``~/.chorus/downloads/epinformerseq/``:
+    Layout under ``<data-dir>/downloads/epinformerseq/``:
         per_cell_widewin/{cell_type}/main.pt (PerCellProfileNetWide)
         bias/{cell_type}/bias.pt             (frozen per-cell BiasNet)
     """

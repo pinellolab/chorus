@@ -360,7 +360,7 @@ class PerTrackNormalizer:
     Parameters
     ----------
     cache_dir : str or None
-        Directory for ``.npz`` files.  Defaults to ``~/.chorus/backgrounds/``.
+        Directory for ``.npz`` files.  Defaults to ``<data-dir>/backgrounds/``.
     """
 
     def __init__(self, cache_dir: Optional[str] = None):
@@ -1172,7 +1172,7 @@ class PerTrackNormalizer:
                 for summary CDFs.
             perbin_counts: ``(n_tracks,)`` int — actual sample count per track
                 for per-bin CDFs.
-            cache_dir: Output directory.  Defaults to ``~/.chorus/backgrounds/``.
+            cache_dir: Output directory.  Defaults to ``<data-dir>/backgrounds/``.
             n_points: Number of CDF points per track (default 10,000).
             provenance: File-level facts about how this background was built —
                 genome, formula, pseudocount, region-set composition, XLA flags,
@@ -1558,7 +1558,7 @@ def get_pertrack_normalizer(
     """Auto-discover and load per-track CDFs for an oracle.
 
     Looks for ``{oracle_name}_pertrack.npz`` in *cache_dir* (default
-    ``~/.chorus/backgrounds/``).  If not found locally, attempts to
+    ``<data-dir>/backgrounds/``).  If not found locally, attempts to
     download from the ``lucapinello/chorus-backgrounds`` HuggingFace
     dataset.
 
@@ -1779,7 +1779,7 @@ def download_pertrack_backgrounds(
 
     Fetches ``{oracle_name}_pertrack.npz`` from the
     ``lucapinello/chorus-backgrounds`` dataset repo and saves it to
-    *cache_dir* (default ``~/.chorus/backgrounds/``).
+    *cache_dir* (default ``<data-dir>/backgrounds/``).
 
     Returns 1 if downloaded, 0 if already usable-as-cached or not available.
 

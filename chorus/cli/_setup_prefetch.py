@@ -56,7 +56,7 @@ _DEFAULT_CTOR_KWARGS: Dict[str, Dict[str, object]] = {
 # that iterates ALL registered models, so it is NOT listed here.
 _DEFAULT_LOAD_KWARGS: Dict[str, Union[Dict[str, object], List[Dict[str, object]]]] = {
     # ChromBPNet fast-path default: pre-cache K562 + HepG2 DNase only
-    # (~1.4 GB total). The shipped quickstart + advanced + comprehensive
+    # (~50 MB total — 25 MB each from the slim mirror). The shipped quickstart + advanced + comprehensive
     # notebooks all use these two. Pre-caching every published model is
     # opt-in via `chorus setup --oracle chrombpnet --all-chrombpnet`.
     "chrombpnet": [
@@ -196,7 +196,7 @@ def prefetch_weights(
     """Trigger the oracle's lazy-download path by loading the default model.
 
     For ChromBPNet, the default fast path pre-caches only K562 + HepG2
-    DNase (~1.4 GB; matches the shipped notebooks). Pass
+    DNase (~50 MB; matches the shipped notebooks). Pass
     ``full_chrombpnet=True`` to instead pre-cache all 786 ChromBPNet +
     BPNet fold-0 nobias h5's from the HuggingFace slim mirror
     (lucapinello/chorus-chrombpnet-slim, ~1.5 GB total; ~5 min on a
@@ -302,7 +302,7 @@ def prefetch_for_oracle(
     success lets the caller safely write the setup-complete marker.
 
     ``full_chrombpnet=True`` switches the chrombpnet weight prefetch from
-    the fast 2-model default (~1.4 GB) to the full 786-model catalogue
+    the fast 2-model default (~50 MB) to the full 786-model catalogue
     (~1.5 GB via the HF slim mirror). Has no effect on other oracles.
     """
     errors: List[str] = []

@@ -12,8 +12,8 @@
 4. [Utility Functions](#utility-functions)
 5. [Track Management](#track-management)
 6. [Environment Management](#environment-management)
-7. [Examples](#examples)
-8. [Quantile Normalization](#quantile-normalization)
+7. [Complete Example](#complete-example)
+8. [Per-Track Normalization](#per-track-normalization)
 9. [Application layer (`chorus.analysis`)](#application-layer-chorusanalysis) — high-level variant analysis, discovery, batch scoring, fine-mapping, sequence engineering
 
 ## Overview
@@ -527,13 +527,13 @@ Factory function that returns a `PerTrackNormalizer` for a given oracle.
 from chorus.analysis import get_pertrack_normalizer
 
 norm = get_pertrack_normalizer('enformer')
-# Loads ~/.chorus/backgrounds/enformer_pertrack.npz
+# Loads <data-dir>/backgrounds/enformer_pertrack.npz
 ```
 
 **Parameters:**
 - `oracle_name` (str): Name of the oracle (`'enformer'`, `'borzoi'`,
   `'alphagenome'`, `'chrombpnet'`, `'sei'`, `'legnet'`)
-- `cache_dir` (str, optional): Defaults to `~/.chorus/backgrounds/`
+- `cache_dir` (str, optional): Defaults to `<data-dir>/backgrounds/`
 
 **Returns:**
 - `PerTrackNormalizer` instance, or `None` if no NPZ file exists
@@ -610,7 +610,7 @@ needed — the dataset is public.
 ```python
 # Explicit download (usually not needed — auto-downloaded on first use)
 from chorus.analysis import download_pertrack_backgrounds
-download_pertrack_backgrounds("enformer")  # → ~/.chorus/backgrounds/enformer_pertrack.npz
+download_pertrack_backgrounds("enformer")  # → <data-dir>/backgrounds/enformer_pertrack.npz
 ```
 
 ### Auto-discovery via MCP

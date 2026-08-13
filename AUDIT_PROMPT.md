@@ -110,9 +110,9 @@ for o in ["alphagenome", "enformer", "borzoi", "chrombpnet", "sei", "legnet"]:
     n = download_pertrack_backgrounds(o)
     print(f"{o}: {n} files downloaded")
 
-# Confirm cache landed in ~/.chorus/backgrounds/
+# Confirm cache landed in <data-dir>/backgrounds/
 import os
-print(sorted(os.listdir(os.path.expanduser("~/.chorus/backgrounds/"))))
+print(sorted(os.listdir(os.path.expanduser("<data-dir>/backgrounds/"))))
 ```
 
 ## 2.2 End-to-end percentile lookup for each oracle
@@ -378,7 +378,7 @@ mamba run -n chorus-chrombpnet python scripts/build_backgrounds_chrombpnet.py \
     --n-tss 5 --n-gene-body 5 --reservoir-size 100 --n-cdf-points 100 2>&1 | tail -20
 ```
 
-Verify a `*_interim_variants.npz` file shows up in `~/.chorus/backgrounds/`.
+Verify a `*_interim_variants.npz` file shows up in `<data-dir>/backgrounds/`.
 
 ---
 

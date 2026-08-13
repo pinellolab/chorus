@@ -1,4 +1,4 @@
-"""`chorus setup all` — orchestrates end-to-end setup of every oracle.
+"""`chorus setup` (all oracles) — orchestrates end-to-end setup of every oracle.
 
 Flow:
     1. Resolve the HuggingFace token (blocking — no fallback). If the
@@ -74,7 +74,7 @@ def setup_all_oracles(args) -> int:
             interactive=True,
         ):
             logger.error(
-                "`chorus setup all` halted: a working HuggingFace token is "
+                "`chorus setup` halted: a working HuggingFace token is "
                 "required for AlphaGenome. Nothing was downloaded. "
                 "Set HF_TOKEN, run 'huggingface-cli login', or pass "
                 "--hf-token and retry."

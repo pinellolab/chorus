@@ -53,8 +53,9 @@ report rendering and two real defects — see the banner on each entry.
 
   ```bash
   # serve the report beside the genome — same origin, no CORS, no internet
-  cp report.html "$(chorus config data-dir)/genomes/" && \
-      python -m http.server -d "$(chorus config data-dir)/genomes" 8000
+  # `chorus config data-dir` prints a human-readable block, so resolve the path itself:
+  GENOMES=$(python -c 'from chorus.core.globals import describe_layout; print(describe_layout()["genomes"])')
+  cp report.html "$GENOMES/" && python -m http.server -d "$GENOMES" 8000
   ```
 
   Same-origin matters: a page opened from `file://` has origin `null` and cannot read a served FASTA, and a second port needs CORS headers — both measured, both fail with `Access to XMLHttpRequest ... has been blocked`.
@@ -85,6 +86,52 @@ report rendering and two real defects — see the banner on each entry.
 
 
 ### Added
+- **The installation instructions were audited against the code and re-measured; the disk figure was
+  wrong by more than 2× and is the reason to re-read them.** The prerequisite said **~38 GB free
+  disk** while a default all-oracle install on Linux + CUDA measures **~85 GB** — so anyone who
+  provisioned a 40 GB volume on that advice ran out of space partway through an unattended
+  55–75-minute setup, with a half-built set of envs and no hint that 2× was needed. Two independent
+  causes: the per-env row claimed "~3 GB each" when the smallest oracle env is 6.1 GB and the largest
+  is 11 GB (every env carries its own CUDA payload — pip `nvidia_*` wheels in six of them, conda-side
+  `libtorch_cuda`/`libcu*` in Borzoi, LegNet and Sei, and pip does not hardlink between envs); and the
+  table had **no row at all** for the weights `chorus setup` prefetches by default, ~11 GB of which
+  Sei alone is 6.5 GB because its 3.1 GB tarball is kept beside the 3.4 GB it extracts to. The
+  breakdown is now itemised to 14 buckets and `tests/test_disk_claims_add_up.py` fails if the rows
+  stop summing to the stated total or the prerequisite drops below it.
+
+  Fixed in the same pass, each verified against the code rather than re-read:
+
+  - **`chorus setup all` is not a command** — the subparser defines only flags, so it exits 2 with
+    "unrecognized arguments". It was the documented prerequisite in
+    `examples/walkthroughs/README.md`, and appeared in `chorus/utils/ld.py`'s user-facing hint and in
+    `_setup_all.py`'s own failure banner.
+  - **`chorus setup` needs a TTY.** The token resolves before anything is built and aborts if stdin
+    is not a TTY, so `nohup chorus setup &` — the pattern the TLDR recommends — died instantly with
+    zero progress. `HF_TOKEN` / `--hf-token` / `--no-weights` are now documented there.
+  - **Notebooks needed a step that did not exist in the docs.** 16 of 19 shipped notebooks declare
+    kernel name `chorus`, nothing in the package registers it (`grep -rn ipykernel chorus/` → 0), and
+    the README claimed all three "work as soon as `chorus setup` finishes". Without
+    `python -m ipykernel install --user --name chorus`, `nbconvert` raises `NoSuchKernel`.
+  - **`claude mcp add chorus …` does not register globally** — it defaults to `--scope local`, so the
+    documented "available in every project" recipe registered chorus for the clone directory only.
+    Now `-s user`.
+  - **`chorus cleanup --all` leaves the HuggingFace cache**, which is where most weights live (~20 GB),
+    while the docs called it "Remove everything".
+  - **`~/.chorus/backgrounds/` was wrong in 20 live places**, including two CLI help strings and four
+    `normalization.py` docstrings stating it as the default. The data directory has defaulted to the
+    *installation tree* since 2026-08; `CHORUS_DATA_DIR` — the one switch that relocates all 85 GB —
+    appeared in no user-facing doc at all, and now has its own section, including the legacy
+    backgrounds-only rule that lets `backgrounds` resolve outside `data_dir`.
+  - **`$(chorus config data-dir)` was used as a path** in this file's own air-gap recipe; the command
+    prints a human-readable block.
+  - **Stale by 28×**: three `_setup_prefetch.py` comments called the 2-model ChromBPNet default
+    "~1.4 GB" where the slim mirror serves 25 MB each. The giveaway was that the same line put the
+    786-model catalogue at ~1.5 GB.
+  - `environments/chorus-base.yml` is documented as **vestigial** — no code reads it (the manager
+    explicitly excludes it), it is not the subset the docs claimed, and it declares `name: chorus`,
+    so installing it collides with the documented base env.
+  - Three dead in-page doc anchors, now guarded by `tests/test_doc_links_resolve.py`.
+
 - **The genome assembly is now asserted rather than assumed ([#124](https://github.com/pinellolab/chorus/issues/124)).** Chorus is human hg38 everywhere, and until now that held *by accident*: Enformer and Borzoi exclude their 1,643 and 2,608 mouse tracks because someone selected `enformer_human_targets.txt` / `borzoi_human_targets.txt`, AlphaGenome because `Organism.HOMO_SAPIENS` is hardcoded in its metadata loader. Those are file and literal choices, not assertions — nothing connected any of them to `genomes/hg38.fa`, which every builder opens, so nothing would have caught a future `*_mouse_targets.txt`. ChromBPNet, whose registry had no organism field at all, is where it actually went wrong: 33 mm10 models were scored against hg38 sequence using the hg38 DHS vocabulary, removed in [#121](https://github.com/pinellolab/chorus/issues/121).
 
   A hard failure rather than a warning, because there is no symptom to notice: mm10 `chr1:1,000,000` exists in hg38 too, so every coordinate resolves, every prediction returns, and every percentile lands in [0, 1]. The answer is simply about a different piece of DNA. Four mechanisms:
