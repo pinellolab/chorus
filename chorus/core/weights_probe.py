@@ -6,7 +6,7 @@ Runs in the base ``chorus`` environment (no heavy deps). Answers: *is
 by ``chorus setup`` to skip work that is already done.
 
 A setup-complete marker file ``downloads/<oracle>/.chorus_setup_v1`` is
-written by ``chorus setup <oracle>`` once env + weights (+ backgrounds,
+written by ``chorus setup --oracle <name>`` once env + weights (+ backgrounds,
 + auth for gated oracles) are in place. The marker is the primary
 signal; we additionally verify the expected weight artifacts for
 oracles where chorus controls the cache path, and re-check HF auth for
@@ -84,7 +84,7 @@ def _probe_chrombpnet() -> Tuple[bool, List[str]]:
     The local ``downloads/chrombpnet/DNASE_K562`` directory is only
     populated for users who explicitly request ``model_type='chrombpnet'``
     (bias-aware) or fold ≠ 0, both of which fall back to ENCODE tarballs.
-    `chorus setup chrombpnet` succeeds on the slim path, so we must
+    `chorus setup --oracle chrombpnet` succeeds on the slim path, so we must
     accept either cache as installed.
     """
     # 0.3.0+ default: slim HF mirror.
@@ -180,7 +180,7 @@ _ARTIFACT_PROBES: Dict[str, Callable[[], Tuple[bool, List[str]]]] = {
 def probe_weights(oracle: str) -> Tuple[bool, List[str]]:
     """Return ``(installed, reasons)``.
 
-    ``installed`` is True when ``chorus setup <oracle>`` has completed
+    ``installed`` is True when ``chorus setup --oracle <name>`` has completed
     *and* the expected artifacts are still in place (for oracles with
     cheap artifact probes) *and* (for AlphaGenome) HF auth still works.
     Otherwise ``reasons`` lists what's missing.
@@ -208,7 +208,7 @@ def probe_weights(oracle: str) -> Tuple[bool, List[str]]:
 def write_setup_marker(oracle: str) -> Path:
     """Write the setup-complete marker for ``oracle`` and return its path.
 
-    Called at the end of a successful ``chorus setup <oracle>`` run,
+    Called at the end of a successful ``chorus setup --oracle <name>`` run,
     after env build + weight pre-download (+ auth validation for
     AlphaGenome) have all completed. Parent directory is created if
     missing.

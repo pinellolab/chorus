@@ -296,7 +296,7 @@ def check_health(args):
 
         if health.get('weights_status') == 'missing':
             logger.warning(
-                f"⚠ {oracle}: Not installed — run `chorus setup {oracle}`"
+                f"⚠ {oracle}: Not installed — run `chorus setup --oracle {oracle}`"
             )
             for reason in health.get('missing_artifacts', []):
                 logger.warning(f"  - {reason}")

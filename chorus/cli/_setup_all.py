@@ -10,8 +10,8 @@ Flow:
        background CDFs, and (once) the hg38 reference, then write the
        setup-complete marker.
 
-The single-oracle flow (``chorus setup <oracle>``) lives in
-``main.setup_environments``; ``setup all`` is intentionally a separate
+The single-oracle flow (``chorus setup --oracle <name>``) lives in
+``main.setup_environments``; this all-oracles flow is intentionally a separate
 entry so its stricter gating is obvious from the call graph.
 """
 

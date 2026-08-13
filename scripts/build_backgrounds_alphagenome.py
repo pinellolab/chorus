@@ -73,7 +73,7 @@ parser.add_argument("--shard", type=int, default=None,
                          "time -- each shard would still run every pass.")
 parser.add_argument("--shard-of", type=int, default=None,
                     help="Total number of position shards. Required with --shard. "
-                         "Collect all shards, then run --part merge-shards, which "
+                         "Collect all shards, then run --part merge, which "
                          "unions the raw samples and builds the CDF exactly once "
                          "(pooling the shards' CDF grids would only approximate it).")
 args = parser.parse_args()
@@ -533,7 +533,7 @@ def build_variant_backgrounds():
     if _suffix:
         # A position shard holds a PARTIAL reservoir for every track, so it must
         # ship raw samples: the CDF is built once, from the union, by
-        # --part merge-shards. Writing a CDF per shard and pooling the grids would
+        # --part merge. Writing a CDF per shard and pooling the grids would
         # only approximate the unsharded result.
         np.savez_compressed(
             interim_path,

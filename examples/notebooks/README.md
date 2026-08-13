@@ -61,7 +61,7 @@ kernel from the Kernel menu.
   `chorus-cherimoya` env is Linux/CUDA; Apple Silicon is CPU-only).
 - `advanced_multi_oracle_analysis` needs **all six oracle envs**
   installed (see the matrix in
-  [`../../README.md#setting-up-oracle-environments`](../../README.md#setting-up-oracle-environments)).
+  [`../../README.md#setting-up-oracle-environments-one-by-one`](../../README.md#setting-up-oracle-environments-one-by-one)).
   Each oracle loads via subprocess isolation so there's no dependency
   conflict between them. A GPU is recommended but not required; the
   AlphaGenome cells will fall back to CPU if CUDA isn't available.

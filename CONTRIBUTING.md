@@ -345,27 +345,34 @@ BORZOI_ENV_CONFIG = {
 
 ## Running the tests
 
-From the `chorus` base env, at the repo root. This is the same command CI runs, and a guard test
-enforces that it stays the same one:
+From the `chorus` base env, at the repo root. This is the command CI runs, and a guard test enforces
+that it stays the same one:
 
 ```bash
-pytest tests/ -m "not integration"        # the fast suite — no GPU, no network, ~3 min
+pytest tests/                             # the fast suite — no GPU, no network, ~5 min
 ```
 
-Two suites need more than the base env:
+No marker flag: `pytest.ini` sets `addopts = -m "not integration"`, so the exclusion is already
+applied and lives in one place. That matters for the two heavier suites, because **passing no `-m`
+does not mean "run everything"** — you have to override the default explicitly:
 
 ```bash
-# Integration — needs the per-oracle conda envs, a GPU, and hg38 on disk. ~20 min.
+# Integration — needs the per-oracle conda envs, a GPU, and hg38 on disk. ~19 min.
 pytest tests/ -m integration
 
-# Browser — renders the committed HTML reports in headless Chromium.
+# Browser — renders every committed HTML report in headless Chromium. ~2 min, no GPU.
 pip install playwright && playwright install chromium
-CHORUS_BROWSER_SMOKE=1 pytest tests/test_committed_reports_render_in_a_browser.py
+pytest tests/test_committed_reports_render_in_a_browser.py -m ""
 ```
 
-Both **skip cleanly** rather than failing when their prerequisites are missing — the browser suite
-reports exactly what is absent (`playwright not installed`, or `no chromium in <cache>`). If you are
-only changing Python, the fast suite is what you need; CI runs the rest.
+The `-m ""` is load-bearing. That file sets `pytestmark = pytest.mark.integration` at module level,
+so without it `pytest.ini`'s default deselects the lot and you get `no tests collected (46
+deselected)` — which scrolls past looking like success. Set `CHORUS_BROWSER_SMOKE=1` only if you want
+CI's reduced 3-report subset (12 tests) rather than all 46.
+
+Both heavier suites **skip cleanly** rather than failing when their prerequisites are missing — the
+browser one names exactly what is absent (`playwright not installed`, or `no chromium in <cache>`).
+If you are only changing Python, the fast suite is what you need; CI runs the rest.
 
 > **Do not run the notebooks and the integration suite at the same time**, even pinned to different
 > `CUDA_VISIBLE_DEVICES`. `scripts/gate_end_to_end_determinism.py` sets its own mask and spawns two

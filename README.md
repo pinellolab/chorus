@@ -17,7 +17,10 @@ Four steps. Steps 1 + 2 are copy-paste. Step 3 is a runnable snippet. Step 4 hoo
 **Before you start** — three things you need:
 
 - **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>
-- **~90 GB free disk** for the default all-oracle install on Linux x86_64 + CUDA (~85 GB installed plus a reclaimable package cache). Each oracle env carries its own multi-GB CUDA payload, which is nearly all of it — so a macOS or CPU-only install is far smaller. See [Disk usage breakdown](#disk-usage-breakdown) for per-oracle / per-asset numbers, `chorus setup --oracle <name>` if you only need one oracle, and [Where chorus puts large files](#where-chorus-puts-large-files) to put it on a different filesystem
+- **~100 GB free disk** for the default all-oracle install on Linux x86_64 + CUDA. The install itself
+  is ~85 GiB (as `du -sh` counts it) plus a ~4 GiB reclaimable package cache — and if you are
+  provisioning a cloud volume, note that those are **binary** units: a disk *sold* as "90 GB" is only
+  83.8 GiB, which is smaller than the install. 100 GB decimal (93 GiB) fits with room to work. Each oracle env carries its own multi-GB CUDA payload, which is nearly all of it — so a macOS or CPU-only install is far smaller. See [Disk usage breakdown](#disk-usage-breakdown) for per-oracle / per-asset numbers, `chorus setup --oracle <name>` if you only need one oracle, and [Where chorus puts large files](#where-chorus-puts-large-files) to put it on a different filesystem
 - **Linux x86_64 or macOS** (Intel / Apple Silicon)
 
 ### 1. Install (5 minutes)
@@ -100,7 +103,7 @@ print(f"Variant result: scored {n_alts} alt alleles "
 Hook chorus up to Claude Code once and then *describe* the analysis you want. Claude figures out which models to load, which tracks to score, and which chorus tool to call.
 
 ```bash
-claude mcp add chorus -- mamba run -n chorus chorus-mcp
+claude mcp add -s user chorus -- mamba run -n chorus chorus-mcp
 ```
 
 Now ask, in any Claude Code prompt:
@@ -285,7 +288,7 @@ The default `chorus setup` (all 8 oracles, both AlphaGenome backends, hg38, all 
 | Enformer weights | ~960 MB |
 | ChromBPNet slim HuggingFace mirror — fast-path pre-cache (K562 + HepG2 DNase) | ~50 MB |
 | LegNet weights | ~41 MB |
-| EPInformer-seq per-cell weights (11 main + 11 bias) | ~11 MB |
+| EPInformer-seq per-cell weights (11 main + 11 bias) | ~8 MB |
 | Cherimoya fast-path weights (DNase + ATAC K562/HepG2) | ~10 MB |
 | **Total default** | **~85 GB** |
 
@@ -300,8 +303,10 @@ neither `mamba clean` nor conda's hardlinking gets you out of it:
 * **pip `nvidia_*` wheels** in the Enformer (2.9 GB), ChromBPNet (2.9 GB), AlphaGenome (4.4 GB),
   AlphaGenome-PyTorch (2.7 GB), EPInformer-seq (2.7 GB) and Cherimoya (2.7 GB) envs. pip does not
   hardlink between envs, so each is a full copy.
-* **conda-side `libtorch_cuda` / `libcu*`** in Borzoi (~1.9 GB), LegNet (~3.8 GB) and Sei (~1.9 GB),
-  which have no pip `nvidia` directory at all.
+* **conda-side `libtorch_cuda` / `libcu*`** in Borzoi, LegNet and Sei, which have no pip `nvidia`
+  directory at all. Those libraries are measured differently by different tools depending on how
+  hardlinks and symlinked sonames are counted, so treat the per-env totals in the table above as the
+  number to plan with, not a per-library breakdown.
 
 Measured together with `du -sc` — which counts a hardlinked file once — the nine envs still come to
 67 GB, so there is no dedup credit hiding in that number. Two consequences worth planning around:
@@ -344,7 +349,7 @@ Resolved chorus data layout
   backgrounds   /home/you/chorus/backgrounds  [1.9 GB]
   downloads     /home/you/chorus/downloads  [14.5 GB]
   genomes       /home/you/chorus/genomes  [3.1 GB]
-  hf_cache      /home/you/chorus/huggingface  [20 GB]
+  hf_cache      /home/you/chorus/huggingface  [4.5 GB]
 ```
 
 > **One exception, for upgrades from before this switch.** Backgrounds — and *only* backgrounds — have
@@ -392,8 +397,9 @@ chorus cleanup --all --dry-run
 chorus cleanup --all
 
 # `cleanup` does NOT touch the HuggingFace cache, which is where most oracle weights
-# actually live (~20 GB on a full install). `chorus config data-dir` prints its location
-# as `hf_cache`; to reclaim it too, remove that directory explicitly:
+# actually live — ~4.5 GB for the default oracle set, and much more if you have pulled
+# the full 1,518-experiment Cherimoya atlas. `chorus config data-dir` prints its
+# location as `hf_cache`; to reclaim it too, remove that directory explicitly:
 rm -rf "$(python -c 'from chorus.core.globals import describe_layout; print(describe_layout()["hf_cache"])')"
 
 # Finer-grained options:

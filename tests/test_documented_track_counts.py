@@ -28,7 +28,15 @@ import numpy as np
 import pytest
 
 REPO = Path(__file__).resolve().parent.parent
-BACKGROUNDS = Path.home() / ".chorus" / "backgrounds"
+
+#: Ask the resolver, do not hardcode. ``~/.chorus`` is what ``globals.py`` labels ``LEGACY_DATA_DIR``
+#: ("pre-2026-08"); the default is the installation tree now. The hardcoded path made this whole
+#: module a no-op on any machine without the legacy directory — ``_shipped_counts()`` returned ``{}``
+#: and all six tests skipped, reporting green while checking nothing. It kept passing on the box it
+#: was written on only because ``~/.chorus/backgrounds`` there is a *symlink* to the real location.
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR  # noqa: E402
+
+BACKGROUNDS = CHORUS_BACKGROUNDS_DIR
 
 LIVE_DOCS = [
     "README.md",

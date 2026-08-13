@@ -86,7 +86,7 @@ def cleanup_resources(args) -> int:
         print(
             "Nothing to clean up. Specify at least one of:\n"
             "  --oracle {name|all}   conda env + weights\n"
-            "  --backgrounds         background CDFs (<data-dir>/backgrounds/)\n"
+            f"  --backgrounds         background CDFs ({_BACKGROUNDS_DIR}/)\n"
             "  --genomes             downloaded reference genomes\n"
             "  --all                 everything above\n"
             "\nAdd --dry-run to preview without deleting."
