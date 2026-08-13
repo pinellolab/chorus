@@ -24,7 +24,21 @@ logger = logging.getLogger(__name__)
 
 class OracleBase(ABC):
     """Abstract base class for all oracle implementations."""
-    
+
+    #: Assembly this oracle's weights were trained on, e.g. ``"hg38"``.
+    #:
+    #: Declared on the subclass, never inherited: ``None`` here means a new
+    #: oracle has to say, and ``tests/test_genome_is_asserted_not_assumed.py``
+    #: enumerates the subclasses to make sure one does. Inheriting a default of
+    #: ``"hg38"`` would recreate exactly the accident #124 is about — chorus is
+    #: human-only today because someone picked ``enformer_human_targets.txt``,
+    #: not because anything checked, and the one registry with no organism field
+    #: shipped 33 mm10 models scored against hg38 sequence.
+    #:
+    #: Read by :func:`chorus.analysis.background_sampling.require_reference_assembly`,
+    #: which is what turns the declaration into enforcement.
+    training_genome: Optional[str] = None
+
     def __init__(self, use_environment: bool = True,
                  model_load_timeout: Optional[int] = 600,
                  predict_timeout: Optional[int] = 300,

@@ -625,6 +625,44 @@ def abort_if_nothing_loads(
         )
 
 
+def require_reference_assembly(fasta_path, oracle, *, label: str) -> str:
+    """Refuse to build a background from the wrong assembly. Returns the assembly.
+
+    Every builder opens a FASTA and every builder scores a model, and until this
+    existed nothing compared the two. The models are human-only *by accident*:
+    Enformer and Borzoi because someone selected ``*_human_targets.txt``,
+    AlphaGenome because ``Organism.HOMO_SAPIENS`` is hardcoded in its metadata
+    loader. Those are file and literal choices, not assertions, so nothing would
+    have caught a future ``*_mouse_targets.txt`` — and ChromBPNet, whose registry
+    had no organism field at all, is where it actually went wrong: 33 mm10 models
+    scored against hg38 sequence with the hg38 DHS vocabulary, removed in #121.
+
+    Called at the top of a build rather than per position, because the answer
+    cannot change mid-run and a 14-hour job should fail in the first second.
+
+    *oracle* may be an oracle instance, an oracle class, or a plain assembly
+    string — builders reach this point holding whichever is cheapest. An oracle
+    that has not declared :attr:`~chorus.core.base.OracleBase.training_genome`
+    raises: "nobody said" is the state #124 is about, and the guard's whole
+    purpose is to stop it being tolerated.
+    """
+    from ..utils.genome import require_assembly
+
+    expected = oracle if isinstance(oracle, str) else getattr(
+        oracle, "training_genome", None)
+    if not expected:
+        raise ValueError(
+            f"{label}: {oracle!r} does not declare training_genome, so there is "
+            f"nothing to check {fasta_path} against. Set it on the oracle class "
+            f"(see chorus.core.base.OracleBase.training_genome) -- an undeclared "
+            f"training genome is exactly the state #124 exists to end."
+        )
+    found = require_assembly(fasta_path, expected, context=label)
+    logger.info("%s: reference %s is %s, as %s requires.", label, fasta_path,
+                found or "unverified", expected)
+    return expected
+
+
 def scope_violations(
     n_planned: int, *, label: str, n_shipped: "int | None" = None,
     min_fraction: float = 0.9,
