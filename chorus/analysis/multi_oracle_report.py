@@ -518,15 +518,11 @@ class MultiOracleReport:
             }],
         }]
 
-        options = {
-            "genome": "hg38",
-            "locus": f"{self.chrom}:{min_start}-{max_end}",
-            "showRuler": True,
-            "showNavigation": True,
-            "showCenterGuide": True,
-            "roi": roi,
-            "tracks": tracks,
-        }
+        from ._igv_report import igv_browser_config
+
+        options = igv_browser_config(
+            f"{self.chrom}:{min_start}-{max_end}", tracks, roi,
+        )
         options_json = _json.dumps(options, separators=(",", ":"))
 
         local_igv = _ensure_igv_local()

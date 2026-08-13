@@ -26,12 +26,31 @@ semantics are those of the original publication.
 - **IGV.js** (Integrative Genomics Viewer, Robinson et al., Broad/UCSD) —
   [igv.org](https://igv.org/), [github.com/igvteam/igv.js](https://github.com/igvteam/igv.js),
   MIT license. Shipped as `chorus/analysis/static/igv.min.js` (1.3 MB, inlined) so a
-  report needs no CDN for the library itself. Note this does **not** make a report fully
-  offline: the browser config names `genome: "hg38"`, which igv.js resolves through its
-  hosted genome registry, so the reference index, cytobands and RefSeq annotation are still
-  fetched at load time — see
-  [#139](https://github.com/pinellolab/chorus/issues/139). Source license at
+  report needs no CDN for the library itself. Source license at
   [github.com/igvteam/igv.js/blob/master/LICENSE](https://github.com/igvteam/igv.js/blob/master/LICENSE).
+
+  A report no longer resolves its genome through igv.org's hosted registry
+  ([#139](https://github.com/pinellolab/chorus/issues/139)): chromosome lengths, the
+  ideogram and the gene track are bundled, which took one report from 14 requests across
+  two hosts to **9 across one**, and from 9.6 s to **2.2 s** to paint. **One resource is
+  still remote — the reference sequence** (`hg38.2bit` from UCSC), because every igv.js
+  version requires a sequence source and hg38 is 3 GB. Point `CHORUS_IGV_SEQUENCE_URL` at
+  a self-hosted copy and a report needs no internet at all; serving it same-origin with the
+  report measured 0 external requests and 0.8 s.
+
+- **UCSC hg38 cytoband table** (`cytoBandIdeo`, primary chromosomes only) — shipped as
+  `chorus/analysis/static/cytoBandIdeo_hg38.txt.gz`, 6.1 kB, from
+  [hgdownload.soe.ucsc.edu/goldenPath/hg38/database/cytoBandIdeo.txt.gz](https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/cytoBandIdeo.txt.gz).
+  UCSC genome-annotation data is free to use and redistribute
+  ([genome.ucsc.edu/license](https://genome.ucsc.edu/license/)). igv.js draws the ideogram
+  from it, and the per-chromosome maximum band end supplies the chromosome lengths, so this
+  one file replaces both the `cytoBandIdeo` and the `hg38.chrom.sizes` fetch.
+
+- **GENCODE v48 basic annotation** supplies the inline gene track, scoped to the drawn
+  window (~59 genes and 5.5 kB for a 1 Mb locus). It replaces the UCSC `ncbiRefSeq` track
+  the registry used to attach, and has the advantage of being the same annotation chorus
+  uses for every gene lookup, so the panel agrees with the numbers printed beside it.
+  Already credited under the annotation section below; downloaded, not vendored.
 
 ## Per-track background CDFs
 

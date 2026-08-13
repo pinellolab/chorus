@@ -25,6 +25,35 @@ project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 - **⚠️ `AlphaGenomeOracle(organism="mouse")` now raises instead of being silently ignored ([#124](https://github.com/pinellolab/chorus/issues/124)).** The parameter was accepted, assigned to `self.organism`, and read by nothing — the metadata loader hardcodes `Organism.HOMO_SAPIENS` and the PyTorch port passes `organism_index=0` — so the one oracle whose upstream API genuinely supports mouse had a switch that looked functional and returned human predictions under a mouse label. Same fix on `AlphaGenomePTOracle`. `organism="human"` (any capitalisation, plus `homo_sapiens`) is unchanged; anything else raises `NotImplementedError` naming what mouse would actually require. Of make-it-work / remove-it / raise, only raising is both honest and affordable: mouse needs an mm10 reference in the genome manager, an mm10 reference class for the background null (SCREEN publishes mm10 cCREs; the Meuleman DHS index has no mouse equivalent), and a background pass over ~4,300 further tracks.
 
+
+### Fixed
+- **Reports no longer resolve their genome through igv.org's hosted registry ([#139](https://github.com/pinellolab/chorus/issues/139)).** `genome: "hg38"` reads like a setting but is a *registry lookup*: igv.js resolves the string against its catalogue and follows the result, so every shipped report opened **six remote resources across two hosts** — the catalogue, chromosome aliases, `hg38.chrom.sizes`, `cytoBandIdeo.txt.gz`, `ncbiRefSeq.txt.gz` and ranged reads of `hg38.2bit`. Fourteen requests, and the catalogue fetch is **fatal**: with the network cut the panel did not degrade, it never appeared. The docstring claiming that inlining `igv.min.js` made reports "viewable offline, on air-gapped hosts" was therefore false in the strongest available sense.
+
+  Chromosome lengths and the ideogram now come from one vendored 6.1 kB table (UCSC's `cytoBandIdeo`, primary chromosomes only — the per-chromosome maximum band end *is* the chromosome length, verified against the FASTA index at chr1 = 248,956,422 both ways), and the gene track from chorus's own GENCODE v48 annotation scoped to the drawn window, which also means the panel's genes agree with the gene names printed beside them. Measured on one report:
+
+  | | requests | hosts | load to paint | with no network |
+  |---|---|---|---|---|
+  | before | 14 | 2 | 9.6 s | **fatal** (`genomes.json`) |
+  | after | 9 | 1 | **2.2 s** | fatal (`hg38.2bit`) |
+  | after, sequence self-hosted same-origin | **0** | 0 | **0.8 s** | **works** |
+
+  Cost: **+46.7 kB** per report, 2.8% of a 1.65 MiB one.
+
+  **The reference sequence is the one thing that cannot be bundled, and that is igv.js's rule rather than a choice.** Every version requires a sequence source: omit it and 3.1.1 dies in `Ec.loadAll` on `undefined.startsWith`, while 3.8.5 dies on `url must be either a 'File', 'string', 'function', or 'Promise'`. A `data:` URI does not substitute either — igv decodes data URIs inline and treats them as a *non-indexed* FASTA, taking chromosome lengths from the body, so a stub declaring the real lengths in its index renders a perfect ideogram and ruler while every feature track silently draws nothing (3 of 5 canvases painted, against 5 of 5 with a real reference). hg38 is 3 GB.
+
+  For a genuinely air-gapped site, `CHORUS_IGV_SEQUENCE_URL` points the report at a self-hosted copy, and it accepts a **FASTA** as well as a 2bit because every chorus install already downloads `hg38.fa`:
+
+  ```bash
+  # serve the report beside the genome — same origin, no CORS, no internet
+  cp report.html "$(chorus config data-dir)/genomes/" && \
+      python -m http.server -d "$(chorus config data-dir)/genomes" 8000
+  ```
+
+  Same-origin matters: a page opened from `file://` has origin `null` and cannot read a served FASTA, and a second port needs CORS headers — both measured, both fail with `Access to XMLHttpRequest ... has been blocked`.
+
+  All three render paths (`_igv_report`, `multi_oracle_report`, `causal`) now share one config builder, since three copies of the same dict is precisely how the display-pooling defect shipped with only one of them fixed. Every committed report was regenerated; a test reads the artefacts rather than the generator, because regeneration is what makes the fix real.
+
+### Added
 - **Every committed report is now opened in a real browser and checked that it paints ([#135](https://github.com/pinellolab/chorus/issues/135)).** Nothing in the suite had ever loaded one: the checks were on bytes and JSON, so a report could be regenerated, sized, diffed, committed and shipped while rendering a blank page. `tests/test_committed_reports_render_in_a_browser.py` loads all 19 in headless Chromium and asserts every canvas IGV laid out has ink, with no console errors and no uncaught exceptions. Marked `integration`; skips cleanly where Chromium is unavailable.
 
   Three things had to be got right, each of which produces a failure indistinguishable from a broken panel. **IGV renders inside a shadow root**, so `document.querySelectorAll('canvas')` returns 0 for a panel that is painting perfectly — which is what led #139 to report "the panel never renders", and to the conclusion that headless Chromium cannot be used as an oracle for this. It can; the query just has to pierce shadow boundaries. **Chromium's shared libraries are scattered across conda envs** (`libgbm`/`libatk` only in `chorus-browsertest`, `libXcomposite`/`libcups` only in the oracle and base envs), so the path is assembled in the harness and passed to the browser process rather than exported by whoever runs pytest. And **"loaded" is not "painted"**: polling until the canvas count stops changing reported 61/62 and 39/42 on reports that reach 64/64 and 44/44 a second later, so the harness polls to convergence instead.

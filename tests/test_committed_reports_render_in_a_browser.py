@@ -171,11 +171,20 @@ def test_the_table_only_report_renders_its_table(browser):
     ("features emptied",
      lambda s: re.subn(r'"features":\s*\[[^\]]*\]', '"features":[]', s)[0],
      "blank"),
-    # A bad genome name makes igv.createBrowser throw. The report's own try/catch turns that
-    # into console.error rather than an uncaught exception, so page_errors stays empty and
-    # only the console channel sees it -- which is why both are checked.
-    ("genome broken",
-     lambda s: s.replace('"genome":"hg38"', '"genome":"nosuchgenome"', 1),
+    # A reference with no sequence source makes igv.createBrowser throw. The report's own
+    # try/catch turns that into console.error rather than an uncaught exception, so
+    # page_errors stays empty and only the console channel sees it -- which is why both are
+    # checked.
+    #
+    # This used to break the genome by renaming it, back when the config said
+    # `"genome":"hg38"` and igv resolved that against its hosted catalogue. #139 replaced
+    # that with an explicit inline reference, so the rename became a no-op and the mutation
+    # stopped mutating: the report rendered 6/6 canvases and the test correctly reported
+    # that nothing had noticed. Misspelling the sequence key is the equivalent for the new
+    # shape, and it targets the exact constraint #139 ran into -- igv.js requires a sequence
+    # source and dies without one.
+    ("reference has no sequence",
+     lambda s: s.replace('"twoBitURL"', '"tw0BitURL"', 1),
      "console"),
     # A syntax error never reaches the report's catch block at all.
     ("config truncated",
