@@ -121,3 +121,59 @@ def test_the_remap_arithmetic_is_right():
            / "predict_template.py").read_text()
     assert "[x for x in outer.split(',') if x != '']" in src or \
            "[p for p in outer.split(',') if p != '']" in src
+
+# ──────────────────────────────────────────────────────────────────────
+# The direct path — the half the first fix missed
+# ──────────────────────────────────────────────────────────────────────
+
+#: Oracle modules, not templates. `use_environment=False` is the `create_oracle` DEFAULT, so
+#: this path matters at least as much as the subprocess one — and it was still overwriting the
+#: mask after the templates were fixed, because the original guard only globbed
+#: `*_source/templates/*template.py`. Found by re-auditing the released tree (2026-08-13).
+ORACLE_MODULES = sorted(REPO.glob("chorus/oracles/*.py"))
+
+
+@pytest.mark.parametrize("path", ORACLE_MODULES, ids=lambda p: p.name)
+def test_no_oracle_module_overwrites_the_mask_with_a_bare_ordinal(path: Path):
+    """Same property as the template guard, on the in-process load path."""
+    offenders = []
+    lines = path.read_text().splitlines()
+    for i, line in enumerate(lines, 1):
+        code = line.split("#", 1)[0]
+        if "CUDA_VISIBLE_DEVICES" not in code or "=" not in code:
+            continue
+        if "'-1'" in code or '"-1"' in code:          # forcing CPU is correct
+            continue
+        # The value assigned must come from the resolver, not from splitting the string.
+        window = "\n".join(lines[max(0, i - 6):i])
+        if "resolve_visible_ordinal" in window:
+            continue
+        if "device.split" in code or "device.split" in window:
+            offenders.append(f"{path.name}:{i}  {line.strip()[:78]}")
+    assert not offenders, (
+        "these oracle modules set CUDA_VISIBLE_DEVICES from a bare ordinal on the direct "
+        f"load path, so cuda:N lands on physical N regardless of the mask:\n  "
+        + "\n  ".join(offenders)
+        + "\n  Use chorus.core.platform.resolve_visible_ordinal()."
+    )
+
+
+def test_the_shared_resolver_is_the_only_arithmetic():
+    """One implementation now, after six templates and two modules had their own."""
+    from chorus.core.platform import resolve_visible_ordinal
+    import os
+
+    saved = os.environ.get("CUDA_VISIBLE_DEVICES")
+    try:
+        os.environ["CUDA_VISIBLE_DEVICES"] = "4,5"
+        assert resolve_visible_ordinal("cuda:0") == "4"
+        assert resolve_visible_ordinal("cuda:1") == "5"
+        with pytest.raises(ValueError, match="granted"):
+            resolve_visible_ordinal("cuda:2")
+        del os.environ["CUDA_VISIBLE_DEVICES"]
+        assert resolve_visible_ordinal("cuda:3") == "3", "no mask: pass the ordinal through"
+    finally:
+        if saved is None:
+            os.environ.pop("CUDA_VISIBLE_DEVICES", None)
+        else:
+            os.environ["CUDA_VISIBLE_DEVICES"] = saved
