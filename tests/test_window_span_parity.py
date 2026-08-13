@@ -48,9 +48,60 @@ because the null is the expensive artefact:
 """
 from __future__ import annotations
 
+import ast
+import subprocess
+
 import pytest
 
 from chorus.analysis.background_sampling import centered_bin_span
+
+
+def _code_fingerprint(source: str) -> str:
+    """A module's AST with every docstring removed, so prose changes are invisible.
+
+    Comments never reach the AST at all, and ``ast.dump`` omits line numbers unless
+    asked for them, so reformatting and blank-line churn are invisible too.
+    """
+    tree = ast.parse(source)
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef,
+                                 ast.AsyncFunctionDef)):
+            continue
+        body = getattr(node, "body", None)
+        if (body and isinstance(body[0], ast.Expr)
+                and isinstance(body[0].value, ast.Constant)
+                and isinstance(body[0].value.value, str)):
+            node.body = body[1:]
+    return ast.dump(tree)
+
+
+def _git(*args: str) -> str:
+    return subprocess.run(["git", *args], capture_output=True, text=True,
+                          check=True).stdout
+
+
+def _last_semantic_change(path: str) -> str:
+    """ISO commit date of the newest commit that changed *path*'s code.
+
+    Commits that only touched docstrings or comments are skipped. Returns the oldest
+    known commit date if every commit in range was prose-only, and "" if the file has
+    no history (a shallow clone), which the caller treats as a skip.
+    """
+    shas = _git("log", "--format=%H", "--", path).split()
+    if not shas:
+        return ""
+    for sha in shas:                      # newest first
+        try:
+            after = _code_fingerprint(_git("show", f"{sha}:{path}"))
+        except (subprocess.CalledProcessError, SyntaxError):
+            return _git("log", "-1", "--format=%cI", sha).strip()
+        try:
+            before = _code_fingerprint(_git("show", f"{sha}^:{path}"))
+        except (subprocess.CalledProcessError, SyntaxError):
+            return _git("log", "-1", "--format=%cI", sha).strip()  # file was added here
+        if after != before:
+            return _git("log", "-1", "--format=%cI", sha).strip()
+    return _git("log", "-1", "--format=%cI", shas[-1]).strip()
 
 # (oracle, resolution, window_bp, expected bins) — the builders' convention,
 # read off scripts/build_backgrounds_{enformer,borzoi,alphagenome}.py.
@@ -273,6 +324,49 @@ def test_centre_bin_override_is_what_the_query_needs():
 
 
 @pytest.mark.integration
+def test_prose_only_edits_do_not_make_the_examples_look_stale():
+    """The staleness guard must key off code, not off any commit touching the file.
+
+    #187 changed exactly one line of ``scorers.py``'s module docstring and thereby
+    declared all 14 committed examples stale — a false positive that would have cost a
+    multi-hour regeneration producing byte-identical numbers. Both directions are
+    asserted here: prose churn is invisible, real code is not.
+    """
+    base = "x = 1\n\n\ndef f():\n    \"\"\"Doc.\"\"\"\n    return x + 1\n"
+    prose = "x = 1\n\n\ndef f():\n    \"\"\"Totally different words.\"\"\"\n    # and a comment\n    return x + 1\n"
+    code = "x = 1\n\n\ndef f():\n    \"\"\"Doc.\"\"\"\n    return x + 2\n"
+
+    assert _code_fingerprint(base) == _code_fingerprint(prose), \
+        "a docstring/comment edit changed the fingerprint — the guard will false-positive"
+    assert _code_fingerprint(base) != _code_fingerprint(code), \
+        "a real code change did NOT change the fingerprint — the guard is now blind"
+
+
+@pytest.mark.integration
+def test_the_staleness_guard_skips_the_prose_commit_in_real_history():
+    """Against this repo's actual history, not a synthetic string.
+
+    ``scorers.py``'s newest commit is #187's docstring fix; the newest *semantic* one is
+    #163. If these ever coincide again the guard is back to keying off prose.
+    """
+    path = "chorus/analysis/scorers.py"
+    try:
+        semantic = _last_semantic_change(path)
+        touched = _git("log", "-1", "--format=%cI", "--", path).strip()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pytest.skip("git unavailable")
+    if not semantic or not touched:
+        pytest.skip("no git history (shallow clone?)")
+    assert semantic <= touched
+    newest_sha = _git("log", "--format=%H", "--", path).split()[0]
+    if _code_fingerprint(_git("show", f"{newest_sha}:{path}")) == \
+       _code_fingerprint(_git("show", f"{newest_sha}^:{path}")):
+        assert semantic != touched, (
+            "the newest commit to scorers.py is prose-only, yet the guard still dated "
+            "the module from it — every committed example would read as stale"
+        )
+
+
 def test_committed_examples_are_stale_until_the_regen_sweep():
     """Makes the staleness of shipped examples *visible* rather than silent.
 
@@ -309,11 +403,15 @@ def test_committed_examples_are_stale_until_the_regen_sweep():
 
     # git commit time, NOT mtime: on a fresh clone every file carries checkout
     # time, so an mtime comparison would call every example stale everywhere.
+    #
+    # And the most recent commit that *touched* scorers.py is the wrong question — a
+    # docstring edit cannot move a number. #187 changed one line of this module's
+    # docstring (`~/.chorus/backgrounds` -> `<data-dir>/backgrounds`) and that alone
+    # declared all 14 committed examples stale, which would have bought a multi-hour
+    # regeneration producing byte-identical output. So walk back to the last commit
+    # that changed the module's *semantics*.
     try:
-        iso = subprocess.run(
-            ["git", "log", "-1", "--format=%cI", "--", "chorus/analysis/scorers.py"],
-            capture_output=True, text=True, check=True,
-        ).stdout.strip()
+        iso = _last_semantic_change("chorus/analysis/scorers.py")
     except (subprocess.CalledProcessError, FileNotFoundError):
         pytest.skip("git unavailable")
     if not iso:
