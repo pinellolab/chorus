@@ -50,6 +50,7 @@ from __future__ import annotations
 
 import ast
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -75,6 +76,9 @@ def _code_fingerprint(source: str) -> str:
     return ast.dump(tree)
 
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
 def _git(*args: str) -> str:
     return subprocess.run(["git", *args], capture_output=True, text=True,
                           check=True).stdout
@@ -87,18 +91,22 @@ def _last_semantic_change(path: str) -> str:
     known commit date if every commit in range was prose-only, and "" if the file has
     no history (a shallow clone), which the caller treats as a skip.
     """
+    # A shallow clone cannot answer this question at all. `actions/checkout@v4` defaults to
+    # `fetch-depth: 1`, so CI has exactly one commit: every path looks like it was *added* there,
+    # dated today, and every committed example therefore reads as stale. Detect it and let the
+    # caller skip, rather than reporting a staleness that is an artefact of the checkout.
+    if (REPO_ROOT / ".git" / "shallow").exists():
+        return ""
     shas = _git("log", "--format=%H", "--", path).split()
     if not shas:
         return ""
     for sha in shas:                      # newest first
         try:
             after = _code_fingerprint(_git("show", f"{sha}:{path}"))
-        except (subprocess.CalledProcessError, SyntaxError):
-            return _git("log", "-1", "--format=%cI", sha).strip()
-        try:
             before = _code_fingerprint(_git("show", f"{sha}^:{path}"))
         except (subprocess.CalledProcessError, SyntaxError):
-            return _git("log", "-1", "--format=%cI", sha).strip()  # file was added here
+            # No parent (initial commit) or unparseable revision — treat as a real change.
+            return _git("log", "-1", "--format=%cI", sha).strip()
         if after != before:
             return _git("log", "-1", "--format=%cI", sha).strip()
     return _git("log", "-1", "--format=%cI", shas[-1]).strip()
@@ -323,7 +331,6 @@ def test_centre_bin_override_is_what_the_query_needs():
     assert centered_bin_span(1000, 501, 1, centre_bin=100) == (0, 351)
 
 
-@pytest.mark.integration
 def test_prose_only_edits_do_not_make_the_examples_look_stale():
     """The staleness guard must key off code, not off any commit touching the file.
 
@@ -367,6 +374,7 @@ def test_the_staleness_guard_skips_the_prose_commit_in_real_history():
         )
 
 
+@pytest.mark.integration
 def test_committed_examples_are_stale_until_the_regen_sweep():
     """Makes the staleness of shipped examples *visible* rather than silent.
 
