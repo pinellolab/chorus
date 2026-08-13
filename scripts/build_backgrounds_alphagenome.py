@@ -138,6 +138,7 @@ from chorus.analysis.background_sampling import (
     StagedSamples,
     centered_bin_span,
     report_sampling_uniformity,
+    require_reference_assembly,
 )
 from chorus.analysis.scorers import canonical_layer, classify_chip_layer  # noqa: E402
 from chorus.utils.annotations import (  # noqa: E402
@@ -343,7 +344,13 @@ def build_variant_backgrounds():
         tracks_by_ot[t['output_type']].append((t_i, t))
 
     import pysam
-    ref = pysam.FastaFile(os.path.join(REPO_ROOT, 'genomes/hg38.fa'))
+
+    from chorus.oracles.alphagenome import AlphaGenomeOracle
+
+    ref_path = os.path.join(REPO_ROOT, 'genomes/hg38.fa')
+    require_reference_assembly(ref_path, AlphaGenomeOracle,
+                               label="alphagenome background (variants)")
+    ref = pysam.FastaFile(ref_path)
 
     # Generate SNPs, anchored on gene structure rather than uniformly at random.
     #
@@ -592,7 +599,13 @@ def build_baseline_backgrounds():
     )
 
     import pysam
-    ref = pysam.FastaFile(os.path.join(REPO_ROOT, 'genomes/hg38.fa'))
+
+    from chorus.oracles.alphagenome import AlphaGenomeOracle
+
+    ref_path = os.path.join(REPO_ROOT, 'genomes/hg38.fa')
+    require_reference_assembly(ref_path, AlphaGenomeOracle,
+                               label="alphagenome background (baselines)")
+    ref = pysam.FastaFile(ref_path)
 
     # Position sets
     random.seed(789)

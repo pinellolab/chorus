@@ -486,6 +486,7 @@ class PerTrackNormalizer:
             entry["build_config"] = self._read_build_config(
                 data["build_config"], oracle_name,
             )
+        self._require_ranking_genome(oracle_name, path, entry["build_config"])
         self._loaded[oracle_name] = entry
         n_tracks = len(entry["track_ids"])
         cdfs_present = [k for k in ("effect_cdfs", "summary_cdfs", "perbin_cdfs") if entry[k] is not None]
@@ -495,6 +496,37 @@ class PerTrackNormalizer:
         )
         self._warn_on_geometry_mismatch(oracle_name, entry)
         return entry
+
+    @staticmethod
+    def _require_ranking_genome(oracle_name: str, path: Path, config: dict | None) -> None:
+        """Refuse an artefact whose declared assembly is not the one chorus ranks against.
+
+        Checked here, after ``build_config`` is parsed, rather than before ``np.load`` like
+        the fold guard: the genome is in the config the loader already reads, so this costs
+        no second open. Raised before the entry reaches ``self._loaded``, so a refused
+        artefact is not cached as usable.
+
+        An **unstamped** artefact is silent, matching :meth:`_warn_on_geometry_mismatch`:
+        every background built before the provenance work has no ``genome`` key, and it
+        makes no claim to contradict. Refusing those would break working installs to enforce
+        a metadata convention. What is *not* tolerated is a stated assembly that disagrees —
+        that is a claim, and it is wrong.
+        """
+        if not isinstance(config, dict):
+            return
+        declared = config.get("genome")
+        if declared is None or declared == RANKING_GENOME:
+            return
+        raise BackgroundGenomeMismatch(
+            f"{path.name} declares genome {declared!r}, but chorus ranks against "
+            f"{RANKING_GENOME!r} (build_config.schema_version "
+            f"{config.get('schema_version')!r}). A percentile is a rank within a reference "
+            f"class of {RANKING_GENOME} regions, so this artefact's CDFs describe different "
+            f"DNA than the predictions being ranked -- and every coordinate would still "
+            f"resolve, so nothing else would notice. If you are developing a "
+            f"{declared} oracle, the query-side reference class has to be built for "
+            f"{declared} first; see docs/BACKGROUND_NULL_PROTOCOL.md."
+        )
 
     @staticmethod
     def _read_build_config(raw, label: str) -> dict | None:
@@ -1567,6 +1599,18 @@ _HF_REPO = os.environ.get("CHORUS_BACKGROUNDS_REPO", "lucapinello/chorus-backgro
 MIN_ARTEFACT_SCHEMA = 4
 
 
+#: The assembly every shipped background is built on, and the only one the query side
+#: knows how to rank against.
+#:
+#: Not merely "what we happen to ship". The region sets a percentile is a rank within are
+#: hg38-specific and have no mouse equivalent — the Meuleman DHS vocabulary in particular,
+#: where SCREEN publishes an mm10 cCRE registry but the DHS index does not. So an mm10
+#: artefact is not a drop-in even once one exists: the reference class needs its own mm10
+#: variant and its own validation. Until that work happens, an artefact declaring anything
+#: else is refused rather than ranked against.
+RANKING_GENOME = "hg38"
+
+
 #: Dataset revision this release of chorus was verified against.
 #:
 #: A percentile is a function of (code, artefacts), and the artefacts live in a separate
@@ -1640,14 +1684,38 @@ def normalization_key(oracle_name: str, track=None, fold=None) -> str:
     return "cherimoya_ensemble" if fold == "ensemble" else "cherimoya"
 
 
-class BackgroundFoldMismatch(ValueError):
+class BackgroundArtefactMismatch(ValueError):
+    """The artefact loaded is not the null this CDF key is supposed to rank against.
+
+    Deliberately NOT swallowed by ``get_normalizer``'s legacy fallback, and the base class
+    exists so that stays true for the next guard as well. Every other reason a per-track
+    artefact fails to load means "no percentiles available", which is a degradation the
+    fallback is right to absorb. These mean "the percentiles would be WRONG" -- ranked
+    against a different distribution than the one they name -- and falling back silently
+    would hide the single condition the guard was added to surface.
+    """
+
+
+class BackgroundFoldMismatch(BackgroundArtefactMismatch):
     """An artefact was built on a different model fold than the CDF key requires.
 
-    Deliberately NOT swallowed by ``get_normalizer``'s legacy fallback. Every other reason a
-    per-track artefact fails to load means "no percentiles available", which is a degradation.
-    This one means "the percentiles would be wrong" -- ranked against a different model's
-    distribution -- and silently falling back would hide the one condition the guard exists
-    to surface.
+    The five CATv1 folds disagree by ~2x on the same sequence, so this is a plausible
+    wrong number rather than an approximation.
+    """
+
+
+class BackgroundGenomeMismatch(BackgroundArtefactMismatch):
+    """An artefact was built on a different genome assembly than chorus ranks against.
+
+    Same shape of failure as the fold case and a worse magnitude: an mm10 null describes a
+    different species' regulatory landscape, but every hg38 coordinate still resolves
+    against it and every percentile still returns a number in [0, 1].
+
+    Reachable today only by hand — all nine shipped artefacts are hg38 — which is exactly
+    when to install the guard. #124's finding was that human-only holds by *accident*:
+    Enformer and Borzoi are human because someone chose ``*_human_targets.txt``, and
+    ChromBPNet, whose registry had no organism field, shipped 33 mm10 models scored against
+    hg38 sequence. The next mouse artefact should meet a refusal, not a percentile.
     """
 
 
@@ -1931,9 +1999,11 @@ def get_normalizer(
         pertrack = get_pertrack_normalizer(oracle_name, cache_dir=cache_dir)
         if pertrack is not None and pertrack.n_tracks(oracle_name) > 0:
             return pertrack
-    except BackgroundFoldMismatch:
+    except BackgroundArtefactMismatch:
         # Not a "no percentiles available" condition -- a "the percentiles would be wrong"
-        # condition. Let it out.
+        # condition. Let it out. Catching the base class rather than BackgroundFoldMismatch
+        # so the next guard in this family inherits the non-swallowing contract instead of
+        # having to remember to widen this clause.
         raise
     except Exception as exc:
         logger.debug(

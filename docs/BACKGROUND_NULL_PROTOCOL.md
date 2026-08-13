@@ -545,6 +545,8 @@ Every one of these exists because something passed all the *other* checks.
 | `scope_violations` | a build covering far fewer tracks than the background it replaces | **preflight** |
 | `sampler_preflight` | a retention config that would thin the tail | **preflight** |
 | `abort_if_nothing_loads` | a per-track loader that has attempted 25 models and loaded none | build loop |
+| `require_reference_assembly` | a builder opening a FASTA that is not the assembly its model was trained on. Checks the oracle's declared `training_genome` against the reference's chr1 length | **preflight**, all 8 builders |
+| `BackgroundGenomeMismatch` | an artefact declaring a genome chorus does not rank against. On the `BackgroundArtefactMismatch` contract, so it is **not** absorbed by `get_normalizer`'s legacy fallback | load time |
 | stratum-name `ValueError` | a stratum with no sampler branch | sampling |
 | annotation round-trip | positions that do not match the annotation their tag names | test |
 | `check_counts_fit_the_population` | a stamped activity population too small to have produced the samples the file carries: `max(counts) ≤ n_positions × per-position × fan-out`, per layer | stamp time + test |
@@ -610,6 +612,15 @@ Compute `N_expected = n_positions × fan_out` per layer, then:
 
 Pass `sampling=sampling_block(...)` to `build_and_save`. Omitting it logs an error and
 disables the thinning check entirely.
+
+Declare `training_genome` on the oracle class and call
+`require_reference_assembly(fasta, YourOracle, label=...)` immediately before the builder
+opens its FASTA. The declaration is deliberately **not** inherited — `OracleBase` says
+`None` and the guard refuses that — because chorus's human-only property came from a
+metadata-file choice rather than an assertion, and an inherited `"hg38"` would be another
+such choice wearing an assertion's clothes. If your model is not hg38 you cannot simply
+declare that and proceed: the reference class itself is hg38-specific (§4b), so read §11's
+mouse entry first.
 
 ### Step 6 — register the reference family
 
@@ -691,6 +702,12 @@ The activity population is derived per oracle (§4b) and `check_counts_fit_the_p
 refuses to write a stamp the file's own count arrays contradict (§7). A refusal fails that
 oracle and leaves it unstamped, with a non-zero exit code; the other seven still stamp.
 
+`genome` is measured from the reference's chromosome lengths rather than stated, for the
+same reason: the loader now refuses an artefact whose declared assembly is not the one
+chorus ranks against, and that check compares two constants if the declaration is the
+stamper's own assumption. An unidentifiable reference fails the stamp rather than being
+guessed at.
+
 ---
 
 ## 9. Decision log
@@ -712,6 +729,7 @@ oracle and leaves it unstamped, with a non-zero exit code; the other seven still
 | 2026-08-12 | Cherimoya default fold 0, with a second null for the ensemble | folds disagree 2.02x on the same sequence, so one null cannot rank the other's predictions; fold 0 matches ChromBPNet's default, making percentiles comparable (0.9325 vs 0.9550). Agreed with CATv1's author |
 | 2026-08-12 | ChromBPNet↔Cherimoya compared at percentile level only | CATv1 has no bias model (`n_control_tracks: 0`, `controls = None`); it tracks bias-*aware* ChromBPNet at 1.02x on peak and differs from `chrombpnet_nobias` by 3.40x |
 | 2026-08-11 | the trigger is **not** a genome-wide CDF statistic | all four candidates overlap between must-change and must-not-move; `max/p99.9 > 50` would have log-scaled 130 tracks: 102 ChromBPNet ChIP, 10 Enformer + 8 Borzoi CAGE, 7 AlphaGenome TF-ChIP, 2 ChromBPNet DNase, 1 Cherimoya DNase. `CHIP:K562:ZBTB11`, which that statistic ranked above CAGE, measures 0.000 saturation as drawn |
+| 2026-08-12 | the assembly is **checked**, not inherited from a filename | human-only held by accident: Enformer/Borzoi via `*_human_targets.txt`, AlphaGenome via a hardcoded `HOMO_SAPIENS`, ChromBPNet via nothing — which is why 33 mm10 models were scored against hg38 sequence (#121). `build_config.genome` was itself a literal in the stamper, so the field restated an assumption; it is now read off the FASTA. No artefact changed: all nine already said `hg38`, and all nine are |
 | 2026-08-09 | activity population **recorded per builder** (three mixtures), not harmonised to one | harmonising means rebuilding five backgrounds, and the three mixtures are 29,500 / 31,500 / 34,500 positions — a composition change, so §9's two-arm rule applies. Recording it is free and makes the difference legible; the stamp had asserted one 31,500-position set for all eight, false for five |
 
 ## 10. The converged state (2026-08-07)
@@ -832,6 +850,17 @@ oracle is thinned.
   them or claims they are equivalent.
 * AlphaGenome `histone_marks` and Enformer `tf_binding` remain ~20%/25% pinned on
   motif-creating variants. Irreducible with an empirical ceiling; see §9's last row.
+* **Mouse is refused, not supported, and the reference class is why.** hg38 is now asserted
+  at three points (§7), so a non-hg38 model can no longer reach a percentile by accident.
+  What the assertion does *not* do is make mouse cheap: SCREEN publishes an mm10 cCRE
+  registry but the Meuleman DHS index has **no** mouse equivalent, so the effect-null and
+  baseline populations of §3–§4 would each need an mm10 variant plus its own validation that
+  the `p0` gain transfers. Exposing the mouse heads of Enformer + Borzoi + AlphaGenome is
+  ~4,300 further tracks, each needing a full background pass — the largest single compute
+  item outstanding, and it should be costed on its own merits rather than folded into an
+  oracle addition. Also note the collision trap from #121: mouse tissue names (`liver`,
+  `heart`, `brain`, `forebrain`) are all *human* ENCODE CHIP biosamples, so any species
+  filter must key on `(assay, cell_type)` — a name-only filter deletes 16 human rows.
 * **One AlphaGenome MCP end-to-end test never runs on an authenticated machine.**
   `tests/test_integration.py:196` gates on the `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN`
   environment variables, but `huggingface_hub` also authenticates from the stored token on

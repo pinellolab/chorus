@@ -301,7 +301,156 @@ class GenomeManager:
             return None
 
 
-def download_genome(genome_id: str, genomes_dir: Optional[Path] = None, 
+# ----------------------------------------------------------------------
+# Assembly identity
+# ----------------------------------------------------------------------
+
+#: Length of chromosome 1 in each assembly chorus knows how to name.
+#:
+#: The cheapest fingerprint that is also *provider-independent*: a UCSC
+#: ``hg38.fa``, an Ensembl ``GRCh38.dna.primary_assembly.fa`` and a GENCODE
+#: release disagree about chromosome naming (``chr1`` vs ``1``), line width,
+#: soft-masking and which scaffolds are included, but they all agree about how
+#: long chromosome 1 is. Hashing the file instead — which is what
+#: ``build_config.fasta_sha256_prefix64mb`` records — distinguishes *files*, not
+#: assemblies, so it would reject a correct Ensembl GRCh38 as loudly as it
+#: rejects mm10.
+ASSEMBLY_CHR1_LENGTH: Dict[str, int] = {
+    'hg38': 248_956_422,   # GRCh38
+    'hg19': 249_250_621,   # GRCh37
+    'mm39': 195_154_279,   # GRCm39
+    'mm10': 195_471_971,   # GRCm38
+    'mm9':  197_195_432,
+}
+
+#: Reverse lookup. hg38 and hg19 differ by ~294 kb on chr1, mm10 and mm39 by
+#: ~318 kb, so there is no collision to resolve.
+_CHR1_LENGTH_TO_ASSEMBLY: Dict[int, str] = {
+    v: k for k, v in ASSEMBLY_CHR1_LENGTH.items()
+}
+
+
+def chr1_length(fasta_path) -> Optional[int]:
+    """Length of chromosome 1 in *fasta_path*, or None if it can't be read.
+
+    Reads the ``.fai`` index when there is one — a few hundred bytes and no
+    dependency — and only falls back to opening the FASTA through pysam when
+    there isn't. Accepts both ``chr1`` and ``1`` so an Ensembl reference works.
+    """
+    fasta_path = Path(fasta_path)
+    fai = Path(str(fasta_path) + '.fai')
+    if fai.exists():
+        try:
+            for line in fai.read_text().splitlines():
+                name, _, rest = line.partition('\t')
+                if name in ('chr1', '1'):
+                    return int(rest.split('\t')[0])
+        except (OSError, ValueError, IndexError):
+            pass
+    try:
+        import pysam
+        with pysam.FastaFile(str(fasta_path)) as fa:
+            for name in ('chr1', '1'):
+                if name in fa.references:
+                    return int(fa.get_reference_length(name))
+    except Exception:                                   # unreadable / unindexed
+        return None
+    return None
+
+
+def detect_assembly(fasta_path) -> Optional[str]:
+    """Identify the assembly of *fasta_path*, or None if it is unrecognised.
+
+    None means "no claim": an unreadable reference, one with no chromosome 1, or
+    a genuine assembly not in :data:`ASSEMBLY_CHR1_LENGTH` (dm6, ce11, a custom
+    build). Callers must treat that differently from a *wrong* answer — see
+    :func:`require_assembly`.
+    """
+    length = chr1_length(fasta_path)
+    if length is None:
+        return None
+    return _CHR1_LENGTH_TO_ASSEMBLY.get(length)
+
+
+def require_assembly(fasta_path, expected: str, *, context: str = "") -> Optional[str]:
+    """Raise unless *fasta_path* is the *expected* assembly. Returns what it found.
+
+    The asymmetry is deliberate and is the whole design:
+
+    * a **recognised, different** assembly raises
+      :class:`~chorus.core.exceptions.GenomeAssemblyMismatchError`, because every
+      coordinate in mm10 also exists in hg38 and so the only symptom of the
+      mistake is a plausible number about the wrong piece of DNA;
+    * an **unrecognised** reference warns and returns None, because refusing it
+      would break anyone using a legitimate assembly chorus has no chr1 length
+      for, to enforce a lookup table's completeness.
+
+    ``expected`` itself being unknown is a programming error and raises, so a
+    typo (``"GRCh38"`` for ``"hg38"``) fails at the guard rather than silently
+    disabling it.
+    """
+    if expected not in ASSEMBLY_CHR1_LENGTH:
+        raise ValueError(
+            f"require_assembly(expected={expected!r}) is not an assembly chorus can "
+            f"identify; known: {sorted(ASSEMBLY_CHR1_LENGTH)}. A typo here would "
+            f"silently disable the check it was added to perform."
+        )
+    where = f" ({context})" if context else ""
+    found = detect_assembly(fasta_path)
+    if found is None:
+        logger.warning(
+            "Could not identify the assembly of %s%s (no chr1, or a build chorus has "
+            "no length for). Expected %s; proceeding unverified.",
+            fasta_path, where, expected,
+        )
+        return None
+    if found != expected:
+        from ..core.exceptions import GenomeAssemblyMismatchError
+        raise GenomeAssemblyMismatchError(
+            f"{fasta_path} is {found}, not {expected}{where}. chr1 is "
+            f"{ASSEMBLY_CHR1_LENGTH[found]:,} bp; {expected} has "
+            f"{ASSEMBLY_CHR1_LENGTH[expected]:,}. Every coordinate in one assembly "
+            f"also exists in the other, so this would not fail -- it would return "
+            f"predictions about different DNA than the ones asked for."
+        )
+    return found
+
+
+#: Spellings of "human" an `organism=` argument may use.
+_HUMAN_ALIASES = frozenset({'human', 'homo_sapiens', 'homo sapiens', 'hsapiens', 'hg38'})
+
+
+def require_human_organism(organism: str, *, oracle: str) -> str:
+    """Accept a spelling of human; raise on anything else. Returns the normalised value.
+
+    ``AlphaGenomeOracle(organism="mouse")`` used to be accepted, stored on
+    ``self.organism``, and never read by anything: the metadata loader hardcodes
+    ``Organism.HOMO_SAPIENS`` and the PyTorch port passes ``organism_index=0``.
+    So the one oracle whose upstream API genuinely supports mouse had a parameter
+    that looked functional, returned human predictions, and labelled them mouse.
+
+    Of the three ways out — make it work, remove it, raise — raising is the only
+    one that is both honest and cheap. Making it work is not a parameter fix: it
+    needs an mm10/mm39 FASTA in the genome manager, an mm10 reference class for
+    the background (SCREEN publishes mm10 cCREs; the Meuleman DHS vocabulary has
+    no mouse equivalent), and a full background pass over ~4,300 mouse tracks.
+    Removing it would silently change a public signature. So the parameter stays,
+    documents the gap, and refuses to pretend.
+    """
+    if str(organism).strip().lower() in _HUMAN_ALIASES:
+        return 'human'
+    raise NotImplementedError(
+        f"{oracle}(organism={organism!r}) is not supported: chorus is human-only. "
+        f"This parameter used to be accepted and silently ignored, which returned "
+        f"human predictions labelled as {organism!r}. Mouse needs an mm10 reference "
+        f"in the genome manager, an mm10 reference class for the background null "
+        f"(the hg38 DHS vocabulary has no mouse equivalent), and a background pass "
+        f"over the ~4,300 mouse tracks -- tracked in issue #124. Pass "
+        f"organism='human' or omit it."
+    )
+
+
+def download_genome(genome_id: str, genomes_dir: Optional[Path] = None,
                    force: bool = False) -> Optional[Path]:
     """Convenience function to download a genome.
     

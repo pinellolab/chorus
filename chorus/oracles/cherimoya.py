@@ -60,14 +60,17 @@ from .cherimoya_source.scoring import (
 
 logger = logging.getLogger(__name__)
 
-# chr1 length in GRCh38.  Used for a one-time advisory assembly check --
-# CATv1 is hg38-only and silently scoring an hg19 FASTA would produce
-# plausible-looking nonsense.
-_GRCH38_CHR1_LENGTH = 248_956_422
+# The one-time advisory assembly check now reads chorus.utils.genome's table rather
+# than a local copy of hg38's chr1 length -- CATv1 is hg38-only and silently scoring
+# an hg19 FASTA produces plausible-looking nonsense, and two copies of the same
+# constant is how that kind of check drifts out of agreement with the guard beside it.
 
 
 class CherimoyaOracle(OracleBase):
     """Cherimoya / CATv1 oracle for chromatin accessibility (DNase / ATAC)."""
+
+    #: Weights are trained on GRCh38. Enforced, not assumed -- see #124.
+    training_genome = "hg38"
 
     def __init__(
         self,
@@ -454,25 +457,32 @@ class CherimoyaOracle(OracleBase):
     # ── prediction ───────────────────────────────────────────────────
 
     def _check_assembly(self) -> None:
-        """Warn once if the reference doesn't look like GRCh38."""
+        """Warn once if the reference isn't the assembly CATv1 was trained on.
+
+        Advisory, unlike the build-side ``require_reference_assembly``: refusing here
+        would change behaviour for anyone deliberately scoring a non-reference FASTA,
+        which is a separate decision from #124's build and load guards. It does now
+        *name* the assembly it found rather than printing two chromosome lengths, and
+        it reads the shared table instead of a local copy of hg38's chr1 length.
+        """
         if self._assembly_checked or not self.reference_fasta:
             return
         self._assembly_checked = True
-        try:
-            import pysam
-            with pysam.FastaFile(self.reference_fasta) as fasta:
-                if "chr1" not in fasta.references:
-                    return
-                length = fasta.get_reference_length("chr1")
-        except Exception:  # pragma: no cover - advisory only
+        from ..utils.genome import chr1_length, detect_assembly
+
+        found = detect_assembly(self.reference_fasta)
+        if found == self.training_genome:
             return
-        if length != _GRCH38_CHR1_LENGTH:
-            logger.warning(
-                "Reference %s has chr1 length %d, not GRCh38's %d. Every "
-                "CATv1 model is trained on GRCh38; predictions against "
-                "another assembly will be silently wrong.",
-                self.reference_fasta, length, _GRCH38_CHR1_LENGTH,
-            )
+        length = chr1_length(self.reference_fasta)
+        if length is None:
+            return                      # unreadable or no chr1 -- no claim to make
+        logger.warning(
+            "Reference %s looks like %s (chr1 is %s bp), not %s. Every CATv1 model is "
+            "trained on %s; predictions against another assembly resolve fine and are "
+            "silently about different DNA.",
+            self.reference_fasta, found or "an assembly chorus does not recognise",
+            f"{length:,}", self.training_genome, self.training_genome,
+        )
 
     def _transform_predictions_to_tracks(
         self,
