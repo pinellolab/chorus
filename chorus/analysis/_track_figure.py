@@ -64,7 +64,7 @@ def render_track_figures(
     canonical 0–3.0 (unsigned) or ±3.0 (signed) scale used by the IGV /
     CoolBox / notebook paths, so every renderer shares one source of
     truth: ``1.0 = genome-wide p99``.  The normalizer is auto-loaded
-    from ``~/.chorus/backgrounds/`` (or the HuggingFace mirror) using
+    from ``<data-dir>/backgrounds/`` (or the HuggingFace mirror) using
     the first track's ``source_model`` as the oracle name.
 
     Pass ``normalize=False`` to opt out and get autoscaled raw values

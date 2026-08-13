@@ -343,6 +343,35 @@ BORZOI_ENV_CONFIG = {
 
 6. **Documentation**: Include docstrings for all public methods
 
+## Running the tests
+
+From the `chorus` base env, at the repo root. This is the same command CI runs, and a guard test
+enforces that it stays the same one:
+
+```bash
+pytest tests/ -m "not integration"        # the fast suite — no GPU, no network, ~3 min
+```
+
+Two suites need more than the base env:
+
+```bash
+# Integration — needs the per-oracle conda envs, a GPU, and hg38 on disk. ~20 min.
+pytest tests/ -m integration
+
+# Browser — renders the committed HTML reports in headless Chromium.
+pip install playwright && playwright install chromium
+CHORUS_BROWSER_SMOKE=1 pytest tests/test_committed_reports_render_in_a_browser.py
+```
+
+Both **skip cleanly** rather than failing when their prerequisites are missing — the browser suite
+reports exactly what is absent (`playwright not installed`, or `no chromium in <cache>`). If you are
+only changing Python, the fast suite is what you need; CI runs the rest.
+
+> **Do not run the notebooks and the integration suite at the same time**, even pinned to different
+> `CUDA_VISIBLE_DEVICES`. `scripts/gate_end_to_end_determinism.py` sets its own mask and spawns two
+> AlphaGenome processes with JAX preallocating, which produces a false `CUDA_ERROR_OUT_OF_MEMORY`
+> in whichever suite loses the race.
+
 ## Submitting Your Contribution
 
 1. **Create a Pull Request** with:
@@ -383,7 +412,7 @@ chorus/
 
 ## Current Priorities
 
-All six core oracles (Enformer, Borzoi, ChromBPNet, Sei, LegNet, AlphaGenome) are implemented. We're interested in contributions for:
+All eight core oracles (Enformer, Borzoi, ChromBPNet/BPNet, Sei, LegNet, AlphaGenome, Cherimoya/CATv1, EPInformer-seq) are implemented — nine registered names, since AlphaGenome ships both a JAX and a PyTorch backend. We're interested in contributions for:
 1. **Custom fine-tuned models** — models trained on specific tissues or conditions
 2. **Species-specific oracles** — mouse, drosophila, etc.
 3. **New architectures** — HyenaDNA, Evo, Nucleotide Transformer, etc.

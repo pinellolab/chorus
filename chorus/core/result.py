@@ -452,7 +452,7 @@ class OraclePredictionTrack:
         helper so this panel uses the **same 0-3.0 / ±3.0 scale and
         "1.0 = genome-wide p99" semantics** as the IGV / matplotlib
         renderers.  The normalizer is auto-loaded from
-        ``~/.chorus/backgrounds/`` (or the HuggingFace mirror) using
+        ``<data-dir>/backgrounds/`` (or the HuggingFace mirror) using
         ``self.source_model`` as the oracle name.
 
         Pass ``normalize=False`` to opt out and get raw autoscaled
@@ -479,7 +479,7 @@ class OraclePredictionTrack:
         df = self.to_dataframe(use_reference_interval=True)
 
         # CDF-rescale via the unified helper.  Auto-load the per-track
-        # normalizer from ``~/.chorus/backgrounds/`` (or the HuggingFace
+        # normalizer from ``<data-dir>/backgrounds/`` (or the HuggingFace
         # mirror) using ``self.source_model`` so this panel matches the
         # IGV / matplotlib / notebook renders of the same track without
         # the caller having to pass anything.  Set ``normalize=False``

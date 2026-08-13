@@ -18,9 +18,20 @@
 > directory below also ships a `notebook.ipynb` that runs the same Python
 > API the MCP tool wraps. Execute with
 > `jupyter nbconvert --to notebook --execute --inplace <dir>/notebook.ipynb`
-> from the repo root after `chorus setup all`. Notebooks delegate to
-> per-oracle conda envs via `use_environment=True`, so you only need the
-> base `chorus` kernel.
+> from the repo root after `chorus setup`. Notebooks delegate to
+> per-oracle conda envs via `use_environment=True`, so the base `chorus`
+> env is the only kernel you need — but you do have to **register** it,
+> because `chorus setup` does not:
+>
+> ```bash
+> mamba activate chorus
+> python -m ipykernel install --user --name chorus \
+>     --display-name "Python 3 (chorus)"
+> ```
+>
+> Every `notebook.ipynb` here declares kernel name `chorus`, so without
+> that step `nbconvert` fails with
+> `jupyter_client.kernelspec.NoSuchKernel: No such kernel named chorus`.
 
 ## Which tool do I use?
 

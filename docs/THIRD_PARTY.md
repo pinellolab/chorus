@@ -80,7 +80,7 @@ citation here — this note deliberately does not invent one.
 
 ## Per-track background CDFs
 
-The NPZ CDFs under `~/.chorus/backgrounds/` are derived from the oracle
+The NPZ CDFs under `<data-dir>/backgrounds/` are derived from the oracle
 authors' published predictions on a reference set of genomic loci.
 They are computed by Chorus and distributed at
 [`huggingface.co/datasets/lucapinello/chorus-backgrounds`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds)

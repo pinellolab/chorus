@@ -682,7 +682,8 @@ def main(argv: Optional[List[str]] = None):
     cleanup_parser.add_argument(
         '--backgrounds',
         action='store_true',
-        help='Remove background CDF files from ~/.chorus/backgrounds/',
+        help="Remove background CDF files from the resolved backgrounds dir "
+             "(run 'chorus config data-dir' to see where that is)",
     )
     cleanup_parser.add_argument(
         '--genomes',

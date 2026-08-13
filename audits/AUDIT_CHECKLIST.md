@@ -17,7 +17,7 @@ Runbook convention: items that can be mechanised are called out with the exact c
 - [ ] `chorus genome download hg38` downloads to the expected path and the resulting FASTA is indexed (`.fai` present). **P0**
 - [ ] `download_gencode(version='v48', annotation_type='basic')` pulls and caches the GTF. **P1**
 - [ ] The cache paths are user-overridable via env vars where documented (`CHORUS_NO_TIMEOUT`, `CHORUS_DEVICE`, `CHORUS_BACKGROUNDS_REPO`). Note there is **no** download-dir override: `CHORUS_ROOT` is derived from the package location and `annotations/`, `downloads/`, `genomes/` are created under it unconditionally (`chorus/core/globals.py`). **P2**
-- [ ] `~/.chorus/backgrounds/` auto-downloads per-track NPZs on first use from `huggingface.co/datasets/lucapinello/chorus-backgrounds` 8 NPZs ship: alphagenome, borzoi, cherimoya, chrombpnet, enformer, epinformerseq, legnet, sei. **P1**
+- [ ] `<data-dir>/backgrounds/` auto-downloads per-track NPZs on first use from `huggingface.co/datasets/lucapinello/chorus-backgrounds` 8 NPZs ship: alphagenome, borzoi, cherimoya, chrombpnet, enformer, epinformerseq, legnet, sei. **P1**
 
 ## 2. HuggingFace authentication (AlphaGenome gate)
 
@@ -92,7 +92,7 @@ for name in ['alphagenome', 'borzoi', 'cherimoya', 'chrombpnet',
   - alphagenome: ~13% signed — measured 12.9%
 - [ ] Track counts match published specs, measured from the NPZs: enformer 5,313 / borzoi 7,611 / **chrombpnet 753** (9 human ATAC-DNASE + 744 CHIP) / sei 40 / legnet 3 / alphagenome 5,168 / cherimoya 1,518 / epinformerseq 33. **P1**
 - [ ] `perbin_cdfs` present for Enformer / Borzoi / ChromBPNet / AlphaGenome / **Cherimoya**; the scalar-output oracles Sei, LegNet and **EPInformer-seq** omit it by design. **P1**
-- [ ] Cache dir `~/.chorus/backgrounds/` is the canonical location (no per-project duplication). **P2**
+- [ ] Cache dir `<data-dir>/backgrounds/` is the canonical location (no per-project duplication). **P2**
 - [ ] **ChromBPNet count inversion is `expm1`, not `exp`, on both sides.** The count head predicts `log(1 + count)`; the oracle and the CDF builder must agree or every ChromBPNet percentile is silently wrong. Regression: `tests/test_chrombpnet_counts.py` (incl. the builder↔oracle consistency assertion). **P0**
 - [ ] The `summary`/`perbin` CDFs of ChromBPNet and Cherimoya legitimately contain a few small **negative** entries (a near-dead window gives `log(count+1) < 0`, so `expm1 < 0`); they are left unclamped so builder and `predict()` agree. Do not "fix" them. The `effect` CDFs have none. **P1**
 

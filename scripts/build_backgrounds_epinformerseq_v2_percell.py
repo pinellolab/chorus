@@ -12,7 +12,7 @@ Builds the full ``{oracle}_pertrack.npz`` background bundle for the 11 cells:
   (15 000 random + ~11 500 cCRE + 3 000 TSS + 5 000 DHS-summit). Used for
   locus-level 90th-percentile thresholds in visualization.
 
-Output: ``~/.chorus/backgrounds/epinformerseq_pertrack.npz`` with
+Output: ``<data-dir>/backgrounds/epinformerseq_pertrack.npz`` with
 ``track_ids``, ``summary_cdfs``, ``summary_counts``,
 ``effect_cdfs``, ``effect_counts``.
 
