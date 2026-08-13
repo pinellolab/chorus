@@ -691,9 +691,16 @@ def main(argv: Optional[List[str]] = None):
         help='Remove downloaded reference genomes',
     )
     cleanup_parser.add_argument(
+        '--hf-cache',
+        action='store_true',
+        help="Remove the HuggingFace hub cache, where most oracle weights live. Not included "
+             "in --all: it can be shared (HF_HOME) and holds your login token's directory",
+    )
+    cleanup_parser.add_argument(
         '--all',
         action='store_true',
-        help='Remove everything: all oracle envs, weights, backgrounds, and genomes',
+        help='Remove all oracle envs, weights, backgrounds, and genomes. Leaves the '
+             'HuggingFace cache — add --hf-cache for that',
     )
     cleanup_parser.add_argument(
         '--dry-run',

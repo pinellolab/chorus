@@ -191,9 +191,23 @@ def test_mcp_e2e_list_oracles_and_analyze_variant(tmp_path):
     from fastmcp import Client
     from fastmcp.client.transports import StdioTransport
 
-    hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+    # Ask huggingface_hub, not just the environment. `get_token()` is the read-only equivalent of
+    # what the AlphaGenome load paths themselves do: HF_TOKEN -> HUGGING_FACE_HUB_TOKEN -> the
+    # credential file written by `huggingface-cli login`. Gating on the env vars alone was strictly
+    # narrower than the runtime it guards -- both alphagenome.py and its load template try
+    # `huggingface_hub.whoami()` FIRST and only fall back to the env -- so this test skipped on any
+    # host authenticated the normal way, and the MCP path went unverified for months.
+    #
+    # Deliberately not `chorus.cli._tokens.resolve_hf_token`: that calls `huggingface_hub.login()`,
+    # which writes the token to disk, and mutates os.environ on failure. A test must not do either.
+    import huggingface_hub
+
+    hf_token = huggingface_hub.get_token()
     if not hf_token:
-        pytest.skip("HF_TOKEN not set — AlphaGenome is gated")
+        pytest.skip(
+            "no HuggingFace token (set HF_TOKEN, HUGGING_FACE_HUB_TOKEN, or run "
+            "`huggingface-cli login`) — AlphaGenome is gated"
+        )
 
     # Locate chorus-mcp on PATH (installed by `pip install -e .` in the
     # active env). Going through `mamba run -n chorus chorus-mcp` is
@@ -215,6 +229,10 @@ def test_mcp_e2e_list_oracles_and_analyze_variant(tmp_path):
         transport = StdioTransport(
             command=chorus_mcp_bin,
             args=[],
+            # A whitelist, so anything the child needs must be named explicitly. HF_TOKEN is
+            # passed because the token may have come from the credential file rather than the
+            # environment; the HF_* vars below are forwarded when set so a non-default credential
+            # or cache location still resolves in the child (HOME alone only covers the default).
             env={
                 "HF_TOKEN": hf_token,
                 "CHORUS_NO_TIMEOUT": "1",
@@ -222,6 +240,9 @@ def test_mcp_e2e_list_oracles_and_analyze_variant(tmp_path):
                 "MAMBA_ROOT_PREFIX": mamba_root,
                 "MAMBA_EXE": os.environ.get("MAMBA_EXE", ""),
                 "HOME": os.environ.get("HOME", ""),
+                **{k: os.environ[k] for k in
+                   ("HF_HOME", "HF_TOKEN_PATH", "HF_HUB_CACHE", "XDG_CACHE_HOME")
+                   if k in os.environ},
             },
         )
         async with Client(transport=transport) as client:

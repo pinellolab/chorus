@@ -19,24 +19,45 @@ from __future__ import annotations
 
 import logging
 import shutil
+import stat as stat_module
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 
 def _fmt_size(path: Path) -> str:
+    """Size of a tree, counting each underlying file once — i.e. ``du -L`` semantics.
+
+    The dedup is the whole point. A HuggingFace hub cache stores every file once under
+    ``<repo>/blobs/<sha>`` and exposes it as a relative symlink from
+    ``<repo>/snapshots/<rev>/<name>``, so **both endpoints live inside the tree being walked**.
+    Counting the real file and then again through the dereferenced symlink reported the cache here
+    as **41.5 GB** against a true 20.7 GB — 6,927 symlinks, all resolving internally, double-counted
+    to the byte. (An earlier write-up blamed hardlinks; measured, this tree has none —
+    ``find -links +1`` returns nothing. Deduping on ``(st_dev, st_ino)`` covers both anyway, and
+    `huggingface_hub` does hardlink in some configurations.)
+
+    Symlinks are still **followed**, deliberately. Simply skipping them — the obvious one-line fix —
+    drops ``genomes`` from 3.3 GB to 170 bytes, because its two entries are symlinks to FASTAs
+    stored outside the tree, so their bytes are only reachable through the link.
+    """
     if not path.exists():
         return "absent"
     total = 0
+    seen: set[tuple[int, int]] = set()
     try:
         for p in path.rglob("*"):
-            if p.is_file() and not p.is_symlink():
-                total += p.stat().st_size
-            elif p.is_symlink():
-                try:
-                    total += p.stat().st_size          # follows the link
-                except OSError:
-                    pass
+            try:
+                st = p.stat()                          # follows symlinks
+            except OSError:
+                continue                               # broken link, or vanished mid-walk
+            if not stat_module.S_ISREG(st.st_mode):
+                continue
+            key = (st.st_dev, st.st_ino)
+            if key in seen:
+                continue
+            seen.add(key)
+            total += st.st_size
     except Exception:
         return "?"
     if total >= 1e9:
