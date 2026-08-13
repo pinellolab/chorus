@@ -241,6 +241,11 @@ def test_file_size_is_not_what_costs_load_time(browser):
     load time -- and the reasoning that made 50 MiB acceptable needs re-deriving rather than
     the number being nudged.
     """
+    if _SMOKE_ONLY:
+        pytest.skip(
+            "corpus-wide property: the CI subset is the two SMALLEST reports, which span "
+            "1.3x rather than the 11x needed to say anything about size vs load time"
+        )
     igv = [p for p in REPORTS if p.stat().st_size > 1_000_000]
     biggest, smallest = igv[0], igv[-1]
     size_ratio = biggest.stat().st_size / smallest.stat().st_size
