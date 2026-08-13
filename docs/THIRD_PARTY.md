@@ -43,7 +43,9 @@ citation here — this note deliberately does not invent one.
   A report no longer resolves its genome through igv.org's hosted registry
   ([#139](https://github.com/pinellolab/chorus/issues/139)): chromosome lengths, the
   ideogram and the gene track are bundled, which took one report from 14 requests across
-  two hosts to **9 across one**, and from 9.6 s to **2.2 s** to paint. **One resource is
+  two hosts to **9 across one**, and — on one report, the SORT1 Cherimoya panel — from 9.6 s
+  to **2.2 s** to paint (across the whole 19-report corpus the range moved 8.6–10.8 s to
+  2.2–4.4 s, a 3.9x mean). **One resource is
   still remote — the reference sequence** (`hg38.2bit` from UCSC), because every igv.js
   version requires a sequence source and hg38 is 3 GB. Point `CHORUS_IGV_SEQUENCE_URL` at
   a self-hosted copy and a report needs no internet at all; serving it same-origin with the

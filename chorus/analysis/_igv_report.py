@@ -1,8 +1,15 @@
 """Generate an IGV.js-based interactive genome browser for HTML reports.
 
-Embeds signal tracks as inline feature arrays in a self-contained HTML
-page.  The user can zoom, pan, and interact with the browser.  Gene
-annotations come from hg38 automatically via IGV's built-in genome.
+Embeds signal tracks as inline feature arrays in a single HTML file, which the reader can
+zoom and pan. Gene annotations are **inlined too**, from chorus's own GENCODE v48 scoped to
+the drawn window -- not fetched from IGV's built-in genome, which is what #139 replaced.
+
+The one thing still fetched at view time is the reference **sequence** (`hg38.2bit` from
+UCSC), because every igv.js version requires a sequence source and hg38 is 3 GB. So a report
+is *nearly* self-contained, and this docstring deliberately does not say "self-contained
+offline" -- the previous wording did, and it was false for three months. See
+`igv_reference_config` below for what is bundled and `CHORUS_IGV_SEQUENCE_URL` for closing
+the last gap.
 
 Track data is downsampled to keep the HTML file size manageable while
 preserving the shape of peaks and effects.

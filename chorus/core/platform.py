@@ -444,14 +444,36 @@ def resolve_visible_ordinal(device: str) -> str:
     """
     import os
 
-    ordinal = device.split(":", 1)[1]
+    raw = device.split(":", 1)[1]
+    try:
+        index = int(raw)
+    except ValueError:
+        raise ValueError(f"device={device!r}: {raw!r} is not a GPU ordinal.")
+    # Negative ordinals must NOT reach the list index below: Python would treat cuda:-1 as
+    # "the last visible device" and resolve it silently. There is no such CUDA device.
+    if index < 0:
+        raise ValueError(
+            f"device={device!r}: a GPU ordinal cannot be negative. Use device='cpu' to force CPU."
+        )
+
     outer = os.environ.get("CUDA_VISIBLE_DEVICES")
     if not outer:
-        return ordinal
+        return raw
     visible = [x for x in outer.split(",") if x != ""]
+
+    # A mask of '-1' means a previous call already forced CPU in this process. Indexing it would
+    # hand back '-1' and quietly run cuda:0 on the CPU, so refuse instead. Same for any mask that
+    # a previous resolution already narrowed: resolving twice in one process compounds, and the
+    # second answer would be about a set the caller never asked for.
+    if visible == ["-1"]:
+        raise ValueError(
+            f"device={device!r} but CUDA_VISIBLE_DEVICES is '-1' — something in this process "
+            f"already forced CPU. Construct the oracle with the device you want rather than "
+            f"changing it after a CPU load."
+        )
     try:
-        return visible[int(ordinal)]
-    except (ValueError, IndexError):
+        return visible[index]
+    except IndexError:
         raise ValueError(
             f"device={device!r} but only {len(visible)} GPU(s) are visible to this process "
             f"(CUDA_VISIBLE_DEVICES={outer!r}). cuda:N indexes the devices you were "

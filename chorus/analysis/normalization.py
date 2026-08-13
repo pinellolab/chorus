@@ -1626,6 +1626,7 @@ RANKING_GENOME = "hg38"
 #:   chorus 0.7.0     backgrounds-2026-08-06-schema4      (exact effect/summary retention)
 #:   chorus 0.7.1     backgrounds-2026-08-10-layers        (+ layers_per_row on all eight)
 #:   chorus 0.7.2     backgrounds-2026-08-12-cherimoya-fold0  (+ a cherimoya null per fold mode)
+#:   chorus 0.7.3     backgrounds-2026-08-12-cherimoya-fold0  (unchanged: no artefact was rebuilt)
 #:
 #: Override with ``CHORUS_BACKGROUNDS_REVISION`` -- set it to ``main`` to track the
 #: dataset's head, which is what you want while developing a new oracle's background and

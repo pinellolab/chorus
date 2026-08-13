@@ -341,6 +341,15 @@ and the artefacts live in a repo whose `main` moves. Skipping the second half is
       `pytest tests/ -q -m integration`. The second is the one that carries the release
       gates, and it is the one easy to forget. **P0**
 - [ ] Annotated tag + a GitHub Release whose body is that CHANGELOG section. **P1**
+- [ ] **Publish the Release only once the tag is final, and never move a tag under a published
+      Release without saying so.** Both v0.7.2 and v0.7.3 were published seconds after their
+      `vX.Y.Z` commit and then had the tag force-moved hours later — v0.7.3's by two commits —
+      so for 8.5 h and 12 h respectively, anyone who ran `git fetch --tags` or downloaded the
+      release tarball got a tree **missing the fixes the notes led with**. The tell is in the
+      API and nowhere else: `gh release list --json tagName,createdAt,publishedAt` shows
+      `createdAt` (which is tag-derived) *later* than `publishedAt`, and for a healthy release
+      they differ by seconds. Check that before calling a release done. If the tag has to move,
+      re-point it, regenerate the notes, and note the move on the release page. **P1**
 - [ ] `tests/test_release_bookkeeping.py` and `tests/test_artefact_revision_is_pinned.py`
       pass, including the `[Unreleased]`-is-empty check, which only activates once HEAD is
       tagged. **P0**
