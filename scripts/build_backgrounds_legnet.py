@@ -97,7 +97,12 @@ def load_setup():
     device = torch.device(args.device or ('cuda:0' if torch.cuda.is_available() else 'cpu'))
     logger.info("Device: %s", device)
 
-    ref = pysam.FastaFile(os.path.join(REPO_ROOT, "genomes/hg38.fa"))
+    from chorus.analysis.background_sampling import require_reference_assembly
+    from chorus.oracles.legnet import LegNetOracle
+
+    ref_path = os.path.join(REPO_ROOT, "genomes/hg38.fa")
+    require_reference_assembly(ref_path, LegNetOracle, label="legnet background")
+    ref = pysam.FastaFile(ref_path)
     cell_types = list(LEGNET_AVAILABLE_CELLTYPES)
 
     def get_sequence(chrom, pos):

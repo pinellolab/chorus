@@ -127,6 +127,19 @@ die with `exec: --: invalid option` before the script starts, which reads as a c
 a tail'd log. Either put the flag first or call the env's python directly
 (`/home/nvidia/miniforge3/envs/chorus-X/bin/python`).
 
+`regenerate_multioracle.py` has **no `--gpu` flag** (the other two do); passing one is an argparse
+error that scrolls past in a tail'd log.
+
+**Finish editing before you start regenerating.** Python reads source at process start, so a change
+made mid-run reaches the examples generated after it and not the ones before — leaving a committed
+set that is internally inconsistent in a way no test compares. Established 2026-08-12: a one-line
+prose fix landed four minutes into the walkthrough step and cost the whole run.
+
+Do not launch a long regeneration as `nohup script.sh &` inside a backgrounded call either. The
+outer command exits immediately, the harness reaps the process group, and the log ends mid-step
+with exit code 0 — which reads exactly like a clean finish that produced nothing. Run the script
+in the foreground of a backgrounded call instead.
+
 
 After any correctness fix (e.g. the ref-allele off-by-one) every
 committed example output drifts. Regenerate with:

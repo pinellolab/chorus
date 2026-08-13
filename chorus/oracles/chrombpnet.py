@@ -41,6 +41,9 @@ HF_SLIM_REPO_TYPE = "model"
 class ChromBPNetOracle(OracleBase):
     """ChromBPNet oracle implementation for TF binding and chromatin accessibility."""
 
+    #: Weights are trained on GRCh38. Enforced, not assumed -- see #124.
+    training_genome = "hg38"
+
     def __init__(self,
                  use_environment: bool = True, 
                  reference_fasta: Optional[str] = None,

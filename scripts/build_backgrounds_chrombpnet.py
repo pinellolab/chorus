@@ -238,7 +238,12 @@ def load_models_and_setup():
     import pysam
     from chorus.oracles.chrombpnet import ChromBPNetOracle
 
+    from chorus.analysis.background_sampling import require_reference_assembly
+
     ref_path = os.path.join(REPO_ROOT, "genomes/hg38.fa")
+    # The oracle whose registry had no organism field at all, and so the one that
+    # shipped 33 mm10 models scored against hg38 sequence (#121).
+    require_reference_assembly(ref_path, ChromBPNetOracle, label="chrombpnet background")
     ref = pysam.FastaFile(ref_path)
 
     models_to_score = _enumerate_models(args.assay)

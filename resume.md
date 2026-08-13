@@ -257,8 +257,9 @@ reproducible from committed artefacts:
   Reproduces with **no LDlink token** (`ld_proxies.tsv` is committed).
   **Resolves the audit's 54-vs-56 discrepancy:** `snvs_only=True` → 56
   (1 sentinel + 55 proxies), `False` → 64.
-  Its HTML is **not committed** — 25.70 MB, over the ceiling; set
-  `CHORUS_WRITE_LARGE_HTML=1` to write it locally.
+  Its HTML **is** committed — 25.7 MiB, the largest artefact in the repo. The
+  20 MiB ceiling that blocked it was raised to 50 and the real check is now that
+  the report loads: 134 canvases, all painted, 11.3 s in headless Chromium (#135).
 
 Still wrong in the published post: the oracle count ("seven" → **eight models /
 nine registered**, with Cherimoya absent entirely), and the "floating-point

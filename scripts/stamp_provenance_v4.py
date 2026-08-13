@@ -132,6 +132,35 @@ def _sha_file(p: Path, limit: int | None = None) -> str:
     return h.hexdigest()
 
 
+#: The reference every builder opens, and the one this script hashes.
+FASTA = REPO / "genomes" / "hg38.fa"
+
+
+def _observed_genome(fasta: Path = FASTA) -> str:
+    """The assembly *fasta* actually is, measured from its chromosome lengths.
+
+    ``"genome": "hg38"`` was a literal here, which made the field a restatement of
+    this script's filename convention rather than an observation — and it is the
+    field :class:`~chorus.analysis.normalization.BackgroundGenomeMismatch` now
+    refuses a mismatch on, so leaving it hardcoded would have had that guard
+    compare a constant against a constant.
+
+    Refuses to stamp a guess: an unidentifiable reference means the claim cannot
+    be made, and a background that does not know its own assembly is the state
+    #124 is about.
+    """
+    from chorus.utils.genome import detect_assembly
+
+    found = detect_assembly(fasta)
+    if found is None:
+        raise SystemExit(
+            f"[prov] cannot identify the assembly of {fasta} (no chr1, or a build "
+            f"chorus has no length for). Refusing to stamp 'genome' as a guess — "
+            f"the loader treats that field as an observation."
+        )
+    return found
+
+
 _DHS_CACHE: dict = {}
 
 
@@ -325,9 +354,9 @@ def build_config(oracle: str, payload: dict) -> dict:
         "schema_version": SCHEMA_VERSION,
         "oracle": oracle,
         "n_tracks": len(ids),
-        "genome": "hg38",
-        "fai_sha256": _sha_file(REPO / "genomes" / "hg38.fa.fai"),
-        "fasta_sha256_prefix64mb": _sha_file(REPO / "genomes" / "hg38.fa", 64 << 20),
+        "genome": _observed_genome(),
+        "fai_sha256": _sha_file(Path(str(FASTA) + ".fai")),
+        "fasta_sha256_prefix64mb": _sha_file(FASTA, 64 << 20),
         "stamped_at": datetime.now(timezone.utc).isoformat(),
         "stamper": "scripts/stamp_provenance_v4.py",
         "git_sha": subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO,

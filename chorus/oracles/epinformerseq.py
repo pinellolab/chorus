@@ -72,6 +72,9 @@ class EPInformerSeqOracle(OracleBase):
         bias/{cell_type}/bias.pt             (frozen per-cell BiasNet)
     """
 
+    #: Weights are trained on GRCh38. Enforced, not assumed -- see #124.
+    training_genome = "hg38"
+
     def __init__(
         self,
         cell_type: str = "K562",
