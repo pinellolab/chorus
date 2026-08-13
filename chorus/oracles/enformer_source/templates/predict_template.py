@@ -16,7 +16,25 @@ if device:
     if device == 'cpu':
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
     elif device.startswith('cuda:'):
-        gpu_id = device.split(':')[1]
+        # TensorFlow selects its GPU through the mask, so `cuda:N` is REMAPPED through
+        # any mask already in place rather than replacing it -- otherwise a request for
+        # the Nth device the caller was GRANTED lands on physical GPU N, someone else's.
+        # audits/2026-08-12_post_v0.7.2_audit.md F1.
+        ordinal = device.split(':')[1]
+        outer = os.environ.get('CUDA_VISIBLE_DEVICES')
+        if outer:
+            visible = [x for x in outer.split(',') if x != '']
+            try:
+                gpu_id = visible[int(ordinal)]
+            except (ValueError, IndexError):
+                raise ValueError(
+                    "device='cuda:" + ordinal + "' but only " + str(len(visible)) +
+                    " GPU(s) are visible to this process (CUDA_VISIBLE_DEVICES=" +
+                    repr(outer) + "). cuda:N indexes the devices you were granted, "
+                    "not physical ones."
+                )
+        else:
+            gpu_id = ordinal
         os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
 
 # Read sequence from file

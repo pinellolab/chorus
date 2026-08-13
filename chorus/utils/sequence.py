@@ -371,9 +371,29 @@ def extract_sequence_with_padding(
                 trim_amount = region_length - total_length
                 trim_left = trim_amount // 2
 
-                meta =  {'start_change': trim_left, 'end_change': -(trim_amount-trim_left), 'leftN': 0, 'rightN': 0}
-                seq = fasta.fetch(chrom, start + trim_left, start + trim_left + total_length).upper()
-                
+                want_start = start + trim_left
+                want_end = want_start + total_length
+
+                # Clamp to the chromosome and N-pad the shortfall. Without this the
+                # branch handed `want_end` straight to pysam, which SILENTLY clamps —
+                # so a caller asking for total_length bases near a telomere got fewer,
+                # with no error and with meta reporting leftN/rightN = 0. Measured on
+                # chr1: 2,114 requested 40 bp from the end returned 40 bp. Sei reaches
+                # this path with total_length=SEI_WINDOW, so a short one-hot could get
+                # to the model. The branch below always padded correctly; this is the
+                # same handling. See audits/2026-08-12_post_v0.7.2_audit.md F2.
+                fetch_start = max(0, want_start)
+                fetch_end = min(chrom_length, want_end)
+                seq = fasta.fetch(chrom, fetch_start, fetch_end).upper() if fetch_end > fetch_start else ''
+                left_n = fetch_start - want_start          # >0 only past the 5' end
+                right_n = total_length - len(seq) - left_n
+                if left_n > 0 or right_n > 0:
+                    seq = ('N' * max(0, left_n)) + seq + ('N' * max(0, right_n))
+
+                meta = {'start_change': trim_left,
+                        'end_change': -(trim_amount - trim_left),
+                        'leftN': max(0, left_n), 'rightN': max(0, right_n)}
+
                 if return_meta:
                     return seq, meta
                 else:

@@ -82,16 +82,44 @@ def test_ci_runs_the_same_command_a_contributor_runs():
     if not WORKFLOW.exists():
         pytest.skip("no CI workflow in this checkout")
     body = WORKFLOW.read_text()
+    # Lines that INVOKE pytest, not ones that merely mention it: `pip install pytest` and
+    # `pytest --version` are not test runs and were tripping this check.
     run_lines = [
         line.strip() for line in body.splitlines()
-        if "pytest" in line and not line.strip().startswith("#")
+        if re.match(r"pytest\s+(?!--version)", line.strip())
     ]
-    filtered = [line for line in run_lines if "-m " in line]
+
+    # The property is about the run that stands in for "the tests pass": a whole-suite
+    # invocation must not carry its own selection, or CI and a bare `pytest` can disagree
+    # silently -- which is what happened, CI green and the documented command red.
+    #
+    # A job that names ONE test file and marks itself integration is a different claim and
+    # is allowed: the browser-smoke job renders a reduced report set on every PR because the
+    # full 19 belong to the release host, and running none of it in CI is how a blank-panel
+    # regression reaches main between audits (2026-08-12 audit; see checklist section 7).
+    # Narrow, deliberate, and recorded here as that message asked.
+    whole_suite = [l for l in run_lines if re.search(r"pytest\s+(tests/\s|tests/\s*$|tests/ )", l + " ")]
+    filtered = [l for l in whole_suite if "-m " in l or "--ignore" in l]
     assert not filtered, (
-        f"the CI workflow passes its own marker filter: {filtered}. The exclusion lives in "
-        f"pytest.ini so that CI, the docs and a bare `pytest` cannot disagree; if CI "
-        f"genuinely needs a different selection, say so in the checklist and here."
+        f"a whole-suite CI run passes its own marker filter or --ignore: {filtered}. The "
+        f"exclusion lives in pytest.ini so that CI, the docs and a bare `pytest` cannot "
+        f"disagree; if CI genuinely needs a different selection, say so in the checklist "
+        f"and here."
     )
+    assert whole_suite, (
+        "no whole-suite `pytest tests/` invocation left in the workflow -- if the fast job "
+        "was renamed or removed, this guard is now checking nothing"
+    )
+
+    # And a single-file job must still declare which marker it is opting into, so nobody
+    # can widen it back to the whole suite by deleting a path.
+    for line in run_lines:
+        if line in whole_suite:
+            continue
+        assert "-m " in line and ".py" in line, (
+            f"CI runs pytest without either a whole-suite path or an explicit marker+file: "
+            f"{line!r}"
+        )
 
     ignored = [
         line.strip() for line in body.splitlines()

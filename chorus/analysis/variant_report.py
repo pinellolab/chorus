@@ -1484,6 +1484,27 @@ def _score_color_class(interpretation: str):
     return "badge-minimal"
 
 
+def _cell_type_cell(ts) -> str:
+    """The Cell Type column, blanked when the track label already says it.
+
+    ChromBPNet/BPNet track ids carry the biosample: ``CHIP:CEBPB:IMR-90`` next to a Cell Type
+    column reading ``IMR-90`` says it twice and squeezes the numbers that matter. Measured
+    2026-08-12: 13 of 20 committed reports, up to 22 rows in one (audit F7).
+
+    Suppressed only on an exact, case-insensitive match of the final colon-delimited component,
+    so the column still carries its value wherever it adds anything -- AlphaGenome's
+    ``DNASE:fibroblast of lung`` keeps it, and a label that merely *contains* the cell name as a
+    substring (``HepG2_treated`` vs ``HepG2``) is left alone rather than guessed at. An em dash
+    rather than an empty cell, so the column reads as deliberately blank.
+    """
+    cell = (ts.cell_type or "").strip()
+    if not cell:
+        return "—"
+    label = (ts.description or ts.assay_id or "")
+    tail = label.rsplit(":", 1)[-1].strip()
+    return "—" if tail.lower() == cell.lower() else cell
+
+
 def _bar_width(raw_score, max_abs=2.0):
     """Bar width as percentage (0–100) for inline bar chart."""
     if raw_score is None:
@@ -1765,7 +1786,7 @@ def _build_html_report(report: "VariantReport") -> str:
                 if ts.region_label:
                     track_label += f' <span style="color:#6b7280;font-weight:normal">— {ts.region_label}</span>'
                 parts.append(f"<td>{track_label}</td>")
-                parts.append(f"<td>{html_mod.escape(ts.cell_type)}</td>")
+                parts.append(f"<td>{html_mod.escape(_cell_type_cell(ts))}</td>")
 
                 if ts.raw_score is None:
                     note = ts.note or "Not scored"

@@ -7,6 +7,7 @@ from ..core.interval import Interval, GenomeRef, Sequence
 from ..core.exceptions import ModelNotLoadedError, InvalidAssayError
 from ..core.globals import CHORUS_DOWNLOADS_DIR
 from ..core.count_head import counts_from_log, expected_counts_profile
+from ..utils.genome import missing_reference_fasta_error
 from .chrombpnet_source.chrombpnet_globals import CHROMBPNET_MODELS_DICT
 
 from typing import List, Tuple, Optional, ClassVar
@@ -733,7 +734,7 @@ class ChromBPNetOracle(OracleBase):
         # Handle genomic coordinates
         if isinstance(seq, tuple):
             if self.reference_fasta is None:
-                raise ValueError("Reference FASTA required for genomic coordinates.")
+                raise missing_reference_fasta_error(self.oracle_name)
             chrom, start, end = seq
             query_interval = Interval.make(GenomeRef(
                 chrom=chrom,

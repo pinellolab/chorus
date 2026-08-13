@@ -29,7 +29,7 @@ Runbook convention: items that can be mechanised are called out with the exact c
   - `chorus/oracles/alphagenome.py` (direct load)
   - `chorus/oracles/alphagenome_source/templates/load_template.py` (env-runner load)
   - `README.md` / `environments/README.md` (doc)
-- [ ] `list_tracks('alphagenome')` works **without** an HF token (metadata is cached / bundled; only weights are gated).
+- [ ] `list_tracks('alphagenome')` works **without** an HF token (metadata is cached / bundled; only weights are gated). Note this is the **MCP tool**, not a Python API — `chorus.list_tracks` does not exist, so call it through `chorus.mcp.server` or the MCP client. Verified 2026-08-12: 331 K562 hits with no token in the environment.
 - [ ] User whose `HF_TOKEN` is only in `~/.zshrc` gets a clear hint that they may need to `export` it in the shell that starts `claude`. **P2**
 
 ## 3. GPU / device detection
@@ -166,7 +166,7 @@ For each `examples/walkthroughs/**/*.html`:
 - [ ] Formula badges match layer: log2FC on chromatin/TF/histone/TSS, lnFC on RNA-seq/CAGE gene expression, Δ (alt−ref) on MPRA. **P0**
 - [ ] Cell-type column doesn't duplicate text already in the track label (e.g. `CHIP:CEBPA:HepG2 · HepG2` is a known regression). **P1**
 - [ ] The cross-oracle consensus section (multi-oracle reports only; the `h2` is "Cross-oracle consensus", not "Consensus matrix") uses single-voter `n=1` labels correctly. **P1**
-- [ ] "How to read this report" defines every numeric column. It is an always-expanded `<section>`, **not** a collapsible — `grep -c '<details'` returns 0 in every shipped report — and it does not define the plain Ref / Alt value columns. Either implement the collapsible or drop the word. **P2**
+- [ ] "How to read this report" defines every numeric column. It is an always-expanded `<section>`, **not** a collapsible, and it does not define the plain Ref / Alt value columns. Either implement the collapsible or drop the word. **P2** — ⚠ do **not** test this with `grep -c '<details'`: the multi-oracle report legitimately uses four `<details class='oracle-block'>` wrappers, one per oracle, so a zero-count assertion fails on a correct artefact. Scope the check to the how-to-read block.
 - [ ] 👁 The Interpretation badge ("Strong opening", "Moderate binding gain", etc.) is consistent with the sign and magnitude of the effect and the assay convention.
 - [ ] Every `README.md` number in the same walkthrough dir is within ±0.006 of the `example_output.md` it's derived from. **P1**
 - [ ] **Report size is pushable.** `rs12740374_SORT1_legnet_report.html` and the consolidated multi-oracle report embed locus-wide 1-bp IGV arrays; with LegNet tiled per #99 they reach 137 MB / 145 MB, above GitHub's 100 MiB file limit, so the artefact cannot be committed at all. Check `find examples -name '*.html' -size +50M` is empty before regenerating. **P0** — now also enforced automatically by `test_no_tracked_example_artefact_is_oversized`, so this box is a backstop rather than the only check.
@@ -205,7 +205,7 @@ grep -rn 'LegNet.*230 bp\|input_size_bp.*230' chorus/ scripts/ --include='*.py' 
 
 - [ ] Canonical numbers: **AlphaGenome 5,731 model tracks** but **5,168 CDF-backed** (both figures are correct — always say which) / **Enformer 5,313** / **Borzoi 7,611** / **Sei 21,907** total but 40 CDF-backed classes / **LegNet 200 bp input, 3 CDFs** / **ChromBPNet 753 per-track CDFs** (9 human ATAC-DNASE + 744 CHIP; the 33 mouse mm10 models were dropped 2026-08-01 because their backgrounds were built on hg38 — the old "786" and "24 per-model" both predate that) / **Cherimoya 1,518** / **EPInformer-seq 33**. No doc may disagree. **P1**
 - [ ] Formula conventions documented **once** and cited by every report/notebook: `log2FC` (default), `lnFC` (gene expression), `Δ (alt−ref)` (MPRA). **P1**
-- [ ] Directory naming: live docs only reference `examples/walkthroughs/` and `examples/notebooks/`. The old `examples/applications/` path must only appear in `audits/` historical snapshots. **P0**
+- [ ] Directory naming: live docs only reference `examples/walkthroughs/` and `examples/notebooks/`. The old `examples/applications/` path must not appear **as a path users are pointed at**. **P0** — three live mentions are legitimate and expected: two in `tests/test_rerender_refuses_to_degrade.py` (the test that exists *because* the directory was removed) and one comment in `scripts/rerender_examples.py` recording the rename.
 - [ ] README "Hardware matrix per oracle" section is in sync with `chorus/mcp/server.py::ORACLE_SPECS`. **P1**
 - [ ] 👁 No "TODO", "coming soon", "WIP" markers in live docs (`audits/` and git history excluded).
 
@@ -273,7 +273,7 @@ assert np.allclose(r1['<track>'].values, r2['<track>'].values, atol=1e-6)
 
 Each is a common user scenario, not a theoretical corner:
 
-- [ ] **Variant near a chromosome end** (< half window from telomere). Oracle should pad / clamp gracefully, not crash. **P1**
+- [ ] **Variant near a chromosome end** (< half window from telomere). The raw `extract_sequence` *raises* `InvalidRegionError` naming the chromosome and both lengths, which is correct; padding is `extract_sequence_with_padding`'s job and it must return exactly `total_length`. **P1** — regression: `tests/test_padding_never_returns_a_short_sequence.py`. Its wide-interval branch used to hand an out-of-bounds end to pysam, which clamps silently: 2,114 bp requested 40 bp from chr1's end returned **40 bp** with metadata claiming no padding (2026-08-12 audit, F2).
 - [ ] **Soft-masked (lowercase) FASTA bases** — `extract_sequence` **upper-cases** its output (`chorus/utils/sequence.py:135` ends `return sequence.upper()`), and the ref-allele comparison that uses `.upper()` is at **`core/base.py:460`** (`:325` is now inside an unrelated `ValueError`). Either way a variant in a soft-masked region must not produce a spurious mismatch warning. **P1**
 - [ ] **Multi-allelic site** (`alleles=['A','C','G','T']`) — the report renders one `### Allele: alt_N` **section** per alt (three tables), not three columns, and `effect_sizes` carries `alt_1..alt_3` with distinct values. **P1**
 - [ ] **Non-SNV** (simple insertion / deletion): if not supported, `predict_variant_effect` should error **before** running the model, not after — and the message should say indels are unsupported. **P1**
@@ -285,7 +285,7 @@ Many scientific compute environments cut outbound internet after setup. Once ins
 
 - [ ] `oracle.predict(...)` works with `HF_TOKEN` unset and no network, for the non-gated oracles. **P1**
 - [ ] `oracle.analyze_gene_expression(predictions, 'GATA1')` works against the locally-cached GTF. (The signature takes the `OraclePrediction` first — `analyze_gene_expression('GATA1')` alone raises `TypeError`; see `core/base.py:591`.) **P1**
-- [ ] Report HTML renders in a browser with no outbound network — `grep -rn 'cdn\|googleapis\|cdnjs\|unpkg\|jsdelivr' examples/walkthroughs/**/*.html` should return only bundled-resource references. We already vendor IGV via `chorus/analysis/static/igv.min.js`. **P1**
+- [ ] Report HTML makes no network call but the reference sequence. **Do not use the grep** that used to be here: `googleapis` matches Google-Cloud-Storage support code *inside* the inlined `igv.min.js` and so fires on all 19 IGV reports, and `igv.org` matches its blat service URL — both false positives on correct artefacts. Measure the request inventory instead: `pytest tests/test_reports_bundle_their_genome.py -m integration`, which counts what Chromium actually fetches (9 requests to one host after #139) and proves the same-origin air-gap recipe renders with zero. **P1**
 
 ## 16. Logging hygiene
 
@@ -296,7 +296,7 @@ Many scientific compute environments cut outbound internet after setup. Once ins
 
 ## 17. Dependency supply chain
 
-- [ ] `environment.yml` pins every dep to a range or exact version — no bare dep names. **P1**
+- [ ] `environment.yml` pins every dep to a range or exact version — no bare dep names. **P1** — two entries read as unpinned to a naive check and are both fine: the literal `pip` (not a dependency) and `coolbox @ git+…@651b930…` (pinned to a commit, which is stronger than a version range).
 - [ ] `pip-audit` on the base env flags no known CVEs above *medium*. **P1**
 - [ ] Per-oracle envs use the same `chorus` editable install so they track the parent codebase (`EnvironmentManager.install_chorus_primitive`). **P1**
 
