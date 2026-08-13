@@ -6,6 +6,18 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [0.7.3] — 2026-08-13
+
+**No percentile changes.** No background null, region set, retention rule or default fold moved,
+so effect and activity percentiles are directly comparable with 0.7.2. What changed is enforcement,
+report rendering and two real defects — see the banner on each entry.
+
+**Background artefacts.** Unchanged: this release is verified against dataset revision
+`backgrounds-2026-08-12-cherimoya-fold0`, the same pair 0.7.2 shipped with, and
+`_HF_REVISION` still pins it. Nothing was rebuilt or re-uploaded.
+
 ### Fixed
 - **⚠ `device='cuda:N'` no longer takes a GPU you were not given — and no longer crashes on the PyTorch oracles.** Six oracle templates set `CUDA_VISIBLE_DEVICES` straight from the ordinal. Under a scheduler that grants `CUDA_VISIBLE_DEVICES=4,5`, a request for `cuda:1` means "the second GPU I was granted" — physical 5 — and overwriting the mask sent the process to **physical GPU 1, somebody else's job**. Worse on the PyTorch side: Cherimoya's templates masked to `N` and then handed the same `cuda:N` string to torch, which indexes *within* the now-one-device visible set, so every ordinal but 0 died with `CUDA error: invalid device ordinal`. A documented parameter was simply broken.
 
@@ -19,34 +31,6 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 - **Attribution gaps:** `igv.min.js` bundles **DOMPurify** (Cure53) and **pako**, both shipped in the wheel and credited nowhere; both are now in `docs/THIRD_PARTY.md` with the licence notices that survive inside the bundle. Borzoi was described as 7,612 tracks in a docstring where it is **7,611**. And `THIRD_PARTY.md` now states explicitly that **EPInformer-seq is first-party** — no vendored upstream code, weights from this project's own HuggingFace repo — because "7 of 8 oracles attributed" reads like a missing attribution otherwise. Audit F4–F6.
 
-### Changed
-- **CI renders reports on every PR now, a reduced set of them.** The full 19-report browser suite stays on the release host, but running none of it in CI is how a blank panel reaches `main` between audits — which is the gap that let a size ceiling stand in for a rendering check in the first place. `CHORUS_BROWSER_SMOKE=1` selects the two smallest IGV reports plus the panel-less table: 12 tests instead of 46, enough to catch the failures that hit every report at once.
-
-  This needed `test_ci_runs_the_same_command_a_contributor_runs` narrowed, since it correctly refused the new job. Its property is about the run that stands for "the tests pass" — a whole-suite invocation must carry no selection of its own — so a single-file job with an explicit marker is now allowed while a widened one still fails. Mutation-tested three ways.
-
-- **Six items in `audits/AUDIT_CHECKLIST.md` corrected**, because they produced false findings against a correct tree: the `<details>` count (the multi-oracle report legitimately has four), the CDN grep (it matches `googleapis` and `igv.org` *inside* the inlined igv.js, firing on all 19 reports — the measured request inventory replaces it), the P0 forbidding the pre-rename examples directory (its three live mentions are the test and the comment that record the rename, not paths anyone is sent to), `list_tracks` being an MCP tool rather than a Python API, the dependency-pin check, and which function §14's padding item refers to.
-
-### Added
-- **The genome assembly is now asserted rather than assumed ([#124](https://github.com/pinellolab/chorus/issues/124)).** Chorus is human hg38 everywhere, and until now that held *by accident*: Enformer and Borzoi exclude their 1,643 and 2,608 mouse tracks because someone selected `enformer_human_targets.txt` / `borzoi_human_targets.txt`, AlphaGenome because `Organism.HOMO_SAPIENS` is hardcoded in its metadata loader. Those are file and literal choices, not assertions — nothing connected any of them to `genomes/hg38.fa`, which every builder opens, so nothing would have caught a future `*_mouse_targets.txt`. ChromBPNet, whose registry had no organism field at all, is where it actually went wrong: 33 mm10 models were scored against hg38 sequence using the hg38 DHS vocabulary, removed in [#121](https://github.com/pinellolab/chorus/issues/121).
-
-  A hard failure rather than a warning, because there is no symptom to notice: mm10 `chr1:1,000,000` exists in hg38 too, so every coordinate resolves, every prediction returns, and every percentile lands in [0, 1]. The answer is simply about a different piece of DNA. Four mechanisms:
-
-  - every oracle **declares** `training_genome` on its own class — deliberately not inherited, since `OracleBase` defaulting to `"hg38"` would be one more silent choice, and a test enumerates the subclasses to make sure a new oracle says;
-  - all 8 builders **check** it against the FASTA they open, at all 10 open sites, via `require_reference_assembly` — at preflight, so a 14-hour build fails in its first second;
-  - both stamp scripts **observe** the assembly from the reference's chromosome lengths instead of writing `"genome": "hg38"` as a literal, which had made that field a restatement of the stamper's own assumption;
-  - the loader **refuses** an artefact declaring a genome chorus does not rank against, as `BackgroundGenomeMismatch`.
-
-  Identity comes from chr1's length, which is provider-independent: UCSC, Ensembl and GENCODE disagree about chromosome naming, line width and scaffolds but agree on chromosome lengths, where the `fasta_sha256_prefix64mb` the artefacts already carry would reject a correct Ensembl GRCh38 as loudly as it rejects mm10. An *unrecognised* reference warns and proceeds — refusing it would break anyone on a legitimate custom build to enforce a lookup table's completeness — while a recognised, wrong one raises. A typo in the expected value (`"GRCh38"` for `"hg38"`) also raises, so it cannot silently disable the check it was added to perform.
-
-  **No published number changes and no artefact was re-uploaded.** All nine shipped backgrounds already declared `genome: hg38`, and all nine are; the fix is that this is now checked at both ends rather than asserted at neither. Deliberately *not* done: the per-row `genome` field the issue also proposed, which would mean re-stamping and re-uploading all nine artefacts and re-cutting the pinned dataset tag, and only earns its keep if chorus ever ships mixed-species artefacts.
-
-- **`BackgroundGenomeMismatch` and `BackgroundFoldMismatch` now share a `BackgroundArtefactMismatch` base**, and `get_normalizer` re-raises the base class. Every *other* reason a per-track artefact fails to load means "no percentiles available", which its legacy `.npy` fallback is right to absorb; these mean "the percentiles would be **wrong**", ranked against a different distribution than they name. Catching the family rather than listing subclasses means the next guard of this kind inherits the non-swallowing contract instead of depending on someone remembering to widen the clause.
-
-### Changed
-- **⚠️ `AlphaGenomeOracle(organism="mouse")` now raises instead of being silently ignored ([#124](https://github.com/pinellolab/chorus/issues/124)).** The parameter was accepted, assigned to `self.organism`, and read by nothing — the metadata loader hardcodes `Organism.HOMO_SAPIENS` and the PyTorch port passes `organism_index=0` — so the one oracle whose upstream API genuinely supports mouse had a switch that looked functional and returned human predictions under a mouse label. Same fix on `AlphaGenomePTOracle`. `organism="human"` (any capitalisation, plus `homo_sapiens`) is unchanged; anything else raises `NotImplementedError` naming what mouse would actually require. Of make-it-work / remove-it / raise, only raising is both honest and affordable: mouse needs an mm10 reference in the genome manager, an mm10 reference class for the background null (SCREEN publishes mm10 cCREs; the Meuleman DHS index has no mouse equivalent), and a background pass over ~4,300 further tracks.
-
-
-### Fixed
 - **Reports no longer resolve their genome through igv.org's hosted registry ([#139](https://github.com/pinellolab/chorus/issues/139)).** `genome: "hg38"` reads like a setting but is a *registry lookup*: igv.js resolves the string against its catalogue and follows the result, so every shipped report opened **six remote resources across two hosts** — the catalogue, chromosome aliases, `hg38.chrom.sizes`, `cytoBandIdeo.txt.gz`, `ncbiRefSeq.txt.gz` and ranged reads of `hg38.2bit`. Fourteen requests, and the catalogue fetch is **fatal**: with the network cut the panel did not degrade, it never appeared. The docstring claiming that inlining `igv.min.js` made reports "viewable offline, on air-gapped hosts" was therefore false in the strongest available sense.
 
   Chromosome lengths and the ideogram now come from one vendored 6.1 kB table (UCSC's `cytoBandIdeo`, primary chromosomes only — the per-chromosome maximum band end *is* the chromosome length, verified against the FASTA index at chr1 = 248,956,422 both ways), and the gene track from chorus's own GENCODE v48 annotation scoped to the drawn window, which also means the panel's genes agree with the gene names printed beside them. Measured on one report:
@@ -73,19 +57,18 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
   All three render paths (`_igv_report`, `multi_oracle_report`, `causal`) now share one config builder, since three copies of the same dict is precisely how the display-pooling defect shipped with only one of them fixed. Every committed report was regenerated; a test reads the artefacts rather than the generator, because regeneration is what makes the fix real.
 
-### Added
-- **Every committed report is now opened in a real browser and checked that it paints ([#135](https://github.com/pinellolab/chorus/issues/135)).** Nothing in the suite had ever loaded one: the checks were on bytes and JSON, so a report could be regenerated, sized, diffed, committed and shipped while rendering a blank page. `tests/test_committed_reports_render_in_a_browser.py` loads all 19 in headless Chromium and asserts every canvas IGV laid out has ink, with no console errors and no uncaught exceptions. Marked `integration`; skips cleanly where Chromium is unavailable.
-
-  Three things had to be got right, each of which produces a failure indistinguishable from a broken panel. **IGV renders inside a shadow root**, so `document.querySelectorAll('canvas')` returns 0 for a panel that is painting perfectly — which is what led #139 to report "the panel never renders", and to the conclusion that headless Chromium cannot be used as an oracle for this. It can; the query just has to pierce shadow boundaries. **Chromium's shared libraries are scattered across conda envs** (`libgbm`/`libatk` only in `chorus-browsertest`, `libXcomposite`/`libcups` only in the oracle and base envs), so the path is assembled in the harness and passed to the browser process rather than exported by whoever runs pytest. And **"loaded" is not "painted"**: polling until the canvas count stops changing reported 61/62 and 39/42 on reports that reach 64/64 and 44/44 a second later, so the harness polls to convergence instead.
-
-  Calibrated rather than guessed: "painted" is **any** non-white pixel, because a 0.05% floor was too high — the causal report's point tracks are ~20 marks across a 3288 px canvas (0.000238 of it) and were being reported as blank while drawing exactly what they should. And the check is shown to work: three mutations of a real report (features emptied, genome name broken, config truncated) are each caught by a different one of the three channels.
-
-- **The CDYL fine-map report ships its IGV panel** — `examples/walkthroughs/causal_prioritization/CDYL_rs9504151/rs9504151_CDYL_locus_causal_report.html`, 25.7 MiB and now the largest artefact in the repo. It was the one example with no browser panel, skipped behind `CHORUS_WRITE_LARGE_HTML=1`, because 21 lung-fibroblast tracks × 2 alleles exceeded a 20 MiB ceiling that had been chosen as "headroom over today's largest artefact" rather than derived from any failure. Adding it moved no numbers: regenerating the example produced a JSON differing from the committed one in **1 of 4,001 leaf values**, and that one is the timestamp.
 
 ### Changed
+- **CI renders reports on every PR now, a reduced set of them.** The full 19-report browser suite stays on the release host, but running none of it in CI is how a blank panel reaches `main` between audits — which is the gap that let a size ceiling stand in for a rendering check in the first place. `CHORUS_BROWSER_SMOKE=1` selects the two smallest IGV reports plus the panel-less table: 12 tests instead of 46, enough to catch the failures that hit every report at once.
+
+  This needed `test_ci_runs_the_same_command_a_contributor_runs` narrowed, since it correctly refused the new job. Its property is about the run that stands for "the tests pass" — a whole-suite invocation must carry no selection of its own — so a single-file job with an explicit marker is now allowed while a widened one still fails. Mutation-tested three ways.
+
+- **Six items in `audits/AUDIT_CHECKLIST.md` corrected**, because they produced false findings against a correct tree: the `<details>` count (the multi-oracle report legitimately has four), the CDN grep (it matches `googleapis` and `igv.org` *inside* the inlined igv.js, firing on all 19 reports — the measured request inventory replaces it), the P0 forbidding the pre-rename examples directory (its three live mentions are the test and the comment that record the rename, not paths anyone is sent to), `list_tracks` being an MCP tool rather than a Python API, the dependency-pin check, and which function §14's padding item refers to.
+
+- **⚠️ `AlphaGenomeOracle(organism="mouse")` now raises instead of being silently ignored ([#124](https://github.com/pinellolab/chorus/issues/124)).** The parameter was accepted, assigned to `self.organism`, and read by nothing — the metadata loader hardcodes `Organism.HOMO_SAPIENS` and the PyTorch port passes `organism_index=0` — so the one oracle whose upstream API genuinely supports mouse had a switch that looked functional and returned human predictions under a mouse label. Same fix on `AlphaGenomePTOracle`. `organism="human"` (any capitalisation, plus `homo_sapiens`) is unchanged; anything else raises `NotImplementedError` naming what mouse would actually require. Of make-it-work / remove-it / raise, only raising is both honest and affordable: mouse needs an mm10 reference in the genome manager, an mm10 reference class for the background null (SCREEN publishes mm10 cCREs; the Meuleman DHS index has no mouse equivalent), and a background pass over ~4,300 further tracks.
+
 - **Report size is no longer a proxy for report health.** The ceiling stands at 50 MiB — GitHub's advisory threshold, under its hard 100 MiB wall — and it now exists alongside a check that actually loads the file. Measured across the corpus, size barely predicts load time: **20× the bytes costs 1.3× the wait** (25.7 MiB → 11.3 s; 1.3 MiB → 8.8 s), because most of those seconds go on ~14 network round-trips for genome resources ([#139](https://github.com/pinellolab/chorus/issues/139)) rather than on parsing the payload. `CHORUS_WRITE_LARGE_HTML` is gone.
 
-### Changed
 - **The BPNet-family count-head arithmetic now has one implementation ([#125](https://github.com/pinellolab/chorus/issues/125)).** Turning a profile head and a count head into a per-position expected-count track is four operations — centre the logits, softmax, invert the count head, scale — and it existed in five places at once. All three defects fixed on 2026-07-31 were two of those copies disagreeing: `exp` vs `expm1` across four call sites (+1 read, ~0.1% at a peak but up to **100%** at a quiet site, which is the regime the activity CDFs are built from); per-strand vs joint softmax (the two emitted tracks together claimed **2.00×** the predicted counts); and a count bias hardcoded `(N, 1)` that Keras broadcast silently (every log-count shifted by 0.5885, i.e. 1.80× low at a peak and 3.04× at a quiet site). None crashed; each produced a plausible number and each shipped.
 
   `chorus/core/count_head.py` is now the only implementation, used by `ChromBPNetOracle`'s three paths, Cherimoya's `scoring.py`, and the ChromBPNet background builder — the last of which had to be factored into a `profiles_from_heads()` function, because its arithmetic was inline in a TensorFlow-dependent routine and could therefore only ever be compared against the oracle by grepping both files for matching source text. That is exactly the check `exp`/`expm1` walked past four times.
@@ -95,6 +78,50 @@ project adheres to [Semantic Versioning](https://semver.org/).
   The one thing that did drift was caught by that end-to-end run and by no unit test: the two copies disagreed about *precision* — Cherimoya cast to float64 before doing anything, ChromBPNet used whatever TensorFlow returned. The shared helper therefore preserves its caller's dtype, and Cherimoya promotes on the way in; without that, leaving `log_counts` in float32 moved the SORT1 example's `ref_value` from 603.3464052301788 to 603.3464123072064 — 1.2e-8, and with nothing behind it. Whether ChromBPNet *should* compute this in float64 is a real question and deliberately a separate one.
 
   **Two copies stay where they are, on purpose, with their equivalence pinned.** The torch expression in `build_backgrounds_cherimoya.py` runs on the accelerator inside the batch loop, where a numpy round-trip per batch would be charged to a multi-hour job — verified in `chorus-cherimoya` (torch 2.13.0+cu130) at a **1.25e-07** maximum relative difference. And **EPInformer-seq is not routed through here at all**: it scales by `10 ** log_count`, a different convention from a differently-trained model, and at a log-count of 2.5 the two differ by **26×** — so a tidy-up that unified them would be the same class of mistake as the three above, in the opposite direction. A test pins that difference rather than leaving it to be noticed.
+
+
+### Added
+- **The genome assembly is now asserted rather than assumed ([#124](https://github.com/pinellolab/chorus/issues/124)).** Chorus is human hg38 everywhere, and until now that held *by accident*: Enformer and Borzoi exclude their 1,643 and 2,608 mouse tracks because someone selected `enformer_human_targets.txt` / `borzoi_human_targets.txt`, AlphaGenome because `Organism.HOMO_SAPIENS` is hardcoded in its metadata loader. Those are file and literal choices, not assertions — nothing connected any of them to `genomes/hg38.fa`, which every builder opens, so nothing would have caught a future `*_mouse_targets.txt`. ChromBPNet, whose registry had no organism field at all, is where it actually went wrong: 33 mm10 models were scored against hg38 sequence using the hg38 DHS vocabulary, removed in [#121](https://github.com/pinellolab/chorus/issues/121).
+
+  A hard failure rather than a warning, because there is no symptom to notice: mm10 `chr1:1,000,000` exists in hg38 too, so every coordinate resolves, every prediction returns, and every percentile lands in [0, 1]. The answer is simply about a different piece of DNA. Four mechanisms:
+
+  - every oracle **declares** `training_genome` on its own class — deliberately not inherited, since `OracleBase` defaulting to `"hg38"` would be one more silent choice, and a test enumerates the subclasses to make sure a new oracle says;
+  - all 8 builders **check** it against the FASTA they open, at all 10 open sites, via `require_reference_assembly` — at preflight, so a 14-hour build fails in its first second;
+  - both stamp scripts **observe** the assembly from the reference's chromosome lengths instead of writing `"genome": "hg38"` as a literal, which had made that field a restatement of the stamper's own assumption;
+  - the loader **refuses** an artefact declaring a genome chorus does not rank against, as `BackgroundGenomeMismatch`.
+
+  Identity comes from chr1's length, which is provider-independent: UCSC, Ensembl and GENCODE disagree about chromosome naming, line width and scaffolds but agree on chromosome lengths, where the `fasta_sha256_prefix64mb` the artefacts already carry would reject a correct Ensembl GRCh38 as loudly as it rejects mm10. An *unrecognised* reference warns and proceeds — refusing it would break anyone on a legitimate custom build to enforce a lookup table's completeness — while a recognised, wrong one raises. A typo in the expected value (`"GRCh38"` for `"hg38"`) also raises, so it cannot silently disable the check it was added to perform.
+
+  **No published number changes and no artefact was re-uploaded.** All nine shipped backgrounds already declared `genome: hg38`, and all nine are; the fix is that this is now checked at both ends rather than asserted at neither. Deliberately *not* done: the per-row `genome` field the issue also proposed, which would mean re-stamping and re-uploading all nine artefacts and re-cutting the pinned dataset tag, and only earns its keep if chorus ever ships mixed-species artefacts.
+
+- **`BackgroundGenomeMismatch` and `BackgroundFoldMismatch` now share a `BackgroundArtefactMismatch` base**, and `get_normalizer` re-raises the base class. Every *other* reason a per-track artefact fails to load means "no percentiles available", which its legacy `.npy` fallback is right to absorb; these mean "the percentiles would be **wrong**", ranked against a different distribution than they name. Catching the family rather than listing subclasses means the next guard of this kind inherits the non-swallowing contract instead of depending on someone remembering to widen the clause.
+
+- **Every committed report is now opened in a real browser and checked that it paints ([#135](https://github.com/pinellolab/chorus/issues/135)).** Nothing in the suite had ever loaded one: the checks were on bytes and JSON, so a report could be regenerated, sized, diffed, committed and shipped while rendering a blank page. `tests/test_committed_reports_render_in_a_browser.py` loads all 19 in headless Chromium and asserts every canvas IGV laid out has ink, with no console errors and no uncaught exceptions. Marked `integration`; skips cleanly where Chromium is unavailable.
+
+  Three things had to be got right, each of which produces a failure indistinguishable from a broken panel. **IGV renders inside a shadow root**, so `document.querySelectorAll('canvas')` returns 0 for a panel that is painting perfectly — which is what led #139 to report "the panel never renders", and to the conclusion that headless Chromium cannot be used as an oracle for this. It can; the query just has to pierce shadow boundaries. **Chromium's shared libraries are scattered across conda envs** (`libgbm`/`libatk` only in `chorus-browsertest`, `libXcomposite`/`libcups` only in the oracle and base envs), so the path is assembled in the harness and passed to the browser process rather than exported by whoever runs pytest. And **"loaded" is not "painted"**: polling until the canvas count stops changing reported 61/62 and 39/42 on reports that reach 64/64 and 44/44 a second later, so the harness polls to convergence instead.
+
+  Calibrated rather than guessed: "painted" is **any** non-white pixel, because a 0.05% floor was too high — the causal report's point tracks are ~20 marks across a 3288 px canvas (0.000238 of it) and were being reported as blank while drawing exactly what they should. And the check is shown to work: three mutations of a real report (features emptied, genome name broken, config truncated) are each caught by a different one of the three channels.
+
+- **The CDYL fine-map report ships its IGV panel** — `examples/walkthroughs/causal_prioritization/CDYL_rs9504151/rs9504151_CDYL_locus_causal_report.html`, 25.7 MiB and now the largest artefact in the repo. It was the one example with no browser panel, skipped behind `CHORUS_WRITE_LARGE_HTML=1`, because 21 lung-fibroblast tracks × 2 alleles exceeded a 20 MiB ceiling that had been chosen as "headroom over today's largest artefact" rather than derived from any failure. Adding it moved no numbers: regenerating the example produced a JSON differing from the committed one in **1 of 4,001 leaf values**, and that one is the timestamp.
+
+### Known limitations
+
+- **The `SORT1_enformer` example cannot be regenerated reproducibly.** Two runs of identical code
+  differ by 400 values at a 0.0159% median, while Enformer's forward pass is bitwise identical
+  in-process *and* across processes — so the cause is above the model and is not localised. A diff
+  on that one example after an unrelated change is expected to show ~400 moved values.
+  `scripts/gate_end_to_end_determinism.py` cannot catch it, because what it compares is
+  deterministic. Measured in `audits/2026-08-12_post_v0.7.2_audit.md` (F8).
+- **A report still fetches one thing from the internet: the reference sequence.** Every igv.js
+  version requires a sequence source and hg38 is 3 GB, so it cannot be bundled. Everything else is
+  inline. Point `CHORUS_IGV_SEQUENCE_URL` at a self-hosted copy served **same-origin** with the
+  report and it needs no network at all (measured: 0 requests, 0.8 s).
+- **Cherimoya and ChromBPNet remain incomparable at raw magnitude** — CATv1 has no bias model and
+  tracks bias-*aware* ChromBPNet, while chorus loads `chrombpnet_nobias`. Percentiles are
+  unaffected, since each is ranked against its own null. Unchanged from 0.7.2.
+- **One AlphaGenome MCP end-to-end test never runs on an authenticated host**:
+  `tests/test_integration.py:196` gates on the `HF_TOKEN` environment variable, so it skips when
+  credentials come from the stored token. That path stays unverified.
 
 ## [0.7.2] — 2026-08-12
 
@@ -852,6 +879,8 @@ HTML report generation with embedded IGV, and the `chorus` CLI
 ---
 
 [Unreleased]: https://github.com/pinellolab/chorus/compare/v0.7.1...HEAD
+[0.7.3]: https://github.com/pinellolab/chorus/compare/v0.7.2...v0.7.3
+[0.7.2]: https://github.com/pinellolab/chorus/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/pinellolab/chorus/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/pinellolab/chorus/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/pinellolab/chorus/compare/v0.5.6...v0.6.0

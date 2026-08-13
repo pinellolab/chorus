@@ -5,7 +5,7 @@ Chorus provides a consistent API for working with various genomic deep learning
 models including Enformer, Borzoi, ChromBPNet, and Sei.
 """
 
-__version__ = "0.7.2"
+__version__ = "0.7.3"
 
 # ---------------------------------------------------------------------------
 # PATH guard for subprocess tools (bgzip, tabix, samtools)
