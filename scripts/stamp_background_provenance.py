@@ -184,6 +184,17 @@ def main() -> int:
     fasta_sha = _sha256(FASTA)
     print(f"[prov] fasta sha256 {fasta_sha[:16]}...")
 
+    # Measured, not assumed. This stamper is superseded by stamp_provenance_v4.py
+    # (schema 2 is below MIN_ARTEFACT_SCHEMA, so nothing it writes would be
+    # accepted today), but a stamper that can state an unchecked assembly is a
+    # stamper that can lie, and it costs one call not to be.
+    from chorus.utils.genome import detect_assembly
+    genome = detect_assembly(FASTA)
+    if genome is None:
+        raise SystemExit(f"[prov] cannot identify the assembly of {FASTA}; "
+                         f"refusing to stamp 'genome' as a guess")
+    print(f"[prov] {FASTA} is {genome}")
+
     from chorus.utils.annotations import DEFAULT_REGION_STRATA
 
     for name in args.oracles:
@@ -204,7 +215,7 @@ def main() -> int:
         config = {
             "schema_version": 2,
             "oracle": name,
-            "genome": "hg38",
+            "genome": genome,
             "fasta_sha256": fasta_sha,
             "build_started": start,
             "build_finished": finish,

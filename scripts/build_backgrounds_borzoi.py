@@ -181,7 +181,12 @@ def load_model_and_metadata():
     metadata = BorzoiMetadata()
 
     import pysam
+
+    from chorus.analysis.background_sampling import require_reference_assembly
+    from chorus.oracles.borzoi import BorzoiOracle
+
     ref_path = os.path.join(REPO_ROOT, "genomes/hg38.fa")
+    require_reference_assembly(ref_path, BorzoiOracle, label="borzoi background")
     ref = pysam.FastaFile(ref_path)
 
     logger.info("Model loaded in %.1f seconds", time.time() - t_load)

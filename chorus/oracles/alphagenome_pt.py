@@ -33,6 +33,7 @@ fits a given query.
 from ..core.base import OracleBase
 from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..core.track import Track
+from ..utils.genome import require_human_organism
 from ..core.interval import Interval, GenomeRef, Sequence
 from ..core.exceptions import ModelNotLoadedError
 
@@ -54,6 +55,9 @@ class AlphaGenomePTOracle(OracleBase):
     so percentile CDFs, walkthroughs, and report templates port over without
     schema changes.
     """
+
+    #: Weights are trained on GRCh38. Enforced, not assumed -- see #124.
+    training_genome = "hg38"
 
     HF_REPO = "gtca/alphagenome_pytorch"
     WEIGHTS_FILENAME = "model_all_folds.safetensors"
@@ -94,7 +98,9 @@ class AlphaGenomePTOracle(OracleBase):
         self.target_length = 1_048_576
         self.bin_size = 1
         self.fold = fold
-        self.organism = organism
+        # See AlphaGenomeOracle: inert here too, since the forward pass passes
+        # organism_index=0 (human) unconditionally (#124).
+        self.organism = require_human_organism(organism, oracle="AlphaGenomePTOracle")
         self.hf_repo = hf_repo or self.HF_REPO
         if weights_filename is not None:
             self.weights_filename = weights_filename

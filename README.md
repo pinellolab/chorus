@@ -393,6 +393,14 @@ Supported genomes:
 
 Genomes are stored in the `genomes/` directory within your Chorus installation.
 
+> **The downloader is not the oracles.** Every shipped oracle is trained on **hg38 only**,
+> and every background null is a rank within hg38 reference regions, so a non-hg38 reference
+> is refused rather than scored — an mm10 coordinate resolves against hg38 without
+> complaint, so a warning would produce a plausible number about different DNA. Assemblies
+> other than hg38 are here for other tooling and for future work; see
+> [`docs/BACKGROUND_NULL_PROTOCOL.md` §11](docs/BACKGROUND_NULL_PROTOCOL.md) for what mouse
+> support would actually require.
+
 #### Per-track background distributions (auto-downloaded)
 
 Chorus converts every raw prediction into an **effect percentile** and **activity percentile** against each track's own sampled-SNP reference population and ~19,000–104,000 genome-wide positions scored on the same oracle. These pre-computed per-track CDFs are what let a user interpret a `+0.45` log2FC as `0.962 activity %ile`.
