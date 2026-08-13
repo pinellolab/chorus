@@ -39,6 +39,7 @@ from ..core.globals import CHORUS_DOWNLOADS_DIR
 from ..core.interval import GenomeRef, Interval, Sequence
 from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..core.track import Track
+from ..utils.genome import missing_reference_fasta_error
 from .cherimoya_source.catv1_globals import (
     CATV1_ASSAY_TYPES,
     CATV1_BIN_SIZE,
@@ -537,7 +538,7 @@ class CherimoyaOracle(OracleBase):
 
         if isinstance(seq, tuple):
             if self.reference_fasta is None:
-                raise ValueError("Reference FASTA required for genomic coordinates.")
+                raise missing_reference_fasta_error(self.oracle_name)
             chrom, start, end = seq
             query_interval = Interval.make(GenomeRef(
                 chrom=chrom, start=start, end=end, fasta=self.reference_fasta,
@@ -809,7 +810,7 @@ class CherimoyaOracle(OracleBase):
 
         if isinstance(seq, tuple):
             if self.reference_fasta is None:
-                raise ValueError("Reference FASTA required for genomic coordinates.")
+                raise missing_reference_fasta_error(self.oracle_name)
             chrom, start, end = seq
             query_interval = Interval.make(GenomeRef(
                 chrom=chrom, start=start, end=end, fasta=self.reference_fasta,

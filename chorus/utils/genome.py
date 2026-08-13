@@ -416,6 +416,29 @@ def require_assembly(fasta_path, expected: str, *, context: str = "") -> Optiona
     return found
 
 
+def missing_reference_fasta_error(oracle_name: str = "") -> ValueError:
+    """The error for a coordinate query with no reference, phrased so it can be acted on.
+
+    Ten sites across nine oracles raised this, in two wordings that differed only by
+    punctuation, and neither named the argument to pass or the command that produces the file:
+
+        "Reference FASTA required for genomic coordinate input"
+        "Reference FASTA required for genomic coordinates."
+
+    A first-time user reading either has to go and find out that the kwarg is
+    ``reference_fasta`` and that chorus can fetch hg38 itself. Both facts belong in the
+    message. Audit finding F3, 2026-08-12; the same N-copies-of-one-string shape as #125.
+    """
+    who = f"{oracle_name} " if oracle_name else ""
+    return ValueError(
+        f"{who}needs a reference genome to turn coordinates into sequence, and none was "
+        f"given. Pass reference_fasta='<path to hg38.fa>' when constructing the oracle "
+        f"(chorus.create_oracle(..., reference_fasta=...)), or run `chorus genome download "
+        f"hg38` to fetch and index one — `chorus config data-dir` shows where it will land. "
+        f"Passing a DNA string instead of coordinates needs no reference."
+    )
+
+
 #: Spellings of "human" an `organism=` argument may use.
 _HUMAN_ALIASES = frozenset({'human', 'homo_sapiens', 'homo sapiens', 'hsapiens', 'hg38'})
 

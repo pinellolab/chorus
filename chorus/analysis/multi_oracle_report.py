@@ -34,7 +34,7 @@ from ._report_glossary import (
     render_how_to_read,
 )
 from .scorers import LAYER_CONFIGS
-from .variant_report import TrackScore, VariantReport, _CSS, _fmt_percentile
+from .variant_report import _cell_type_cell, TrackScore, VariantReport, _CSS, _fmt_percentile
 
 logger = logging.getLogger(__name__)
 
@@ -901,7 +901,11 @@ def _build_multioracle_html(report: "MultiOracleReport") -> str:
                 p.append(
                     f"<tr><td>{esc(layer_label)} {chip}</td>"
                     f"<td>{esc(track_display)}</td>"
-                    f"<td>{esc(ts.cell_type or '—')}</td>"
+                    # Blank the cell type when track_display already ends in it -- one
+                    # helper for all three render paths, since fixing only
+                    # variant_report.py left this table and causal.py still repeating
+                    # themselves. See _cell_type_cell (#F7).
+                    f"<td>{esc(_cell_type_cell(ts))}</td>"
                     f"<td>{ref_s}</td><td>{alt_s}</td>"
                     f"<td class='effect-cell {cls}'>"
                     f"{sign_s}{sc:.3f}</td>"

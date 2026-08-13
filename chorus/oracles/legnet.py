@@ -12,6 +12,7 @@ from ..core.exceptions import ModelNotLoadedError, InvalidAssayError
 from ..core.globals import CHORUS_DOWNLOADS_DIR
 from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..core.interval import Interval, GenomeRef, Sequence
+from ..utils.genome import missing_reference_fasta_error
 
 from .legnet_source.legnet_globals import LEGNET_WINDOW, LEGNET_DEFAULT_STEP, LEGNET_AVAILABLE_CELLTYPES
 from .legnet_source.exceptions import LegNetError
@@ -231,7 +232,7 @@ class LegNetOracle(OracleBase):
         # Handle genomic coordinates
         if isinstance(seq, tuple):
             if self.reference_fasta is None:
-                raise ValueError("Reference FASTA required for genomic coordinates.")
+                raise missing_reference_fasta_error(self.oracle_name)
             chrom, start, end = seq
             query_interval = Interval.make(GenomeRef(
                 chrom=chrom,

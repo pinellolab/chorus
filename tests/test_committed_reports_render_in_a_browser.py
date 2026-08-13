@@ -33,6 +33,7 @@ Marked ``integration``: it needs Chromium and takes about three minutes.
 """
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -55,10 +56,23 @@ _LOAD_BUDGET_S = 30.0
 _MIN_CANVASES = 6
 
 
+#: CI runs a reduced set. Rendering all 19 costs ~4 minutes and a Chromium download, which is
+#: too much for every push; rendering *none* is how a blank-panel regression reaches main
+#: between audits. So CI takes the two smallest IGV reports plus the panel-less batch table —
+#: enough to catch "IGV stopped painting" and "the config stopped parsing", which are the
+#: failures that affect all reports at once — and the release host runs the full corpus.
+_SMOKE_ONLY = os.environ.get("CHORUS_BROWSER_SMOKE") == "1"
+
+
 def _committed_reports() -> list:
     out = subprocess.check_output(["git", "ls-files", "examples/"], cwd=REPO, text=True)
-    return sorted((REPO / p for p in out.split() if p.endswith(".html")),
-                  key=lambda p: -p.stat().st_size)
+    reports = sorted((REPO / p for p in out.split() if p.endswith(".html")),
+                     key=lambda p: -p.stat().st_size)
+    if not _SMOKE_ONLY:
+        return reports
+    igv = [p for p in reports if "igv.createBrowser" in p.read_text()]
+    other = [p for p in reports if p not in igv]
+    return igv[-2:] + other[:1]
 
 
 REPORTS = _committed_reports()
@@ -97,7 +111,10 @@ def _render_once(browser, report):
 
 def test_there_are_reports_to_check():
     """A silent zero-parameter parametrize would make this whole file a no-op."""
-    assert len(REPORTS) >= 19, f"expected the committed report set, found {len(REPORTS)}"
+    expected = 3 if _SMOKE_ONLY else 19
+    assert len(REPORTS) >= expected, (
+        f"expected {'the CI smoke subset' if _SMOKE_ONLY else 'the committed report set'}, "
+        f"found {len(REPORTS)}")
 
 
 @pytest.mark.parametrize("report", REPORTS, ids=lambda p: p.name)
@@ -224,6 +241,11 @@ def test_file_size_is_not_what_costs_load_time(browser):
     load time -- and the reasoning that made 50 MiB acceptable needs re-deriving rather than
     the number being nudged.
     """
+    if _SMOKE_ONLY:
+        pytest.skip(
+            "corpus-wide property: the CI subset is the two SMALLEST reports, which span "
+            "1.3x rather than the 11x needed to say anything about size vs load time"
+        )
     igv = [p for p in REPORTS if p.stat().st_size > 1_000_000]
     biggest, smallest = igv[0], igv[-1]
     size_ratio = biggest.stat().st_size / smallest.stat().st_size

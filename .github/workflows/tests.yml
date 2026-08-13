@@ -80,3 +80,47 @@ jobs:
           # this advisory-only so CI goes green, then inspect the summary
           # in the job log to decide whether to bump pins.
           pip-audit -l --format columns --desc || true
+
+  browser-smoke:
+    # A reduced render check on every PR. The full 19-report suite belongs to the release
+    # host (audits/AUDIT_CHECKLIST.md section 7), but running NONE of it in CI is how a
+    # blank-panel regression reaches main between audits -- which is exactly what happened
+    # before #135: nothing had ever opened a report in a browser, so a size ceiling was
+    # standing in for a rendering check.
+    #
+    # CHORUS_BROWSER_SMOKE=1 selects the two smallest IGV reports plus the panel-less batch
+    # table. That is enough to catch the failures that hit every report at once -- IGV not
+    # painting, the inlined config not parsing, the bundled genome tables going missing --
+    # without a 4-minute render of the whole corpus on every push.
+    name: browser smoke (2 reports)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Miniforge + mamba
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-variant: Miniforge3
+          miniforge-version: latest
+          activate-environment: chorus
+          environment-file: environment.yml
+          use-mamba: true
+          auto-update-conda: false
+
+      - name: Install chorus + playwright
+        run: |
+          pip install -e . || true
+          pip install pytest playwright
+          # --with-deps installs Chromium's shared libraries via apt. On the dev host those
+          # come from the chorus-browsertest conda env instead, which is why the harness
+          # assembles LD_LIBRARY_PATH itself rather than trusting the caller.
+          playwright install --with-deps chromium
+
+      - name: Render the smoke subset
+        env:
+          CHORUS_BROWSER_SMOKE: "1"
+        run: |
+          pytest tests/test_committed_reports_render_in_a_browser.py -m integration -q

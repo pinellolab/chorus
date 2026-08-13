@@ -17,10 +17,28 @@ if device:
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
         print("Forcing CPU usage")
     elif device.startswith('cuda:'):
-        # Use specific GPU
-        gpu_id = device.split(':')[1]
+        # TensorFlow selects its GPU through the mask, so `cuda:N` is REMAPPED through
+        # any mask already in place rather than replacing it. Overwriting it sent the
+        # process to physical GPU N, which under a scheduler that granted e.g.
+        # CUDA_VISIBLE_DEVICES=4,5 is a device the caller was never given. `cuda:N`
+        # means "the Nth device I can see". audits/2026-08-12_post_v0.7.2_audit.md F1.
+        ordinal = device.split(':')[1]
+        outer = os.environ.get('CUDA_VISIBLE_DEVICES')
+        if outer:
+            visible = [x for x in outer.split(',') if x != '']
+            try:
+                gpu_id = visible[int(ordinal)]
+            except (ValueError, IndexError):
+                raise ValueError(
+                    "device='cuda:" + ordinal + "' but only " + str(len(visible)) +
+                    " GPU(s) are visible to this process (CUDA_VISIBLE_DEVICES=" +
+                    repr(outer) + "). cuda:N indexes the devices you were granted, "
+                    "not physical ones."
+                )
+        else:
+            gpu_id = ordinal
         os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
-        print(f"Using GPU {{gpu_id}}")
+        print("Using GPU " + gpu_id + " (requested " + device + ")")
     elif device in ['cuda', 'gpu']:
         # Use default GPU (don't change CUDA_VISIBLE_DEVICES)
         print("Using default GPU")

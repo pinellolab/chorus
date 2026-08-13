@@ -47,6 +47,7 @@ from ..core.exceptions import InvalidAssayError, ModelNotLoadedError
 from ..core.globals import CHORUS_DOWNLOADS_DIR
 from ..core.interval import GenomeRef, Interval, Sequence
 from ..core.result import OraclePrediction, OraclePredictionTrack
+from ..utils.genome import missing_reference_fasta_error
 
 from .epinformerseq_source.globals import (
     EPINFORMERSEQ_AVAILABLE_ASSAYS,
@@ -295,7 +296,7 @@ class EPInformerSeqOracle(OracleBase):
     ) -> OraclePrediction:
         if isinstance(seq, tuple):
             if self.reference_fasta is None:
-                raise ValueError("Reference FASTA required for genomic coordinates.")
+                raise missing_reference_fasta_error(self.oracle_name)
             chrom, start, end = seq
             query_interval = Interval.make(
                 GenomeRef(chrom=chrom, start=start, end=end, fasta=self.reference_fasta)

@@ -19,6 +19,7 @@ from .sei_source.sei_globals import SEI_WINDOW, SEI_DEFAULT_STEP, SEI_TARGETS, S
 from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..core.interval import Interval, GenomeRef, Sequence
 from ..core.globals import CHORUS_DOWNLOADS_DIR
+from ..utils.genome import missing_reference_fasta_error
 
 
 logger = logging.getLogger(__name__)
@@ -400,7 +401,7 @@ class SeiOracle(OracleBase):
        # Handle genomic coordinates
         if isinstance(seq, tuple):
             if self.reference_fasta is None:
-                raise ValueError("Reference FASTA required for genomic coordinate input")
+                raise missing_reference_fasta_error(self.oracle_name)
             chrom, start, end = seq
             query_interval = Interval.make(GenomeRef(chrom=chrom, 
                                                      start=start, 

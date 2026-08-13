@@ -3,7 +3,7 @@
 Shaped after :class:`~chorus.oracles.borzoi_source.borzoi_metadata.BorzoiMetadata`
 rather than ChromBPNet's flat dict, because CATv1 is a large atlas (1,518
 tracks) and needs to be *searched* rather than enumerated — Borzoi already
-ships 7,612 tracks behind this interface and ``list_tracks`` in the MCP
+ships 7,611 tracks behind this interface and ``list_tracks`` in the MCP
 server routes it through ``search_tracks`` with a result cap.
 
 The two TSVs are vendored next to this module (281 KB total, smaller than

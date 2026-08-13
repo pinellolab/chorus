@@ -22,7 +22,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: top 30 tracks for HepG2
 - **Cell types**: HepG2
-- **Generated**: 2026-08-12 17:59 UTC
+- **Generated**: 2026-08-13 01:27 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -120,7 +120,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: top 6 tracks for MCF 10A
 - **Cell types**: MCF 10A
-- **Generated**: 2026-08-12 17:59 UTC
+- **Generated**: 2026-08-13 01:28 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -183,7 +183,7 @@
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: top 3 tracks for amniotic epithelial cell
 - **Cell types**: amniotic epithelial cell
-- **Generated**: 2026-08-12 18:00 UTC
+- **Generated**: 2026-08-13 01:28 UTC
 
 ## Multi-Layer Variant Effect Report
 
