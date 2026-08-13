@@ -37,18 +37,6 @@ def _find_mamba() -> str:
     )
 
 
-ORACLE_CLASS_MAP = {
-    "chrombpnet": "ChromBPNetOracle",
-    "cherimoya": "CherimoyaOracle",
-    "borzoi": "BorzoiOracle",
-    "enformer": "EnformerOracle",
-    "sei": "SeiOracle",
-    "legnet": "LegNetOracle",
-    "epinformerseq": "EPInformerSeqOracle",
-    "alphagenome": "AlphaGenomeOracle",
-}
-
-
 class EnvironmentRunner:
     """Executes code in oracle-specific conda environments."""
 
@@ -400,7 +388,12 @@ except Exception as e:
         Returns:
             Dictionary with oracle metadata
         """
-        class_name = ORACLE_CLASS_MAP.get(oracle.lower(), f"{oracle.capitalize()}Oracle")
+        # No class-name lookup here on purpose: the script below asks the oracle for its own
+        # `__class__.__name__` in the child process, so the answer is always right. A module-level
+        # ORACLE_CLASS_MAP used to be consulted on this line and the result thrown away — dead for
+        # long enough that it had gone stale (no `alphagenome_pt` entry, and its fallback
+        # `f"{oracle.capitalize()}Oracle"` would have produced `Alphagenome_ptOracle`). Removed
+        # rather than completed, since nothing depended on it.
         script = f"""
 import json
 import sys
@@ -585,7 +578,9 @@ dependencies = {{
     'chrombpnet': ['tensorflow'],
     'legnet': ['torch'],
     'epinformerseq': ['torch'],
-    'alphagenome': ['jax']
+    'alphagenome': ['jax'],
+    'alphagenome_pt': ['torch'],
+    'cherimoya': ['torch', 'cherimoya']
 }}
 
 oracle_deps = dependencies.get('{oracle}', [])
