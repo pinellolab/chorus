@@ -69,7 +69,7 @@ Mutation-tested against both the historical `~38 GB` and an over-correction.
 
 ## Wrong paths and stale numbers
 
-* **`~/.chorus/backgrounds/` in 20 live places** — README, four docs, two CLI `--help` strings, four
+* **`~/.chorus/backgrounds/` in every live place it appeared** (32 lines, 30 files) — README, four docs, two CLI `--help` strings, four
   `normalization.py` docstrings stating it as the `cache_dir` default, plus `scorers.py`,
   `result.py`, `_track_figure.py`, `build_backgrounds.py`, two builders and the audit runbook. The
   data directory has defaulted to the **installation tree** since 2026-08; `~/.chorus` is only the

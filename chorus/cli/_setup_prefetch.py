@@ -1,4 +1,4 @@
-"""Post-env-build pre-download for `chorus setup <oracle>`.
+"""Post-env-build pre-download for `chorus setup --oracle <name>`.
 
 After ``EnvironmentManager.create_environment`` builds the conda env,
 this module drives the "wait once, then ready" part: pull the oracle's

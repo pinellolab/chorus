@@ -139,7 +139,7 @@ def register_backgrounds_subcommand(subparsers):
         description=(
             "View, build, and extend the per-track CDF backgrounds used for\n"
             "percentile-normalised variant scoring. Each oracle stores one\n"
-            "NPZ file (<data-dir>/backgrounds/{oracle}_pertrack.npz) with\n"
+            f"NPZ file ({_BG_DIR}/" "{oracle}_pertrack.npz) with\n"
             "effect, summary, and per-bin CDFs for every track."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,

@@ -12,6 +12,8 @@ click>=8.0
 pygenometracks>=3.8
 fastmcp>=3.0
 huggingface_hub>=0.20.0
+pyyaml>=5.4  # chorus/core/environment/manager.py imports yaml at module level
+requests>=2.25  # chorus/utils/annotations.py imports requests at module level
 
 # Note: Oracle-specific dependencies are installed in separate environments
 # See environments/ directory for oracle-specific requirements

@@ -110,9 +110,12 @@ for o in ["alphagenome", "enformer", "borzoi", "chrombpnet", "sei", "legnet"]:
     n = download_pertrack_backgrounds(o)
     print(f"{o}: {n} files downloaded")
 
-# Confirm cache landed in <data-dir>/backgrounds/
+# Confirm the cache landed in the resolved backgrounds dir (the install tree by
+# default, NOT ~/.chorus — ask the resolver rather than hardcoding a path).
 import os
-print(sorted(os.listdir(os.path.expanduser("<data-dir>/backgrounds/"))))
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
+print(CHORUS_BACKGROUNDS_DIR)
+print(sorted(os.listdir(CHORUS_BACKGROUNDS_DIR)))
 ```
 
 ## 2.2 End-to-end percentile lookup for each oracle
@@ -210,7 +213,7 @@ kill $MCP_PID 2>/dev/null
 
 ## 5.2 Set up Claude Code MCP integration
 ```bash
-claude mcp add chorus -- mamba run -n chorus chorus-mcp
+claude mcp add -s user chorus -- mamba run -n chorus chorus-mcp
 ```
 
 Then in a Claude Code session (`claude` from the chorus repo dir),
@@ -378,7 +381,7 @@ mamba run -n chorus-chrombpnet python scripts/build_backgrounds_chrombpnet.py \
     --n-tss 5 --n-gene-body 5 --reservoir-size 100 --n-cdf-points 100 2>&1 | tail -20
 ```
 
-Verify a `*_interim_variants.npz` file shows up in `<data-dir>/backgrounds/`.
+Verify a `*_interim_variants.npz` file shows up in the resolved backgrounds dir (`chorus config data-dir`).
 
 ---
 
