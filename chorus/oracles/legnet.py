@@ -26,6 +26,9 @@ LEGNET_MODELS_DIR.mkdir(exist_ok=True, parents=True)
 class LegNetOracle(OracleBase):
     """LegNet oracle implementation for sequence regulatory activities."""
 
+    #: Weights are trained on GRCh38. Enforced, not assumed -- see #124.
+    training_genome = "hg38"
+
     def __init__(self, 
                  cell_type: str = 'HepG2',
                  assay: str = 'LentiMPRA',

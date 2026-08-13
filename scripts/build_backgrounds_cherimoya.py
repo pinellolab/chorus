@@ -77,6 +77,7 @@ from chorus.analysis.background_sampling import (
     sampling_block,  # noqa: E402
     ReservoirSampler,
     StagedSamples,
+    require_reference_assembly,
 )
 
 parser = argparse.ArgumentParser()
@@ -557,6 +558,10 @@ def build(do_variants: bool, do_baselines: bool):
 
     from chorus.oracles.cherimoya import CherimoyaOracle
 
+    # --reference is user-supplied, so this is the one builder where the wrong
+    # assembly is a plausible typo rather than a code change.
+    require_reference_assembly(args.reference, CherimoyaOracle,
+                               label="cherimoya background")
     ref = pysam.FastaFile(args.reference)
     specs = enumerate_tracks()
     n_tracks = len(specs)

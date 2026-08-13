@@ -5,6 +5,7 @@ from ..core.result import OraclePrediction, OraclePredictionTrack
 from ..core.track import Track
 from ..core.interval import Interval, GenomeRef, Sequence
 from ..core.exceptions import ModelNotLoadedError
+from ..utils.genome import require_human_organism
 
 from typing import List, Tuple, Union, Optional, Dict, Any
 import contextlib
@@ -30,6 +31,9 @@ class AlphaGenomeOracle(OracleBase):
     available tracks.
     """
 
+    #: Weights are trained on GRCh38. Enforced, not assumed -- see #124.
+    training_genome = "hg38"
+
     def __init__(
         self,
         use_environment: bool = True,
@@ -54,7 +58,10 @@ class AlphaGenomeOracle(OracleBase):
         self.target_length = 1_048_576    # single bp resolution output
         self.bin_size = 1                 # default (most modalities are 1bp)
         self.fold = fold
-        self.organism = organism
+        # Validated rather than stored-and-ignored: the metadata loader hardcodes
+        # Organism.HOMO_SAPIENS, so a non-human value used to buy human
+        # predictions under a mouse label (#124).
+        self.organism = require_human_organism(organism, oracle="AlphaGenomeOracle")
 
         # Model state
         self._model = None

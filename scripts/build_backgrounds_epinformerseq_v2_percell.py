@@ -139,7 +139,14 @@ def one_hot(seq):
 
 def sample_positions():
     import pysam
-    ref = pysam.FastaFile(os.path.join(REPO_ROOT, "genomes", "hg38.fa"))
+
+    from chorus.analysis.background_sampling import require_reference_assembly
+    from chorus.oracles.epinformerseq import EPInformerSeqOracle
+
+    ref_path = os.path.join(REPO_ROOT, "genomes", "hg38.fa")
+    require_reference_assembly(ref_path, EPInformerSeqOracle,
+                               label="epinformerseq background (positions)")
+    ref = pysam.FastaFile(ref_path)
 
     random.seed(789)
     chroms = [f"chr{i}" for i in range(1, 23)]
@@ -349,7 +356,13 @@ def build_variant_backgrounds():
     n_tracks = len(cells) * n_assays
     track_ids = [f"{a}:{c}" for c in cells for a in ASSAYS]
 
-    ref = pysam.FastaFile(os.path.join(REPO_ROOT, "genomes", "hg38.fa"))
+    from chorus.analysis.background_sampling import require_reference_assembly
+    from chorus.oracles.epinformerseq import EPInformerSeqOracle
+
+    ref_path = os.path.join(REPO_ROOT, "genomes", "hg38.fa")
+    require_reference_assembly(ref_path, EPInformerSeqOracle,
+                               label="epinformerseq background")
+    ref = pysam.FastaFile(ref_path)
     rng = random.Random(42)
     chroms = [f"chr{i}" for i in range(1, 23)]
     # EPInformer-seq predicts enhancer activity from DNase and H3K27ac, so a

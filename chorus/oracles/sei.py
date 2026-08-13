@@ -28,6 +28,9 @@ SEI_MODELS_DIR.mkdir(exist_ok=True, parents=True)
 
 class SeiOracle(OracleBase):
     """Sei oracle implementation for sequence regulatory activities."""
+
+    #: Weights are trained on GRCh38. Enforced, not assumed -- see #124.
+    training_genome = "hg38"
     
     def __init__(self, 
                  step_size: int = SEI_DEFAULT_STEP,

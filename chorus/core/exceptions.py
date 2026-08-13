@@ -57,6 +57,29 @@ class ReferenceAlleleMismatchError(ChorusError, ValueError):
     pass
 
 
+class GenomeAssemblyMismatchError(ChorusError, ValueError):
+    """A reference FASTA is not the assembly the model was trained on.
+
+    Every shipped oracle is human hg38, and that is currently enforced *by
+    accident*: Enformer and Borzoi are human-only because someone selected
+    ``*_human_targets.txt``, and AlphaGenome because ``Organism.HOMO_SAPIENS``
+    is hardcoded in its metadata loader. Nothing connected any of those choices
+    to the FASTA the builders open, so nothing would have caught a future
+    ``*_mouse_targets.txt`` — and the one registry with no organism field at all
+    (ChromBPNet's hand-written accession dict) is exactly where it did go wrong:
+    33 mm10 models were scored against hg38 sequence using the hg38 DHS
+    vocabulary before #121 removed them.
+
+    Raised rather than warned because the output of scoring the wrong assembly
+    is not an error, it is a plausible number: mm10 chr1:1,000,000 exists in
+    hg38 too, so every coordinate resolves, every prediction returns, and the
+    only symptom is that the answer is about a different piece of DNA.
+
+    Inherits ``ValueError`` as well, matching :class:`InvalidRegionError`.
+    """
+    pass
+
+
 class FileFormatError(ChorusError):
     """Raised when a file format is invalid or unsupported."""
     pass

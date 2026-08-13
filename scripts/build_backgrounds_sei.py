@@ -123,7 +123,13 @@ def load_model_and_setup():
     logger.info("Model loaded in %.1f s, %d classes", time.time() - t0, len(class_names))
 
     import pysam
-    ref = pysam.FastaFile(os.path.join(REPO_ROOT, "genomes/hg38.fa"))
+
+    from chorus.analysis.background_sampling import require_reference_assembly
+    from chorus.oracles.sei import SeiOracle
+
+    ref_path = os.path.join(REPO_ROOT, "genomes/hg38.fa")
+    require_reference_assembly(ref_path, SeiOracle, label="sei background")
+    ref = pysam.FastaFile(ref_path)
 
     def one_hot_encode(seq):
         mapping = {'A': 0, 'C': 1, 'G': 2, 'T': 3}
