@@ -1291,15 +1291,9 @@ def _build_causal_igv(result: CausalResult) -> str:
         }],
     }]
 
-    igv_options = {
-        "genome": "hg38",
-        "locus": f"{chrom}:{min_pos}-{max_pos}",
-        "showRuler": True,
-        "showNavigation": True,
-        "showCenterGuide": True,
-        "roi": roi,
-        "tracks": tracks,
-    }
+    from ._igv_report import igv_browser_config
+
+    igv_options = igv_browser_config(f"{chrom}:{min_pos}-{max_pos}", tracks, roi)
 
     options_json = json_mod.dumps(igv_options, separators=(",", ":"))
 

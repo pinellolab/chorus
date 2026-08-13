@@ -24,10 +24,12 @@ logger = logging.getLogger(__name__)
 # fallback paths remain as secondary options in case a downstream
 # consumer stripped the static file from the wheel.
 #
-# Inlining the JS into every report makes the committed HTMLs
-# self-contained (viewable offline, through SSL-MITM proxies, on air-gapped
-# hosts). The CDN <script> fallback is the last resort and only triggers
-# when both the bundled copy and both network paths fail.
+# Inlining the JS removes the *library* from the report's network dependencies.
+# It does NOT make the report self-contained, which this comment used to claim:
+# the genome is a separate dependency, and see igv_reference_config below for
+# what is now bundled and the one resource that cannot be. The CDN <script>
+# fallback is the last resort and only triggers when both the bundled copy and
+# both network paths fail.
 _IGV_CDN = "https://cdn.jsdelivr.net/npm/igv@3.1.1/dist/igv.min.js"
 _IGV_LOCAL = CHORUS_LIB_DIR / "igv.min.js"
 _IGV_BUNDLED = Path(__file__).parent / "static" / "igv.min.js"
@@ -36,6 +38,229 @@ _IGV_BUNDLED = Path(__file__).parent / "static" / "igv.min.js"
 # urllib is blocked by a MITM proxy.
 _IGV_HF_REPO = "lucapinello/chorus-backgrounds"
 _IGV_HF_FILENAME = "igv.min.js"
+
+# ----------------------------------------------------------------------
+# The genome reference (#139)
+# ----------------------------------------------------------------------
+# `genome: "hg38"` is a *registry lookup*, not a genome. igv.js resolves the
+# string against its hosted catalogue, which means every shipped report used to
+# open six remote resources across two hosts:
+#
+#     igv.org/genomes/genomes.json                     the catalogue
+#     igv.org/genomes/data/hg38/hg38_alias.tab         chromosome aliases
+#     hgdownload.soe.ucsc.edu .../hg38.chrom.sizes     chromosome lengths
+#     hgdownload.soe.ucsc.edu .../cytoBandIdeo.txt.gz  the ideogram
+#     hgdownload.soe.ucsc.edu .../ncbiRefSeq.txt.gz    the gene track
+#     hgdownload.soe.ucsc.edu .../hg38.2bit            the sequence (ranged)
+#
+# Measured: 14 requests per report, and the catalogue fetch is FATAL — with the
+# network blocked the panel does not degrade, it never appears, dying on
+# `Error accessing resource: https://igv.org/genomes/genomes.json`. So the
+# docstring above claiming air-gapped viewability was false in the strongest way.
+#
+# Four of those six are replaced by inline data, the fifth (the gene track) by
+# features read from chorus's own GENCODE annotation, and the catalogue lookup
+# disappears with `loadDefaultGenomes: false`. Measured effect on one report:
+# 14 requests across 2 hosts -> 9 across 1, and 10.5 s to paint -> 2.3 s.
+#
+# THE SEQUENCE CANNOT BE BUNDLED, and that is a property of igv.js rather than a
+# decision. Every version requires a sequence source: omit it and 3.1.1 dies in
+# `Ec.loadAll` on `undefined.startsWith`, while 3.8.5 dies on "url must be either
+# a 'File', 'string', 'function', or 'Promise'". A data: URI does not work
+# either -- igv decodes data URIs inline and treats them as a NON-indexed FASTA,
+# taking chromosome lengths from the body, so a stub declaring real lengths in its
+# .fai renders an ideogram and ruler that look perfect while every feature track
+# silently draws nothing (measured: 3 of 5 canvases painted against 5 of 5 with a
+# real reference). hg38 is 3 GB, so inlining the real thing is not an option.
+#
+# A site that needs true offline use must therefore serve the 2bit itself and
+# point CHORUS_IGV_SEQUENCE_URL at it; that is the only remaining fetch.
+_UCSC_HG38_2BIT = "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.2bit"
+
+#: UCSC's hg38 ideogram table, primary chromosomes only, vendored at 6.1 kB.
+#:
+#: Serves double duty: igv.js draws the ideogram from it, and the per-chromosome
+#: maximum band end IS the chromosome length (verified against the FASTA index:
+#: chr1 248,956,422 both ways), so one asset replaces both the cytoband and the
+#: chrom.sizes fetch.
+_CYTOBAND_BUNDLED = Path(__file__).parent / "static" / "cytoBandIdeo_hg38.txt.gz"
+
+
+def _data_uri(text: str) -> str:
+    """A ``data:`` URL igv.js can load without touching the network."""
+    import base64
+
+    return "data:text/plain;base64," + base64.b64encode(text.encode()).decode("ascii")
+
+
+def _cytoband_table() -> "tuple[str, str] | None":
+    """``(cytoband text, chrom.sizes text)`` from the vendored table, or None.
+
+    Returns None rather than raising if the asset was stripped from the wheel, so a
+    report still renders — falling back to the registry lookup, which is worse but
+    working. The failure this protects against is a packaging accident, not a bug.
+    """
+    if not _CYTOBAND_BUNDLED.exists():
+        logger.warning(
+            "%s is missing, so the report will resolve its genome through igv.org's "
+            "catalogue instead of the bundled tables (six remote fetches, fatal with "
+            "no network). Reinstall chorus to restore it.", _CYTOBAND_BUNDLED,
+        )
+        return None
+    import gzip
+
+    with gzip.open(_CYTOBAND_BUNDLED, "rt") as fh:
+        cyto = fh.read()
+    ends: dict[str, int] = {}
+    for line in cyto.splitlines():
+        parts = line.split("\t")
+        if len(parts) >= 3:
+            ends[parts[0]] = max(ends.get(parts[0], 0), int(parts[2]))
+    sizes = "".join(f"{c}\t{n}\n" for c, n in ends.items())
+    return cyto, sizes
+
+
+def igv_reference_config(sequence_url: str | None = None) -> dict | None:
+    """An explicit inline reference, or None to fall back to the registry lookup.
+
+    Everything igv.js needs about hg38 except the sequence itself: chromosome
+    names and lengths, and the ideogram, both from one vendored 6.1 kB table and
+    both passed as ``data:`` URLs so they cost no round-trip. See the block comment
+    above for what this replaces, what it measured, and why the sequence is the one
+    piece that has to stay remote.
+
+    *sequence_url* overrides where the sequence comes from;
+    ``CHORUS_IGV_SEQUENCE_URL`` does the same by environment. That is the hook for
+    an air-gapped site, and it accepts a **FASTA** as well as a 2bit precisely
+    because every chorus install already downloads ``hg38.fa`` — serve the genomes
+    directory over HTTP and reports need no internet at all:
+
+        python -m http.server -d "$(chorus config data-dir --show)/genomes" 8000
+        export CHORUS_IGV_SEQUENCE_URL=http://localhost:8000/hg38.fa
+
+    A ``file://`` path does **not** work, and that is a browser rule rather than a
+    chorus limitation: a page opened from disk may not read sibling files, so the
+    sequence has to be served.
+    """
+    import os
+
+    tables = _cytoband_table()
+    if tables is None:
+        return None
+    cyto, sizes = tables
+    url = sequence_url or os.environ.get("CHORUS_IGV_SEQUENCE_URL") or _UCSC_HG38_2BIT
+    reference = {
+        "id": "hg38",
+        "name": "Human (GRCh38/hg38)",
+        "cytobandURL": _data_uri(cyto),
+        "chromSizesURL": _data_uri(sizes),
+    }
+    # The only remote resource left, and igv.js requires one; see above. A FASTA
+    # needs its index named too, since igv reads lengths and offsets from the .fai
+    # rather than parsing the whole file.
+    if url.endswith(".2bit"):
+        reference["twoBitURL"] = url
+    else:
+        reference["fastaURL"] = url
+        reference["indexURL"] = url + ".fai"
+    return reference
+
+
+def igv_browser_config(
+    locus: str,
+    tracks: list,
+    roi: list | None = None,
+    *,
+    genome: str = "hg38",
+    gene_track: bool = True,
+) -> dict:
+    """Assemble the ``igv.createBrowser`` config, one place for all three reports.
+
+    ``_igv_report``, ``multi_oracle_report`` and ``causal`` each built this dict
+    themselves, which is how the pooling defect shipped: three copies of the same
+    thing, one of them patched. Anything genome-related belongs here now.
+
+    Falls back to the bare ``genome`` string only when the bundled tables are
+    unavailable, so a stripped install degrades to the old behaviour instead of
+    rendering nothing.
+    """
+    reference = igv_reference_config() if genome == "hg38" else None
+    config: dict = {
+        "locus": locus,
+        "showRuler": True,
+        "showNavigation": True,
+        "showCenterGuide": True,
+        "roi": roi or [],
+        "tracks": list(tracks),
+    }
+    if reference is None:
+        config["genome"] = genome
+        return config
+    config["reference"] = reference
+    # Skip igv.org's catalogue fetch entirely. Without this the reference above is
+    # still honoured but the catalogue is loaded first regardless -- and that fetch
+    # is the one that makes an offline load fatal.
+    config["loadDefaultGenomes"] = False
+    if gene_track:
+        track = _gencode_track_for_window(locus)
+        if track is not None:
+            config["tracks"].append(track)
+    return config
+
+
+def _gencode_track_for_window(locus: str) -> dict | None:
+    """An inline gene track for *locus*, from chorus's own GENCODE annotation.
+
+    The registry-supplied genome came with UCSC's ``ncbiRefSeq`` track, so dropping
+    the registry drops the gene track with it -- and a locus panel without genes is
+    a real loss, not a cosmetic one. This replaces it with GENCODE v48 (what chorus
+    already uses for every gene lookup, so the report agrees with the numbers beside
+    it), scoped to the drawn window and inlined as features.
+
+    Returns None when the annotation is not on disk. Report generation must not fail
+    for want of a gene track; it warns and ships the signal tracks.
+    """
+    try:
+        chrom, span = locus.split(":")
+        start, end = (int(x.replace(",", "")) for x in span.split("-"))
+    except (ValueError, AttributeError):
+        return None
+    try:
+        from chorus.utils.annotations import get_genes_in_region
+
+        genes = get_genes_in_region(chrom, start, end)
+    except Exception as exc:                       # annotation absent or unreadable
+        logger.info("No inline gene track (%s: %s); the panel will show signal only.",
+                    type(exc).__name__, exc)
+        return None
+    if genes is None or len(genes) == 0:
+        return None
+
+    features = []
+    for _, g in genes.iterrows():
+        name = g.get("gene_name") or g.get("gene_id")
+        if not name:
+            continue
+        features.append({
+            "chr": chrom,
+            "start": int(g["start"]) - 1,          # GTF is 1-based inclusive
+            "end": int(g["end"]),
+            "name": str(name),
+            "strand": str(g.get("strand") or "."),
+        })
+    if not features:
+        return None
+    logger.info("Inlined %d GENCODE genes for %s", len(features), locus)
+    return {
+        "name": "Genes (GENCODE v48)",
+        "type": "annotation",
+        "format": "annotation",
+        "displayMode": "COLLAPSED",
+        "color": "rgb(0, 0, 150)",
+        "height": 60,
+        "order": 10_000,                           # keep it under the signal tracks
+        "features": features,
+    }
 
 
 def _ensure_igv_local() -> Path | None:
@@ -925,15 +1150,7 @@ def build_igv_html(
     # Initial locus: full prediction window
     locus = f"{variant_chrom}:{pred_start}-{pred_end}"
 
-    igv_options = {
-        "genome": genome,
-        "locus": locus,
-        "showRuler": True,
-        "showNavigation": True,
-        "showCenterGuide": True,
-        "roi": roi,
-        "tracks": tracks,
-    }
+    igv_options = igv_browser_config(locus, tracks, roi, genome=genome)
 
     # Build HTML fragment
     options_json = json.dumps(igv_options, separators=(",", ":"))

@@ -6,7 +6,7 @@
 - **Oracle**: enformer
 - **Normalizer**: per-track background CDFs
 - **Tracks requested**: all Enformer tracks (discovery mode)
-- **Generated**: 2026-08-12 04:01 UTC
+- **Generated**: 2026-08-12 18:11 UTC
 
 ## Multi-Layer Variant Effect Report
 
@@ -22,7 +22,7 @@
 | Track | Ref | Alt | Effect | Effect %ile | Activity %ile | Interpretation |
 |---|---|---|---|---|---|---|
 | DNASE:fibroblast of lung | 0.838 | 7.73 | +2.247 | 0.9998 | 0.857 | Very strong opening |
-| DNASE:CD14-positive monocyte male adult (21 year) | 0.902 | 7.75 | +2.203 | 0.9997 | 0.860 | Very strong opening |
+| DNASE:CD14-positive monocyte male adult (21 year) | 0.902 | 7.75 | +2.202 | 0.9997 | 0.860 | Very strong opening |
 | DNASE:amniotic epithelial cell | 2.35 | 14.3 | +2.193 | 0.9997 | 0.898 | Very strong opening |
 | DNASE:fibroblast of villous mesenchyme | 2.01 | 11 | +1.997 | 0.9997 | 0.883 | Very strong opening |
 | DNASE:HL-60 | 1.69 | 9.52 | +1.969 | 0.9998 | 0.868 | Very strong opening |
@@ -41,9 +41,9 @@
 | CHIP:CEBPb:ChIP-seq, CEBPb_LowDensity_DMI / hMSC / Human Mesenchymal Stem Cells | 3.99 | 97.9 | +4.310 | ≥99th (1.03× null max) | 0.793 | Very strong binding gain |
 | CHIP:CEBPb:ChIP-seq, CEBPb_HighDensity_noDMI / hMSC / Human Mesenchymal Stem Cells | 7.06 | 106 | +3.729 | ≥99th (1.18× null max) | 0.744 | Very strong binding gain |
 | CHIP:CEBPB:IMR-90 | 10.4 | 140 | +3.632 | 0.9997 | 0.908 | Very strong binding gain |
-| CHIP:CEBPB:K562 | 12.1 | 148 | +3.507 | 0.9998 | 0.919 | Very strong binding gain |
+| CHIP:CEBPB:K562 | 12.1 | 148 | +3.506 | 0.9998 | 0.919 | Very strong binding gain |
 | CHIP:eGFP-CEBPB:K562 genetically modified using stable transfection | 7.61 | 85.2 | +3.323 | 0.9999 | 0.898 | Very strong binding gain |
-| CHIP:CEBPB:HepG2 | 15 | 146 | +3.198 | 0.9996 | 0.955 | Very strong binding gain |
+| CHIP:CEBPB:HepG2 | 15 | 146 | +3.197 | 0.9996 | 0.955 | Very strong binding gain |
 | CHIP:eGFP-CEBPG:K562 genetically modified using stable transfection | 6.86 | 54.8 | +2.827 | 0.9999 | 0.869 | Very strong binding gain |
 | CHIP:CEBPB:A549 | 12.3 | 90.4 | +2.786 | 0.9997 | 0.955 | Very strong binding gain |
 | CHIP:CEBPB:HepG2 | 15.5 | 108 | +2.722 | 0.9998 | 0.932 | Very strong binding gain |
@@ -57,7 +57,7 @@
 | CHIP:H3K27ac:liver female adult (25 years) | 77.6 | 225 | +1.524 | 0.9998 | 0.853 | Very strong mark gain |
 | CHIP:H3K27ac:liver male adult (31 year) | 92.5 | 259 | +1.477 | 0.9994 | 0.860 | Very strong mark gain |
 | CHIP:H3K27ac:heart left ventricle male adult (32 years) | 67.4 | 182 | +1.417 | 0.9997 | 0.873 | Very strong mark gain |
-| CHIP:H3K4me1:CD14-positive monocyte male adult (21 year) | 120 | 274 | +1.189 | 0.9966 | 0.891 | Very strong mark gain |
+| CHIP:H3K4me1:CD14-positive monocyte male adult (21 year) | 120 | 275 | +1.190 | 0.9966 | 0.891 | Very strong mark gain |
 | CHIP:H3K27ac:right lobe of liver female adult (53 years) | 158 | 344 | +1.118 | 0.9992 | 0.874 | Very strong mark gain |
 | CHIP:H3K4me1:CD14-positive monocyte female | 155 | 331 | +1.091 | 0.9960 | 0.897 | Very strong mark gain |
 | CHIP:H3K27ac:skeletal muscle tissue female adult (72 years) | 147 | 263 | +0.834 | 0.9990 | 0.881 | Very strong mark gain |
@@ -73,12 +73,12 @@
 | CAGE:Hepatocyte, — PSRC1 TSS | 6.83 | 9.73 | +0.454 | 0.9933 | 0.921 | Strong increase |
 | CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_ — variant site | 18.5 | 25.6 | +0.452 | 0.98 | 0.916 | Strong increase |
 | CAGE:hepatocellular carcinoma cell line: HepG2 ENCODE, biol_ — MYBPHL TSS | 40.1 | 51 | +0.340 | 0.98 | 0.926 | Strong increase |
-| CAGE:thalamus, adult, — MYBPHL TSS | 7.02 | 8.67 | +0.270 | 0.98 | 0.902 | Moderate increase |
-| CAGE:locus coeruleus, adult, — MYBPHL TSS | 5.89 | 7.19 | +0.248 | 0.97 | 0.886 | Moderate increase |
+| CAGE:thalamus, adult, — MYBPHL TSS | 7.02 | 8.67 | +0.269 | 0.98 | 0.902 | Moderate increase |
+| CAGE:locus coeruleus, adult, — MYBPHL TSS | 5.89 | 7.18 | +0.247 | 0.97 | 0.886 | Moderate increase |
 | CAGE:spinal cord, adult, — variant site | 15.2 | 18.2 | +0.244 | 0.98 | 0.926 | Moderate increase |
 | CAGE:globus pallidus, adult, — variant site | 27.2 | 32.3 | +0.243 | 0.98 | 0.927 | Moderate increase |
-| CAGE:substantia nigra, adult, — MYBPHL TSS | 7.13 | 8.61 | +0.241 | 0.98 | 0.903 | Moderate increase |
-| CAGE:substantia nigra, adult, — variant site | 30.2 | 35.8 | +0.237 | 0.98 | 0.928 | Moderate increase |
+| CAGE:substantia nigra, adult, — MYBPHL TSS | 7.13 | 8.6 | +0.240 | 0.98 | 0.903 | Moderate increase |
+| CAGE:substantia nigra, adult, — variant site | 30.2 | 35.7 | +0.237 | 0.98 | 0.928 | Moderate increase |
 | _…showing top 10 of 48 — see `example_output.json` for the full set_ | | | | | | |
 
 ---

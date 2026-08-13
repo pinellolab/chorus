@@ -1869,7 +1869,10 @@ def _render_track_figure(
                 'Ref signal in grey, alt signal in colour. '
                 'Red stripe marks the variant. '
                 'Zoom in/out and pan to explore. '
-                'Gene track (RefSeq) loaded automatically.</p>'
+                'Genes are GENCODE v48, bundled into this file for the window '
+                'shown (#139) — the same annotation the gene names above come '
+                'from. Only the reference sequence is fetched from UCSC, and '
+                'only if you zoom to base level.</p>'
             )
             if getattr(report, '_igv_truncated', 0):
                 parts.append(

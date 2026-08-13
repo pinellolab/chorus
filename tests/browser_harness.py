@@ -161,6 +161,7 @@ def render(
     path,
     *,
     block_external: bool = False,
+    allow_hosts: "tuple | None" = None,
     poll_ms: int = 500,
     timeout_s: float = 60.0,
 ) -> RenderResult:
@@ -169,6 +170,11 @@ def render(
     *block_external* aborts every non-``file:`` request, which is how the offline claim is
     tested: a report that needs the network renders differently, or not at all, with it cut.
     The URLs are still recorded, so a blocked run says what it *would* have fetched.
+
+    *allow_hosts* exempts specific hosts from that block, which is how a *self-hosted*
+    resource is tested — an air-gapped site serving its own reference is offline in every
+    sense that matters, and blocking localhost too would make that indistinguishable from
+    depending on the internet.
     """
     path = Path(path).resolve()
     result = RenderResult(path=path, mib=path.stat().st_size / (1024 * 1024),
@@ -186,7 +192,8 @@ def render(
                 route.continue_()
                 return
             result.external_urls.append(url)
-            route.abort() if block_external else route.continue_()
+            exempt = allow_hosts and urlparse(url).netloc in allow_hosts
+            route.abort() if (block_external and not exempt) else route.continue_()
 
         page.route("**/*", _record)
 
