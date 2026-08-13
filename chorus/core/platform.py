@@ -423,3 +423,37 @@ def adapt_environment_config(
     config["dependencies"] = new_deps
 
     return config, adaptation.post_install, adaptation.notes
+
+
+def resolve_visible_ordinal(device: str) -> str:
+    """Translate ``cuda:N`` into the CUDA_VISIBLE_DEVICES value that selects it.
+
+    ``cuda:N`` means "the Nth GPU **this process can see**". TensorFlow selects its device
+    through the mask rather than from a device string, so a TF caller has to write the mask
+    itself — and writing ``N`` into it is wrong whenever a mask is already set: under a
+    scheduler that granted ``CUDA_VISIBLE_DEVICES=4,5``, ``cuda:1`` means physical 5, while
+    ``CUDA_VISIBLE_DEVICES=1`` means physical 1, a device the caller was never given.
+
+    Audit F1 fixed this in the six oracle *templates* (the ``use_environment=True`` path).
+    The 2026-08-13 re-audit found the **direct** path still did it — and that path is the
+    `create_oracle` default. Hence one shared implementation instead of a seventh and eighth
+    copy of the arithmetic.
+
+    Raises ``ValueError`` if the ordinal is outside the visible set, because silently landing
+    somewhere else is the failure mode this exists to prevent.
+    """
+    import os
+
+    ordinal = device.split(":", 1)[1]
+    outer = os.environ.get("CUDA_VISIBLE_DEVICES")
+    if not outer:
+        return ordinal
+    visible = [x for x in outer.split(",") if x != ""]
+    try:
+        return visible[int(ordinal)]
+    except (ValueError, IndexError):
+        raise ValueError(
+            f"device={device!r} but only {len(visible)} GPU(s) are visible to this process "
+            f"(CUDA_VISIBLE_DEVICES={outer!r}). cuda:N indexes the devices you were "
+            f"granted, not physical ones."
+        )
