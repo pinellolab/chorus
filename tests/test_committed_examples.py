@@ -300,6 +300,13 @@ def test_example_is_reachable_from_a_generator(d: Path):
 # So this exists to catch a *pathology* — a payload that is redundant by
 # construction, like the 200x-expanded LegNet track — not to police size for
 # its own sake. Losing resolution to hit a number would be the wrong trade.
+#
+# It is also no longer the only thing standing between a bad report and a
+# release. `tests/test_committed_reports_render_in_a_browser.py` opens every
+# committed report in headless Chromium and asserts every canvas paints, which
+# is what a size ceiling was previously being asked to stand in for. Measured
+# there, the 25.7 MiB CDYL report loads in 11.3 s against 8.8 s for a 1.3 MiB
+# one — 20x the bytes for 1.3x the wait.
 _MAX_TRACKED_MIB = 50
 
 
