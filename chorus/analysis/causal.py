@@ -1299,10 +1299,11 @@ def _build_causal_igv(result: CausalResult) -> str:
 
     options_json = json_mod.dumps(igv_options, separators=(",", ":"))
 
-    # Prefer the locally-cached igv.min.js (populated on first report
-    # generation by _igv_report._ensure_igv_local) so the rendered HTML is
-    # self-contained offline. Fall back to the CDN tag if the cache is
-    # unavailable for any reason.
+    # Prefer the bundled/locally-cached igv.min.js (see
+    # _igv_report._ensure_igv_local) so the report does not fetch the LIBRARY at view
+    # time. That is all inlining the JS buys -- the reference sequence is still fetched
+    # (#139), so a report is not free of the network, which is what this comment used to
+    # assert. Falls back to a CDN tag if the cache is unavailable.
     from chorus.analysis._igv_report import _ensure_igv_local
     _local_igv = _ensure_igv_local()
     _igv_script_tag = (

@@ -25,7 +25,7 @@ report rendering and two real defects — see the banner on each entry.
 
   The two frameworks need different handling and that is the point: torch resolves the ordinal itself, so the assignment is gone; TensorFlow selects *through* the mask, so `cuda:N` is remapped by one shared `chorus.core.platform.resolve_visible_ordinal`, which raises naming what `N` indexes when it is out of range. Verified under `CUDA_VISIBLE_DEVICES=2,3`: `cuda:0` → physical 2, `cuda:1` → physical 3.
 
-  The direct path was missed by the first fix and by its own guard, which enumerated only `*_source/templates/*template.py` — the search was scoped to what the checklist item named rather than to the property. The guard now covers `chorus/oracles/*.py` too and is mutation-tested. The eight builders under `scripts/` were swept in the same pass and were already correct. Both halves are audit findings F1 and G1, in `audits/2026-08-12_post_v0.7.2_audit.md` and `audits/2026-08-13_v0.7.3_release_audit.md`. Six oracle templates set `CUDA_VISIBLE_DEVICES` straight from the ordinal. Under a scheduler that grants `CUDA_VISIBLE_DEVICES=4,5`, a request for `cuda:1` means "the second GPU I was granted" — physical 5 — and overwriting the mask sent the process to **physical GPU 1, somebody else's job**. Worse on the PyTorch side: Cherimoya's templates masked to `N` and then handed the same `cuda:N` string to torch, which indexes *within* the now-one-device visible set, so every ordinal but 0 died with `CUDA error: invalid device ordinal`. A documented parameter was simply broken.
+  The direct path was missed by the first fix and by its own guard, which enumerated only `*_source/templates/*template.py` — the search was scoped to what the checklist item named rather than to the property. The guard now covers `chorus/oracles/*.py` too and is mutation-tested. The eight builders under `scripts/` were swept in the same pass and were already correct. Both halves are audit findings F1 and G1, in `audits/2026-08-12_post_v0.7.2_audit.md` and `audits/2026-08-13_v0.7.3_release_audit.md`.
 
 - **`extract_sequence_with_padding` no longer returns a short sequence near a chromosome end.** Its wide-interval branch handed an out-of-bounds end straight to pysam, which clamps silently, and the metadata it returned hardcoded `leftN/rightN = 0` — reporting that no padding was needed. Measured on chr1: **2,114 bp requested 40 bp from the end returned 40 bp.** The narrow-interval branch always padded correctly, so the two disagreed about the same question; both are now pinned to agree. Sei reaches this path with `total_length=SEI_WINDOW`, so a short one-hot could reach the model. Audit F2.
 
@@ -882,7 +882,7 @@ HTML report generation with embedded IGV, and the `chorus` CLI
 
 ---
 
-[Unreleased]: https://github.com/pinellolab/chorus/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/pinellolab/chorus/compare/v0.7.3...HEAD
 [0.7.3]: https://github.com/pinellolab/chorus/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/pinellolab/chorus/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/pinellolab/chorus/compare/v0.7.0...v0.7.1
