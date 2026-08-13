@@ -545,6 +545,7 @@ Every one of these exists because something passed all the *other* checks.
 | `scope_violations` | a build covering far fewer tracks than the background it replaces | **preflight** |
 | `sampler_preflight` | a retention config that would thin the tail | **preflight** |
 | `abort_if_nothing_loads` | a per-track loader that has attempted 25 models and loaded none | build loop |
+| `test_count_head_copies_agree` | a builder and its oracle computing the count head differently. Feeds identical heads to every copy and compares outputs — including the torch path, which stays duplicated for speed, and the pre-extraction expressions verbatim | test |
 | `require_reference_assembly` | a builder opening a FASTA that is not the assembly its model was trained on. Checks the oracle's declared `training_genome` against the reference's chr1 length | **preflight**, all 8 builders |
 | `BackgroundGenomeMismatch` | an artefact declaring a genome chorus does not rank against. On the `BackgroundArtefactMismatch` contract, so it is **not** absorbed by `get_normalizer`'s legacy fallback | load time |
 | stratum-name `ValueError` | a stratum with no sampler branch | sampling |
@@ -586,6 +587,40 @@ Add an `assay_type` branch; do not invent a layer without a statistic.
 | a fixed short promoter window (MPRA) | `PROMOTER_REGION_STRATA` | a generic mixture would be mostly enhancers |
 | accessibility only, peak-centric | `random ∪ DHS-summit` (ChromBPNet/Cherimoya pattern) | assay-appropriate; do not "upgrade" it to the gene-anchored mix without measuring |
 | something else | **measure before choosing** — build two arms differing in one thing and compare p50/p90/p99/max per layer, as in §3.4 | every composition guess in this project that was not measured was wrong |
+
+### Step 2b — if it is a BPNet-family model, do NOT write the head arithmetic again
+
+A profile head plus a count head is four operations — centre the logits, softmax, invert the
+count head, scale — and they live in exactly one place:
+[`chorus/core/count_head.py`](../chorus/core/count_head.py). Call
+`expected_counts_profile(logits, log_counts, n_tracks=...)` from both the oracle and the
+builder. Do not reimplement it, and in particular do not reach for a bare `expm1`.
+
+**The rule this enforces: a CDF is only meaningful if it was built from the quantity
+`predict()` returns.** If the builder and the oracle combine the heads differently, every
+percentile that oracle produces is ranked against a distribution of something else — and it
+will look completely normal. That is not hypothetical; three separate defects in this project
+were two copies of these four operations disagreeing:
+
+| what disagreed | what it cost |
+|---|---|
+| `exp` vs `expm1` on the count head, four call sites, fixed one at a time | +1 read — ~0.1% at a peak, up to **100%** at a quiet site, which is the regime a null is built from |
+| per-strand vs one joint softmax over the flattened both-strand vector | the two emitted tracks together claimed **2.00x** the predicted counts |
+| a count bias hardcoded `(N, 1)` where the model declares `(None, 2)`, silently broadcast by Keras | every predicted log-count shifted by 0.5885 — 1.80x low at a peak, 3.04x at a quiet site |
+
+**The count head has three conventions and they are not interchangeable.** Get this from the
+model's training target, not from a sibling oracle:
+
+| convention | inverse | who |
+|---|---|---|
+| `log1p` per track | `expm1(C)` | ChromBPNet ATAC/DNASE, CATv1 — 1,560 tracks |
+| `log1p` per track, pooled across a task's tracks with `logsumexp` | `exp(C) - n_tracks` | BPNet CHIP — 744 models |
+| `log10` | `10 ** C` | EPInformer-seq |
+
+EPInformer-seq is deliberately **not** routed through the shared helper for that reason: at a
+log-count of 2.5 the log10 and log1p conventions differ by **26x**, so "unifying" them would
+silently rescale every value. `tests/test_count_head_copies_agree.py` pins that distinction
+along with the equivalences.
 
 ### Step 3 — baseline region set
 
@@ -729,6 +764,7 @@ guessed at.
 | 2026-08-12 | Cherimoya default fold 0, with a second null for the ensemble | folds disagree 2.02x on the same sequence, so one null cannot rank the other's predictions; fold 0 matches ChromBPNet's default, making percentiles comparable (0.9325 vs 0.9550). Agreed with CATv1's author |
 | 2026-08-12 | ChromBPNet↔Cherimoya compared at percentile level only | CATv1 has no bias model (`n_control_tracks: 0`, `controls = None`); it tracks bias-*aware* ChromBPNet at 1.02x on peak and differs from `chrombpnet_nobias` by 3.40x |
 | 2026-08-11 | the trigger is **not** a genome-wide CDF statistic | all four candidates overlap between must-change and must-not-move; `max/p99.9 > 50` would have log-scaled 130 tracks: 102 ChromBPNet ChIP, 10 Enformer + 8 Borzoi CAGE, 7 AlphaGenome TF-ChIP, 2 ChromBPNet DNase, 1 Cherimoya DNase. `CHIP:K562:ZBTB11`, which that statistic ranked above CAGE, measures 0.000 saturation as drawn |
+| 2026-08-13 | the BPNet-family count-head arithmetic has **one** implementation (`chorus/core/count_head.py`), shared by the oracles and the builders | it existed in five places and all three of the 2026-07-31 defects were two copies disagreeing (exp vs expm1 at four sites; per-strand vs joint softmax, 2.00x; a broadcast count bias, 0.5885 shift). Extraction verified **bit-identical** — the pre-extraction expressions compared with `array_equal`, not `allclose`, in float32 and float64 — and the two examples that exercise it regenerated to timestamp-only diffs. The torch builder path stays duplicated for accelerator speed, with equivalence pinned at 1.25e-07 |
 | 2026-08-12 | the assembly is **checked**, not inherited from a filename | human-only held by accident: Enformer/Borzoi via `*_human_targets.txt`, AlphaGenome via a hardcoded `HOMO_SAPIENS`, ChromBPNet via nothing — which is why 33 mm10 models were scored against hg38 sequence (#121). `build_config.genome` was itself a literal in the stamper, so the field restated an assumption; it is now read off the FASTA. No artefact changed: all nine already said `hg38`, and all nine are |
 | 2026-08-09 | activity population **recorded per builder** (three mixtures), not harmonised to one | harmonising means rebuilding five backgrounds, and the three mixtures are 29,500 / 31,500 / 34,500 positions — a composition change, so §9's two-arm rule applies. Recording it is free and makes the difference legible; the stamp had asserted one 31,500-position set for all eight, false for five |
 
