@@ -519,9 +519,14 @@ class ChromBPNetOracle(OracleBase):
                     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
                     logger.info("Forcing CPU usage")
                 elif self.device.startswith('cuda:'):
-                    gpu_id = self.device.split(':')[1]
+                    # Remapped through any mask already set, not overwritten: cuda:N is
+                    # the Nth device THIS process can see. The templates were fixed for
+                    # this (audit F1); the direct path -- which is the create_oracle
+                    # default -- was missed until the 2026-08-13 re-audit.
+                    from ..core.platform import resolve_visible_ordinal
+                    gpu_id = resolve_visible_ordinal(self.device)
                     os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
-                    logger.info(f"Using GPU {gpu_id}")
+                    logger.info("Using GPU %s (requested %s)", gpu_id, self.device)
                 elif self.device in ['cuda', 'gpu']:
                     logger.info("Using default GPU")
             else:
