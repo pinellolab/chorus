@@ -80,18 +80,27 @@ def test_transform_round_trips_log1p(count):
     numpy.testing.assert_allclose(_profile(out).sum(), count, atol=1e-8)
 
 
-def test_predict_sliding_inverts_counts_with_expm1():
+def test_predict_sliding_inverts_counts_through_the_shared_helper():
     """Guard the sliding-window site, which needs a live TF model to hit.
 
-    ``predict_sliding`` scales its softmaxed profile by the count head
-    inside a batch loop, so a behavioural test would require TensorFlow
-    plus weights.  Assert on the source instead: the profile softmax
-    legitimately uses ``np.exp``, the count inversion must not.
+    ``predict_sliding`` scales its softmaxed profile by the count head inside a batch loop,
+    so a behavioural test would require TensorFlow plus weights. Assert on the source
+    instead.
+
+    This used to require the literal ``np.expm1(counts[b][0])``, which is a check on the
+    *spelling* of the arithmetic rather than on the arithmetic — so extracting the four
+    operations into ``chorus.core.count_head`` (#125) broke it while computing exactly the
+    same numbers. What matters is that the site does not invert the count head by hand;
+    ``tests/test_count_head_copies_agree.py`` is where the numbers are compared.
     """
     src = inspect.getsource(ChromBPNetOracle.predict_sliding)
 
-    assert "np.expm1(counts[b][0])" in src
-    assert "np.exp(counts" not in src
+    assert "expected_counts_profile" in src or "_counts_from_log" in src, (
+        "the sliding path must route the count inversion through chorus.core.count_head"
+    )
+    assert "np.expm1(" not in src and "np.exp(counts" not in src, (
+        "the sliding path is inverting the count head inline again"
+    )
 
 
 def test_builder_and_oracle_invert_counts_identically():
@@ -104,17 +113,26 @@ def test_builder_and_oracle_invert_counts_identically():
     """
     builder_src = BUILDER.read_text()
 
-    # Single-track models keep expm1; multi-track subtract n_strands. A bare
-    # exp(counts) with nothing subtracted would be upstream's own predict.py
-    # bug (off by +n_tracks), so require the guarded form.
-    assert "np.expm1(counts[:, 0:1]) if n_strands == 1" in builder_src
-    assert "np.exp(counts[:, 0:1]) - n_strands" in builder_src
+    # Single-track models keep expm1; multi-track subtract n_strands. A bare exp(counts)
+    # with nothing subtracted would be upstream's own predict.py bug (off by +n_tracks).
+    # Since #125 both sides get that from one function rather than two matching literals,
+    # so require the call and check the closed form where it now lives.
+    assert "expected_counts_profile" in builder_src
+    assert "n_tracks=n_strands" in builder_src, (
+        "the builder must pass the strand count through, or two-track CHIP models get "
+        "expm1 and keep one read of inflation"
+    )
 
     oracle_src = Path(inspect.getfile(ChromBPNetOracle)).read_text()
-    # The oracle routes every inversion through the shared helper rather than
-    # inlining exp/expm1 at each call site.
+    # The oracle routes every inversion through the shared helper rather than inlining
+    # exp/expm1 at each call site. The closed form itself now lives in
+    # chorus/core/count_head.py (#125), so assert it where it is rather than where it was.
     assert "_counts_from_log" in oracle_src
-    assert "np.exp(counts) - n_tracks" in oracle_src
+    from chorus.core import count_head
+
+    helper_src = Path(inspect.getfile(count_head)).read_text()
+    assert "np.exp(counts) - n_tracks" in helper_src
+    assert "np.expm1(counts)" in helper_src
 
 
 # ── CHIP two-strand handling ─────────────────────────────────────────
@@ -230,14 +248,30 @@ def test_chip_strand_split_respects_asymmetric_logits():
 def test_builder_uses_the_same_joint_softmax_as_the_oracle():
     """A CDF is only meaningful if built from what predict() returns.
 
-    The builder used to sum the strand logits before one softmax — a
-    different quantity from either strand, and sequence-dependently so.
+    The builder used to sum the strand logits before one softmax — a different quantity from
+    either strand, and sequence-dependently so.
+
+    Since #125 the builder and the oracle call **the same function**, which is a stronger
+    guarantee than these greps could give: they used to check that two files spelled the
+    arithmetic the same way, which is exactly the check ``exp`` vs ``expm1`` slipped past
+    four times. The numbers are compared in
+    ``tests/test_count_head_copies_agree.py::test_the_chrombpnet_builder_agrees_with_the_oracle``.
     """
     builder_src = BUILDER.read_text()
 
-    assert "probabilities.sum(axis=-1)" not in builder_src
-    assert "length * n_strands" in builder_src
-    assert "for strand in range(" in builder_src
+    assert "probabilities.sum(axis=-1)" not in builder_src, (
+        "the builder is summing strand logits again -- a quantity the oracle never emits"
+    )
+    assert "expected_counts_profile" in builder_src, (
+        "the builder must route the profile arithmetic through chorus.core.count_head"
+    )
+    from chorus.core import count_head
+
+    helper_src = Path(inspect.getfile(count_head)).read_text()
+    assert "reshape(values.shape[0], -1)" in helper_src, (
+        "the shared helper no longer flattens before the softmax, so the strands no longer "
+        "share one distribution"
+    )
 
 
 # ── BPNet bias-input shapes ──────────────────────────────────────────
