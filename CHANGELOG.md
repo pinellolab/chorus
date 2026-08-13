@@ -160,11 +160,36 @@ report rendering and two real defects — see the banner on each entry.
 ### Known limitations
 
 - **The `SORT1_enformer` example cannot be regenerated reproducibly.** Two runs of identical code
-  differ by 400 values at a 0.0159% median, while Enformer's forward pass is bitwise identical
-  in-process *and* across processes — so the cause is above the model and is not localised. A diff
-  on that one example after an unrelated change is expected to show ~400 moved values.
-  `scripts/gate_end_to_end_determinism.py` cannot catch it, because what it compares is
-  deterministic. Measured in `audits/2026-08-12_post_v0.7.2_audit.md` (F8).
+  differ in **596 numeric fields** at a 0.0159% median (`ref_value` max 0.067%, `raw_score` max
+  4.29% where log2FC amplifies a near-zero denominator). That is **~298 distinct values**, not 596:
+  each track is serialised twice, once under `all_scores` and once under `scores_by_layer`. Of the
+  file's 845 numeric leaves, that is most of them. Enformer's forward pass is bitwise identical
+  in-process *and* across processes, so the cause is above the model and is still not localised.
+  Measured in `audits/2026-08-12_post_v0.7.2_audit.md` (F8); narrowed further in
+  `audits/2026-08-14_f8_localisation.md`.
+
+  **It is intermittent, which is why it looked contradictory.** Four pairs of consecutive
+  `use_environment=True` `predict()` calls over the same region: three pairs bitwise identical, one
+  pair differing in 3,583 of 3,584 values. That reconciles "the forward pass is bitwise identical
+  across processes" with "regenerations keep differing" — both are true, and a single clean probe is
+  not evidence of determinism at this failure rate. Anyone chasing it further must run each
+  configuration **several times and report a rate**; a one-shot comparison confirms whichever answer
+  the experimenter expects about three times in four.
+
+  Two things about it are now pinned rather than assumed. **The top-N cutoff is a discontinuous
+  amplifier:** `discover_variant_effects` cuts hard at `top_n_per_layer`, and the gap at
+  `tf_binding`'s cutoff in the committed example is **4.25%** — smaller than the 4.29% drift
+  measured on `raw_score` — so a wobble that size can change *which track ships*, presenting as a
+  large diff rather than a small one. **The percentile tie-break is not the mechanism:** its
+  blake2b draw is keyed on the raw value, so a 1-ULP change could in principle re-hash across a
+  whole tied run, but measured on all 84 committed tracks, **0** change rank under
+  `np.nextafter`.
+
+  `scripts/gate_end_to_end_determinism.py` does not catch it — but not because "what it compares is
+  deterministic", as this entry previously said. The gate *is* cross-process (it spawns two
+  children); it is pointed at **AlphaGenome with `use_environment=False`** and compares numeric
+  leaves only. It now takes `--oracle enformer` and reports string changes too, so a top-N
+  *identity* flip is named as such instead of masquerading as numeric drift.
 - **A report still fetches one thing from the internet: the reference sequence.** Every igv.js
   version requires a sequence source and hg38 is 3 GB, so it cannot be bundled. Everything else is
   inline. Point `CHORUS_IGV_SEQUENCE_URL` at a self-hosted copy served **same-origin** with the
