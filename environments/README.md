@@ -3,15 +3,24 @@
 This directory contains conda environment definitions for each oracle in the Chorus library. Each oracle runs in its own isolated environment to avoid dependency conflicts.
 
 > **Which env file should I use?** The root `environment.yml` (at the top of the
-> repo) is the one used by the install instructions in the main `README.md` —
-> it adds matplotlib/seaborn/jupyter on top of the minimal `chorus-base.yml`
-> here, so notebooks work out of the box. The `chorus-{oracle}.yml` files in
-> this directory are installed automatically by `chorus setup --oracle {name}`
-> and you should not need to touch them directly.
+> repo) — it is the only one the install instructions in the main `README.md` use,
+> and it is what `chorus setup` builds the base env from. The
+> `chorus-{oracle}.yml` files in this directory are installed automatically by
+> `chorus setup --oracle {name}` and you should not need to touch them directly.
+>
+> **`chorus-base.yml` is vestigial — do not install it.** Nothing reads it:
+> `EnvironmentManager` explicitly *excludes* it when enumerating oracle envs
+> (`chorus/core/environment/manager.py:129`), and `tests/test_core.py:393` asserts
+> that exclusion. It is also **not** a subset of the root `environment.yml` — it
+> declares `coolbox`, `h5py`, `pyyaml`, `setuptools` and `wheel`, which the root
+> file does not, while the root file adds `click`, `samtools`, `htslib`,
+> `pygenometracks`, `pillow` and `huggingface_hub`, which it does not. Worse, both
+> files declare `name: chorus`, so creating an env from this one **collides with
+> the documented base env**.
 
 ## Environment Files
 
-- `chorus-base.yml`: Minimal base environment (used by `chorus setup` internals — the root `environment.yml` is a superset for general use)
+- `chorus-base.yml`: **unused / vestigial** — no code reads it, and it collides with the root `environment.yml` on the env name `chorus`. Use the root `environment.yml` instead (see the note above)
 - `chorus-enformer.yml`: Environment for Enformer (TensorFlow-based)
 - `chorus-borzoi.yml`: Environment for Borzoi (PyTorch-based)
 - `chorus-chrombpnet.yml`: Environment for ChromBPNet (TensorFlow-based)
@@ -98,7 +107,19 @@ adaptation system (CUDA is not available on Mac).
 ## HuggingFace Access
 
 Most oracles and all background distributions are **publicly available** and
-require no HuggingFace account.
+require no HuggingFace account — but the **default `chorus setup` still needs a
+token**, because it sets up AlphaGenome along with everything else and resolves
+the token up front. Without one it logs
+`a working HuggingFace token is required for AlphaGenome. Nothing was downloaded.`
+and exits 1 **before building any environment**, so the eight token-free oracles
+are not installed either.
+
+Two ways round it if you do not want an account:
+
+```bash
+chorus setup --oracle enformer     # per-oracle setup only gates for alphagenome
+chorus setup --no-weights          # skip the weight downloads (and the token gate)
+```
 
 **AlphaGenome** is a gated model from Google DeepMind. To use it:
 1. Create a free account at [huggingface.co](https://huggingface.co)

@@ -21,7 +21,7 @@ Two types of backgrounds:
 2. **Baseline signal backgrounds** — sample wild-type prediction values
    at random positions to contextualise ref_value (is this region active?).
 
-Backgrounds are cached under ``~/.chorus/backgrounds/`` by default
+Backgrounds are cached under ``<data-dir>/backgrounds/`` by default
 and keyed by ``{oracle}_{layer}.npy``.
 """
 

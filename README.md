@@ -17,7 +17,7 @@ Four steps. Steps 1 + 2 are copy-paste. Step 3 is a runnable snippet. Step 4 hoo
 **Before you start** — three things you need:
 
 - **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>
-- **~38 GB free disk** — see [Disk usage breakdown](#disk-usage-breakdown) if you want the per-oracle / per-asset numbers
+- **~90 GB free disk** for the default all-oracle install on Linux x86_64 + CUDA (~85 GB installed plus a reclaimable package cache). Each oracle env carries its own multi-GB CUDA payload, which is nearly all of it — so a macOS or CPU-only install is far smaller. See [Disk usage breakdown](#disk-usage-breakdown) for per-oracle / per-asset numbers, `chorus setup --oracle <name>` if you only need one oracle, and [Where chorus puts large files](#where-chorus-puts-large-files) to put it on a different filesystem
 - **Linux x86_64 or macOS** (Intel / Apple Silicon)
 
 ### 1. Install (5 minutes)
@@ -41,6 +41,18 @@ One command, walk away, come back to a complete chorus install. When prompted:
   1. Create a read token at <https://huggingface.co/settings/tokens>
   2. Accept the license at <https://huggingface.co/google/alphagenome-all-folds>
   3. Paste the token when `chorus setup` asks.
+
+> **Backgrounding it, or running from a script?** The token is resolved **before** anything is built,
+> and if stdin is not a TTY the whole run aborts immediately with *"No HuggingFace token available and
+> stdin is not a TTY"* — zero progress, no envs. So for `nohup`, a CI step, a Slurm job or a
+> tmux-less ssh session, supply it up front:
+>
+> ```bash
+> export HF_TOKEN=hf_...        # or: chorus setup --hf-token hf_...
+> nohup chorus setup &
+> ```
+>
+> `chorus setup --no-weights` skips the gate entirely if you do not want an account at all.
 - **LDlink token** (optional — only for `fine_map_causal_variant`): register free at <https://ldlink.nih.gov/?tab=apiaccess>, paste when prompted. Press Enter to skip.
 
 ### 3. Your first prediction — score a SNP at the β-globin locus
@@ -99,7 +111,7 @@ Now ask, in any Claude Code prompt:
 
 > *"Replace the 200 bp endogenous enhancer at chrX:48,782,929–48,783,129 with this synthetic sequence and predict accessibility in HepG2, K562, and GM12878."*
 
-That's it. No more boilerplate, no juggling oracle APIs — chorus exposes **24 MCP tools** ([full list](#mcp-server)) covering prediction, variant effects, region swaps, multi-layer analysis, in-silico mutagenesis, gene-TSS lookups, and cell-type discovery, and Claude picks the right one for the question.
+That's it. No more boilerplate, no juggling oracle APIs — chorus exposes **24 MCP tools** ([full list](#mcp-server--chorus-but-you-talk-to-claude)) covering prediction, variant effects, region swaps, multi-layer analysis, in-silico mutagenesis, gene-TSS lookups, and cell-type discovery, and Claude picks the right one for the question.
 
 ### What to read next
 
@@ -226,7 +238,7 @@ Chorus ships **two interchangeable AlphaGenome oracles for the same model with t
 | Oracle | Backend | Weight source | HF gating | Default? | Best for |
 |---|---|---|---|---|---|
 | `alphagenome` | JAX (Google DeepMind reference) | `google/alphagenome-all-folds` | gated (HF token + accept terms) | yes — installed by default `chorus setup` | macOS at any window size, Linux/CUDA at any window size |
-| `alphagenome_pt` | PyTorch ([genomicsxai/alphagenome-pytorch](https://github.com/genomicsxai/alphagenome-pytorch)) | `gtca/alphagenome_pytorch` — *converted from the official JAX checkpoint* (same numbers, safetensors format) | public on HF, but the **non-commercial model terms still apply to the weights** regardless of which mirror you download from — read [Google's AlphaGenome model terms](https://deepmind.google.com/science/alphagenome/model-terms) before commercial-adjacent use | yes — installed by default `chorus setup` (~1.7 GB env + ~880 MB weights on top of the JAX backend) | macOS at ≤600 kb (5–8× faster than JAX CPU on MPS) |
+| `alphagenome_pt` | PyTorch ([genomicsxai/alphagenome-pytorch](https://github.com/genomicsxai/alphagenome-pytorch)) | `gtca/alphagenome_pytorch` — *converted from the official JAX checkpoint* (same numbers, safetensors format) | public on HF, but the **non-commercial model terms still apply to the weights** regardless of which mirror you download from — read [Google's AlphaGenome model terms](https://deepmind.google.com/science/alphagenome/model-terms) before commercial-adjacent use | yes — installed by default `chorus setup` (~7.5 GB env + ~880 MB weights on top of the JAX backend — see [Disk usage breakdown](#disk-usage-breakdown)) | macOS at ≤600 kb (5–8× faster than JAX CPU on MPS) |
 
 **The two backends produce equivalent outputs.** Verified on M3 Ultra and A100: per-track agreement within 1–2 % relative error at 524 kb across all 7 chorus-exposed assays, within 0.02 log₂ on full Fig 3f region-swap layer scores. The small residual diff is fp32 implementation noise (different op orderings, conv kernels, attention numerics across JAX and PyTorch), not different weights. Full audit at `audits/2026-04-29_alphagenome_pytorch_spike/` and `audits/2026-04-29_alphagenome_pt_stress_test/`.
 
@@ -256,21 +268,97 @@ The TLDR's `chorus setup` does everything you need. This section covers the edge
 
 #### Disk usage breakdown
 
-The default `chorus setup` (all 8 oracles, both AlphaGenome backends, hg38, all CDF backgrounds) lands at **~38 GB**:
+The default `chorus setup` (all 8 oracles, both AlphaGenome backends, hg38, all CDF backgrounds) lands at
+**~85 GB**, measured with `du -sh` on a Linux x86_64 + CUDA box after a default setup:
 
 | Bucket | Size |
 |---|---|
-| 7 of the 8 oracle conda envs (~3 GB each; EPInformer-seq env ~2 GB) — Cherimoya's is larger, listed separately below | ~20 GB |
-| `hg38` reference fasta + index | ~3 GB |
-| Per-oracle CDF backgrounds (`~/.chorus/backgrounds/`) | ~2 GB |
-| AlphaGenome PyTorch backend (`alphagenome_pt`, default-on so Mac users get MPS speed) | ~2.6 GB |
+| 7 of the 8 oracle conda envs — Cherimoya's is listed separately below | ~53 GB |
+| AlphaGenome PyTorch backend env (`alphagenome_pt`, default-on so Mac users get MPS speed) | ~7.5 GB |
+| Cherimoya env (PyTorch + CUDA + triton) | ~6.6 GB |
+| Sei weights — the extracted model **plus** the retained `sei_model.tar.gz` it came from | ~6.5 GB |
+| `hg38` reference fasta + index | ~3.1 GB |
+| Base `chorus` env | ~2.7 GB |
+| Per-oracle CDF backgrounds (`<data-dir>/backgrounds/`, 9 files) | ~1.9 GB |
+| AlphaGenome weights — PyTorch (~880 MB) + JAX (~700 MB) | ~1.6 GB |
+| Borzoi weights | ~1.4 GB |
+| Enformer weights | ~960 MB |
 | ChromBPNet slim HuggingFace mirror — fast-path pre-cache (K562 + HepG2 DNase) | ~50 MB |
-| Cherimoya env (PyTorch + CUDA + triton) | ~7 GB |
-| Cherimoya fast-path weights (DNase + ATAC K562/HepG2) | ~10 MB |
+| LegNet weights | ~41 MB |
 | EPInformer-seq per-cell weights (11 main + 11 bias) | ~11 MB |
-| **Total default** | **~38 GB** |
+| Cherimoya fast-path weights (DNase + ATAC K562/HepG2) | ~10 MB |
+| **Total default** | **~85 GB** |
+
+Budget above that: `mamba` also fills a package cache (~4 GB here) shared across envs, which you can
+reclaim afterwards with `mamba clean --all`. Sei's `sei_model.tar.gz` is kept after extraction, so
+deleting it reclaims ~3.1 GB if you are tight.
+
+**Why the envs are most of it, and why your number will differ.** Every oracle env ships its own CUDA
+payload, and that — not the model code — is what you are paying for. It arrives two different ways, so
+neither `mamba clean` nor conda's hardlinking gets you out of it:
+
+* **pip `nvidia_*` wheels** in the Enformer (2.9 GB), ChromBPNet (2.9 GB), AlphaGenome (4.4 GB),
+  AlphaGenome-PyTorch (2.7 GB), EPInformer-seq (2.7 GB) and Cherimoya (2.7 GB) envs. pip does not
+  hardlink between envs, so each is a full copy.
+* **conda-side `libtorch_cuda` / `libcu*`** in Borzoi (~1.9 GB), LegNet (~3.8 GB) and Sei (~1.9 GB),
+  which have no pip `nvidia` directory at all.
+
+Measured together with `du -sc` — which counts a hardlinked file once — the nine envs still come to
+67 GB, so there is no dedup credit hiding in that number. Two consequences worth planning around:
+
+* **macOS and CPU-only installs are far smaller** — `chorus setup` strips the CUDA packages on
+  `macos_arm64`, so no env pays the 2.9 GB.
+* **Per-env sizes are not uniform** — they range from 6.1 GB (Enformer) to 11 GB (AlphaGenome). If you
+  need one oracle rather than eight, `chorus setup --oracle <name>` builds just that env, and
+  `--no-weights` / `--no-genome` / `--no-backgrounds` skip the asset buckets above.
+
+All of it is relocatable: see [Where chorus puts large files](#where-chorus-puts-large-files) if `$HOME`
+or the clone's filesystem is the wrong place for 85 GB.
 
 Opting in via `chorus setup --all-chrombpnet` pre-caches every fold-0 bias-corrected ChromBPNet model from the slim mirror (+~1.5 GB, ~5 min). Other ChromBPNet cell types download lazily on first `load_pretrained_model(...)` regardless. If you specifically need the full bias-aware `chrombpnet` variant or fold ≠ 0, chorus falls back to the original ENCODE tarball for that specific model (+~1.8 GB on disk per model). See [Where the oracle weights come from](#where-the-oracle-weights-come-from) for the full mirror map.
+
+#### Where chorus puts large files
+
+By default, everything bulky goes in the **chorus installation directory** — *not* `~/.chorus`, and not
+`~/.cache/huggingface`. On a shared cluster node, or any box where the clone sits on a small volume,
+that is usually the wrong filesystem for 85 GB. One switch moves all of it:
+
+```bash
+export CHORUS_DATA_DIR=/data/chorus_data          # per-shell, highest priority
+chorus setup --data-dir /data/chorus_data         # choose at install time
+chorus config data-dir --set /data/chorus_data    # persist for this install
+chorus config data-dir --set PATH --migrate       # move backgrounds you already downloaded
+chorus config data-dir                            # print what resolved, and why
+```
+
+Resolution order: `CHORUS_DATA_DIR` → `<install>/chorus_data_dir.txt` → the install directory →
+`~/.chorus` (only when the install tree is not writable, e.g. a pip install into system
+site-packages). `chorus config data-dir` prints the resolved paths with their sizes, so it is also the
+quickest way to see where your disk went:
+
+```
+Resolved chorus data layout
+  data_dir      /home/you/chorus
+  chosen via    installation directory (default)
+
+  backgrounds   /home/you/chorus/backgrounds  [1.9 GB]
+  downloads     /home/you/chorus/downloads  [14.5 GB]
+  genomes       /home/you/chorus/genomes  [3.1 GB]
+  hf_cache      /home/you/chorus/huggingface  [20 GB]
+```
+
+> **One exception, for upgrades from before this switch.** Backgrounds — and *only* backgrounds — have
+> a legacy rule: if `~/.chorus/backgrounds` already holds `*_pertrack.npz` and the resolved directory
+> does not, chorus keeps using the old location and logs that it is doing so. That way an upgrade does
+> not silently re-download 1.9 GB. It applies per-kind on purpose (annotations, downloads and genomes
+> were always in the install tree, so a whole-directory fallback would have dragged those out of it),
+> and an explicit `CHORUS_DATA_DIR` or `--set` always wins. Run
+> `chorus config data-dir --set PATH --migrate` to move them for good. This is why `backgrounds` can
+> print a different root from `data_dir` in the output above.
+
+Two things deliberately do **not** follow this switch: **credentials** (`~/.chorus/config.toml`, the
+HuggingFace token) stay with the user, because a shared data directory is the wrong place for a personal
+token; and **conda environments**, which stay with the installation.
 
 #### Upgrading
 
@@ -284,6 +372,10 @@ chorus cleanup --all
 mamba env remove -n chorus -y
 ```
 
+Note that `chorus cleanup --all` leaves the **HuggingFace cache** in place — see
+[Uninstalling](#uninstalling--starting-from-scratch) for how to reclaim that too. For an upgrade that
+is usually what you want, since re-downloading the weights is the slow part.
+
 Then re-run the Fresh Install steps above.
 
 > **Using the MCP server?** Restart Claude Code (or Claude Desktop) after upgrading.
@@ -296,13 +388,18 @@ Then re-run the Fresh Install steps above.
 # Preview what will be deleted (safe — no changes):
 chorus cleanup --all --dry-run
 
-# Remove everything: all oracle envs, downloaded weights, background CDFs, and genomes:
+# Remove all oracle envs, downloaded weights, background CDFs, and genomes:
 chorus cleanup --all
+
+# `cleanup` does NOT touch the HuggingFace cache, which is where most oracle weights
+# actually live (~20 GB on a full install). `chorus config data-dir` prints its location
+# as `hf_cache`; to reclaim it too, remove that directory explicitly:
+rm -rf "$(python -c 'from chorus.core.globals import describe_layout; print(describe_layout()["hf_cache"])')"
 
 # Finer-grained options:
 chorus cleanup --oracle enformer          # one oracle only (env + weights)
 chorus cleanup --oracle all               # all oracle envs + weights, keep backgrounds/genomes
-chorus cleanup --backgrounds              # remove ~/.chorus/backgrounds/*.npz only
+chorus cleanup --backgrounds              # remove <data-dir>/backgrounds/*.npz only
 chorus cleanup --genomes                  # remove downloaded reference genomes only
 ```
 
@@ -405,7 +502,12 @@ Genomes are stored in the `genomes/` directory within your Chorus installation.
 
 Chorus converts every raw prediction into an **effect percentile** and **activity percentile** against each track's own sampled-SNP reference population and ~19,000–104,000 genome-wide positions scored on the same oracle. These pre-computed per-track CDFs are what let a user interpret a `+0.45` log2FC as `0.962 activity %ile`.
 
-**Nothing to configure.** `chorus setup` pre-downloads the relevant backgrounds for every oracle. If you skipped that step, on the first variant analysis for a given oracle the backgrounds are automatically fetched from the public HuggingFace dataset [`lucapinello/chorus-backgrounds`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds) and cached at `~/.chorus/backgrounds/`.
+**Nothing to configure.** `chorus setup` pre-downloads the relevant backgrounds for every oracle. If you skipped that step, on the first variant analysis for a given oracle the backgrounds are automatically fetched from the public HuggingFace dataset [`lucapinello/chorus-backgrounds`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds) and cached at `<data-dir>/backgrounds/`.
+
+> `<data-dir>` is the **chorus installation directory** by default — not `~/.chorus`. Override it with
+> `CHORUS_DATA_DIR`, `chorus config data-dir --set PATH`, or `chorus setup --data-dir PATH`, and run
+> `chorus config data-dir` to print what resolved and why. Credentials (`~/.chorus/config.toml`) stay
+> in `$HOME` deliberately and do **not** follow this switch.
 
 #### Where the oracle weights come from
 
@@ -432,6 +534,7 @@ The chorus mirrors are byte-identical to the originals (verified via md5 / size 
 | Borzoi | ~770 MB | 7,611 |
 | ChromBPNet | ~80 MB | 753 (9 ATAC/DNASE + 744 CHIP) |
 | Cherimoya | ~162 MB | 1,518 (369 ATAC + 1,149 DNASE) |
+| Cherimoya (ensemble) | ~154 MB | 1,518 — the fold-ensemble has its own null; see [Cherimoya folds](#cherimoya--catv1) |
 | Sei | ~2.8 MB | 40 classes |
 | LegNet | ~210 KB | 3 cell types |
 | EPInformer-seq | ~2.3 MB | 33 tracks (11 cell types × 3 assays: DNase, H3K27ac, composite) |
@@ -610,7 +713,16 @@ wt_files = predictions.save_predictions_as_bedgraph(output_dir="bedgraph_outputs
 
 ### Notebooks — three sittings, zero to confident
 
-Three end-to-end Jupyter notebooks shipped with the repo. Run them in order — by the time you finish notebook 3 you'll have used every oracle, scored a variant across five regulatory layers, and rendered a coolbox track view of your own predictions. All three work as soon as `chorus setup` finishes; no extra downloads needed.
+Three end-to-end Jupyter notebooks shipped with the repo. Run them in order — by the time you finish notebook 3 you'll have used every oracle, scored a variant across five regulatory layers, and rendered a coolbox track view of your own predictions. All three work as soon as `chorus setup` finishes; no extra downloads needed. One extra step, though —
+register the base env as a Jupyter kernel, which `chorus setup` does **not** do for you:
+
+```bash
+mamba activate chorus
+python -m ipykernel install --user --name chorus --display-name "Python 3 (chorus)"
+```
+
+The shipped notebooks declare kernel name `chorus`, so without this JupyterLab prompts you to choose a
+kernel and `jupyter nbconvert --execute` fails with `NoSuchKernel: No such kernel named chorus`.
 
 | Notebook | Oracles | What you'll build |
 |----------|---------|----------------|
@@ -669,9 +781,13 @@ Claude Code reads `.mcp.json` on startup and launches the MCP server in the back
 **Alternatively**, you can add Chorus to your global Claude Code settings (`~/.claude/settings.json`) so it's available in every project without needing a per-project `.mcp.json`:
 
 ```bash
-# Add globally (one-time setup):
-claude mcp add chorus -- mamba run -n chorus chorus-mcp
+# Add globally (one-time setup) — note `-s user`:
+claude mcp add -s user chorus -- mamba run -n chorus chorus-mcp
 ```
+
+`claude mcp add` defaults to `--scope local`, which registers the server for the **current project
+only**. Without `-s user` you would run this in the chorus clone, then open Claude Code in your actual
+analysis project and find no chorus tools — with nothing in the output to say why.
 
 #### Setup for Claude Desktop
 
@@ -1288,7 +1404,7 @@ A raw `log2FC = +0.45` in a DNase-seq track is hard to interpret. Is it strong? 
 
 Both range `[0, 1]` for unsigned layers (chromatin, ChIP, CAGE, splicing). For signed layers (gene expression, MPRA, Sei), the effect percentile ranges `[-1, 1]` (preserving the direction of effect).
 
-The backgrounds are stored as 10,000-point CDFs per track in NPZ files (one file per oracle, `~/.chorus/backgrounds/{oracle}_pertrack.npz`). Each oracle's NPZ contains three matrices:
+The backgrounds are stored as 10,000-point CDFs per track in NPZ files (one file per oracle, `<data-dir>/backgrounds/{oracle}_pertrack.npz`). Each oracle's NPZ contains three matrices:
 
 - `effect_cdfs (n_tracks × 10000)` — for the effect percentile
 - `summary_cdfs (n_tracks × 10000)` — for the activity percentile
@@ -1374,7 +1490,7 @@ Auto-load (downloads from HuggingFace if not cached):
 from chorus.analysis.normalization import get_pertrack_normalizer
 
 norm = get_pertrack_normalizer("alphagenome")
-# → ~/.chorus/backgrounds/alphagenome_pertrack.npz (auto-downloaded if missing)
+# → <data-dir>/backgrounds/alphagenome_pertrack.npz (auto-downloaded if missing)
 ```
 
 Look up an effect or activity percentile for a single track:
@@ -1424,7 +1540,7 @@ rather than keeping whatever is on disk.
 
 You don't have to do anything. The MCP server auto-attaches the appropriate normalizer when you call any analysis tool (`analyze_variant_multilayer`, `score_variant_batch`, `fine_map_causal_variant`, `analyze_region_swap`, `simulate_integration`, `discover_variant`, `discover_variant_cell_types`).
 
-The first call for a given oracle triggers a one-time HuggingFace download (a few hundred MB), cached at `~/.chorus/backgrounds/`. Subsequent calls reuse the cache.
+The first call for a given oracle triggers a one-time HuggingFace download (a few hundred MB), cached at `<data-dir>/backgrounds/`. Subsequent calls reuse the cache.
 
 In the resulting report, every track row gets two extra columns — `Effect %ile` and `Activity %ile` — and the IGV browser uses the per-bin CDFs to rescale bin heights for cross-cell-type comparability.
 

@@ -63,7 +63,7 @@ value, then divides by the total sample count to get the percentile.
 Each oracle stores one compressed NumPy archive:
 
 ```
-~/.chorus/backgrounds/{oracle}_pertrack.npz
+<data-dir>/backgrounds/{oracle}_pertrack.npz
 ```
 
 NPZ keys:
@@ -465,7 +465,7 @@ The CDF needs ~18K assay-matched regulatory variants (effect rows) and ~30K base
 (summary + perbin rows) through your model. Rough wall-clock per model:
 ~22 min for ChromBPNet on Apple M3 Ultra Metal, ~5 min on a CUDA A100;
 BPNet (smaller architecture) is ~2× faster either way. The
-[full sharded build](#sharded-build) of all 753 ChromBPNet+BPNet
+[full sharded build](#chrombpnet) of all 753 ChromBPNet+BPNet
 models takes about 6 hours on a single GPU.
 
 **Recommended path — bypass the build script and call its scoring
@@ -1027,11 +1027,16 @@ mamba run -n chorus-myoracle python scripts/build_backgrounds_myoracle.py \
 If you want other users to auto-download your backgrounds:
 
 ```python
+import os
+
 from huggingface_hub import HfApi
+
+from chorus.core.globals import CHORUS_BACKGROUNDS_DIR
 
 api = HfApi(token=os.environ["HF_TOKEN"])
 api.upload_file(
-    path_or_fileobj=str(Path.home() / ".chorus/backgrounds/myoracle_pertrack.npz"),
+    # Resolves to <data-dir>/backgrounds/ — the install tree by default, not ~/.chorus.
+    path_or_fileobj=str(CHORUS_BACKGROUNDS_DIR / "myoracle_pertrack.npz"),
     path_in_repo="myoracle_pertrack.npz",
     repo_id="lucapinello/chorus-backgrounds",
     repo_type="dataset",

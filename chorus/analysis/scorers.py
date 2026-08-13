@@ -40,7 +40,7 @@ indicates where a region's signal ranks genome-wide.
 The baselines are built by the ``scripts/build_backgrounds_*.py`` scripts
 using the same window/aggregation as variant scoring, scored at 20K
 protein-coding TSSs and 5K random positions per oracle.  Files are stored
-as ``~/.chorus/backgrounds/{oracle}_{layer}_baseline.npy`` and auto-loaded
+as ``<data-dir>/backgrounds/{oracle}_{layer}_baseline.npy`` and auto-loaded
 by ``chorus.analysis.normalization.get_normalizer()``.
 """
 

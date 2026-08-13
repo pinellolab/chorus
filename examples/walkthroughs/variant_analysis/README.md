@@ -113,7 +113,7 @@ signal activity percentile** — how active this region is genome-wide:
 ### Background availability
 
 Quantile and percentile scores appear automatically when pre-computed
-backgrounds exist in `~/.chorus/backgrounds/`. These are built once per
+backgrounds exist in `<data-dir>/backgrounds/`. These are built once per
 oracle by the `scripts/build_backgrounds_*.py` scripts and auto-loaded
 when an oracle is loaded via MCP or the Python API.
 

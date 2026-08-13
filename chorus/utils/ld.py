@@ -138,7 +138,7 @@ def fetch_ld_variants(
             "LDlink API token required. Register free at "
             "https://ldlink.nih.gov/?tab=apiaccess, then either: "
             "(a) pass ldlink_token=..., (b) set LDLINK_TOKEN, or "
-            "(c) run 'chorus setup all' to be prompted once."
+            "(c) run 'chorus setup' to be prompted once."
         )
 
     if genome_build not in _GENOME_BUILD_ALIASES:
