@@ -278,26 +278,19 @@ def regen_cdyl_finemap(oracle, norm):
             f"{out_dir}/example_output.tsv", sep="\t", index=False)
     except Exception as exc:
         logger.warning("  tsv write failed: %s", exc)
-    # No committed HTML for this example, deliberately. Measured at 25.70 MB,
-    # above the 20 MiB ceiling that tests/test_committed_examples.py enforces
-    # on tracked artefacts. The #129 feature budget is PER TRACK (4,000), and
-    # nothing caps a report total — so 21 lung-fibroblast tracks x 2 alleles
-    # is ~42x a single-track panel and legitimately blows the file limit. The
-    # JSON/MD/TSV carry every number the example is for; the IGV panel is the
-    # only casualty. Write it locally for inspection if you want it:
-    #
-    #   result.to_html(output_path=f"{out_dir}/rs9504151_CDYL_locus_causal_report.html")
-    #
-    # and see the report-level-budget follow-up before committing one.
-    if os.environ.get("CHORUS_WRITE_LARGE_HTML"):
-        html_path = f"{out_dir}/rs9504151_CDYL_locus_causal_report.html"
-        result.to_html(output_path=html_path)
-        logger.info("  ✓ HTML: %s (%.0f KB) — NOT for committing",
-                    os.path.basename(html_path),
-                    os.path.getsize(html_path) / 1024)
-    else:
-        logger.info("  (HTML skipped — exceeds the 20 MiB artefact ceiling; "
-                    "set CHORUS_WRITE_LARGE_HTML=1 to write it locally)")
+    # The HTML is committed now (#135). It was skipped behind CHORUS_WRITE_LARGE_HTML
+    # because at 25.70 MB it exceeded a 20 MiB ceiling that had been chosen as
+    # "headroom over today's largest artefact" rather than derived from a failure —
+    # so the largest, most interesting example was the one example with no browser
+    # panel. The ceiling is 50 MiB and the question is now answered by loading the
+    # report rather than by weighing it: tests/test_committed_reports_render_in_a_browser.py
+    # opens every committed report in headless Chromium and asserts every canvas
+    # paints. Measured there, 11x the file size costs 1.2x the load time, because the
+    # seconds go on genome-resource round-trips, not on the payload.
+    html_path = f"{out_dir}/rs9504151_CDYL_locus_causal_report.html"
+    result.to_html(output_path=html_path)
+    logger.info("  ✓ HTML: %s (%.1f MiB)", os.path.basename(html_path),
+                os.path.getsize(html_path) / (1024 * 1024))
 
     top = result.rankings[:3] if hasattr(result, "rankings") else []
     for i, r in enumerate(top, 1):

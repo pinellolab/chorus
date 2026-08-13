@@ -79,12 +79,22 @@ they simply could not be checked by anyone until now.
   denominator, BPNet CHIP), and both `max_effect` and `ref_activity` read off
   the corrected counts.
 
-## No committed HTML
+## The committed HTML is the largest in the repo, deliberately
 
-Deliberate. The causal report renders at **25.70 MB**, above the 20 MiB ceiling
-`tests/test_committed_examples.py` enforces on tracked artefacts. The
-[#129](https://github.com/pinellolab/chorus/issues/129) IGV feature budget is
-**per track** (4,000), and nothing caps a report *total* — so 21 tracks × 2
-alleles is ~42× a single-track panel and legitimately exceeds the file limit.
-The JSON/MD/TSV carry every number; only the browser panel is missing. Set
-`CHORUS_WRITE_LARGE_HTML=1` to write it locally.
+`rs9504151_CDYL_locus_causal_report.html` is **25.7 MiB** — 21 lung-fibroblast
+tracks × 2 alleles, ~42× a single-track panel. It used to be the one example with
+no browser panel, skipped behind `CHORUS_WRITE_LARGE_HTML=1` because it exceeded a
+20 MiB ceiling that had been picked as "headroom over today's largest artefact"
+rather than derived from a failure.
+
+That ceiling is 50 MiB now and the question is answered by loading the report
+rather than weighing it —
+[`tests/test_committed_reports_render_in_a_browser.py`](../../../../tests/test_committed_reports_render_in_a_browser.py)
+opens every committed report in headless Chromium and asserts every canvas paints.
+Measured for this file: **134 canvases, all painted, 11.3 s**, against 8.8 s for the
+smallest 1.3 MiB report. 20× the bytes costs 1.3× the load, because the seconds go
+on genome-resource round-trips rather than on the payload
+([#139](https://github.com/pinellolab/chorus/issues/139)).
+
+Adding it moved no numbers: regenerating this example produced a JSON differing from
+the committed one in **1 of 4,001 leaf values**, and that one is the timestamp.
