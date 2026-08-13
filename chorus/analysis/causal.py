@@ -22,6 +22,8 @@ from .variant_report import (
     _describe_normalizer, _fmt_percentile,
 )
 
+from types import SimpleNamespace as _NS
+
 logger = logging.getLogger(__name__)
 
 
@@ -1476,7 +1478,15 @@ def _build_causal_html(result: CausalResult) -> str:
         p.append(f'<td class="r2-cell {r2_cls}">{s.r2:.2f}</td>')
 
         gene = html_mod.escape(s.gene_name) if s.gene_name else "—"
-        ct = html_mod.escape(s.cell_type) if s.cell_type else "—"
+        # Same suppression as the other two render paths: the per-variant rows carry a
+        # track label whose tail is often the cell type. _cell_type_cell reads
+        # .description/.assay_id, so give it those under the names it expects (#F7).
+        from .variant_report import _cell_type_cell
+        from types import SimpleNamespace as _NS
+        _label = s.top_track or ""      # CausalVariantScore.top_track, e.g. "CHIP:CEBPB:HepG2"
+        ct = html_mod.escape(
+            _cell_type_cell(_NS(description=_label, assay_id=_label, cell_type=s.cell_type))
+        ) if s.cell_type else "—"
         p.append(f'<td>{gene}</td>')
         p.append(f'<td>{ct}</td>')
 
@@ -1577,7 +1587,9 @@ def _build_causal_html(result: CausalResult) -> str:
                          f'<td>{html_mod.escape(name)}</td>'
                          f'<td><span class="formula-chip">{formula}</span></td>'
                          f'<td>{html_mod.escape(str(assay_display))}</td>'
-                         f'<td>{html_mod.escape(str(ct_val))}</td>'
+                         # Fourth render path for this one column (summary row above,
+                         # multi_oracle_report, variant_report). Same helper (#F7).
+                         f'<td>{html_mod.escape(_cell_type_cell(_NS(description=str(assay_display), assay_id=str(assay_display), cell_type=str(ct_val or ""))))}</td>'
                          f'<td>{ref_str}</td>'
                          f'<td>{alt_str}</td>'
                          f'<td style="color:{color};font-weight:600">'

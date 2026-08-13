@@ -21,6 +21,17 @@ Chorus does not modify the upstream model code beyond the adapter
 layer in `chorus/oracles/<name>.py`. Each oracle's predict / score
 semantics are those of the original publication.
 
+**EPInformer-seq is deliberately absent from that table: it is not third-party.** Its weights
+are trained for chorus and served from this project's own HuggingFace repo
+([`lucapinello/chorus-epinformerseq-v2`](https://huggingface.co/lucapinello/chorus-epinformerseq-v2)),
+there is no vendored upstream code under `chorus/oracles/epinformerseq_source/`, and the
+architecture is described in `chorus/oracles/epinformerseq.py`. What it *does* borrow is the
+ChromBPNet-style frozen bias net that subtracts Tn5/MNase sequence preference in logit space —
+credited to the Kundaje lab in the row above. Recorded here because an audit reasonably read
+"7 of 8 oracles attributed" as a missing attribution rather than as a first-party model
+(2026-08-12 audit, F5). If the *name* is meant to credit upstream EPInformer work, add that
+citation here — this note deliberately does not invent one.
+
 ## Bundled third-party JavaScript
 
 - **IGV.js** (Integrative Genomics Viewer, Robinson et al., Broad/UCSD) —
@@ -37,6 +48,19 @@ semantics are those of the original publication.
   version requires a sequence source and hg38 is 3 GB. Point `CHORUS_IGV_SEQUENCE_URL` at
   a self-hosted copy and a report needs no internet at all; serving it same-origin with the
   report measured 0 external requests and 0.8 s.
+
+- **Bundled *inside* `igv.min.js`** — the igv.js UMD bundle vendors third-party libraries of
+  its own, which chorus therefore ships too. Their licence banners survive inside the file
+  (`grep -o '@license[^*]*' chorus/analysis/static/igv.min.js`):
+
+  | library | notice in the bundle | licence |
+  |---|---|---|
+  | [DOMPurify](https://github.com/cure53/DOMPurify) | `@license DOMPurify 3.2.1 \| (c) Cure53 and other contributors` | Apache-2.0 OR MPL-2.0 |
+  | [pako](https://github.com/nodeca/pako) | `@license (MIT AND Zlib)` | MIT AND Zlib |
+
+  Noted because the audit asked whether the bundle "carries its upstream license header": the
+  UMD bundle opens with code rather than a banner, so the licences are present but not at the
+  top of the file, and these two were credited nowhere outside it (2026-08-12 audit, F6).
 
 - **UCSC hg38 cytoband table** (`cytoBandIdeo`, primary chromosomes only) — shipped as
   `chorus/analysis/static/cytoBandIdeo_hg38.txt.gz`, 6.1 kB, from
