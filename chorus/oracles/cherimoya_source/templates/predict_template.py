@@ -23,8 +23,13 @@ with open("__ARGS_FILE_NAME__") as inp:  # to be formatted by calling script
 device = args["device"]
 if device == "cpu":
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-elif device and device.startswith("cuda:"):
-    os.environ["CUDA_VISIBLE_DEVICES"] = device.split(":")[1]
+# NOTE: `cuda:N` deliberately does NOT touch CUDA_VISIBLE_DEVICES. Torch already
+# interprets the ordinal within the visible set, so masking here did two wrong
+# things at once: it overrode any outer mask a scheduler had set -- landing the
+# process on a GPU it was not granted -- and, because the resolved device string
+# `cuda:N` is then handed to torch anyway, it made every N except 0 crash with
+# `CUDA error: invalid device ordinal` (masking to one device, then asking for
+# device N of one). Verified 2026-08-13. See audits/2026-08-12_post_v0.7.2_audit.md F1.
 
 import numpy
 import torch
