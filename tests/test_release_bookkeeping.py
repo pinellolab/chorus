@@ -99,9 +99,28 @@ def test_released_sections_are_dated():
         v for v in _changelog_versions()
         if not re.search(rf"^## \[{re.escape(v)}\] — \d{{4}}-\d{{2}}-\d{{2}}", body, re.M)
     ]
-    # 0.1.0 predates the convention and carries a deliberate placeholder.
-    undated = [v for v in undated if v != "0.1.0"]
+    # The 0.1.0 exception that used to live here is gone: that heading is no longer bracketed, so
+    # `_changelog_versions()` does not yield it and there is nothing to exempt. It was never tagged
+    # and never released, so a `[0.1.0]` reference-style heading with no link definition rendered as
+    # literal brackets — neither a `compare/` range nor a `releases/tag/` URL exists for it.
     assert not undated, f"released sections without an ISO date: {undated}"
+
+
+def test_every_bracketed_section_has_a_link_definition():
+    """A `## [x]` with no `[x]:` footer entry renders as literal brackets, not a link.
+
+    This is what `## [0.1.0] — 2025-09-XX` did for its whole life. Guarding it here means the next
+    section added without a footer entry fails immediately rather than shipping looking broken.
+    """
+    body = CHANGELOG.read_text()
+    used = set(re.findall(r"^## \[([^\]]+)\]", body, re.M))
+    defined = set(re.findall(r"^\[([^\]]+)\]:", body, re.M))
+    missing = sorted(used - defined)
+    assert not missing, (
+        f"bracketed CHANGELOG headings with no link definition: {missing}. Either add "
+        f"`[x]: https://github.com/pinellolab/chorus/compare/v<prev>...v<x>` to the footer, or drop "
+        f"the brackets if the version was never tagged."
+    )
 
 
 def test_every_released_section_states_its_artefact_revision():

@@ -396,11 +396,11 @@ chorus cleanup --all --dry-run
 # Remove all oracle envs, downloaded weights, background CDFs, and genomes:
 chorus cleanup --all
 
-# `cleanup` does NOT touch the HuggingFace cache, which is where most oracle weights
-# actually live — ~4.5 GB for the default oracle set, and much more if you have pulled
-# the full 1,518-experiment Cherimoya atlas. `chorus config data-dir` prints its
-# location as `hf_cache`; to reclaim it too, remove that directory explicitly:
-rm -rf "$(python -c 'from chorus.core.globals import describe_layout; print(describe_layout()["hf_cache"])')"
+# `--all` deliberately leaves the HuggingFace cache, where most oracle weights actually
+# live — ~4.5 GB for the default set, and much more once you have pulled the full
+# 1,518-experiment Cherimoya atlas. Keeping it makes a re-install fast. To reclaim it:
+chorus cleanup --hf-cache --dry-run   # preview first
+chorus cleanup --hf-cache
 
 # Finer-grained options:
 chorus cleanup --oracle enformer          # one oracle only (env + weights)

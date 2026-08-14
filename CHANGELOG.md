@@ -921,7 +921,7 @@ Six dated reports documenting the v22 → v29 cycle live under
   `pytorch>=2.0.0`. If you have a manually pinned env, rebuild with
   `chorus setup --oracle sei --force`.
 
-## [0.1.0] — 2025-09-XX
+## 0.1.0 — never tagged
 
 Initial release: unified Python API + MCP server over six genomic
 deep-learning oracles (Enformer, Borzoi, ChromBPNet, Sei, LegNet,
