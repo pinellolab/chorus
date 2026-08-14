@@ -155,3 +155,50 @@ def test_the_smoke_fixtures_skip_rather_than_error():
         f"these fixtures call into an oracle without a prerequisite check, so they "
         f"raise instead of skipping when the env is missing: {unguarded}"
     )
+
+
+#: A fresh clone with no genomes, backgrounds or oracle envs collected 125 on CI on 2026-08-14.
+#: The floor sits below that: it exists to catch "the marker selected nothing", not to track the
+#: exact number, which is not a property of the repo at all.
+_INTEGRATION_FLOOR = 100
+
+
+def test_the_integration_marker_still_selects_a_real_suite():
+    """`pytest -m integration` must select a suite, and pytest.ini must not claim an exact size.
+
+    The usage comment used to name a figure, and it drifted four times: 66, 153, 154, 157. The first
+    version of this guard pinned that figure by collection -- and failed on CI, which collects **125**
+    where this host collects **162**. That is not drift; the count is genuinely environment-dependent,
+    because integration tests parametrize over locally-present artefacts (genomes, backgrounds,
+    per-oracle envs). An exact number was never a fact about the repository, so no guard could have
+    made it one, and the honest fix was to stop asserting it.
+
+    What remains worth checking is what a contributor actually uses the figure for: confirming their
+    run selected the suite rather than silently collecting nothing -- the failure mode that shipped in
+    CONTRIBUTING's browser recipe, which collected 0 because `addopts` deselected everything it named.
+    """
+    import subprocess
+    import sys
+
+    text = PYTEST_INI.read_text()
+    assert "pytest -m integration" in text, "pytest.ini no longer documents the integration opt-in"
+    assert re.search(r"fresh clone|provisioned host|magnitude, not an identity", text), (
+        "pytest.ini states an integration-test count without saying it varies by environment. CI "
+        "collects 125 where a provisioned host collects 162; a bare number reads as exact, goes "
+        "stale, and has already done so four times."
+    )
+
+    proc = subprocess.run(
+        [sys.executable, "-m", "pytest", str(REPO / "tests"), "-m", "integration",
+         "--collect-only", "-q", "-p", "no:cacheprovider"],
+        capture_output=True, text=True, cwd=REPO, timeout=900,
+    )
+    got = re.search(r"(\d+)(?:/\d+)? tests collected", proc.stdout)
+    assert got, f"could not read a collection count from pytest output:\n{proc.stdout[-1500:]}"
+    actual = int(got.group(1))
+
+    assert actual >= _INTEGRATION_FLOOR, (
+        f"`pytest -m integration` collected only {actual} tests, below the floor of "
+        f"{_INTEGRATION_FLOOR}. Either the marker stopped being applied or a collection error is "
+        f"swallowing most of the suite -- a run that quietly selects almost nothing reads as a pass."
+    )
