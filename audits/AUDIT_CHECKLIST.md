@@ -407,6 +407,19 @@ and the artefacts live in a repo whose `main` moves. Skipping the second half is
       `createdAt` (which is tag-derived) *later* than `publishedAt`, and for a healthy release
       they differ by seconds. Check that before calling a release done. If the tag has to move,
       re-point it, regenerate the notes, and note the move on the release page. **P1**
+- [ ] **A moved tag has _two_ independent copies of the notes; regenerate both.** The GitHub Release
+      body is the obvious one. The **annotated tag object carries its own message**
+      (`git tag -l --format='%(contents)' v<X.Y.Z>`) and editing the release does not touch it.
+      Create it with **`--cleanup=verbatim`**, or git silently deletes every line starting with `#`:
+      v0.7.3's tag message lost all four `###` headings that way and nobody noticed, because the
+      release page looked correct. Verify with
+      `git tag -l --format='%(contents)' v<X.Y.Z> | grep -c '^### '`. **P1**
+- [ ] **The `## [X.Y.Z] — DATE` heading must match the day of the commit the tag points at.** Nothing
+      enforces this — `test_released_sections_are_dated` only asserts that *an* ISO date is present —
+      so a tag moved across midnight dates its own tree a day early. **P2**
+- [ ] **CI cannot observe a tag move.** `.github/workflows/tests.yml` has no `tags:` trigger, so
+      force-pushing a tag runs nothing at all. Any verification a release claims must be run locally
+      against the exact commit the tag dereferences to, and the numbers recorded with that sha. **P1**
 - [ ] `tests/test_release_bookkeeping.py` and `tests/test_artefact_revision_is_pinned.py`
       pass, including the `[Unreleased]`-is-empty check, which only activates once HEAD is
       tagged. **P0**

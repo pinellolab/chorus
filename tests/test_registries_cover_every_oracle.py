@@ -139,6 +139,30 @@ def test_the_valid_names_error_string_lists_every_oracle():
     )
 
 
+def test_the_cleanup_oracle_list_covers_every_oracle():
+    """`chorus cleanup --oracle all` iterates a hardcoded list, so an omission is a silent skip.
+
+    Missed by the first version of this file, which is the same class of gap it was written to close:
+    the list is a plain module-level list rather than a dict, so the dict-based checks above walked
+    straight past it. An oracle absent here survives `cleanup --oracle all` with no error and no
+    mention — the user believes they removed everything.
+    """
+    tree = ast.parse((REPO / "chorus" / "cli" / "_cleanup.py").read_text())
+    listed = None
+    for node in ast.walk(tree):
+        target = node.targets[0] if isinstance(node, ast.Assign) and len(node.targets) == 1 else None
+        if isinstance(target, ast.Name) and target.id == "_ALL_ORACLES" \
+                and isinstance(node.value, (ast.List, ast.Tuple)):
+            listed = {e.value for e in node.value.elts
+                      if isinstance(e, ast.Constant) and isinstance(e.value, str)}
+    assert listed is not None, "no _ALL_ORACLES list literal in chorus/cli/_cleanup.py"
+    missing = sorted(set(ORACLE_NAMES) - listed)
+    assert not missing, (
+        f"chorus/cli/_cleanup.py's _ALL_ORACLES omits {missing}, so `chorus cleanup --oracle all` "
+        f"silently leaves their env and weights on disk."
+    )
+
+
 def test_every_oracle_has_an_environment_file():
     """The `chorus-*.yml` filename is what `list_available_oracles` globs."""
     missing = [o for o in ORACLE_NAMES

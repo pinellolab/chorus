@@ -17,37 +17,54 @@ keeping the cache is the point, and a shared `HF_HOME` makes deleting it activel
 from __future__ import annotations
 
 import importlib
+import os
 from pathlib import Path
 
 import pytest
 
 
-def _targets(monkeypatch, hf_home: Path | None = None, hub: Path | None = None):
-    """Re-resolve `_hf_cache_targets` under a given HF env."""
+#: HF variables that change where the cache resolves.
+_HF_VARS = ("HF_HOME", "HF_HUB_CACHE", "HUGGINGFACE_HUB_CACHE")
+
+
+def _targets(hf_home: Path | None = None, hub: Path | None = None):
+    """Re-resolve `_hf_cache_targets` under a given HF env, then put the module back.
+
+    Deliberately manages os.environ itself rather than using monkeypatch. `monkeypatch` undoes its
+    changes at *teardown*, i.e. after this function returns — so a restoring
+    `importlib.reload(hf_constants)` in a `finally` here would re-read the still-patched environment
+    and leave `huggingface_hub.constants` pointing at a test's temp directory for every later test in
+    the process. That is exactly the shape of bug this file exists to catch, one level up.
+    """
     import chorus.cli._cleanup as cleanup
-
-    for var in ("HF_HOME", "HF_HUB_CACHE", "HUGGINGFACE_HUB_CACHE"):
-        monkeypatch.delenv(var, raising=False)
-    if hf_home is not None:
-        monkeypatch.setenv("HF_HOME", str(hf_home))
-    if hub is not None:
-        monkeypatch.setenv("HF_HUB_CACHE", str(hub))
-
     import huggingface_hub.constants as hf_constants
-    importlib.reload(hf_constants)
+
+    saved = {k: os.environ.get(k) for k in _HF_VARS}
     try:
+        for k in _HF_VARS:
+            os.environ.pop(k, None)
+        if hf_home is not None:
+            os.environ["HF_HOME"] = str(hf_home)
+        if hub is not None:
+            os.environ["HF_HUB_CACHE"] = str(hub)
+        importlib.reload(hf_constants)
         return cleanup._hf_cache_targets()
     finally:
-        importlib.reload(hf_constants)
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+        importlib.reload(hf_constants)      # now reads the real environment
 
 
-def test_the_credential_parent_is_never_a_target(tmp_path, monkeypatch):
+def test_the_credential_parent_is_never_a_target(tmp_path):
     """The case that made the old README recipe dangerous."""
     home = tmp_path / "hf_home"
     (home / "hub").mkdir(parents=True)
     (home / "token").write_text("hf_notarealtoken")
 
-    targets, parent = _targets(monkeypatch, hf_home=home)
+    targets, parent = _targets(hf_home=home)
 
     assert parent == home
     assert home not in targets, "the HF home itself was targeted — that holds the login token"
@@ -55,13 +72,13 @@ def test_the_credential_parent_is_never_a_target(tmp_path, monkeypatch):
     assert all(home in t.parents or t == home / "hub" for t in targets), targets
 
 
-def test_xet_is_only_taken_when_the_cache_is_inside_the_chorus_data_dir(tmp_path, monkeypatch):
+def test_xet_is_only_taken_when_the_cache_is_inside_the_chorus_data_dir(tmp_path):
     """A shared HF_HOME keeps everything except the hub cache."""
     home = tmp_path / "shared_hf"
     (home / "hub").mkdir(parents=True)
     (home / "xet").mkdir()
 
-    targets, _ = _targets(monkeypatch, hf_home=home)
+    targets, _ = _targets(hf_home=home)
 
     assert home / "hub" in targets
     assert home / "xet" not in targets, (
