@@ -52,10 +52,11 @@ REDACTED = re.compile(
     re.I,
 )
 
-#: Files whose whole purpose is to describe credential shapes.
-ALLOW_PATHS = {
-    "tests/test_no_committed_credentials.py",
-}
+#: Files skipped entirely. Empty on purpose: a security guard that exempts a file from its own
+#: scan cannot report a credential pasted into that file, and this one exempted *itself* while
+#: carrying the real leaked token as a fixture. Use CONTEXTUAL_EXEMPT below instead, which keeps
+#: every prefixed pattern in force.
+ALLOW_PATHS: set[str] = set()
 
 #: Exempt from the *contextual* heuristic only — these files deliberately hold synthetic
 #: credential-shaped fixtures (e.g. ``SECRET = "SUPERSECRETLDTOKEN123"``) to prove the redaction
@@ -63,6 +64,26 @@ ALLOW_PATHS = {
 #: has a prefix and a test file is not a licence to commit one.
 CONTEXTUAL_EXEMPT = {
     "tests/test_credentials_never_reach_an_error_message.py",
+    # This file's own fixtures are credential-shaped by design. It stays in scope for every
+    # PREFIXED pattern, so a real `hf_…` pasted here is still caught.
+    "tests/test_no_committed_credentials.py",
+}
+
+
+#: Suffixes that are genuinely binary. Everything else is opened and scanned.
+#:
+#: This used to be the other way round — an allowlist of "text" suffixes — and that inverted the
+#: default in the wrong direction for a security guard. Measured on this repo it opened 655 of 869
+#: tracked files and **never opened 214**, including **59 `.log` files and 20 `.html` reports**:
+#: precisely the artefacts a token leaks into, since a log captures whatever was in the environment
+#: and a rendered report captures whatever was in a URL. A manual sweep of those 214 found nothing,
+#: so no leak was missed — but a guard that cannot see the most likely hiding places is a claim of
+#: coverage rather than coverage, which is the exact failure this file exists to correct.
+BINARY_SUFFIXES = {
+    ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".pdf",
+    ".npz", ".npy", ".gz", ".zip", ".tar", ".bz2", ".xz",
+    ".h5", ".hdf5", ".pt", ".pth", ".safetensors", ".bin", ".pkl", ".2bit",
+    ".woff", ".woff2", ".ttf", ".eot",
 }
 
 
@@ -163,7 +184,12 @@ def test_the_guard_opens_the_file_types_a_token_actually_leaks_into():
 
 
 @pytest.mark.parametrize("leak", [
-    "The LDlink token the user pasted this session (`5b19f9d3d067`) and",
+    # Same SHAPE as the value that leaked (12 bare hex, backticked, after the word "token"),
+    # deliberately NOT the value itself. The first version of this test pasted the real token
+    # back into the repo -- in the one file whose job is to stop exactly that -- and then relied
+    # on the self-exemption below to keep passing. A fixture does not need the true secret to
+    # prove the pattern matches.
+    "The LDlink token the user pasted this session (`0123456789ab`) and",
     'api_key="a1b2c3d4e5f6"',
     "password: `hunter2hunter2hunter2`",
 ])

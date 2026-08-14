@@ -15,15 +15,32 @@ logger = logging.getLogger(__name__)
 
 
 def _find_mamba() -> str:
-    """Locate the mamba executable, falling back to conda."""
+    """Locate the mamba executable, falling back to conda.
+
+    Order: ``MAMBA_EXE`` → ``PATH`` → the usual per-user install locations.
+
+    ``MAMBA_EXE`` comes first because it is the variable mamba's own shell hook exports, so it is
+    both the documented way to point chorus at a specific install and the mechanism a shared or
+    module-loaded install already provides. ``EnvironmentManager._find_conda_executable`` has always
+    honoured it; this function did not, which is why it needed a hardcoded path to work anywhere
+    mamba was off ``PATH``.
+
+    That hardcoded path was ``/data/pinello/SHARED_SOFTWARE/miniforge3/bin/mamba`` — one lab's shared
+    filesystem, in a package presented as general-purpose, and placed *ahead* of the user's own
+    ``~/miniforge3``, so on that cluster it silently overrode whatever install they had chosen.
+    Removed: ``MAMBA_EXE`` covers that case properly and for everyone.
+    """
+    exe = os.environ.get("MAMBA_EXE")
+    if exe and os.path.isfile(exe):
+        return exe
     exe = shutil.which("mamba")
     if exe:
         return exe
-    # Common install locations
+    # Common per-user install locations.
     for candidate in [
-        "/data/pinello/SHARED_SOFTWARE/miniforge3/bin/mamba",
         os.path.expanduser("~/miniforge3/bin/mamba"),
         os.path.expanduser("~/mambaforge/bin/mamba"),
+        os.path.expanduser("~/miniconda3/bin/mamba"),
     ]:
         if os.path.isfile(candidate):
             return candidate
