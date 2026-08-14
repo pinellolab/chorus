@@ -1,2 +1,0 @@
-=== §15 actual runtime CDN fetches (script src / link href) ===
-(if empty: all JS/CSS is bundled — reports work offline ✓)
