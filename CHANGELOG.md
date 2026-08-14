@@ -8,7 +8,7 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 _Nothing yet._
 
-## [0.7.3] — 2026-08-13
+## [0.7.3] — 2026-08-14
 
 **No percentile changes.** No background null, region set, retention rule or default fold moved,
 so effect and activity percentiles are directly comparable with 0.7.2. What changed is enforcement,
@@ -19,6 +19,24 @@ report rendering and two real defects — see the banner on each entry.
 `_HF_REVISION` still pins it. Nothing was rebuilt or re-uploaded.
 
 ### Fixed
+- **🔐 A live LDlink API token had been committed in plaintext since April and is now redacted
+  ([#188](https://github.com/pinellolab/chorus/pull/188)).** It sat in a tracked audit report, inside
+  a paragraph headed *"Reminder / hygiene"* that asserted "No copy was written to any on-disk
+  location by me during the audit" — the HuggingFace token on the next line **was** redacted; this
+  one was not. **The token has been revoked.** Redaction does not undo exposure: the value remains in
+  this repository's git history, so anyone who mirrored the repo should treat it as compromised
+  rather than fixed.
+
+  The reason it survived four secret sweeps is the part worth carrying forward. Every sweep, this
+  release's own audit included, searched for **prefixed** patterns — `hf_…`, `AKIA…`. An LDlink
+  token is twelve bare hex characters with no prefix, so none of them could ever have matched, and
+  each clean result was reported as "no secrets" when it only ever meant "no secrets *of the shapes
+  we grep for*". `tests/test_no_committed_credentials.py` now covers the unprefixed case
+  contextually — a hex or base62 run within 40 characters of *token/secret/api-key/password* — and is
+  verified to flag the exact line that leaked while leaving this repo's thousands of legitimate
+  hashes alone. `audits/AUDIT_CHECKLIST.md` §16 now says to run that test rather than hand-roll a
+  grep.
+
 - **`chorus health` could report an oracle Healthy while checking nothing, and an unreachable
   mamba root was reported as a missing Python interpreter.** Two defects in the same area, both
   found by work that started as documentation tidying
@@ -66,7 +84,8 @@ report rendering and two real defects — see the banner on each entry.
   `chorus/core/environment/manager.py`) or `requests` (by `chorus/utils/annotations.py`, working
   only because `huggingface_hub` happens to pull it in). Both declared, with
   `tests/test_declared_dependencies_cover_the_imports.py` enforcing the property
-  ([#189](https://github.com/pinellolab/chorus/pull/189)).
+  ([#188](https://github.com/pinellolab/chorus/pull/188) — this one predates the post-release batch
+  and was simply undescribed; #189 touched none of those files).
 
 - **The MCP end-to-end test had been skipping for months, and failed the moment it ran.** Its gate
   read only `HF_TOKEN`/`HUGGING_FACE_HUB_TOKEN`, while both AlphaGenome load paths try the stored
@@ -74,7 +93,7 @@ report rendering and two real defects — see the banner on each entry.
   `huggingface_hub.get_token()`, which immediately exposed a hardcoded `MAMBA_ROOT_PREFIX` fallback
   of `~/.local/share/mamba`: wrong on any host whose envs live under `miniforge3/envs`, and the
   cause of the misleading interpreter error above. Now derived from the mamba binary chorus itself
-  resolved. The integration suite goes **145 → 148 passing**
+  resolved. The integration suite goes **146 → 148 passing** (145 was the figure before #188 added one of its own; 146 is what this batch started from)
   ([#190](https://github.com/pinellolab/chorus/pull/190)).
 
 - **`layers_affected` came back in a different order every run.** `discover_variant_effects` built it
@@ -299,9 +318,6 @@ report rendering and two real defects — see the banner on each entry.
 - **Cherimoya and ChromBPNet remain incomparable at raw magnitude** — CATv1 has no bias model and
   tracks bias-*aware* ChromBPNet, while chorus loads `chrombpnet_nobias`. Percentiles are
   unaffected, since each is ranked against its own null. Unchanged from 0.7.2.
-- **One AlphaGenome MCP end-to-end test never runs on an authenticated host**:
-  `tests/test_integration.py:196` gates on the `HF_TOKEN` environment variable, so it skips when
-  credentials come from the stored token. That path stays unverified.
 
 ## [0.7.2] — 2026-08-12
 
