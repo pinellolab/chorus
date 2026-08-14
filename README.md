@@ -103,7 +103,7 @@ print(f"Variant result: scored {n_alts} alt alleles "
 Hook chorus up to Claude Code once and then *describe* the analysis you want. Claude figures out which models to load, which tracks to score, and which chorus tool to call.
 
 ```bash
-claude mcp add -s user chorus -- mamba run -n chorus chorus-mcp
+claude mcp add -s user chorus -e CHORUS_NO_TIMEOUT=1 -- mamba run -n chorus chorus-mcp
 ```
 
 Now ask, in any Claude Code prompt:
@@ -788,7 +788,7 @@ Claude Code reads `.mcp.json` on startup and launches the MCP server in the back
 
 ```bash
 # Add globally (one-time setup) — note `-s user`:
-claude mcp add -s user chorus -- mamba run -n chorus chorus-mcp
+claude mcp add -s user chorus -e CHORUS_NO_TIMEOUT=1 -- mamba run -n chorus chorus-mcp
 ```
 
 `claude mcp add` defaults to `--scope local`, which registers the server for the **current project
@@ -1369,7 +1369,8 @@ If you use Chorus in your research, please cite:
 ```bibtex
 @software{chorus2026,
   title = {Chorus: A unified interface for genomic sequence oracles},
-  author = {Dmitry Penzar , Lorenzo Ruggeri , Rosalba Giugno, Luca Pinello},
+  version = {0.7.3},
+  author = {Penzar, Dmitry and Ruggeri, Lorenzo and Giugno, Rosalba and Pinello, Luca},
   year = {2026},
   url = {https://github.com/pinellolab/chorus}
 }

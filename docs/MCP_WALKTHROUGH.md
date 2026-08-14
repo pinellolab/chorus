@@ -18,7 +18,7 @@ what a user types in natural language and what Claude returns.
      Best when you want chorus available only inside that project.
    - **Global** — add it once to Claude Code's CLI config:
      ```bash
-     claude mcp add -s user chorus -- mamba run -n chorus chorus-mcp
+     claude mcp add -s user chorus -e CHORUS_NO_TIMEOUT=1 -- mamba run -n chorus chorus-mcp
      ```
      Best when you use chorus from many directories.
 
