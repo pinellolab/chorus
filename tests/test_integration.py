@@ -217,13 +217,27 @@ def test_mcp_e2e_list_oracles_and_analyze_variant(tmp_path):
     if not chorus_mcp_bin:
         pytest.skip("chorus-mcp not on PATH — activate the chorus env first")
 
-    # Inherit MAMBA_ROOT_PREFIX so the spawned server finds the
-    # oracle envs under ~/.local/share/mamba (documented "two mamba
-    # installs" trap — default mamba root is miniforge3/envs which
-    # doesn't contain chorus-*).
-    mamba_root = os.environ.get("MAMBA_ROOT_PREFIX") or str(
-        Path.home() / ".local" / "share" / "mamba"
-    )
+    # MAMBA_ROOT_PREFIX tells the spawned server which mamba root holds the oracle envs. It used to
+    # fall back to `~/.local/share/mamba` when the variable was unset — the "two mamba installs"
+    # trap this test was written on. On a host where the envs live under `miniforge3/envs` that
+    # fallback is actively wrong: the child inherits a root with no `chorus-*` in it, `mamba env
+    # list --json` returns envs that do not include the oracle, and the failure surfaces as
+    # "Python executable not found in environment" — which sends you looking at the env's contents
+    # rather than at the root you pointed mamba at. Masked for months by the HF skip above.
+    #
+    # Derive it from the mamba/conda binary chorus itself resolved (root = <prefix>/bin/mamba's
+    # grandparent), and if that cannot be determined, pass nothing and let mamba use its own
+    # default — which is correct far more often than a guess.
+    mamba_root = os.environ.get("MAMBA_ROOT_PREFIX")
+    if not mamba_root:
+        try:
+            from chorus.core.environment import EnvironmentManager
+
+            conda_exe = Path(EnvironmentManager().conda_exe).resolve()
+            if conda_exe.parent.name == "bin":
+                mamba_root = str(conda_exe.parent.parent)
+        except Exception:
+            mamba_root = None
 
     async def run():
         transport = StdioTransport(
@@ -237,7 +251,8 @@ def test_mcp_e2e_list_oracles_and_analyze_variant(tmp_path):
                 "HF_TOKEN": hf_token,
                 "CHORUS_NO_TIMEOUT": "1",
                 "PATH": os.environ.get("PATH", ""),
-                "MAMBA_ROOT_PREFIX": mamba_root,
+                # Omitted entirely when it could not be derived, rather than guessed at.
+                **({"MAMBA_ROOT_PREFIX": mamba_root} if mamba_root else {}),
                 "MAMBA_EXE": os.environ.get("MAMBA_EXE", ""),
                 "HOME": os.environ.get("HOME", ""),
                 **{k: os.environ[k] for k in
