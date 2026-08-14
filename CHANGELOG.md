@@ -239,7 +239,7 @@ ships, and several audit reports cite them as evidence.
 ### Changed
 - **`audits/` no longer ships its raw artefacts, only the reports
   ([#198](https://github.com/pinellolab/chorus/pull/198)).** It was **426 of 869 tracked files** —
-  nearly 3× the package itself — and 119 MB, which made the repo's file tree read as an audit dump
+  nearly 3× the package itself — and ~123 MB, which made the repo's file tree read as an audit dump
   rather than a library. The split was lopsided enough to decide it: **79 `.md` reports hold all the
   reasoning in 0.9 MB**, against 347 artefacts in 122 MB. The reports stay, and several are cited
   from this file and from `CLAUDE.md`; the artefacts were evidence for conclusions the reports

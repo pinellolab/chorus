@@ -86,9 +86,21 @@ def test_every_documented_choice_is_a_real_choice(script: str, flag: str, doc: s
     # covered by test_the_enformer_exception_is_still_true instead
     import re
     positive = re.sub(r"no\s+`[a-z_]+`", "", row)
+    # Two spellings occur in these tables: values called out individually (`chrombpnet`) and values
+    # shown inside a whole command (`scripts/…py --only all`). Collect both, or the non-vacuity check
+    # below trips on formatting rather than on content.
     cited = {m for m in re.findall(r"`([a-z_]+)`", positive)}
+    cited |= {m for m in re.findall(rf"{re.escape(flag)}\s+([a-z_]+)", positive)}
     known_oracles = {"alphagenome", "enformer", "chrombpnet", "cherimoya", "legnet", "sei",
                      "borzoi", "epinformerseq", "alphagenome_pt"}
+    # Non-vacuity: the row must document at least one real choice. Without this, the loop below
+    # is empty for `regenerate_remaining_examples.py` -- whose `--only` choices are stage names, not
+    # oracle names -- so that parametrization asserted nothing about the documented values.
+    assert cited & set(choices), (
+        f"{doc}'s row for {script} cites none of its {flag} choices {choices}; the row documents no "
+        f"values, so nothing here can catch a wrong one. cited={sorted(cited)}"
+    )
+
     for name in cited & known_oracles:
         assert name in choices, (
             f"{doc}'s row for {script} cites `{name}`, but its {flag} choices are {choices}. "
@@ -173,6 +185,12 @@ def test_the_routing_table_covers_the_non_oracle_paths():
     place. The routing table exists so that does not happen.
     """
     head = CONTRIBUTING.read_text()[:2000].lower()
+    # Anchored on the routing table's own link target, not the bare word "example": that word appears
+    # in prose predating the table, so deleting the example row left this green.
+    assert "#contributing-an-example-or-walkthrough" in head, (
+        "the routing table no longer links to the example-contribution section; a reader with an "
+        "example to add is back to reading an oracle-implementation guide to find out this is not it"
+    )
     for want, why in (
         ("example", "an example contributor must see themselves in the first screen"),
         ("bug fix", "small fixes are wanted and were never mentioned"),

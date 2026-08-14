@@ -432,12 +432,21 @@ and give the commit.
 
 ## Appendix — artefacts to produce per audit
 
-A full audit should leave behind, in `audits/YYYY-MM-DD_vNN_<label>/`:
+A full audit should **produce** all of the following, and **commit only the first**.
+
+Committed, in `audits/YYYY-MM-DD_vNN_<label>/`:
 
 - `report.md` — findings summary (one bullet per finding: file:line, problem, fix).
+
+Produced and kept **outside the repository** (v0.7.3 removed 347 such files, ~122 MB, from the tree —
+see [`audits/README.md`](README.md); re-committing them undoes that):
+
 - `screenshots/*.png` — one per shipped HTML (selenium-rendered, 1600×4500).
 - `nb_fresh_output/*.ipynb` — fresh re-execution of every notebook.
 - `cdf_check.txt` — output of the CDF-sanity script from §4.
 - `device_probe.txt` — output of the per-env GPU probe from §3.
 
-These let the next auditor diff your findings against theirs mechanically.
+Produce them, read them, quote the numbers that matter into `report.md`, then archive them somewhere
+the maintainers can reach. The report is the record; the artefacts were evidence for conclusions the
+report already states. If the next auditor needs to diff mechanically, ask a maintainer for the
+archive rather than re-adding 122 MB to every clone.
