@@ -499,17 +499,36 @@ class EnvironmentManager:
             
             if not env_path:
                 return None
-            
-            # Get package list
-            result = subprocess.run(
-                [self.conda_exe, 'list', '-n', env_name, '--json'],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            
-            packages = json.loads(result.stdout)
-            
+
+            # The package list is a nice-to-have; its only consumer is a count printed by
+            # `chorus list --verbose`. It must NOT be able to veto the rest of this function.
+            #
+            # It used to: a failing `list` call raised CalledProcessError, the handler at the
+            # bottom returned None, and all eleven callers read None as "the environment does not
+            # exist". `get_python_executable` then reported "Python executable not found in
+            # environment" for an env whose interpreter was sitting right there — a message that
+            # sent three separate diagnostic attempts looking inside the env instead of at the
+            # lookup. Found when a test handed a child the wrong MAMBA_ROOT_PREFIX: `env list`
+            # still located the env (so `environment_exists` correctly said True) while
+            # `list -n <name>`, which resolves the name against the root, exited 1.
+            #
+            # Two changes: resolve by `-p <path>`, which does not depend on the root and is the
+            # path we just looked up anyway; and keep a failure non-fatal.
+            packages = []
+            try:
+                result = subprocess.run(
+                    [self.conda_exe, 'list', '-p', env_path, '--json'],
+                    capture_output=True,
+                    text=True,
+                    check=True
+                )
+                packages = json.loads(result.stdout)
+            except (subprocess.CalledProcessError, json.JSONDecodeError) as exc:
+                logger.debug(
+                    "Could not list packages for %s (%s); returning env info without them. "
+                    "Path and existence are already known.", env_name, exc,
+                )
+
             # Parse environment file
             env_file = self.get_environment_file(oracle)
             env_config = {}
@@ -571,7 +590,18 @@ class EnvironmentManager:
         # Check Python executable
         python_exe = self.get_python_executable(oracle)
         if not python_exe:
-            issues.append("Python executable not found in environment")
+            # Name both possibilities. `environment_exists` above already said yes, so if the
+            # interpreter cannot be resolved the likelier cause is that the *lookup* failed —
+            # historically a mamba root that does not contain this env — not a genuinely
+            # interpreter-less environment. The old wording asserted the latter and cost real
+            # debugging time.
+            env_name = self.get_environment_name(oracle)
+            issues.append(
+                f"Could not resolve a Python interpreter for {env_name}. The environment is "
+                f"listed, so either it is incomplete, or the lookup is pointed at the wrong "
+                f"conda/mamba root (check MAMBA_ROOT_PREFIX; `{self.conda_exe} env list` should "
+                f"show {env_name})"
+            )
             return False, issues
         
         # Check oracle-specific dependencies instead of importing chorus
