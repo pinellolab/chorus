@@ -20,7 +20,7 @@ Four steps. Steps 1 + 2 are copy-paste. Step 3 is a runnable snippet. Step 4 hoo
 - **~100 GB free disk** for the default all-oracle install on Linux x86_64 + CUDA. The install itself
   is ~85 GiB (as `du -sh` counts it) plus a ~4 GiB reclaimable package cache — and if you are
   provisioning a cloud volume, note that those are **binary** units: a disk *sold* as "90 GB" is only
-  83.8 GiB, which is smaller than the install. 100 GB decimal (93 GiB) fits with room to work. Each oracle env carries its own multi-GB CUDA payload, which is nearly all of it — so a macOS or CPU-only install is far smaller. See [Disk usage breakdown](#disk-usage-breakdown) for per-oracle / per-asset numbers, `chorus setup --oracle <name>` if you only need one oracle — **that is ~14 GiB, not 85** (measured for `enformer`: 2.4 GiB base env + 5.9 GiB oracle env + 3.1 GiB hg38 + 1.9 GiB weights + 0.5 GiB backgrounds = 13.7 GiB) — and [Where chorus puts large files](#where-chorus-puts-large-files) to put it on a different filesystem
+  83.8 GiB, which is smaller than the install. 100 GB decimal (93 GiB) fits with room to work. Each oracle env carries its own multi-GB CUDA payload, which is nearly all of it — so a macOS or CPU-only install is far smaller. See [Disk usage breakdown](#disk-usage-breakdown) for per-oracle / per-asset numbers, `chorus setup --oracle <name>` if you only need one oracle — **that is ~14 GiB, not 85** (measured for `enformer`: 2.41 GiB base env + 5.89 GiB oracle env + 3.05 GiB hg38 + 1.87 GiB weights + 0.52 GiB backgrounds = 13.74 GiB) — and [Where chorus puts large files](#where-chorus-puts-large-files) to put it on a different filesystem
 - **Linux x86_64 or macOS** (Intel / Apple Silicon)
 
 ### 1. Install (5 minutes)
