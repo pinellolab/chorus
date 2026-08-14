@@ -95,46 +95,6 @@ def browser():
             b.close()
 
 
-#: Console-error signatures that mean "a host did not answer", not "this report is broken".
-#: Chromium reports a refused/blocked fetch as ERR_CONNECTION_REFUSED and igv.js surfaces the
-#: same event as `Status: 0`, so both spellings of the one condition have to be recognised.
-_UNREACHABLE = (
-    "ERR_CONNECTION_REFUSED", "ERR_NAME_NOT_RESOLVED", "ERR_INTERNET_DISCONNECTED",
-    "ERR_TIMED_OUT", "ERR_CONNECTION_TIMED_OUT", "ERR_ADDRESS_UNREACHABLE",
-    "ERR_CONNECTION_RESET", "ERR_NETWORK_CHANGED", "Status: 0",
-)
-
-
-def _unreachable_external_host(r) -> "str | None":
-    """Why this render cannot be judged, or None if it can.
-
-    Every committed report resolves its reference sequence from `hgdownload.soe.ucsc.edu`: igv.js
-    requires a sequence source, hg38 is ~3 GB, and bundling it in a repo is not an option — a
-    documented limitation rather than a defect. The consequence is that this file's verdict depended
-    on a third party being up. On 2026-08-14 UCSC refused the connection during one PR's run and the
-    same corpus that had passed minutes earlier reported `canvases 0/0 painted (NOT converged)` and
-    blew the 30 s budget at the 60 s timeout — four failures, none of them about the reports.
-
-    A test that goes red when someone else's server hiccups trains people to re-run CI until it is
-    green, which is how a real blank-panel regression gets waved through. So: if the *only* console
-    errors are unreachable-host signatures and an external host was actually contacted, this render
-    is unverifiable and says so. A genuinely broken report still fails — a blank canvas with UCSC up
-    produces no such console error, and any error outside this list disqualifies the skip.
-    """
-    if not r.console_errors or not r.external_urls:
-        return None
-    unexplained = [e for e in r.console_errors
-                   if not any(sig in e for sig in _UNREACHABLE)]
-    if unexplained:
-        return None
-    hosts = ", ".join(r.external_hosts) or "an external host"
-    return (
-        f"{r.path.name}: {hosts} did not answer, so the reference sequence never loaded and the "
-        f"panel could not paint. Not a report defect -- igv.js needs a sequence source and hg38 is "
-        f"too large to bundle. Errors: {r.console_errors[:2]}"
-    )
-
-
 _RENDERED: dict = {}
 
 
@@ -169,7 +129,7 @@ def test_every_committed_report_paints_every_track(browser, report):
     """
     r = _render_once(browser, report)
 
-    unverifiable = _unreachable_external_host(r)
+    unverifiable = bh.unreachable_external_host(r)
     if unverifiable:
         pytest.skip(unverifiable)
 
@@ -200,7 +160,7 @@ def test_no_committed_report_takes_absurdly_long_to_paint(browser, report):
     """"Large is fine if it still loads" is the policy; this is the "still loads" half."""
     r = _render_once(browser, report)
 
-    unverifiable = _unreachable_external_host(r)
+    unverifiable = bh.unreachable_external_host(r)
     if unverifiable:
         pytest.skip(unverifiable)
 
@@ -310,57 +270,3 @@ def test_file_size_is_not_what_costs_load_time(browser):
         f"When the 50 MiB ceiling was set, 11x the bytes cost 1.2x the time, because the "
         f"seconds go on genome-resource round-trips rather than on parsing the payload."
     )
-
-
-# ── the outage guard itself, checked without a browser ───────────────────────────
-
-def _fake(console=(), external=(), page=(), blank=()):
-    """A RenderResult standing in for one render, so the skip logic is testable offline."""
-    return bh.RenderResult(
-        path=REPO / "examples" / "fake_report.html", mib=1.3, canvases=4, measured=0, painted=0,
-        blank=list(blank), page_errors=list(page), console_errors=list(console),
-        external_urls=list(external), seconds=60.1, is_igv=True, converged=False,
-    )
-
-
-#: Verbatim from the failing run on 2026-08-14, so the guard is pinned to the real signature
-#: rather than to my paraphrase of it.
-_REAL_OUTAGE = [
-    "error: IGV error: Error accessing resource: "
-    "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.2bit Status: 0",
-    "error: Failed to load resource: net::ERR_CONNECTION_REFUSED",
-]
-_UCSC = ["https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.2bit"]
-
-
-def test_an_unreachable_sequence_host_is_recognised():
-    """The exact failure that turned a browser job red while the corpus was fine."""
-    why = _unreachable_external_host(_fake(console=_REAL_OUTAGE, external=_UCSC))
-    assert why and "hgdownload.soe.ucsc.edu" in why, (
-        f"the 2026-08-14 outage signature was not recognised, so CI stays hostage to UCSC: {why!r}"
-    )
-
-
-def test_a_broken_report_is_still_a_failure():
-    """The case this must never mask: blank canvases with nobody's server to blame."""
-    assert _unreachable_external_host(_fake(blank=[0, 1], external=_UCSC)) is None, (
-        "a report with blank canvases and no console errors was treated as an outage; a real "
-        "blank-panel regression would then skip instead of failing, which is the whole risk here"
-    )
-
-
-def test_one_unexplained_error_disqualifies_the_skip():
-    """A genuine JS fault alongside an outage must still fail — outages do not grant amnesty."""
-    mixed = _REAL_OUTAGE + ["error: TypeError: undefined is not a function"]
-    assert _unreachable_external_host(_fake(console=mixed, external=_UCSC)) is None, (
-        "an unrelated console error was swallowed because an outage signature was also present"
-    )
-
-
-def test_errors_without_any_external_request_are_never_an_outage():
-    """No external fetch attempted means no third party to blame."""
-    assert _unreachable_external_host(_fake(console=_REAL_OUTAGE)) is None
-
-
-def test_a_clean_render_needs_no_excuse():
-    assert _unreachable_external_host(_fake()) is None
