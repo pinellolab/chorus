@@ -20,7 +20,7 @@ Four steps. Steps 1 + 2 are copy-paste. Step 3 is a runnable snippet. Step 4 hoo
 - **~100 GB free disk** for the default all-oracle install on Linux x86_64 + CUDA. The install itself
   is ~85 GiB (as `du -sh` counts it) plus a ~4 GiB reclaimable package cache — and if you are
   provisioning a cloud volume, note that those are **binary** units: a disk *sold* as "90 GB" is only
-  83.8 GiB, which is smaller than the install. 100 GB decimal (93 GiB) fits with room to work. Each oracle env carries its own multi-GB CUDA payload, which is nearly all of it — so a macOS or CPU-only install is far smaller. See [Disk usage breakdown](#disk-usage-breakdown) for per-oracle / per-asset numbers, `chorus setup --oracle <name>` if you only need one oracle, and [Where chorus puts large files](#where-chorus-puts-large-files) to put it on a different filesystem
+  83.8 GiB, which is smaller than the install. 100 GB decimal (93 GiB) fits with room to work. Each oracle env carries its own multi-GB CUDA payload, which is nearly all of it — so a macOS or CPU-only install is far smaller. See [Disk usage breakdown](#disk-usage-breakdown) for per-oracle / per-asset numbers, `chorus setup --oracle <name>` if you only need one oracle — **that is ~14 GiB, not 85** (measured for `enformer`: 2.4 GiB base env + 5.9 GiB oracle env + 3.1 GiB hg38 + 1.9 GiB weights + 0.5 GiB backgrounds = 13.7 GiB) — and [Where chorus puts large files](#where-chorus-puts-large-files) to put it on a different filesystem
 - **Linux x86_64 or macOS** (Intel / Apple Silicon)
 
 ### 1. Install (5 minutes)
@@ -55,12 +55,22 @@ One command, walk away, come back to a complete chorus install. When prompted:
 > nohup chorus setup &
 > ```
 >
-> `chorus setup --no-weights` skips the gate entirely if you do not want an account at all.
+> **No HuggingFace account, and you want one that actually runs?** Only AlphaGenome is gated, and
+> the gate is scoped to it — `chorus setup --oracle enformer` never asks for a token
+> ([`main.py`](chorus/cli/main.py#L93) prompts only when `alphagenome` is among the requested
+> oracles) and leaves you with a fully working install in ~14 GiB. Every snippet in
+> [step 3](#3-your-first-prediction--score-a-snp-at-the-β-globin-locus) below uses Enformer, so
+> nothing in this TLDR needs an account.
+>
+> `chorus setup --no-weights` also skips the gate, but it downloads **no** model weights at all, so
+> you cannot predict anything afterwards — it is for provisioning envs, not for getting started.
 - **LDlink token** (optional — only for `fine_map_causal_variant`): register free at <https://ldlink.nih.gov/?tab=apiaccess>, paste when prompted. Press Enter to skip.
 
 ### 3. Your first prediction — score a SNP at the β-globin locus
 
-A 30-second taste of what chorus does. The snippet loads Enformer, predicts DNase accessibility around `chr11:5,247,500` (in the β-globin locus, expressed in K562), then scans **every possible SNP at that one base** to score the effect of A/C/G/T. One real wild-type signal, three counter-factual variants — the same shape every chorus prediction takes.
+The snippet loads Enformer, predicts DNase accessibility around `chr11:5,247,500` (in the β-globin locus, expressed in K562), then scans **every possible SNP at that one base** to score the effect of A/C/G/T. One real wild-type signal, three counter-factual variants — the same shape every chorus prediction takes.
+
+**About a minute, and no GPU required.** Measured end to end on this snippet: **64 s** on an idle H100, **59 s** CPU-only — near-identical, because the cost is almost entirely TensorFlow import and model load rather than the forward pass, so four 1 kb predictions are cheap either way. (The first run also downloads ~1.9 GiB of Enformer weights.)
 
 ```python
 import chorus
@@ -77,7 +87,10 @@ wt = oracle.predict(
     ('chr11', 5247000, 5248000),
     ['ENCFF413AHU'],
 )
-print(f"WT mean signal: {wt['ENCFF413AHU'].values.mean():.3f}")
+# NB: .values is Enformer's FULL output — 896 bins x 128 bp = 114,688 bp centred
+# on the query, not the 1 kb you asked for. This mean is over all of it. To score
+# just the window, use score_region (recipe 5 below).
+print(f"mean over Enformer's 114 kb output: {wt['ENCFF413AHU'].values.mean():.3f}")
 
 # Variant effect: scan every SNV at chr11:5247500 (genome has 'C' here)
 effects = oracle.predict_variant_effect(
@@ -91,12 +104,23 @@ print(f"Variant result: scored {n_alts} alt alleles "
       f"({list(effects['predictions'].keys())})")
 ```
 
-> **Coordinate convention:** chorus uses **1-based inclusive** positions everywhere
-> (`chr11:5247500`), matching dbSNP / gnomAD / UCSC / IGV. If you assemble ref/alt
-> sequence windows by hand, use
-> [`chorus.utils.get_centered_window`](chorus/utils/sequence.py) — it converts
-> from 1-based to pyfaidx's 0-based half-open internally and validates the ref
-> base against the FASTA so off-by-one bugs fail loudly.
+> **Coordinate convention — the two forms differ by one base.** chorus accepts a region either way,
+> and they are *not* interchangeable:
+>
+> | form | convention | `…5247500, 5247504` means |
+> |---|---|---|
+> | `'chr11:5247500-5247504'` (string) | **1-based inclusive** — dbSNP / gnomAD / UCSC / IGV | `CATCA` (5 bases) |
+> | `('chr11', 5247500, 5247504)` (tuple) | **0-based end-exclusive** — BED / pyfaidx | `ATCA` (4 bases, starting one later) |
+>
+> Both rows are measured with `extract_sequence` against hg38. **Prefer the string form** — it is the
+> convention every variant database you will paste from uses. The snippet above uses the tuple form
+> because it is asking for a window rather than a point, and a 1 bp shift inside a 114 kb output
+> changes nothing; at 1 bp resolution it would.
+>
+> If you assemble ref/alt sequence windows by hand, use
+> [`chorus.utils.get_centered_window`](chorus/utils/sequence.py) — it converts from 1-based to
+> pyfaidx's 0-based half-open internally and validates the ref base against the FASTA, so
+> off-by-one bugs fail loudly.
 
 ### 4. Skip the code — drive chorus from Claude in plain English 🤖
 
@@ -649,7 +673,10 @@ inserted = oracle.predict_region_insertion_at(
 variant_effects = oracle.predict_variant_effect(
     'chr11:5247000-5248000',  # Region containing variant
     'chr11:5247500',          # Variant position
-    ['A', 'G', 'C', 'T'],     # Reference first, then alternates
+    ['C', 'A', 'G', 'T'],     # ref FIRST and it must match the genome: hg38
+                              # has C at chr11:5247500. strict_ref=True by
+                              # default, so a wrong ref raises rather than
+                              # silently substituting.
     tracks
 )
 ```

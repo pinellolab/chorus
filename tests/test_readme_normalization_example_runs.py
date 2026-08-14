@@ -121,3 +121,58 @@ def test_the_stratification_table_matches_the_code():
             f"omitted the cCRE stratum entirely and doubled every other fraction; keep it in step "
             f"with DEFAULT_REGION_STRATA."
         )
+
+
+# ── README variant-effect recipes ────────────────────────────────────────────────
+
+def _readme_allele_blocks() -> list[tuple[int, str, int, str]]:
+    """(line_no, chrom, pos, ref_allele) for every `alleles=[...]` list near a variant position."""
+    lines = README.read_text().splitlines()
+    out = []
+    for i, ln in enumerate(lines):
+        m = re.search(r"\[\s*'([ACGT])'\s*,", ln)
+        if not m:
+            continue
+        pos = None
+        for j in range(max(0, i - 6), i):
+            pm = re.search(r"'(chr[\dXYM]+):(\d+)'", lines[j])
+            if pm:
+                pos = pm.groups()
+        if pos:
+            out.append((i + 1, pos[0], int(pos[1]), m.group(1)))
+    return out
+
+
+@pytest.mark.integration
+def test_every_readme_ref_allele_matches_the_genome():
+    """`predict_variant_effect` is strict about the reference allele, and the README got it wrong twice.
+
+    `strict_ref=True` is the default and deliberate (#128): a mismatched reference raises rather than
+    silently substituting. The README's TLDR shipped `['A','G','C','T']` at chr11:5247500 where hg38
+    has **C**; that was corrected in b5a8403 — and the identical block 600 lines later, in the
+    "9 runnable recipes" section, was missed. Because it raises before binding `variant_effects`, two
+    *later* recipes then died with `NameError`, so **3 of the 9 advertised recipes could not be run**.
+
+    Needs the FASTA, hence integration-marked.
+    """
+    from chorus.utils.genome import GenomeManager
+
+    fasta = Path(GenomeManager().get_genome_path("hg38") or "")
+    if not fasta.is_file():
+        pytest.skip("hg38.fa not available")
+
+    from chorus.utils.sequence import extract_sequence
+
+    blocks = _readme_allele_blocks()
+    assert blocks, "no allele lists found in README — has the recipe section moved?"
+
+    wrong = []
+    for line_no, chrom, pos, ref in blocks:
+        actual = extract_sequence(f"{chrom}:{pos}-{pos}", str(fasta)).upper()
+        if actual != ref:
+            wrong.append(f"README.md:{line_no}  says ref '{ref}' at {chrom}:{pos}, genome has '{actual}'")
+    assert not wrong, (
+        "README variant recipes name a reference allele the genome does not have. strict_ref=True "
+        "means these raise ReferenceAlleleMismatchError rather than degrading:\n  "
+        + "\n  ".join(wrong)
+    )
