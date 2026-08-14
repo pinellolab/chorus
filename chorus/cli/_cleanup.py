@@ -1,4 +1,4 @@
-"""chorus cleanup — remove conda envs, downloaded weights, CDFs, and genomes."""
+"""chorus cleanup — remove conda envs, downloaded weights, CDFs, genomes, and the HF cache."""
 
 from __future__ import annotations
 
@@ -23,6 +23,47 @@ _ALL_ORACLES = [
 def _dry(msg: str, dry_run: bool) -> None:
     prefix = "[DRY RUN] " if dry_run else ""
     print(f"{prefix}{msg}")
+
+
+def _hf_cache_targets() -> Tuple[List[Path], Path | None]:
+    """The HuggingFace directories chorus owns, and the parent it must never delete.
+
+    Returns ``(targets, credential_parent)``.
+
+    Resolution goes through ``huggingface_hub.constants.HF_HUB_CACHE`` rather than
+    ``describe_layout()["hf_cache"]``, and the difference is not cosmetic:
+
+    * with ``HF_HOME`` set, ``describe_layout()`` returns the HF **home**, which contains the
+      ``token`` and ``stored_tokens`` files written by ``huggingface-cli login``. Deleting that
+      would destroy the user's credential and any non-chorus model cache.
+    * with ``HF_HUB_CACHE`` set and ``HF_HOME`` unset, ``describe_layout()`` reports
+      ``<data-dir>/huggingface`` while the real cache is elsewhere — so a cleanup keyed on it would
+      delete the wrong directory and leave the bytes behind.
+
+    Only ``hub/`` is removed unconditionally. Its sibling ``xet/`` is chorus-owned too, but is only
+    taken when the parent sits inside the chorus data dir, so a shared ``HF_HOME`` keeps everything
+    except the hub cache. The parent itself is never a target.
+    """
+    from ..core.globals import CHORUS_DATA_DIR
+
+    try:
+        from huggingface_hub.constants import HF_HUB_CACHE
+        hub = Path(HF_HUB_CACHE)
+    except Exception:
+        hub = Path.home() / ".cache" / "huggingface" / "hub"
+
+    parent = hub.parent
+    targets = [hub]
+    inside_chorus = False
+    try:
+        inside_chorus = parent.resolve().is_relative_to(Path(CHORUS_DATA_DIR).resolve())
+    except (OSError, ValueError):
+        pass
+    if inside_chorus:
+        xet = parent / "xet"
+        if xet.exists():
+            targets.append(xet)
+    return targets, parent
 
 
 def _remove_path(p: Path, dry_run: bool) -> bool:
@@ -75,20 +116,27 @@ def cleanup_resources(args) -> int:
     do_oracle: str | None = getattr(args, "oracle", None)
     do_backgrounds: bool = getattr(args, "backgrounds", False)
     do_genomes: bool = getattr(args, "genomes", False)
+    do_hf_cache: bool = getattr(args, "hf_cache", False)
     do_all: bool = getattr(args, "all", False)
 
     if do_all:
         do_oracle = "all"
         do_backgrounds = True
         do_genomes = True
+        # Deliberately NOT do_hf_cache. `--all` means "everything chorus put in its data dir",
+        # and the HF cache can legitimately live outside it: with HF_HOME pointing at a shared
+        # cache, deleting it would take other projects' weights and the user's stored token with
+        # it. Keeping it also makes an upgrade cheap, which is what README's Upgrading section
+        # recommends. The notice below makes the omission visible rather than silent.
 
-    if not any([do_oracle, do_backgrounds, do_genomes]):
+    if not any([do_oracle, do_backgrounds, do_genomes, do_hf_cache]):
         print(
             "Nothing to clean up. Specify at least one of:\n"
             "  --oracle {name|all}   conda env + weights\n"
             f"  --backgrounds         background CDFs ({_BACKGROUNDS_DIR}/)\n"
             "  --genomes             downloaded reference genomes\n"
-            "  --all                 everything above\n"
+            "  --hf-cache            the HuggingFace hub cache (most oracle weights live here)\n"
+            "  --all                 everything above except --hf-cache\n"
             "\nAdd --dry-run to preview without deleting."
         )
         return 1
@@ -96,6 +144,7 @@ def cleanup_resources(args) -> int:
     total_envs = 0
     total_dirs = 0
     total_files = 0
+    total_caches = 0
 
     # ── Oracle envs + weights ──────────────────────────────────────────
     if do_oracle:
@@ -131,6 +180,24 @@ def cleanup_resources(args) -> int:
                 gm.remove_genome(genome_id)
             total_files += 1
 
+    # ── HuggingFace cache ──────────────────────────────────────────────
+    if do_hf_cache:
+        targets, parent = _hf_cache_targets()
+        print(f"{'[DRY RUN] ' if dry_run else ''}Cleaning HuggingFace cache")
+        for t in targets:
+            if _remove_path(t, dry_run):      # prints the "remove <path>" line itself
+                total_caches += 1
+        if parent is not None:
+            _dry(f"  keeping {parent} itself — it can hold your `huggingface-cli login` token",
+                 dry_run)
+    elif do_all:
+        targets, _ = _hf_cache_targets()
+        hub = targets[0]
+        if hub.exists():
+            print(f"Note: the HuggingFace cache at {hub} was NOT removed — most oracle weights "
+                  f"live there, and keeping it makes a re-install fast. Pass --hf-cache to remove "
+                  f"it too.")
+
     # ── Summary ────────────────────────────────────────────────────────
     parts = []
     if total_envs:
@@ -139,6 +206,8 @@ def cleanup_resources(args) -> int:
         parts.append(f"{total_dirs} weight dir(s)")
     if total_files:
         parts.append(f"{total_files} file(s)")
+    if total_caches:
+        parts.append(f"{total_caches} HF cache dir(s)")
 
     verb = "Would remove" if dry_run else "Removed"
     summary = f"{verb}: {', '.join(parts)}" if parts else f"{verb}: nothing (already clean)"

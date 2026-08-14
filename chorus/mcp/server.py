@@ -9,8 +9,9 @@ Or via the console_scripts entry-point:
 
 import logging
 import re
+import argparse
 import sys
-from typing import Optional
+from typing import List, Optional
 
 from fastmcp import FastMCP
 
@@ -25,8 +26,9 @@ from chorus.mcp.serializers import (
 logger = logging.getLogger(__name__)
 
 _INSTRUCTIONS = (
-    "Unified interface for 7 genomic deep-learning oracles "
-    "(Enformer, Borzoi, ChromBPNet, Sei, LegNet, EPInformer-seq, AlphaGenome). "
+    "Unified interface for 8 genomic deep-learning oracles "
+    "(Enformer, Borzoi, ChromBPNet, Sei, LegNet, Cherimoya/CATv1, EPInformer-seq, "
+    "AlphaGenome) — 9 registered names, since AlphaGenome ships two backends. "
     "AlphaGenome "
     "ships with two interchangeable backends — `alphagenome` (JAX, default) "
     "and `alphagenome_pt` (PyTorch, opt-in alternative) — that share the "
@@ -293,7 +295,7 @@ def recommend_alphagenome_backend(window_size_bp: int) -> dict:
 @mcp.tool()
 @_safe_tool
 def list_oracles() -> dict:
-    """List all genomic oracles (7 plus an alternative PyTorch backend for AlphaGenome) with their specs, environment install status, and loaded status.
+    """List all genomic oracles (8, plus an alternative PyTorch backend for AlphaGenome = 9 names) with their specs, environment install status, and loaded status.
 
     No model loading is required — this returns static metadata plus live status.
     """
@@ -2083,40 +2085,56 @@ def analyze_variant(variant: str, gene: str, cell_type: str = "K562") -> str:
 
 # ── Entry-point ──────────────────────────────────────────────────────
 
-def main():
+def registered_tool_names() -> List[str]:
+    """The tool names FastMCP actually registered, read from the server object.
+
+    Asking `mcp` rather than maintaining a list. The hand-written list this replaces had drifted
+    twice: a v27 audit found it missing `discover_variant` and `fine_map_causal_variant`, and by
+    v0.7.3 it still said "Tools provided (22)" while 24 were registered (`recommend_alphagenome_backend`
+    and `score_ism` were absent). A count that is derived cannot disagree with the code.
+    """
+    import asyncio
+
+    try:
+        tools = asyncio.run(mcp.list_tools())
+    except Exception:                      # no sync accessor in FastMCP 3.x; never break --help
+        return []
+    return sorted(getattr(t, "name", str(t)) for t in tools)
+
+
+def main(argv: Optional[List[str]] = None):
     """Console-scripts entry-point for ``chorus-mcp``."""
-    if "--help" in sys.argv or "-h" in sys.argv:
-        print("chorus-mcp — Chorus Genomics MCP Server")
-        print()
-        print("Starts the Chorus MCP server (Model Context Protocol) for AI")
-        print("assistant integration. The server communicates via stdio and")
-        print("is normally launched automatically by Claude Code or Claude Desktop.")
-        print()
-        print("Usage:")
-        print("  chorus-mcp          Start the MCP server (stdio transport)")
-        print("  chorus-mcp --help   Show this help message")
-        print()
-        print("Configuration:")
-        print("  CHORUS_NO_TIMEOUT=1       Disable prediction timeouts")
-        print("  CHORUS_MCP_OUTPUT_DIR=DIR  Set output directory for bedgraph files")
-        print()
-        # Tool list mirrors what `@mcp.tool()` registers below — kept
-        # alphabetised so audit drift is easy to spot. v27 audit found
-        # this list missing `discover_variant` and `fine_map_causal_variant`.
-        print("Tools provided (22):")
-        print("  Discovery: list_oracles, list_tracks, list_genomes,")
-        print("    get_genes_in_region, get_gene_tss")
-        print("  Lifecycle: load_oracle, unload_oracle, oracle_status")
-        print("  Predict:   predict, predict_variant_effect,")
-        print("    predict_region_replacement, predict_region_insertion,")
-        print("    predict_variant_effect_on_gene, score_prediction_region,")
-        print("    score_variant_effect_at_region, score_variant_batch")
-        print("  Analyze:   analyze_variant_multilayer, analyze_region_swap,")
-        print("    discover_variant, discover_variant_cell_types,")
-        print("    fine_map_causal_variant, simulate_integration")
-        print()
-        print("Prompts provided: getting_started, analyze_variant")
-        return
+    names = registered_tool_names()
+    tool_lines = "\n".join(f"  {n}" for n in names) or "  (none discovered)"
+
+    parser = argparse.ArgumentParser(
+        prog="chorus-mcp",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=(
+            "Chorus Genomics MCP Server (Model Context Protocol).\n\n"
+            "Communicates over stdio and is normally launched for you by Claude Code or Claude\n"
+            "Desktop rather than run by hand. It takes no options: transport, host and port come\n"
+            "from FastMCP's own settings (see below)."
+        ),
+        epilog=(
+            f"Tools registered ({len(names)}):\n{tool_lines}\n\n"
+            "Prompts registered: getting_started, analyze_variant\n\n"
+            "Environment:\n"
+            "  CHORUS_NO_TIMEOUT=1        Disable prediction AND model-load timeouts\n"
+            "                             (read in chorus/core/base.py, not in this module)\n"
+            "  CHORUS_MCP_OUTPUT_DIR=DIR  Where bedgraphs and reports are written. Defaults to\n"
+            "                             ./chorus_mcp_output relative to the *client's* working\n"
+            "                             directory, captured when the server starts\n"
+            "  CHORUS_MCP_DEBUG=1         Include a traceback in error payloads\n"
+            "  FASTMCP_TRANSPORT=...      FastMCP reads its own FASTMCP_*-prefixed settings (and a\n"
+            "                             .env file), so this can switch the transport away from\n"
+            "                             stdio; FASTMCP_HOST/FASTMCP_PORT default to\n"
+            "                             127.0.0.1:8000 and apply only to a network transport\n"
+        ),
+    )
+    # No flags on purpose — but parse anyway, so `chorus-mcp --port 9000` fails loudly instead of
+    # being swallowed by a `"--help" in sys.argv` check and silently starting a stdio server.
+    parser.parse_args(argv)
     mcp.run()
 
 

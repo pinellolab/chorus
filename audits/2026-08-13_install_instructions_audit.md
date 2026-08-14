@@ -139,6 +139,16 @@ neither install-blocking nor doc-currency issues:
 * `_datadir.py`'s `_fmt_size` reported `hf_cache` as 41.5 GB where `du -shL` gives 20 GB — a
   double-count of hardlinked blobs in the size display only.
 
+  > **Correction, 2026-08-14.** "Hardlinked" was wrong. Measured on the same tree,
+  > `find … -links +1` returns **zero** files; there are **6,927 symlinks**, all resolving *inside*
+  > the walked tree, because the hub stores each file once under `<repo>/blobs/<sha>` and exposes it
+  > as a symlink from `<repo>/snapshots/<rev>/<name>`. The old code added the real file and then
+  > added it again through the dereferenced link. Fixed by deduping on `(st_dev, st_ino)` — which
+  > covers hardlinks too, so the conclusion held even though the mechanism named did not. Worth
+  > recording because the wrong mechanism suggests the wrong fix: skipping symlinks, the obvious
+  > reading of "double-counted links", drops `genomes` from 3.3 GB to **170 bytes**, since its
+  > entries are symlinks to FASTAs stored outside the tree.
+
 ## Tests
 
 Fast suite on the fixed tree: **1,792 passed, 29 skipped, 0 failed** (5 m 30 s), including the two

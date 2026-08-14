@@ -191,9 +191,23 @@ def test_mcp_e2e_list_oracles_and_analyze_variant(tmp_path):
     from fastmcp import Client
     from fastmcp.client.transports import StdioTransport
 
-    hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+    # Ask huggingface_hub, not just the environment. `get_token()` is the read-only equivalent of
+    # what the AlphaGenome load paths themselves do: HF_TOKEN -> HUGGING_FACE_HUB_TOKEN -> the
+    # credential file written by `huggingface-cli login`. Gating on the env vars alone was strictly
+    # narrower than the runtime it guards -- both alphagenome.py and its load template try
+    # `huggingface_hub.whoami()` FIRST and only fall back to the env -- so this test skipped on any
+    # host authenticated the normal way, and the MCP path went unverified for months.
+    #
+    # Deliberately not `chorus.cli._tokens.resolve_hf_token`: that calls `huggingface_hub.login()`,
+    # which writes the token to disk, and mutates os.environ on failure. A test must not do either.
+    import huggingface_hub
+
+    hf_token = huggingface_hub.get_token()
     if not hf_token:
-        pytest.skip("HF_TOKEN not set — AlphaGenome is gated")
+        pytest.skip(
+            "no HuggingFace token (set HF_TOKEN, HUGGING_FACE_HUB_TOKEN, or run "
+            "`huggingface-cli login`) — AlphaGenome is gated"
+        )
 
     # Locate chorus-mcp on PATH (installed by `pip install -e .` in the
     # active env). Going through `mamba run -n chorus chorus-mcp` is
@@ -203,25 +217,47 @@ def test_mcp_e2e_list_oracles_and_analyze_variant(tmp_path):
     if not chorus_mcp_bin:
         pytest.skip("chorus-mcp not on PATH — activate the chorus env first")
 
-    # Inherit MAMBA_ROOT_PREFIX so the spawned server finds the
-    # oracle envs under ~/.local/share/mamba (documented "two mamba
-    # installs" trap — default mamba root is miniforge3/envs which
-    # doesn't contain chorus-*).
-    mamba_root = os.environ.get("MAMBA_ROOT_PREFIX") or str(
-        Path.home() / ".local" / "share" / "mamba"
-    )
+    # MAMBA_ROOT_PREFIX tells the spawned server which mamba root holds the oracle envs. It used to
+    # fall back to `~/.local/share/mamba` when the variable was unset — the "two mamba installs"
+    # trap this test was written on. On a host where the envs live under `miniforge3/envs` that
+    # fallback is actively wrong: the child inherits a root with no `chorus-*` in it, `mamba env
+    # list --json` returns envs that do not include the oracle, and the failure surfaces as
+    # "Python executable not found in environment" — which sends you looking at the env's contents
+    # rather than at the root you pointed mamba at. Masked for months by the HF skip above.
+    #
+    # Derive it from the mamba/conda binary chorus itself resolved (root = <prefix>/bin/mamba's
+    # grandparent), and if that cannot be determined, pass nothing and let mamba use its own
+    # default — which is correct far more often than a guess.
+    mamba_root = os.environ.get("MAMBA_ROOT_PREFIX")
+    if not mamba_root:
+        try:
+            from chorus.core.environment import EnvironmentManager
+
+            conda_exe = Path(EnvironmentManager().conda_exe).resolve()
+            if conda_exe.parent.name == "bin":
+                mamba_root = str(conda_exe.parent.parent)
+        except Exception:
+            mamba_root = None
 
     async def run():
         transport = StdioTransport(
             command=chorus_mcp_bin,
             args=[],
+            # A whitelist, so anything the child needs must be named explicitly. HF_TOKEN is
+            # passed because the token may have come from the credential file rather than the
+            # environment; the HF_* vars below are forwarded when set so a non-default credential
+            # or cache location still resolves in the child (HOME alone only covers the default).
             env={
                 "HF_TOKEN": hf_token,
                 "CHORUS_NO_TIMEOUT": "1",
                 "PATH": os.environ.get("PATH", ""),
-                "MAMBA_ROOT_PREFIX": mamba_root,
+                # Omitted entirely when it could not be derived, rather than guessed at.
+                **({"MAMBA_ROOT_PREFIX": mamba_root} if mamba_root else {}),
                 "MAMBA_EXE": os.environ.get("MAMBA_EXE", ""),
                 "HOME": os.environ.get("HOME", ""),
+                **{k: os.environ[k] for k in
+                   ("HF_HOME", "HF_TOKEN_PATH", "HF_HUB_CACHE", "XDG_CACHE_HOME")
+                   if k in os.environ},
             },
         )
         async with Client(transport=transport) as client:
