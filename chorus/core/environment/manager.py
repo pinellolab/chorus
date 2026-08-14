@@ -584,6 +584,7 @@ class EnvironmentManager:
             'legnet': ['torch'],
             'epinformerseq': ['torch'],
             'alphagenome': ['jax'],
+            'alphagenome_pt': ['torch'],
         }
         
         if oracle in oracle_deps:

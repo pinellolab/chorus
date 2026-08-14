@@ -197,7 +197,11 @@ Create an environment configuration that we can integrate into the setup system.
 
 1. **Conda packages needed:**
 ```yaml
-# Example for a PyTorch-based model
+# Example for a PyTorch-based model. Compare against a real one, e.g.
+# environments/chorus-sei.yml, which carries an in-file note on why its old
+# pytorch<2.0 + cudatoolkit=11.7 pin was itself the bug.
+name: chorus-mymodel   # REQUIRED — EnvironmentManager derives both the env name
+                       # and the file path as chorus-{oracle}
 channels:
   - pytorch
   - conda-forge
@@ -205,8 +209,8 @@ channels:
   - defaults
 
 dependencies:
-  - python=3.9
-  - pytorch=2.0
+  - python=3.10
+  - pytorch>=2.0.0
   - torchvision
   - numpy
   - pandas
@@ -227,25 +231,79 @@ wget https://example.com/model_weights.pt -O ~/.cache/mymodel/weights.pt
 
 ### Step 5: Register Your Oracle
 
-Add your oracle to `chorus/oracles/__init__.py`:
+> **This guide is the canonical one.** `environments/README.md` and
+> `docs/IMPLEMENTATION_GUIDE.md` used to carry their own shorter recipes and both were wrong —
+> the latter told contributors to edit an `ORACLE_REGISTRY` that has never existed in this
+> codebase. They now point here. If you change the registration surface, change it here.
 
-```python
-from .mymodel import MyModelOracle
+Registration is **not** automatic. Dropping a `chorus-{name}.yml` into `environments/` makes your
+oracle appear in `chorus list`, and that is genuinely all it does — the oracle is not loadable,
+not scoreable, and invisible to the MCP server until every site below names it. There is no
+single registry; these are hand-edited, and the list is in dependency order.
 
-ORACLES = {
-    'enformer': EnformerOracle,
-    'mymodel': MyModelOracle,  # Add your oracle
-    # ...
-}
-```
+**Required — without these the oracle does not work at all:**
 
-Update `chorus/__init__.py` to support environment isolation:
+1. **`chorus/oracles/mymodel.py`** — the class (Steps 2–3 above). It **must** declare
+   `training_genome` on the subclass. `OracleBase.training_genome` is deliberately `None` so a new
+   oracle cannot inherit `"hg38"` by saying nothing; `tests/test_genome_is_asserted_not_assumed.py`
+   enumerates the subclasses and fails if yours is silent.
 
-```python
-if oracle_name.lower() == 'mymodel':
-    from .oracles.mymodel import MyModelOracle
-    return MyModelOracle(use_environment=True, **kwargs)
-```
+2. **`chorus/oracles/__init__.py`** — the import, the `ORACLES` dict, and `__all__`:
+   ```python
+   from .mymodel import MyModelOracle
+   ORACLES = {'enformer': EnformerOracle, 'mymodel': MyModelOracle, ...}
+   ```
+
+3. **`chorus/__init__.py`** (`create_oracle`) — one `elif` branch **and** the valid-names string in
+   the `else`. Miss the string and the error message for a typo silently omits your oracle:
+   ```python
+   elif oracle_name.lower() == 'mymodel':
+       from .oracles.mymodel import MyModelOracle
+       return MyModelOracle(use_environment=True, **kwargs)
+   ```
+
+4. **`chorus/mcp/server.py`** — `ORACLE_SPECS`. `tests/test_mcp.py` asserts the **exact** key set,
+   so the suite goes red until you add yours; that is intentional.
+
+**Required for the CLI to report your oracle honestly:**
+
+5. **`chorus/core/weights_probe.py`** — `_ARTIFACT_PROBES`, so `chorus health` and
+   `chorus setup` can tell "not installed" from "unhealthy" without spawning a subprocess.
+
+6. **The two dependency probes** — `chorus/core/environment/runner.py`'s `dependencies` and
+   `chorus/core/environment/manager.py`'s `oracle_deps`. These are near-duplicates that have
+   drifted apart before: as of this writing `runner` was missing both `cherimoya` and
+   `alphagenome_pt`, and `manager` was missing `alphagenome_pt`, so `chorus health` reported
+   **Healthy** for those two even with a broken env, because an absent key means an empty
+   dependency list rather than an error. Add yours to **both**.
+
+7. **`chorus/cli/_setup_prefetch.py`** — `_DEFAULT_CTOR_KWARGS` / `_DEFAULT_LOAD_KWARGS`, needed
+   whenever a bare `load_pretrained_model()` will not work. The file's own comments record LegNet
+   raising `TypeError` and Cherimoya raising `InvalidAssayError` from getting this wrong.
+
+8. **`chorus/cli/_backgrounds.py`** `_KNOWN_ORACLES` and **`chorus/cli/_cleanup.py`** — so
+   `chorus backgrounds status` lists you and `chorus cleanup --oracle mymodel` removes you.
+
+9. **`environments/chorus-mymodel.yml`** — the filename is load-bearing:
+   `EnvironmentManager.list_available_oracles` globs `chorus-*.yml` and strips the prefix. Include
+   the `name: chorus-mymodel` key (Step 4).
+
+**Required before any percentile is meaningful:**
+
+10. **Background nulls** — read [`docs/BACKGROUND_NULL_PROTOCOL.md`](docs/BACKGROUND_NULL_PROTOCOL.md)
+    **§8, "Adding a new oracle"**, and follow it. This is not optional polish. If
+    `classify_track_layer` returns `"other"` for your track ids, every score comes back `None`
+    with no error — Sei shipped 40 built, verified, unreachable rows that way for months. You will
+    also need `scripts/build_backgrounds_mymodel.py` and an `ACTIVITY_POPULATIONS` entry in
+    `scripts/stamp_provenance_v4.py`.
+
+**Three tests pin the registry and will fail until you update them** — that is the design, not an
+obstacle: `tests/test_mcp.py` (exact `ORACLE_SPECS` key set),
+`tests/test_reference_position_sets.py` (every oracle needs a reference SNP family), and
+`tests/test_genome_is_asserted_not_assumed.py` (`training_genome` declared).
+
+`tests/test_registries_cover_every_oracle.py` checks the sites above mechanically, so a missing
+entry fails with the site named rather than surfacing as a mystery later.
 
 ### Step 6: Add Tests
 
@@ -278,7 +336,7 @@ def test_mymodel_tracks():
 
 ### Step 7: Create an Example Notebook
 
-Create `examples/mymodel_example.ipynb` demonstrating your oracle's features:
+Create `examples/notebooks/mymodel_example.ipynb` demonstrating your oracle's features (library tutorials live in `examples/notebooks/`; the per-walkthrough `examples/walkthroughs/*/notebook.ipynb` files are code-generated by `scripts/generate_walkthrough_notebooks.py` and should not be hand-written):
 
 ```python
 # Example notebook structure
@@ -308,8 +366,8 @@ When submitting your oracle, provide the environment configuration in this forma
 BORZOI_ENV_CONFIG = {
     'channels': ['pytorch', 'conda-forge', 'bioconda', 'defaults'],
     'dependencies': [
-        'python=3.9',
-        'pytorch=2.0',
+        'python=3.10',
+        'pytorch>=2.0.0',
         'numpy',
         'pandas',
         # ... other conda packages
@@ -407,7 +465,7 @@ chorus/
 ├── tests/
 │   └── test_mymodel.py     # Tests
 ├── examples/
-│   └── mymodel_example.ipynb  # Example notebook
+│   └── notebooks/mymodel_example.ipynb  # Example notebook
 └── README.md              # Updated with your oracle info
 ```
 

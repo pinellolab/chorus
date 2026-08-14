@@ -182,6 +182,62 @@ For each `examples/walkthroughs/**/*.html`:
 - [ ] `analyze_variant_multilayer` end-to-end: spawn `chorus-mcp`, connect with `fastmcp.Client`, run rs12740374 against AlphaGenome HepG2 tracks, assert the returned dict shape matches what walkthroughs document. (Integration-marked; run on release host.) **P1**
 - [ ] Error paths in MCP tools surface `{"error": ..., "error_type": ..., "tool": ...}` — not raw tracebacks. **P1**
 
+### 8b. Drive the tools in plain English, as a user would
+
+Inherited from the retired `AUDIT_PROMPT.md`. Paste each into a Claude Code session with the chorus
+MCP server registered, and check the result against the committed walkthrough it corresponds to
+(`examples/walkthroughs/<area>/<name>/example_output.md`). The point is to exercise the *natural
+language* path, which the Python-API checks above never touch. **P1**
+
+- **Variant analysis** — should reproduce a CEBPA/CEBPB binding gain in HepG2:
+  > Load AlphaGenome and analyze rs12740374 (chr1:109274968 G>T) in HepG2 liver cells. Use DNASE,
+  > CEBPA ChIP, CEBPB ChIP, H3K27ac, and CAGE tracks. Gene is SORT1.
+
+  Expect `CHIP:CEBPB:HepG2` ≈ **+3.32 at percentile 0.9995** and `CHIP:CEBPA:HepG2` ≈ **+2.95 at
+  0.9998** (`variant_analysis/SORT1_rs12740374/example_output.md`).
+- **Discovery** — which cell types are affected:
+  > Discover which cell types are most affected by rs12740374 (chr1:109274968 G>T) using
+  > AlphaGenome.
+- **Batch scoring** — five SORT1-locus SNPs:
+  > Score these 5 variants in HepG2 with AlphaGenome and rank by effect: rs12740374
+  > chr1:109274968 G>T, rs1626484 chr1:109275684 G>T, rs660240 chr1:109275216 T>C, rs4970836
+  > chr1:109279175 G>A, rs7528419 chr1:109274570 A>G. Use DNASE, CEBPA, CEBPB, H3K27ac and CAGE.
+  > Gene is SORT1.
+- **Causal prioritization** — exercises the LDlink token path:
+  > Fine-map the SORT1 LDL cholesterol GWAS locus. Lead variant is rs12740374. Auto-fetch LD
+  > proxies from LDlink (population CEU, r²≥0.85). Score each variant in HepG2 with DNASE, CEBPA,
+  > CEBPB, H3K27ac and CAGE. Gene is SORT1.
+
+  Note the **committed** example supplies 11 LD variants directly rather than auto-fetching, so
+  this prompt tests a path the shipped artefact does not: expect `composite=0.970`,
+  `max_effect=+3.316`, 4 layers, `convergence=1.00` for the locus itself
+  (`causal_prioritization/SORT1_locus/example_output.md`), not a byte match.
+- **Region swap** and **integration simulation** — the two sequence-engineering tools. Use the
+  prompts at the top of `sequence_engineering/region_swap/example_output.md` and
+  `integration_simulation/example_output.md` **verbatim**; both were reworded (a 630 bp
+  GFP/reporter construct, and a 378 bp CMV construct at chr19:55115000) and a paraphrase will not
+  reproduce the committed numbers.
+
+### 8c. Credentials for an audit run
+
+`chorus setup` prompts for both tokens and persists them to `~/.chorus/config.toml`, so exporting
+them is optional — but **required** if stdin is not a TTY, because the HF token resolves before
+anything is built and the run aborts with zero progress otherwise:
+
+```bash
+export HF_TOKEN=hf_...        # gated AlphaGenome model; or pass chorus setup --hf-token
+export LDLINK_TOKEN=...       # only for fine_map_causal_variant's auto-fetch
+```
+
+- [ ] Do **not** write real tokens into any file in the repo. A live LDlink token sat in a tracked
+      audit report for four months because it was pasted into a "hygiene" note; see §16. **P0**
+
+> **Browser rendering is no longer a manual step.** `AUDIT_PROMPT.md` carried a Selenium block for
+> this; it is superseded by `tests/test_committed_reports_render_in_a_browser.py` (46 tests, run with
+> `-m ""`), which drives headless Chromium via playwright and — unlike
+> `document.querySelectorAll` — walks shadow roots, without which a perfectly painting IGV panel
+> reads as blank. See §7.
+
 ## 9. Error messages — first-user friendliness
 
 Trigger and inspect each:
