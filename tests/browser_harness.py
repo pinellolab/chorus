@@ -142,33 +142,83 @@ UNREACHABLE_SIGNATURES = (
 )
 
 
+#: The only host a committed report is *expected* to fetch from: igv.js needs a sequence source and
+#: hg38 is ~3 GB, so the reference two-bit is resolved from UCSC at open time. Anything else failing
+#: is a defect in the report, not weather — so it must not qualify for a skip.
+#:
+#: Compared as an **exact netloc**, never as a substring. `"hgdownload.soe.ucsc.edu" in url` also
+#: matches `hgdownload.soe.ucsc.edu.example.net`, which would let a typo'd or hijacked domain inherit
+#: the trusted host's exemption. That was the first implementation, and this file's own test caught it.
+REFERENCE_SEQUENCE_HOSTS = frozenset({"hgdownload.soe.ucsc.edu"})
+
+
+def _urls_in(message: str) -> list:
+    """URLs named inside a console error, e.g. igv.js's "Error accessing resource: <url> Status: 0"."""
+    import re
+
+    return re.findall(r"https?://[^\s\"'<>]+", message)
+
+
 def unreachable_external_host(r) -> "str | None":
     """Why this render cannot be judged, or None if it can.
 
     Every committed report resolves its reference sequence from `hgdownload.soe.ucsc.edu`: igv.js
     requires a sequence source, hg38 is ~3 GB, and bundling it in a repo is not an option — a
-    documented limitation rather than a defect. The consequence is that this file's verdict depended
-    on a third party being up. On 2026-08-14 UCSC refused the connection during one PR's run and the
+    documented limitation rather than a defect. The consequence was that this file's verdict depended
+    on a third party being up: on 2026-08-14 UCSC refused the connection during one PR's run and the
     same corpus that had passed minutes earlier reported `canvases 0/0 painted (NOT converged)` and
     blew the 30 s budget at the 60 s timeout — four failures, none of them about the reports.
 
-    A test that goes red when someone else's server hiccups trains people to re-run CI until it is
-    green, which is how a real blank-panel regression gets waved through. So: if the *only* console
-    errors are unreachable-host signatures and an external host was actually contacted, this render
-    is unverifiable and says so. A genuinely broken report still fails — a blank canvas with UCSC up
-    produces no such console error, and any error outside this list disqualifies the skip.
+    A suite that goes red when someone else's server hiccups trains people to re-run CI until it is
+    green, which is how a real blank-panel regression gets waved through. But the first version of
+    this function was far too generous, and an adversarial review found three ways a genuine defect
+    could take the skip. All three are now closed:
+
+    * **Uncaught JS was swallowed.** The old version looked only at `console_errors`, and the callers
+      skip *before* asserting `page_errors` — so a report throwing an uncaught exception was skipped
+      whenever the console errors happened to be outage-shaped. An uncaught error is now
+      disqualifying on its own: it cannot be caused by a remote host refusing a connection.
+    * **Any failing external URL counted.** The old version required only that *some* external
+      request had been attempted. Since all 19 reports contact UCSC, that was satisfied
+      essentially always, so one unrelated refused request disabled every verdict for that report.
+      Now the URLs named in the failures must all be reference-sequence URLs.
+    * **A wrong URL committed inside a report looked like weather.** A typo'd or third-party host
+      baked into a report is a permanent defect for every reader, and it produced the same console
+      error as an outage. Restricting the skip to `REFERENCE_SEQUENCE_HOSTS` means a report citing
+      anything else fails instead of being skipped forever.
+
+    One case remains genuinely undecidable and is called out rather than papered over: a *correct*
+    reference URL that is permanently dead looks exactly like a transient outage. Nothing observable
+    in one render distinguishes them, so it skips. If UCSC ever retires that path, every report will
+    skip rather than fail, and this docstring is the note that says to look here.
     """
     if not r.console_errors or not r.external_urls:
         return None
+
+    # An uncaught JS exception is never explained by an unreachable host.
+    if getattr(r, "page_errors", None):
+        return None
+
     unexplained = [e for e in r.console_errors
                    if not any(sig in e for sig in UNREACHABLE_SIGNATURES)]
     if unexplained:
         return None
-    hosts = ", ".join(r.external_hosts) or "an external host"
+
+    # Every URL implicated in the failures must be one we expect a report to fetch. When a message
+    # names no URL (Chromium's bare "Failed to load resource: net::ERR_*"), fall back to requiring
+    # that every external request this report made was a reference-sequence one.
+    named = [u for e in r.console_errors for u in _urls_in(e)]
+    implicated = named or list(r.external_urls)
+    hosts = {urlparse(u).netloc for u in implicated}
+    foreign = sorted(h for h in hosts if h not in REFERENCE_SEQUENCE_HOSTS)
+    if foreign:
+        return None
+
+    where = ", ".join(sorted(hosts)) or "the reference host"
     return (
-        f"{r.path.name}: {hosts} did not answer, so the reference sequence never loaded and the "
-        f"panel could not paint. Not a report defect -- igv.js needs a sequence source and hg38 is "
-        f"too large to bundle. Errors: {r.console_errors[:2]}"
+        f"{r.path.name}: {where} did not answer, so the reference sequence could not load. Not a "
+        f"report defect -- igv.js needs a sequence source and hg38 is too large to bundle. "
+        f"Errors: {r.console_errors[:2]}"
     )
 
 
