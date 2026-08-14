@@ -19,6 +19,80 @@ report rendering and two real defects — see the banner on each entry.
 `_HF_REVISION` still pins it. Nothing was rebuilt or re-uploaded.
 
 ### Fixed
+- **`chorus health` could report an oracle Healthy while checking nothing, and an unreachable
+  mamba root was reported as a missing Python interpreter.** Two defects in the same area, both
+  found by work that started as documentation tidying
+  ([#189](https://github.com/pinellolab/chorus/pull/189),
+  [#192](https://github.com/pinellolab/chorus/pull/192)).
+
+  The dependency probes behind `chorus health` and `validate_environment` are near-duplicate dicts
+  that had drifted to **three different contents** — the runner's was missing `cherimoya` and
+  `alphagenome_pt`, the manager's was missing `alphagenome_pt`. Because `dependencies.get(oracle,
+  [])` turns a missing key into "nothing to check", `chorus health --oracle alphagenome_pt` printed
+  **"✓ Healthy"** without importing a thing. Both completed, and
+  `tests/test_registries_cover_every_oracle.py` now fails with the site and the consequence named.
+
+  Separately, `get_environment_info()` looked an environment up, obtained its path, and then ran a
+  second subprocess purely to fill a `packages` field — using `mamba list -n <name>`, which resolves
+  the name against `MAMBA_ROOT_PREFIX` where discovery via `env list` does not. When the root did
+  not contain the env, discovery succeeded (so `environment_exists()` correctly said `True`) while
+  that call exited 1, and the `CalledProcessError` handler returned `None` — which **all eleven
+  callers** read as "the environment does not exist". The symptom was `get_python_executable()`
+  reporting *"Python executable not found in environment"* for an env whose interpreter was exactly
+  where it belonged. `packages` has one consumer, a count in `chorus list --verbose`. It now resolves
+  by `-p <path>` and a listing failure is non-fatal, and the message names the wrong-root
+  possibility rather than asserting the unlikely one.
+
+- **`chorus config data-dir` overstated the HuggingFace cache by 2×**, reporting 41.5 GB against a
+  real 20.7 GB ([#190](https://github.com/pinellolab/chorus/pull/190)). The hub stores each file once
+  under `<repo>/blobs/<sha>` and exposes it as a symlink from `<repo>/snapshots/<rev>/<name>`, so
+  **both endpoints sit inside the walked tree** and every blob was counted twice. Fixed by deduping
+  on `(st_dev, st_ino)`, which is `du -L` semantics and covers hardlinks too. Note for anyone
+  tempted by the one-line version: *skipping* symlinks drops `genomes` from 3.3 GB to **170 bytes**,
+  because those entries point at FASTAs stored outside the tree. All five buckets now match
+  `du -sL --apparent-size`.
+
+- **`chorus-mcp` accepted and ignored every flag.** Its entry point was `if "--help" in sys.argv`
+  followed by `mcp.run()`, so `chorus-mcp --port 9000` silently started a stdio server instead of
+  erroring ([#190](https://github.com/pinellolab/chorus/pull/190)). It now has a real parser and
+  exits 2 on an unknown flag. The tool list was hand-maintained and had drifted twice — it announced
+  22 against 24 registered — so it is derived from the server now. `CHORUS_MCP_OUTPUT_DIR` (absent
+  from every doc, and defaulting relative to the *client's* working directory), `CHORUS_MCP_DEBUG`
+  and the `FASTMCP_*` transport settings are documented, and `CHORUS_NO_TIMEOUT` no longer
+  understates itself — it disables model-load timeouts too.
+
+- **A `pip install` was missing two runtime dependencies.** `setup.py` builds `install_requires`
+  from `requirements.txt`, which did not list `pyyaml` (imported at module level by
+  `chorus/core/environment/manager.py`) or `requests` (by `chorus/utils/annotations.py`, working
+  only because `huggingface_hub` happens to pull it in). Both declared, with
+  `tests/test_declared_dependencies_cover_the_imports.py` enforcing the property
+  ([#189](https://github.com/pinellolab/chorus/pull/189)).
+
+- **The MCP end-to-end test had been skipping for months, and failed the moment it ran.** Its gate
+  read only `HF_TOKEN`/`HUGGING_FACE_HUB_TOKEN`, while both AlphaGenome load paths try the stored
+  credential *first* — so it skipped on any normally-authenticated host. Widened to
+  `huggingface_hub.get_token()`, which immediately exposed a hardcoded `MAMBA_ROOT_PREFIX` fallback
+  of `~/.local/share/mamba`: wrong on any host whose envs live under `miniforge3/envs`, and the
+  cause of the misleading interpreter error above. Now derived from the mamba binary chorus itself
+  resolved. The integration suite goes **145 → 148 passing**
+  ([#190](https://github.com/pinellolab/chorus/pull/190)).
+
+- **`layers_affected` came back in a different order every run.** `discover_variant_effects` built it
+  as `list({...})` over a set of strings, so its order followed per-process `hash(str)`. It reaches
+  MCP replies rather than the committed examples, so it is a separate defect from the F8 drift below
+  — and free to remove. Now `sorted()`. In the same pass, `AnalysisRequest.generated_at` honours
+  **`SOURCE_DATE_EPOCH`**, so a regeneration can be diffed at all: previously every committed example
+  showed at least a changed timestamp even when nothing numeric moved, which made the F8
+  investigation harder than it needed to be
+  ([#191](https://github.com/pinellolab/chorus/pull/191)).
+
+- **`chorus cleanup` can now reclaim the HuggingFace cache**, via a new `--hf-cache`. Deliberately
+  **not** part of `--all`: with `HF_HOME` set, that directory is the HF *home* and holds the token
+  from `huggingface-cli login`, so `--all` removing it would destroy a credential and any
+  non-chorus model cache. `--all` now says out loud that it left the cache. This also replaces a
+  recipe added in 0.7.3's own install-docs pass that would have deleted exactly that directory
+  ([#190](https://github.com/pinellolab/chorus/pull/190)).
+
 - **⚠ `device='cuda:N'` no longer takes a GPU you were not given — on **either** load path.** Six oracle *templates* (the `use_environment=True` subprocess path) set `CUDA_VISIBLE_DEVICES` straight from the ordinal, and so did `ChromBPNetOracle._load_direct` and Enformer's in-process load — which is the `create_oracle` **default**. Under a scheduler granting `CUDA_VISIBLE_DEVICES=4,5`, `cuda:1` means *the second GPU I was granted* (physical 5); overwriting the mask sent the process to **physical GPU 1, somebody else's job**. Not hypothetical: GPU 4 was another tenant's throughout the audit that found it.
 
   Worse on the PyTorch side, where it was a live crash rather than a hazard: Cherimoya's templates masked to `N` and then handed the same `cuda:N` string to torch, which indexes *within* the now-one-device visible set, so every ordinal but 0 died with `CUDA error: invalid device ordinal`. A documented parameter was simply broken.
@@ -64,6 +138,34 @@ report rendering and two real defects — see the banner on each entry.
 
 
 ### Changed
+- **There is one procedure for adding an oracle now, and it is `CONTRIBUTING.md`
+  ([#189](https://github.com/pinellolab/chorus/pull/189)).** Three documents described it and they
+  disagreed on the central fact: `docs/IMPLEMENTATION_GUIDE.md` told contributors to register in an
+  **`ORACLE_REGISTRY`** that has never existed in this codebase — following it produces a dict
+  nothing reads and a `ValueError: Unknown oracle` at run time — while `environments/README.md` said
+  the environment "will be automatically detected by the CLI", true of `chorus list` and false of
+  everything else. `CONTRIBUTING.md` was the only one correct as far as it went, but never mentioned
+  `ORACLE_SPECS`, the dependency probes, `training_genome`, or background nulls, so following it
+  end-to-end still produced an oracle invisible to MCP that returned `None` for every percentile.
+
+  Step 5 now lists the sites that actually exist — each verified present before being written down,
+  since documenting a site that isn't there is the defect being fixed — and the other two shrink to
+  cross-references. `tests/test_registries_cover_every_oracle.py` checks them mechanically.
+
+  One registry was **deleted rather than documented**: `ORACLE_CLASS_MAP` had no live consumer. Its
+  only caller assigned the lookup to a local and never read it, because the generated script asks the
+  child process for its own `__class__.__name__`. It had gone stale unnoticed (no `alphagenome_pt`,
+  and its fallback would have produced `Alphagenome_ptOracle` against the real
+  `AlphaGenomePTOracle`). Completing it, or guarding its completeness, would have enshrined an
+  invariant nothing relies on.
+
+  `AUDIT_PROMPT.md` is **removed**. Nothing referenced it, it duplicated
+  `audits/AUDIT_CHECKLIST.md` — which `CLAUDE.md` names canonical — and it carried 24 stale claims
+  including `git checkout chorus-applications`, "six oracle environments", "286 passed" against 1,960
+  collected, and four builder flags that do not exist. Its two genuinely unique pieces are folded into
+  the checklist as §8b/§8c; its Selenium block is retired in favour of the playwright suite added
+  earlier in this release, which pierces shadow roots.
+
 - **`docs/BACKGROUND_NULL_PROTOCOL.md` is current with the count-head extraction ([#186](https://github.com/pinellolab/chorus/pull/186)).** The protocol is the living document a new oracle's background build is written against, and §8 said nothing about which quantity a CDF must be built from — the distinction #125 exists to enforce. It now carries §8 Step 2b (use `chorus.core.count_head.expected_counts_profile` from **both** the oracle and the builder, because a CDF is only meaningful if it was built from the quantity `predict()` returns), the three count-head conventions side by side (`log1p` per track → `expm1`; `log1p` pooled → `exp(C) − n_tracks`; `log10` → `10**C`, which differ by 26× at log-count 2.5), a §7 equivalence-guard row, and a §9 decision-log entry.
 
 - **CI renders reports on every PR now, a reduced set of them.** The full 19-report browser suite stays on the release host, but running none of it in CI is how a blank panel reaches `main` between audits — which is the gap that let a size ceiling stand in for a rendering check in the first place. `CHORUS_BROWSER_SMOKE=1` selects the two smallest IGV reports plus the panel-less table: 12 tests instead of 46, enough to catch the failures that hit every report at once.
