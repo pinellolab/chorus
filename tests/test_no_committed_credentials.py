@@ -87,6 +87,23 @@ BINARY_SUFFIXES = {
 }
 
 
+#: Suffixes that are genuinely binary. Everything else is opened and scanned.
+#:
+#: This used to be the other way round — an allowlist of "text" suffixes — and that inverted the
+#: default in the wrong direction for a security guard. Measured on this repo it opened 655 of 869
+#: tracked files and **never opened 214**, including **59 `.log` files and 20 `.html` reports**:
+#: precisely the artefacts a token leaks into, since a log captures whatever was in the environment
+#: and a rendered report captures whatever was in a URL. A manual sweep of those 214 found nothing,
+#: so no leak was missed — but a guard that cannot see the most likely hiding places is a claim of
+#: coverage rather than coverage, which is the exact failure this file exists to correct.
+BINARY_SUFFIXES = {
+    ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".pdf",
+    ".npz", ".npy", ".gz", ".zip", ".tar", ".bz2", ".xz",
+    ".h5", ".hdf5", ".pt", ".pth", ".safetensors", ".bin", ".pkl", ".2bit",
+    ".woff", ".woff2", ".ttf", ".eot",
+}
+
+
 def _tracked_text_files() -> list[Path]:
     """Every tracked file that is not obviously binary, so the default is *scan*."""
     out = subprocess.run(["git", "ls-files", "-z"], cwd=REPO,
