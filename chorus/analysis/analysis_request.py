@@ -16,7 +16,21 @@ through to the report builders.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import os
 from datetime import datetime, timezone
+
+
+def _now_stamp() -> str:
+    """UTC minute stamp, or SOURCE_DATE_EPOCH when set (reproducible-builds convention)."""
+    epoch = os.environ.get("SOURCE_DATE_EPOCH")
+    if epoch:
+        try:
+            when = datetime.fromtimestamp(int(epoch), tz=timezone.utc)
+        except (ValueError, OverflowError, OSError):
+            when = datetime.now(timezone.utc)
+    else:
+        when = datetime.now(timezone.utc)
+    return when.strftime("%Y-%m-%d %H:%M UTC")
 
 
 @dataclass
@@ -35,9 +49,11 @@ class AnalysisRequest:
     tracks_requested: str | None = None     # human description: "all tracks", "K562 DNASE/CAGE"
     cell_types: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)  # caveats / limitations
-    generated_at: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    )
+    #: Wall-clock stamp. Honours SOURCE_DATE_EPOCH so a regeneration can be diffed at all:
+    #: otherwise this field changes on every run and every committed example shows a diff even
+    #: when nothing numeric moved, which is what made the F8 investigation harder than it needed
+    #: to be. Set SOURCE_DATE_EPOCH to a fixed unix time to pin it.
+    generated_at: str = field(default_factory=lambda: _now_stamp())
 
     # -- serialisation --------------------------------------------------
 
