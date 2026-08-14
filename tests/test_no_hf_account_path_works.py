@@ -122,7 +122,9 @@ def test_no_weights_is_not_sold_as_a_getting_started_option():
     text = README.read_text()
     i = text.index("chorus setup --no-weights")
     sentence = text[i:i + 400]
-    assert "no" in sentence.lower() and "weights" in sentence.lower(), sentence
+    # (An earlier assertion here checked that the sentence contained "no" and "weights" -- which the
+    # literal flag name `--no-weights` guarantees, so it could never fail. Removed rather than kept
+    # as decoration.)
     assert "cannot predict" in sentence or "not for getting started" in sentence, (
         "the README describes `--no-weights` without saying it downloads no weights, so a reader "
         "takes it as the no-account path and lands on an install that cannot run the TLDR"

@@ -33,10 +33,10 @@ If you need one, ask a maintainer rather than assuming it is gone.
 
 ## The merged branches were deleted too (2026-08-14)
 
-The rewrite alone did not shrink what GitHub reports, because 27 stale remote branches still pointed
+The rewrite alone did not shrink what GitHub reports, because 26 stale remote branches still pointed
 at pre-rewrite commits and kept every one of those objects reachable. 18 of them had a **merged PR**
-(#70, #78, #80, #87–#89, #157, #158, #164, #169–#177, `release/v0.7.2`), so their work is in `main` by
-construction and the refs were redundant; those were deleted. The 8 with no merged PR were
+(#70, #78, #80, #87–#89, #157, #158, #164, and #169–#177, which includes `release/v0.7.2` as #175), so
+their work is in `main` by construction and the refs were redundant; those were deleted. The 8 with no merged PR were
 deliberately left, on the principle that deleting a branch someone may still want is worse than
 carrying it.
 

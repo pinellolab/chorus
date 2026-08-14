@@ -48,6 +48,11 @@ def test_no_document_claims_the_rewrite_was_declined():
         denials = ("deliberately not done", "not done", "we have not", "has not been",
                    "was not done", "declined", "chose not to")
         hit = next((d for d in denials if d in window), None)
+        # A denial quoted as history ("this used to end 'deliberately not done'. It was then done.")
+        # is narration, not a claim. Without this the guard fired on a correct paragraph and passed
+        # only by a 38-character margin, so any reword would have broken it.
+        if hit and any(k in window for k in ("used to", "was then done", "it was then")):
+            continue
         assert hit is None, (
             f"audits/README.md says {hit!r} within 200 characters of a mention of rewriting, while "
             f"CHANGELOG.md documents that the history WAS rewritten for v0.7.3. One of the two is "
@@ -82,3 +87,27 @@ def test_the_branch_cleanup_is_recorded_with_its_caveats():
         ("gh pr list", "the authoritative check should be copy-pasteable"),
     ):
         assert want in text, f"audits/README.md does not mention {want!r} — {why}"
+
+
+def test_the_audit_checklist_does_not_ask_for_what_the_repo_just_removed():
+    """The live runbook must not instruct the next auditor to re-commit the archived artefacts.
+
+    v0.7.3 removed 347 raw audit artefacts (~122 MB) from the tree and `audits/README.md` explains
+    why. `AUDIT_CHECKLIST.md` — which `CLAUDE.md` names as the thing to run before any release — still
+    listed `screenshots/*.png`, `nb_fresh_output/*.ipynb`, `cdf_check.txt` and `device_probe.txt` under
+    "a full audit should leave behind, in audits/...". Followed literally, the next audit undoes the
+    cleanup, and the runbook is the more likely of the two documents to be obeyed.
+    """
+    checklist = (REPO / "audits" / "AUDIT_CHECKLIST.md").read_text()
+    i = checklist.index("## Appendix — artefacts to produce per audit")
+    appendix = checklist[i:]
+
+    lowered = appendix.lower()
+    assert "commit only" in lowered or "outside the repository" in lowered, (
+        "the audit checklist's artefact appendix does not distinguish what to commit from what to "
+        "keep outside the repo. v0.7.3 removed 347 files / ~122 MB of exactly these artefacts; a "
+        "runbook that asks for them back re-adds that weight to every clone."
+    )
+    assert "audits/README.md" in appendix or "README.md" in appendix, (
+        "the appendix should point at audits/README.md, which records what was archived and why"
+    )

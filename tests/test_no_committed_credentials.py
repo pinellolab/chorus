@@ -87,23 +87,6 @@ BINARY_SUFFIXES = {
 }
 
 
-#: Suffixes that are genuinely binary. Everything else is opened and scanned.
-#:
-#: This used to be the other way round — an allowlist of "text" suffixes — and that inverted the
-#: default in the wrong direction for a security guard. Measured on this repo it opened 655 of 869
-#: tracked files and **never opened 214**, including **59 `.log` files and 20 `.html` reports**:
-#: precisely the artefacts a token leaks into, since a log captures whatever was in the environment
-#: and a rendered report captures whatever was in a URL. A manual sweep of those 214 found nothing,
-#: so no leak was missed — but a guard that cannot see the most likely hiding places is a claim of
-#: coverage rather than coverage, which is the exact failure this file exists to correct.
-BINARY_SUFFIXES = {
-    ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".pdf",
-    ".npz", ".npy", ".gz", ".zip", ".tar", ".bz2", ".xz",
-    ".h5", ".hdf5", ".pt", ".pth", ".safetensors", ".bin", ".pkl", ".2bit",
-    ".woff", ".woff2", ".ttf", ".eot",
-}
-
-
 def _tracked_text_files() -> list[Path]:
     """Every tracked file that is not obviously binary, so the default is *scan*."""
     out = subprocess.run(["git", "ls-files", "-z"], cwd=REPO,
@@ -164,14 +147,28 @@ def test_the_guard_opens_the_file_types_a_token_actually_leaks_into():
     known-binary suffixes are skipped.
     """
     suffixes = {p.suffix.lower() for p in FILES}
+    # `present` comes from raw `git ls-files`, NOT from _tracked_text_files(): both sides of this
+    # check used to derive from the same filter, so putting `.log` back into BINARY_SUFFIXES -- the
+    # exact regression this test exists to prevent -- emptied `present` and skipped the assertion
+    # instead of failing it.
+    all_tracked = [REPO / f for f in subprocess.run(
+        ["git", "ls-files", "-z"], cwd=REPO, capture_output=True, text=True, check=True
+    ).stdout.split("\0") if f]
+    checked = []
     for risky in (".log", ".html", ".tsv", ".ini"):
-        present = [p for p in _tracked_text_files() if p.suffix.lower() == risky]
+        present = [p for p in all_tracked if p.suffix.lower() == risky]
         if not present:
-            continue
+            continue  # e.g. .log: #198 removed every tracked one, so there is nothing to cover
+        checked.append(risky)
         assert risky in suffixes, (
             f"{len(present)} tracked {risky} files exist and the guard does not open them; a token "
             f"in one would go unreported"
         )
+
+    assert checked, (
+        "none of the risky suffixes exist in the tree any more, so the loop above asserted nothing. "
+        "Add a suffix that does exist, or this half of the coverage guarantee is decoration."
+    )
 
     tracked = len([f for f in subprocess.run(["git", "ls-files", "-z"], cwd=REPO,
                                              capture_output=True, text=True,
@@ -194,7 +191,13 @@ def test_the_guard_opens_the_file_types_a_token_actually_leaks_into():
     "password: `hunter2hunter2hunter2`",
 ])
 def test_the_guard_catches_the_unprefixed_shapes(leak: str):
-    """Fails-without-fix. The first string is the leak that actually shipped, verbatim."""
+    """Fails-without-fix, on the *shape* that shipped rather than the value.
+
+    The first string reproduces the construction that leaked -- twelve bare hex characters next to
+    the word "token" -- using a synthetic value. It said "verbatim" until #197 replaced the real
+    token with `0123456789ab`, leaving a docstring that invited a maintainer to paste the true
+    secret back into the one file whose job is to stop exactly that.
+    """
     assert CONTEXTUAL.search(leak) and not REDACTED.search(leak), \
         f"guard no longer catches: {leak}"
 
