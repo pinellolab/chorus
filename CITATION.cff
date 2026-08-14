@@ -1,0 +1,35 @@
+cff-version: 1.2.0
+message: "If you use Chorus in your research, please cite it as below."
+title: "Chorus: A unified interface for genomic sequence oracles"
+type: software
+version: 0.7.3
+date-released: "2026-08-14"
+license: MIT
+repository-code: "https://github.com/pinellolab/chorus"
+abstract: >-
+  Chorus provides one interface to eight genomic deep-learning oracles (Enformer,
+  Borzoi, ChromBPNet/BPNet, Sei, LegNet, Cherimoya/CATv1, EPInformer-seq and
+  AlphaGenome, the last with both a JAX and a PyTorch backend), each in its own
+  isolated conda environment. Raw predictions are turned into percentiles against
+  per-track empirical background nulls, so an effect size can be read across
+  models and assays, and every analysis is reproducible from a code version paired
+  with a dataset revision.
+keywords:
+  - genomics
+  - deep-learning
+  - regulatory-genomics
+  - variant-effect-prediction
+  - enformer
+  - borzoi
+  - chrombpnet
+  - alphagenome
+  - model-context-protocol
+authors:
+  - family-names: Penzar
+    given-names: Dmitry
+  - family-names: Ruggeri
+    given-names: Lorenzo
+  - family-names: Giugno
+    given-names: Rosalba
+  - family-names: Pinello
+    given-names: Luca

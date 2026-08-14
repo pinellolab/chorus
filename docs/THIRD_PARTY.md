@@ -89,6 +89,7 @@ when citing numbers derived from them.
 
 ## Chorus itself
 
-MIT-licensed (see [`LICENSE`](../LICENSE)). Cite as:
-
-> Pinello Lab. *Chorus: unified interface for genomic deep-learning oracles.* 2026.
+MIT-licensed (see [`LICENSE`](../LICENSE)). For the citation, use the BibTeX entry in
+[the README](../README.md#citation) — it is the canonical one. This file previously carried a second,
+differently-worded citation with a different title and author, which left a reader to guess which was
+authoritative.
