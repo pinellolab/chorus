@@ -155,3 +155,36 @@ def test_the_smoke_fixtures_skip_rather_than_error():
         f"these fixtures call into an oracle without a prerequisite check, so they "
         f"raise instead of skipping when the env is missing: {unguarded}"
     )
+
+
+def test_the_documented_integration_count_is_the_real_one():
+    """The count in `pytest.ini`'s usage comment has drifted three times: 66, 153, 154, now 157.
+
+    It is the number a contributor uses to sanity-check that their `-m integration` run selected
+    what it should have, so a stale one quietly undermines the check it exists for. Nothing pinned
+    it, which is why it kept moving; collection is the cheapest possible source of truth.
+    """
+    import subprocess
+    import sys
+
+    m = re.search(r"pytest -m integration\s+#\s*the ([\d,]+) integration tests", PYTEST_INI.read_text())
+    assert m, (
+        "pytest.ini no longer documents how many integration tests there are. Either restore the "
+        "count or drop this guard deliberately -- do not leave a number nobody checks."
+    )
+    documented = int(m.group(1).replace(",", ""))
+
+    proc = subprocess.run(
+        [sys.executable, "-m", "pytest", str(REPO / "tests"), "-m", "integration",
+         "--collect-only", "-q", "-p", "no:cacheprovider"],
+        capture_output=True, text=True, cwd=REPO, timeout=900,
+    )
+    got = re.search(r"(\d+)(?:/\d+)? tests collected", proc.stdout)
+    assert got, f"could not read a collection count from pytest output:\n{proc.stdout[-1500:]}"
+    actual = int(got.group(1))
+
+    assert actual == documented, (
+        f"pytest.ini says there are {documented} integration tests; collection finds {actual}. "
+        f"If you added or removed one, update the comment in pytest.ini -- a contributor uses that "
+        f"number to confirm their `-m integration` run selected the right suite."
+    )
