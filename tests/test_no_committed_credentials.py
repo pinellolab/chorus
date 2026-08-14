@@ -66,12 +66,29 @@ CONTEXTUAL_EXEMPT = {
 }
 
 
+#: Suffixes that are genuinely binary. Everything else is opened and scanned.
+#:
+#: This used to be the other way round — an allowlist of "text" suffixes — and that inverted the
+#: default in the wrong direction for a security guard. Measured on this repo it opened 655 of 869
+#: tracked files and **never opened 214**, including **59 `.log` files and 20 `.html` reports**:
+#: precisely the artefacts a token leaks into, since a log captures whatever was in the environment
+#: and a rendered report captures whatever was in a URL. A manual sweep of those 214 found nothing,
+#: so no leak was missed — but a guard that cannot see the most likely hiding places is a claim of
+#: coverage rather than coverage, which is the exact failure this file exists to correct.
+BINARY_SUFFIXES = {
+    ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".pdf",
+    ".npz", ".npy", ".gz", ".zip", ".tar", ".bz2", ".xz",
+    ".h5", ".hdf5", ".pt", ".pth", ".safetensors", ".bin", ".pkl", ".2bit",
+    ".woff", ".woff2", ".ttf", ".eot",
+}
+
+
 def _tracked_text_files() -> list[Path]:
+    """Every tracked file that is not obviously binary, so the default is *scan*."""
     out = subprocess.run(["git", "ls-files", "-z"], cwd=REPO,
                          capture_output=True, text=True, check=True).stdout
-    keep = {".md", ".py", ".ipynb", ".yml", ".yaml", ".json", ".toml", ".txt", ".sh", ".cfg", ".js"}
     return [REPO / p for p in out.split("\0")
-            if p and Path(p).suffix in keep and p not in ALLOW_PATHS]
+            if p and Path(p).suffix.lower() not in BINARY_SUFFIXES and p not in ALLOW_PATHS]
 
 
 FILES = _tracked_text_files()
@@ -114,6 +131,34 @@ def test_no_credential_shaped_value_sits_next_to_a_credential_word():
         + "\n  ".join(hits)
         + "\nIf it is genuinely not a secret, add a redaction marker or rephrase the line. "
           "If it is, rotate it — removing it from the tree does not undo git history."
+    )
+
+
+def test_the_guard_opens_the_file_types_a_token_actually_leaks_into():
+    """Coverage is part of the guarantee, so it is asserted rather than assumed.
+
+    The first version filtered by an allowlist of "text" suffixes and so never opened 59 `.log`
+    files or 20 `.html` reports — the two places a credential is most likely to end up, because a log
+    captures the environment and a rendered report captures URLs. Scanning is the default now; only
+    known-binary suffixes are skipped.
+    """
+    suffixes = {p.suffix.lower() for p in FILES}
+    for risky in (".log", ".html", ".tsv", ".ini"):
+        present = [p for p in _tracked_text_files() if p.suffix.lower() == risky]
+        if not present:
+            continue
+        assert risky in suffixes, (
+            f"{len(present)} tracked {risky} files exist and the guard does not open them; a token "
+            f"in one would go unreported"
+        )
+
+    tracked = len([f for f in subprocess.run(["git", "ls-files", "-z"], cwd=REPO,
+                                             capture_output=True, text=True,
+                                             check=True).stdout.split("\0") if f])
+    assert len(FILES) / tracked > 0.80, (
+        f"the guard opens only {len(FILES)} of {tracked} tracked files "
+        f"({100 * len(FILES) / tracked:.0f}%). It was 75% when a live token sat undetected in a "
+        f"file it did read — shrinking coverage is the wrong direction."
     )
 
 
