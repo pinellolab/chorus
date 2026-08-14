@@ -194,9 +194,11 @@ def cleanup_resources(args) -> int:
         targets, _ = _hf_cache_targets()
         hub = targets[0]
         if hub.exists():
-            print(f"Note: the HuggingFace cache at {hub} was NOT removed — most oracle weights "
-                  f"live there, and keeping it makes a re-install fast. Pass --hf-cache to remove "
-                  f"it too.")
+            # _dry(), not print(): under --dry-run every other line carries the [DRY RUN] prefix,
+            # and one unprefixed line in the transcript reads as something that already happened.
+            _dry(f"Note: the HuggingFace cache at {hub} was NOT removed — most oracle weights "
+                 f"live there, and keeping it makes a re-install fast. Pass --hf-cache to remove "
+                 f"it too.", dry_run)
 
     # ── Summary ────────────────────────────────────────────────────────
     parts = []
