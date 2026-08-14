@@ -129,6 +129,10 @@ def test_every_committed_report_paints_every_track(browser, report):
     """
     r = _render_once(browser, report)
 
+    unverifiable = bh.unreachable_external_host(r)
+    if unverifiable:
+        pytest.skip(unverifiable)
+
     assert not r.page_errors, f"{r.summary()}\nuncaught JS: {r.page_errors[:3]}"
     assert not r.console_errors, f"{r.summary()}\nconsole errors: {r.console_errors[:3]}"
 
@@ -155,6 +159,11 @@ def test_every_committed_report_paints_every_track(browser, report):
 def test_no_committed_report_takes_absurdly_long_to_paint(browser, report):
     """"Large is fine if it still loads" is the policy; this is the "still loads" half."""
     r = _render_once(browser, report)
+
+    unverifiable = bh.unreachable_external_host(r)
+    if unverifiable:
+        pytest.skip(unverifiable)
+
     assert r.seconds < _LOAD_BUDGET_S, (
         f"{r.summary()}: took {r.seconds:.1f}s to paint, over the {_LOAD_BUDGET_S:.0f}s "
         f"budget. The committed corpus measured 8.8-10.8s across 1.3-14.7 MiB when this "

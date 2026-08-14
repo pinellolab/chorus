@@ -132,6 +132,46 @@ class RenderResult:
                 + (f"  external: {hosts}" if hosts else "  external: none"))
 
 
+#: Console-error signatures that mean "a host did not answer", not "this report is broken".
+#: Chromium reports a refused/blocked fetch as ERR_CONNECTION_REFUSED and igv.js surfaces the
+#: same event as `Status: 0`, so both spellings of the one condition have to be recognised.
+UNREACHABLE_SIGNATURES = (
+    "ERR_CONNECTION_REFUSED", "ERR_NAME_NOT_RESOLVED", "ERR_INTERNET_DISCONNECTED",
+    "ERR_TIMED_OUT", "ERR_CONNECTION_TIMED_OUT", "ERR_ADDRESS_UNREACHABLE",
+    "ERR_CONNECTION_RESET", "ERR_NETWORK_CHANGED", "Status: 0",
+)
+
+
+def unreachable_external_host(r) -> "str | None":
+    """Why this render cannot be judged, or None if it can.
+
+    Every committed report resolves its reference sequence from `hgdownload.soe.ucsc.edu`: igv.js
+    requires a sequence source, hg38 is ~3 GB, and bundling it in a repo is not an option — a
+    documented limitation rather than a defect. The consequence is that this file's verdict depended
+    on a third party being up. On 2026-08-14 UCSC refused the connection during one PR's run and the
+    same corpus that had passed minutes earlier reported `canvases 0/0 painted (NOT converged)` and
+    blew the 30 s budget at the 60 s timeout — four failures, none of them about the reports.
+
+    A test that goes red when someone else's server hiccups trains people to re-run CI until it is
+    green, which is how a real blank-panel regression gets waved through. So: if the *only* console
+    errors are unreachable-host signatures and an external host was actually contacted, this render
+    is unverifiable and says so. A genuinely broken report still fails — a blank canvas with UCSC up
+    produces no such console error, and any error outside this list disqualifies the skip.
+    """
+    if not r.console_errors or not r.external_urls:
+        return None
+    unexplained = [e for e in r.console_errors
+                   if not any(sig in e for sig in UNREACHABLE_SIGNATURES)]
+    if unexplained:
+        return None
+    hosts = ", ".join(r.external_hosts) or "an external host"
+    return (
+        f"{r.path.name}: {hosts} did not answer, so the reference sequence never loaded and the "
+        f"panel could not paint. Not a report defect -- igv.js needs a sequence source and hg38 is "
+        f"too large to bundle. Errors: {r.console_errors[:2]}"
+    )
+
+
 def unavailable() -> "str | None":
     """Why a browser check cannot run here, or None if it can."""
     try:
