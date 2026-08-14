@@ -28,6 +28,12 @@ dumps), a 33.7 MB `annotations/gencode.v48.basic.annotation.gtf.gz` that `chorus
 anyway, and 1.7 MB of `chorus_mcp_output/` that was committed by accident. Purged with
 `git-filter-repo`; the pack went **266.5 MiB → 218.5 MiB** and `.git` **597 MB → 220 MB**.
 
+The rewrite alone did not change what GitHub *reports*, because 27 stale remote branches still
+pointed at pre-rewrite commits and kept those objects reachable. The 18 whose PRs were merged were
+deleted on 2026-08-14 — their work is in `main` by construction — and the 8 with no merged PR were
+left alone. GitHub recomputes repository size on its own GC schedule, so the published figure lags
+the deletion rather than following it.
+
 What this means for you:
 
 * **Re-clone, or hard-reset.** `git fetch --tags --force && git reset --hard origin/main`. A plain
