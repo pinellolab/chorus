@@ -450,11 +450,28 @@ def test_create_oracle_resolves_cherimoya():
 
 
 def test_registered_in_environment_maps():
-    from chorus.core.environment.manager import EnvironmentManager
-    from chorus.core.environment.runner import ORACLE_CLASS_MAP
+    """Cherimoya resolves to its own env, and its dependency probe actually probes something.
 
-    assert ORACLE_CLASS_MAP["cherimoya"] == "CherimoyaOracle"
+    This used to also assert `ORACLE_CLASS_MAP["cherimoya"] == "CherimoyaOracle"`. That map was
+    removed: its only consumer assigned the lookup to a local and never read it, because the
+    generated script asks the oracle for its own `__class__.__name__` in the child process. The
+    assertion was pinning a value nothing consulted.
+
+    The dependency-probe check replaces it, and is the assertion that would have caught a real
+    defect — cherimoya was absent from the runner's probe, so `chorus health` reported it Healthy
+    without importing torch or cherimoya.
+    """
+    import sys
+    from pathlib import Path
+
+    from chorus.core.environment.manager import EnvironmentManager
+
     assert EnvironmentManager().get_environment_name("cherimoya") == "chorus-cherimoya"
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from test_registries_cover_every_oracle import _runner_dependencies
+
+    assert "cherimoya" in _runner_dependencies()
 
 
 def test_environment_yaml_exists_and_pins_cherimoya():

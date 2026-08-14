@@ -269,48 +269,19 @@ predictions = oracle.predict_batch(
 
 ## Adding New Oracles
 
-To implement a new oracle:
+See **[`CONTRIBUTING.md`](../CONTRIBUTING.md#step-by-step-guide-to-implementing-a-new-oracle)**,
+which is the canonical procedure.
 
-1. **Create oracle class**:
-```python
-# chorus/oracles/newmodel.py
-class NewModelOracle(OracleBase):
-    def __init__(self, use_environment=True, reference_fasta=None):
-        self.oracle_name = 'newmodel'
-        super().__init__(use_environment)
-        self.sequence_length = 1000  # Model-specific
-        
-    def load_pretrained_model(self, weights=None):
-        # Load model architecture and weights
-        
-    def _predict(self, seq, assay_ids):
-        # Run model prediction
-        
-    def _get_context_size(self):
-        return self.sequence_length
-```
+This section used to carry its own three-step recipe. It was wrong in a way that cost real time, so
+it is deliberately not reproduced here: it told contributors to register their oracle in an
+`ORACLE_REGISTRY` dict in `chorus/__init__.py`, and **no such name has ever existed in this
+codebase** — following it produced a dict nothing reads and a `ValueError: Unknown oracle` at run
+time. Its class skeleton also implemented 3 of the 8 abstract methods on `OracleBase` and was not
+valid Python.
 
-2. **Create environment file**:
-```yaml
-# environments/chorus-newmodel.yml
-name: chorus-newmodel
-channels:
-  - conda-forge
-  - bioconda
-dependencies:
-  - python=3.9
-  - pytorch=2.0
-  - model-specific-deps
-```
-
-3. **Register in factory**:
-```python
-# chorus/__init__.py
-ORACLE_REGISTRY = {
-    'enformer': EnformerOracle,
-    'newmodel': NewModelOracle,
-}
-```
+Registration is roughly ten hand-edited sites plus a background null, none of them auto-discovered.
+Rather than keep a second, shorter list in step with the real one, there is now one list, in
+CONTRIBUTING.md.
 
 ## Testing
 
@@ -372,7 +343,8 @@ logging.basicConfig(level=logging.DEBUG)
 oracle._validate_sequence(seq)  # Length and content
 
 # Check coordinates
-oracle._validate_region("chr1:1000-2000")  # Format
+# NOTE: there is no _validate_region. Region strings are parsed by
+# chorus.utils.genome; OracleBase exposes only the two validators above.
 
 # Check track IDs
 oracle._validate_assay_ids(['ENCFF413AHU'])  # Valid IDs

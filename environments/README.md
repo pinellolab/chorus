@@ -81,12 +81,23 @@ predictions = oracle.predict(('chr1', 1000000, 1001000), ['ENCFF413AHU'])
 
 ## Adding New Oracles
 
-To add a new oracle with its own environment:
+**[`CONTRIBUTING.md` → Step 5](../CONTRIBUTING.md#step-5-register-your-oracle) is the canonical
+procedure.** Only the environment-file half belongs here:
 
-1. Create `chorus-{oracle_name}.yml` in this directory
-2. Include core dependencies plus oracle-specific packages
-3. Update the oracle class to inherit from `OracleBase` with `use_environment=True`
-4. The environment will be automatically detected by the CLI
+1. Create `chorus-{oracle_name}.yml` in this directory. The filename is load-bearing —
+   `EnvironmentManager.list_available_oracles` globs `chorus-*.yml` and strips the prefix, which is
+   what makes the name appear in `chorus list`. Include the `name: chorus-{oracle_name}` key.
+2. Include the oracle's own dependencies; model the file on an existing one such as
+   `chorus-sei.yml`. On macOS arm64 `chorus setup` strips the CUDA packages for you
+   (`chorus/core/platform.py`), so pin them normally.
+
+> **The environment is *not* enough.** A yml alone gets your oracle into `chorus list` and nowhere
+> else — it will not load, score, or appear to any MCP client until roughly ten hand-edited
+> registration sites name it, and it returns `None` for every percentile until it has a background
+> null. This README used to say "the environment will be automatically detected by the CLI", which
+> was true of `chorus list` and misleading about everything else. See
+> [CONTRIBUTING.md Step 5](../CONTRIBUTING.md#step-5-register-your-oracle) for the full list and
+> [`docs/BACKGROUND_NULL_PROTOCOL.md`](../docs/BACKGROUND_NULL_PROTOCOL.md) §8 for the nulls.
 
 ## GPU Support
 
