@@ -157,22 +157,36 @@ def test_the_smoke_fixtures_skip_rather_than_error():
     )
 
 
-def test_the_documented_integration_count_is_the_real_one():
-    """The count in `pytest.ini`'s usage comment has drifted three times: 66, 153, 154, now 157.
+#: A fresh clone with no genomes, backgrounds or oracle envs collected 125 on CI on 2026-08-14.
+#: The floor sits below that: it exists to catch "the marker selected nothing", not to track the
+#: exact number, which is not a property of the repo at all.
+_INTEGRATION_FLOOR = 100
 
-    It is the number a contributor uses to sanity-check that their `-m integration` run selected
-    what it should have, so a stale one quietly undermines the check it exists for. Nothing pinned
-    it, which is why it kept moving; collection is the cheapest possible source of truth.
+
+def test_the_integration_marker_still_selects_a_real_suite():
+    """`pytest -m integration` must select a suite, and pytest.ini must not claim an exact size.
+
+    The usage comment used to name a figure, and it drifted four times: 66, 153, 154, 157. The first
+    version of this guard pinned that figure by collection -- and failed on CI, which collects **125**
+    where this host collects **162**. That is not drift; the count is genuinely environment-dependent,
+    because integration tests parametrize over locally-present artefacts (genomes, backgrounds,
+    per-oracle envs). An exact number was never a fact about the repository, so no guard could have
+    made it one, and the honest fix was to stop asserting it.
+
+    What remains worth checking is what a contributor actually uses the figure for: confirming their
+    run selected the suite rather than silently collecting nothing -- the failure mode that shipped in
+    CONTRIBUTING's browser recipe, which collected 0 because `addopts` deselected everything it named.
     """
     import subprocess
     import sys
 
-    m = re.search(r"pytest -m integration\s+#\s*the ([\d,]+) integration tests", PYTEST_INI.read_text())
-    assert m, (
-        "pytest.ini no longer documents how many integration tests there are. Either restore the "
-        "count or drop this guard deliberately -- do not leave a number nobody checks."
+    text = PYTEST_INI.read_text()
+    assert "pytest -m integration" in text, "pytest.ini no longer documents the integration opt-in"
+    assert re.search(r"fresh clone|provisioned host|magnitude, not an identity", text), (
+        "pytest.ini states an integration-test count without saying it varies by environment. CI "
+        "collects 125 where a provisioned host collects 162; a bare number reads as exact, goes "
+        "stale, and has already done so four times."
     )
-    documented = int(m.group(1).replace(",", ""))
 
     proc = subprocess.run(
         [sys.executable, "-m", "pytest", str(REPO / "tests"), "-m", "integration",
@@ -183,8 +197,8 @@ def test_the_documented_integration_count_is_the_real_one():
     assert got, f"could not read a collection count from pytest output:\n{proc.stdout[-1500:]}"
     actual = int(got.group(1))
 
-    assert actual == documented, (
-        f"pytest.ini says there are {documented} integration tests; collection finds {actual}. "
-        f"If you added or removed one, update the comment in pytest.ini -- a contributor uses that "
-        f"number to confirm their `-m integration` run selected the right suite."
+    assert actual >= _INTEGRATION_FLOOR, (
+        f"`pytest -m integration` collected only {actual} tests, below the floor of "
+        f"{_INTEGRATION_FLOOR}. Either the marker stopped being applied or a collection error is "
+        f"swallowing most of the suite -- a run that quietly selects almost nothing reads as a pass."
     )
