@@ -959,11 +959,14 @@ ChromBPNet's percentile-normalisation coverage from 24 → 786 tracks.
   and `chorus-mcp` stdio MCP E2E.
 - **Error-recovery unit tests** (`tests/test_error_recovery.py`) — 12
   mock-based tests covering download/auth/env-missing failure paths.
-- **HTML walkthrough render audit** —
-  `audits/2026-04-26_v29_scorched_earth/probes/05_html_render.py`
-  renders all 18 shipped walkthroughs at 1600×4500 in headless
-  Chromium and audits each against the §7 audit checklist (IGV
-  block, glossary, percentile columns, formula badges, JS errors).
+- **HTML walkthrough render audit** — a Selenium probe rendered all 18 shipped
+    walkthroughs at 1600×4500 in headless Chromium and audited each against the §7
+    checklist (IGV block, glossary, percentile columns, formula badges, JS errors).
+    The path this entry used to cite,
+    `audits/2026-04-26_v29_scorched_earth/probes/05_html_render.py`, **never existed** —
+    the probe lived under other dated audit directories. Superseded either way by
+    `tests/test_committed_reports_render_in_a_browser.py`, which does the same job inside
+    the suite with playwright, and pierces shadow roots.
 
 ### Changed
 
