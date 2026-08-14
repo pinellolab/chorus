@@ -38,20 +38,56 @@ def _snippet() -> str:
     return text[start + len("```python"):end]
 
 
+def _documented_keywords() -> dict[str, set[str]]:
+    """Keyword names the README snippet passes, per method, parsed rather than regexed.
+
+    The first version matched `{method}\\([^)]*?(\\w+)=`, which cannot cross the `)` of the nested
+    `abs(0.45)` in the snippet. It therefore found **zero** keywords and the loop below never ran:
+    renaming the real `signed` parameter to `is_signed` left the test green. An AST walk sees the call
+    structure instead of guessing at it, and nested calls stop mattering.
+    """
+    import ast
+
+    tree = ast.parse(_snippet().strip())
+    out: dict[str, set[str]] = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        name = getattr(node.func, "attr", None) or getattr(node.func, "id", None)
+        if name in ("effect_percentile", "activity_percentile"):
+            out.setdefault(name, set()).update(
+                kw.arg for kw in node.keywords if kw.arg is not None
+            )
+    return out
+
+
 def test_the_documented_calls_use_the_real_signatures():
     """Static half: no keyword the API does not accept. Runs without loading an artefact."""
     import inspect
 
     from chorus.analysis.normalization import PerTrackNormalizer
 
-    snippet = _snippet()
-    for method in ("effect_percentile", "activity_percentile"):
+    documented = _documented_keywords()
+    assert documented, (
+        "no percentile calls were parsed out of the README snippet, so this test would pass "
+        "vacuously -- the same way it did when a regex could not cross a nested paren"
+    )
+    for method, kws in documented.items():
         params = set(inspect.signature(getattr(PerTrackNormalizer, method)).parameters)
-        for kw in re.findall(rf"{method}\([^)]*?(\w+)=", snippet, re.S):
+        for kw in kws:
             assert kw in params, (
                 f"README calls {method}(…{kw}=…) but the signature has no `{kw}` parameter "
                 f"(accepts: {sorted(params - {'self'})}). The documented call would raise TypeError."
             )
+
+
+def test_the_signature_check_sees_the_keyword_the_snippet_actually_passes():
+    """Fails-without-fix for the vacuous-regex bug: `signed=` must be among the parsed keywords."""
+    documented = _documented_keywords()
+    assert "signed" in documented.get("effect_percentile", set()), (
+        f"the snippet passes signed=False to effect_percentile, but the parser found "
+        f"{documented} -- if that keyword is invisible, no signature drift can be caught"
+    )
 
 
 def test_the_documented_call_shape_is_positional_for_raw_signal():
@@ -109,17 +145,35 @@ def test_the_stratification_table_matches_the_code():
 
     text = README.read_text()
     i = text.index("| oracle | effect reference population |")
-    table = text[i:i + 1400]
+    # Scope to the table itself. The first version took a flat 1400-character slice, which reached
+    # ~700 characters past the table into prose containing "50 % of Enformer's accessibility rows" --
+    # so the cCRE assertion was satisfied by an unrelated sentence, and deleting the cCRE stratum
+    # from the table (the exact regression this test names) still passed.
+    table = text[i:text.index("\n\n", i)]
 
     assert abs(sum(DEFAULT_REGION_STRATA.values()) - 1.0) < 1e-9, DEFAULT_REGION_STRATA
-    for name, pct in (("ccre", 50), ("tss_near", 10), ("junction", 16.5), ("random", 7.5)):
-        expected = DEFAULT_REGION_STRATA[name] * 100
-        assert abs(expected - pct) < 1e-9, f"{name} moved in the code: {expected}% vs doc {pct}%"
-        rendered = f"{pct:g} %"
-        assert rendered in table, (
-            f"the README stratification table no longer states {rendered} for `{name}`. It once "
-            f"omitted the cCRE stratum entirely and doubled every other fraction; keep it in step "
-            f"with DEFAULT_REGION_STRATA."
+
+    # Each percentage anchored to its own label, and all six strata covered. Bare "10 %" was
+    # previously satisfied for tss_near by tss_far's identical figure in the sibling clause.
+    LABELS = {
+        "ccre": "inside cCREs",
+        "tss_near": "within ±1 kb of a TSS",
+        "tss_far": "at 1–10 kb",
+        "junction": "within ±100 bp of an exon/intron boundary",
+        "gene_body": "elsewhere in a gene body",
+        "random": "uniformly random",
+    }
+    assert set(LABELS) == set(DEFAULT_REGION_STRATA), (
+        f"strata changed in code: {sorted(DEFAULT_REGION_STRATA)} vs documented {sorted(LABELS)}"
+    )
+    for name, label in LABELS.items():
+        pct = DEFAULT_REGION_STRATA[name] * 100
+        anchored = f"{pct:g} % {label}"
+        assert anchored in table, (
+            f"the README stratification table does not state {anchored!r} for `{name}`.\n"
+            f"Every percentage must sit next to its own label: the table once omitted the cCRE "
+            f"stratum entirely and doubled every other fraction, and a bare percentage check could "
+            f"not see either problem.\ntable was:\n{table}"
         )
 
 

@@ -20,7 +20,7 @@ Four steps. Steps 1 + 2 are copy-paste. Step 3 is a runnable snippet. Step 4 hoo
 - **~100 GB free disk** for the default all-oracle install on Linux x86_64 + CUDA. The install itself
   is ~85 GiB (as `du -sh` counts it) plus a ~4 GiB reclaimable package cache — and if you are
   provisioning a cloud volume, note that those are **binary** units: a disk *sold* as "90 GB" is only
-  83.8 GiB, which is smaller than the install. 100 GB decimal (93 GiB) fits with room to work. Each oracle env carries its own multi-GB CUDA payload, which is nearly all of it — so a macOS or CPU-only install is far smaller. See [Disk usage breakdown](#disk-usage-breakdown) for per-oracle / per-asset numbers, `chorus setup --oracle <name>` if you only need one oracle — **that is ~14 GiB, not 85** (measured for `enformer`: 2.41 GiB base env + 5.89 GiB oracle env + 3.05 GiB hg38 + 1.87 GiB weights + 0.52 GiB backgrounds = 13.74 GiB) — and [Where chorus puts large files](#where-chorus-puts-large-files) to put it on a different filesystem
+  83.8 GiB, which is smaller than the install. 100 GB decimal (93 GiB) fits with room to work. Each oracle env carries its own multi-GB CUDA payload, which is nearly all of it — so a macOS or CPU-only install is far smaller. See [Disk usage breakdown](#disk-usage-breakdown) for per-oracle / per-asset numbers, `chorus setup --oracle <name>` if you only need one oracle — **that is ~13 GiB, not 85** (measured for `enformer`: 2.41 GiB base env + 5.89 GiB oracle env + 3.05 GiB hg38 + 0.94 GiB weights + 0.52 GiB backgrounds = 12.81 GiB) — and [Where chorus puts large files](#where-chorus-puts-large-files) to put it on a different filesystem
 - **Linux x86_64 or macOS** (Intel / Apple Silicon)
 
 ### 1. Install (5 minutes)
@@ -58,7 +58,7 @@ One command, walk away, come back to a complete chorus install. When prompted:
 > **No HuggingFace account, and you want one that actually runs?** Only AlphaGenome is gated, and
 > the gate is scoped to it — `chorus setup --oracle enformer` never asks for a token
 > ([`main.py`](chorus/cli/main.py#L93) prompts only when `alphagenome` is among the requested
-> oracles) and leaves you with a fully working install in ~14 GiB. Every snippet in
+> oracles) and leaves you with a fully working install in ~13 GiB. Every snippet in
 > [step 3](#3-your-first-prediction--score-a-snp-at-the-β-globin-locus) below uses Enformer, so
 > nothing in this TLDR needs an account.
 >
@@ -159,7 +159,7 @@ _Everything below is optional — the TLDR above is enough to get running. Secti
 
 **Conversational genomics.** The idea behind Chorus: ask in plain language what DNA does — and what happens when you change it — while an AI agent orchestrates the right sequence-to-function models to predict, compare, and explain the answer. An agent that *predicts* function from sequence, not a chatbot that looks up what is already known. Computation, replaced by conversation.
 
-Eight state-of-the-art genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Cherimoya/CATv1, Sei, LegNet, EPInformer-seq, AlphaGenome — wired through one API. The same five lines of Python predict variant effects on chromatin accessibility (ChromBPNet, base-pair resolution), TF binding (Enformer, BPNet), 5,168 multi-modal tracks at 1 Mb context (AlphaGenome), or RNA-seq-grade gene expression (Borzoi). Every prediction comes with **effect-percentile and activity-percentile scores** ranked against ~18 k–225 k sampled SNPs and ~29 k–320 k genome-wide positions, so a `+0.45 log₂FC` becomes `0.98 effect %ile, 0.81 activity %ile` — directly interpretable, not a raw fold-change you have to calibrate yourself.
+Eight state-of-the-art genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Cherimoya/CATv1, Sei, LegNet, EPInformer-seq, AlphaGenome — wired through one API. The same five lines of Python predict variant effects on chromatin accessibility (ChromBPNet, base-pair resolution), TF binding (Enformer, BPNet), 5,168 multi-modal tracks at 1 Mb context (AlphaGenome), or RNA-seq-grade gene expression (Borzoi). Every prediction comes with **effect-percentile and activity-percentile scores** ranked against ~18 k–225 k sampled SNPs and ~19.5 k–320 k genome-wide positions, so a `+0.45 log₂FC` becomes `0.98 effect %ile, 0.96 activity %ile` — directly interpretable, not a raw fold-change you have to calibrate yourself.
 
 Each oracle runs in its own conda environment (no TF/PyTorch/JAX dependency hell), every weight + reference + background is pre-mirrored to a chorus-controlled HuggingFace org (no broken-link surprises), and the **24-tool MCP server** lets you ask Claude to run the analysis in plain English. See [Pick an oracle](#pick-an-oracle) for the per-oracle hardware/cost matrix.
 
@@ -530,7 +530,7 @@ Genomes are stored in the `genomes/` directory within your Chorus installation.
 
 #### Per-track background distributions (auto-downloaded)
 
-Chorus converts every raw prediction into an **effect percentile** and **activity percentile** against each track's own sampled-SNP reference population (~17,800–225,000 variants) and ~29,000–320,000 genome-wide positions scored on the same oracle. These pre-computed per-track CDFs are what let a user interpret a `+0.45` log2FC as `0.96 activity %ile`.
+Chorus converts every raw prediction into an **effect percentile** and **activity percentile** against each track's own sampled-SNP reference population (~17,800–225,000 variants) and ~19,500–320,000 genome-wide positions scored on the same oracle. These pre-computed per-track CDFs are what let a user interpret a `+0.45` log2FC as `0.96 activity %ile`.
 
 **Nothing to configure.** `chorus setup` pre-downloads the relevant backgrounds for every oracle. Developing a **new** oracle and need a background the canonical dataset does not have? Set `CHORUS_BACKGROUNDS_REPO=you/your-backgrounds` to read from your own dataset, or pass `get_pertrack_normalizer(name, cache_dir=...)` to use a local `.npz` — see [CONTRIBUTING](CONTRIBUTING.md#you-do-not-need-our-infrastructure-to-develop-or-to-open-the-pr). If you skipped that step, on the first variant analysis for a given oracle the backgrounds are automatically fetched from the public HuggingFace dataset [`lucapinello/chorus-backgrounds`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds) and cached at `<data-dir>/backgrounds/`.
 
@@ -1454,9 +1454,11 @@ The reference population differs by oracle, and by layer, because a percentile o
 
 | oracle | effect reference population |
 |---|---|
-| AlphaGenome, Borzoi, Enformer, ChromBPNet, Cherimoya, Sei, LegNet, EPInformer-seq | **one stratified mixture**, sampled from GENCODE v48 protein-coding annotation and ENCODE SCREEN cCREs: **50 % inside cCREs**, 10 % within ±1 kb of a TSS, 10 % at 1–10 kb, 16.5 % within ±100 bp of an exon/intron boundary, 6 % elsewhere in a gene body, 7.5 % uniformly random across `chr1`–`chr22`. The authoritative values are `DEFAULT_REGION_STRATA` in [`chorus/utils/annotations.py`](chorus/utils/annotations.py), and the mixture actually used is stamped into every shipped NPZ's provenance |
+| AlphaGenome, Borzoi, Enformer, Sei, EPInformer-seq | **the base stratified mixture**, sampled from GENCODE v48 protein-coding annotation and ENCODE SCREEN cCREs: **50 % inside cCREs**, 10 % within ±1 kb of a TSS, 10 % at 1–10 kb, 16.5 % within ±100 bp of an exon/intron boundary, 6 % elsewhere in a gene body, 7.5 % uniformly random across `chr1`–`chr22` |
+| **LegNet** | the same mixture **minus the `gene_body` stratum** (`drop_strata: ["gene_body"]`) — a promoter-length model has no gene-body reference class |
+| **ChromBPNet, Cherimoya/CATv1** | the same mixture **minus `gene_body`, plus a 5,000-position `dhs` stratum** sampled from the DHS vocabulary (`add_strata: {"dhs": 5000}`) — base-pair-resolution accessibility models need accessible-site density the base mixture does not provide |
 
-Uniform-random was the original choice everywhere, and it is the wrong reference class for a localised assay: a random position carries almost no CAGE or accessibility signal, so the `+1` pseudocount damps its log-ratio toward zero and the null's body collapses below where real regulatory effects live. The 15 % uniform tail in the gene-anchored mixture is deliberate — with no near-zero mass, genuinely small effects would receive artificially *low* percentiles, which is the mirror of the same failure.
+Uniform-random was the original choice everywhere, and it is the wrong reference class for a localised assay: a random position carries almost no CAGE or accessibility signal, so the `+1` pseudocount damps its log-ratio toward zero and the null's body collapses below where real regulatory effects live. The 7.5 % uniform tail in the gene-anchored mixture is deliberate — with no near-zero mass, genuinely small effects would receive artificially *low* percentiles, which is the mirror of the same failure.
 
 Half the mixture is cCRE positions because accessibility was the one layer still saturating against a purely gene-anchored null: measured at SORT1, 50 % of Enformer's accessibility rows exceeded their own track's null maximum, and a cCRE-anchored null takes that to 0 %. That treatment is *not* extended to TF binding or histone marks, which were measured and got no better or worse — a cCRE is defined by accessibility, H3K4me3 or CTCF signal, so a randomly chosen one is often not bound by the particular TF a given ChIP track measures.
 
