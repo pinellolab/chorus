@@ -53,7 +53,18 @@ VARIANT = dict(
 )
 
 
-def _child(out_path: str, gpu: str) -> int:
+#: One track per layer, read out of the committed SORT1_enformer example rather than invented, so
+#: the gate scores the same kinds of track the example does. Enformer uses ENCODE/FANTOM accessions,
+#: not AlphaGenome's ontology strings, so the two arms cannot share a list.
+ENFORMER_TRACKS = [
+    "ENCFF430NNH",   # tf_binding
+    "ENCFF035NGT",   # histone_marks
+    "GSM2543098",    # chromatin_accessibility
+    "CNhs12328",     # tss_activity
+]
+
+
+def _child(out_path: str, gpu: str, oracle_name: str = "alphagenome") -> int:
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu
     sys.path.insert(0, str(REPO))
     # Exactly the path scripts/regenerate_examples.py takes, so this gates what
@@ -61,32 +72,37 @@ def _child(out_path: str, gpu: str) -> int:
     from chorus.analysis.analysis_request import AnalysisRequest
     from chorus.analysis.normalization import PerTrackNormalizer
     from chorus.analysis.variant_report import build_variant_report
-    from chorus.oracles.alphagenome import AlphaGenomeOracle
-
     # reference_fasta is required: predict_variant_effect refuses to guess a
     # genome (#128's strict_ref work made that a hard error rather than a
     # substitution). regenerate_examples.py passes it the same way.
-    oracle = AlphaGenomeOracle(
-        use_environment=False,
-        reference_fasta=str(REPO / "genomes" / "hg38.fa"),
-    )
+    fasta = str(REPO / "genomes" / "hg38.fa")
+    if oracle_name == "enformer":
+        # use_environment=True on purpose: that is the path regenerate_examples.py takes for the
+        # walkthroughs, and it spawns a fresh process per predict. The AlphaGenome arm below runs
+        # in-process, so the two arms cover different execution models rather than duplicating one.
+        from chorus.oracles.enformer import EnformerOracle
+        oracle = EnformerOracle(use_environment=True, reference_fasta=fasta)
+    else:
+        from chorus.oracles.alphagenome import AlphaGenomeOracle
+        oracle = AlphaGenomeOracle(use_environment=False, reference_fasta=fasta)
     oracle.load_pretrained_model()
     pos = f"{VARIANT['chrom']}:{VARIANT['position']}"
+    assay_ids = VARIANT["assay_ids"] if oracle_name == "alphagenome" else ENFORMER_TRACKS
     variant_result = oracle.predict_variant_effect(
         genomic_region=f"{pos}-{VARIANT['position'] + 1}",
         variant_position=pos,
         alleles=[VARIANT["ref"], VARIANT["alt"]],
-        assay_ids=VARIANT["assay_ids"],
+        assay_ids=assay_ids,
     )
     report = build_variant_report(
         variant_result,
-        oracle_name="alphagenome",
+        oracle_name=oracle_name,
         gene_name=VARIANT["gene"],
         normalizer=PerTrackNormalizer(),
         analysis_request=AnalysisRequest(
             user_prompt="determinism gate",
             tool_name="analyze_variant_multilayer",
-            oracle_name="alphagenome",
+            oracle_name=oracle_name,
             tracks_requested="determinism gate",
         ),
     )
@@ -94,27 +110,53 @@ def _child(out_path: str, gpu: str) -> int:
     return 0
 
 
-def _leaves(obj, path=""):
-    """Every numeric leaf, with a stable path, so a diff can name the field."""
+#: Fields that change every run by construction and say nothing about determinism.
+_VOLATILE = ("generated_at",)
+
+
+def _leaves(obj, path="", strings=False):
+    """Every leaf, with a stable path, so a diff can name the field.
+
+    ``strings=True`` also yields text leaves. That matters for F8: the failure mode there is a
+    *top-N identity* flip — a different track surviving `discover_variant_effects`' hard cutoff —
+    which shows up as changed `assay_id` / `description` strings. A numeric-only comparison reports
+    it as a pile of moved numbers and hides what actually happened. `generated_at` is excluded
+    because it is a wall-clock stamp; set SOURCE_DATE_EPOCH to pin it instead.
+    """
     if isinstance(obj, dict):
         for k in sorted(obj):
-            yield from _leaves(obj[k], f"{path}.{k}")
+            if k in _VOLATILE:
+                continue
+            yield from _leaves(obj[k], f"{path}.{k}", strings=strings)
     elif isinstance(obj, (list, tuple)):
         for i, v in enumerate(obj):
-            yield from _leaves(v, f"{path}[{i}]")
+            yield from _leaves(v, f"{path}[{i}]", strings=strings)
     elif isinstance(obj, bool) or obj is None:
         return
     elif isinstance(obj, (int, float)):
         yield path, float(obj)
+    elif strings and isinstance(obj, str):
+        yield path, obj
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gpu", default="1")
+    ap.add_argument(
+        "--oracle", default="alphagenome", choices=["alphagenome", "enformer"],
+        help="Which oracle to gate. The default AlphaGenome path runs in-process "
+             "(use_environment=False); `enformer` exercises the use_environment=True subprocess "
+             "path that regenerate_examples.py actually uses, which is where F8 lives.",
+    )
+    ap.add_argument(
+        "--strings", action="store_true",
+        help="Compare text leaves too, so a top-N identity flip is reported as such rather than "
+             "as numeric drift. `generated_at` is always excluded.",
+    )
     ap.add_argument("--child", default=None, help=argparse.SUPPRESS)
     args = ap.parse_args()
     if args.child:
-        return _child(args.child, args.gpu)
+        return _child(args.child, args.gpu, args.oracle)
 
     tmp = Path(tempfile.mkdtemp())
     outs = []
@@ -122,7 +164,8 @@ def main() -> int:
         out = tmp / f"run{run}.json"
         print(f"[gate] process {run}/2 on GPU {args.gpu} ...", flush=True)
         proc = subprocess.run(
-            [sys.executable, __file__, "--gpu", args.gpu, "--child", str(out)],
+            [sys.executable, __file__, "--gpu", args.gpu,
+             "--oracle", args.oracle, "--child", str(out)],
             cwd=str(REPO), capture_output=True, text=True,
         )
         if proc.returncode != 0 or not out.exists():
@@ -130,8 +173,8 @@ def main() -> int:
             raise SystemExit(f"child {run} failed with {proc.returncode}")
         outs.append(json.loads(out.read_text()))
 
-    a = dict(_leaves(outs[0]))
-    b = dict(_leaves(outs[1]))
+    a = dict(_leaves(outs[0], strings=args.strings))
+    b = dict(_leaves(outs[1], strings=args.strings))
     keys = sorted(set(a) | set(b))
     missing = [k for k in keys if k not in a or k not in b]
     differing, sign_flips, worst = [], [], 0.0
@@ -139,7 +182,14 @@ def main() -> int:
         if k in missing:
             continue
         x, y = a[k], b[k]
-        if x == y or (math.isnan(x) and math.isnan(y)):
+        if x == y:
+            continue
+        if isinstance(x, str) or isinstance(y, str):
+            # A text leaf changed: with --strings this is the top-N identity flip F8 can produce,
+            # and it is not a numeric drift, so it must not reach the float arithmetic below.
+            differing.append((k, x, y))
+            continue
+        if math.isnan(x) and math.isnan(y):
             continue
         differing.append((k, x, y))
         if x * y < 0:

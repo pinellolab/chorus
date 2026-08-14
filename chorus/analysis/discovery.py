@@ -681,7 +681,11 @@ def _rank_cell_types(
             "effect_pctile": best.effect_pctile,
             "effect_exceedance": best.effect_exceedance,
             "n_tracks": len(ct_effects),
-            "layers_affected": list({e.layer for e in ct_effects if e.abs_score > 0.01}),
+            # sorted(): a set of str materialises in per-process hash order, so this field
+            # differed between runs for no reason. It reaches MCP replies rather than
+            # the committed examples, so it is a separate defect from F8 — but the same
+            # class, and free to remove.
+            "layers_affected": sorted({e.layer for e in ct_effects if e.abs_score > 0.01}),
         })
 
     ct_ranking.sort(key=lambda r: r["ranking_score"], reverse=True)
