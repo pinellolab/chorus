@@ -81,3 +81,10 @@ kernel from the Kernel menu.
   ~30 s.
 - **Notebook cells show `<Figure ... >` but no image** — check your
   matplotlib backend; `%matplotlib inline` should be in cell 1.
+
+## Want to add one?
+
+See [CONTRIBUTING.md § Contributing an example or walkthrough](../../CONTRIBUTING.md#contributing-an-example-or-walkthrough).
+Note the `notebook.ipynb` inside each `examples/walkthroughs/*/` directory is **code-generated** by
+`scripts/generate_walkthrough_notebooks.py` — the hand-written tutorials are the ones in this
+directory.

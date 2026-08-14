@@ -157,3 +157,10 @@ Every analysis tool produces outputs in four formats:
 | JSON | `report.to_dict()` | Programmatic analysis, pipelines, notebooks |
 | TSV | `report.to_tsv(path)` or `report.to_dataframe()` | Excel, R, pandas |
 | HTML | `report.to_html(path)` | Visual review with embedded IGV genome browser |
+
+## Want to add one?
+
+Worked examples are the smallest useful contribution to chorus — one entry in a declarative list
+plus one script run. The canonical step-by-step, including which regeneration script owns which
+kind of example and which conda env it needs, is
+[CONTRIBUTING.md § Contributing an example or walkthrough](../../CONTRIBUTING.md#contributing-an-example-or-walkthrough).
