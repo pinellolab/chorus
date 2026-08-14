@@ -579,6 +579,23 @@ returns `"other"`, `LAYER_CONFIGS.get("other")` is `None` and **every score beco
 `None` silently** — Sei shipped 40 built, verified, unreachable rows this way for months.
 Add an `assay_type` branch; do not invent a layer without a statistic.
 
+### Step 1b — you can develop without our HuggingFace dataset
+
+Before the region-set decision, the practical question: **where does your null live while you work on
+it?** The canonical CDFs are in `lucapinello/chorus-backgrounds`, which an outside contributor cannot
+write to, and reading §8 top-to-bottom leaves the impression that a contribution is blocked on that.
+It is not. Two supported overrides:
+
+* `CHORUS_BACKGROUNDS_REPO=your-username/your-backgrounds` — the dataset repo is read from that
+  environment variable, defaulting to the canonical one.
+* `get_pertrack_normalizer("mymodel", cache_dir=...)` — a local directory is checked **before** any
+  download, so `mymodel_pertrack.npz` on your disk is used for an oracle name the canonical dataset
+  has never heard of.
+
+Neither is a workaround; both are in `chorus/analysis/normalization.py` for exactly this purpose.
+Mirroring a finished null into the canonical dataset is a maintainer step, and it does not have to
+block the PR that adds the oracle.
+
 ### Step 2 — effect-null region set
 
 | if the model predicts… | use | because |

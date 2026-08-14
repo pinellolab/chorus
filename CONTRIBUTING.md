@@ -297,6 +297,37 @@ single registry; these are hand-edited, and the list is in dependency order.
     also need `scripts/build_backgrounds_mymodel.py` and an `ACTIVITY_POPULATIONS` entry in
     `scripts/stamp_provenance_v4.py`.
 
+### You do not need our infrastructure to develop, or to open the PR
+
+Read plainly, step 10 sounds like a wall: percentiles need a per-track null, the canonical nulls live
+in a HuggingFace dataset you cannot write to, and building one means scoring ~18,000 positions
+through your model. **None of that has to happen before you open a PR**, and two supported paths
+exist. Both are load-bearing code, not workarounds:
+
+```bash
+# (a) point chorus at a background you host yourself
+export CHORUS_BACKGROUNDS_REPO=your-username/your-backgrounds
+```
+
+```python
+# (b) or keep it entirely local — no HuggingFace account involved
+from chorus.analysis.normalization import get_pertrack_normalizer
+norm = get_pertrack_normalizer("mymodel", cache_dir="/path/holding/mymodel_pertrack.npz's/dir")
+```
+
+`cache_dir` is checked before any download, so a `mymodel_pertrack.npz` sitting on your disk is used
+as-is for an oracle name the canonical dataset has never heard of. Verified: a fresh name loads from a
+local directory and reports its tracks.
+
+**What we would rather have than nothing:** a correct oracle class, registered, with `predict()`
+working and a *small* background built on whatever hardware you have — even a few thousand positions.
+Say so in the PR. Percentiles from a small null are wide, not wrong, and mirroring a rebuilt null into
+the canonical dataset is a maintainer step that does not need to block your contribution. An oracle
+that predicts and returns `None` percentiles, clearly labelled as such, is still a useful PR.
+
+The one thing that is **not** negotiable is the layer classification in Step 1 of §8 — because that
+failure is silent, and a silently-`None` column looks like a working feature.
+
 **Three tests pin the registry and will fail until you update them** — that is the design, not an
 obstacle: `tests/test_mcp.py` (exact `ORACLE_SPECS` key set),
 `tests/test_reference_position_sets.py` (every oracle needs a reference SNP family), and
