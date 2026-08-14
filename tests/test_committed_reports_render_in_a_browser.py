@@ -129,11 +129,15 @@ def test_every_committed_report_paints_every_track(browser, report):
     """
     r = _render_once(browser, report)
 
+    # Asserted BEFORE the outage skip, deliberately. `unreachable_external_host` also refuses to
+    # excuse a render with uncaught JS, so this is belt and braces — but the original defect was
+    # precisely that the skip ran first and swallowed this assertion, and the ordering is the part a
+    # future edit is most likely to get wrong again.
+    assert not r.page_errors, f"{r.summary()}\nuncaught JS: {r.page_errors[:3]}"
+
     unverifiable = bh.unreachable_external_host(r)
     if unverifiable:
         pytest.skip(unverifiable)
-
-    assert not r.page_errors, f"{r.summary()}\nuncaught JS: {r.page_errors[:3]}"
     assert not r.console_errors, f"{r.summary()}\nconsole errors: {r.console_errors[:3]}"
 
     if not r.is_igv:
