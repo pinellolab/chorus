@@ -18,7 +18,78 @@ report rendering and two real defects — see the banner on each entry.
 `backgrounds-2026-08-12-cherimoya-fold0`, the same pair 0.7.2 shipped with, and
 `_HF_REVISION` still pins it. Nothing was rebuilt or re-uploaded.
 
+### ⚠ Git history was rewritten for this release
+
+**Every commit sha changed. If you have a clone, fork, or a pinned sha, read this.**
+
+`git history` carried 142.6 MB of artefacts that no longer exist in the tree and never needed to:
+107.2 MB of raw audit output (screenshots, per-probe logs, executed notebooks, two prediction `.npz`
+dumps), a 33.7 MB `annotations/gencode.v48.basic.annotation.gtf.gz` that `chorus setup` downloads
+anyway, and 1.7 MB of `chorus_mcp_output/` that was committed by accident. Purged with
+`git-filter-repo`; the pack went **266.5 MiB → 218.5 MiB** and `.git` **597 MB → 220 MB**.
+
+What this means for you:
+
+* **Re-clone, or hard-reset.** `git fetch --tags --force && git reset --hard origin/main`. A plain
+  `git pull` will report divergent histories, because it is one.
+* **Any sha you recorded — in a paper, a notebook, a lockfile, an issue — no longer resolves.** Tags
+  are the stable reference: all 16 were re-pointed at the rewritten equivalents of the same commits.
+* **Nothing in the released tree changed.** Verified rather than asserted: `HEAD`'s tree hash is
+  byte-identical before and after (`b3069df3…`), and none of the 338 purged paths was tracked at
+  `HEAD`. The full suite passes on the rewritten history — 1,972 fast, and the release numbers below
+  were re-measured on the tagged commit.
+* **The purged artefacts still exist**, in a full pre-rewrite mirror held by the maintainer. Ask
+  rather than assuming they are gone; `audits/README.md` records this.
+
+Deliberately *not* purged, though it is where the remaining weight is: 603 MB of superseded HTML
+report versions and 125 MB of old notebook copies. Those are the history of files the project still
+ships, and several audit reports cite them as evidence.
+
 ### Fixed
+- **🔐 The guard added to catch the leaked credential was itself carrying it
+  ([#197](https://github.com/pinellolab/chorus/pull/197)).** `tests/test_no_committed_credentials.py`
+  held the real LDlink token verbatim as a fails-without-fix fixture, and listed **itself** in
+  `ALLOW_PATHS` so the scan skipped it and passed — so the value redacted from the audit report in
+  #188 was put straight back into the repo by the fix for that leak, in the one file guaranteed not
+  to be read. The fixture is synthetic now (same shape: 12 bare hex after the word "token"), and
+  `ALLOW_PATHS` is **permanently empty**: a security guard that exempts a file from its own scan
+  cannot report a credential pasted into that file. The guard keeps only a *contextual* exemption, so
+  every prefixed pattern still applies to it.
+
+- **🔐 That guard only read 655 of 869 tracked files
+  ([#196](https://github.com/pinellolab/chorus/pull/196)).** It filtered by an allowlist of "text"
+  suffixes and so never opened **59 `.log` files or 20 `.html` reports** — the likeliest hiding
+  places, since a log captures whatever was in the environment and a rendered report captures
+  whatever was in a URL. Swept those 214 files by hand first (0 hits, so nothing was missed), then
+  inverted the default: scanning is the behaviour now and only known-binary suffixes are skipped
+  (759 of 869). Coverage is asserted by the test, because a shrinking allowlist is how a guard
+  quietly stops guarding.
+
+- **A lab-internal absolute path shipped inside the package
+  ([#197](https://github.com/pinellolab/chorus/pull/197)).** `_find_mamba()` hardcoded
+  `/data/pinello/SHARED_SOFTWARE/miniforge3/bin/mamba` **ahead of** the user's own `~/miniforge3`, so
+  on that one cluster it silently overrode whatever install they had chosen, and everywhere else it
+  was dead code advertising a private filesystem layout. Removed; `_find_mamba` now honours
+  **`MAMBA_EXE`** first — the variable mamba's own shell hook exports, which `EnvironmentManager`
+  already honoured and this function did not. That covers shared installs properly, for everyone.
+
+- **The citation did not parse ([#197](https://github.com/pinellolab/chorus/pull/197)).** The BibTeX
+  `author` field separated names with commas; BibTeX's separator is ` and `, and commas *within* a
+  name are the `von Last, Jr, First` form, which permits at most two. Three commas is a parse error
+  or four authors silently collapsed into one — in someone else's paper. It was also the only README
+  block no test exercised. Now ` and `-separated in `Last, First` form, with a `version` field;
+  `docs/THIRD_PARTY.md` no longer offers a second, differently-worded citation; and **`CITATION.cff`**
+  is added so GitHub renders a "Cite this repository" button. A test cross-checks the two against each
+  other and against `chorus.__version__`.
+
+- **The MCP quick-start dropped the timeout every other config sets
+  ([#197](https://github.com/pinellolab/chorus/pull/197)).** `claude mcp add …` omitted
+  `CHORUS_NO_TIMEOUT` while every JSON config in the README and the shipped `.mcp.json` set it, and
+  the README calls it "recommended for interactive use". That step targets users who skip the code —
+  laptop and CPU users — whose first long question could then die on the 300 s predict timeout inside
+  a Claude conversation, looking like a broken tool. All three recipes now pass
+  `-e CHORUS_NO_TIMEOUT=1`.
+
 - **🔐 A live LDlink API token had been committed in plaintext since April and is now redacted
   ([#188](https://github.com/pinellolab/chorus/pull/188)).** It sat in a tracked audit report, inside
   a paragraph headed *"Reminder / hygiene"* that asserted "No copy was written to any on-disk
@@ -157,6 +228,27 @@ report rendering and two real defects — see the banner on each entry.
 
 
 ### Changed
+- **`audits/` no longer ships its raw artefacts, only the reports
+  ([#198](https://github.com/pinellolab/chorus/pull/198)).** It was **426 of 869 tracked files** —
+  nearly 3× the package itself — and 119 MB, which made the repo's file tree read as an audit dump
+  rather than a library. The split was lopsided enough to decide it: **79 `.md` reports hold all the
+  reasoning in 0.9 MB**, against 347 artefacts in 122 MB. The reports stay, and several are cited
+  from this file and from `CLAUDE.md`; the artefacts were evidence for conclusions the reports
+  already state. A full copy was taken first and `audits/README.md` records that it exists, so nobody
+  assumes the evidence is gone. Tracked files 869 → 524.
+
+  Also found there: this file cited
+  `audits/2026-04-26_v29_scorched_earth/probes/05_html_render.py`, which **never existed** —
+  `git log --all` returns nothing for that path and it is absent from the pre-removal archive. That
+  citation was broken before the cleanup, not by it, and now says so.
+
+- **`resume.md` is no longer in the repo root
+  ([#197](https://github.com/pinellolab/chorus/pull/197)).** 18 KB of internal working notes titled
+  *"Resume notes — chorus, updated 2026-08-03 (rebuild in flight)"*, opening with a table of "Claims
+  that were made and then REFUTED" and hardcoding `/home/nvidia` paths. Root-level files are the
+  second thing a newcomer clicks, and "rebuild in flight" eleven days before the tag reads as
+  mid-surgery. Removed from the tree; git history retains it.
+
 - **There is one procedure for adding an oracle now, and it is `CONTRIBUTING.md`
   ([#189](https://github.com/pinellolab/chorus/pull/189)).** Three documents described it and they
   disagreed on the central fact: `docs/IMPLEMENTATION_GUIDE.md` told contributors to register in an
