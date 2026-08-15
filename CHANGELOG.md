@@ -6,6 +6,18 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Regenerating the walkthrough notebooks no longer rewrites all 13 of them for no reason.**
+  `nbformat.v4.new_code_cell` mints a random `id` per call, so every run of
+  `scripts/generate_walkthrough_notebooks.py` produced 121 insertions and 121 deletions of which
+  **zero** lines were anything but `"id"`. The churn was not the problem; the problem was that
+  "have the committed notebooks drifted from their generator?" became unanswerable, because
+  `git status` was dirty after every run whether anything had changed or not — so a real drift would
+  have hidden in noise nobody reads. Cell ids are now derived from `(index, cell_type, source)`:
+  stable across runs, unique within a notebook, and changed exactly when a cell's content changes,
+  so a one-cell edit produces a one-cell diff.
+
 ### Added
 
 - **`CHORUS_IGV_BUNDLE_SEQUENCE=1` makes an HTML report render with no network at all.** Every report
