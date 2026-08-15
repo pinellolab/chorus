@@ -256,6 +256,26 @@ ships, and several audit reports cite them as evidence.
   stable across runs, unique within a notebook, and changed exactly when a cell's content changes,
   so a one-cell edit produces a one-cell diff.
 
+- **Three of the six library notebooks pointed at the wrong Jupyter kernel
+  ([#220](https://github.com/pinellolab/chorus/pull/220)).** `cherimoya_quickstart.ipynb`,
+  `epinformerseq_testing.ipynb` and `klf1_validated_enhancer_profiles.ipynb` declared
+  `kernelspec.name = "python3"`, which resolves to whatever the reader's **default** Jupyter kernel is.
+  On the dev host that accidentally *is* the chorus env, so the problem was invisible; anyone starting
+  JupyterLab from a base or system Python gets their own interpreter and fails on the first
+  `import chorus`. `klf1` was the worst of the three — `display_name: "chorus"` with
+  `name: "python3"`, so JupyterLab showed the reader the word "chorus" while running something else,
+  and a wrong kernel that announces itself as the right one is harder to diagnose than a missing one.
+  All six now declare the kernel `chorus setup` registers; metadata only, with every output cell
+  preserved.
+
+- **`examples/walkthroughs/README.md` promised more than it shipped
+  ([#220](https://github.com/pinellolab/chorus/pull/220)).** Its title reads "pre-run, MCP-driven
+  worked examples", which is true of the reports — every directory ships generated HTML, JSON and TSV
+  — and not true of the `notebook.ipynb` beside them, all 12 of which carry **zero** outputs because
+  they are code-generated and executing them needs the matching oracle env and usually a GPU. A reader
+  who opened one expecting the promised results found an empty file. Now stated directly under that
+  title, pointing at `examples/notebooks/` for notebooks that do ship with their results.
+
 ### Changed
 - **`audits/` no longer ships its raw artefacts, only the reports
   ([#198](https://github.com/pinellolab/chorus/pull/198)).** It was **426 of 869 tracked files** —
