@@ -319,20 +319,39 @@ class SeiNormalizer:
         self.histone_inds = np.load(histone_inds)
     
     def normalize(self, preds_ref, preds_alt):
-        preds_ref_adjust = preds_ref.copy()
-        preds_alt_adjust = preds_alt.copy()
+        """Equalise the histone totals of a ref/alt pair, as upstream Sei does.
 
-        sum_ref = np.sum(preds_ref_adjust[:, self.histone_inds], axis=1)
-        sum_alt = np.sum(preds_ref_adjust[:, self.histone_inds], axis=1)
+        Ports ``sc_hnorm_varianteffect`` from FunctionLab/sei-framework ``utils.py``: both alleles'
+        histone tracks are scaled so each sums to the pair's mean, removing a global
+        nucleosome-occupancy shift between the two sequences before projection.
 
-        pred_avg = (sum_ref + sum_alt) / 2
-         
-        norm_ref = (pred_avg / sum_ref)[:, None]
-        norm_alt = (pred_avg / sum_alt)[:, None]
-        preds_ref_adjust[:, self.histone_inds] = preds_ref_adjust[:, self.histone_inds] * norm_ref
-        preds_alt_adjust[:, self.histone_inds] = preds_alt_adjust[:, self.histone_inds] * norm_alt
+        The previous version computed ``sum_alt`` from ``preds_ref_adjust`` rather than
+        ``preds_alt_adjust``. That made ``sum_alt == sum_ref``, so both scaling factors were
+        **exactly 1.0** and the whole correction was a no-op -- and it was never called anyway.
+        Measured on three real variants once wired up, the correction moves every one of the 40
+        sequence classes and shifts the top-ranked class for 2 of 3.
+        """
+        return tuple(self.equalize([preds_ref, preds_alt]))
 
-        return preds_ref_adjust, preds_alt_adjust
-    
+    def equalize(self, preds_list):
+        """Scale each allele's histone tracks to the mean histone total across all alleles.
+
+        For a ref and a single alt this is **bit-for-bit** ``sc_hnorm_varianteffect`` (verified by
+        ``tests/test_sei_nucleosome_normalization.py``), since the mean of two sums is exactly
+        upstream's ``sum_ref*0.5 + sum_alt*0.5``.
+
+        The generalisation matters because chorus reports one prediction per allele from a single
+        call, whereas upstream only ever returns ``alt - ref`` for one pair and so never needs a
+        shared reference. Equalising every allele to one common total keeps chorus's result schema
+        identical to every other oracle's -- one ``reference`` entry, one entry per alt,
+        ``effect = alt - ref`` -- while each pair still carries upstream's correction.
+        """
+        adjusted = [np.asarray(p).copy() for p in preds_list]
+        sums = [np.sum(p[:, self.histone_inds], axis=1) for p in adjusted]
+        target = np.mean(np.stack(sums), axis=0)
+        for p, s in zip(adjusted, sums):
+            p[:, self.histone_inds] = p[:, self.histone_inds] * (target / s)[:, None]
+        return adjusted
+
     def __call__(self, preds_ref, preds_alt):
         return self.normalize(preds_ref, preds_alt)
