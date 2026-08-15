@@ -1,7 +1,8 @@
 """The kernel `chorus setup` registers must be the one the shipped notebooks ask for.
 
-15 of the 18 committed notebooks declare ``kernelspec.name == "chorus"``, and until now nothing
-created that kernel. On a fresh install every one of them failed:
+Every committed notebook declares ``kernelspec.name == "chorus"`` -- 15 of 18 did when this was
+written, and #220 brought the other three into line -- and until recently nothing created that
+kernel. On a fresh install every one of them failed:
 ``jupyter nbconvert --execute`` raises ``NoSuchKernel: No such kernel named chorus``, and JupyterLab
 silently prompts for a kernel instead — which reads as a broken notebook rather than a missed step.
 The step existed only as item 4 of ``examples/notebooks/README.md``, a file you reach *after* deciding
@@ -173,4 +174,29 @@ def test_every_library_notebook_declares_the_chorus_kernel():
         f"({KERNEL_NAME!r} / {KERNEL_DISPLAY_NAME!r}):\n  " + "\n  ".join(wrong)
         + "\nA notebook naming `python3` runs whatever the reader's default kernel is, which is only "
           "the chorus env by coincidence."
+    )
+
+
+def test_the_documented_notebook_count_is_the_real_one():
+    """A count in prose goes stale the moment the thing it counts changes.
+
+    `examples/notebooks/README.md` said "15 of the 18 shipped notebooks declare kernel name `chorus`"
+    -- true when written, and false as soon as #220 brought the other three into line. Pinning the
+    number to the notebooks themselves is the only version that stays true.
+    """
+    import re
+
+    declared = _declared_kernels()
+    total = sum(declared.values())
+
+    readme = (REPO / "examples" / "notebooks" / "README.md").read_text()
+    m = re.search(r"(?:All|all)\s+(\d+)\s+shipped notebooks declare kernel name", readme)
+    assert m, (
+        "examples/notebooks/README.md no longer states how many shipped notebooks declare the kernel; "
+        "if the sentence changed shape, update this guard with it"
+    )
+    stated = int(m.group(1))
+    assert stated == total, (
+        f"the README says {stated} shipped notebooks declare the kernel; there are {total}. "
+        f"A count in prose is only true until someone adds or removes a notebook."
     )
