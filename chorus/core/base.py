@@ -266,6 +266,20 @@ class OracleBase(ABC):
         predictions = self._predict(input_data, assay_ids)
         return predictions
 
+    def _predict_alleles(self, intervals: Dict[str, Any], assay_ids: List[str]) -> Dict[str, Any]:
+        """Predict every allele of a variant. Default: each independently, one call per allele.
+
+        An extension point, not a behaviour change -- the default is exactly the loop this replaced.
+
+        It exists because at least one oracle defines a correction over the ref/alt *pair* rather
+        than per sequence. Sei's nucleosome-occupancy adjustment (upstream
+        ``sc_hnorm_varianteffect``) scales both alleles' histone tracks to their shared mean before
+        projecting, so it cannot be expressed by a per-sequence ``_predict`` at all. Overriding here
+        keeps that logic in the one oracle it belongs to while leaving the result schema -- a
+        ``reference`` entry, one entry per alt, ``effect = alt - ref`` -- identical across oracles.
+        """
+        return {name: self._predict(interval, assay_ids) for name, interval in intervals.items()}
+
     def get_output_window_offsets(self) -> Tuple[int, int]:
         """
            by default we assume that model predicts for the same size of window it accepts
@@ -526,11 +540,7 @@ class OracleBase(ABC):
 
         
         # Get predictions for each sequence
-        all_predictions = {}
-        
-        for allele_name, interval in intervals.items():
-            predictions = self._predict(interval, assay_ids)
-            all_predictions[allele_name] = predictions
+        all_predictions = self._predict_alleles(intervals, assay_ids)
     
         # Calculate effect sizes using actual prediction keys (may differ from
         # input assay_ids, e.g. ChromBPNet returns "ATAC:K562" not "ATAC")
