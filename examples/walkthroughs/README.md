@@ -1,5 +1,12 @@
 # Chorus Walkthroughs — pre-run, MCP-driven worked examples
 
+> **"Pre-run" means the reports, not the notebooks.** Each walkthrough directory ships its
+> `*_report.html`, JSON and TSV already generated — open the HTML and the answer is there, no install
+> required. The `notebook.ipynb` beside it is **code-generated and ships with no outputs**: it is the
+> same analysis as runnable code, for when you want to change a parameter, not a transcript of a run.
+> Executing one needs the matching oracle env and, for most of them, a GPU. If you want a notebook
+> that comes with its results already in it, use [`examples/notebooks/`](../notebooks/) instead.
+
 > **These are demonstrations, not rigid templates.** Chorus is designed to
 > be driven through Claude in natural language — ask in your own words
 > about your own variants, cell types, or constructs, and Claude will pick

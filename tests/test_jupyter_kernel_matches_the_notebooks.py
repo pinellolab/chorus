@@ -143,3 +143,34 @@ def test_the_kernel_resolves_the_way_nbconvert_resolves_it():
     assert spec.argv and spec.argv[0].endswith("python"), (
         f"kernel {KERNEL_NAME!r} does not launch a python interpreter: argv={spec.argv}"
     )
+
+
+def test_every_library_notebook_declares_the_chorus_kernel():
+    """Not "most" -- every one, and this is stricter than it sounds.
+
+    Three of the six declared `name: "python3"`, which resolves to whatever the reader's default
+    Jupyter kernel happens to be. On the dev host that accidentally *is* the chorus env, so it worked
+    here and would have failed for anyone running JupyterLab from a base or system Python: `import
+    chorus` against their default interpreter.
+
+    `klf1_validated_enhancer_profiles.ipynb` was the worst of the three — `name: "python3"` with
+    `display_name: "chorus"`, so JupyterLab showed the reader the word "chorus" while running a
+    different interpreter. A wrong kernel that announces itself as the right one is harder to diagnose
+    than a missing one.
+    """
+    import json
+
+    from chorus.cli._jupyter import KERNEL_DISPLAY_NAME, KERNEL_NAME
+
+    wrong = []
+    for path in sorted(REPO.glob("examples/notebooks/*.ipynb")):
+        spec = json.loads(path.read_text()).get("metadata", {}).get("kernelspec", {})
+        if (spec.get("name"), spec.get("display_name")) != (KERNEL_NAME, KERNEL_DISPLAY_NAME):
+            wrong.append(f"{path.name}: name={spec.get('name')!r} "
+                         f"display={spec.get('display_name')!r}")
+    assert not wrong, (
+        f"these notebooks do not declare the kernel `chorus setup` registers "
+        f"({KERNEL_NAME!r} / {KERNEL_DISPLAY_NAME!r}):\n  " + "\n  ".join(wrong)
+        + "\nA notebook naming `python3` runs whatever the reader's default kernel is, which is only "
+          "the chorus env by coincidence."
+    )
