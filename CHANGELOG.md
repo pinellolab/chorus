@@ -6,31 +6,9 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Added
+_Nothing yet._
 
-- **`chorus setup` registers the `chorus` Jupyter kernel.** 15 of the 18 shipped notebooks declare
-  `kernelspec.name == "chorus"` and nothing created it, so on a fresh install every one of them failed:
-  `jupyter nbconvert --execute` raises `NoSuchKernel: No such kernel named chorus`, and JupyterLab
-  silently prompts for a kernel instead — which reads as a broken notebook rather than a missed step.
-  The step existed only as item 4 of `examples/notebooks/README.md`, a file you reach *after* deciding
-  to open a notebook. Opt out with `--no-jupyter-kernel`.
-
-  Registration uses `--user`, not `--sys-prefix`, so the kernel is visible to a JupyterLab started from
-  any environment — with `--sys-prefix` the notebooks still fail from a system Jupyter, which is how
-  most people run one. Failure is never fatal: a missing `ipykernel` or an unwritable Jupyter config
-  logs a warning and the exact command to run later rather than turning a completed multi-GB install
-  into a non-zero exit.
-
-### Changed
-
-- **The install instructions pin a released tag.** `git clone` followed by `pip install -e .` installed
-  whatever `main` happened to be, while the README's numbers, the committed example outputs and the
-  background CDFs are only consistent *as of a tag*. The quickstart now checks out `v0.7.3` and says
-  when to omit it. Also states plainly that chorus is **not on PyPI** — the name `chorus` belongs to an
-  unrelated chemistry toolkit — so `pip install chorus` fetches someone else's package.
-
-
-## [0.7.3] — 2026-08-14
+## [0.7.3] — 2026-08-15
 
 **No percentile changes.** No background null, region set, retention rule or default fold moved,
 so effect and activity percentiles are directly comparable with 0.7.2. What changed is enforcement,
@@ -348,6 +326,12 @@ ships, and several audit reports cite them as evidence.
 
 - **`CLAUDE.md` keeps its copy of the regeneration matrix, now checked ([#208](https://github.com/pinellolab/chorus/pull/208)).** #203 moved that matrix into `CONTRIBUTING.md` precisely because two copies drift, then left the original in place with only the new copy guarded. Both are now parametrized over the same `argparse`-derived assertions — pinned to the code rather than to each other, since two copies compared with one another can agree and both be wrong.
 
+- **The install instructions pin a released tag.** `git clone` followed by `pip install -e .` installed
+  whatever `main` happened to be, while the README's numbers, the committed example outputs and the
+  background CDFs are only consistent *as of a tag*. The quickstart now checks out `v0.7.3` and says
+  when to omit it. Also states plainly that chorus is **not on PyPI** — the name `chorus` belongs to an
+  unrelated chemistry toolkit — so `pip install chorus` fetches someone else's package.
+
 ### Added
 - **The installation instructions were audited against the code and re-measured; the disk figure was
   wrong by more than 2× and is the reason to re-read them.** The prerequisite said **~38 GB free
@@ -420,6 +404,19 @@ ships, and several audit reports cite them as evidence.
 
 - **Contributing a worked example is a documented path ([#203](https://github.com/pinellolab/chorus/pull/203)).** `CONTRIBUTING.md` opened by describing itself as a guide to implementing a new oracle, and `Current Priorities` listed three kinds of contribution, all models — so a reader with a variant they cared about and no intention of porting a network was turned away in sentence one. The mechanics were undocumented too: four regeneration scripts own different example types, and the matrix mapping *example → script → valid `--oracle` → conda env* lived in `CLAUDE.md`, this changelog, and a May audit report. It exists because getting it wrong is the most common way a regeneration silently does nothing — `regenerate_multioracle.py` accepts `chrombpnet`/`cherimoya`/`legnet`/`alphagenome` and pointedly **not** `enformer`, has no `--gpu` where the other two do, and the wrong conda env logs `Failed to load <track>` per track and carries on rather than failing fast. There is now a routing table in the first screen (oracle / example / small fix, with honest sizes), a section carrying the verified matrix with the real entry shape and the four traps, and the six guard tests to expect — whose documented command collects **138 tests**. Eight new tests pin the table to the scripts' `argparse` definitions, including the no-enformer exception in both directions, so the table cannot go stale silently.
 - **An outside contributor can develop an oracle without our HuggingFace dataset ([#201](https://github.com/pinellolab/chorus/pull/201)).** The capability existed and was documented nowhere: `CHORUS_BACKGROUNDS_REPO` redirects the backgrounds lookup to a repo you control, and `get_pertrack_normalizer(name, cache_dir=…)` is checked before any download, making the path fully offline — yet neither appeared in README, CONTRIBUTING, `BACKGROUND_NULL_PROTOCOL.md` or `NORMALIZATION_GUIDE.md`. Read as written, §8 said percentiles require a per-track null, the canonical nulls live in a dataset you cannot write to, and building one means scoring ~18,000 positions through your model — from which a contributor reasonably concludes they need the lab's infrastructure and stops. Both mechanisms are now documented and pinned by tests, and CONTRIBUTING states plainly that a small background, or none with percentiles labelled unavailable, is still a useful PR.
+
+- **`chorus setup` registers the `chorus` Jupyter kernel.** 15 of the 18 shipped notebooks declare
+  `kernelspec.name == "chorus"` and nothing created it, so on a fresh install every one of them failed:
+  `jupyter nbconvert --execute` raises `NoSuchKernel: No such kernel named chorus`, and JupyterLab
+  silently prompts for a kernel instead — which reads as a broken notebook rather than a missed step.
+  The step existed only as item 4 of `examples/notebooks/README.md`, a file you reach *after* deciding
+  to open a notebook. Opt out with `--no-jupyter-kernel`.
+
+  Registration uses `--user`, not `--sys-prefix`, so the kernel is visible to a JupyterLab started from
+  any environment — with `--sys-prefix` the notebooks still fail from a system Jupyter, which is how
+  most people run one. Failure is never fatal: a missing `ipykernel` or an unwritable Jupyter config
+  logs a warning and the exact command to run later rather than turning a completed multi-GB install
+  into a non-zero exit.
 
 ### Known limitations
 
