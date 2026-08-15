@@ -127,7 +127,34 @@ def _cytoband_table() -> "tuple[str, str] | None":
     return cyto, sizes
 
 
-def igv_reference_config(sequence_url: str | None = None) -> dict | None:
+#: A one-contig placeholder FASTA. igv.js needs *a* sequence source to build a browser at all --
+#: `fastaURL||t.twobitURL||(i=t.id)` in the bundled igv.js, where the `id` branch resolves hg38
+#: against igv.org's hosted registry, which is the remote catalogue fetch #139 removed. So with no
+#: sequence the panel does not degrade, it never appears: measured `canvases 0/0 painted` with
+#: external requests blocked.
+#:
+#: What it is NOT: the real sequence for the displayed window. An unindexed FASTA positions its bases
+#: from offset 0 of the contig, and these reports display loci tens of megabases in -- placing the
+#: real window correctly would need that many leading bases. Inlining real bases at the wrong
+#: coordinates is worse than showing none, because a reader can zoom in and read them.
+#:
+#: So it is deliberately `N`. Chromosome lengths still come from `chromSizesURL`, which igv.js
+#: prefers over the FASTA -- verified: with a 2 kb placeholder and chr1's true 248,956,422 declared,
+#: `createBrowser` succeeded at chr1:109,274,000 (109 Mb past the placeholder) and painted its data
+#: tracks. The sequence track has nothing to draw; every other track renders.
+_PLACEHOLDER_CONTIG = "chr1"
+_PLACEHOLDER_BASES = 1000
+
+
+def _placeholder_sequence_uri() -> str:
+    """A `data:` FASTA holding `N` x _PLACEHOLDER_BASES, enough for igv.js to initialise."""
+    fasta = f">{_PLACEHOLDER_CONTIG}\n" + ("N" * _PLACEHOLDER_BASES) + "\n"
+    return _data_uri(fasta)
+
+
+def igv_reference_config(
+    sequence_url: str | None = None, *, bundle_sequence: bool = False
+) -> dict | None:
     """An explicit inline reference, or None to fall back to the registry lookup.
 
     Everything igv.js needs about hg38 except the sequence itself: chromosome
@@ -155,13 +182,22 @@ def igv_reference_config(sequence_url: str | None = None) -> dict | None:
     if tables is None:
         return None
     cyto, sizes = tables
-    url = sequence_url or os.environ.get("CHORUS_IGV_SEQUENCE_URL") or _UCSC_HG38_2BIT
     reference = {
         "id": "hg38",
         "name": "Human (GRCh38/hg38)",
         "cytobandURL": _data_uri(cyto),
         "chromSizesURL": _data_uri(sizes),
     }
+
+    explicit = sequence_url or os.environ.get("CHORUS_IGV_SEQUENCE_URL")
+    if explicit is None and (bundle_sequence or os.environ.get("CHORUS_IGV_BUNDLE_SEQUENCE")):
+        # Bundle a placeholder sequence so igv.js can initialise with no network at all. See
+        # _placeholder_sequence_uri for why this is a placeholder and not the real bases.
+        reference["fastaURL"] = _placeholder_sequence_uri()
+        reference["indexed"] = False
+        return reference
+
+    url = explicit or _UCSC_HG38_2BIT
     # The only remote resource left, and igv.js requires one; see above. A FASTA
     # needs its index named too, since igv reads lengths and offsets from the .fai
     # rather than parsing the whole file.
@@ -180,6 +216,7 @@ def igv_browser_config(
     *,
     genome: str = "hg38",
     gene_track: bool = True,
+    bundle_sequence: bool | None = None,
 ) -> dict:
     """Assemble the ``igv.createBrowser`` config, one place for all three reports.
 
@@ -191,7 +228,13 @@ def igv_browser_config(
     unavailable, so a stripped install degrades to the old behaviour instead of
     rendering nothing.
     """
-    reference = igv_reference_config() if genome == "hg38" else None
+    import os
+
+    if bundle_sequence is None:
+        bundle_sequence = bool(os.environ.get("CHORUS_IGV_BUNDLE_SEQUENCE"))
+    reference = (
+        igv_reference_config(bundle_sequence=bundle_sequence) if genome == "hg38" else None
+    )
     config: dict = {
         "locus": locus,
         "showRuler": True,

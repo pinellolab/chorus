@@ -158,6 +158,31 @@ Every analysis tool produces outputs in four formats:
 | TSV | `report.to_tsv(path)` or `report.to_dataframe()` | Excel, R, pandas |
 | HTML | `report.to_html(path)` | Visual review with embedded IGV genome browser |
 
+> **An HTML report needs network the first time you open it.** The IGV panel resolves its reference
+> sequence from `hgdownload.soe.ucsc.edu`, because igv.js requires a sequence source and hg38 is ~3 GB
+> — too large to bundle. Everything else the panel needs (chromosome sizes, the ideogram, all your
+> data) already travels inside the file. With no network the panel does not degrade, it never appears:
+> measured `canvases 0/0 painted`, because igv.js allocates no canvases if it cannot build a genome.
+>
+> Two ways to close that, both opt-in:
+>
+> ```bash
+> # (a) the real sequence, served locally -- reports look exactly as they do online
+> python -m http.server -d "$(chorus config data-dir --show)/genomes" 8000
+> export CHORUS_IGV_SEQUENCE_URL=http://localhost:8000/hg38.fa
+>
+> # (b) no server, no network: bundle a placeholder so the panel always paints
+> export CHORUS_IGV_BUNDLE_SEQUENCE=1
+> ```
+>
+> With (b) a report renders offline in ~1.6 s instead of timing out — measured 100/100 canvases
+> painted with every external request blocked. The trade-off is that the sequence track shows `N`
+> rather than real bases if you zoom in far enough to read them, so it is not the default. (An
+> inlined FASTA is positioned from the start of the contig, and these reports sit tens of megabases
+> in; showing real bases at the wrong coordinates would be worse than showing none.) A `file://` path
+> does not work for (a) — a page opened from disk may not read sibling files, which is a browser rule.
+
+
 ## Want to add one?
 
 Worked examples are the smallest useful contribution to chorus — one entry in a declarative list
