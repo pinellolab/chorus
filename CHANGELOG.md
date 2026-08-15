@@ -6,7 +6,29 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- **`chorus setup` registers the `chorus` Jupyter kernel.** 15 of the 18 shipped notebooks declare
+  `kernelspec.name == "chorus"` and nothing created it, so on a fresh install every one of them failed:
+  `jupyter nbconvert --execute` raises `NoSuchKernel: No such kernel named chorus`, and JupyterLab
+  silently prompts for a kernel instead — which reads as a broken notebook rather than a missed step.
+  The step existed only as item 4 of `examples/notebooks/README.md`, a file you reach *after* deciding
+  to open a notebook. Opt out with `--no-jupyter-kernel`.
+
+  Registration uses `--user`, not `--sys-prefix`, so the kernel is visible to a JupyterLab started from
+  any environment — with `--sys-prefix` the notebooks still fail from a system Jupyter, which is how
+  most people run one. Failure is never fatal: a missing `ipykernel` or an unwritable Jupyter config
+  logs a warning and the exact command to run later rather than turning a completed multi-GB install
+  into a non-zero exit.
+
+### Changed
+
+- **The install instructions pin a released tag.** `git clone` followed by `pip install -e .` installed
+  whatever `main` happened to be, while the README's numbers, the committed example outputs and the
+  background CDFs are only consistent *as of a tag*. The quickstart now checks out `v0.7.3` and says
+  when to omit it. Also states plainly that chorus is **not on PyPI** — the name `chorus` belongs to an
+  unrelated chemistry toolkit — so `pip install chorus` fetches someone else's package.
+
 
 ## [0.7.3] — 2026-08-14
 
