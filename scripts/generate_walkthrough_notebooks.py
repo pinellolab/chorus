@@ -1230,6 +1230,29 @@ def _build_notebook(spec: dict) -> Any:
     return nb
 
 
+def _stabilise_cell_ids(nb) -> None:
+    """Give every cell an id derived from its content, not a fresh random one.
+
+    `nbformat.v4.new_code_cell` mints a random `id` per call, so re-running this codegen rewrote all
+    13 notebooks with new ids and no other change -- 121 insertions and 121 deletions of pure noise.
+    That made "have the committed notebooks drifted?" unanswerable: `git status` was dirty after every
+    run whether anything had changed or not, so the honest check was indistinguishable from the
+    meaningless one.
+
+    Hashing (index, cell_type, source) keeps ids stable across runs, unique within a notebook (the
+    index guarantees it even for two identical cells), and changed exactly when a cell's content
+    changes. nbformat requires 1-64 chars of alphanumerics, `-` or `_`; 12 hex characters qualify.
+    """
+    import hashlib
+
+    for i, cell in enumerate(nb.cells):
+        source = cell.get("source", "")
+        if isinstance(source, list):
+            source = "".join(source)
+        key = f"{i}:{cell.get('cell_type', '')}:{source}".encode()
+        cell["id"] = hashlib.sha256(key).hexdigest()[:12]
+
+
 def main() -> int:
     n_written = 0
     for spec in WALKTHROUGHS:
@@ -1238,6 +1261,7 @@ def main() -> int:
             print(f"SKIP (dir missing): {spec['dir']}", file=sys.stderr)
             continue
         nb = _build_notebook(spec)
+        _stabilise_cell_ids(nb)
         out_path = out_dir / "notebook.ipynb"
         with out_path.open("w") as fh:
             nbf.write(nb, fh)
