@@ -6,37 +6,7 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Fixed
-
-- **Regenerating the walkthrough notebooks no longer rewrites all 13 of them for no reason.**
-  `nbformat.v4.new_code_cell` mints a random `id` per call, so every run of
-  `scripts/generate_walkthrough_notebooks.py` produced 121 insertions and 121 deletions of which
-  **zero** lines were anything but `"id"`. The churn was not the problem; the problem was that
-  "have the committed notebooks drifted from their generator?" became unanswerable, because
-  `git status` was dirty after every run whether anything had changed or not — so a real drift would
-  have hidden in noise nobody reads. Cell ids are now derived from `(index, cell_type, source)`:
-  stable across runs, unique within a notebook, and changed exactly when a cell's content changes,
-  so a one-cell edit produces a one-cell diff.
-
-### Added
-
-- **`CHORUS_IGV_BUNDLE_SEQUENCE=1` makes an HTML report render with no network at all.** Every report
-  resolved its reference sequence from `hgdownload.soe.ucsc.edu`, so opened offline the IGV panel
-  painted **nothing** — measured `canvases 0/0`, because igv.js allocates no canvases if it cannot
-  build a genome, and simply dropping the sequence is worse: with neither `fastaURL` nor `twoBitURL`
-  it falls back to resolving `id: "hg38"` against igv.org's hosted registry, the remote catalogue
-  fetch [#139](https://github.com/pinellolab/chorus/issues/139) removed.
-
-  The way through is that igv.js takes chromosome lengths from `chromSizesURL`, which reports already
-  inline, and needs the FASTA only to *initialise*. So a 1 kb placeholder is enough: the same report
-  went from `0/0 painted` in 45.3 s (timeout) to **100/100 painted in 1.6 s** with every external
-  request blocked.
-
-  Opt-in, and the placeholder is deliberately `N` rather than real bases. An unindexed FASTA is
-  positioned from offset 0 of its contig while these reports display loci tens of megabases in, so
-  real sequence would render at the wrong coordinates — worse than rendering none, because a reader
-  can zoom in and read it. `CHORUS_IGV_SEQUENCE_URL` still serves the real thing for anyone who wants
-  both, and remains the default path.
+_Nothing yet._
 
 ## [0.7.3] — 2026-08-15
 
@@ -276,6 +246,16 @@ ships, and several audit reports cite them as evidence.
 
 - **The audit runbook still asked for the artefacts this release removed ([#211](https://github.com/pinellolab/chorus/pull/211)).** `audits/AUDIT_CHECKLIST.md` — the file `CLAUDE.md` names as the thing to run before any release — listed `screenshots/*.png`, `nb_fresh_output/*.ipynb` and two probe logs under "a full audit should leave behind, in `audits/…`". Followed literally, the next audit re-commits the 347 files and ~122 MB that #198 removed. It now says to produce them, quote what matters into `report.md`, and keep them outside the repository.
 
+- **Regenerating the walkthrough notebooks no longer rewrites all 13 of them for no reason.**
+  `nbformat.v4.new_code_cell` mints a random `id` per call, so every run of
+  `scripts/generate_walkthrough_notebooks.py` produced 121 insertions and 121 deletions of which
+  **zero** lines were anything but `"id"`. The churn was not the problem; the problem was that
+  "have the committed notebooks drifted from their generator?" became unanswerable, because
+  `git status` was dirty after every run whether anything had changed or not — so a real drift would
+  have hidden in noise nobody reads. Cell ids are now derived from `(index, cell_type, source)`:
+  stable across runs, unique within a notebook, and changed exactly when a cell's content changes,
+  so a one-cell edit produces a one-cell diff.
+
 ### Changed
 - **`audits/` no longer ships its raw artefacts, only the reports
   ([#198](https://github.com/pinellolab/chorus/pull/198)).** It was **426 of 869 tracked files** —
@@ -447,6 +427,24 @@ ships, and several audit reports cite them as evidence.
   most people run one. Failure is never fatal: a missing `ipykernel` or an unwritable Jupyter config
   logs a warning and the exact command to run later rather than turning a completed multi-GB install
   into a non-zero exit.
+
+- **`CHORUS_IGV_BUNDLE_SEQUENCE=1` makes an HTML report render with no network at all.** Every report
+  resolved its reference sequence from `hgdownload.soe.ucsc.edu`, so opened offline the IGV panel
+  painted **nothing** — measured `canvases 0/0`, because igv.js allocates no canvases if it cannot
+  build a genome, and simply dropping the sequence is worse: with neither `fastaURL` nor `twoBitURL`
+  it falls back to resolving `id: "hg38"` against igv.org's hosted registry, the remote catalogue
+  fetch [#139](https://github.com/pinellolab/chorus/issues/139) removed.
+
+  The way through is that igv.js takes chromosome lengths from `chromSizesURL`, which reports already
+  inline, and needs the FASTA only to *initialise*. So a 1 kb placeholder is enough: the same report
+  went from `0/0 painted` in 45.3 s (timeout) to **100/100 painted in 1.6 s** with every external
+  request blocked.
+
+  Opt-in, and the placeholder is deliberately `N` rather than real bases. An unindexed FASTA is
+  positioned from offset 0 of its contig while these reports display loci tens of megabases in, so
+  real sequence would render at the wrong coordinates — worse than rendering none, because a reader
+  can zoom in and read it. `CHORUS_IGV_SEQUENCE_URL` still serves the real thing for anyone who wants
+  both, and remains the default path.
 
 ### Known limitations
 
