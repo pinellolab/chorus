@@ -162,6 +162,30 @@ the regen sweep.
 Notebooks must be re-executed on GPU (advanced + comprehensive pull in
 multiple oracles; quickstart is CPU-safe).
 
+## Moving a release tag
+
+`v0.7.3` was moved several times while the release was assembled. Four traps, each of which produced a
+wrong or invisible result rather than an error:
+
+* **`git tag -d -q` fails and leaves the tag in place.** Delete without `-q` and check the exit code.
+* **An annotated tag without `--cleanup=verbatim` loses every `#`-prefixed line**, because git strips
+  them as comments. v0.7.3's message silently lost all four `###` headings this way. After re-creating,
+  count them back: `git tag -l v0.7.3 --format='%(contents)' | grep -c '^#'`.
+* **Deleting a tag that has a GitHub Release demotes the Release to a draft.** The release then
+  disappears from the public releases page and `gh api repos/.../releases/tags/v0.7.3` returns 404,
+  while `gh release view` still shows it — so it looks fine unless you check `isDraft`. Restore with
+  `gh release edit v0.7.3 --draft=false` and verify.
+* **The notes exist in two copies** — the tag message and the Release body — and updating one leaves
+  the other stale. They had drifted to 37,593 and 38,893 characters against a 50,436-character
+  CHANGELOG section. Generate both from the `## [0.7.3]` section of `CHANGELOG.md` in one step and
+  assert they match.
+
+`git ls-remote --tags` shows the **tag object** sha, not the commit; `git rev-list -n1 <tag>`
+dereferences it. Comparing the former against a commit sha and concluding the tag is wrong is easy.
+
+CI has no `tags:` trigger, so it structurally cannot verify a tag move. Any numbers quoted in the
+release notes have to be measured locally against the exact sha the tag lands on.
+
 ## Branch flow
 
 Ship branch is `main` — that's what users see. Other agents may open
