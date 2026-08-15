@@ -6,7 +6,25 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Added
+
+- **`CHORUS_IGV_BUNDLE_SEQUENCE=1` makes an HTML report render with no network at all.** Every report
+  resolved its reference sequence from `hgdownload.soe.ucsc.edu`, so opened offline the IGV panel
+  painted **nothing** — measured `canvases 0/0`, because igv.js allocates no canvases if it cannot
+  build a genome, and simply dropping the sequence is worse: with neither `fastaURL` nor `twoBitURL`
+  it falls back to resolving `id: "hg38"` against igv.org's hosted registry, the remote catalogue
+  fetch [#139](https://github.com/pinellolab/chorus/issues/139) removed.
+
+  The way through is that igv.js takes chromosome lengths from `chromSizesURL`, which reports already
+  inline, and needs the FASTA only to *initialise*. So a 1 kb placeholder is enough: the same report
+  went from `0/0 painted` in 45.3 s (timeout) to **100/100 painted in 1.6 s** with every external
+  request blocked.
+
+  Opt-in, and the placeholder is deliberately `N` rather than real bases. An unindexed FASTA is
+  positioned from offset 0 of its contig while these reports display loci tens of megabases in, so
+  real sequence would render at the wrong coordinates — worse than rendering none, because a reader
+  can zoom in and read it. `CHORUS_IGV_SEQUENCE_URL` still serves the real thing for anyone who wants
+  both, and remains the default path.
 
 ## [0.7.3] — 2026-08-15
 
