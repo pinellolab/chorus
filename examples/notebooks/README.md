@@ -40,12 +40,19 @@ chorus setup --oracle enformer
 # 3. Download the reference genome
 chorus genome download hg38
 
-# 4. Register the chorus env as a Jupyter kernel. `chorus setup` does NOT
-#    do this, and most shipped notebooks declare kernel name `chorus`, so
-#    without it nbconvert raises NoSuchKernel and JupyterLab prompts you
-#    to pick a kernel.
-python -m ipykernel install --user --name chorus \
-    --display-name "Python 3 (chorus)"
+# 4. Nothing — `chorus setup` registers the `chorus` Jupyter kernel for you.
+```
+
+15 of the 18 shipped notebooks declare kernel name `chorus`, and until recently nothing created it:
+`jupyter nbconvert --execute` raised `NoSuchKernel: No such kernel named chorus` and JupyterLab
+silently prompted you to pick one, which looks like a broken notebook rather than a missing step.
+`chorus setup` now does it.
+
+If you passed `--no-jupyter-kernel`, installed before this change, or the registration warned and
+carried on (it never fails setup), do it by hand from the env chorus is installed in:
+
+```bash
+python -m ipykernel install --user --name chorus --display-name "Python 3 (chorus)"
 ```
 
 Then `jupyter lab` (or `jupyter notebook`) and pick a notebook from this

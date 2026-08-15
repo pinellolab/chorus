@@ -160,6 +160,11 @@ def setup_environments(args):
             logger.info(f"✓ {oracle} ready")
         success_count += 1
 
+    # The shipped notebooks declare kernel 'chorus' and nothing else creates it. Never fatal: see
+    # chorus/cli/_jupyter.py for why a convenience step must not fail a multi-GB install.
+    from ._jupyter import register_kernel_and_report
+    register_kernel_and_report(skip=getattr(args, "no_jupyter_kernel", False))
+
     logger.info(f"\nSetup complete: {success_count}/{len(oracles)} oracles ready.")
     return 0 if success_count == len(oracles) else 1
 
@@ -494,6 +499,13 @@ def main(argv: Optional[List[str]] = None):
         '--no-backgrounds',
         action='store_true',
         help='Skip pre-download of background CDFs from HuggingFace'
+    )
+    setup_parser.add_argument(
+        '--no-jupyter-kernel',
+        action='store_true',
+        help=("Do not register this env as the Jupyter kernel named 'chorus'. 15 of the 18 shipped "
+              "notebooks declare that kernel and will not run without it, so this is opt-out "
+              "rather than opt-in")
     )
     setup_parser.add_argument(
         '--no-genome',

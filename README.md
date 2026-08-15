@@ -27,10 +27,19 @@ Four steps. Steps 1 + 2 are copy-paste. Step 3 is a runnable snippet. Step 4 hoo
 
 ```bash
 git clone https://github.com/pinellolab/chorus.git && cd chorus
+git checkout v0.7.3          # a released tag; omit to track main
 mamba env create -f environment.yml
 mamba activate chorus
 python -m pip install -e .
 ```
+
+> **Which revision should you install?** `main` is the ship branch and is kept green, but it moves —
+> the numbers in this README, the committed example outputs and the background CDFs are all consistent
+> *as of a tag*. If you are citing chorus in a paper or sharing a result, install a tag and say which
+> one; [`CHANGELOG.md`](CHANGELOG.md) records what changed between them, including any release that
+> moved a percentile. Chorus is **not on PyPI** — the name `chorus` is taken by an unrelated project —
+> so a source install is the supported path and `pip install chorus` will get you someone else's
+> package.
 
 ### 2. Get every oracle, weight, and reference — batteries included (~55–75 min, unattended)
 

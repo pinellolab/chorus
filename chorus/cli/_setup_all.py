@@ -126,5 +126,10 @@ def setup_all_oracles(args) -> int:
             logger.info(f"✓ {oracle} ready")
         success_count += 1
 
+    # As in the per-oracle path: the shipped notebooks need a kernel named 'chorus', and failing to
+    # create one must not turn a successful 85 GiB install into a non-zero exit.
+    from ._jupyter import register_kernel_and_report
+    register_kernel_and_report(skip=getattr(args, "no_jupyter_kernel", False))
+
     logger.info(f"\nSetup all complete: {success_count}/{len(oracles)} oracles ready.")
     return 0 if success_count == len(oracles) else 1
