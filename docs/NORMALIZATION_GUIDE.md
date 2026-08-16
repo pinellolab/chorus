@@ -1100,7 +1100,7 @@ Example output:
   borzoi           7611 tracks  766.1 MB  2026-04-24 23:43  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
   chrombpnet        753 tracks   79.5 MB  2026-08-01 02:53  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
                          ATAC/DNASE: 9  CHIP: 744
-  sei                40 tracks    2.8 MB  2026-04-25 00:29  CDFs: effect_cdfs, summary_cdfs
+  sei            21,947 tracks    1.5 GB  2026-08-16 02:56  CDFs: effect_cdfs, summary_cdfs
   legnet              3 tracks    0.2 MB  2026-04-24 23:54  CDFs: effect_cdfs, summary_cdfs
   alphagenome       5168 tracks  262.8 MB  2026-04-24 23:32  CDFs: effect_cdfs, summary_cdfs, perbin_cdfs
 ```
