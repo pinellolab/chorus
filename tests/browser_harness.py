@@ -139,6 +139,13 @@ UNREACHABLE_SIGNATURES = (
     "ERR_CONNECTION_REFUSED", "ERR_NAME_NOT_RESOLVED", "ERR_INTERNET_DISCONNECTED",
     "ERR_TIMED_OUT", "ERR_CONNECTION_TIMED_OUT", "ERR_ADDRESS_UNREACHABLE",
     "ERR_CONNECTION_RESET", "ERR_NETWORK_CHANGED", "Status: 0",
+    # igv.js reports a resource timeout in its OWN words, not Chromium's. A UCSC timeout in CI on
+    # 2026-08-16 produced BOTH "error: Failed to load resource: net::ERR_TIMED_OUT" (matched) and
+    # "error: IGV error: Timed out" (unmatched) -- and one unmatched error disqualifies the whole
+    # skip, so the guard added in #206/#210 did not fire and a third-party timeout failed the build
+    # on a change that touched no browser code. Narrow on purpose: this is igv.js's fixed prefix, and
+    # the caller still requires every implicated URL to resolve to a REFERENCE_SEQUENCE_HOSTS entry.
+    "IGV error: Timed out",
 )
 
 
