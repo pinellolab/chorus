@@ -78,6 +78,17 @@ class _Shim:
 
 
 def assay_type_for(oracle: str, track_id: str) -> str:
+    # Sei carries TWO id kinds now that its nulls cover every track it predicts: 21,907 chromatin
+    # profiles `TA#{celltype}@{assay}@{id}` and the 40 projected classes `CA#...`. The old constant
+    # "sequence-class" was right when only the classes had rows and would now mislabel every profile,
+    # sending 21,907 of them to a layer whose scorer config does not apply. Mirrors what the oracle
+    # itself assigns in SeiOracle._assemble_prediction (info.assay for targets, "sequence-class" for
+    # classes).
+    if oracle == "sei":
+        if track_id.startswith("TA#"):
+            parts = track_id[len("TA#"):].split("@")
+            return parts[1] if len(parts) > 1 else ""
+        return "sequence-class"
     if oracle in _CONSTANT_ASSAY_TYPE:
         return _CONSTANT_ASSAY_TYPE[oracle]
     return track_id.split(":")[0]

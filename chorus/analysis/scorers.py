@@ -259,6 +259,18 @@ def canonical_layer(assay_key: str) -> str:
     )
 
 
+def _classify_sei_profile(assay_type: str) -> str:
+    """Map one of Sei's 1,176 raw ENCODE assay names onto a canonical layer.
+
+    Accessibility assays are named "DNase"/"ATAC-seq" where chorus uses "DNASE"/"ATAC"; everything
+    else is a ChIP target, so `classify_chip_layer` does the histone-vs-TF split it already owns.
+    """
+    a = (assay_type or "").strip()
+    if a.lower().replace("-seq", "").replace("_seq", "") in ("dnase", "atac"):
+        return "chromatin_accessibility"
+    return classify_chip_layer(a, "")
+
+
 def classify_track_layer(track) -> str:
     """Classify a prediction track into a regulatory layer.
 
@@ -268,6 +280,16 @@ def classify_track_layer(track) -> str:
     """
     assay_type = getattr(track, "assay_type", "")
     assay_id = getattr(track, "assay_id", "")
+
+    # Sei chromatin profiles carry raw ENCODE assay names -- "DNase", "ATAC-seq", "H3K27ac", "CTCF" --
+    # not chorus's uppercase vocabulary, and there are 1,176 distinct ones across 21,907 profiles.
+    # Every one of them fell through to "other", so `score_track_effect` returned None for all of
+    # them: nulls built and verified but unreachable, which is the documented Sei failure mode
+    # (docs/BACKGROUND_NULL_PROTOCOL.md:579) at 21,907x the original scale. Dispatched on the `TA#`
+    # id prefix so only Sei profiles are affected, and routed through `classify_chip_layer` rather
+    # than a second histone/TF vocabulary -- it already makes exactly that split.
+    if isinstance(assay_id, str) and assay_id.startswith("TA#"):
+        return _classify_sei_profile(assay_type)
 
     if assay_type in ("DNASE", "ATAC"):
         return "chromatin_accessibility"

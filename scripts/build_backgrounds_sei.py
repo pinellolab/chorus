@@ -1,7 +1,11 @@
 """Build per-track background distributions for Sei.
 
-Sei outputs 40 regulatory classes — each treated as a track. Produces
-``sei_pertrack.npz`` with effect_cdfs and summary_cdfs per class.
+Sei's network outputs 21,907 chromatin profiles, which a projection matrix aggregates into 40
+sequence classes. **Both are tracks**: this builds nulls for all 21,947. The previous version built
+the 40 only, which was never a recorded decision -- this docstring simply asserted that 40 was the
+whole output, and everything downstream inherited it.
+
+Produces ``sei_pertrack.npz`` with effect_cdfs and summary_cdfs per track.
 No perbin CDFs since Sei outputs are scalar (one value per window per class).
 
 Input: 4,096 bp window. Fast (~seconds per prediction on GPU).
@@ -82,7 +86,10 @@ INPUT_LENGTH = 4096
 
 
 def load_model_and_setup():
-    """Load Sei model + reference. Returns (predict_fn, get_seq_fn, ref, class_names)."""
+    """Load Sei model + reference.
+
+    Returns (predict_raw, to_tracks, normalizer, get_sequence, ref, track_names, n_targets).
+    """
     # An explicit CUDA_VISIBLE_DEVICES wins. This used to assign unconditionally, so
     # `CUDA_VISIBLE_DEVICES=1 python build_...py` silently ran on GPU 0 anyway. Two
     # arms of an ablation launched that way both landed on GPU 0; the first grabbed
@@ -94,9 +101,9 @@ def load_model_and_setup():
         os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
     import torch
-    from chorus.oracles.sei_source.sei import Sei, SeiProjector
+    from chorus.oracles.sei_source.sei import Sei, SeiProjector, SeiNormalizer
     from chorus.oracles.sei_source.sei_globals import SEI_WINDOW, SEI_TARGETS, SEI_CLASSES
-    from chorus.oracles.sei_source.annotations import SeiClassesList
+    from chorus.oracles.sei_source.annotations import SeiClassesList, SeiTargetList
     from chorus.core.globals import CHORUS_DOWNLOADS_DIR
 
     SEI_MODELS_DIR = CHORUS_DOWNLOADS_DIR / "sei"
@@ -120,7 +127,20 @@ def load_model_and_setup():
     )
     classes_list = SeiClassesList.load(str(SEI_MODELS_DIR / 'model' / 'seqclass_info.txt'))
     class_names = [str(cl) for cl in classes_list.classes.keys()]
-    logger.info("Model loaded in %.1f s, %d classes", time.time() - t0, len(class_names))
+
+    # Every track Sei predicts, not just the 40 projected classes. The ids must be the exact strings
+    # the oracle emits from predict() -- str(SeiTarget) and str(SeiClass) -- or
+    # PerTrackNormalizer._match_track_id cannot resolve them and every percentile stays None. That is
+    # how Sei previously shipped 40 built, verified, unreachable rows.
+    targets_list = SeiTargetList.load(str(SEI_MODELS_DIR / 'model' / 'target.names'))
+    target_names = [str(tg) for tg in targets_list.targets.keys()]
+    track_names = target_names + class_names          # ORDER IS LOAD-BEARING: targets, then classes
+    n_targets = len(target_names)
+
+    normalizer = SeiNormalizer(histone_inds=str(SEI_MODELS_DIR / 'model' / 'histone_inds.npy'))
+
+    logger.info("Model loaded in %.1f s, %d tracks (%d chromatin profiles + %d sequence classes)",
+                time.time() - t0, len(track_names), n_targets, len(class_names))
 
     import pysam
 
@@ -139,13 +159,22 @@ def load_model_and_setup():
                 oh[i, mapping[b]] = 1.0
         return oh
 
-    def predict_classes(seq):
+    def predict_raw(seq):
+        """The raw 21,907-profile vector, shape (1, 21907).
+
+        The projection to 40 classes is deliberately NOT applied here. Sei's nucleosome-occupancy
+        correction is defined over the raw profiles of an allele pair, and projecting first destroys
+        the information it needs -- which is why the previous version, returning only the 40, could
+        neither build profile nulls nor apply the correction.
+        """
         ohe = one_hot_encode(seq)
         tensor = torch.from_numpy(ohe).permute(1, 0).float().unsqueeze(0).to(device)
         with torch.no_grad():
-            target_preds = model(tensor).cpu().numpy()[0]
-        class_preds = projector(target_preds[np.newaxis, :])
-        return class_preds[0]
+            return model(tensor).cpu().numpy()
+
+    def to_tracks(raw):
+        """Concatenate one allele's raw profiles and projected classes in `track_names` order."""
+        return np.concatenate([raw[0], projector(raw)[0]])
 
     def get_sequence(chrom, pos):
         half = INPUT_LENGTH // 2
@@ -158,7 +187,7 @@ def load_model_and_setup():
             return None
         return seq
 
-    return predict_classes, get_sequence, ref, class_names
+    return predict_raw, to_tracks, normalizer, get_sequence, ref, track_names, n_targets
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -166,11 +195,12 @@ def load_model_and_setup():
 # ══════════════════════════════════════════════════════════════════
 
 def build_variant_backgrounds():
-    predict_classes, get_sequence, ref, class_names = load_model_and_setup()
-    n_tracks = len(class_names)
+    predict_raw, to_tracks, normalizer, get_sequence, ref, track_names, n_targets = \
+        load_model_and_setup()
+    n_tracks = len(track_names)
 
     logger.info("=" * 60)
-    logger.info("PER-TRACK VARIANT BACKGROUNDS: %d SNPs x %d Sei classes",
+    logger.info("PER-TRACK VARIANT BACKGROUNDS: %d SNPs x %d Sei tracks",
                 args.n_variants, n_tracks)
     logger.info("=" * 60)
 
@@ -231,17 +261,21 @@ def build_variant_backgrounds():
         offset = INPUT_LENGTH // 2 - 1
         seq_alt = seq_ref[:offset] + snp["alt"] + seq_ref[offset + 1:]
 
-        # All 40 sequence classes, or none (#123). Failing part-way through the
-        # class loop would credit the classes already visited and skip the rest,
-        # so different classes would be ranked against different variant sets.
+        # All tracks, or none (#123). Failing part-way through the loop would credit the tracks
+        # already visited and skip the rest, so different tracks would be ranked against different
+        # variant sets.
         staged = StagedSamples()
         try:
-            ref_classes = predict_classes(seq_ref)
-            alt_classes = predict_classes(seq_alt)
-            # Per-class effect (signed)
-            for class_idx in range(n_tracks):
-                effect = float(alt_classes[class_idx] - ref_classes[class_idx])
-                staged.add(class_idx, effect)
+            raw_ref = predict_raw(seq_ref)
+            raw_alt = predict_raw(seq_alt)
+            # Nucleosome-occupancy correction BEFORE projection, using the oracle's own
+            # implementation rather than a second copy. A background built with different arithmetic
+            # from the query path is silently wrong: nothing compares a null against the predictions
+            # it was built from. See tests/test_sei_nucleosome_normalization.py.
+            raw_ref, raw_alt = normalizer.equalize([raw_ref, raw_alt])
+            eff = to_tracks(raw_alt) - to_tracks(raw_ref)
+            for track_idx in range(n_tracks):
+                staged.add(track_idx, float(eff[track_idx]))
         except Exception as exc:
             logger.warning("Failed variant %d: %s", i, str(exc)[:150])
         else:
@@ -257,7 +291,7 @@ def build_variant_backgrounds():
     interim_path = os.path.join(cache_dir, "sei_effect_cdfs_interim.npz")
     np.savez_compressed(
         interim_path,
-        track_ids=np.array(class_names, dtype='U'),
+        track_ids=np.array(track_names, dtype='U'),
         effect_cdfs=effect_matrix.astype(np.float32),
         effect_counts=effect_reservoir.get_counts(),
         effect_retained=effect_reservoir.retained_counts(),
@@ -272,8 +306,9 @@ def build_variant_backgrounds():
 # ══════════════════════════════════════════════════════════════════
 
 def build_baseline_backgrounds():
-    predict_classes, get_sequence, ref, class_names = load_model_and_setup()
-    n_tracks = len(class_names)
+    predict_raw, to_tracks, normalizer, get_sequence, ref, track_names, n_targets = \
+        load_model_and_setup()
+    n_tracks = len(track_names)
 
     logger.info("=" * 60)
     logger.info("PER-TRACK BASELINE BACKGROUNDS: %d Sei classes", n_tracks)
@@ -351,9 +386,12 @@ def build_baseline_backgrounds():
         # Same all-or-nothing rule as the variant pass above (#123).
         staged = StagedSamples()
         try:
-            class_preds = predict_classes(seq)
-            for class_idx in range(n_tracks):
-                staged.add(class_idx, float(class_preds[class_idx]))
+            # No normalisation here, deliberately: the correction is defined over an allele PAIR and
+            # a baseline is a single sequence. So the effect null is histone-equalised and the
+            # activity null is not -- recorded in docs/BACKGROUND_NULL_PROTOCOL.md.
+            vals = to_tracks(predict_raw(seq))
+            for track_idx in range(n_tracks):
+                staged.add(track_idx, float(vals[track_idx]))
         except Exception as exc:
             logger.warning("Failed %s:%d: %s", chrom, pos, str(exc)[:150])
         else:
@@ -367,7 +405,7 @@ def build_baseline_backgrounds():
     interim_path = os.path.join(cache_dir, "sei_baseline_cdfs_interim.npz")
     np.savez_compressed(
         interim_path,
-        track_ids=np.array(class_names, dtype='U'),
+        track_ids=np.array(track_names, dtype='U'),
         summary_cdfs=summary_matrix.astype(np.float32),
         summary_counts=summary_reservoir.get_counts(),
         summary_retained=summary_reservoir.retained_counts(),

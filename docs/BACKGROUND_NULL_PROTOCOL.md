@@ -422,7 +422,7 @@ regenerated. Three properties of the measurement matter:
   lift the floor" is meaningless, and max over a bin holding a strong repression and a weak
   activation returns the activation — the repressive half of the panel disappears. Measured on
   borzoi `ENCFF734OLC+`, the measured choice flips mean → max and takes saturation 0.000 →
-  0.138. 2,253 shipped tracks are signed (borzoi 1,543, alphagenome 667, sei 40, legnet 3).
+  0.138. 24,160 shipped tracks are signed (borzoi 1,543, alphagenome 667, sei 21,947, legnet 3).
 
 So a wrong trigger cannot damage a track: it either changes nothing or it demonstrably
 improves the panel.
@@ -766,6 +766,9 @@ guessed at.
 
 | date | decision | evidence |
 |---|---|---|
+| 2026-08-16 | **Sei's null covers all 21,947 tracks**, not the 40 projected classes | the 40-only scope was never a recorded decision — the builder's docstring simply asserted "Sei outputs 40 regulatory classes". `predict()` accepts `TA#` profile ids and returned real values whose percentile was always `None`. Compute was already being spent: the forward pass emits all 21,907 and `project()` discarded them. Cost is storage, 2.8 MB → 1.5 GB |
+| 2026-08-16 | the **effect** null is histone-equalised; the **activity** null is not | upstream's correction (`sc_hnorm_varianteffect`) is defined over a ref/alt PAIR, and a baseline is one sequence. Deliberate asymmetry, recorded here because it is invisible in the artefact |
+| 2026-08-16 | Sei profile layers routed through `classify_chip_layer`, not a new vocabulary | all **1,176** distinct Sei assay-type strings classified as `other`, so all 21,907 profiles would have been built, verified and unscoreable — §8's failure mode at 21,907× scale. Now 10,310 `tf_binding` / 9,225 `histone_marks` / 2,372 `chromatin_accessibility` / 40 `regulatory_classification`, zero unclassified |
 | 2026-08-03 | cCRE half added as an additive union, not a re-weighting | fixed-N re-division took TF saturation 25% → 92% |
 | 2026-08-06 | merge retains **exactly**; `capacity` keyword-only and required | AlphaGenome RNA thinned 2.97× at the merge; ceilings understated median 1.33×, worst **8.34×**, while p99 stayed correct to 0.02% |
 | 2026-08-06 | anchored source populations filtered to the usable interval | 12.5% of PC TSS were clamped onto margins; `chr16:5,000,000` appeared 64× |

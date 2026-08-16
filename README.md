@@ -574,7 +574,7 @@ The chorus mirrors are byte-identical to the originals (verified via md5 / size 
 | ChromBPNet | ~80 MB | 753 (9 ATAC/DNASE + 744 CHIP) |
 | Cherimoya | ~162 MB | 1,518 (369 ATAC + 1,149 DNASE) |
 | Cherimoya (ensemble) | ~154 MB | 1,518 — the fold-ensemble has its own null; see [Cherimoya folds](#cherimoya--catv1) |
-| Sei | ~2.8 MB | 40 classes |
+| Sei | ~1.5 GB | 21,947 tracks (21,907 chromatin profiles + 40 sequence classes) |
 | LegNet | ~210 KB | 3 cell types |
 | EPInformer-seq | ~2.3 MB | 33 tracks (11 cell types × 3 assays: DNase, H3K27ac, composite) |
 
@@ -1518,7 +1518,7 @@ The per-bin CDFs are used by the unified `chorus.analysis._igv_report.rescale_fo
 | Borzoi | 7,611 | 17,908–51,831 | 19,548–75,021 | gene-anchored + cCRE (17,909) | 804 MB |
 | ChromBPNet | 753 | 18,672–37,344 | 34,004–68,008 | uniform + DHS summits (18,672) | 79 MB |
 | Cherimoya (CATv1) | 1,518 | 18,672 | 34,004 | uniform + DHS summits (18,672) | 162 MB |
-| Sei | 40 | 17,909 | 29,004 | gene-anchored + cCRE (17,909) | 3 MB |
+| Sei | 21,947 | 17,909 | 29,004 | gene-anchored + cCRE (17,909) | 1.5 GB |
 | LegNet | 3 | 17,805 | 29,002 | promoter-anchored (17,805) | 200 KB |
 | EPInformer-seq | 33 | 17,909 | 34,002 | gene-anchored + cCRE (17,909) | 2 MB |
 <!-- END GENERATED: background-table -->
