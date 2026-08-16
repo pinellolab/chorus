@@ -31,7 +31,10 @@ logger = logging.getLogger(__name__)
 # Oracle classification: which strategy to use
 # ---------------------------------------------------------------------------
 
-_MULTI_TRACK_ORACLES = {"enformer", "borzoi", "alphagenome", "sei"}
+#: Oracles scored by enumerating every track in one pass. `alphagenome_pt` was missing from both
+#: this set and _PER_MODEL_ORACLES, so it fell through to the `else` and returned
+#: {"error": "Unsupported oracle"} despite being fully implemented.
+_MULTI_TRACK_ORACLES = {"enformer", "borzoi", "alphagenome", "alphagenome_pt", "sei"}
 _PER_MODEL_ORACLES = {"chrombpnet", "legnet", "epinformerseq"}
 
 
@@ -749,7 +752,10 @@ def discover_variant_effects(
     # ── Step 1: Get variant predictions for ALL tracks ──────────────
     if name in _MULTI_TRACK_ORACLES:
         logger.info("Discovery: scoring ALL tracks in single pass (%s)...", name)
-        all_ids = oracle.get_all_assay_ids()
+        # describe_tracks() rather than get_all_assay_ids(): the latter does not exist on Sei
+        # (only a private _get_all_assay_ids), so this branch raised AttributeError for an oracle
+        # that is a member of _MULTI_TRACK_ORACLES above. Every oracle implements describe_tracks.
+        all_ids = [r.track_id for r in oracle.describe_tracks()]
         logger.info("  %d tracks to score", len(all_ids))
 
         variant_result = oracle.predict_variant_effect(

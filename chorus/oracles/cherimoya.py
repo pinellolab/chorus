@@ -440,6 +440,27 @@ class CherimoyaOracle(OracleBase):
         """Return every canonical track id in the atlas (1,518 of them)."""
         return get_metadata().list_track_ids()
 
+    def _describe_tracks(self) -> list:
+        """The full CATv1 atlas — 1,518 tracks. Available before load; `track_id` is None until then."""
+        from ..core.tracks import TrackRecord
+        from .cherimoya_source.catv1_metadata import get_metadata
+
+        meta = get_metadata()
+        out = []
+        for tid in meta.list_track_ids():
+            try:
+                d = meta.describe(tid)
+            except (KeyError, ValueError):
+                d = {}
+            out.append(TrackRecord(
+                track_id=str(tid),
+                assay=d.get("assay") or (str(tid).split(":")[0] if ":" in str(tid) else None),
+                cell_type=d.get("biosample_term_name") or d.get("cell_type"),
+                description=d.get("description"),
+                extra={k: v for k, v in d.items() if k == "experiment_accession"},
+            ))
+        return out
+
     def describe_track(self, track_or_accession: str) -> Dict:
         """Return assay, biosample, and fold-0 metrics for a track.
 

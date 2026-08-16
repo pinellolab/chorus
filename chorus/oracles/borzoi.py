@@ -438,6 +438,28 @@ class BorzoiOracle(OracleBase):
         
         return status
     
+    def _describe_tracks(self) -> list:
+        """Every track, from the vendored Borzoi metadata. Works before `load_pretrained_model()`."""
+        from ..core.tracks import TrackRecord
+
+        from .borzoi_source.borzoi_metadata import get_metadata
+
+        meta = get_metadata()
+        out = []
+        for _, row in meta.tracks_df.iterrows():
+            ident = row.get("identifier")
+            if not ident:
+                continue
+            desc = row.get("description") or ""
+            parsed = meta.parse_description(desc) if hasattr(meta, "parse_description") else {}
+            out.append(TrackRecord(
+                track_id=str(ident),
+                assay=(parsed or {}).get("assay_type") or row.get("track_type"),
+                cell_type=(parsed or {}).get("cell_type") or row.get("cell_type"),
+                description=str(desc) or None,
+            ))
+        return out
+
     def get_track_info(self, query: str = None) -> Union[pd.DataFrame, Dict[str, int]]:
         """Get information about available tracks.
         

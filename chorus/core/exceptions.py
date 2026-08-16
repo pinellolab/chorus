@@ -91,7 +91,7 @@ class EmptyPredictionsError(ChorusError):
     Common cause: passing an ``assay_ids`` list to ``predict_variant_effect``
     that didn't match any tracks on the oracle, so the predict loop
     returned an empty dict. The message includes a hint to check
-    ``oracle.get_all_assay_ids()``.
+    ``oracle.describe_tracks()``.
     """
     pass
 

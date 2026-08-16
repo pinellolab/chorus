@@ -568,6 +568,36 @@ class ChromBPNetOracle(OracleBase):
         except Exception as e:
             raise ModelNotLoadedError(f"Failed to load ChromBPNet model: {e}.")
     
+    def _describe_tracks(self) -> list:
+        """All 753 ChromBPNet models: 9 accessibility (ATAC/DNASE) plus 744 CHIP TF x cell.
+
+        This is the catalogue — what the oracle *could* load — which is a different question from what
+        a given instance has loaded. ChromBPNet cannot be constructed without `assay` and `cell_type`,
+        so a catalogue that required a loaded model would be useless for discovery.
+
+        Enumerated through `iter_unique_models` / `iter_unique_bpnet_models`, the same functions
+        `scripts/build_backgrounds_chrombpnet.py` uses. Reading the JASPAR table directly instead gives
+        **1,268** rows against the shipped null's 753, because the table carries combinations with no
+        model behind them; sharing the builder's enumerator is what keeps catalogue and null agreeing.
+        """
+        from ..core.tracks import TrackRecord
+        from .chrombpnet_source.chrombpnet_globals import (
+            iter_unique_bpnet_models, iter_unique_models,
+        )
+
+        out = []
+        for assay, cell, weights in iter_unique_models():
+            out.append(TrackRecord(
+                track_id=f"{assay}:{cell}", assay=assay, cell_type=cell,
+                description=f"{assay} accessibility in {cell}", extra={"weights": weights},
+            ))
+        for cell, tf, _url, model_id in iter_unique_bpnet_models():
+            out.append(TrackRecord(
+                track_id=f"CHIP:{cell}:{tf}", assay="CHIP", cell_type=cell,
+                description=f"{tf} binding in {cell}", extra={"tf": tf, "model_id": model_id},
+            ))
+        return out
+
     def list_assay_types(self) -> List[str]:
         """Return ChromBPNet's assay types."""
         return ["ATAC", "DNASE", "CHIP"]

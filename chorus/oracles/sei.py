@@ -437,6 +437,32 @@ class SeiOracle(OracleBase):
 
         return final_prediction
 
+    def _describe_tracks(self) -> list:
+        """All 21,947 tracks: 21,907 chromatin profiles plus the 40 projected sequence classes.
+
+        Reads the packaged annotation files, so this works without the 3.3 GB Zenodo archive — the same
+        reason `get_target_names()` falls back to the vendored copy.
+
+        Both kinds are included because `predict()` accepts both, and as of the 2026-08-16 rebuild both
+        have background rows. Before that rebuild the 21,907 profiles returned real values whose
+        percentile was always None, which is what motivated the `has_background` field.
+        """
+        from ..core.tracks import TrackRecord
+        from .sei_source.annotations import SeiClassesList, SeiTargetList
+
+        out = []
+        for tg in SeiTargetList.load(self.get_target_names()).targets.keys():
+            out.append(TrackRecord(
+                track_id=str(tg), assay=tg.assay, cell_type=tg.celltype,
+                description=f"{tg.assay} in {tg.celltype}", extra={"kind": "chromatin_profile"},
+            ))
+        for cl in SeiClassesList.load(self.get_classes_names()).classes.keys():
+            out.append(TrackRecord(
+                track_id=str(cl), assay="sequence-class", cell_type=None,
+                description=cl.name, extra={"kind": "sequence_class", "group": cl.group},
+            ))
+        return out
+
     def _parse_assay_ids(self, assay_ids):
         """Split requested ids into Sei targets and sequence classes, with their model indices.
 
