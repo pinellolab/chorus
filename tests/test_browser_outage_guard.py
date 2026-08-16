@@ -134,3 +134,34 @@ def test_the_skip_message_names_only_hosts_that_actually_failed():
     assert "fonts.googleapis.com" not in why, (
         f"the skip message blames a host that did not fail: {why!r}"
     )
+
+
+def test_igv_reports_a_timeout_in_its_own_words():
+    """The exact console pair that failed CI on 2026-08-16, on a change touching no browser code.
+
+    UCSC timed out and igv.js emitted TWO errors: Chromium's "net::ERR_TIMED_OUT" (which the signature
+    list matched) and igv.js's own "IGV error: Timed out" (which it did not). Because one unmatched
+    error disqualifies the entire skip, the guard from #206/#210 stayed silent and a third-party
+    timeout failed the build -- the precise outcome that guard exists to prevent.
+    """
+    r = _fake(console=["error: IGV error: Timed out",
+                       "error: Failed to load resource: net::ERR_TIMED_OUT"],
+              external=_UCSC)
+    why = bh.unreachable_external_host(r)
+    assert why and "hgdownload.soe.ucsc.edu" in why, (
+        f"igv.js's own timeout wording is not recognised as an outage, so a UCSC timeout fails the "
+        f"build instead of skipping: {why!r}"
+    )
+
+
+def test_the_igv_timeout_signature_did_not_widen_the_guard():
+    """Adding a signature is where over-broadness creeps in; the three refusals must still hold."""
+    assert bh.unreachable_external_host(_fake(
+        console=["error: IGV error: Timed out"], external=_UCSC,
+        page=["TypeError: Cannot read properties of undefined"])) is None, "uncaught JS was excused"
+    assert bh.unreachable_external_host(_fake(
+        console=["error: IGV error: Timed out"],
+        external=["https://cdn.example.com/t.bw"])) is None, "a foreign host was excused"
+    assert bh.unreachable_external_host(_fake(
+        console=["error: something genuinely broke in the report"],
+        external=_UCSC)) is None, "an unrelated console error was excused"
