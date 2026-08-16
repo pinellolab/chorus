@@ -263,11 +263,36 @@ class EPInformerSeqOracle(OracleBase):
         return list(EPINFORMERSEQ_AVAILABLE_ASSAYS)
 
     def list_cell_types(self) -> List[str]:
-        return [self.cell_type]
+        """Every cell type this oracle supports — not the one this instance was built with.
+
+        This returned ``[self.cell_type]``, so it reported 1 of 11 and answered a question nobody asked:
+        callers use it to discover what is available, and the instance already knows its own cell.
+        LegNet had exactly this bug and fixed it at ``legnet.py:192``; the fix was never ported here,
+        and `tests/test_oracle_cell_type_discoverability.py` covered legnet and chrombpnet but not this
+        oracle. The shipped background carries all 33 rows (11 cells x 3 assays), so the missing 10
+        cells had nulls that `list_cell_types()` said did not exist.
+        """
+        return list(EPINFORMERSEQ_AVAILABLE_CELLTYPES)
 
     def _validate_loaded(self):
         if not self.loaded:
             raise ModelNotLoadedError("Model not loaded. Call load_pretrained_model first.")
+
+    def _describe_tracks(self) -> list:
+        """All 33 EPInformer-seq tracks: 3 assays x 11 cell types.
+
+        Enumerates the oracle's full catalogue rather than this instance's single configured cell,
+        which is what `list_cell_types()` returned (1 of 11) until it was fixed alongside this.
+        """
+        from ..core.tracks import TrackRecord
+        from .epinformerseq_source.globals import (
+            EPINFORMERSEQ_AVAILABLE_ASSAYS, EPINFORMERSEQ_AVAILABLE_CELLTYPES,
+        )
+
+        return [TrackRecord(track_id=f"{a}:{c}", assay=a, cell_type=c,
+                            description=f"{a} enhancer activity in {c}")
+                for c in EPINFORMERSEQ_AVAILABLE_CELLTYPES
+                for a in EPINFORMERSEQ_AVAILABLE_ASSAYS]
 
     def _validate_assay_ids(self, assay_ids: List[str] | None):
         if assay_ids is None or (len(assay_ids) == 1 and assay_ids[0] == self.assay_id):

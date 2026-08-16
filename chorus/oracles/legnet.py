@@ -211,6 +211,19 @@ class LegNetOracle(OracleBase):
         if not self.loaded:
             raise ModelNotLoadedError("Model not loaded. Call load_pretrained_model first.")
     
+    def _describe_tracks(self) -> list:
+        """LegNet's three MPRA cell types. Instance-independent, deliberately.
+
+        Returns every cell the oracle can load, not the one this instance happens to hold — the
+        distinction `list_cell_types` was fixed for at :192 and which epinformerseq still got wrong.
+        """
+        from ..core.tracks import TrackRecord
+        from .legnet_source.legnet_globals import LEGNET_AVAILABLE_CELLTYPES
+
+        return [TrackRecord(track_id=f"LentiMPRA:{c}", assay="LentiMPRA", cell_type=c,
+                            description=f"LentiMPRA activity in {c}")
+                for c in LEGNET_AVAILABLE_CELLTYPES]
+
     def _validate_assay_ids(self, assay_ids: List[str] | None):
         if assay_ids is None or (len(assay_ids) == 1 and assay_ids[0] == self.assay_id):
             return 

@@ -280,6 +280,46 @@ class OracleBase(ABC):
         """
         return {name: self._predict(interval, assay_ids) for name, interval in intervals.items()}
 
+    def describe_tracks(self, query: str = None, limit: int = None) -> list:
+        """Every track this oracle can predict, as :class:`~chorus.core.tracks.TrackRecord` objects.
+
+        The one call that answers "what can this oracle predict?" for all nine oracles. Before it,
+        that took `get_all_assay_ids()` on four, `list_tracks()` on cherimoya, a private
+        `_get_all_assay_ids()` on sei, and nothing at all on chrombpnet, legnet and epinformerseq — so
+        every consumer grew its own per-oracle branch, and those branches drifted from the oracles they
+        described.
+
+        ``track_id`` on each record is exactly what ``predict(..., assay_ids=[...])`` accepts.
+
+        Concrete rather than abstract **on purpose**: seven test-double subclasses across five test
+        files implement exactly the previous abstract set, and adding a ninth abstract method would
+        break every one of them at instantiation. Subclasses override `_describe_tracks`; this wrapper
+        owns the filtering so all nine share one search semantics.
+
+        Args:
+            query: case-insensitive substring filter over id / assay / cell type / description.
+            limit: cap the number of records returned, applied after filtering.
+        """
+        records = self._describe_tracks()
+        if query:
+            records = [r for r in records if r.matches(query)]
+        if limit is not None and limit >= 0:
+            records = records[:limit]
+        return records
+
+    def _describe_tracks(self) -> list:
+        """Return every track this oracle predicts. Override this, not `describe_tracks`.
+
+        The default raises rather than returning an empty list: "this oracle has no tracks" and "nobody
+        has taught this oracle to describe itself" are different states, and silently conflating them
+        is how a tenth oracle would ship invisible to every consumer.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement _describe_tracks() yet. Every oracle should be "
+            f"able to enumerate what it predicts; see chorus/core/tracks.py for the record shape and "
+            f"any existing oracle for an example."
+        )
+
     def get_output_window_offsets(self) -> Tuple[int, int]:
         """
            by default we assume that model predicts for the same size of window it accepts

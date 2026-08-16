@@ -1096,7 +1096,7 @@ def build_variant_report(
             "Reference prediction dict is empty — likely the assay_ids "
             "passed to predict_variant_effect() didn't match any tracks on "
             f"the {oracle_name!r} oracle. Check assay_ids against "
-            "oracle.get_all_assay_ids() (or pass None/[] to score all tracks)."
+            "oracle.describe_tracks() (or pass None/[] to score all tracks)."
         )
     first_track = next(iter(ref_pred.values()))
     pred_start = first_track.prediction_interval.reference.start

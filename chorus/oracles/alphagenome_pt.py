@@ -463,6 +463,29 @@ class AlphaGenomePTOracle(OracleBase):
         from .alphagenome_source.alphagenome_metadata import get_metadata
         return get_metadata().list_cell_types()
 
+    def _describe_tracks(self) -> list:
+        """Every non-padding AlphaGenome track. Works before `load_pretrained_model()`.
+
+        Uses the metadata's own `iter_tracks()`, which already drops the 563 padding rows — the
+        distinction behind the 5,731-vs-5,168 split that `tests/test_documented_track_counts.py`
+        exists to police.
+        """
+        from ..core.tracks import TrackRecord
+        from .alphagenome_source.alphagenome_metadata import get_metadata
+
+        out = []
+        for tr in get_metadata().iter_tracks():
+            ident = tr.get("identifier") or tr.get("assay_id")
+            if not ident:
+                continue
+            out.append(TrackRecord(
+                track_id=str(ident),
+                assay=tr.get("chorus_type") or tr.get("assay_type"),
+                cell_type=tr.get("cell_type"),
+                description=tr.get("name") or tr.get("description"),
+            ))
+        return out
+
     def get_all_assay_ids(self) -> List[str]:
         from .alphagenome_source.alphagenome_metadata import get_metadata
 
