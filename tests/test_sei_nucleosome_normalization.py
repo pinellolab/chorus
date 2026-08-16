@@ -184,3 +184,44 @@ def test_the_sum_is_not_taken_from_the_same_array_twice():
     assert "equalize" in body, (
         "SeiNormalizer no longer exposes `equalize`; the multi-allele path chorus needs is gone"
     )
+
+
+def test_sei_overrides_the_hook_and_asks_for_normalization():
+    """The wiring, asserted without torch: Sei must override the seam AND request the correction.
+
+    The original bug was not a wrong formula, it was a correct formula nobody called. A test that only
+    checks the arithmetic would have passed for months while Sei shipped unnormalized values, so this
+    pins the call path itself.
+    """
+    import ast
+    import inspect
+    from pathlib import Path
+
+    src = Path(__file__).resolve().parent.parent / "chorus" / "oracles" / "sei.py"
+    text = src.read_text()
+    tree = ast.parse(text)
+    cls = next(n for n in ast.walk(tree)
+               if isinstance(n, ast.ClassDef) and n.name == "SeiOracle")
+    methods = {n.name for n in cls.body if isinstance(n, ast.FunctionDef)}
+
+    assert "_predict_alleles" in methods, (
+        "SeiOracle no longer overrides _predict_alleles, so variant effects fall back to the base's "
+        "per-allele loop and the nucleosome correction is silently not applied — the original defect"
+    )
+    body = ast.get_source_segment(text, next(
+        n for n in cls.body if isinstance(n, ast.FunctionDef) and n.name == "_predict_alleles")) or ""
+    assert "normalize=True" in body, (
+        "SeiOracle._predict_alleles no longer passes normalize=True to the environment path, so the "
+        "child skips the histone equalisation"
+    )
+    assert "_predict_alleles_direct" in body, (
+        "the in-process path is not reached from _predict_alleles; use_environment=False would go "
+        "unnormalized"
+    )
+
+    # the environment template must carry the correction, since the raw profiles never leave the child
+    tpl = (src.parent / "sei_source" / "templates" / "predict_template.py").read_text()
+    assert "SeiNormalizer" in tpl and "equalize" in tpl, (
+        "the predict template no longer equalises histone totals; the 21,907-profile vectors are only "
+        "available inside the child, so the correction cannot be applied anywhere else"
+    )

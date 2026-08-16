@@ -30,29 +30,53 @@ projector = SeiProjector(weights=args['projector_weights'], n_classes=args['n_cl
 targets = SeiTargetList.load(args['targets'])
 classes = SeiClassesList.load(args['classes'])
 
-seq = args['seq']
 targets_inds = args['targets_inds']
 classes_inds = args['classes_inds']
 
 if targets_inds is None and classes_inds is None:
     raise SeiError("Assays or classes ids must be provided")
 
-predictions, _ = model.seq_sliding_predict(seq, 
+
+def _raw(sequence):
+    preds, _ = model.seq_sliding_predict(sequence,
                                         reverse_aug=args['reverse_aug'],
                                         window_size=args['sequence_length'],
                                         step=args['bin_size'],
                                         batch_size=args['batch_size'])
+    return preds
 
-class_preds = projector(predictions)
 
-selected_preds = predictions[:, targets_inds] # single-seq prediction
-selected_preds = selected_preds.tolist()
+# Two shapes. `seqs` is the variant path: every allele is predicted here so the
+# nucleosome-occupancy correction -- which is defined over the ref/alt PAIR, not over one
+# sequence -- can be applied to the raw 21,907-profile vectors before projection. Doing it in
+# the child avoids shipping 21,907 floats per allele back across the subprocess boundary.
+# `seq` is the single-sequence path and is unchanged.
+if args.get('seqs') is not None:
+    seqs = args['seqs']
+    raws = [_raw(s) for s in seqs]
 
-selected_classes = class_preds[:, classes_inds] # single-seq prediction
-selected_classes = selected_classes.tolist()
-        
-result = {
-    'selected_preds': selected_preds,
-    'selected_classes': selected_classes,
-    'seq_length': len(seq),
-}
+    if args.get('histone_inds'):
+        normalizer = SeiNormalizer(histone_inds=args['histone_inds'])
+        raws = normalizer.equalize(raws)
+
+    result = {
+        'per_allele': [
+            {
+                'selected_preds': r[:, targets_inds].tolist(),
+                'selected_classes': projector(r)[:, classes_inds].tolist(),
+                'seq_length': len(s),
+            }
+            for r, s in zip(raws, seqs)
+        ],
+        'normalized': bool(args.get('histone_inds')),
+    }
+else:
+    seq = args['seq']
+    predictions = _raw(seq)
+    class_preds = projector(predictions)
+
+    result = {
+        'selected_preds': predictions[:, targets_inds].tolist(),
+        'selected_classes': class_preds[:, classes_inds].tolist(),
+        'seq_length': len(seq),
+    }

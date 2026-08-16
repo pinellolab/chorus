@@ -375,67 +375,18 @@ class SeiOracle(OracleBase):
         return total_length
 
     
-    def _predict(self,
-                 seq: Union[str, Tuple[str, int, int], Interval],
-                 assay_ids: list[str]) -> OraclePrediction:
-        targets_ids = []
-        classes_ids = []
-        mapping = {}
-        
-        for ind, ai in enumerate(assay_ids):
-            if SeiTarget.is_id(ai):
-                mapping[ind] = ('t', len(targets_ids))
-                targets_ids.append(ai)
-            elif SeiClass.is_id(ai):
-                mapping[ind] = ('c', len(classes_ids))
-                classes_ids.append(ai)
-            else: 
-                raise InvalidAssayError(f"Invalid assay ID: {ai}")
+    def _assemble_prediction(self, assay_ids, parsed, target_preds, class_preds,
+                             query_interval, prediction_interval, input_interval):
+        """Build the OraclePrediction for one sequence from its selected target/class arrays.
 
-        sei_targets = [SeiTarget.from_str(tai) for tai in targets_ids]
-        sei_classes = [SeiClass.from_str(cli) for cli in classes_ids]
-        
-        targets_inds = self._targets2inds(sei_targets)
-        classes_inds = self._cl2ind(sei_classes)
-
-       # Handle genomic coordinates
-        if isinstance(seq, tuple):
-            if self.reference_fasta is None:
-                raise missing_reference_fasta_error(self.oracle_name)
-            chrom, start, end = seq
-            query_interval = Interval.make(GenomeRef(chrom=chrom, 
-                                                     start=start, 
-                                                     end=end, 
-                                                     fasta=self.reference_fasta))
-        elif isinstance(seq, str):
-            query_interval = Interval.make(Sequence(sequence=seq))
-        elif isinstance(seq, Interval):
-            query_interval = seq
-        else:
-            raise ValueError(f"Unsupported sequence type: {type(seq)}")
-
-        input_interval = query_interval.extend(self.sequence_length)
-        prediction_interval = query_interval.extend(self.sequence_length)
-        
-        full_seq = input_interval.sequence
-        
-        if self.use_environment:
-            target_preds, class_preds = self._predict_in_environment(
-                seq=full_seq, 
-                targets_inds=targets_inds, 
-                classes_inds=classes_inds,
-                reverse_aug=self.average_reverse)
-            
-        else:
-            target_preds, class_preds = self._predict_direct(
-                seq=full_seq, 
-                targets_inds=targets_inds, 
-                classes_inds=classes_inds,
-                reverse_aug=self.average_reverse)            
-
+        Shared by the single-sequence path and the multi-allele variant path so both produce
+        identical track metadata; the only difference between them is whether the raw profiles were
+        histone-equalised against the other alleles first.
+        """
+        mapping = parsed["mapping"]
+        sei_targets, sei_classes = parsed["sei_targets"], parsed["sei_classes"]
 
         final_prediction = OraclePrediction()
-
 
         for ind, assay_id in enumerate(assay_ids):
             source, source_ind = mapping[ind]
@@ -485,13 +436,158 @@ class SeiOracle(OracleBase):
             final_prediction.add(assay_id, track)
 
         return final_prediction
+
+    def _parse_assay_ids(self, assay_ids):
+        """Split requested ids into Sei targets and sequence classes, with their model indices.
+
+        Extracted from ``_predict`` so the single-sequence and multi-allele paths cannot drift: the
+        pairwise nucleosome correction needs the same id resolution, and duplicating it is how the two
+        would end up disagreeing about which column a track is.
+        """
+        targets_ids, classes_ids, mapping = [], [], {}
+        for ind, ai in enumerate(assay_ids):
+            if SeiTarget.is_id(ai):
+                mapping[ind] = ('t', len(targets_ids))
+                targets_ids.append(ai)
+            elif SeiClass.is_id(ai):
+                mapping[ind] = ('c', len(classes_ids))
+                classes_ids.append(ai)
+            else:
+                raise InvalidAssayError(f"Invalid assay ID: {ai}")
+
+        sei_targets = [SeiTarget.from_str(tai) for tai in targets_ids]
+        sei_classes = [SeiClass.from_str(cli) for cli in classes_ids]
+        return {
+            "mapping": mapping,
+            "sei_targets": sei_targets,
+            "sei_classes": sei_classes,
+            "targets_inds": self._targets2inds(sei_targets),
+            "classes_inds": self._cl2ind(sei_classes),
+        }
+
+    def _predict(self,
+                 seq: Union[str, Tuple[str, int, int], Interval],
+                 assay_ids: list[str]) -> OraclePrediction:
+        parsed = self._parse_assay_ids(assay_ids)
+        mapping = parsed["mapping"]
+        sei_targets, sei_classes = parsed["sei_targets"], parsed["sei_classes"]
+        targets_inds, classes_inds = parsed["targets_inds"], parsed["classes_inds"]
+
+       # Handle genomic coordinates
+        if isinstance(seq, tuple):
+            if self.reference_fasta is None:
+                raise missing_reference_fasta_error(self.oracle_name)
+            chrom, start, end = seq
+            query_interval = Interval.make(GenomeRef(chrom=chrom, 
+                                                     start=start, 
+                                                     end=end, 
+                                                     fasta=self.reference_fasta))
+        elif isinstance(seq, str):
+            query_interval = Interval.make(Sequence(sequence=seq))
+        elif isinstance(seq, Interval):
+            query_interval = seq
+        else:
+            raise ValueError(f"Unsupported sequence type: {type(seq)}")
+
+        input_interval = query_interval.extend(self.sequence_length)
+        prediction_interval = query_interval.extend(self.sequence_length)
+        
+        full_seq = input_interval.sequence
+        
+        if self.use_environment:
+            target_preds, class_preds = self._predict_in_environment(
+                seq=full_seq, 
+                targets_inds=targets_inds, 
+                classes_inds=classes_inds,
+                reverse_aug=self.average_reverse)
+            
+        else:
+            target_preds, class_preds = self._predict_direct(
+                seq=full_seq, 
+                targets_inds=targets_inds, 
+                classes_inds=classes_inds,
+                reverse_aug=self.average_reverse)            
+
+
+        return self._assemble_prediction(
+            assay_ids=assay_ids, parsed=parsed, target_preds=target_preds, class_preds=class_preds,
+            query_interval=query_interval, prediction_interval=prediction_interval,
+            input_interval=input_interval)
+
         
     
+    def _predict_alleles_direct(self, seqs, targets_inds, classes_inds, reverse_aug=True):
+        """Every allele in-process, with the pairwise histone correction applied before projection."""
+        if self._model is None or self._projector is None or self._normalizer is None:
+            raise ModelNotLoadedError()
+
+        raws = []
+        for s in seqs:
+            preds, _ = self._model.seq_sliding_predict(
+                seq=s, reverse_aug=reverse_aug, window_size=self.sequence_length,
+                step=self.bin_size, batch_size=self.batch_size)
+            raws.append(np.asarray(preds))
+
+        raws = self._normalizer.equalize(raws)
+        return [(r[:, targets_inds], self._projector(r)[:, classes_inds]) for r in raws]
+
+    def _predict_alleles(self, intervals, assay_ids):
+        """Predict every allele together, so the nucleosome-occupancy correction can apply.
+
+        Overrides ``OracleBase._predict_alleles``, whose default predicts each allele independently.
+        Sei needs the override because upstream's ``sc_hnorm_varianteffect`` equalises the histone
+        totals of the ref/alt **pair** on the raw 21,907-profile vectors before projecting -- a
+        correction that cannot be expressed one sequence at a time, and which chorus was not applying
+        at all (the normalizer was built, required, and never called; see
+        ``tests/test_sei_nucleosome_normalization.py``).
+
+        The result schema is deliberately identical to every other oracle's: one entry per allele
+        keyed as the base class keys them, and ``effect = alt - ref`` computed by the base. With more
+        than one alt, every allele is equalised to their common histone total, which for ref + 1 alt
+        is bit-for-bit upstream.
+        """
+        names = list(intervals.keys())
+        parsed = self._parse_assay_ids(assay_ids)
+
+        seqs, meta = [], []
+        for name in names:
+            query_interval = intervals[name]
+            input_interval = query_interval.extend(self.sequence_length)
+            seqs.append(input_interval.sequence)
+            meta.append((query_interval, input_interval))
+
+        if self.use_environment:
+            per_allele = self._predict_in_environment(
+                targets_inds=parsed["targets_inds"], classes_inds=parsed["classes_inds"],
+                reverse_aug=self.average_reverse, seqs=seqs, normalize=True)
+        else:
+            per_allele = self._predict_alleles_direct(
+                seqs, parsed["targets_inds"], parsed["classes_inds"],
+                reverse_aug=self.average_reverse)
+
+        out = {}
+        for name, (query_interval, input_interval), (tp, cp) in zip(names, meta, per_allele):
+            out[name] = self._assemble_prediction(
+                assay_ids=assay_ids, parsed=parsed, target_preds=tp, class_preds=cp,
+                query_interval=query_interval,
+                prediction_interval=query_interval.extend(self.sequence_length),
+                input_interval=input_interval)
+        return out
+
     def _predict_in_environment(self,
-                                seq: str,
-                                targets_inds: list[int],
-                                classes_inds: list[int],
-                                reverse_aug: bool = True) -> Tuple[np.ndarray, np.ndarray]:
+                                seq: str = None,
+                                targets_inds: list[int] = None,
+                                classes_inds: list[int] = None,
+                                reverse_aug: bool = True,
+                                seqs: list = None,
+                                normalize: bool = False):
+        """One sequence, or every allele of a variant in a single child process.
+
+        Passing ``seqs`` runs the multi-allele path, which exists so the nucleosome-occupancy
+        correction can be applied to the raw 21,907-profile vectors *before* projection. Those raw
+        vectors never cross the subprocess boundary -- only the selected values do -- so the
+        correction has to happen in the child.
+        """
  
         args = {
             'device': self.device,
@@ -503,6 +599,8 @@ class SeiOracle(OracleBase):
             'targets': str(self.get_target_names()),
             'classes': str(self.get_classes_names()),
             'seq': seq,
+            'seqs': seqs,
+            'histone_inds': str(self.get_adjustor_params()) if (seqs and normalize) else None,
             'targets_inds': targets_inds,
             'classes_inds': classes_inds,
             'reverse_aug': reverse_aug,
@@ -518,6 +616,12 @@ class SeiOracle(OracleBase):
             template = template.replace(arg, arg_file.name)
             model_predictions = self.run_code_in_environment(template, timeout=self.predict_timeout)
 
+            if seqs is not None:
+                return [
+                    (np.array(d['selected_preds'], dtype=np.float32),
+                     np.array(d['selected_classes'], dtype=np.float32))
+                    for d in model_predictions['per_allele']
+                ]
             selected_preds = np.array(model_predictions['selected_preds'], dtype=np.float32)
             selected_classes = np.array(model_predictions['selected_classes'], dtype=np.float32)
         return selected_preds, selected_classes
