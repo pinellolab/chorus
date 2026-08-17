@@ -221,3 +221,26 @@ ChromBPNet is the gap that matters most: it is TensorFlow, like the one oracle k
 is the one the gate structurally cannot test. Extending the gate to accept it is a smaller job than
 the null rebuilds, and it would establish whether the F8 flags are needed for one TF oracle or two —
 which changes the cost of adopting them.
+
+## 2026-08-17 (later) — all nine measured; Enformer stands alone
+
+The table above listed chrombpnet, sei, borzoi and alphagenome_pt as unmeasured. Measured now:
+
+| oracle | cross-process |
+|---|---|
+| chrombpnet | **bit-exact** (3/3 pairs) |
+| alphagenome | **bit-exact** (gate, 3/3 runs) |
+| borzoi | **bit-exact** (2/2 pairs) |
+| sei | **bit-exact** (2/2 pairs, once `assay_ids=None` was fixed in #237) |
+| cherimoya, legnet, epinformerseq | **bit-exact** |
+| **enformer** | **the only drifting oracle** |
+| alphagenome_pt | still unmeasured — `assay_ids=None` raises `invalid literal for int() with base 10: 'logits'` |
+
+**F8 is Enformer-specific, not a TensorFlow problem.** ChromBPNet is the other TF-backed oracle and is
+bit-exact across processes, so the accepted drift is one oracle wide. That is the strongest available
+support for the decision not to rebuild the Enformer and ChromBPNet nulls: only one of those two nulls
+would have been affected at all, and the residual risk — a changed top-N membership — is covered by
+`near_ties_at_cutoff`.
+
+See `audits/2026-08-17_post_v074_focused_audit.md` for the full pass, including the alphagenome_pt
+defect and why the guard written for Sei's equivalent does not catch it.

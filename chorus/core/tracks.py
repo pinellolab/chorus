@@ -56,7 +56,15 @@ class TrackRecord:
     #:
     #: This field exists because Sei made the distinction unavoidable: it predicts 21,907 chromatin
     #: profiles that for a long time had no null at all, so ``predict()`` returned a real value whose
-    #: percentile was silently ``None``. Rather than hide that, a caller can now see it.
+    #: percentile was silently ``None``.
+    #:
+    #: **No oracle populates this yet — it is ``None`` everywhere today.** Answering it means loading
+    #: the background NPZ and running each id through ``PerTrackNormalizer._match_track_id``, and
+    #: ``describe_tracks()`` is deliberately load-free: it works pre-model, pre-genome, without a GPU
+    #: and without triggering a multi-GiB download, which is what makes it cheap to explore with. A
+    #: caller who needs the answer should ask ``NormalizationLoader.has_background`` directly. Keeping
+    #: the field declared and honestly ``None`` beats either a silent ``False`` (which would read as
+    #: "checked and absent") or a hidden download inside a listing call.
     has_background: Optional[bool] = None
 
     #: Anything oracle-specific worth surfacing without inventing a field for it (fold, ENCODE

@@ -621,23 +621,42 @@ print(f"Mean signal: {track.values.mean():.2f}, Max: {track.values.max():.2f}")
 
 #### Discovering tracks
 
-Each oracle has thousands of tracks. Use the metadata to find the right ones:
+Each oracle has thousands of tracks. **`describe_tracks()` is the one call that works on all nine** —
+no model load, no reference genome, no GPU, so it is cheap to explore with:
 
 ```python
-# List available assay types
-print(oracle.list_assay_types())   # ['ATAC', 'CAGE', 'CHIP', 'DNASE']
+oracle = chorus.create_oracle('enformer', use_environment=True)
 
-# Search for tracks by keyword (e.g. cell type)
-from chorus.oracles.enformer_source.enformer_metadata import get_metadata
-meta = get_metadata()
-k562_tracks = meta.search_tracks('K562')  # Returns DataFrame with 'identifier' column
-print(k562_tracks[['identifier', 'description']].head())
+for t in oracle.describe_tracks(query='K562', limit=3):
+    print(t.track_id, '|', t.assay, '|', t.cell_type, '|', t.description)
+# ENCFF899YDP | DNASE | K562 | DNASE:K562 treated with 1 uM vorinostat for 72 hours
+# ENCFF515UNC | DNASE | K562 | DNASE:K562 G2 phase
+# ENCFF708UIS | DNASE | K562 | DNASE:K562 G1 phase
 
-# Use the 'identifier' column as track IDs for predictions
-tracks = ['ENCFF413AHU', 'CNhs11250']  # DNase:K562, CAGE:K562
+len(oracle.describe_tracks())        # 5313 — omit query/limit for everything
 ```
 
-> **Tip:** Each oracle has different track naming. Enformer and Borzoi use ENCODE identifiers (e.g. `ENCFF413AHU`). ChromBPNet uses assay + cell type. Cherimoya uses assay + ENCODE experiment accession (e.g. `DNASE:ENCSR000EOT`). AlphaGenome uses `{OutputType}/{TrackName}/{Strand}`. See the [Model-specific details](#model-specific-details) section for each oracle's track format.
+`query` matches case-insensitively across id, assay, cell type and description. Each record is a
+`TrackRecord` with `.track_id`, `.assay`, `.cell_type`, `.description`, `.extra` (oracle-specific
+fields such as fold or ENCODE accession) and `.as_dict()`. **`track_id` is the contract**: pass it
+straight to `predict()` and it comes back as the key.
+
+```python
+tracks = [t.track_id for t in oracle.describe_tracks(query='DNASE:K562')]
+predictions = oracle.predict(('chr11', 5247000, 5248000), tracks)
+```
+
+Per-oracle metadata is still there when you want a DataFrame or an oracle-specific column, but it
+differs per oracle — `describe_tracks()` exists so you don't have to know which:
+
+```python
+print(oracle.list_assay_types())   # ['ATAC', 'CAGE', 'CHIP', 'DNASE']
+
+from chorus.oracles.enformer_source.enformer_metadata import get_metadata
+k562_tracks = get_metadata().search_tracks('K562')   # DataFrame, 'identifier' column
+```
+
+> **Tip:** Each oracle has different track naming. Enformer and Borzoi use ENCODE identifiers (e.g. `ENCFF413AHU`). ChromBPNet uses assay + cell type. Cherimoya uses assay + ENCODE experiment accession (e.g. `DNASE:ENCSR000EOT`). AlphaGenome uses `{OutputType}/{TrackName}/{Strand}`. See the [Model-specific details](#model-specific-details) section for each oracle's track format — or just read `.track_id` off `describe_tracks()`, which returns the right form for whichever oracle you loaded.
 
 #### 1. Wild-type prediction
 
@@ -1029,6 +1048,17 @@ Enformer (Avsec et al., 2021) is a hybrid convolutional-transformer architecture
   - CAGE IDs (e.g., CNhs11250 for CAGE:K562)
   - Descriptive names (e.g., 'DNase:K562', 'H3K4me3:HepG2')
 - Track metadata: Included in the package (file with all 5,313 human track definitions)
+
+> **Enformer predictions vary slightly between processes.** Two runs of the same variant on the same
+> GPU agree to about 0.02% typically, with a worst observed relative difference of **3.4%** on an
+> individual raw value; within a single process they are bit-identical. This is nondeterministic
+> TensorFlow GPU op scheduling, and Enformer is the **only** one of the nine oracles that shows it —
+> ChromBPNet, the other TF-backed oracle, is bit-exact across processes. Aggregate scores move far
+> less than raw values (`quantile_score` ≤0.69%), so conclusions are stable; what drift can change is
+> the *membership* of a top-N list when two tracks are nearly tied, which is why discovery reports a
+> `near_ties_at_cutoff` field. If you need bit-exact reproducibility, set
+> `TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1` before importing — that made 4/4 repeat runs
+> identical in testing, at some speed cost. The shipped background nulls were built without it.
 
 #### Borzoi
 
