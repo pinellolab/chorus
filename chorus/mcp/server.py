@@ -452,43 +452,40 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
         }
 
     if oracle_name == "chrombpnet":
-        from chorus.oracles.chrombpnet_source.metadata import BPNetMetadata
-        from chorus.oracles.chrombpnet_source.chrombpnet_globals import CHROMBPNET_MODELS_DICT
-        meta = BPNetMetadata()
-        atac_cell_types = sorted(CHROMBPNET_MODELS_DICT.get("ATAC", {}).keys())
-        dnase_cell_types = sorted(CHROMBPNET_MODELS_DICT.get("DNASE", {}).keys())
-        chip_cell_types = meta.list_cell_types()
-        chip_tfs = meta.list_TFs()
+        # This branch read BPNetMetadata directly and reported CHIP_cell_types x CHIP_TFs as
+        # 172 x 240 -- implying 41,280 available models when only **744** exist. Same trap as
+        # describe_tracks hit (1,268 vs 753), an order of magnitude worse: it invites Claude to request
+        # a cell/TF pair with no model behind it. Derived from describe_tracks(), which enumerates
+        # through the background builder's own iter_unique_* helpers, so catalogue and reality agree.
+        #
+        # The payload SHAPE is unchanged -- the ATAC/DNASE/CHIP split is more useful to a caller than a
+        # flat list -- but every list is now real, and `num_tracks` plus search are additions.
+        from chorus import create_oracle
+
+        records = create_oracle("chrombpnet").describe_tracks()
         if query:
-            q = query.upper()
-            # Show matching ATAC/DNASE cell types
-            matching_atac = [c for c in atac_cell_types if q in c.upper()]
-            matching_dnase = [c for c in dnase_cell_types if q in c.upper()]
-            # Show matching CHIP TF-cell_type combinations
-            matching_chip_cells = [c for c in chip_cell_types if q in c.upper()]
-            matching_chip_tfs = [t for t in chip_tfs if q in t.upper()]
-            chip_combos = []
-            if matching_chip_cells or matching_chip_tfs:
-                for ct in (matching_chip_cells or chip_cell_types):
-                    for tf in meta.list_TFs_by_cell_type(ct):
-                        if not matching_chip_tfs or tf in matching_chip_tfs:
-                            chip_combos.append({"cell_type": ct, "TF": tf})
-            return {
-                "oracle": oracle_name,
-                "query": query,
-                "ATAC_cell_types": matching_atac,
-                "DNASE_cell_types": matching_dnase,
-                "CHIP_combinations": chip_combos[:100],
-                "note": "Load with: load_oracle('chrombpnet', assay='ATAC', cell_type='K562') or load_oracle('chrombpnet', assay='CHIP', cell_type='K562', TF='GATA1')",
-            }
+            hits = [r for r in records if r.matches(query)]
+            return _track_page(oracle_name, query, [r.as_dict() for r in hits])
+
+        by_assay: dict = {}
+        for r in records:
+            by_assay.setdefault(r.assay, []).append(r)
+        chip = by_assay.get("CHIP", [])
         return {
             "oracle": oracle_name,
-            "assay_types": ["ATAC", "DNASE", "CHIP"],
-            "ATAC_cell_types": atac_cell_types,
-            "DNASE_cell_types": dnase_cell_types,
-            "CHIP_cell_types": chip_cell_types,
-            "CHIP_TFs": chip_tfs,
-            "note": "Load with: load_oracle('chrombpnet', assay='ATAC', cell_type='K562') or load_oracle('chrombpnet', assay='CHIP', cell_type='K562', TF='GATA1')",
+            "num_tracks": len(records),
+            "assay_types": sorted(by_assay),
+            "ATAC_cell_types": sorted({r.cell_type for r in by_assay.get("ATAC", [])}),
+            "DNASE_cell_types": sorted({r.cell_type for r in by_assay.get("DNASE", [])}),
+            "CHIP_cell_types": sorted({r.cell_type for r in chip}),
+            "CHIP_TFs": sorted({r.extra.get("tf") for r in chip if r.extra.get("tf")}),
+            "num_chip_models": len(chip),
+            "note": (
+                f"{len(records)} models exist: {len(records) - len(chip)} accessibility plus "
+                f"{len(chip)} CHIP. CHIP is NOT the full cross product of CHIP_cell_types x CHIP_TFs "
+                f"-- only the {len(chip)} listed pairs have models. Pass a query to search them, or "
+                f"call oracle.describe_tracks() for the exact list."
+            ),
         }
 
     if oracle_name in ("alphagenome", "alphagenome_pt"):
@@ -547,13 +544,20 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
         }
 
     if oracle_name == "epinformerseq":
-        from chorus.oracles.epinformerseq_source.globals import (
-            EPINFORMERSEQ_AVAILABLE_CELLTYPES,
-        )
+        # The assay list here was a third hardcoded copy (the constant, the background builder, and
+        # this). Derived now; the explanatory note is kept verbatim because it carries real modelling
+        # detail a caller cannot infer from the ids.
+        from chorus import create_oracle
+
+        records = create_oracle("epinformerseq").describe_tracks()
+        if query:
+            hits = [r for r in records if r.matches(query)]
+            return _track_page(oracle_name, query, [r.as_dict() for r in hits])
         return {
             "oracle": oracle_name,
-            "assay_types": ["Enhancer_DNase", "Enhancer_H3K27ac", "Enhancer_H3K27ac_DNase"],
-            "cell_types": list(EPINFORMERSEQ_AVAILABLE_CELLTYPES),
+            "num_tracks": len(records),
+            "assay_types": sorted({r.assay for r in records if r.assay}),
+            "cell_types": sorted({r.cell_type for r in records if r.cell_type}),
             "note": (
                 "EPInformer-seq returns a single scalar per 2114-bp window from a "
                 "2-channel per-cell PerCellProfileNetWide (ch0 DNase cut-site, ch1 "

@@ -123,12 +123,20 @@ class TestEPInformerSeqRegistry:
         assert set(cells) == EXPECTED_CELLS
 
     def test_mcp_import_path_source(self):
-        """chorus/mcp/server.py imports from the correct globals module
-        (static grep — skips importing the module itself, which needs fastmcp)."""
+        """chorus/mcp/server.py must not reference the renamed globals module.
+
+        This asserted that server.py *imports* `epinformerseq_source.globals`, which was the right
+        check while the MCP branch hand-copied the constants. It no longer imports them at all — the
+        branch derives its payload from `oracle.describe_tracks()`, so there is one source rather than
+        a third copy — and requiring the import would now mean requiring the duplication back.
+
+        What still matters is the original bug: a reference to the pre-rename `epinformerseq_globals`.
+        That is asserted below. The payload's agreement with the constants is covered by
+        `tests/test_describe_tracks_is_uniform.py::test_mcp_epinformerseq_assays_come_from_the_constant`,
+        which checks the values rather than the import.
+        """
         src = (Path(__file__).resolve().parent.parent
                / "chorus" / "mcp" / "server.py").read_text()
-        assert "epinformerseq_source.globals" in src, \
-            "chorus/mcp/server.py must import from epinformerseq_source.globals"
         assert "epinformerseq_globals" not in src, \
             "chorus/mcp/server.py still references the renamed epinformerseq_globals module"
 

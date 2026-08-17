@@ -238,4 +238,22 @@ print("@@@" + json.dumps(out))
             f"{allele}: only {info['n_scored']} of {len(ids)} Sei tracks produced a "
             f"raw_score; before the fix this was 0 for every track"
         )
-        assert info["layers"] == ["regulatory_classification"], info["layers"]
+        # Sei spanned one layer when its null held only the 40 projected sequence classes. Since the
+        # 2026-08-16 rebuild it also ships 21,907 chromatin profiles, which are genuinely histone
+        # marks, TF binding and accessibility — so four canonical layers is correct, and the property
+        # worth asserting is that none of them fell through to "other" (the failure mode this file
+        # exists for) rather than that there is exactly one.
+        from chorus.analysis.scorers import LAYER_CONFIGS
+
+        assert info["layers"], f"{allele}: no layers at all"
+        assert "other" not in info["layers"], (
+            f"{allele}: tracks classified as 'other', whose LAYER_CONFIGS entry is None, so they "
+            f"cannot be scored: {info['layers']}"
+        )
+        assert set(info["layers"]) <= set(LAYER_CONFIGS), (
+            f"{allele}: layers outside LAYER_CONFIGS: "
+            f"{sorted(set(info['layers']) - set(LAYER_CONFIGS))}"
+        )
+        assert "regulatory_classification" in info["layers"], (
+            f"{allele}: the 40 sequence classes vanished from the scored set: {info['layers']}"
+        )
