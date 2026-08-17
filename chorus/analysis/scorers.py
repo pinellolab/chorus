@@ -345,6 +345,29 @@ def _compute_effect(
 # Single-track scoring
 # ---------------------------------------------------------------------------
 
+def _is_scalar_output(track) -> bool:
+    """True when a track carries one value for the whole window rather than bins.
+
+    Sei emits exactly one value per track per window, whatever the assay. Its 40 sequence classes
+    scored fine because `regulatory_classification` has `window_bp=None` and so took the full-output
+    branch; its 21,907 chromatin profiles classify as `histone_marks` / `tf_binding` /
+    `chromatin_accessibility`, whose configs carry window_bp of 2001/501/501 because those layers were
+    built for binned oracles. Windowing a 1-element array returns None, so **21,907 of 21,947 Sei
+    tracks produced no raw_score** — built nulls, resolvable ids, correct layers, and still unscoreable.
+
+    Keyed on the data rather than the oracle name: any scalar-output oracle gets the branch its shape
+    requires, and binned tracks are untouched (they have more than one value, so nothing about
+    Enformer, Borzoi, ChromBPNet or AlphaGenome changes).
+    """
+    values = getattr(track, "values", None)
+    if values is None:
+        return False
+    try:
+        return len(values) <= 1
+    except TypeError:
+        return True
+
+
 def score_track_effect(
     ref_track,
     alt_track,
@@ -428,7 +451,7 @@ def score_track_effect(
         ref_value = ref_total / n_bins
         alt_value = alt_total / n_bins
 
-    elif layer_config.window_bp is not None:
+    elif layer_config.window_bp is not None and not _is_scalar_output(ref_track):
         # Window-based scoring, in bin space against the SAME definition of
         # "centred window" the builders use (#144 instance 2).
         #

@@ -1627,12 +1627,14 @@ RANKING_GENOME = "hg38"
 #:   chorus 0.7.1     backgrounds-2026-08-10-layers        (+ layers_per_row on all eight)
 #:   chorus 0.7.2     backgrounds-2026-08-12-cherimoya-fold0  (+ a cherimoya null per fold mode)
 #:   chorus 0.7.3     backgrounds-2026-08-12-cherimoya-fold0  (unchanged: no artefact was rebuilt)
+#:   chorus 0.7.4     backgrounds-2026-08-16-sei-full      (sei 40 -> 21,947 tracks, nucleosome-
+#:                                                          normalized; see CHANGELOG #224/#225/#226)
 #:
 #: Override with ``CHORUS_BACKGROUNDS_REVISION`` -- set it to ``main`` to track the
 #: dataset's head, which is what you want while developing a new oracle's background and
 #: not what you want in an analysis you intend to reproduce.
 _HF_REVISION = os.environ.get(
-    "CHORUS_BACKGROUNDS_REVISION", "backgrounds-2026-08-12-cherimoya-fold0"
+    "CHORUS_BACKGROUNDS_REVISION", "backgrounds-2026-08-16-sei-full"
 )
 
 

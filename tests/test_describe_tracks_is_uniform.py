@@ -309,3 +309,48 @@ def test_mcp_legnet_cells_come_from_the_constant():
     payload = fn("legnet")
     assert set(payload.get("cell_types") or []) == set(LEGNET_AVAILABLE_CELLTYPES)
     assert payload.get("num_tracks") == 3
+
+
+def test_mcp_chrombpnet_does_not_imply_models_that_do_not_exist():
+    """It reported 172 CHIP cell types x 240 TFs — implying 41,280 models when 744 exist.
+
+    Reading BPNetMetadata directly is the same trap describe_tracks hit (1,268 vs 753), an order of
+    magnitude worse: a caller reading that payload requests a cell/TF pair with no model behind it. The
+    two lists are still useful for browsing, so they stay — but the real count must be stated and the
+    cross-product reading must be ruled out in words.
+    """
+    from chorus.mcp.server import list_tracks
+
+    fn = getattr(list_tracks, "fn", list_tracks)
+    r = fn("chrombpnet")
+    assert r["num_tracks"] == 753, r["num_tracks"]
+    assert r["num_chip_models"] == 744, r["num_chip_models"]
+    implied = len(r["CHIP_cell_types"]) * len(r["CHIP_TFs"])
+    assert implied > r["num_chip_models"], "the lists no longer over-imply; drop this guard if so"
+    assert "NOT the full cross product" in r["note"], (
+        f"the payload lists {implied:,} implied cell/TF combinations against {r['num_chip_models']} "
+        f"real models without saying so"
+    )
+
+
+def test_mcp_epinformerseq_assays_come_from_the_constant():
+    """A third hardcoded copy of EPINFORMERSEQ_AVAILABLE_ASSAYS lived in the MCP branch."""
+    from chorus.mcp.server import list_tracks
+    from chorus.oracles.epinformerseq_source.globals import (
+        EPINFORMERSEQ_AVAILABLE_ASSAYS, EPINFORMERSEQ_AVAILABLE_CELLTYPES,
+    )
+
+    fn = getattr(list_tracks, "fn", list_tracks)
+    r = fn("epinformerseq")
+    assert set(r["assay_types"]) == set(EPINFORMERSEQ_AVAILABLE_ASSAYS)
+    assert set(r["cell_types"]) == set(EPINFORMERSEQ_AVAILABLE_CELLTYPES)
+    assert r["num_tracks"] == 33
+
+
+@pytest.mark.parametrize("oracle", ["sei", "chrombpnet", "epinformerseq", "legnet"])
+def test_the_rewired_branches_report_the_catalogue_size(oracle):
+    """Every rewired branch must agree with describe_tracks, or the payload has drifted again."""
+    from chorus.mcp.server import list_tracks
+
+    fn = getattr(list_tracks, "fn", list_tracks)
+    assert fn(oracle)["num_tracks"] == len(_oracle(oracle).describe_tracks())
