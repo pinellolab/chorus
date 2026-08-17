@@ -92,3 +92,45 @@ class TestAsResolution:
         with caplog.at_level("WARNING"):
             assert _as_resolution(bad) == 1
         assert "Non-numeric resolution" in caplog.text
+
+
+class TestTheEnvModeTemplateDoesNotHoldASecondCopy:
+    """env mode is this backend's default, and it runs a *template*, not the oracle method.
+
+    The first fix for this bug corrected `_predict_raw` only. The template carried its own copy of the
+    same six lines, so `predict_variant_effect(..., assay_ids=None)` still raised
+    `invalid literal for int() with base 10: 'logits'` end-to-end while every unit test passed. Two
+    copies of one rule is the silent-divergence failure mode this repo keeps rediscovering (the Sei
+    normalizer and the Jupyter kernel were both correct code that nothing called).
+
+    Source-level assertions, because the template is executed in a per-oracle conda env that this test
+    process cannot import torch from.
+    """
+
+    @staticmethod
+    def _template_source() -> str:
+        from pathlib import Path
+
+        import chorus
+
+        path = (
+            Path(chorus.__file__).parent
+            / "oracles"
+            / "alphagenome_pt_source"
+            / "templates"
+            / "predict_template.py"
+        )
+        return path.read_text()
+
+    def test_the_template_imports_the_shared_helpers(self):
+        src = self._template_source()
+        assert "_select_head_tensor" in src, "template must reuse the selection rule, not restate it"
+        assert "_as_resolution" in src, "template must reuse the resolution coercion"
+
+    def test_the_template_does_not_call_int_on_a_head_key(self):
+        # The exact expression that raised. Its absence is the regression guard.
+        assert "int(res)" not in self._template_source()
+
+    def test_the_template_does_not_reimplement_the_first_key_fallback(self):
+        # `next(iter(head_out.keys()))` was the line that silently preferred logits over probs.
+        assert "next(iter(head_out" not in self._template_source()
