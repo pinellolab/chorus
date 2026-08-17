@@ -136,3 +136,47 @@ treatment. It is a plausible hardening, but `determinism.py`'s own rule is that 
 queries must run under the same setting, so flipping it would invalidate the Enformer and ChromBPNet
 nulls and require rebuilding both. That is far outside this scope, and it should not be flipped
 without measuring whether it moves any number first. Recorded with the cost attached.
+
+---
+
+## 2026-08-17 — F8 has a demonstrated fix, and it is the lever we had declined
+
+The section above records `TF_DETERMINISTIC_OPS` as "a plausible hardening" that should not be flipped
+without measuring first. Measured now, on this host, with `scripts/gate_end_to_end_determinism.py
+--oracle enformer --gpu 0 --strings`:
+
+| condition | runs | result |
+|---|---|---|
+| `TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1` | 4 | **PASS — bit-exact across two processes**, every run |
+| flags unset, same host, same command | 2 | **FAIL** — worst relative delta 3.391e-02 and 1.446e-02 |
+
+Four for four against zero for two. That is the first evidence that anything eliminates F8 rather than
+merely correlating with it.
+
+Two details worth carrying forward:
+
+* **The drift rate is higher than this document previously recorded.** "Intermittent — roughly 1 pair in
+  4" was measured earlier; here the control failed **2 of 2**. The magnitude also varies between runs
+  (3.4% then 1.4%), so a single passing run has never been evidence of determinism — which is why the
+  four runs above matter more than the first one did.
+* **`TF_CUDNN_DETERMINISTIC` was set alongside `TF_DETERMINISTIC_OPS`.** The two were not separated, so
+  this measurement does not attribute the fix to either alone. Worth splitting before writing the flag
+  into `determinism.py`, because the cheaper flag may be sufficient.
+
+### What adopting it costs
+
+`chorus/core/determinism.py`'s own rule is that a background and its queries must run under the same
+setting. So turning these on for the TF oracles invalidates the **Enformer and ChromBPNet** nulls and
+requires rebuilding both — the same shape as the Sei rebuild in 0.7.4, twice over, and it would change
+published Enformer and ChromBPNet numbers.
+
+That is a scientific decision rather than a code change, and it reverses a call already taken
+deliberately ("I don't care about being deterministic for TF"). The evidence has changed, so it is worth
+re-deciding; it should not be flipped on the strength of this measurement alone.
+
+### What it would unblock
+
+`test_committed_examples_are_stale_until_the_regen_sweep` cannot currently be cleared: regenerating the
+committed examples would import this drift into shipped artefacts to gain nothing but fresh timestamps.
+With the flags on and the two nulls rebuilt, a regen sweep becomes reproducible and that guard can go
+green honestly rather than being explained away.
