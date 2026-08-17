@@ -159,7 +159,10 @@ def test_sei_reports_both_kinds_of_track():
 #: track per loaded model, and its `predict()` ignores `assay_ids` — so routing it needs an
 #: enumeration branch over 1,518 models, not a set-membership entry. Listing it here rather than
 #: adding it to a set it would silently return `models = []` from.
-DISCOVERY_UNSUPPORTED = {"cherimoya": "per-model; needs a 1,518-model enumeration branch"}
+#: Empty, and that is the point: cherimoya was the last entry and now has a real enumeration branch
+#: (one model per biosample, 407 of 1,518, logged at runtime). Kept as a mechanism so a future gap is
+#: recorded with its reason instead of being absorbed into a set that would silently return no models.
+DISCOVERY_UNSUPPORTED: dict = {}
 
 
 def test_discovery_routes_every_oracle_it_claims_to():
@@ -222,3 +225,56 @@ def test_epinformerseq_lists_every_cell_type():
         f"not the instance."
     )
     assert len(listed) == 11
+
+
+#: Oracles whose tracks are cell-type specific, with the distinct count published for each. Sei's
+#: sequence classes are genuinely not cell-typed, so it is absent by design rather than by omission.
+EXPECTED_CELL_TYPES = {"cherimoya": 407, "legnet": 3, "epinformerseq": 11}
+
+
+@pytest.mark.parametrize("name,expected", sorted(EXPECTED_CELL_TYPES.items()))
+def test_cell_type_is_actually_populated(name, expected):
+    """Counts being right is not the same as the fields being right.
+
+    cherimoya's first implementation read `biosample_term_name`, a key CATv1-metadata.tsv does not
+    have, so `cell_type` was None on all 1,518 records. Every count assertion still passed — and the
+    field the catalogue exists to let you filter on was empty. It surfaced only when discovery tried to
+    dedupe by biosample and found one.
+    """
+    recs = _oracle(name).describe_tracks()
+    populated = [r for r in recs if r.cell_type]
+    assert populated, f"{name}: no record carries a cell_type at all"
+    distinct = {r.cell_type for r in populated}
+    assert len(distinct) == expected, (
+        f"{name} reports {len(distinct)} distinct cell types, expected {expected}. A catalogue whose "
+        f"cell_type is empty or collapsed cannot answer the question it exists for."
+    )
+
+
+@pytest.mark.parametrize("name", ORACLES)
+def test_assay_is_populated_for_every_track(name):
+    """`assay` drives layer classification, so a null one is a track that cannot be scored."""
+    recs = _oracle(name).describe_tracks()
+    missing = [r.track_id for r in recs if not r.assay]
+    assert not missing, (
+        f"{name}: {len(missing)} of {len(recs)} records carry no assay, e.g. {missing[:3]}. "
+        f"classify_track_layer dispatches on it, so those tracks would classify as 'other'."
+    )
+
+
+def test_cherimoya_is_routed_by_biosample_not_by_experiment():
+    """Discovery loads one model at a time; 1,518 experiments is 6.5 h, 407 biosamples is 1.7 h.
+
+    Measured 15.3 s per cherimoya model (5.0 s load + 10.3 s predict). Deduping to biosamples is a
+    dedupe rather than a sample — discovery asks which cell types respond, and a biosample with four
+    ATAC experiments answers that once — but the count is logged at runtime either way, because a
+    silent reduction reads as full coverage.
+    """
+    from chorus.analysis.discovery import _PER_MODEL_ORACLES
+
+    assert "cherimoya" in _PER_MODEL_ORACLES, (
+        "cherimoya is unrouted again, so discovery returns {'error': 'Unsupported oracle'}"
+    )
+    recs = _oracle("cherimoya").describe_tracks()
+    biosamples = {r.cell_type for r in recs if r.cell_type}
+    assert len(biosamples) < len(recs), "the dedupe cannot help if every experiment is its own biosample"
