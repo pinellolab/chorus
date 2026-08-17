@@ -620,16 +620,64 @@ def _score_all_tracks(
     return effects
 
 
+#: Relative gap below which rank N and N+1 are treated as indistinguishable.
+#:
+#: Cross-process drift is accepted rather than eliminated (2026-08-17 decision, recorded in
+#: docs/BACKGROUND_NULL_PROTOCOL.md). Median drift is 0.016% and published percentiles move at most
+#: 0.69%, which is harmless for a *value* — but this function cuts hard at `top_n_per_layer`, and the
+#: measured rank-12↔13 gap in `tf_binding` was **4.25%** against a **4.29%** worst-case drift. So the
+#: drift can change *which* track is reported while changing no number a reader would question.
+#:
+#: 1% sits above the 0.69% percentile drift and below the gaps that represent a real ranking
+#: difference. It does not alter selection — the top N are still the top N — it only records that the
+#: boundary was too close to call.
+NEAR_TIE_RELATIVE_GAP = 0.01
+
+
+def _near_tie_at_cutoff(
+    layer_effects: list, top_n: int, threshold: float = NEAR_TIE_RELATIVE_GAP,
+) -> dict | None:
+    """Describe the rank N / N+1 boundary when it is closer than the drift band.
+
+    Returns None when the cut is clean, so callers can treat presence as the signal.
+    """
+    if len(layer_effects) <= top_n or top_n < 1:
+        return None
+    kept, dropped = layer_effects[top_n - 1], layer_effects[top_n]
+    a, b = kept.ranking_score, dropped.ranking_score
+    if a is None or b is None:
+        return None
+    scale = max(abs(a), abs(b))
+    if scale <= 0:
+        return None
+    gap = abs(a - b) / scale
+    if gap > threshold:
+        return None
+    return {
+        "rank": top_n,
+        "relative_gap": round(gap, 6),
+        "kept": {"assay_id": kept.assay_id, "cell_type": kept.cell_type,
+                 "ranking_score": a},
+        "dropped": {"assay_id": dropped.assay_id, "cell_type": dropped.cell_type,
+                    "ranking_score": b},
+        "note": (
+            f"ranks {top_n} and {top_n + 1} differ by {gap * 100:.3f}%, within the accepted "
+            f"cross-process drift band, so which one is reported is not stable between runs"
+        ),
+    }
+
+
 def _rank_and_select(
     effects: list[TrackEffect],
     top_n_per_layer: int = 3,
     min_effect_pctile: float = 0.80,
-) -> tuple[list[TrackEffect], dict[str, list[TrackEffect]]]:
+) -> tuple[list[TrackEffect], dict[str, list[TrackEffect]], dict[str, dict]]:
     """Rank effects and select top tracks per layer.
 
     Returns:
-        (selected_tracks, layer_rankings) where layer_rankings maps
-        layer_name → sorted list of TrackEffect.
+        (selected_tracks, layer_rankings, near_ties) where layer_rankings maps
+        layer_name → sorted list of TrackEffect, and near_ties maps
+        layer_name → the rank N/N+1 boundary description when it is too close to call.
     """
     # Filter out control/reference samples (not cell-type-specific)
     _CONTROL_PATTERNS = {"universal rna control", "universal rna", "unknown"}
@@ -641,8 +689,12 @@ def _rank_and_select(
         by_layer[te.layer].append(te)
 
     selected: list[TrackEffect] = []
+    near_ties: dict[str, dict] = {}
     for layer, layer_effects in by_layer.items():
         layer_effects.sort(key=lambda e: e.ranking_score, reverse=True)
+        tie = _near_tie_at_cutoff(layer_effects, top_n_per_layer)
+        if tie is not None:
+            near_ties[layer] = tie
         # Take top N, but only if they have meaningful effects
         for te in layer_effects[:top_n_per_layer]:
             if te.effect_pctile is not None and te.effect_pctile < min_effect_pctile:
@@ -651,7 +703,7 @@ def _rank_and_select(
                 continue  # Skip negligible effects
             selected.append(te)
 
-    return selected, dict(by_layer)
+    return selected, dict(by_layer), near_ties
 
 
 def _rank_cell_types(
@@ -852,10 +904,11 @@ def discover_variant_effects(
         return {"error": f"Unsupported oracle: {name}"}
 
     if not all_effects:
-        return {"cell_type_ranking": [], "layer_rankings": {}, "report": None}
+        return {"cell_type_ranking": [], "layer_rankings": {}, "report": None,
+                "near_ties_at_cutoff": {}}
 
     # ── Step 2: Rank and select top tracks ──────────────────────────
-    selected, layer_rankings = _rank_and_select(
+    selected, layer_rankings, near_ties = _rank_and_select(
         all_effects, top_n_per_layer=top_n_per_layer,
     )
     cell_type_ranking = _rank_cell_types(
@@ -864,6 +917,10 @@ def discover_variant_effects(
 
     logger.info("Discovery results:")
     logger.info("  %d tracks selected across %d layers", len(selected), len(layer_rankings))
+    for layer, tie in near_ties.items():
+        # Logged as a warning, not info: this is the one way accepted cross-process drift can change
+        # what a reader sees, so it should not scroll past unnoticed.
+        logger.warning("  %s: %s", layer, tie["note"])
     for ct in cell_type_ranking[:5]:
         logger.info("  %s: %+.3f (%s)", ct["cell_type"], ct["best_effect"], ct["best_layer"])
 
@@ -918,6 +975,10 @@ def discover_variant_effects(
 
     return {
         "_ranking_metric": ranking_metric,
+        # Present whenever the rank N / N+1 boundary in a layer is closer than the accepted
+        # cross-process drift band, i.e. when "the top N" is not stable between runs. Empty dict when
+        # every cut is clean, so a caller can treat presence as the signal.
+        "near_ties_at_cutoff": near_ties,
         "cell_type_ranking": cell_type_ranking,
         "layer_rankings": {
             layer: [

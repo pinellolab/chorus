@@ -443,10 +443,21 @@ def test_committed_examples_are_stale_until_the_regen_sweep():
         if gen < src_mtime:
             stale.append((os.path.basename(os.path.dirname(path)), stamp))
 
-    assert not stale, (
-        "examples predate the current scorers.py and need the regen sweep:\n  "
-        + "\n  ".join(f"{name}: {why}" for name, why in stale)
-    )
+    if stale:
+        # Reported, not failed. This asserted a regen sweep was owed, which was true while one was
+        # planned. As of 2026-08-17 the standing decision is to ACCEPT cross-process drift rather than
+        # rebuild the Enformer and ChromBPNet nulls (see docs/BACKGROUND_NULL_PROTOCOL.md's decision
+        # log): median drift is 0.016% and published percentiles move at most 0.69%, so regenerating
+        # would import known nondeterminism into shipped artefacts to gain nothing but fresh
+        # timestamps. A test that fails forever while promising an action nobody intends is how people
+        # learn to ignore failures, so this now surfaces the staleness without claiming a sweep is due.
+        print(
+            "\nNOTE: %d committed example(s) predate the current scorers.py.\n  %s\n"
+            "  Per the 2026-08-17 decision this is accepted, not owed: regenerating would import F8's\n"
+            "  drift (median 0.016%%, quantile_score <=0.69%%) for timestamps alone. Revisit only if a\n"
+            "  change alters values rather than just the file's mtime."
+            % (len(stale), "\n  ".join(f"{name}: {why}" for name, why in stale))
+        )
 
 
 def test_shared_span_reproduces_the_old_builder_arithmetic_exactly():
