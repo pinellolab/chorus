@@ -278,3 +278,34 @@ def test_cherimoya_is_routed_by_biosample_not_by_experiment():
     recs = _oracle("cherimoya").describe_tracks()
     biosamples = {r.cell_type for r in recs if r.cell_type}
     assert len(biosamples) < len(recs), "the dedupe cannot help if every experiment is its own biosample"
+
+
+def test_mcp_answers_for_sei_from_the_oracle_not_a_literal():
+    """The MCP branch returned a hardcoded `["sequence-class"]` and never consulted the oracle.
+
+    By the 2026-08-16 background rebuild that answer was simply false: Sei predicts 21,907 chromatin
+    profiles across 1,176 assay types as well as the 40 projected classes, and all of them now carry
+    percentiles. A payload that cannot go stale has to be derived.
+    """
+    from chorus.mcp.server import list_tracks
+
+    fn = getattr(list_tracks, "fn", list_tracks)
+    payload = fn("sei")
+    assert payload.get("num_tracks") == 21_947, payload.get("num_tracks")
+    assays = payload.get("assay_types") or []
+    assert len(assays) > 100, (
+        f"sei reports {len(assays)} assay types; it has 1,176 plus sequence-class. A single hardcoded "
+        f"entry is what this replaced."
+    )
+    assert "sequence-class" in assays, "the 40 projected classes disappeared from the payload"
+
+
+def test_mcp_legnet_cells_come_from_the_constant():
+    """The MCP branch held a third hardcoded copy of LEGNET_AVAILABLE_CELLTYPES."""
+    from chorus.mcp.server import list_tracks
+    from chorus.oracles.legnet_source.legnet_globals import LEGNET_AVAILABLE_CELLTYPES
+
+    fn = getattr(list_tracks, "fn", list_tracks)
+    payload = fn("legnet")
+    assert set(payload.get("cell_types") or []) == set(LEGNET_AVAILABLE_CELLTYPES)
+    assert payload.get("num_tracks") == 3

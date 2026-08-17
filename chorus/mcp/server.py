@@ -509,17 +509,40 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
         }
 
     if oracle_name == "sei":
+        # Was a hardcoded ["sequence-class"] that never consulted the oracle -- and by 2026-08-16 it
+        # was simply false: Sei predicts 21,907 chromatin profiles across 1,176 assay types as well as
+        # the 40 projected classes, and since the background rebuild every one of them has a
+        # percentile. Derived from describe_tracks() so it cannot go stale again. Payload keys are
+        # unchanged; `num_tracks` and the searchable path are additions.
+        from chorus import create_oracle
+
+        records = create_oracle("sei").describe_tracks(query=query)
+        if query:
+            return _track_page(oracle_name, query, [r.as_dict() for r in records])
+        assays = sorted({r.assay for r in records if r.assay})
         return {
             "oracle": oracle_name,
-            "assay_types": ["sequence-class"],
-            "note": "Sei predicts regulatory element classes, not per-assay tracks.",
+            "num_tracks": len(records),
+            "assay_types": assays,
+            "cell_types": sorted({r.cell_type for r in records if r.cell_type})[:200],
+            "note": (
+                "Sei predicts 21,907 chromatin profiles (TA# ids, per assay x cell type) plus 40 "
+                "projected regulatory sequence classes (CA# ids). Both accept percentiles. Pass a "
+                "query to search; cell_types is truncated to 200."
+            ),
         }
 
     if oracle_name == "legnet":
+        # The cell list was a third hardcoded copy of LEGNET_AVAILABLE_CELLTYPES (the others being the
+        # constant itself and the background builder). Derived now, so there is one source.
+        from chorus import create_oracle
+
+        records = create_oracle("legnet").describe_tracks()
         return {
             "oracle": oracle_name,
-            "assay_types": ["LentiMPRA"],
-            "cell_types": ["K562", "HepG2", "WTC11"],
+            "num_tracks": len(records),
+            "assay_types": sorted({r.assay for r in records if r.assay}),
+            "cell_types": sorted({r.cell_type for r in records if r.cell_type}),
             "note": "LegNet predicts lentiMPRA activity. Specify cell_type when loading.",
         }
 
