@@ -180,3 +180,44 @@ re-deciding; it should not be flipped on the strength of this measurement alone.
 committed examples would import this drift into shipped artefacts to gain nothing but fresh timestamps.
 With the flags on and the two nulls rebuilt, a regen sweep becomes reproducible and that guard can go
 green honestly rather than being explained away.
+
+## 2026-08-17 — which oracles this was ever measured on
+
+F8 was reported as an Enformer problem, and a same-process probe of four oracles was allowed to stand
+for more than it measured. **In-process determinism proves very little here**: Enformer is bit-exact
+within one process and drifts 3.4% between two, which is the path `regenerate_examples.py` takes. So
+"bitwise identical" from a single-process probe leaves an oracle effectively unverified.
+
+Measured cross-process (two separate `use_environment=True` runs, values compared):
+
+| oracle | framework | cross-process result |
+|---|---|---|
+| enformer | TF | **drifts** — 3.4% / 1.4% worst relative; bit-exact in 4/4 runs with `TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1` |
+| cherimoya | PyTorch + Triton | **bit-exact** |
+| legnet | PyTorch | **bit-exact** |
+| epinformerseq | PyTorch | **bit-exact** |
+| alphagenome | JAX | own known drift (~0.1–0.4% on all 64 raw values per `AUDIT_CHECKLIST.md`) **despite** `determinism.py` already pinning `--xla_gpu_deterministic_ops=true` — so the JAX flag in place is not sufficient, and this is separate from F8 |
+| chrombpnet | TF | **not measured.** Same framework as enformer, so plausibly the same exposure; `gate_end_to_end_determinism.py` accepts only `alphagenome` and `enformer`, so it cannot be targeted without extending the gate |
+| sei | PyTorch | **not measured** — blocked by the defect below |
+| borzoi, alphagenome_pt | PyTorch / PyTorch | not measured |
+
+### Two gaps found while measuring
+
+**The gate's default oracle cannot run from the base env.** `--oracle alphagenome` uses
+`use_environment=False`, so invoking the gate from `chorus` dies with
+`ModelNotLoadedError: ... No module named 'jax'`. It has to be run from `chorus-alphagenome`. Since
+alphagenome is the *default*, the obvious invocation fails, and it fails after the argument parsing so
+it reads like a model problem rather than an env one.
+
+**`predict(..., assay_ids=None)` raises on Sei where every other oracle defaults to all tracks.**
+`SeiOracle._validate_assay_ids` takes `assay_ids: List[str]` — no `| None`, no default — and iterates
+it, so `None` gives `TypeError: 'NoneType' object is not iterable`. `_predict` likewise has no
+"default to everything" branch, unlike enformer, borzoi and both AlphaGenome backends. That is what
+blocked the Sei row above: the probe passed `None` as it did for the others.
+
+### Priority this implies
+
+ChromBPNet is the gap that matters most: it is TensorFlow, like the one oracle known to drift, and it
+is the one the gate structurally cannot test. Extending the gate to accept it is a smaller job than
+the null rebuilds, and it would establish whether the F8 flags are needed for one TF oracle or two —
+which changes the cost of adopting them.
