@@ -455,9 +455,13 @@ class CherimoyaOracle(OracleBase):
             out.append(TrackRecord(
                 track_id=str(tid),
                 assay=d.get("assay") or (str(tid).split(":")[0] if ":" in str(tid) else None),
-                cell_type=d.get("biosample_term_name") or d.get("cell_type"),
-                description=d.get("description"),
-                extra={k: v for k, v in d.items() if k == "experiment_accession"},
+                # `biosample` is the key CATv1-metadata.tsv actually uses. The first version looked
+                # for "biosample_term_name", so cell_type was None on all 1,518 records -- counts were
+                # right, so the conformance test passed, and the field the catalogue exists to let you
+                # filter on was empty.
+                cell_type=d.get("biosample"),
+                description=d.get("biosample_summary") if str(d.get("biosample_summary")) != "nan" else None,
+                extra={k: d[k] for k in ("experiment_accession", "biosample_classification") if k in d},
             ))
         return out
 

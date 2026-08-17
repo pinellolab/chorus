@@ -35,7 +35,9 @@ logger = logging.getLogger(__name__)
 #: this set and _PER_MODEL_ORACLES, so it fell through to the `else` and returned
 #: {"error": "Unsupported oracle"} despite being fully implemented.
 _MULTI_TRACK_ORACLES = {"enformer", "borzoi", "alphagenome", "alphagenome_pt", "sei"}
-_PER_MODEL_ORACLES = {"chrombpnet", "legnet", "epinformerseq"}
+#: Oracles scored by loading one model at a time. Inherently slow — chrombpnet iterates 753 models —
+#: so each branch below must state what it covers rather than silently sampling.
+_PER_MODEL_ORACLES = {"chrombpnet", "legnet", "epinformerseq", "cherimoya"}
 
 
 @dataclass
@@ -794,6 +796,25 @@ def discover_variant_effects(
                 EPINFORMERSEQ_AVAILABLE_CELLTYPES,
             )
             models = [{"cell_type": ct} for ct in EPINFORMERSEQ_AVAILABLE_CELLTYPES]
+        elif name == "cherimoya":
+            # One experiment per biosample, not all 1,518. Measured 15.3 s per model (5.0 load +
+            # 10.3 predict), so the full atlas is 6.4 hours for a single discovery call; the 407
+            # biosamples are 1.7 h. Discovery's question is which CELL TYPES respond, and a biosample
+            # with four ATAC experiments answers it once — so this is a dedupe, not a sample, and the
+            # count is logged below rather than left implicit.
+            seen, models = set(), []
+            for rec in oracle.describe_tracks():
+                cell = rec.cell_type
+                if cell in seen:
+                    continue
+                seen.add(cell)
+                assay, _, encode_id = str(rec.track_id).partition(":")
+                models.append({"assay": assay, "encode_id": encode_id})
+            logger.info(
+                "  cherimoya: %d biosamples from %d experiments (one experiment each; the full "
+                "atlas would be ~%.1f h at 15.3 s/model)",
+                len(models), len(oracle.describe_tracks()), len(oracle.describe_tracks()) * 15.3 / 3600,
+            )
         else:
             models = []
 
