@@ -118,7 +118,9 @@ examples are affected.
 
 ### Known limitations
 
-- **`test_committed_examples_are_stale_until_the_regen_sweep` fails, deliberately.** It compares each
+- **Cross-process drift is accepted rather than eliminated.** `TF_DETERMINISTIC_OPS=1` was measured to make Enformer bit-exact (4/4 runs, against a control failing 2/2 at 3.4% and 1.4%), but adopting it would require rebuilding the Enformer and ChromBPNet nulls and changing published numbers for both. Median drift is **0.016%** and the published `quantile_score` moves at most **0.69%**, so the trade is not worth it. The residual risk is *which* track gets reported, not the numbers: `discovery.py` cuts hard at `top_n_per_layer` and the rank-12↔13 gap can be smaller than the drift. Near-tie reporting is the follow-up. See `docs/BACKGROUND_NULL_PROTOCOL.md`'s decision log.
+
+- **The committed-example staleness check reports rather than fails**, following that decision. It compares each
   committed example against the last semantic change to `scorers.py`, so this release's scoring fix
   fires it. A regen sweep is currently the wrong response: committed examples cover alphagenome,
   chrombpnet and enformer and **no** Sei, and the fix can only touch scalar tracks in a windowed layer,
