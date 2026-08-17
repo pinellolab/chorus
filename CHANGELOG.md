@@ -116,9 +116,27 @@ examples are affected.
   borzoi 7,611, alphagenome and alphagenome_pt 5,168, cherimoya 1,518, sei 21,947, chrombpnet 753,
   legnet 3, epinformerseq 33 — and each works before `load_pretrained_model()`.
 
+- **Near-ties at the top-N cutoff are now reported
+  ([#235](https://github.com/pinellolab/chorus/pull/235)).** `discover_variant_effects` returns
+  `near_ties_at_cutoff`, populated whenever the rank N / N+1 boundary in a layer is closer than 1% —
+  naming the kept and dropped track, the relative gap, and that which one is reported is not stable
+  between runs. Also logged as a warning. Selection is unchanged; this only stops a coin-flip being
+  presented as a result. It exists because the measured rank-12↔13 gap in `tf_binding` was 4.25%
+  against a 4.29% worst-case cross-process drift, which is the one way the accepted drift can still
+  change a conclusion while no number moves visibly.
+
+### Documentation
+
+- **Audit coverage reached 18 of 18 checklist sections**
+  ([#223](https://github.com/pinellolab/chorus/pull/223)): GPU detection, per-track CDFs,
+  reproducibility and scientific determinism were the four never previously exercised. Every §4 figure
+  matched its published value; §3's documented trap (a bare probe reports 0 GPUs for both TensorFlow
+  envs, because their CUDA libs are only on the runner's `LD_LIBRARY_PATH`) caught the auditor as
+  designed.
+
 ### Known limitations
 
-- **Cross-process drift is accepted rather than eliminated.** `TF_DETERMINISTIC_OPS=1` was measured to make Enformer bit-exact (4/4 runs, against a control failing 2/2 at 3.4% and 1.4%), but adopting it would require rebuilding the Enformer and ChromBPNet nulls and changing published numbers for both. Median drift is **0.016%** and the published `quantile_score` moves at most **0.69%**, so the trade is not worth it. The residual risk is *which* track gets reported, not the numbers: `discovery.py` cuts hard at `top_n_per_layer` and the rank-12↔13 gap can be smaller than the drift. Near-tie reporting is the follow-up. See `docs/BACKGROUND_NULL_PROTOCOL.md`'s decision log.
+- **Cross-process drift is accepted rather than eliminated.** `TF_DETERMINISTIC_OPS=1` was measured to make Enformer bit-exact (4/4 runs, against a control failing 2/2 at 3.4% and 1.4%), but adopting it would require rebuilding the Enformer and ChromBPNet nulls and changing published numbers for both. Median drift is **0.016%** and the published `quantile_score` moves at most **0.69%**, so the trade is not worth it. The residual risk is *which* track gets reported, not the numbers: `discovery.py` cuts hard at `top_n_per_layer` and the rank-12↔13 gap can be smaller than the drift. Near-tie reporting is the follow-up. See `docs/BACKGROUND_NULL_PROTOCOL.md`'s decision log, and `audits/2026-08-14_f8_localisation.md` for the measurements ([#233](https://github.com/pinellolab/chorus/pull/233)) and the per-oracle coverage map ([#234](https://github.com/pinellolab/chorus/pull/234)) — cherimoya, legnet and epinformerseq are bit-exact cross-process; chrombpnet and sei remain unmeasured because the gate cannot target them.
 
 - **The committed-example staleness check reports rather than fails**, following that decision. It compares each
   committed example against the last semantic change to `scorers.py`, so this release's scoring fix

@@ -118,6 +118,38 @@ result = {{'loaded': True, 'description': 'Model loaded successfully'}}
 
 #### 3.2 Track Information
 
+Implement **`_describe_tracks()`** — the one method that answers "what can this oracle predict?".
+Return a list of [`TrackRecord`](chorus/core/tracks.py) objects whose `track_id` is exactly what your
+`predict(..., assay_ids=[...])` accepts:
+
+```python
+def _describe_tracks(self) -> list:
+    from ..core.tracks import TrackRecord
+
+    return [
+        TrackRecord(track_id=f"{assay}:{cell}", assay=assay, cell_type=cell,
+                    description=f"{assay} in {cell}")
+        for cell in MY_CELL_TYPES for assay in MY_ASSAYS
+    ]
+```
+
+Three rules, each learned the hard way:
+
+* **Make it work before `load_pretrained_model()`.** Discovery should not cost a multi-GB model load,
+  and `tests/test_describe_tracks_is_uniform.py` asserts it.
+* **Populate `assay` on every record.** `classify_track_layer` dispatches on it, and a null one
+  classifies as `other`, whose scorer config is `None` — so the track produces no score. Sei shipped
+  21,907 such tracks: built, verified, and unscoreable.
+* **Enumerate from the same source your background builder uses.** ChromBPNet's raw metadata table
+  offers 1,268 cell/TF combinations against a 753-row null; reading it directly instead of the
+  builder's own helper reproduces exactly that gap, and a catalogue that disagrees with the background
+  is worse than none — callers filter on it and then find no percentile.
+
+`describe_tracks()` (the public wrapper) is provided by the base and handles `query` / `limit`
+filtering, so all oracles share one search behaviour. Do not override it.
+
+The two older methods below are still required:
+
 ```python
 def list_assay_types(self) -> List[str]:
     """Return list of available assay types."""
