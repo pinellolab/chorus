@@ -354,3 +354,44 @@ def test_the_rewired_branches_report_the_catalogue_size(oracle):
 
     fn = getattr(list_tracks, "fn", list_tracks)
     assert fn(oracle)["num_tracks"] == len(_oracle(oracle).describe_tracks())
+
+
+def test_no_oracle_raises_when_assay_ids_is_omitted():
+    """`predict(..., assay_ids=None)` must mean "use your default", not TypeError.
+
+    Sei's `_validate_assay_ids` took `List[str]` with no `| None` and iterated it, so omitting ids gave
+    `TypeError: 'NoneType' object is not iterable` where the other eight oracles default to all their
+    tracks. It blocked a determinism probe that passed None exactly as it did for the others — the
+    inconsistency cost a measurement, not just tidiness.
+
+    Asserted at the validation layer so it needs no GPU: a model load would make this a 9-oracle
+    integration test for a one-line contract.
+    """
+    for name in ORACLES:
+        o = _oracle(name)
+        try:
+            o._validate_assay_ids(None)
+        except TypeError as exc:  # the exact defect
+            raise AssertionError(
+                f"{name}._validate_assay_ids(None) raised TypeError ({exc}); omitting assay_ids must "
+                f"mean 'use the default', as it does for every other oracle"
+            ) from None
+        except Exception:
+            pass  # a domain-specific refusal is a design choice; a TypeError is a bug
+
+
+def test_sei_defaults_to_its_sequence_classes_not_all_21947():
+    """The default is deliberately the 40 classes, not every track.
+
+    Strict consistency with enformer would make an unnamed call score 21,907 chromatin profiles too —
+    a very large accident to make easy — and the classes are the interpretable output the projection
+    exists to produce. Profiles stay available by naming them.
+    """
+    o = _oracle("sei")
+    defaults = o._default_assay_ids()
+    assert len(defaults) == 40, f"sei's default is {len(defaults)} tracks, expected the 40 classes"
+    assert all(str(d).startswith("CA#") for d in defaults), (
+        "sei's default includes chromatin profiles (TA# ids); an omitted assay_ids would then score "
+        "21,947 tracks"
+    )
+    assert len(o.describe_tracks()) == 21_947, "the full catalogue must still be reachable"
