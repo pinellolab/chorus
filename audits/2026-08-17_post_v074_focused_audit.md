@@ -65,6 +65,31 @@ Not fixed here: it needs the child-side resolution read, and it is a user-facing
 | release artefacts | tag → `8ffb842`, `isDraft=false`, tag message and release body byte-identical (10,665 chars), 5 `#` headings intact |
 | fast / browser / integration | **2,124** / **58** / **158 passed, 0 failed** |
 
+## Two documentation gaps this pass closed
+
+Both were cases of shipped behaviour the README did not describe.
+
+1. **`describe_tracks()` was undocumented in the README.** It shipped in 0.7.4 specifically to end the
+   "four attempts to get one track id" friction, and the README's *Discovering tracks* section still
+   opened with `from chorus.oracles.enformer_source.enformer_metadata import get_metadata` — a
+   per-oracle import, i.e. the friction itself. Now leads with `describe_tracks()`, every snippet
+   copied from a real run (5,313 total; `query='K562', limit=3` → the three DNASE:K562 ids shown).
+2. **The accepted Enformer drift was invisible to users.** It was recorded in the CHANGELOG and
+   `BACKGROUND_NULL_PROTOCOL.md`, both of which a user hitting it would not think to open. The README's
+   Enformer section now carries the measured numbers, the fact that it is the only affected oracle, why
+   conclusions hold, and the env-var opt-in. Accepting a known limitation is defensible; not telling
+   users about it is not.
+
+## One follow-up created by this pass
+
+`TrackRecord.has_background` is declared, documented as tri-state, and **never populated** — it is
+`None` on every record from every oracle. The docstring claimed "a caller can now see it", which was
+aspirational. Corrected to state the truth and the reason: answering it needs the background NPZ and a
+`_match_track_id` pass, and `describe_tracks()` is deliberately load-free — no model, no genome, no
+GPU, no multi-GiB download — which is what makes it cheap enough to explore with. Callers who need the
+answer should ask `NormalizationLoader.has_background`. Left `None` rather than defaulted to `False`,
+which would read as "checked and absent".
+
 ## Process notes worth keeping
 
 * **I caused two false failures** by running the determinism gate on other GPUs while the integration

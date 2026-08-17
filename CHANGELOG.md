@@ -6,7 +6,34 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-_Nothing yet._
+### Documentation
+
+- **`describe_tracks()` is now documented in the README.** It shipped in 0.7.4 as the one uniform way
+  to ask any of the nine oracles what it can predict, and the README's "Discovering tracks" section
+  still told users to import an oracle-specific metadata module — the exact friction the method was
+  added to remove. The section now leads with `describe_tracks()` (load-free: no model, no reference
+  genome, no GPU) and keeps the per-oracle metadata search as the deeper option. Every snippet is
+  copied from real output.
+- **The README now states that Enformer predictions vary between processes**, with the measured
+  numbers (~0.02% typical, 3.4% worst on a raw value, bit-identical within one process), the fact that
+  it is the only one of the nine oracles affected, why conclusions are still stable
+  (`quantile_score` ≤0.69%, `near_ties_at_cutoff` covers changed top-N membership), and the
+  `TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1` opt-in for bit-exactness. This was previously
+  recorded only in the CHANGELOG and the null protocol, so a user who ran Enformer twice and got
+  different numbers had nothing in the README to explain it.
+- **Cross-process determinism measured for eight of nine oracles** and written up in
+  `audits/2026-08-17_post_v074_focused_audit.md`. Corrects two claims in `AUDIT_CHECKLIST.md`: an
+  "AlphaGenome is NOT deterministic" finding that three gate runs now contradict (`0.000e+00`), and a
+  "verified bitwise" claim that held same-process only.
+- `TrackRecord.has_background` no longer promises more than it delivers: no oracle populates it, so
+  the docstring now says so and explains why (`describe_tracks()` stays download-free), pointing
+  callers at `NormalizationLoader.has_background`.
+
+### Known issues
+
+- `predict_variant_effect(..., assay_ids=None)` raises `invalid literal for int() with base 10:
+  'logits'` on the **`alphagenome_pt`** backend; passing explicit ids works. Same class as the Sei
+  defect fixed in 0.7.4, in the PyTorch AlphaGenome backend. Use explicit `assay_ids` as a workaround.
 
 ## [0.7.4] — 2026-08-17
 
