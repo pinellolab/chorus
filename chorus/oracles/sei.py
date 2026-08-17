@@ -360,11 +360,31 @@ class SeiOracle(OracleBase):
         if not self.loaded:
             raise ModelNotLoadedError("Model not loaded. Call load_pretrained_model first.")
     
-    def _validate_assay_ids(self, assay_ids: List[str]):
+    #: What `predict()` scores when the caller names nothing.
+    #:
+    #: Every other oracle defaults to all of its tracks; Sei raised `TypeError: 'NoneType' object is
+    #: not iterable` instead, because `_validate_assay_ids` took `List[str]` with no `| None` and
+    #: iterated it. That inconsistency blocked a determinism probe that passed `None` exactly as it did
+    #: for the other eight.
+    #:
+    #: Sei defaults to its **40 projected sequence classes**, not all 21,947 tracks. Strict consistency
+    #: with enformer would mean an unnamed call scoring 21,907 chromatin profiles as well — a very
+    #: large accident to make easy. The classes are also the interpretable output the projection exists
+    #: to produce. Profiles remain available by naming them.
+    DEFAULT_ASSAY_KIND = "classes"
+
+    def _default_assay_ids(self) -> list:
+        """The 40 sequence classes — see `DEFAULT_ASSAY_KIND` for why not all 21,947."""
+        return list(self._class_assays_ids())
+
+    def _validate_assay_ids(self, assay_ids=None):
+        if assay_ids is None:
+            return True
         available_assay_ids = set(self._get_all_assay_ids())
         for ai in assay_ids:
             if ai not in available_assay_ids:
                 raise InvalidAssayError(f"Invalid assay ID: {ai}")
+        return True
 
     def _refine_total_length(self, total_length: int) -> int:
         if not self.sliding_predict:
@@ -494,6 +514,8 @@ class SeiOracle(OracleBase):
     def _predict(self,
                  seq: Union[str, Tuple[str, int, int], Interval],
                  assay_ids: list[str]) -> OraclePrediction:
+        if not assay_ids:
+            assay_ids = self._default_assay_ids()
         parsed = self._parse_assay_ids(assay_ids)
         mapping = parsed["mapping"]
         sei_targets, sei_classes = parsed["sei_targets"], parsed["sei_classes"]
@@ -573,6 +595,8 @@ class SeiOracle(OracleBase):
         is bit-for-bit upstream.
         """
         names = list(intervals.keys())
+        if not assay_ids:
+            assay_ids = self._default_assay_ids()
         parsed = self._parse_assay_ids(assay_ids)
 
         seqs, meta = [], []
