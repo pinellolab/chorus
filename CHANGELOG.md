@@ -8,6 +8,128 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 _Nothing yet._
 
+## [0.7.4] — 2026-08-17
+
+**Sei's numbers change in this release.** Its variant effects were missing a correction the upstream
+authors specify, and its background covered 40 of the 21,947 tracks it predicts. If you have published
+Sei results from 0.7.3 or earlier, they were computed without the nucleosome-occupancy adjustment and
+against a 40-row null. Nothing else moves: no other oracle's predictions, percentiles or committed
+examples are affected.
+
+### Fixed
+
+- **Sei's nucleosome-occupancy correction was absent in two independent ways
+  ([#224](https://github.com/pinellolab/chorus/pull/224),
+  [#225](https://github.com/pinellolab/chorus/pull/225)).** `SeiNormalizer.normalize` computed
+  `sum_alt` from the *reference* array, so both scaling factors were exactly 1.0 — a no-op. And it was
+  never called: `sei.py` built the normalizer, required it non-`None`, and never invoked it. The
+  correction is described in its own docstring as "recommended by Sei authors" and is
+  `sc_hnorm_varianteffect` in FunctionLab/sei-framework; `normalize` is now a faithful port, asserted
+  with `np.array_equal` against a transcription rather than merely close. Measured on three real
+  variants, applying it moves **every one of the 40 sequence classes**, by 12–48% of the variant's
+  largest effect, and changes the top-ranked class for 2 of 3. At chr11:5247500 the correction is larger
+  than the signal (median |Δ| 0.0181 vs median |effect| 0.0170).
+
+  The correction is defined over a ref/alt **pair**, which a per-sequence `_predict` cannot express, so
+  `OracleBase` gained `_predict_alleles` — a seam whose default is exactly the per-allele loop it
+  replaced, leaving the other eight oracles untouched. `SeiNormalizer.equalize` generalises the pair to
+  n alleles and is bit-for-bit upstream for ref + 1 alt, so chorus's result schema stays identical
+  across oracles.
+
+- **21,907 of Sei's 21,947 tracks produced no `raw_score`
+  ([#231](https://github.com/pinellolab/chorus/pull/231)).** They classify as `histone_marks` /
+  `tf_binding` / `chromatin_accessibility`, whose configs carry `window_bp` of 2001/501/501 because
+  those layers were built for **binned** oracles — and windowing Sei's 1-element output returns `None`.
+  `score_track_effect` already had a "Full output scoring (LentiMPRA, Sei, etc.)" branch that Sei's
+  profiles never reached. Scoring now routes on the data shape, so a track carrying one value takes that
+  branch whatever its layer. Provably scoped: the only tracks affected are scalar tracks in a windowed
+  layer, which is Sei's profiles alone.
+
+- **`chorus/analysis/discovery.py` raised `AttributeError` for Sei and skipped two oracles entirely
+  ([#227](https://github.com/pinellolab/chorus/pull/227),
+  [#229](https://github.com/pinellolab/chorus/pull/229)).** It called `oracle.get_all_assay_ids()`,
+  which Sei does not have (only a private `_get_all_assay_ids`), for an oracle listed in its own
+  multi-track set. `alphagenome_pt` and `cherimoya` were in neither oracle set, so both returned
+  `{"error": "Unsupported oracle"}` despite being fully implemented. Cherimoya now iterates its 407
+  biosamples rather than all 1,518 experiments — measured 15.3 s per model, so 1.7 h instead of 6.5 h —
+  with both counts logged rather than silently capped.
+
+- **`epinformerseq.list_cell_types()` returned 1 of 11 cell types**
+  ([#227](https://github.com/pinellolab/chorus/pull/227)) — the instance's own cell rather than the
+  oracle's catalogue, while its background carries all 33 rows. LegNet fixed this exact bug and the fix
+  was never ported.
+
+- **MCP `list_tracks` answered for Sei from a stale literal and for ChromBPNet with models that do not
+  exist ([#230](https://github.com/pinellolab/chorus/pull/230),
+  [#231](https://github.com/pinellolab/chorus/pull/231)).** The Sei branch returned a hardcoded
+  `["sequence-class"]` without ever consulting the oracle — false for an oracle with 1,176 assay types.
+  ChromBPNet reported 172 cell types × 240 TFs, implying **41,280** available models against **744**
+  that exist. Both derive from `describe_tracks()` now, keeping their payload shapes; ChromBPNet states
+  `num_chip_models` and rules out the cross-product reading in words. LegNet and EPInformer-seq no
+  longer hold third copies of their constants.
+
+- **A third-party timeout could fail the browser job
+  ([#228](https://github.com/pinellolab/chorus/pull/228)).** igv.js reports a resource timeout in its
+  own words ("IGV error: Timed out") as well as Chromium's `ERR_TIMED_OUT`, and one unrecognised console
+  error disqualifies the whole outage skip — so a UCSC timeout reddened CI on a change that touched no
+  browser code.
+
+### Changed
+
+- **Sei's background covers all 21,947 tracks, not 40
+  ([#226](https://github.com/pinellolab/chorus/pull/226)).** The 40-only scope was never a recorded
+  decision: the builder's docstring asserted "Sei outputs 40 regulatory classes" and everything
+  downstream inherited it. The network emits 21,907 chromatin profiles that a projection aggregates into
+  the 40, `predict()` accepts profile ids, and it returned real values whose percentile was always
+  `None`. Compute was already being spent — `project()` discarded the profiles — so the cost is storage:
+  2.8 MB → 1.5 GB. The builder imports `SeiNormalizer` rather than carrying a second copy of the
+  arithmetic, and writes ids in the oracle's own `TA#`/`CA#` forms (verified to match
+  `_target_assays_ids() | _class_assays_ids()` exactly, 0 divergence, before the build ran).
+
+  All 1,176 of Sei's assay-type strings previously classified as `other`, which would have shipped
+  21,907 built, verified, unscoreable rows — §8's documented failure mode at 21,907× scale.
+  `classify_track_layer` routes profiles through the existing `classify_chip_layer`, giving 10,310
+  `tf_binding`, 9,225 `histone_marks`, 2,372 `chromatin_accessibility` and 40
+  `regulatory_classification`, zero unclassified.
+
+  The effect null is histone-equalised and the activity null is not, because the correction is defined
+  over an allele pair and a baseline is one sequence. Recorded in
+  `docs/BACKGROUND_NULL_PROTOCOL.md`'s decision log.
+
+- **The pinned backgrounds revision is now `backgrounds-2026-08-16-sei-full`**
+  ([#231](https://github.com/pinellolab/chorus/pull/231)), matching the rebuilt artefact.
+
+### Added
+
+- **`OracleBase.describe_tracks()` — one call every oracle answers
+  ([#227](https://github.com/pinellolab/chorus/pull/227)).** Previously this took four different calls:
+  `get_all_assay_ids()` on four oracles, `list_tracks()` on cherimoya, a private `_get_all_assay_ids()`
+  on Sei, and nothing at all on chrombpnet, legnet or epinformerseq — so a contributor adding a tenth
+  oracle had no single method to implement, and consumers grew per-oracle branches that drifted from the
+  oracles they described. Returns `TrackRecord` objects (`chorus/core/tracks.py`) whose `track_id` is
+  exactly what `predict()` accepts, plus assay, cell type, description, a `has_background` flag and
+  per-oracle extras.
+
+  Concrete rather than abstract, deliberately: seven test-double subclasses across five test files
+  implement exactly the previous abstract set, and a ninth abstract method breaks every one at
+  instantiation. All nine oracles implement it, each count matching what is published — enformer 5,313,
+  borzoi 7,611, alphagenome and alphagenome_pt 5,168, cherimoya 1,518, sei 21,947, chrombpnet 753,
+  legnet 3, epinformerseq 33 — and each works before `load_pretrained_model()`.
+
+### Known limitations
+
+- **`test_committed_examples_are_stale_until_the_regen_sweep` fails, deliberately.** It compares each
+  committed example against the last semantic change to `scorers.py`, so this release's scoring fix
+  fires it. A regen sweep is currently the wrong response: committed examples cover alphagenome,
+  chrombpnet and enformer and **no** Sei, and the fix can only touch scalar tracks in a windowed layer,
+  so no committed number can move — while F8 (`audits/2026-08-14_f8_localisation.md`) remains open, so
+  regenerating *would* change Enformer's numbers for unrelated reasons. Integration-marked so it never
+  blocks CI.
+
+- **CI runs the fast and browser suites only.** Three real defects in this release existed solely in the
+  integration suite, which needs a GPU and the per-oracle envs. Integration has to be run locally before
+  a release; `audits/AUDIT_CHECKLIST.md` is the runbook.
+
 ## [0.7.3] — 2026-08-15
 
 **No percentile changes.** No background null, region set, retention rule or default fold moved,
@@ -1266,6 +1388,7 @@ HTML report generation with embedded IGV, and the `chorus` CLI
 ---
 
 [Unreleased]: https://github.com/pinellolab/chorus/compare/v0.7.3...HEAD
+[0.7.4]: https://github.com/pinellolab/chorus/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/pinellolab/chorus/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/pinellolab/chorus/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/pinellolab/chorus/compare/v0.7.0...v0.7.1
