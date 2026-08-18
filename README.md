@@ -17,11 +17,13 @@ Four steps. Steps 1 + 2 are copy-paste. Step 3 is a runnable snippet. Step 4 hoo
 **Before you start** — three things you need:
 
 - **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>
-- **~100 GB free disk** for the default all-oracle install on Linux x86_64 + CUDA. The install itself
-  is ~87 GiB (as `du -sh` counts it) plus a ~4 GiB reclaimable package cache — and if you are
-  provisioning a cloud volume, note that those are **binary** units: a disk *sold* as "100 GB" is only
-  93.1 GiB, so it fits with about **2 GiB to spare** once the cache is counted. That is enough to
-  finish, not enough to work in — if you will be building anything else on the same volume, size up. Each oracle env carries its own multi-GB CUDA payload, which is nearly all of it — so a macOS or CPU-only install is far smaller. See [Disk usage breakdown](#disk-usage-breakdown) for per-oracle / per-asset numbers, `chorus setup --oracle <name>` if you only need one oracle — **that is ~13 GiB, not 85** (measured for `enformer`: 2.41 GiB base env + 5.89 GiB oracle env + 3.05 GiB hg38 + 0.94 GiB weights + 0.52 GiB backgrounds = 12.81 GiB) — and [Where chorus puts large files](#where-chorus-puts-large-files) to put it on a different filesystem
+- **~100 GB free disk** for the default all-oracle install on Linux x86_64 + CUDA — ~87 GiB installed
+  plus a ~4 GiB reclaimable package cache. A volume *sold* as "100 GB" is 93.1 GiB, so it fits with
+  ~2 GiB spare; size up if you are building anything else on it. Nearly all of that is per-oracle CUDA
+  payloads, so macOS and CPU-only installs are far smaller, and one oracle
+  (`chorus setup --oracle <name>`) is **~13 GiB, not 87**. See
+  [Disk usage breakdown](#disk-usage-breakdown) and
+  [Where chorus puts large files](#where-chorus-puts-large-files).
 - **Linux x86_64 or macOS** (Intel / Apple Silicon)
 
 ### 1. Install (5 minutes)
@@ -34,15 +36,12 @@ mamba activate chorus
 python -m pip install -e .
 ```
 
-> **Which revision should you install?** `main` is the ship branch and is kept green, but it moves —
-> the numbers in this README, the committed example outputs and the background CDFs are all consistent
-> *as of a tag*. If you are citing chorus in a paper or sharing a result, install a tag and say which
-> one; [`CHANGELOG.md`](CHANGELOG.md) records what changed between them and calls out every release that
-> moved a number — **0.7.4 changes Sei's numbers**, and **0.7.5 changes `alphagenome_pt`'s numbers for
-> its 738 splice tracks** (they were pre-activation values ranked against a post-activation null; the JAX
-> `alphagenome` backend was never affected). Chorus is **not on PyPI** — the name `chorus` is taken by an unrelated project —
-> so a source install is the supported path and `pip install chorus` will get you someone else's
-> package.
+> **Install a tag, not `main`.** `main` is kept green but moves; this README's numbers, the committed
+> examples and the background CDFs are consistent *as of a tag*. Releases that changed published numbers
+> are called out in [`CHANGELOG.md`](CHANGELOG.md).
+>
+> **Chorus is not on PyPI** — that name belongs to an unrelated project, so `pip install chorus` gets you
+> someone else's package. A source install is the supported path.
 
 ### 2. Get every oracle, weight, and reference — batteries included (~55–75 min, unattended)
 
@@ -57,25 +56,8 @@ One command, walk away, come back to a complete chorus install. When prompted:
   2. Accept the license at <https://huggingface.co/google/alphagenome-all-folds>
   3. Paste the token when `chorus setup` asks.
 
-> **Backgrounding it, or running from a script?** The token is resolved **before** anything is built,
-> and if stdin is not a TTY the whole run aborts immediately with *"No HuggingFace token available and
-> stdin is not a TTY"* — zero progress, no envs. So for `nohup`, a CI step, a Slurm job or a
-> tmux-less ssh session, supply it up front:
->
-> ```bash
-> export HF_TOKEN=hf_...        # or: chorus setup --hf-token hf_...
-> nohup chorus setup &
-> ```
->
-> **No HuggingFace account, and you want one that actually runs?** Only AlphaGenome is gated, and
-> the gate is scoped to it — `chorus setup --oracle enformer` never asks for a token
-> ([`main.py`](chorus/cli/main.py#L93) prompts only when `alphagenome` is among the requested
-> oracles) and leaves you with a fully working install in ~13 GiB. Every snippet in
-> [step 3](#3-your-first-prediction--score-a-snp-at-the-β-globin-locus) below uses Enformer, so
-> nothing in this TLDR needs an account.
->
-> `chorus setup --no-weights` also skips the gate, but it downloads **no** model weights at all, so
-> you cannot predict anything afterwards — it is for provisioning envs, not for getting started.
+> **Running unattended, or have no HuggingFace account?** Both are fine — see
+> [Token plumbing](#token-plumbing) for the one-liner and the no-account path.
 - **LDlink token** (optional — only for `fine_map_causal_variant`): register free at <https://ldlink.nih.gov/?tab=apiaccess>, paste when prompted. Press Enter to skip.
 
 ### 3. Your first prediction — score a SNP at the β-globin locus
@@ -124,15 +106,9 @@ print(f"Variant result: scored {n_alts} alt alleles "
 > | `'chr11:5247500-5247504'` (string) | **1-based inclusive** — dbSNP / gnomAD / UCSC / IGV | `CATCA` (5 bases) |
 > | `('chr11', 5247500, 5247504)` (tuple) | **0-based end-exclusive** — BED / pyfaidx | `ATCA` (4 bases, starting one later) |
 >
-> Both rows are measured with `extract_sequence` against hg38. **Prefer the string form** — it is the
-> convention every variant database you will paste from uses. The snippet above uses the tuple form
-> because it is asking for a window rather than a point, and a 1 bp shift inside a 114 kb output
-> changes nothing; at 1 bp resolution it would.
->
-> If you assemble ref/alt sequence windows by hand, use
-> [`chorus.utils.get_centered_window`](chorus/utils/sequence.py) — it converts from 1-based to
-> pyfaidx's 0-based half-open internally and validates the ref base against the FASTA, so
-> off-by-one bugs fail loudly.
+> **Prefer the string form** — it is what every variant database you paste from uses. Assembling ref/alt
+> windows by hand? [`get_centered_window`](chorus/utils/sequence.py) converts and validates the ref base
+> against the FASTA, so off-by-one bugs fail loudly.
 
 ### 4. Skip the code — drive chorus from Claude in plain English 🤖
 
@@ -281,14 +257,8 @@ Chorus ships **two interchangeable AlphaGenome oracles for the same model with t
 
 **The two backends produce equivalent outputs — measured per head, not assumed.** Agreement is **0.8–4.9 % peak-relative with correlation 0.9998–1.0000**, measured across one track per output type on a 1 MB SORT1 window; the earlier M3 Ultra / A100 spike reported 1–2 % at 524 kb over a narrower track sample, and within 0.02 log₂ on full Fig 3f region-swap layer scores. The residual is fp32 implementation noise (different op orderings, conv kernels, attention numerics across JAX and PyTorch), not different weights. Full audit at `audits/2026-04-29_alphagenome_pytorch_spike/` and `audits/2026-04-29_alphagenome_pt_stress_test/`.
 
-> ⚠️ **This claim was materially false before 0.7.5, for the `SPLICE_SITES` assay.** `alphagenome_pt`
-> returned **pre-activation** values for its 4 splice-site and 734 splice-usage tracks, correlating at
-> **0.20** with the JAX backend, and — because `alphagenome_pt` has no null of its own and ranks against
-> `alphagenome`'s — their percentiles were meaningless rather than merely noisy. The equivalence test that
-> was supposed to catch this compared three DNase tracks from a single head. It now covers one track per
-> output type ([`tests/test_alphagenome_backends_equivalence.py`](tests/test_alphagenome_backends_equivalence.py)),
-> which is what makes the numbers above checkable rather than a claim. If you ran `alphagenome_pt` on
-> splice tracks before 0.7.5, re-run them.
+> ⚠️ **Before 0.7.5 this was false for splice tracks — re-run them if you used `alphagenome_pt`.** See
+> [Caveats](#caveats--what-to-know-before-you-trust-a-number).
 
 **Use `chorus.recommend_alphagenome_backend(window_size_bp)`** (also available as an MCP tool and as `oracle.recommend_backend()` on either oracle) to get a per-host, per-window-size recommendation grounded in the audit numbers. Logic:
 
@@ -336,6 +306,9 @@ The default `chorus setup` (all 8 oracles, both AlphaGenome backends, hg38, all 
 | EPInformer-seq per-cell weights (11 main + 11 bias) | ~8 MB |
 | Cherimoya fast-path weights (DNase + ATAC K562/HepG2) | ~10 MB |
 | **Total default** | **~87 GB** |
+
+**One oracle instead of eight** is ~13 GiB (measured for `enformer`: 2.41 GiB base env + 5.89 GiB oracle
+env + 3.05 GiB hg38 + 0.94 GiB weights + 0.52 GiB backgrounds = 12.81 GiB).
 
 Budget above that: `mamba` also fills a package cache (~4 GB here) shared across envs, which you can
 reclaim afterwards with `mamba clean --all`. Sei's `sei_model.tar.gz` is kept after extraction, so
@@ -397,14 +370,11 @@ Resolved chorus data layout
   hf_cache      /home/you/chorus/huggingface  [4.5 GB]
 ```
 
-> **One exception, for upgrades from before this switch.** Backgrounds — and *only* backgrounds — have
-> a legacy rule: if `~/.chorus/backgrounds` already holds `*_pertrack.npz` and the resolved directory
-> does not, chorus keeps using the old location and logs that it is doing so. That way an upgrade does
-> not silently re-download 1.9 GB. It applies per-kind on purpose (annotations, downloads and genomes
-> were always in the install tree, so a whole-directory fallback would have dragged those out of it),
-> and an explicit `CHORUS_DATA_DIR` or `--set` always wins. Run
-> `chorus config data-dir --set PATH --migrate` to move them for good. This is why `backgrounds` can
-> print a different root from `data_dir` in the output above.
+> **One exception, for upgrades.** If `~/.chorus/backgrounds` already holds `*_pertrack.npz` and the
+> resolved directory does not, chorus keeps using the old location and logs that it is doing so, so an
+> upgrade does not silently re-download 1.9 GB. It applies to backgrounds only, and an explicit
+> `CHORUS_DATA_DIR` or `--set` always wins. `chorus config data-dir --set PATH --migrate` moves them for
+> good. This is why `backgrounds` can print a different root from `data_dir` above.
 
 Two things deliberately do **not** follow this switch: **credentials** (`~/.chorus/config.toml`, the
 HuggingFace token) stay with the user, because a shared data directory is the wrong place for a personal
@@ -513,6 +483,25 @@ Two tokens are relevant. `chorus setup` surfaces both so they aren't a mid-predi
 
 Register an HF read token at <https://huggingface.co/settings/tokens>, then accept the model license at <https://huggingface.co/google/alphagenome-all-folds>. Register a free LDlink token at <https://ldlink.nih.gov/?tab=apiaccess>.
 
+##### Token plumbing
+
+**Unattended runs.** The token is resolved *before* anything is built, and if stdin is not a TTY the run
+aborts immediately — *"No HuggingFace token available and stdin is not a TTY"* — with zero progress and no
+envs. So for `nohup`, CI, Slurm or a tmux-less ssh session, supply it up front:
+
+```bash
+export HF_TOKEN=hf_...        # or: chorus setup --hf-token hf_...
+nohup chorus setup &
+```
+
+**No HuggingFace account.** Only AlphaGenome is gated and the gate is scoped to it, so
+`chorus setup --oracle enformer` never asks for a token ([`main.py`](chorus/cli/main.py#L93) prompts only
+when `alphagenome` is among the requested oracles) and leaves a fully working ~13 GiB install. Every
+snippet in the quick start uses Enformer.
+
+`chorus setup --no-weights` also skips the gate, but it downloads **no** model weights at all, so you
+cannot predict anything afterwards. It provisions envs; it is not the no-account path.
+
 #### Managing reference genomes
 
 Chorus includes built-in support for downloading and managing reference genomes. `chorus setup` pulls hg38 automatically — this section is for other assemblies or manual management.
@@ -541,13 +530,10 @@ Supported genomes:
 
 Genomes are stored in the `genomes/` directory within your Chorus installation.
 
-> **The downloader is not the oracles.** Every shipped oracle is trained on **hg38 only**,
-> and every background null is a rank within hg38 reference regions, so a non-hg38 reference
-> is refused rather than scored — an mm10 coordinate resolves against hg38 without
-> complaint, so a warning would produce a plausible number about different DNA. Assemblies
-> other than hg38 are here for other tooling and for future work; see
-> [`docs/BACKGROUND_NULL_PROTOCOL.md` §11](docs/BACKGROUND_NULL_PROTOCOL.md) for what mouse
-> support would actually require.
+> **The downloader is not the oracles.** Every oracle is trained on **hg38 only**, and a non-hg38
+> reference is refused rather than scored — see [Caveats](#caveats--what-to-know-before-you-trust-a-number).
+> Other assemblies are here for other tooling; [`docs/BACKGROUND_NULL_PROTOCOL.md` §11](docs/BACKGROUND_NULL_PROTOCOL.md)
+> covers what mouse support would require.
 
 #### Per-track background distributions (auto-downloaded)
 
@@ -590,11 +576,8 @@ The chorus mirrors are byte-identical to the originals (verified via md5 / size 
 | LegNet | ~210 KB | 3 cell types |
 | EPInformer-seq | ~2.3 MB | 33 tracks (11 cell types × 3 assays: DNase, H3K27ac, composite) |
 
-> **Units, because these files are sized twice in this README.** The column above is **binary** (MiB, as
-> `du` and `ls` report), summing to 3.4 GiB — which is the `backgrounds` bucket in
-> [Disk usage breakdown](#disk-usage-breakdown). The `NPZ size` column in
-> [the appendix table](#sample-sizes-per-oracle) states the *same* files in **decimal** MB, so AlphaGenome
-> reads as ~260 MB here and 279 MB there. Same bytes, different convention — not a discrepancy.
+> **Units:** binary here (MiB, as `du` reports), decimal MB in [the appendix table](#sample-sizes-per-oracle).
+> Same files — that is why AlphaGenome reads ~260 MB here and 279 MB there.
 
 > **The backgrounds dataset is public — no HuggingFace token required.** `HF_TOKEN` is only needed for the gated AlphaGenome model itself (see [Tokens](#tokens) above). Causal prioritization with auto-LD-fetch needs a separate free LDlink token.
 
@@ -673,7 +656,9 @@ from chorus.oracles.enformer_source.enformer_metadata import get_metadata
 k562_tracks = get_metadata().search_tracks('K562')   # DataFrame, 'identifier' column
 ```
 
-> **Tip:** Each oracle has different track naming. Enformer and Borzoi use ENCODE identifiers (e.g. `ENCFF413AHU`). ChromBPNet uses assay + cell type. Cherimoya uses assay + ENCODE experiment accession (e.g. `DNASE:ENCSR000EOT`). AlphaGenome uses `{OutputType}/{TrackName}/{Strand}`. See the [Model-specific details](#model-specific-details) section for each oracle's track format — or just read `.track_id` off `describe_tracks()`, which returns the right form for whichever oracle you loaded.
+> **Tip:** track id formats differ per oracle (ENCODE accessions, assay+cell type, `{OutputType}/{Track}/{Strand}`,
+> …). `describe_tracks()` returns the right form for whichever oracle you loaded, so you rarely need to know
+> which; [Model-specific details](#model-specific-details) has them all if you do.
 
 #### 1. Wild-type prediction
 
@@ -809,9 +794,9 @@ kernel and `jupyter nbconvert --execute` fails with `NoSuchKernel: No such kerne
 | `examples/notebooks/comprehensive_oracle_showcase.ipynb` | 6 oracles — Enformer, Borzoi, ChromBPNet/BPNet, Sei, LegNet, AlphaGenome (does not yet include Cherimoya or EPInformer-seq) | Same variant scored by every oracle side-by-side. Cross-model agreement, sub-region scoring, gene-expression layer integration. |
 | `examples/notebooks/advanced_multi_oracle_analysis.ipynb` | Enformer + ChromBPNet/BPNet + LegNet | CHIP-seq TF footprinting, strand-specific tracks, the Interval API, effect-percentile normalization, cell-type switching. The graduate-level notebook. |
 
-> **Per-oracle deep-dive (Cherimoya / CATv1).** [`examples/notebooks/cherimoya_quickstart.ipynb`](examples/notebooks/cherimoya_quickstart.ipynb) is the notebook to read if you need a *specific* cell type or tissue — it works the 1,518-experiment atlas end-to-end: search it, disambiguate a biosample that has several experiments (K562 alone has four ATAC), predict, score a variant, and compare accessibility across biosamples using activity percentiles. Needs a CUDA GPU for fast execution — it runs many predictions across biosamples, which is the regime where CPU falls 45–150× behind (see the timing footnote under [Pick an oracle](#pick-an-oracle)). It will still complete on CPU, just slowly; the shipped `chorus-cherimoya` env is Linux/CUDA, and Apple Silicon is CPU-only (see [Platform & GPU support](#platform--gpu-support)).
->
-> **Per-oracle deep-dives (EPInformer-seq).** Two notebooks go deeper on the per-cell 2-channel model: [`examples/notebooks/epinformerseq_testing.ipynb`](examples/notebooks/epinformerseq_testing.ipynb) walks the SORT1 / rs12740374 locus end-to-end — per-cell DNase + H3K27ac across all 11 Roadmap cells, variant effect, base-resolution saturation mutagenesis, and a cross-oracle DNase comparison (vs ChromBPNet + AlphaGenome) — and [`examples/notebooks/klf1_validated_enhancer_profiles.ipynb`](examples/notebooks/klf1_validated_enhancer_profiles.ipynb) profiles CRISPR-validated KLF1 enhancers across five oracles (EPInformer-seq + ChromBPNet + AlphaGenome + Borzoi + Enformer). Both pull in gated/multi-env oracles, so run them on a box with the per-oracle conda envs (AlphaGenome needs HF auth; `RUN_ALPHAGENOME=1` opts it in for `epinformerseq_testing`).
+> **Need a specific cell type or tissue?** [`cherimoya_quickstart.ipynb`](examples/notebooks/cherimoya_quickstart.ipynb)
+> works the 1,518-experiment CATv1 atlas end-to-end: search, disambiguate a biosample with several
+> experiments, predict, score a variant, compare by activity percentile. Wants a CUDA GPU.
 
 ### MCP server — chorus, but you talk to Claude
 
@@ -1066,16 +1051,8 @@ Enformer (Avsec et al., 2021) is a hybrid convolutional-transformer architecture
   - Descriptive names (e.g., 'DNase:K562', 'H3K4me3:HepG2')
 - Track metadata: Included in the package (file with all 5,313 human track definitions)
 
-> **Enformer predictions vary slightly between processes.** Two runs of the same variant on the same
-> GPU agree to about 0.02% typically, with a worst observed relative difference of **3.4%** on an
-> individual raw value; within a single process they are bit-identical. This is nondeterministic
-> TensorFlow GPU op scheduling, and Enformer is the **only** one of the nine oracles that shows it —
-> ChromBPNet, the other TF-backed oracle, is bit-exact across processes. Aggregate scores move far
-> less than raw values (`quantile_score` ≤0.69%), so conclusions are stable; what drift can change is
-> the *membership* of a top-N list when two tracks are nearly tied, which is why discovery reports a
-> `near_ties_at_cutoff` field. If you need bit-exact reproducibility, set
-> `TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1` before importing — that made 4/4 repeat runs
-> identical in testing, at some speed cost. The shipped background nulls were built without it.
+> **Enformer predictions vary slightly between processes** — the only oracle that does. See
+> [Caveats](#caveats--what-to-know-before-you-trust-a-number).
 
 #### Borzoi
 
@@ -1406,6 +1383,36 @@ oracle = chorus.create_oracle('enformer',
                              use_environment=True,
                              device='cpu')
 ```
+
+### Caveats — what to know before you trust a number
+
+Four things that can change a number or a conclusion. Everything else in this README is the happy path.
+
+**Enformer varies between processes; no other oracle does.** Two runs of the same variant on the same GPU
+agree to ~0.02% typically, worst observed **3.4%** on an individual raw value. Within one process they are
+bit-identical. The cause is nondeterministic TensorFlow GPU op scheduling — and ChromBPNet, the other
+TF-backed oracle, is bit-exact across processes, so this is Enformer-specific rather than a TensorFlow
+problem. Aggregate scores move far less than raw values (`quantile_score` ≤0.69%), so conclusions are
+stable; what drift can change is the *membership* of a top-N list when two tracks are nearly tied, which is
+why discovery reports `near_ties_at_cutoff`. For bit-exact reproducibility set
+`TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1` before importing — 4/4 repeat runs identical in testing,
+at some speed cost. The shipped nulls were built without it.
+
+**`alphagenome_pt` splice tracks were wrong before 0.7.5.** It returned pre-activation values for its 4
+splice-site and 734 splice-usage tracks, correlating **0.20** with the JAX backend. Because
+`alphagenome_pt` has no background null of its own and ranks against `alphagenome`'s, those percentiles
+were meaningless rather than merely noisy. Fixed in 0.7.5; the equivalence test now covers one track per
+output type ([`tests/test_alphagenome_backends_equivalence.py`](tests/test_alphagenome_backends_equivalence.py))
+rather than three DNase tracks from a single head, which is why it went unnoticed. **If you ran
+`alphagenome_pt` on splice tracks before 0.7.5, re-run them.**
+
+**Cherimoya and ChromBPNet are not comparable at raw magnitude** — chorus loads ChromBPNet bias-corrected
+and CATv1 applies no such correction, so they differ ~3.4× on peak while agreeing on shape. Compare them
+through percentiles, which are ranked against each oracle's own null. Details under
+[Cherimoya / CATv1](#cherimoya--catv1).
+
+**hg38 only.** Every oracle is trained on hg38 and every null is a rank within hg38 regions, so a non-hg38
+reference is refused rather than scored. The genome downloader offers other assemblies for other tooling.
 
 ### Further reading
 

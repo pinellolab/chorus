@@ -255,8 +255,13 @@ def _disk_table_total() -> float:
 def test_the_tldr_install_size_agrees_with_the_disk_table():
     """The same quantity is stated twice — in the TLDR (GiB) and the table (GB, loosely)."""
     text = README.read_text()
-    m = re.search(r"The install itself\s*\n?\s*is ~([\d.]+) GiB", text)
-    assert m, "the TLDR no longer states the install size"
+    # Anchor on the prerequisite bullet rather than a sentence, so rewording the prose does not break
+    # this — an earlier version keyed off the exact phrase "The install itself is ~N GiB" and broke the
+    # first time that sentence was edited, which is a guard failing for the wrong reason.
+    bullet = re.search(r"\*\*~\s*[\d.]+\s*GB free disk\*\*(.{0,400})", text, re.S)
+    assert bullet, "the TLDR no longer states a free-disk prerequisite"
+    m = re.search(r"~([\d.]+)\s*GiB", bullet.group(1))
+    assert m, f"no installed-size figure near the prerequisite bullet: {bullet.group(1)[:120]!r}"
     tldr, table = float(m.group(1)), _disk_table_total()
     assert abs(tldr - table) <= 1.0, (
         f"the TLDR says ~{tldr} GiB and the disk table says ~{table} GB for the same install. "

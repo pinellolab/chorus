@@ -762,10 +762,32 @@ guessed at.
 
 ---
 
+## 8b. One oracle that has no null of its own
+
+`alphagenome_pt` ships **no background artefact**. `PerTrackNormalizer._CDF_ALIASES` maps it to
+`alphagenome`, so its percentiles are ranks against the JAX backend's null.
+
+That is a protocol-level decision and it belongs here, because it makes one backend's correctness depend
+on another's. The premise is that the two produce the same predictions — same model, same weights,
+different framework — and the premise is **checked**, not assumed:
+`tests/test_alphagenome_backends_equivalence.py` compares one track per output type at correlation > 0.99
+and peak-relative < 8%.
+
+It has been violated once. Until 0.7.5, `alphagenome_pt` returned **pre-activation** values for its 4
+`SPLICE_SITES` and 734 `SPLICE_SITE_USAGE` tracks — measured -13.8..-11.3 where JAX gives 1e-6..1.2e-5,
+correlating **0.20** across a 1 MB window. Ranked against a post-activation null, those percentiles were
+not noisy, they were meaningless. The equivalence test that should have caught it compared three DNase
+tracks from a single head, so it could not see a dict-keyed head at all.
+
+**If you add another aliased oracle, extend that test first.** An alias is only as good as the comparison
+holding it up, and a comparison that samples the easiest 3 of 5,168 tracks reads as coverage without being
+it.
+
 ## 9. Decision log
 
 | date | decision | evidence |
 |---|---|---|
+| 2026-08-18 | **`alphagenome_pt` keeps sharing `alphagenome`'s null**, and the premise is now enforced by test rather than asserted by comment | the alias was justified by a code comment claiming identical predictions. That was false for 738 splice tracks, which returned pre-activation values against a post-activation null (correlation 0.20 over a 1 MB window) — so the percentiles were meaningless, not noisy. Fixed in #240. Keeping the alias avoids a second 5,168-track build; what changed is that `test_alphagenome_backends_equivalence.py` now covers one track per output type instead of three DNase tracks from one head, so the premise is checkable. See §8b |
 | 2026-08-17 | **cross-process drift is accepted; TF determinism is not adopted** | measured: `TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1` makes Enformer bit-exact 4/4 where the control fails 2/2 (3.4%, 1.4%) — so a fix exists. Not adopted, because `determinism.py` requires a background and its queries under one setting, so it would mean rebuilding the Enformer **and** ChromBPNet nulls and changing published numbers for both. Magnitudes justify living with it: median drift **0.016%**, `ref_value` max 0.067%, published `quantile_score` max **0.69%**. The 3.4% figure is a log2FC over a near-zero denominator. **The residual risk is not numeric**: `discovery.py` cuts hard at `top_n_per_layer` and the rank-12↔13 gap in `tf_binding` is 4.25% against 4.29% max drift, so a sub-0.1% wobble can change *which* track is reported. Near-tie reporting is the follow-up, not a rebuild |
 | 2026-08-16 | **Sei's null covers all 21,947 tracks**, not the 40 projected classes | the 40-only scope was never a recorded decision — the builder's docstring simply asserted "Sei outputs 40 regulatory classes". `predict()` accepts `TA#` profile ids and returned real values whose percentile was always `None`. Compute was already being spent: the forward pass emits all 21,907 and `project()` discarded them. Cost is storage, 2.8 MB → 1.5 GB |
 | 2026-08-16 | the **effect** null is histone-equalised; the **activity** null is not | upstream's correction (`sc_hnorm_varianteffect`) is defined over a ref/alt PAIR, and a baseline is one sequence. Deliberate asymmetry, recorded here because it is invisible in the artefact |
