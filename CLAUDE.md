@@ -186,6 +186,32 @@ dereferences it. Comparing the former against a commit sha and concluding the ta
 CI has no `tags:` trigger, so it structurally cannot verify a tag move. Any numbers quoted in the
 release notes have to be measured locally against the exact sha the tag lands on.
 
+## Probing an oracle by hand
+
+Three traps, each of which produced a confident wrong diagnosis during the 2026-08-17 alphagenome_pt
+investigation before being caught.
+
+* **`predict()` takes a `str` as literal DNA, not a region.** All four coordinate-taking oracles do this
+  (`isinstance(seq, str)` → `Interval.make(Sequence(sequence=seq))`), while `predict_variant_effect`
+  takes the *same* string as a region. So `predict("chr1:109274468-109275468", ids)` one-hot encodes 24
+  non-ACGT characters and dies deep in the model with a shape error — `Expected size for first two
+  dimensions of batch2 tensor to be: [8, 16] but got: [8, 1]`. That error names neither the sequence nor
+  its length, and it reads exactly like a model/head bug. Pass a tuple or an `Interval` for coordinates.
+  When a probe fails inside a model, log what actually reached it before theorising.
+
+* **`use_environment=True` does not run the oracle method you just edited.** It executes a template
+  under `<oracle>_source/templates/`, in the per-oracle env. Templates duplicate extraction logic, so a
+  fix to the in-process method can leave the default path untouched *and every unit test green* — that
+  happened here. After changing a `_predict*` method, grep the matching template for the same lines.
+
+* **The child sees your working tree, so branch matters.** Probing an oracle from a branch that lacks the
+  fix reproduces the original bug and looks like the fix failing. Check `git branch --show-current`
+  before believing a probe.
+
+Bash tool calls are capped at 10 minutes. Model load plus a forward pass routinely exceeds that, so run
+probes with `run_in_background: true` and give the inner `timeout` real headroom. Pipe through
+`grep --line-buffered` or the output file stays 0 bytes until the process exits.
+
 ## Branch flow
 
 Ship branch is `main` — that's what users see. Other agents may open

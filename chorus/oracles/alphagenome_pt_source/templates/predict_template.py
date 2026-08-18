@@ -47,6 +47,7 @@ weights_path = huggingface_hub.hf_hub_download(repo_id=repo_id, filename=filenam
 from chorus.oracles.alphagenome_pt_source import _mps_compat  # noqa: F401
 
 from alphagenome_pytorch import AlphaGenome
+from chorus.oracles.alphagenome_pt import _as_resolution, _select_head_tensor
 from chorus.oracles.alphagenome_source.alphagenome_metadata import (
     get_metadata,
     SKIPPED_OUTPUT_TYPES,
@@ -128,15 +129,14 @@ for aid in assay_ids:
         raise ValueError(
             f"Output type {ot_name} not produced by PyTorch port (key={pt_key})"
         )
-    head_out = output[pt_key]
-    # head_out is either a tensor (single resolution) or a dict[res_int -> tensor]
-    if isinstance(head_out, dict):
-        if res not in head_out:
-            # Fall back to whatever resolution is available
-            res = next(iter(head_out.keys()))
-        tensor = head_out[res]
-    else:
-        tensor = head_out
+    # head_out is either a tensor, a dict[res_int -> tensor], or — for the splice-site
+    # classification head — a dict keyed by tensor *kind*: {"logits", "probs"}. Selecting the
+    # tensor and reporting the resolution are separate questions; conflating them here used to
+    # overwrite `res` with "logits" and then raise on int("logits"), which broke every
+    # assay_ids=None call (the default is all 5,168 tracks and the 4 SPLICE_SITES ones are always
+    # among them). Imported rather than reimplemented: this template is the code that actually runs
+    # in env mode, and a second copy of the rule is how the two paths silently diverge.
+    tensor = _select_head_tensor(output[pt_key], res, ot_name)
 
     cache_key = (pt_key, res)
     arr = _arr_cache.get(cache_key)
@@ -153,7 +153,7 @@ for aid in assay_ids:
             f"Unexpected output array shape {arr.shape} for {ot_name}"
         )
     collected.append(np.ascontiguousarray(track_values, dtype=np.float32))
-    resolutions.append(int(res))
+    resolutions.append(_as_resolution(res))
 
 result = {
     "values": collected,

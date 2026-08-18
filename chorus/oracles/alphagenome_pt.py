@@ -43,6 +43,70 @@ import os
 import logging
 import json
 import numpy as np
+
+#: Which tensor to read from a classification head that returns ``{"logits", "probs"}`` rather than
+#: keying by resolution. Only the splice-site head does this today (4 of the 5,168 tracks).
+#:
+#: ``"probs"`` because the JAX backend — the reference the two are asserted equivalent against — emits
+#: post-softmax probabilities in [0, 1] for these tracks. Relying on dict insertion order instead
+#: silently picked ``"logits"``, so the two backends would have disagreed on those 4 tracks had the
+#: crash on ``int("logits")`` not masked it first.
+_CLASSIFICATION_TENSOR_KEY = "probs"
+
+
+def _select_head_tensor(head_out: Any, res: Any, ot_name: str = "") -> Any:
+    """Pick the tensor for one track out of a head's output.
+
+    A head returns either a bare tensor or a dict, and **the dicts are keyed by two unrelated
+    things**. Most are keyed by *resolution* (``{1: ..., 128: ...}``); the splice-site classification
+    head is keyed by *tensor kind* (``{"logits": ..., "probs": ...}``, see
+    ``SpliceSitesClassificationHead.forward`` in ``alphagenome_pytorch/heads.py``).
+
+    Conflating those two caused the bug this replaces. The caller used to reassign its ``res``
+    variable to whichever key it picked and then call ``int(res)``, so any SPLICE_SITES track raised
+    ``invalid literal for int() with base 10: 'logits'``. That made ``assay_ids=None`` fail on this
+    backend — the default is all 5,168 tracks, which always include the 4 SPLICE_SITES ones — while
+    an explicit list of, say, ATAC ids worked. Resolution and tensor selection are now separate
+    questions asked separately.
+
+    Preferring ``probs`` over dict insertion order is a *correctness* fix, not tidying: the JAX
+    reference returns ``{'logits': logits, 'predictions': softmax(logits)}`` and treats
+    ``'predictions'`` as the prediction — ``alphagenome_research/model/model.py:281`` reads exactly
+    that key to derive splice junctions. The pt port names the same tensor ``probs``, and insertion
+    order put ``logits`` first, so the old fallback would have had the two backends disagree on those
+    4 tracks: unbounded logits against probabilities in [0, 1]. The crash masked it.
+    """
+    if not isinstance(head_out, dict):
+        return head_out
+    if res in head_out:
+        return head_out[res]
+    if _CLASSIFICATION_TENSOR_KEY in head_out:
+        return head_out[_CLASSIFICATION_TENSOR_KEY]
+    first = next(iter(head_out.keys()))
+    logger.warning(
+        "Head output for %s is keyed by neither resolution %r nor %r; falling back to %r. Check "
+        "whether the upstream port changed its output shape.",
+        ot_name or "?", res, _CLASSIFICATION_TENSOR_KEY, first,
+    )
+    return head_out[first]
+
+
+def _as_resolution(value: Any) -> int:
+    """bp-per-bin as an int, tolerating metadata that stores it as a string.
+
+    Deliberately not a bare ``int(value)``: this used to receive a dict *key* rather than a
+    resolution and raise ``invalid literal for int() with base 10: 'logits'``. The caller no longer
+    conflates the two, and this keeps a non-numeric value from becoming a hard failure in a listing
+    path — 1 bp is the finest resolution the model emits and the right conservative default.
+    """
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        logger.warning(
+            "Non-numeric resolution %r; reporting 1 bp. This means metadata and model output "
+            "disagree about a track's binning and is worth investigating.", value
+        )
+        return 1
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -425,13 +489,7 @@ class AlphaGenomePTOracle(OracleBase):
                     f"Output type {ot_name} not produced by PyTorch port "
                     f"(key={pt_key})"
                 )
-            head_out = output[pt_key]
-            if isinstance(head_out, dict):
-                if res not in head_out:
-                    res = next(iter(head_out.keys()))
-                tensor = head_out[res]
-            else:
-                tensor = head_out
+            tensor = _select_head_tensor(output[pt_key], res, ot_name)
             arr = tensor.detach().cpu().numpy()
             if arr.ndim == 3:
                 track_values = arr[0, :, local_idx]
@@ -448,7 +506,7 @@ class AlphaGenomePTOracle(OracleBase):
             # numpy → list → numpy conversion. The subprocess path still
             # returns JSON lists and is consumed the same way.
             collected.append(track_values.astype(np.float32))
-            resolutions.append(int(res))
+            resolutions.append(_as_resolution(res))
 
         return {"values": collected, "resolutions": resolutions}
 
