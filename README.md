@@ -17,13 +17,9 @@ Four steps. Steps 1 + 2 are copy-paste. Step 3 is a runnable snippet. Step 4 hoo
 **Before you start** — three things you need:
 
 - **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>
-- **~100 GB free disk** for the default all-oracle install on Linux x86_64 + CUDA — ~87 GiB installed
-  plus a ~4 GiB reclaimable package cache. A volume *sold* as "100 GB" is 93.1 GiB, so it fits with
-  ~2 GiB spare; size up if you are building anything else on it. Nearly all of that is per-oracle CUDA
-  payloads, so macOS and CPU-only installs are far smaller, and one oracle
-  (`chorus setup --oracle <name>`) is **~13 GiB, not 87**. See
-  [Disk usage breakdown](#disk-usage-breakdown) and
-  [Where chorus puts large files](#where-chorus-puts-large-files).
+- **~100 GB free disk** for the default all-oracle install on Linux x86_64 + CUDA. One oracle only is
+  **~13 GiB** — see [Disk usage breakdown](#disk-usage-breakdown) for the per-asset numbers and
+  [Where chorus puts large files](#where-chorus-puts-large-files) to put it elsewhere.
 - **Linux x86_64 or macOS** (Intel / Apple Silicon)
 
 ### 1. Install (5 minutes)
@@ -56,9 +52,10 @@ One command, walk away, come back to a complete chorus install. When prompted:
   2. Accept the license at <https://huggingface.co/google/alphagenome-all-folds>
   3. Paste the token when `chorus setup` asks.
 
+- **LDlink token** (optional — only for `fine_map_causal_variant`): register free at <https://ldlink.nih.gov/?tab=apiaccess>, paste when prompted. Press Enter to skip.
+
 > **Running unattended, or have no HuggingFace account?** Both are fine — see
 > [Token plumbing](#token-plumbing) for the one-liner and the no-account path.
-- **LDlink token** (optional — only for `fine_map_causal_variant`): register free at <https://ldlink.nih.gov/?tab=apiaccess>, paste when prompted. Press Enter to skip.
 
 ### 3. Your first prediction — score a SNP at the β-globin locus
 
@@ -147,7 +144,9 @@ _Everything below is optional — the TLDR above is enough to get running. Secti
 
 **Conversational genomics.** The idea behind Chorus: ask in plain language what DNA does — and what happens when you change it — while an AI agent orchestrates the right sequence-to-function models to predict, compare, and explain the answer. An agent that *predicts* function from sequence, not a chatbot that looks up what is already known. Computation, replaced by conversation.
 
-Eight state-of-the-art genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Cherimoya/CATv1, Sei, LegNet, EPInformer-seq, AlphaGenome — wired through one API. The same five lines of Python predict variant effects on chromatin accessibility (ChromBPNet, base-pair resolution), TF binding (Enformer, BPNet), 5,168 multi-modal tracks at 1 Mb context (AlphaGenome), or RNA-seq-grade gene expression (Borzoi). Every prediction comes with **effect-percentile and activity-percentile scores** ranked against ~18 k–225 k sampled SNPs and ~19.5 k–320 k genome-wide positions, so a `+0.45 log₂FC` becomes `0.98 effect %ile, 0.96 activity %ile` — directly interpretable, not a raw fold-change you have to calibrate yourself.
+Eight genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Cherimoya/CATv1, Sei, LegNet, EPInformer-seq, AlphaGenome — behind one API. The same five lines of Python predict base-pair chromatin accessibility, TF binding, 5,168 multi-modal tracks at 1 Mb context, or RNA-seq-grade expression.
+
+Every prediction comes with **effect and activity percentiles**, ranked against ~18 k–225 k sampled SNPs and ~19.5 k–320 k genome-wide positions. So a `+0.45 log₂FC` becomes `0.98 effect %ile, 0.96 activity %ile` — interpretable without calibrating it yourself.
 
 Each oracle runs in its own conda environment (no TF/PyTorch/JAX dependency hell), every weight + reference + background is pre-mirrored to a chorus-controlled HuggingFace org (no broken-link surprises), and the **24-tool MCP server** lets you ask Claude to run the analysis in plain English. See [Pick an oracle](#pick-an-oracle) for the per-oracle hardware/cost matrix.
 
@@ -155,7 +154,6 @@ Each oracle runs in its own conda environment (no TF/PyTorch/JAX dependency hell
 
 | Term | Meaning |
 |------|---------|
-| **Conversational genomics** | Asking in plain language what DNA does, and what happens when you change it, while an AI agent orchestrates the right sequence-to-function oracles to predict, compare, and explain the answer. |
 | **Oracle** | A deep learning model that predicts regulatory activity from DNA sequence (e.g. Enformer, AlphaGenome) |
 | **Track** | A single experimental measurement predicted by an oracle (e.g. DNase-seq in K562 cells) |
 | **assay_id** | The unique identifier for a track, used in API calls (e.g. `"ENCFF413AHU"` or `"DNASE/EFO:0001187 DNase-seq/."`) |
@@ -244,7 +242,7 @@ negatives in place of a control track). Measured over four shared DNase experime
 Profile shape agrees either way (rank correlation 0.95). Compare the two through
 **percentiles**, which are unaffected because each oracle is ranked against its own null.
 
-**GPU vs CPU, inference step only** (model load, FASTA extraction and subprocess startup excluded). Measured on one H200 vs 8 CPU threads: **1.2 ms GPU / 10.5 ms CPU** for the single 2,114 bp window a 1 kb query needs. The GPU margin widens sharply with query width, because the GPU batches windows while CPU per-window cost climbs: **8.5×** at 1 kb (1 window), **45×** at 10 kb (8 windows), **150×** at 100 kb (98 windows — 18 ms GPU vs 2.8 s CPU). CPU is therefore comfortable for single-locus work and impractical for wide scans. Note also that the CPU path diverges from the Triton GPU path by ~1e-2 relative on the logits (r = 0.99999), so don't mix devices inside one comparison.
+**GPU vs CPU, inference step only** (model load, FASTA extraction and subprocess startup excluded). Measured on one H200 vs 8 CPU threads: **1.2 ms GPU / 10.5 ms CPU** for the single 2,114 bp window a 1 kb query needs. The GPU margin widens with query width: **8.5×** at 1 kb, **45×** at 10 kb, **150×** at 100 kb (18 ms vs 2.8 s). So CPU is fine for single-locus work and impractical for wide scans. Note also that the CPU path diverges from the Triton GPU path by ~1e-2 relative on the logits (r = 0.99999), so don't mix devices inside one comparison.
 
 #### Two AlphaGenome backends
 
@@ -255,7 +253,7 @@ Chorus ships **two interchangeable AlphaGenome oracles for the same model with t
 | `alphagenome` | JAX (Google DeepMind reference) | `google/alphagenome-all-folds` | gated (HF token + accept terms) | yes — installed by default `chorus setup` | macOS at any window size, Linux/CUDA at any window size |
 | `alphagenome_pt` | PyTorch ([genomicsxai/alphagenome-pytorch](https://github.com/genomicsxai/alphagenome-pytorch)) | `gtca/alphagenome_pytorch` — *converted from the official JAX checkpoint* (same numbers, safetensors format) | public on HF, but the **non-commercial model terms still apply to the weights** regardless of which mirror you download from — read [Google's AlphaGenome model terms](https://deepmind.google.com/science/alphagenome/model-terms) before commercial-adjacent use | yes — installed by default `chorus setup` (~7.5 GB env + ~880 MB weights on top of the JAX backend — see [Disk usage breakdown](#disk-usage-breakdown)) | macOS at ≤600 kb (5–8× faster than JAX CPU on MPS) |
 
-**The two backends produce equivalent outputs — measured per head, not assumed.** Agreement is **0.8–4.9 % peak-relative with correlation 0.9998–1.0000**, measured across one track per output type on a 1 MB SORT1 window; the earlier M3 Ultra / A100 spike reported 1–2 % at 524 kb over a narrower track sample, and within 0.02 log₂ on full Fig 3f region-swap layer scores. The residual is fp32 implementation noise (different op orderings, conv kernels, attention numerics across JAX and PyTorch), not different weights. Full audit at `audits/2026-04-29_alphagenome_pytorch_spike/` and `audits/2026-04-29_alphagenome_pt_stress_test/`.
+**The two backends agree to 0.8–4.9 %** (peak-relative, correlation 0.9998–1.0000), measured per head. The residual is fp32 implementation noise, not different weights. Audits: `audits/2026-04-29_alphagenome_pytorch_spike/` and `audits/2026-04-29_alphagenome_pt_stress_test/`.
 
 > ⚠️ **Before 0.7.5 this was false for splice tracks — re-run them if you used `alphagenome_pt`.** See
 > [Caveats](#caveats--what-to-know-before-you-trust-a-number).
@@ -267,7 +265,7 @@ Chorus ships **two interchangeable AlphaGenome oracles for the same model with t
 - **macOS + MPS, window >600 kb**: prefer `alphagenome` on CPU (PyTorch MPS regresses past a GPU on-die cache cliff at ~768→896 kb on M3 Ultra).
 - **No GPU**: prefer `alphagenome` on CPU (JAX CPU is 30–65 % faster than PyTorch CPU for this model).
 
-The recommendation is suggestion-only — chorus never auto-routes between backends, so users always know which backend produced their predictions. Upstream's PyTorch port also exposes `VariantScoringModel` + 7 scorer classes, LoRA + linear-probe fine-tuning, and CONTACT_MAPS / SPLICE_JUNCTIONS heads — **none of these are wired through the chorus API yet** for either backend; access them via direct `alphagenome_pytorch` import if you need them today.
+The recommendation is suggestion-only: chorus never auto-routes between backends. Upstream's PyTorch port also exposes `VariantScoringModel` + 7 scorer classes, LoRA + linear-probe fine-tuning, and CONTACT_MAPS / SPLICE_JUNCTIONS heads — **none of these are wired through the chorus API yet** for either backend; access them via direct `alphagenome_pytorch` import if you need them today.
 
 ### Installation — detailed
 
@@ -314,29 +312,14 @@ Budget above that: `mamba` also fills a package cache (~4 GB here) shared across
 reclaim afterwards with `mamba clean --all`. Sei's `sei_model.tar.gz` is kept after extraction, so
 deleting it reclaims ~3.1 GB if you are tight.
 
-**Why the envs are most of it, and why your number will differ.** Every oracle env ships its own CUDA
-payload, and that — not the model code — is what you are paying for. It arrives two different ways, so
-neither `mamba clean` nor conda's hardlinking gets you out of it:
-
-* **pip `nvidia_*` wheels** in the Enformer (2.9 GB), ChromBPNet (2.9 GB), AlphaGenome (4.4 GB),
-  AlphaGenome-PyTorch (2.7 GB), EPInformer-seq (2.7 GB) and Cherimoya (2.7 GB) envs. pip does not
-  hardlink between envs, so each is a full copy.
-* **conda-side `libtorch_cuda` / `libcu*`** in Borzoi, LegNet and Sei, which have no pip `nvidia`
-  directory at all. Those libraries are measured differently by different tools depending on how
-  hardlinks and symlinked sonames are counted, so treat the per-env totals in the table above as the
-  number to plan with, not a per-library breakdown.
-
-Measured together with `du -sc` — which counts a hardlinked file once — the nine envs still come to
-67 GB, so there is no dedup credit hiding in that number. Two consequences worth planning around:
-
-* **macOS and CPU-only installs are far smaller** — `chorus setup` strips the CUDA packages on
-  `macos_arm64`, so no env pays the 2.9 GB.
-* **Per-env sizes are not uniform** — they range from 6.1 GB (Enformer) to 11 GB (AlphaGenome). If you
-  need one oracle rather than eight, `chorus setup --oracle <name>` builds just that env, and
-  `--no-weights` / `--no-genome` / `--no-backgrounds` skip the asset buckets above.
+**Most of it is the envs, not the models.** Each oracle env ships its own CUDA payload and pip does not
+hardlink between envs, so each is a full copy — per-env sizes run 6.1 GB (Enformer) to 11 GB (AlphaGenome).
+Two consequences: **macOS and CPU-only installs are far smaller** (`chorus setup` strips CUDA on
+`macos_arm64`), and `chorus setup --oracle <name>` plus `--no-weights` / `--no-genome` /
+`--no-backgrounds` let you skip whatever you do not need.
 
 All of it is relocatable: see [Where chorus puts large files](#where-chorus-puts-large-files) if `$HOME`
-or the clone's filesystem is the wrong place for 85 GB.
+or the clone's filesystem is the wrong place for it.
 
 Opting in via `chorus setup --all-chrombpnet` pre-caches every fold-0 bias-corrected ChromBPNet model from the slim mirror (+~1.5 GB, ~5 min). Other ChromBPNet cell types download lazily on first `load_pretrained_model(...)` regardless. If you specifically need the full bias-aware `chrombpnet` variant or fold ≠ 0, chorus falls back to the original ENCODE tarball for that specific model (+~1.8 GB on disk per model). See [Where the oracle weights come from](#where-the-oracle-weights-come-from) for the full mirror map.
 
@@ -376,9 +359,8 @@ Resolved chorus data layout
 > `CHORUS_DATA_DIR` or `--set` always wins. `chorus config data-dir --set PATH --migrate` moves them for
 > good. This is why `backgrounds` can print a different root from `data_dir` above.
 
-Two things deliberately do **not** follow this switch: **credentials** (`~/.chorus/config.toml`, the
-HuggingFace token) stay with the user, because a shared data directory is the wrong place for a personal
-token; and **conda environments**, which stay with the installation.
+Two things do **not** follow this switch: **credentials** (`~/.chorus/config.toml`, the HuggingFace token)
+stay in `$HOME`, and **conda environments** stay with the installation.
 
 #### Upgrading
 
@@ -430,7 +412,7 @@ The base `chorus` environment itself is not removed by `chorus cleanup` — remo
 
 Chorus uses isolated conda environments for each oracle to avoid dependency conflicts between TensorFlow, PyTorch, and JAX models.
 
-**Which oracle to start with?** For variant analysis, **AlphaGenome** is the most comprehensive (1 Mb input window, 1 bp prediction resolution, 5,168 tracks) but requires ~16 GB RAM and benefits from a GPU. **Enformer** is a good lightweight alternative that runs comfortably on CPU with ~8 GB RAM (see the table in [examples/walkthroughs/README.md](examples/walkthroughs/README.md#which-oracle-should-i-use) for a full side-by-side comparison).
+**Which oracle to start with?** See [Pick an oracle](#pick-an-oracle) for the hardware matrix, or the [side-by-side table](examples/walkthroughs/README.md#which-oracle-should-i-use) in the walkthroughs.
 
 ```bash
 # Set up each oracle individually (alternative to `chorus setup` which does all 8)
@@ -539,12 +521,10 @@ Genomes are stored in the `genomes/` directory within your Chorus installation.
 
 Chorus converts every raw prediction into an **effect percentile** and **activity percentile** against each track's own sampled-SNP reference population (~17,800–225,000 variants) and ~19,500–320,000 genome-wide positions scored on the same oracle. These pre-computed per-track CDFs are what let a user interpret a `+0.45` log2FC as `0.96 activity %ile`.
 
-**Nothing to configure.** `chorus setup` pre-downloads the relevant backgrounds for every oracle. Developing a **new** oracle and need a background the canonical dataset does not have? Set `CHORUS_BACKGROUNDS_REPO=you/your-backgrounds` to read from your own dataset, or pass `get_pertrack_normalizer(name, cache_dir=...)` to use a local `.npz` — see [CONTRIBUTING](CONTRIBUTING.md#you-do-not-need-our-infrastructure-to-develop-or-to-open-the-pr). If you skipped that step, on the first variant analysis for a given oracle the backgrounds are automatically fetched from the public HuggingFace dataset [`lucapinello/chorus-backgrounds`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds) and cached at `<data-dir>/backgrounds/`.
+**Nothing to configure.** `chorus setup` pre-downloads them; otherwise the first variant analysis for an oracle fetches them from [`lucapinello/chorus-backgrounds`](https://huggingface.co/datasets/lucapinello/chorus-backgrounds) and caches them at `<data-dir>/backgrounds/`. Building your own for a new oracle: see [CONTRIBUTING](CONTRIBUTING.md#you-do-not-need-our-infrastructure-to-develop-or-to-open-the-pr).
 
-> `<data-dir>` is the **chorus installation directory** by default — not `~/.chorus`. Override it with
-> `CHORUS_DATA_DIR`, `chorus config data-dir --set PATH`, or `chorus setup --data-dir PATH`, and run
-> `chorus config data-dir` to print what resolved and why. Credentials (`~/.chorus/config.toml`) stay
-> in `$HOME` deliberately and do **not** follow this switch.
+> `<data-dir>` defaults to the **chorus installation directory**, not `~/.chorus` — see
+> [Where chorus puts large files](#where-chorus-puts-large-files) to move it.
 
 #### Where the oracle weights come from
 
@@ -575,10 +555,6 @@ The chorus mirrors are byte-identical to the originals (verified via md5 / size 
 | Sei | ~1.5 GB | 21,947 tracks (21,907 chromatin profiles + 40 sequence classes) |
 | LegNet | ~210 KB | 3 cell types |
 | EPInformer-seq | ~2.3 MB | 33 tracks (11 cell types × 3 assays: DNase, H3K27ac, composite) |
-
-> **Units:** binary here (MiB, as `du` reports), decimal MB in [the appendix table](#sample-sizes-per-oracle).
-> Same files — that is why AlphaGenome reads ~260 MB here and 279 MB there.
-
 > **The backgrounds dataset is public — no HuggingFace token required.** `HF_TOKEN` is only needed for the gated AlphaGenome model itself (see [Tokens](#tokens) above). Causal prioritization with auto-LD-fetch needs a separate free LDlink token.
 
 To pre-download by hand:
@@ -942,20 +918,11 @@ For accurate predictions, provide a reference genome to extract proper flanking 
 # Enformer requires 393,216 bp of context
 # Chorus automatically extracts and pads sequences from the reference
 
-# Option 1: Using get_genome() - simplest approach
 from chorus.utils import get_genome
-genome_path = get_genome('hg38')  # Auto-downloads if not present
-oracle = chorus.create_oracle('enformer', 
-                             use_environment=True,
-                             reference_fasta=str(genome_path))
-
-# Option 2: Using GenomeManager directly
-from chorus.utils import GenomeManager
-gm = GenomeManager()
-genome_path = gm.get_genome('hg38')  # Auto-downloads if needed
-oracle = chorus.create_oracle('enformer', 
-                             use_environment=True,
-                             reference_fasta=str(genome_path))
+genome_path = get_genome('hg38')  # auto-downloads if not present
+oracle = chorus.create_oracle('enformer',
+                              use_environment=True,
+                              reference_fasta=str(genome_path))
 
 # Predict using genomic coordinates
 predictions = oracle.predict(('chr1', 1000000, 1001000), ['DNase:K562'])
@@ -981,25 +948,14 @@ predictions = oracle.predict(sequence, ['CNhs11250'])  # CAGE:K562
 
 #### 4. BedGraph output
 
-Predictions can be saved as BedGraph tracks for genome browser visualization:
-
-```python
-# Predictions are returned as numpy arrays
-# Each bin represents 128 bp for Enformer
-# See examples for BedGraph generation code
-```
+`predictions.save_predictions_as_bedgraph(output_dir, prefix)` writes one file per track — see
+[recipe 9](#9-save-predictions).
 
 ### Core concepts
-
-#### Oracles
-Oracles are deep learning models that predict genomic regulatory activity. Each oracle implements a common interface while running in isolated environments.
 
 #### Intervals
 
 A unified interface to genomic coordinates and reference sequences. Intervals track sequence edits alongside their corresponding model predictions, supporting reproducible in silico perturbation workflows and consistent downstream analysis.
-
-#### Tracks
-Tracks represent genomic signal data (e.g., DNase-seq, ChIP-seq). Enformer predicts 5,313 human tracks covering various assays and cell types.
 
 #### Environment management
 The `chorus` CLI manages conda environments for each oracle:
@@ -1401,10 +1357,7 @@ at some speed cost. The shipped nulls were built without it.
 **`alphagenome_pt` splice tracks were wrong before 0.7.5.** It returned pre-activation values for its 4
 splice-site and 734 splice-usage tracks, correlating **0.20** with the JAX backend. Because
 `alphagenome_pt` has no background null of its own and ranks against `alphagenome`'s, those percentiles
-were meaningless rather than merely noisy. Fixed in 0.7.5; the equivalence test now covers one track per
-output type ([`tests/test_alphagenome_backends_equivalence.py`](tests/test_alphagenome_backends_equivalence.py))
-rather than three DNase tracks from a single head, which is why it went unnoticed. **If you ran
-`alphagenome_pt` on splice tracks before 0.7.5, re-run them.**
+were meaningless rather than merely noisy. Fixed in 0.7.5. **If you ran `alphagenome_pt` on splice tracks before 0.7.5, re-run them.**
 
 **Cherimoya and ChromBPNet are not comparable at raw magnitude** — chorus loads ChromBPNet bias-corrected
 and CATv1 applies no such correction, so they differ ~3.4× on peak while agreeing on shape. Compare them
@@ -1561,7 +1514,7 @@ For each position, the layer-appropriate window-sum is added to the track's rese
 
 At each of the same positions, **32 random bins** from the full output window are added to the perbin reservoir. This captures the per-bin (not per-window) distribution at the track's native resolution (1 bp for ATAC/CAGE/RNA/PRO-CAP/splice; 128 bp for ChIP-Histone/TF in AlphaGenome).
 
-The per-bin CDFs are used by the unified `chorus.analysis._igv_report.rescale_for_display` helper (which all four track-rendering paths — IGV, matplotlib, CoolBox, notebooks — share) to rescale raw bin values onto a uniform `[0, 3.0]` display scale where `1.0` corresponds to the top-1% genome-wide bin value for that track and `3.0` is a hard cap. Signed layers (Borzoi RNA, Sei, LentiMPRA) use the symmetric variant — the normalizer's `signed_floor_rescale_batch` method (`chorus.analysis.normalization`), which `_igv_report` calls — mapping to `[-3.0, +3.0]` with `±1.0 = p99(|effect|)`. This makes overlaid tracks visually comparable across cell types and across renderers.
+`rescale_for_display` (in `chorus.analysis._igv_report`, shared by all four rendering paths) maps raw bin values onto a `[0, 3.0]` display scale where `1.0` is the track's top-1% genome-wide bin value and `3.0` is a hard cap. Signed layers (Borzoi RNA, Sei, LentiMPRA) use the normalizer's `signed_floor_rescale_batch`, mapping to `[-3.0, +3.0]` with `±1.0 = p99(|effect|)`. This is what makes overlaid tracks comparable across cell types and renderers.
 
 #### Sample sizes per oracle
 
@@ -1670,4 +1623,4 @@ mamba run -n chorus              python scripts/build_backgrounds_alphagenome.py
 
 The variants and baselines parts can run in parallel on separate GPUs. The merge step runs CPU-only and combines the interim NPZ files into the final `{oracle}_pertrack.npz`. See [`scripts/README.md`](scripts/README.md) for the full per-oracle commands and runtimes.
 
-If you've rebuilt a background and want to share it: drop the resulting `{oracle}_pertrack.npz` into your data directory (`chorus config data-dir` shows which one resolved — it defaults to the install tree, not `$HOME`). The downloader leaves a local file alone **unless** its provenance says it has been superseded by a newer published build, in which case it is moved to `*.npz.superseded` and refetched. That behaviour is deliberate: the earlier "only fetch when missing" rule meant a corrected background could be published and reach nobody who already had the old one.
+If you've rebuilt a background and want to share it: drop the resulting `{oracle}_pertrack.npz` into your data directory (`chorus config data-dir` shows which one resolved — it defaults to the install tree, not `$HOME`). The downloader leaves a local file alone **unless** its provenance says a newer build has superseded it, in which case it is moved to `*.npz.superseded` and refetched — so a corrected background reaches you even if you already had the old one.

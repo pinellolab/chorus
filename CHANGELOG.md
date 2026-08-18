@@ -8,6 +8,21 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Documentation
 
+- **Second README pass: less lecturing.** The first pass moved caveats out of the reading path; this one
+  cuts explanation a reader does not act on. Gone: the decimal-vs-binary units lesson on the free-disk
+  bullet ("a volume sold as 100 GB is 93.1 GiB, so it fits with ~2 GiB spare"), ~15 lines on why conda envs
+  are large (pip hardlinking, `du -sc` semantics), a units note explaining an inconsistency in our own
+  tables, the provenance of an older audit's equivalence numbers, and the history of the background
+  downloader's previous fetch rule. Also removed five outright duplications — a comment-only BedGraph code
+  block that pointed at the real recipe, two ways to load the same genome, `Core concepts` re-defining
+  "Oracle" and "Track" from `Key terms`, `Key terms` re-defining "Conversational genomics" from the
+  paragraph three lines above it, and the credentials/conda-env rule stated in two places. Cumulatively
+  since 0.7.5: aside text **12,229 → 6,409 chars (−48%)**, longest aside 1,692 → 704, prose lines over 420
+  chars 17 → 8.
+
+  One guard was deleted rather than satisfied: `test_the_tldr_install_size_agrees_with_the_disk_table`
+  existed to keep the TLDR's install size in sync with the disk table, and the TLDR no longer states an
+  install size, so there was nothing left to keep in sync.
 - **README restructured to cut clutter.** It had accumulated **24 blockquote asides totalling 12,229
   characters**, the longest 1,692 — caveats and per-release detail interrupting the reading path rather
   than living somewhere findable. Now **6,793 characters** (−44%), longest 704. The changes are structural,
