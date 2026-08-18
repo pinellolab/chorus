@@ -16,7 +16,7 @@ did not catch this one, which lives in the execution path.
 import pytest
 
 from chorus.oracles.alphagenome_pt import (
-    _CLASSIFICATION_TENSOR_KEY,
+    _ACTIVATED_TENSOR_KEYS,
     _as_resolution,
     _select_head_tensor,
 )
@@ -74,10 +74,31 @@ class TestSelectHeadTensor:
         assert got == "X"
         assert "keyed by neither resolution" in caplog.text
 
-    def test_the_classification_key_is_the_one_the_port_emits(self):
-        # Guards against the constant drifting away from the upstream name. If the port renames
-        # 'probs', selection silently falls back to logits again, so pin the expected value.
-        assert _CLASSIFICATION_TENSOR_KEY == "probs"
+    def test_both_upstream_key_vocabularies_are_covered(self):
+        # The port is inconsistent: the classification head says "probs", the usage head says
+        # "predictions". Missing either one sends that head's tracks back to raw logits, so pin both.
+        assert set(_ACTIVATED_TENSOR_KEYS) == {"predictions", "probs"}
+
+    def test_the_usage_head_shape_resolves_to_predictions_not_logits(self):
+        # SpliceSitesUsageHead returns {"logits", "predictions", "track_mask"} — 734 tracks. The first
+        # version of this fix only knew "probs", so these fell through to logits: measured -13.8..-11.3
+        # where JAX gives 1e-6..1.2e-5, i.e. log-space values ranked against a sigmoid-space null.
+        head_out = {"logits": "LOGITS", "predictions": "SIGMOID", "track_mask": "MASK"}
+        assert _select_head_tensor(head_out, 1) == "SIGMOID"
+
+    def test_a_mask_is_never_returned_as_signal(self):
+        # If the activated key is ever absent, a mask must not be sliced as if it were a prediction.
+        head_out = {"logits": "LOGITS", "track_mask": "MASK"}
+        assert _select_head_tensor(head_out, 1, "SPLICE_SITE_USAGE") == "LOGITS"
+
+    def test_logits_lose_to_any_activated_key_regardless_of_order(self):
+        for head_out in (
+            {"logits": "L", "predictions": "P"},
+            {"predictions": "P", "logits": "L"},
+            {"logits": "L", "probs": "P"},
+            {"probs": "P", "logits": "L"},
+        ):
+            assert _select_head_tensor(head_out, 1) == "P"
 
 
 class TestAsResolution:

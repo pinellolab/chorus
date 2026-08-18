@@ -156,3 +156,105 @@ def test_jax_pt_chorus_api_equivalence_at_sort1():
             f"{aid}: mean rel diff {mean_rel:.4f} exceeds 5% — systematic "
             f"per-track scale mismatch between JAX and PyTorch backends."
         )
+
+
+# One track per output type, so every model *head* is compared and not just the three DNASE tracks
+# above. Those three all come from one head, all at 1 bp, all returning a bare tensor — the easiest
+# case in the model — and that narrowness is not hypothetical: it is why two real divergences shipped.
+#
+# `chorus/analysis/normalization.py` maps `alphagenome_pt -> alphagenome` in `_CDF_ALIASES`, so the
+# PyTorch backend ranks its percentiles against the *JAX* backend's background null. The comment
+# justifying that alias says the two produce identical predictions. This test is what makes that claim
+# checkable, so it has to cover the heads where it can break:
+#
+#   * `SpliceSitesClassificationHead` returns {"logits", "probs"}                        (4 tracks)
+#   * `SpliceSitesUsageHead`          returns {"logits", "predictions", "track_mask"}  (734 tracks)
+#
+# Both were being read as raw `logits`. For a usage track that meant PyTorch emitting -13.8..-11.3
+# where JAX gives 1e-6..1.2e-5 — log-space values ranked against a sigmoid-space null — at
+# corr 0.9168 and a max relative difference of 1.2e6%. The three DNASE tracks above passed throughout.
+#
+# Measured full-array agreement after the fix (chr1:109274468-109275468, hg38, both backends in env
+# mode, GPU idle). corr is 0.9998-1.0000 for every head, so the existing 0.99 floor holds; the peak
+# relative bound needs 8% rather than 2% because the 128-bp and splice heads legitimately diverge more:
+#
+#     ATAC              corr 0.9999   max_rel 1.576%
+#     CAGE              corr 0.9999   max_rel 0.865%
+#     CHIP_HISTONE      corr 0.9999   max_rel 2.250%
+#     CHIP_TF           corr 1.0000   max_rel 1.695%
+#     DNASE             corr 0.9999   max_rel 1.263%
+#     PROCAP            corr 0.9999   max_rel 0.812%
+#     RNA_SEQ           corr 0.9998   max_rel 2.803%
+#     SPLICE_SITES      corr 0.9999   max_rel 3.672%
+#     SPLICE_SITE_USAGE corr 1.0000   max_rel 4.945%
+#
+# 8% is ~1.6x the worst measured value. It is loose against bf16 noise but *seven orders of magnitude*
+# tighter than the defect it exists to catch, which is the comparison that matters. The tight 2% bound
+# on the three DNASE tracks above is deliberately left alone — this adds coverage without trading away
+# sensitivity where sensitivity is already earned.
+_ALL_HEAD_MAX_REL = 0.08
+_ALL_HEAD_MIN_CORR = 0.99
+
+
+def _one_assay_id_per_output_type():
+    """First non-padding track of each output type, so `heads=` covers every head the port computes."""
+    from chorus.oracles.alphagenome_source.alphagenome_metadata import get_metadata
+
+    first = {}
+    for track in get_metadata().iter_tracks():
+        output_type = track.get("output_type")
+        identifier = track.get("identifier") or track.get("assay_id")
+        if output_type and identifier and output_type not in first:
+            first[output_type] = identifier
+    return [first[k] for k in sorted(first)]
+
+
+@pytest.mark.integration
+def test_jax_pt_agree_across_every_output_type():
+    """Every head agrees between backends, not just the three DNASE tracks.
+
+    Derived from metadata rather than hardcoded so the test keeps covering all heads if track ids move;
+    head coverage is the point, the specific tracks are not.
+    """
+    from chorus.core.environment import EnvironmentManager
+
+    mgr = EnvironmentManager()
+    for env in ("alphagenome", "alphagenome_pt"):
+        if not mgr.environment_exists(env):
+            pytest.skip(f"chorus-{env} env missing")
+
+    import chorus
+
+    assay_ids = _one_assay_id_per_output_type()
+    assert len(assay_ids) >= 9, (
+        f"expected at least 9 output types to cover every head, got {len(assay_ids)}: {assay_ids}"
+    )
+
+    preds = {}
+    for name in ("alphagenome", "alphagenome_pt"):
+        oracle = chorus.create_oracle(
+            name, use_environment=True, reference_fasta=str(GENOME_FASTA)
+        )
+        oracle.load_pretrained_model()
+        preds[name] = oracle.predict(SORT1_WINDOW, assay_ids)
+
+    for aid in assay_ids:
+        a = preds["alphagenome"][aid].values
+        b = preds["alphagenome_pt"][aid].values
+
+        assert a.shape == b.shape, f"{aid}: shape mismatch (jax={a.shape}, pt={b.shape})"
+
+        corr = float(np.corrcoef(a, b)[0, 1]) if a.std() > 0 and b.std() > 0 else 1.0
+        peak_mag = max(float(np.abs(a).max()), float(np.abs(b).max()))
+        max_rel = float(np.abs(a - b).max()) / (peak_mag + 1e-9)
+
+        assert corr > _ALL_HEAD_MIN_CORR, (
+            f"{aid}: correlation {corr:.4f} <= {_ALL_HEAD_MIN_CORR} — the backends are producing "
+            f"different signals for this head, not numerical drift."
+        )
+        assert max_rel < _ALL_HEAD_MAX_REL, (
+            f"{aid}: max relative difference {max_rel:.3%} exceeds {_ALL_HEAD_MAX_REL:.0%}. If this "
+            f"head returns a dict keyed by tensor kind, check that alphagenome_pt._select_head_tensor "
+            f"resolves it to the activated output and not to raw logits — that failure looks exactly "
+            f"like this, with jax in [0,1] and pt in log space."
+        )
