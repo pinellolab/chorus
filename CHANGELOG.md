@@ -21,7 +21,9 @@ project adheres to [Semantic Versioning](https://semver.org/).
   `TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1` opt-in for bit-exactness. This was previously
   recorded only in the CHANGELOG and the null protocol, so a user who ran Enformer twice and got
   different numbers had nothing in the README to explain it.
-- **Cross-process determinism measured for eight of nine oracles** and written up in
+- **Cross-process determinism measured for all nine oracles** — `alphagenome_pt` came in bit-exact
+  (2/2 pairs) once the crash above stopped blocking it, leaving **Enformer as the only oracle that
+  drifts between processes**. Written up in
   `audits/2026-08-17_post_v074_focused_audit.md`. Corrects two claims in `AUDIT_CHECKLIST.md`: an
   "AlphaGenome is NOT deterministic" finding that three gate runs now contradict (`0.000e+00`), and a
   "verified bitwise" claim that held same-process only.

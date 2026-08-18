@@ -19,12 +19,17 @@ between processes is the path `regenerate_examples.py` takes.
 | epinformerseq | PyTorch | **bit-exact** | 2 runs |
 | sei | PyTorch | **bit-exact** | 2/2 pairs |
 | **enformer** | TF | **drifts** | 3.4% / 1.4% worst relative; bit-exact 4/4 with `TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1` |
-| alphagenome_pt | PyTorch | **not measured** | blocked by the defect below |
+| alphagenome_pt | PyTorch | **bit-exact** | 2/2 pairs, 9 tracks spanning all 9 heads, 288 values — measurable once #239 landed |
 
-**The headline: Enformer is the only oracle that drifts.** F8 is not a TensorFlow problem — ChromBPNet
-is the other TF oracle and is bit-exact. That materially shrinks the accepted risk: it is one oracle
-wide, and the one way it can reach a reader (a changed top-N membership) is already covered by
-`near_ties_at_cutoff`.
+**The headline: Enformer is the only oracle that drifts — and this is now a complete table, not a
+partial one.** All nine are measured. F8 is not a TensorFlow problem: ChromBPNet is the other TF oracle
+and is bit-exact. That materially shrinks the accepted risk: it is one oracle wide, and the one way it
+can reach a reader (a changed top-N membership) is already covered by `near_ties_at_cutoff`.
+
+`alphagenome_pt` was the last unmeasured row and stayed that way for most of this pass, because the
+defect below blocked it. Fixing that defect closed it: **bit-exact, 2/2 pairs.** Worth noting how the
+blockage read — "not measured" looked like a scheduling gap in the table, when it was actually a live
+bug in the default code path.
 
 Two corrections to the record followed:
 

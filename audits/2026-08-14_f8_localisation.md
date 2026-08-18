@@ -234,9 +234,9 @@ The table above listed chrombpnet, sei, borzoi and alphagenome_pt as unmeasured.
 | sei | **bit-exact** (2/2 pairs, once `assay_ids=None` was fixed in #237) |
 | cherimoya, legnet, epinformerseq | **bit-exact** |
 | **enformer** | **the only drifting oracle** |
-| alphagenome_pt | still unmeasured — `assay_ids=None` raises `invalid literal for int() with base 10: 'logits'` |
+| alphagenome_pt | **bit-exact** (2/2 pairs) — the `assay_ids=None` crash that blocked it was fixed in #239 |
 
-**F8 is Enformer-specific, not a TensorFlow problem.** ChromBPNet is the other TF-backed oracle and is
+All nine oracles are now measured cross-process. **F8 is Enformer-specific, not a TensorFlow problem.** ChromBPNet is the other TF-backed oracle and is
 bit-exact across processes, so the accepted drift is one oracle wide. That is the strongest available
 support for the decision not to rebuild the Enformer and ChromBPNet nulls: only one of those two nulls
 would have been affected at all, and the residual risk — a changed top-N membership — is covered by
