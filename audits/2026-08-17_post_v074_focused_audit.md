@@ -85,6 +85,34 @@ defect in the execution path it precedes — the cheap test bought less coverage
   backends agree" that samples the easiest 3 of 5,168 tracks reads as coverage and is not. Now extended
   to one track per output type, bounds set from full-array measurement.
 
+## Why the bug could only exist on the PyTorch side
+
+Worth stating structurally, because it says where to look next.
+
+The **JAX** backend never touches a raw head dict. Its template asks the library for an assembled
+result — `output.get(ot_enum).values` — and the `alphagenome` library is what selects `'predictions'`
+out of each head's `{'logits', 'predictions'}`. The activation choice is made upstream, so the JAX path
+is correct *by construction*.
+
+The **PyTorch** port exposes raw head outputs, so chorus itself must decide which tensor is the
+prediction. That decision is a responsibility the JAX backend delegates to the library and the pt
+backend cannot. Every divergence found in this session lived in exactly that gap.
+
+So the rule for future work: **wherever chorus reimplements something the JAX library does for the other
+backend, assume divergence until measured.** That is not a general worry about the port's quality — it is
+a specific, enumerable surface.
+
+A sweep for the same shape elsewhere (all nine oracles ship subprocess templates) found that the
+duplication between oracle module and template is mostly benign boilerplate — device selection, one-hot
+encoding, retry sleeps — with two entries worth knowing about:
+
+* `chrombpnet` defines `multinomial_nll` in **three** places (oracle, load template, predict template).
+  It is a Keras `custom_objects` entry needed for deserialisation, so divergence would fail loudly at
+  load rather than silently change numbers. Lower risk than it looks, but three copies.
+* `alphagenome` and `alphagenome_pt` both duplicate the resolution lookup. The pt side now routes
+  through the shared `_as_resolution`; the JAX side appends `info["resolution"]` raw, which is safe only
+  because its metadata is always numeric.
+
 ## Everything else v0.7.4 changed, re-verified
 
 | area | result |
