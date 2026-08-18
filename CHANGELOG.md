@@ -6,48 +6,7 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Documentation
-
-- **Second README pass: less lecturing.** The first pass moved caveats out of the reading path; this one
-  cuts explanation a reader does not act on. Gone: the decimal-vs-binary units lesson on the free-disk
-  bullet ("a volume sold as 100 GB is 93.1 GiB, so it fits with ~2 GiB spare"), ~15 lines on why conda envs
-  are large (pip hardlinking, `du -sc` semantics), a units note explaining an inconsistency in our own
-  tables, the provenance of an older audit's equivalence numbers, and the history of the background
-  downloader's previous fetch rule. Also removed five outright duplications — a comment-only BedGraph code
-  block that pointed at the real recipe, two ways to load the same genome, `Core concepts` re-defining
-  "Oracle" and "Track" from `Key terms`, `Key terms` re-defining "Conversational genomics" from the
-  paragraph three lines above it, and the credentials/conda-env rule stated in two places. Cumulatively
-  since 0.7.5: aside text **12,229 → 6,409 chars (−48%)**, longest aside 1,692 → 704, prose lines over 420
-  chars 17 → 8.
-
-  One guard was deleted rather than satisfied: `test_the_tldr_install_size_agrees_with_the_disk_table`
-  existed to keep the TLDR's install size in sync with the disk table, and the TLDR no longer states an
-  install size, so there was nothing left to keep in sync.
-- **README restructured to cut clutter.** It had accumulated **24 blockquote asides totalling 12,229
-  characters**, the longest 1,692 — caveats and per-release detail interrupting the reading path rather
-  than living somewhere findable. Now **6,793 characters** (−44%), longest 704. The changes are structural,
-  not just shorter: one **Caveats** section holds the four things that can change a number (Enformer
-  cross-process variation, the pre-0.7.5 `alphagenome_pt` splice history, Cherimoya-vs-ChromBPNet
-  magnitude, hg38-only), with inline asides reduced to pointers; token plumbing moved from the quick start
-  into the installation section; and per-release detail is delegated to this changelog, so the README stops
-  growing by a line per release.
-- **Six documentation defects fixed**, found auditing notebooks, examples, docs and the nulls:
-  - `examples/walkthroughs/README.md` described Sei by its **pre-0.7.4 scope** ("40 sequence classes") in a
-    table the README calls a "full side-by-side comparison" — which also covered only 6 of 8 oracles.
-    Corrected, with Cherimoya and EPInformer-seq added.
-  - `docs/variant_analysis_framework.md` still carried the **"1–2 % fp32 noise"** backend-equivalence claim
-    that 0.7.5 corrected in the README: understated, and false for the `SPLICE_SITES` assay.
-  - **`describe_tracks()` appeared zero times in `docs/`**, including the "Full Python API reference". Now
-    documented there with its signature, its load-free guarantees, and what it replaces.
-  - `docs/BACKGROUND_NULL_PROTOCOL.md` had **no record that `alphagenome_pt` has no null of its own** and
-    ranks against `alphagenome`'s. New §8b states the alias, the premise, the test that enforces it, and
-    that the test must be extended before another oracle is aliased. Decision logged for 2026-08-18.
-  - `examples/notebooks/README.md` said each notebook "produces … outputs inline" while **16 code cells
-    across three ship blank** — the cells needing a second oracle env or `coolbox`. Now stated.
-  - The free-disk bullet still said a single-oracle install is "~13 GiB, not 85" after the total moved
-    to 87.
-- Full findings, what was verified clean, and the guard/false-positive notes:
-  [`audits/2026-08-18_post_v075_docs_and_readme_audit.md`](audits/2026-08-18_post_v075_docs_and_readme_audit.md).
+_Nothing yet._
 
 ## [0.7.5] — 2026-08-18
 ### Fixed
@@ -145,6 +104,46 @@ project adheres to [Semantic Versioning](https://semver.org/).
 - `TrackRecord.has_background` no longer promises more than it delivers: no oracle populates it, so
   the docstring now says so and explains why (`describe_tracks()` stays download-free), pointing
   callers at `NormalizationLoader.has_background`.
+- **README restructured to cut clutter.** It had accumulated **24 blockquote asides totalling 12,229
+  characters**, the longest 1,692 — caveats and per-release detail interrupting the reading path rather
+  than living somewhere findable. Now **6,793 characters** (−44%), longest 704. The changes are structural,
+  not just shorter: one **Caveats** section holds the four things that can change a number (Enformer
+  cross-process variation, the pre-0.7.5 `alphagenome_pt` splice history, Cherimoya-vs-ChromBPNet
+  magnitude, hg38-only), with inline asides reduced to pointers; token plumbing moved from the quick start
+  into the installation section; and per-release detail is delegated to this changelog, so the README stops
+  growing by a line per release.
+- **Second README pass: less lecturing.** The first pass moved caveats out of the reading path; this one
+  cuts explanation a reader does not act on. Gone: the decimal-vs-binary units lesson on the free-disk
+  bullet ("a volume sold as 100 GB is 93.1 GiB, so it fits with ~2 GiB spare"), ~15 lines on why conda envs
+  are large (pip hardlinking, `du -sc` semantics), a units note explaining an inconsistency in our own
+  tables, the provenance of an older audit's equivalence numbers, and the history of the background
+  downloader's previous fetch rule. Also removed five outright duplications — a comment-only BedGraph code
+  block that pointed at the real recipe, two ways to load the same genome, `Core concepts` re-defining
+  "Oracle" and "Track" from `Key terms`, `Key terms` re-defining "Conversational genomics" from the
+  paragraph three lines above it, and the credentials/conda-env rule stated in two places. Cumulatively
+  since 0.7.5: aside text **12,229 → 6,409 chars (−48%)**, longest aside 1,692 → 704, prose lines over 420
+  chars 17 → 8.
+
+  One guard was deleted rather than satisfied: `test_the_tldr_install_size_agrees_with_the_disk_table`
+  existed to keep the TLDR's install size in sync with the disk table, and the TLDR no longer states an
+  install size, so there was nothing left to keep in sync.
+- **Six documentation defects fixed**, found auditing notebooks, examples, docs and the nulls:
+  - `examples/walkthroughs/README.md` described Sei by its **pre-0.7.4 scope** ("40 sequence classes") in a
+    table the README calls a "full side-by-side comparison" — which also covered only 6 of 8 oracles.
+    Corrected, with Cherimoya and EPInformer-seq added.
+  - `docs/variant_analysis_framework.md` still carried the **"1–2 % fp32 noise"** backend-equivalence claim
+    that 0.7.5 corrected in the README: understated, and false for the `SPLICE_SITES` assay.
+  - **`describe_tracks()` appeared zero times in `docs/`**, including the "Full Python API reference". Now
+    documented there with its signature, its load-free guarantees, and what it replaces.
+  - `docs/BACKGROUND_NULL_PROTOCOL.md` had **no record that `alphagenome_pt` has no null of its own** and
+    ranks against `alphagenome`'s. New §8b states the alias, the premise, the test that enforces it, and
+    that the test must be extended before another oracle is aliased. Decision logged for 2026-08-18.
+  - `examples/notebooks/README.md` said each notebook "produces … outputs inline" while **16 code cells
+    across three ship blank** — the cells needing a second oracle env or `coolbox`. Now stated.
+  - The free-disk bullet still said a single-oracle install is "~13 GiB, not 85" after the total moved
+    to 87.
+- Full findings, what was verified clean, and the guard/false-positive notes:
+  [`audits/2026-08-18_post_v075_docs_and_readme_audit.md`](audits/2026-08-18_post_v075_docs_and_readme_audit.md).
 
 ## [0.7.4] — 2026-08-17
 
