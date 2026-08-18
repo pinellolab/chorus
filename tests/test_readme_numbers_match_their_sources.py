@@ -252,21 +252,10 @@ def _disk_table_total() -> float:
     return float(m.group(1))
 
 
-def test_the_tldr_install_size_agrees_with_the_disk_table():
-    """The same quantity is stated twice — in the TLDR (GiB) and the table (GB, loosely)."""
-    text = README.read_text()
-    # Anchor on the prerequisite bullet rather than a sentence, so rewording the prose does not break
-    # this — an earlier version keyed off the exact phrase "The install itself is ~N GiB" and broke the
-    # first time that sentence was edited, which is a guard failing for the wrong reason.
-    bullet = re.search(r"\*\*~\s*[\d.]+\s*GB free disk\*\*(.{0,400})", text, re.S)
-    assert bullet, "the TLDR no longer states a free-disk prerequisite"
-    m = re.search(r"~([\d.]+)\s*GiB", bullet.group(1))
-    assert m, f"no installed-size figure near the prerequisite bullet: {bullet.group(1)[:120]!r}"
-    tldr, table = float(m.group(1)), _disk_table_total()
-    assert abs(tldr - table) <= 1.0, (
-        f"the TLDR says ~{tldr} GiB and the disk table says ~{table} GB for the same install. "
-        f"They drifted apart once already when the Sei background grew; keep them together."
-    )
+# A guard that kept the TLDR's install size in sync with the disk table used to live here. The TLDR no
+# longer states an install size — a reader provisioning a volume needs the prerequisite and the smaller
+# single-oracle option, not a second copy of the total — so there is nothing left to keep in sync. Removed
+# with the duplicate rather than kept as a test of a sentence that no longer exists.
 
 
 @pytest.mark.integration
