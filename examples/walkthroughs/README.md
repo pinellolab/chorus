@@ -77,8 +77,10 @@ The HTML reports provide visual summaries with an embedded genome browser.
 | **Enformer** | General-purpose, lightweight | 114 kb | 128 bp | DNASE, ChIP-TF, ChIP-Histone, CAGE |
 | **Borzoi** | Distal gene expression effects | 197 kb | 32 bp | DNASE, ChIP-TF, ChIP-Histone, CAGE, RNA |
 | **ChromBPNet** | Base-resolution motif disruption | 1 kb | 1 bp | DNASE/ATAC or ChIP-TF (one assay per model) |
-| **Sei** | Regulatory element classification | 4 kb | — | 40 sequence classes |
+| **Sei** | Regulatory element classification | 4 kb | — | 21,907 chromatin profiles + 40 sequence classes |
+| **Cherimoya / CATv1** | Accessibility across the widest biosample set | 1 kb | 1 bp | DNASE / ATAC, 1,518 ENCODE experiments |
 | **LegNet** | Promoter activity (MPRA) | 200 bp | — | MPRA activity score |
+| **EPInformer-seq** | Per-cell enhancer activity | 2,114 bp | — | DNase cut-sites + H3K27ac, 11 Roadmap cells |
 
 **Recommendation**: Start with **AlphaGenome** for the broadest coverage.
 Use **ChromBPNet** as a second opinion for base-resolution motif effects.

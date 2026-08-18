@@ -11,7 +11,11 @@ enhancer variants, which are the majority of GWAS signals.
 
 > Chorus ships **two interchangeable AlphaGenome backends** — `alphagenome` (JAX, default)
 > and `alphagenome_pt` (PyTorch, same model + same weights, MPS-capable on Apple Silicon).
-> Both install by default and produce equivalent outputs (1–2 % per-track fp32 noise).
+> Both install by default and produce equivalent outputs — measured per head at 0.8–4.9 %
+> peak-relative, correlation 0.9998–1.0000. **Before 0.7.5 that was false for splice tracks**:
+> `alphagenome_pt` returned pre-activation values for its 738 splice tracks and, because it ranks
+> against `alphagenome`'s null, their percentiles were meaningless. Re-run any pre-0.7.5
+> `alphagenome_pt` splice analysis.
 > Use `chorus.recommend_alphagenome_backend(window_size_bp)` (or the matching MCP tool) to
 > pick the right backend for your platform + window size. The framework below applies
 > identically to both.

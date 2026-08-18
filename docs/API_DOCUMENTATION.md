@@ -8,13 +8,14 @@
 ## Table of Contents
 1. [Overview](#overview)
 2. [Core Classes](#core-classes)
-3. [Prediction Methods](#prediction-methods)
-4. [Utility Functions](#utility-functions)
-5. [Track Management](#track-management)
-6. [Environment Management](#environment-management)
-7. [Complete Example](#complete-example)
-8. [Per-Track Normalization](#per-track-normalization)
-9. [Application layer (`chorus.analysis`)](#application-layer-chorusanalysis) — high-level variant analysis, discovery, batch scoring, fine-mapping, sequence engineering
+3. [Track Discovery](#track-discovery)
+4. [Prediction Methods](#prediction-methods)
+5. [Utility Functions](#utility-functions)
+6. [Track Management](#track-management)
+7. [Environment Management](#environment-management)
+8. [Complete Example](#complete-example)
+9. [Per-Track Normalization](#per-track-normalization)
+10. [Application layer (`chorus.analysis`)](#application-layer-chorusanalysis) — high-level variant analysis, discovery, batch scoring, fine-mapping, sequence engineering
 
 ## Overview
 
@@ -52,6 +53,36 @@ class EnformerOracle(OracleBase):
 - `bin_size` (int): 128 bp per bin
 - Output window: 114,688 bp (896 × 128)
 - Offset from input edges: 139,264 bp on each side
+
+## Track Discovery
+
+### describe_tracks()
+
+One call, the same shape on every oracle: *what can this model predict?*
+
+```python
+oracle = chorus.create_oracle('enformer', use_environment=True)
+
+for track in oracle.describe_tracks(query='K562', limit=3):
+    print(track.track_id, track.assay, track.cell_type, track.description)
+
+len(oracle.describe_tracks())          # 5313 — omit query/limit for everything
+```
+
+**Signature:** `describe_tracks(query: str = None, limit: int = None) -> list[TrackRecord]`
+
+* Works **before** `load_pretrained_model()`, without a reference genome, without a GPU, and without
+  triggering a download — so it is cheap to explore with.
+* `query` matches case-insensitively across id, assay, cell type and description.
+* Each `TrackRecord` carries `track_id`, `assay`, `cell_type`, `description`, `extra` (oracle-specific
+  fields) and `as_dict()`. **`track_id` is the contract**: pass it to `predict()` and it comes back as
+  the key.
+* `has_background` is declared but not populated by any oracle — ask
+  `NormalizationLoader.has_background` if you need that answer.
+
+Added in 0.7.4. It replaces four different shapes — `get_all_assay_ids()` on four oracles,
+`list_tracks()` on Cherimoya, a private `_get_all_assay_ids()` on Sei, and nothing at all on three
+others. Those older methods still work; new code should use `describe_tracks()`.
 
 ## Prediction Methods
 

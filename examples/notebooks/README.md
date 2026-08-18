@@ -5,6 +5,13 @@ directly (no Claude / MCP required). Each one runs top-to-bottom from a
 fresh kernel and produces plots, numeric outputs, and example HTML
 reports inline.
 
+**Committed outputs are partial.** Most cells ship with their results, but 16 across three notebooks do
+not — 13 in `advanced_multi_oracle_analysis`, 2 in `single_oracle_quickstart`, 1 in
+`comprehensive_oracle_showcase`. They are the cells that need a second oracle env or `coolbox`, and
+re-executing them requires a GPU plus every per-oracle environment, which `CLAUDE.md` keeps as a manual
+pre-release step rather than part of the regen sweep. Run them yourself and they fill in; nothing is
+broken. (The `../walkthroughs/` notebooks ship unexecuted by design — different thing, stated there.)
+
 > **Looking for pre-run MCP walkthroughs?** See
 > [`../walkthroughs/`](../walkthroughs/) — those are concrete worked
 > examples with their outputs already committed, driven by Chorus's
