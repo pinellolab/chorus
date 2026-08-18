@@ -29,11 +29,23 @@ project adheres to [Semantic Versioning](https://semver.org/).
   the docstring now says so and explains why (`describe_tracks()` stays download-free), pointing
   callers at `NormalizationLoader.has_background`.
 
-### Known issues
+### Fixed
 
-- `predict_variant_effect(..., assay_ids=None)` raises `invalid literal for int() with base 10:
-  'logits'` on the **`alphagenome_pt`** backend; passing explicit ids works. Same class as the Sei
-  defect fixed in 0.7.4, in the PyTorch AlphaGenome backend. Use explicit `assay_ids` as a workaround.
+- **`predict_variant_effect(..., assay_ids=None)` no longer fails on `alphagenome_pt`.** It raised
+  `invalid literal for int() with base 10: 'logits'`; the default is all 5,168 tracks and the 4
+  `SPLICE_SITES` tracks are always among them, so every default-argument call broke while explicit ids
+  worked. Head outputs are dicts keyed by two unrelated things — resolution (`{1: ..., 128: ...}`) for
+  most heads, tensor kind (`{"logits", "probs"}`) for the splice-site classification head — and the
+  extraction loop overwrote its resolution variable with whichever key it picked before calling `int()`
+  on it. Selecting a tensor and reporting a resolution are now separate operations.
+- **The splice-site tracks were being read as logits rather than probabilities.** Fixing the crash
+  exposed it: the old fallback took the first dict key, which is `logits` by insertion order. The JAX
+  reference returns `{'logits', 'predictions'}` and treats the softmax as the prediction, so the two
+  AlphaGenome backends would have disagreed on those 4 tracks — unbounded logits against values in
+  [0, 1]. Affects `SPLICE_SITES/{donor,acceptor}/{+,-}` on `alphagenome_pt` only.
+- **The env-mode subprocess template held a second copy of the same logic**, so the first fix left the
+  default path (`use_environment=True`) broken while every unit test passed. The template now imports
+  the shared helpers, with source-level guards that fail if it ever restates them.
 
 ## [0.7.4] — 2026-08-17
 

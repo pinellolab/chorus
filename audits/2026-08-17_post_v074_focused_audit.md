@@ -51,8 +51,17 @@ at the validation layer so it needs no GPU. alphagenome_pt passes that: its fail
 the child process where the default track list is resolved. A validation-layer guard cannot see a
 defect in the execution path it precedes — the cheap test bought less coverage than it appeared to.
 
-Not fixed here: it needs the child-side resolution read, and it is a user-facing but non-silent failure
-(a raised error, not a wrong number), so it is a follow-up rather than a release blocker.
+**Fixed in #239** (after this report was first written), and the fix found two more things:
+
+* The splice-site tracks were being read as **logits, not probabilities**. The crash masked it. The JAX
+  reference returns `{'logits', 'predictions'}` and treats the softmax as the prediction, so the two
+  AlphaGenome backends would have disagreed on those 4 tracks.
+* **The first fix was incomplete and the unit tests did not notice.** `use_environment=True` — this
+  backend's default — runs a subprocess *template* that carried its own copy of the same six lines. All
+  13 unit tests passed while the default path stayed broken. That is the second time in this session a
+  duplicated copy of one rule hid a defect, and it is a stronger version of the lesson below: a test can
+  fail to catch a bug not only by asserting at the wrong *layer* but by asserting against the wrong
+  *copy*.
 
 ## Everything else v0.7.4 changed, re-verified
 
