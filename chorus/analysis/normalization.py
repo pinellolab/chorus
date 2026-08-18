@@ -396,6 +396,13 @@ class PerTrackNormalizer:
         return self.npz_path(oracle_name).exists()
 
     # Oracles that share an identical CDF with another oracle.
+    #
+    # This alias makes one backend's percentiles depend on another backend's null, so the premise —
+    # "the two produce the same predictions" — is a correctness requirement, not a convenience note.
+    # It is verified by `tests/test_alphagenome_backends_equivalence.py`, which compares one track per
+    # output type at correlation > 0.99 and peak-relative < 8%. Keep that test covering every head: it
+    # previously compared three DNASE tracks and, while it passed, `alphagenome_pt` was returning raw
+    # logits for 738 splice tracks against this sigmoid-space null (correlation 0.20). Fixed in #240.
     _CDF_ALIASES: dict[str, str] = {"alphagenome_pt": "alphagenome"}
 
     #: CDF keys that are not oracles, and the fold each one's artefact must be built on.
@@ -1578,9 +1585,10 @@ def get_pertrack_normalizer(
         norm._ensure_loaded(oracle_name)
         return norm
 
-    # alphagenome_pt produces identical predictions to alphagenome (same
-    # model + weights, different backend), so share the JAX CDF rather
-    # than requiring a separate upload.
+    # alphagenome_pt runs the same model and weights through a different backend, so it shares the JAX
+    # CDF rather than requiring a separate 5,168-track upload. Agreement is ~1-5% per head, measured, not
+    # assumed — see `_CDF_ALIASES` above for the test that holds this up and what happened when its
+    # coverage was narrower than the claim.
     if oracle_name == "alphagenome_pt":
         return get_pertrack_normalizer("alphagenome", cache_dir=cache_dir)
 
