@@ -18,16 +18,17 @@ Four steps. Steps 1 + 2 are copy-paste. Step 3 is a runnable snippet. Step 4 hoo
 
 - **Miniforge** (provides `mamba`) from <https://github.com/conda-forge/miniforge>
 - **~100 GB free disk** for the default all-oracle install on Linux x86_64 + CUDA. The install itself
-  is ~85 GiB (as `du -sh` counts it) plus a ~4 GiB reclaimable package cache — and if you are
-  provisioning a cloud volume, note that those are **binary** units: a disk *sold* as "90 GB" is only
-  83.8 GiB, which is smaller than the install. 100 GB decimal (93 GiB) fits with room to work. Each oracle env carries its own multi-GB CUDA payload, which is nearly all of it — so a macOS or CPU-only install is far smaller. See [Disk usage breakdown](#disk-usage-breakdown) for per-oracle / per-asset numbers, `chorus setup --oracle <name>` if you only need one oracle — **that is ~13 GiB, not 85** (measured for `enformer`: 2.41 GiB base env + 5.89 GiB oracle env + 3.05 GiB hg38 + 0.94 GiB weights + 0.52 GiB backgrounds = 12.81 GiB) — and [Where chorus puts large files](#where-chorus-puts-large-files) to put it on a different filesystem
+  is ~87 GiB (as `du -sh` counts it) plus a ~4 GiB reclaimable package cache — and if you are
+  provisioning a cloud volume, note that those are **binary** units: a disk *sold* as "100 GB" is only
+  93.1 GiB, so it fits with about **2 GiB to spare** once the cache is counted. That is enough to
+  finish, not enough to work in — if you will be building anything else on the same volume, size up. Each oracle env carries its own multi-GB CUDA payload, which is nearly all of it — so a macOS or CPU-only install is far smaller. See [Disk usage breakdown](#disk-usage-breakdown) for per-oracle / per-asset numbers, `chorus setup --oracle <name>` if you only need one oracle — **that is ~13 GiB, not 85** (measured for `enformer`: 2.41 GiB base env + 5.89 GiB oracle env + 3.05 GiB hg38 + 0.94 GiB weights + 0.52 GiB backgrounds = 12.81 GiB) — and [Where chorus puts large files](#where-chorus-puts-large-files) to put it on a different filesystem
 - **Linux x86_64 or macOS** (Intel / Apple Silicon)
 
 ### 1. Install (5 minutes)
 
 ```bash
 git clone https://github.com/pinellolab/chorus.git && cd chorus
-git checkout v0.7.4          # a released tag; omit to track main
+git checkout v0.7.5          # a released tag; omit to track main
 mamba env create -f environment.yml
 mamba activate chorus
 python -m pip install -e .
@@ -36,9 +37,10 @@ python -m pip install -e .
 > **Which revision should you install?** `main` is the ship branch and is kept green, but it moves —
 > the numbers in this README, the committed example outputs and the background CDFs are all consistent
 > *as of a tag*. If you are citing chorus in a paper or sharing a result, install a tag and say which
-> one; [`CHANGELOG.md`](CHANGELOG.md) records what changed between them, **including that 0.7.4
-> changes Sei's numbers**, including any release that
-> moved a percentile. Chorus is **not on PyPI** — the name `chorus` is taken by an unrelated project —
+> one; [`CHANGELOG.md`](CHANGELOG.md) records what changed between them and calls out every release that
+> moved a number — **0.7.4 changes Sei's numbers**, and **0.7.5 changes `alphagenome_pt`'s numbers for
+> its 738 splice tracks** (they were pre-activation values ranked against a post-activation null; the JAX
+> `alphagenome` backend was never affected). Chorus is **not on PyPI** — the name `chorus` is taken by an unrelated project —
 > so a source install is the supported path and `pip install chorus` will get you someone else's
 > package.
 
@@ -277,7 +279,16 @@ Chorus ships **two interchangeable AlphaGenome oracles for the same model with t
 | `alphagenome` | JAX (Google DeepMind reference) | `google/alphagenome-all-folds` | gated (HF token + accept terms) | yes — installed by default `chorus setup` | macOS at any window size, Linux/CUDA at any window size |
 | `alphagenome_pt` | PyTorch ([genomicsxai/alphagenome-pytorch](https://github.com/genomicsxai/alphagenome-pytorch)) | `gtca/alphagenome_pytorch` — *converted from the official JAX checkpoint* (same numbers, safetensors format) | public on HF, but the **non-commercial model terms still apply to the weights** regardless of which mirror you download from — read [Google's AlphaGenome model terms](https://deepmind.google.com/science/alphagenome/model-terms) before commercial-adjacent use | yes — installed by default `chorus setup` (~7.5 GB env + ~880 MB weights on top of the JAX backend — see [Disk usage breakdown](#disk-usage-breakdown)) | macOS at ≤600 kb (5–8× faster than JAX CPU on MPS) |
 
-**The two backends produce equivalent outputs.** Verified on M3 Ultra and A100: per-track agreement within 1–2 % relative error at 524 kb across all 7 chorus-exposed assays, within 0.02 log₂ on full Fig 3f region-swap layer scores. The small residual diff is fp32 implementation noise (different op orderings, conv kernels, attention numerics across JAX and PyTorch), not different weights. Full audit at `audits/2026-04-29_alphagenome_pytorch_spike/` and `audits/2026-04-29_alphagenome_pt_stress_test/`.
+**The two backends produce equivalent outputs — measured per head, not assumed.** Agreement is **0.8–4.9 % peak-relative with correlation 0.9998–1.0000**, measured across one track per output type on a 1 MB SORT1 window; the earlier M3 Ultra / A100 spike reported 1–2 % at 524 kb over a narrower track sample, and within 0.02 log₂ on full Fig 3f region-swap layer scores. The residual is fp32 implementation noise (different op orderings, conv kernels, attention numerics across JAX and PyTorch), not different weights. Full audit at `audits/2026-04-29_alphagenome_pytorch_spike/` and `audits/2026-04-29_alphagenome_pt_stress_test/`.
+
+> ⚠️ **This claim was materially false before 0.7.5, for the `SPLICE_SITES` assay.** `alphagenome_pt`
+> returned **pre-activation** values for its 4 splice-site and 734 splice-usage tracks, correlating at
+> **0.20** with the JAX backend, and — because `alphagenome_pt` has no null of its own and ranks against
+> `alphagenome`'s — their percentiles were meaningless rather than merely noisy. The equivalence test that
+> was supposed to catch this compared three DNase tracks from a single head. It now covers one track per
+> output type ([`tests/test_alphagenome_backends_equivalence.py`](tests/test_alphagenome_backends_equivalence.py)),
+> which is what makes the numbers above checkable rather than a claim. If you ran `alphagenome_pt` on
+> splice tracks before 0.7.5, re-run them.
 
 **Use `chorus.recommend_alphagenome_backend(window_size_bp)`** (also available as an MCP tool and as `oracle.recommend_backend()` on either oracle) to get a per-host, per-window-size recommendation grounded in the audit numbers. Logic:
 
@@ -306,7 +317,7 @@ The TLDR's `chorus setup` does everything you need. This section covers the edge
 #### Disk usage breakdown
 
 The default `chorus setup` (all 8 oracles, both AlphaGenome backends, hg38, all CDF backgrounds) lands at
-**~85 GB**, measured with `du -sh` on a Linux x86_64 + CUDA box after a default setup:
+**~87 GB**, measured with `du -sh` on a Linux x86_64 + CUDA box after a default setup:
 
 | Bucket | Size |
 |---|---|
@@ -316,7 +327,7 @@ The default `chorus setup` (all 8 oracles, both AlphaGenome backends, hg38, all 
 | Sei weights — the extracted model **plus** the retained `sei_model.tar.gz` it came from | ~6.5 GB |
 | `hg38` reference fasta + index | ~3.1 GB |
 | Base `chorus` env | ~2.7 GB |
-| Per-oracle CDF backgrounds (`<data-dir>/backgrounds/`, 9 files) | ~1.9 GB |
+| Per-oracle CDF backgrounds (`<data-dir>/backgrounds/`, 9 files) — Sei is 1.5 GB of that, a consequence of the 0.7.4 rebuild (40 sequence classes → all 21,947) | ~3.4 GB |
 | AlphaGenome weights — PyTorch (~880 MB) + JAX (~700 MB) | ~1.6 GB |
 | Borzoi weights | ~1.4 GB |
 | Enformer weights | ~960 MB |
@@ -324,7 +335,7 @@ The default `chorus setup` (all 8 oracles, both AlphaGenome backends, hg38, all 
 | LegNet weights | ~41 MB |
 | EPInformer-seq per-cell weights (11 main + 11 bias) | ~8 MB |
 | Cherimoya fast-path weights (DNase + ATAC K562/HepG2) | ~10 MB |
-| **Total default** | **~85 GB** |
+| **Total default** | **~87 GB** |
 
 Budget above that: `mamba` also fills a package cache (~4 GB here) shared across envs, which you can
 reclaim afterwards with `mamba clean --all`. Sei's `sei_model.tar.gz` is kept after extraction, so
@@ -380,7 +391,7 @@ Resolved chorus data layout
   data_dir      /home/you/chorus
   chosen via    installation directory (default)
 
-  backgrounds   /home/you/chorus/backgrounds  [1.9 GB]
+  backgrounds   /home/you/chorus/backgrounds  [3.4 GB]
   downloads     /home/you/chorus/downloads  [14.5 GB]
   genomes       /home/you/chorus/genomes  [3.1 GB]
   hf_cache      /home/you/chorus/huggingface  [4.5 GB]
@@ -578,6 +589,12 @@ The chorus mirrors are byte-identical to the originals (verified via md5 / size 
 | Sei | ~1.5 GB | 21,947 tracks (21,907 chromatin profiles + 40 sequence classes) |
 | LegNet | ~210 KB | 3 cell types |
 | EPInformer-seq | ~2.3 MB | 33 tracks (11 cell types × 3 assays: DNase, H3K27ac, composite) |
+
+> **Units, because these files are sized twice in this README.** The column above is **binary** (MiB, as
+> `du` and `ls` report), summing to 3.4 GiB — which is the `backgrounds` bucket in
+> [Disk usage breakdown](#disk-usage-breakdown). The `NPZ size` column in
+> [the appendix table](#sample-sizes-per-oracle) states the *same* files in **decimal** MB, so AlphaGenome
+> reads as ~260 MB here and 279 MB there. Same bytes, different convention — not a discrepancy.
 
 > **The backgrounds dataset is public — no HuggingFace token required.** `HF_TOKEN` is only needed for the gated AlphaGenome model itself (see [Tokens](#tokens) above). Causal prioritization with auto-LD-fetch needs a separate free LDlink token.
 
@@ -1422,7 +1439,7 @@ We've designed Chorus to make it easy to add new genomic prediction models. Each
 **For a complete step-by-step walkthrough, see [`docs/NORMALIZATION_GUIDE.md` → "Adding a new oracle"](docs/NORMALIZATION_GUIDE.md#walkthrough-adding-a-new-oracle).** It covers: creating the oracle class, registering it, creating the conda environment, writing the CDF build script, uploading backgrounds to HuggingFace, and a verification checklist.
 
 Key steps:
-1. Inherit from `OracleBase` and implement `load_pretrained_model()`, `list_assay_types()`, `list_cell_types()`
+1. Inherit from `OracleBase` and implement `load_pretrained_model()`, `list_assay_types()`, `list_cell_types()`, and `_describe_tracks()` — the hook behind the uniform `describe_tracks()` (added in 0.7.4 precisely so a tenth oracle has one method to implement instead of each exposing its own track listing)
 2. Register in `chorus/oracles/__init__.py`
 3. Create `environments/chorus-myoracle.yml`
 4. Write `scripts/build_backgrounds_myoracle.py` for CDF normalization
@@ -1436,7 +1453,7 @@ If you use Chorus in your research, please cite:
 ```bibtex
 @software{chorus2026,
   title = {Chorus: A unified interface for genomic sequence oracles},
-  version = {0.7.3},
+  version = {0.7.5},
   author = {Penzar, Dmitry and Ruggeri, Lorenzo and Giugno, Rosalba and Pinello, Luca},
   year = {2026},
   url = {https://github.com/pinellolab/chorus}
@@ -1482,7 +1499,7 @@ The backgrounds are stored as 10,000-point CDFs per track in NPZ files (one file
 
 - `effect_cdfs (n_tracks × 10000)` — for the effect percentile
 - `summary_cdfs (n_tracks × 10000)` — for the activity percentile
-- `perbin_cdfs (n_tracks × 10000)` — for IGV per-bin rescaling (omitted for scalar-output oracles like Sei and LegNet)
+- `perbin_cdfs (n_tracks × 10000)` — for IGV per-bin rescaling (omitted for the three scalar-output oracles: Sei, LegNet and EPInformer-seq)
 
 #### How they were calculated
 
@@ -1537,7 +1554,7 @@ For each position, the layer-appropriate window-sum is added to the track's rese
 
 At each of the same positions, **32 random bins** from the full output window are added to the perbin reservoir. This captures the per-bin (not per-window) distribution at the track's native resolution (1 bp for ATAC/CAGE/RNA/PRO-CAP/splice; 128 bp for ChIP-Histone/TF in AlphaGenome).
 
-The per-bin CDFs are used by the unified `chorus.analysis._igv_report.rescale_for_display` helper (which all four track-rendering paths — IGV, matplotlib, CoolBox, notebooks — share) to rescale raw bin values onto a uniform `[0, 3.0]` display scale where `1.0` corresponds to the top-1% genome-wide bin value for that track and `3.0` is a hard cap. Signed layers (Borzoi RNA, Sei, LentiMPRA) use the symmetric variant `signed_floor_rescale_batch`, mapping to `[-3.0, +3.0]` with `±1.0 = p99(|effect|)`. This makes overlaid tracks visually comparable across cell types and across renderers.
+The per-bin CDFs are used by the unified `chorus.analysis._igv_report.rescale_for_display` helper (which all four track-rendering paths — IGV, matplotlib, CoolBox, notebooks — share) to rescale raw bin values onto a uniform `[0, 3.0]` display scale where `1.0` corresponds to the top-1% genome-wide bin value for that track and `3.0` is a hard cap. Signed layers (Borzoi RNA, Sei, LentiMPRA) use the symmetric variant — the normalizer's `signed_floor_rescale_batch` method (`chorus.analysis.normalization`), which `_igv_report` calls — mapping to `[-3.0, +3.0]` with `±1.0 = p99(|effect|)`. This makes overlaid tracks visually comparable across cell types and across renderers.
 
 #### Sample sizes per oracle
 
