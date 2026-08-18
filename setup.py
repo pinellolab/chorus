@@ -10,7 +10,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="chorus",
-    version="0.7.4",
+    version="0.7.5",
     author="Pinello Lab",
     author_email="lucapinello@gmail.com",
     description="A unified interface for genomic sequence oracles",

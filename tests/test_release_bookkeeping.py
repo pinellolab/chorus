@@ -168,3 +168,46 @@ def test_unreleased_is_empty_when_head_is_tagged():
         f"HEAD is tagged {tags} but [Unreleased] still lists {len(bullets)} entries; they "
         f"belong in the released section or they will be attributed to the next release"
     )
+
+
+# ── the version as the README states it, in the two places a reader copies from ──────────
+
+# Both of these were stale when found during the 0.7.5 fold, and neither was covered: the guard above
+# ties setup.py to chorus/__init__.py, and test_citation_is_valid_and_consistent ties CITATION.cff to
+# __version__ and the README BibTeX's *title and authors* to CITATION.cff — but nothing read the README's
+# install tag or the BibTeX's own `version` field. So the install instruction said `git checkout v0.7.4`
+# while the tree was 0.7.5, and the BibTeX said 0.7.3, two releases behind. Both are copy-paste targets:
+# one decides which code a reader installs, the other decides what they cite in a paper.
+
+README_MD = REPO / "README.md"
+
+
+def _readme_install_tag() -> str:
+    m = re.search(r"git checkout v([0-9][^\s]*)", README_MD.read_text())
+    assert m, "the README no longer shows a `git checkout v<tag>` install step"
+    return m.group(1)
+
+
+def _readme_bibtex_version() -> str:
+    bib = re.search(r"```bibtex\n(.*?)```", README_MD.read_text(), re.S)
+    assert bib, "no ```bibtex block in README.md"
+    m = re.search(r"version\s*=\s*\{([^}]+)\}", bib.group(1))
+    assert m, "the README BibTeX entry has no version field"
+    return m.group(1).strip()
+
+
+def test_the_readme_install_tag_is_this_version():
+    """What a reader is told to check out must be what this tree is."""
+    assert _readme_install_tag() == _init_version(), (
+        f"README says `git checkout v{_readme_install_tag()}` but this tree is "
+        f"{_init_version()}. A reader following the install steps gets a different version than the "
+        f"one the rest of the README's numbers were measured against."
+    )
+
+
+def test_the_readme_citation_version_is_this_version():
+    """What a reader cites must be what they installed."""
+    assert _readme_bibtex_version() == _init_version(), (
+        f"README BibTeX cites {_readme_bibtex_version()} but this tree is {_init_version()}. "
+        f"This block is copied into papers; a stale version there is a wrong citation of record."
+    )

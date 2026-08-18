@@ -6,31 +6,9 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### Documentation
+_Nothing yet._
 
-- **`describe_tracks()` is now documented in the README.** It shipped in 0.7.4 as the one uniform way
-  to ask any of the nine oracles what it can predict, and the README's "Discovering tracks" section
-  still told users to import an oracle-specific metadata module — the exact friction the method was
-  added to remove. The section now leads with `describe_tracks()` (load-free: no model, no reference
-  genome, no GPU) and keeps the per-oracle metadata search as the deeper option. Every snippet is
-  copied from real output.
-- **The README now states that Enformer predictions vary between processes**, with the measured
-  numbers (~0.02% typical, 3.4% worst on a raw value, bit-identical within one process), the fact that
-  it is the only one of the nine oracles affected, why conclusions are still stable
-  (`quantile_score` ≤0.69%, `near_ties_at_cutoff` covers changed top-N membership), and the
-  `TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1` opt-in for bit-exactness. This was previously
-  recorded only in the CHANGELOG and the null protocol, so a user who ran Enformer twice and got
-  different numbers had nothing in the README to explain it.
-- **Cross-process determinism measured for all nine oracles** — `alphagenome_pt` came in bit-exact
-  (2/2 pairs) once the crash above stopped blocking it, leaving **Enformer as the only oracle that
-  drifts between processes**. Written up in
-  `audits/2026-08-17_post_v074_focused_audit.md`. Corrects two claims in `AUDIT_CHECKLIST.md`: an
-  "AlphaGenome is NOT deterministic" finding that three gate runs now contradict (`0.000e+00`), and a
-  "verified bitwise" claim that held same-process only.
-- `TrackRecord.has_background` no longer promises more than it delivers: no oracle populates it, so
-  the docstring now says so and explains why (`describe_tracks()` stays download-free), pointing
-  callers at `NormalizationLoader.has_background`.
-
+## [0.7.5] — 2026-08-18
 ### Fixed
 
 - **`predict_variant_effect(..., assay_ids=None)` no longer fails on `alphagenome_pt`.** It raised
@@ -77,6 +55,55 @@ project adheres to [Semantic Versioning](https://semver.org/).
   measurement (correlation > 0.99, peak-relative < 8%, versus a worst measured head of 4.945%); the
   existing 2% bound on the three DNASE tracks is left untouched rather than loosened, so coverage grows
   without trading away sensitivity where it is already earned.
+
+### Documentation
+
+- **README audit, section by section.** Every CLI invocation, flag, Python API call, track count,
+  sequence length and stated size was checked against the code or the shipped artefacts. Most of it was
+  already right — the coordinate-convention table, the Cherimoya 1,149/369 assay split, AlphaGenome's
+  1 bp vs 128 bp bin sizes, the 24 MCP tools, the 4 K562 ATAC experiments and every sequence length all
+  reproduce exactly. Five things did not:
+  - **The install instruction said `git checkout v0.7.4`** and **the citation BibTeX said `0.7.3`**, two
+    releases stale. Both are copy-paste targets: one decides which code a reader installs, the other what
+    they cite in a paper. Now guarded against `chorus.__version__`, which nothing had tied them to.
+  - **The disk breakdown understated backgrounds by ~1.5 GB** (~1.9 → ~3.4 GB) and its total with it
+    (~85 → ~87 GB), because the 0.7.4 Sei rebuild grew that NPZ from 40 sequence classes to all 21,947
+    tracks. The existing guard summed the table, which stayed self-consistent while being wrong, so the
+    new guard compares the bucket against the shipped NPZs.
+  - **The AlphaGenome backend-equivalence claim was understated and, for one assay, false.** It said
+    "within 1–2 % relative error across all 7 chorus-exposed assays"; measured per head it is 0.8–4.9 %
+    at correlation 0.9998–1.0000, and the `SPLICE_SITES` assay — one of those 7 — was not equivalent at
+    all before this release. Now states the measured range, points at the test that enforces it, and tells
+    anyone who ran `alphagenome_pt` on splice tracks to re-run.
+  - **`perbin_cdfs` is omitted for three oracles, not two** (EPInformer-seq was missing), and
+    `signed_floor_rescale_batch` is a normalizer method rather than an `_igv_report` function — a reader
+    following that sentence looked in the wrong module.
+  - **The contributing checklist omitted `_describe_tracks()`**, the hook behind the uniform
+    `describe_tracks()`. Leaving it out recreated exactly the friction that method was added to remove.
+  - Also: the two tables sizing the background NPZs use binary and decimal units respectively, which read
+    as contradicting each other (~260 MB vs 279 MB for the same file). Both now say so.
+- **`describe_tracks()` is now documented in the README.** It shipped in 0.7.4 as the one uniform way
+  to ask any of the nine oracles what it can predict, and the README's "Discovering tracks" section
+  still told users to import an oracle-specific metadata module — the exact friction the method was
+  added to remove. The section now leads with `describe_tracks()` (load-free: no model, no reference
+  genome, no GPU) and keeps the per-oracle metadata search as the deeper option. Every snippet is
+  copied from real output.
+- **The README now states that Enformer predictions vary between processes**, with the measured
+  numbers (~0.02% typical, 3.4% worst on a raw value, bit-identical within one process), the fact that
+  it is the only one of the nine oracles affected, why conclusions are still stable
+  (`quantile_score` ≤0.69%, `near_ties_at_cutoff` covers changed top-N membership), and the
+  `TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1` opt-in for bit-exactness. This was previously
+  recorded only in the CHANGELOG and the null protocol, so a user who ran Enformer twice and got
+  different numbers had nothing in the README to explain it.
+- **Cross-process determinism measured for all nine oracles** — `alphagenome_pt` came in bit-exact
+  (2/2 pairs) once the crash above stopped blocking it, leaving **Enformer as the only oracle that
+  drifts between processes**. Written up in
+  `audits/2026-08-17_post_v074_focused_audit.md`. Corrects two claims in `AUDIT_CHECKLIST.md`: an
+  "AlphaGenome is NOT deterministic" finding that three gate runs now contradict (`0.000e+00`), and a
+  "verified bitwise" claim that held same-process only.
+- `TrackRecord.has_background` no longer promises more than it delivers: no oracle populates it, so
+  the docstring now says so and explains why (`describe_tracks()` stays download-free), pointing
+  callers at `NormalizationLoader.has_background`.
 
 ## [0.7.4] — 2026-08-17
 
@@ -1477,7 +1504,8 @@ HTML report generation with embedded IGV, and the `chorus` CLI
 
 ---
 
-[Unreleased]: https://github.com/pinellolab/chorus/compare/v0.7.3...HEAD
+[Unreleased]: https://github.com/pinellolab/chorus/compare/v0.7.5...HEAD
+[0.7.5]: https://github.com/pinellolab/chorus/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/pinellolab/chorus/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/pinellolab/chorus/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/pinellolab/chorus/compare/v0.7.1...v0.7.2

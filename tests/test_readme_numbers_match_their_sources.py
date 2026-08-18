@@ -220,3 +220,64 @@ def test_the_worked_example_percentiles_agree_wherever_they_appear():
             f"give {act:.4f}. The same example is quoted in two sections and they must agree with "
             f"each other and with the artefact."
         )
+
+
+# ── the disk-usage breakdown ─────────────────────────────────────────────────────
+
+# `tests/test_disk_claims_add_up.py` already sums this table against its stated total, so that is not
+# repeated here. Summing alone could not catch what drifted, though: the backgrounds bucket understated
+# reality by ~1.5 GB *and* the total was consistent with it, so the table added up while being wrong.
+# What follows ties the figures to the artefacts and to the other place the README states the same
+# number. The drift: the 0.7.4 Sei rebuild took Sei's NPZ from 40 tracks (~3 MB) to 21,947
+# (1.5 GB), so the "Per-oracle CDF backgrounds" bucket understated reality by ~1.5 GB and the stated
+# total stayed at ~85 GB. Nothing added the column up, so nothing noticed.
+
+def _disk_table_rows() -> list[tuple[str, float]]:
+    """(label, size in decimal GB) for each bucket row, excluding the total."""
+    text = README.read_text()
+    start = text.index("#### Disk usage breakdown")
+    end = text.index("#### Where chorus puts large files")
+    rows = []
+    for label, num, unit in re.findall(
+        r"^\|\s*(?!\*\*Total)([^|]+?)\s*\|\s*~?([\d.]+)\s*(GB|MB)\s*\|", text[start:end], re.M
+    ):
+        rows.append((label.strip(), float(num) / (1000.0 if unit == "MB" else 1.0)))
+    return rows
+
+
+def _disk_table_total() -> float:
+    text = README.read_text()
+    m = re.search(r"\|\s*\*\*Total default\*\*\s*\|\s*\*\*~?([\d.]+)\s*GB\*\*\s*\|", text)
+    assert m, "the disk-usage table no longer states a total"
+    return float(m.group(1))
+
+
+def test_the_tldr_install_size_agrees_with_the_disk_table():
+    """The same quantity is stated twice — in the TLDR (GiB) and the table (GB, loosely)."""
+    text = README.read_text()
+    m = re.search(r"The install itself\s*\n?\s*is ~([\d.]+) GiB", text)
+    assert m, "the TLDR no longer states the install size"
+    tldr, table = float(m.group(1)), _disk_table_total()
+    assert abs(tldr - table) <= 1.0, (
+        f"the TLDR says ~{tldr} GiB and the disk table says ~{table} GB for the same install. "
+        f"They drifted apart once already when the Sei background grew; keep them together."
+    )
+
+
+@pytest.mark.integration
+def test_the_backgrounds_bucket_matches_the_shipped_npzs():
+    """The bucket that drifted, tied to the artefacts it describes."""
+    from chorus.core.globals import CHORUS_BACKGROUNDS_DIR  # noqa: PLC0415
+
+    d = Path(CHORUS_BACKGROUNDS_DIR)
+    npzs = sorted(d.glob("*_pertrack.npz"))
+    if not npzs:
+        pytest.skip(f"no shipped backgrounds in {d}")
+    actual_gib = sum(p.stat().st_size for p in npzs) / 1024**3
+    label, stated = next(
+        (lab, size) for lab, size in _disk_table_rows() if "backgrounds" in lab.lower()
+    )
+    assert abs(actual_gib - stated) <= 0.6, (
+        f"README's backgrounds bucket says ~{stated} GB but {len(npzs)} shipped NPZs in {d} total "
+        f"{actual_gib:.2f} GiB. This is exactly how the Sei rebuild slipped past the docs."
+    )

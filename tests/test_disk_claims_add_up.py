@@ -1,7 +1,7 @@
 """The README's disk numbers must be internally consistent.
 
 The install prerequisite said **~38 GB free disk** for the better part of a year while a default
-Linux + CUDA install actually took ~85 GB — measured with ``du -sh`` on the H100 box during the
+Linux + CUDA install actually took ~87 GB — measured with ``du -sh`` on the H100 box during the
 v0.7.3 audit. A user who provisioned a 40 GB volume on that advice ran out of space partway
 through ``chorus setup``, which is the worst moment to find out.
 
@@ -100,7 +100,7 @@ def test_the_buckets_sum_to_the_stated_total():
         f"the disk table's rows sum to {summed:.2f} GB but it claims {total:.2f} GB:\n"
         f"  {detail}\n"
         f"Update the total when you change a row — a table that does not add up is how the "
-        f"'~38 GB' prerequisite survived a real footprint of ~85 GB."
+        f"'~38 GB' prerequisite survived a real footprint of ~85 GB (now ~87 GB after the 0.7.4 Sei rebuild)."
     )
 
 
@@ -152,7 +152,7 @@ def test_dropping_a_sub_gb_row_is_caught(row_fragment, monkeypatch):
 @pytest.mark.parametrize("bad_total", ["~38 GB", "~120 GB"])
 def test_the_guard_catches_a_total_that_does_not_match_its_rows(bad_total, monkeypatch):
     """Fails-without-fix: the historical wrong number, and an over-correction."""
-    text = README.read_text().replace("| **Total default** | **~85 GB** |",
+    text = README.read_text().replace("| **Total default** | **~87 GB** |",
                                       f"| **Total default** | **{bad_total}** |")
     monkeypatch.setattr(Path, "read_text", lambda self, *a, **k: text)
     with pytest.raises(AssertionError):
