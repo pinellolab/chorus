@@ -67,6 +67,23 @@ defect in the execution path it precedes — the cheap test bought less coverage
   duplicated copy of one rule hid a defect, and it is a stronger version of the lesson below: a test can
   fail to catch a bug not only by asserting at the wrong *layer* but by asserting against the wrong
   *copy*.
+* **And the fix after that was also incomplete — 4 tracks fixed, 734 missed.** The port names the
+  activated tensor differently per head: `probs` in the classification head, `predictions` in the usage
+  head. Handling only `probs` left 734 `SPLICE_SITE_USAGE` tracks reading raw logits (-13.8..-11.3 against
+  JAX's 1e-6..1.2e-5, correlating at 0.20 across the full 1 MB window). Because `_CDF_ALIASES` points `alphagenome_pt` at `alphagenome`'s null, those
+  log-space values were ranked against a sigmoid-space reference population — the same failure mode as
+  Sei's stale null, arrived at from the opposite direction.
+
+  **Three sequential fixes for one bug, each looking complete.** The pattern behind it: each fix was
+  verified against the case that motivated it rather than against the *class* of case. Enumerating every
+  dict-returning head in the upstream port — three of them, three different key vocabularies — took one
+  command and would have collapsed all three rounds into one.
+
+  What let it persist is worth more than the fix. `test_jax_pt_chorus_api_equivalence_at_sort1` is the
+  test that makes the `_CDF_ALIASES` premise checkable, and it compared **three DNASE tracks**: one head,
+  1 bp, bare tensor — structurally incapable of seeing a dict-keyed head. A guard aimed at "do the
+  backends agree" that samples the easiest 3 of 5,168 tracks reads as coverage and is not. Now extended
+  to one track per output type, bounds set from full-array measurement.
 
 ## Everything else v0.7.4 changed, re-verified
 

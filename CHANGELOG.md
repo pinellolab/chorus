@@ -48,6 +48,35 @@ project adheres to [Semantic Versioning](https://semver.org/).
 - **The env-mode subprocess template held a second copy of the same logic**, so the first fix left the
   default path (`use_environment=True`) broken while every unit test passed. The template now imports
   the shared helpers, with source-level guards that fail if it ever restates them.
+- **734 `SPLICE_SITE_USAGE` tracks were returning log-space values on `alphagenome_pt`.** The fix above
+  covered the splice-site *classification* head, whose activated tensor the port calls `probs`. The
+  *usage* head calls the same thing `predictions` (matching the JAX reference) and also carries a
+  `track_mask`, so its 734 tracks kept falling through to raw `logits`: PyTorch emitted -13.8..-11.3
+  where JAX gives 1e-6..1.2e-5, with `exp(logits)` recovering the JAX values to 2.7%. Across the full
+  1 MB SORT1 window the two backends correlated at **0.20** for this head.
+
+  This mattered beyond the raw numbers. `alphagenome_pt` has no background null of its own — 
+  `_CDF_ALIASES` maps it to `alphagenome` — so those log-space values were being ranked against a
+  sigmoid-space null, making percentiles for the affected tracks meaningless rather than merely noisy.
+  `alphagenome_pt` is in `_MULTI_TRACK_ORACLES`, so a discovery run enumerates all of them. After the
+  fix the two backends agree at correlation 1.0000 and 4.9% peak-relative difference, in line with every
+  other head. **No committed artefact is affected**: the two example outputs containing
+  `SPLICE_SITE_USAGE` were both produced by the JAX backend, so nothing needs regenerating.
+
+  Tensor selection now tries `("predictions", "probs")` in order rather than one hardcoded name, never
+  falls back to `logits` or to a `*_mask` entry while any activated key exists, and warns loudly when it
+  cannot find one — a silent fall-through to logits is invisible downstream, since log-space values are
+  still finite, still float32, and still the right shape.
+
+### Testing
+
+- **The backend-equivalence test now covers every output type**, not three DNASE tracks. That test is
+  what makes the `_CDF_ALIASES` premise ("the two backends produce identical predictions") checkable, and
+  its three tracks all came from one head, at 1 bp, returning a bare tensor — the easiest case in the
+  model. Both divergences above lived in dict-keyed heads it never touched. Bounds come from full-array
+  measurement (correlation > 0.99, peak-relative < 8%, versus a worst measured head of 4.945%); the
+  existing 2% bound on the three DNASE tracks is left untouched rather than loosened, so coverage grows
+  without trading away sensitivity where it is already earned.
 
 ## [0.7.4] — 2026-08-17
 

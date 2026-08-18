@@ -44,14 +44,28 @@ import logging
 import json
 import numpy as np
 
-#: Which tensor to read from a classification head that returns ``{"logits", "probs"}`` rather than
-#: keying by resolution. Only the splice-site head does this today (4 of the 5,168 tracks).
+#: Keys under which a head may return its *activated* output, in preference order, for heads that key
+#: their dict by tensor kind rather than by resolution.
 #:
-#: ``"probs"`` because the JAX backend — the reference the two are asserted equivalent against — emits
-#: post-softmax probabilities in [0, 1] for these tracks. Relying on dict insertion order instead
-#: silently picked ``"logits"``, so the two backends would have disagreed on those 4 tracks had the
-#: crash on ``int("logits")`` not masked it first.
-_CLASSIFICATION_TENSOR_KEY = "probs"
+#: The upstream port is not consistent about this name, which is the whole reason this is a tuple:
+#:
+#: * ``SpliceSitesClassificationHead`` returns ``{"logits", "probs"}``            (4 tracks)
+#: * ``SpliceSitesUsageHead``          returns ``{"logits", "predictions", "track_mask"}`` (734 tracks)
+#:
+#: Both must resolve to the activated tensor, because that is what the JAX reference calls its
+#: prediction: ``jax.nn.softmax`` for classification and ``jax.nn.sigmoid`` for usage, both returned
+#: under ``'predictions'``. Picking ``logits`` instead yields pre-activation values — measured at
+#: -13.8..-11.3 against JAX's 1e-6..1.2e-5 for a usage track, i.e. log-space numbers ranked against a
+#: sigmoid-space background null. ``exp(logits)`` recovers the JAX values to 2.7%, which is the
+#: ordinary framework difference; that is how the mismatch was identified.
+#:
+#: ``predictions`` is tried first because it is the JAX-reference name and covers the larger head.
+_ACTIVATED_TENSOR_KEYS = ("predictions", "probs")
+
+#: Substrings marking a dict entry that is *not* a prediction tensor at all (``track_mask``,
+#: ``splice_junction_mask``). Excluded from the last-resort fallback so a mask is never sliced as if it
+#: were signal.
+_NON_PREDICTION_KEY_HINTS = ("mask",)
 
 
 def _select_head_tensor(head_out: Any, res: Any, ot_name: str = "") -> Any:
@@ -80,15 +94,26 @@ def _select_head_tensor(head_out: Any, res: Any, ot_name: str = "") -> Any:
         return head_out
     if res in head_out:
         return head_out[res]
-    if _CLASSIFICATION_TENSOR_KEY in head_out:
-        return head_out[_CLASSIFICATION_TENSOR_KEY]
-    first = next(iter(head_out.keys()))
+    for key in _ACTIVATED_TENSOR_KEYS:
+        if key in head_out:
+            return head_out[key]
+    # No known activated key. Prefer anything over raw logits or a mask, and say so loudly — silently
+    # returning logits is the defect this function exists to prevent, and it is invisible downstream
+    # because log-space values are still finite, still float32, still the right shape.
+    usable = [
+        k for k in head_out
+        if not (isinstance(k, str)
+                and (k == "logits" or any(h in k for h in _NON_PREDICTION_KEY_HINTS)))
+    ]
+    chosen = usable[0] if usable else next(iter(head_out.keys()))
     logger.warning(
-        "Head output for %s is keyed by neither resolution %r nor %r; falling back to %r. Check "
-        "whether the upstream port changed its output shape.",
-        ot_name or "?", res, _CLASSIFICATION_TENSOR_KEY, first,
+        "Head output for %s is keyed by neither resolution %r nor any known activated key %r; "
+        "falling back to %r. If that is raw logits, percentiles for these tracks will be ranked "
+        "against a background null in a different space. Check whether the upstream port renamed its "
+        "output keys.",
+        ot_name or "?", res, _ACTIVATED_TENSOR_KEYS, chosen,
     )
-    return head_out[first]
+    return head_out[chosen]
 
 
 def _as_resolution(value: Any) -> int:
