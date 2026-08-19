@@ -250,6 +250,22 @@ def _describe_tracks_requested(assay_ids, variant_result=None) -> str:
     return f"{len(assay_ids)} tracks"
 
 
+def _write_html_report(report, output_dir: str) -> str:
+    """Write *report*'s HTML to *output_dir* and return the resulting file path.
+
+    ``report.to_html()`` returns the full HTML string (used elsewhere for
+    in-memory rendering), not a path — callers that only need the on-disk
+    location must not stash that return value directly into a JSON tool
+    result: for reports with large embedded tracks (e.g.
+    show_conservation=True) the HTML can run into the tens of MB, which
+    breaks the MCP stdio transport if shipped back as a string field.
+    """
+    from pathlib import Path
+
+    report.to_html(output_path=output_dir)
+    return str(Path(output_dir) / report.default_filename())
+
+
 def _auto_region(oracle, position: str) -> str:
     """Compute an input region centered on a variant position.
 
@@ -624,6 +640,80 @@ def get_gene_tss(gene_name: str) -> dict:
     df = _get_tss(gene_name)
     records = df.to_dict(orient="records")
     return {"gene_name": gene_name, "num_transcripts": len(records), "tss_positions": records}
+
+
+def _annotation_page(results: list) -> dict:
+    """Cap an annotation listing at ``_TRACK_RESULT_CAP`` rows, same explicit
+    truncation convention as :func:`_track_page` (see its docstring for why),
+    with field names that fit annotations rather than oracle tracks.
+    """
+    shown = results[:_TRACK_RESULT_CAP]
+    truncated = len(results) > len(shown)
+    out = {
+        "num_annotations": len(results),
+        "showing": len(shown),
+        "truncated": truncated,
+        "annotations": shown,
+    }
+    if truncated:
+        out["note"] = (
+            f"{len(results)} annotations matched; showing the first {len(shown)}. "
+            "'num_annotations' is the full count."
+        )
+    return out
+
+
+@mcp.tool()
+@_safe_tool
+def list_annotations() -> dict:
+    """List every known annotation: conservation tracks (GPN-Star, PhyloP, PhastCons),
+    GENCODE gene annotations, and any custom annotation registered via `chorus
+    annotation add`.
+
+    Each row reports its reference genome build, download status, and (once
+    downloaded) local path. Does not download anything.
+    """
+    from chorus.utils.annotation_store import get_annotation_store
+
+    entries = get_annotation_store().list_annotations()
+    rows = [e.as_dict() for e in entries]
+    return _annotation_page(rows)
+
+
+@mcp.tool()
+@_safe_tool
+def describe_annotation(annotation_id: str) -> dict:
+    """Full metadata for one annotation, including a physically-verified genome
+    build for downloaded bigwig-format tracks.
+
+    Args:
+        annotation_id: Id from `list_annotations` (e.g. "gpn_star", "gencode_v48_basic").
+
+    Raises if a downloaded bigwig's actual chromosome-1 length doesn't match its
+    declared genome build — a mismatch would otherwise return a plausible-looking
+    score about the wrong piece of DNA.
+    """
+    from chorus.utils.annotation_store import get_annotation_store
+
+    entry = get_annotation_store().describe_annotation(annotation_id)
+    return entry.as_dict()
+
+
+@mcp.tool()
+@_safe_tool
+def download_annotation(annotation_id: str) -> dict:
+    """Download (or confirm already-cached) an annotation by id.
+
+    WARNING: some conservation tracks are 7-44 GB; this can be a long-running,
+    large download. No-ops if already downloaded.
+
+    Args:
+        annotation_id: Id from `list_annotations`.
+    """
+    from chorus.utils.annotation_store import get_annotation_store
+
+    path = get_annotation_store().download_annotation(annotation_id)
+    return {"annotation_id": annotation_id, "path": str(path)}
 
 
 # ── Oracle lifecycle ─────────────────────────────────────────────────
@@ -1227,6 +1317,7 @@ def analyze_variant_multilayer(
     gene_name: Optional[str] = None,
     region: Optional[str] = None,
     igv_raw: bool = False,
+    show_conservation: bool = False,
     ldlink_token: Optional[str] = None,
     genome_build: str = "grch38",
     user_prompt: Optional[str] = None,
@@ -1266,6 +1357,14 @@ def analyze_variant_multilayer(
         igv_raw: When True, the IGV browser in the HTML report shows raw
                  signal with autoscale instead of the layer-aware rescaled
                  view. Table scores are unaffected.
+        show_conservation: When True, adds conservation tracks to the IGV
+                 browser: two GPN-Star tracks (coverage + sequence logo)
+                 showing a fixed clip(1 - entropy, 0, 1) conservation
+                 score (most conserved = highest value/tallest per-base
+                 letters when zoomed in below 2bp/pixel), and raw PhyloP
+                 20-way / PhastCons 7-way coverage tracks from UCSC — all
+                 capped to a bounded window around the variant. Downloads
+                 each source bigwig (~7-10 GB apiece) on first use.
         ldlink_token: LDlink API token (only used when ``position`` is an
                   rsID). Register free at https://ldlink.nih.gov/?tab=apiaccess
                   or set ``LDLINK_TOKEN``.
@@ -1314,6 +1413,7 @@ def analyze_variant_multilayer(
         gene_name=gene_name,
         normalizer=state.get_normalizer(oracle_name),
         igv_raw=igv_raw,
+        show_conservation=show_conservation,
         analysis_request=analysis_request,
     )
 
@@ -1323,8 +1423,7 @@ def analyze_variant_multilayer(
     # Save HTML report to output directory
     if state.output_dir:
         try:
-            html_path = report.to_html(output_path=state.output_dir)
-            result["html_report_path"] = html_path
+            result["html_report_path"] = _write_html_report(report, state.output_dir)
         except Exception:
             pass  # HTML generation is optional
 
@@ -1460,8 +1559,7 @@ def discover_variant(
         result["markdown_report"] = report.to_markdown()
         if state.output_dir:
             try:
-                html_path = report.to_html(output_path=state.output_dir)
-                result["html_report_path"] = html_path
+                result["html_report_path"] = _write_html_report(report, state.output_dir)
             except Exception:
                 pass
 
@@ -1646,8 +1744,7 @@ def analyze_region_swap(
         result["description"] = description
     if state.output_dir:
         try:
-            html_path = report.to_html(output_path=state.output_dir)
-            result["html_report_path"] = html_path
+            result["html_report_path"] = _write_html_report(report, state.output_dir)
         except Exception:
             pass
     return result
@@ -1710,8 +1807,7 @@ def simulate_integration(
         result["description"] = description
     if state.output_dir:
         try:
-            html_path = report.to_html(output_path=state.output_dir)
-            result["html_report_path"] = html_path
+            result["html_report_path"] = _write_html_report(report, state.output_dir)
         except Exception:
             pass
     return result
@@ -1949,8 +2045,7 @@ def fine_map_causal_variant(
     output["analysis_type"] = "causal_prioritization"
     if state.output_dir:
         try:
-            html_path = result.to_html(output_path=state.output_dir)
-            output["html_report_path"] = html_path
+            output["html_report_path"] = _write_html_report(result, state.output_dir)
         except Exception:
             pass
     return output

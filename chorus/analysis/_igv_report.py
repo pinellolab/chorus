@@ -37,9 +37,14 @@ logger = logging.getLogger(__name__)
 # what is now bundled and the one resource that cannot be. The CDN <script>
 # fallback is the last resort and only triggers when both the bundled copy and
 # both network paths fail.
-_IGV_CDN = "https://cdn.jsdelivr.net/npm/igv@3.1.1/dist/igv.min.js"
+_IGV_CDN = "https://cdn.jsdelivr.net/npm/igv@3.8.4/dist/igv.min.js"
 _IGV_LOCAL = CHORUS_LIB_DIR / "igv.min.js"
 _IGV_BUNDLED = Path(__file__).parent / "static" / "igv.min.js"
+# Custom IGV.js track type registered via the public igv.registerTrackClass
+# plugin API (not part of the vendored/minified bundle above) — draws the
+# LLR-derived stacked-base conservation logo. See its header comment for
+# the track-plugin contract this mirrors.
+_GPN_STAR_LOGO_TRACK_JS = Path(__file__).parent / "static" / "gpn_star_logo_track.js"
 # HuggingFace mirror — tertiary fallback for unusual installs where the
 # bundled resource is missing (e.g. stripped by a packer) and stdlib
 # urllib is blocked by a MITM proxy.
@@ -996,6 +1001,7 @@ def build_igv_html(
     normalizer=None,
     oracle_name: Optional[str] = None,
     modification_region: Optional[tuple[int, int]] = None,
+    show_conservation: bool = False,
 ) -> str:
     """Build the IGV.js browser configuration as an HTML fragment.
 
@@ -1013,6 +1019,20 @@ def build_igv_html(
             When provided, signal values are mapped to genome-wide activity
             percentiles [0, 1], making all tracks directly comparable.
         oracle_name: Oracle name for baseline lookup (required if normalizer given).
+        show_conservation: Add conservation tracks: a plain GPN-Star
+            coverage track showing a fixed ``clip(1 - entropy, 0, 1)``
+            conservation score (0 = neutral, 1 = fully constrained — most
+            conserved positions get the highest values), a stacked
+            LLR-derived sequence-logo track (custom ``gpnStarStackedLogo``
+            IGV.js track type — four colored bars per position, one per
+            nucleotide, height ``p(base) * (2 - H)`` from the calibrated
+            LLR bigwigs; see ``conservation.compute_stacked_logo_heights``)
+            — plus raw, untransformed PhyloP 20-way / PhastCons 7-way
+            coverage tracks from UCSC. All are capped to
+            ``conservation.DEFAULT_MAX_WINDOW_BP`` around the variant.
+            Downloads each source bigwig (~7-10 GB apiece, ~11 GB apiece
+            for the four LLR tracks) on first use
+            (see ``chorus.analysis.conservation``).
 
     Returns:
         HTML string containing the IGV.js browser div + script.
@@ -1044,7 +1064,11 @@ def build_igv_html(
         marker_label = f"{variant_chrom}:{marker_start+1:,}-{marker_end:,} ({ref_allele}>{alt_allele})"
     else:
         marker_start = variant_pos - 1
-        marker_end = variant_pos + max(len(ref_allele), 1)
+        # Width = len(ref_allele) bases starting at marker_start — computing
+        # this from variant_pos instead (variant_pos + len(ref_allele))
+        # double-counts the -1 above, making the highlight one base too
+        # wide (e.g. 2bp for a 1bp SNP).
+        marker_end = marker_start + max(len(ref_allele), 1)
         marker_label = f"{variant_chrom}:{variant_pos:,} {ref_allele}>{alt_allele}"
 
     tracks.append({
@@ -1186,6 +1210,106 @@ def build_igv_html(
             ],
         })
 
+    use_stacked_logo_track = False
+    if show_conservation:
+        try:
+            from . import conservation
+
+            # pred_start/pred_end are 0-based half-open (GenomeRef
+            # convention); conservation.py's region args are 1-based
+            # inclusive (matches saturation.py / UCSC "chr:start-end").
+            # Capped to conservation.DEFAULT_MAX_WINDOW_BP around the
+            # variant (oracle prediction windows can reach ~1Mb, which at
+            # true per-base resolution would bloat the self-contained HTML
+            # by tens of MB per track).
+            #
+            # transform="invert" remaps entropy to a FIXED clip(1 -
+            # entropy, 0, 1) conservation score (entropy=1, the documented
+            # "neutral" reference, maps to 0; entropy=0 maps to 1) rather
+            # than a window-relative max, so the baseline is a consistent
+            # 0 regardless of what else is in the window.
+            entropy_features = conservation.conservation_igv_features(
+                variant_chrom, pred_start + 1, pred_end, center=variant_pos,
+                transform="invert",
+            )
+            tracks.append({
+                "name": "GPN-Star conservation score (1 - entropy, clipped)",
+                "type": "wig",
+                "height": 40,
+                "min": 0,
+                "max": 1,
+                "autoscale": False,
+                "color": "rgb(42,157,143)",
+                "features": entropy_features,
+            })
+        except Exception as exc:
+            logger.warning("Could not build GPN-Star conservation track: %s", exc)
+
+        try:
+            from . import conservation
+
+            if not _GPN_STAR_LOGO_TRACK_JS.exists():
+                raise FileNotFoundError(
+                    f"custom track script missing at {_GPN_STAR_LOGO_TRACK_JS} "
+                    "(stripped from install?) — skipping the stacked-logo track "
+                    "rather than emitting a track igv.js can't render"
+                )
+
+            # Stacked-base logo: unlike the coverage track above, features
+            # carry four per-base heights (pA/pC/pG/pT) rather than a
+            # single value — rendered by the custom "gpnStarStackedLogo"
+            # IGV.js track type (chorus/analysis/static/gpn_star_logo_track.js)
+            # as four colored, stacked bars per position. Height is
+            # p(base) * (2 - entropy) from the calibrated LLR bigwigs, not
+            # the plain 1-entropy score used by the coverage track above —
+            # this is the only track that reflects *which* alternate bases
+            # are tolerated at a position, not just how constrained it is.
+            stacked_logo_features = conservation.conservation_stacked_logo_igv_features(
+                variant_chrom, pred_start + 1, pred_end, center=variant_pos,
+            )
+            tracks.append({
+                "name": "GPN-Star conservation — sequence logo (LLR-derived)",
+                # lowercase: igv.js lowercases config.type before looking it up
+                # in its track-class registry, so this must match the string
+                # passed to igv.registerTrackClass in gpn_star_logo_track.js.
+                "type": "gpnstarstackedlogo",
+                "height": 60,
+                "features": stacked_logo_features,
+            })
+            use_stacked_logo_track = True
+        except Exception as exc:
+            logger.warning("Could not build GPN-Star stacked-logo conservation track: %s", exc)
+
+        try:
+            phylop_features = conservation.phylop_igv_features(
+                variant_chrom, pred_start + 1, pred_end, center=variant_pos,
+            )
+            tracks.append({
+                "name": "PhyloP 20-way",
+                "type": "wig",
+                "height": 40,
+                "autoscale": True,
+                "color": "rgb(106,76,147)",
+                "features": phylop_features,
+            })
+        except Exception as exc:
+            logger.warning("Could not build PhyloP conservation track: %s", exc)
+
+        try:
+            phastcons_features = conservation.phastcons_igv_features(
+                variant_chrom, pred_start + 1, pred_end, center=variant_pos,
+            )
+            tracks.append({
+                "name": "PhastCons 7-way",
+                "type": "wig",
+                "height": 40,
+                "autoscale": True,
+                "color": "rgb(25,130,196)",
+                "features": phastcons_features,
+            })
+        except Exception as exc:
+            logger.warning("Could not build PhastCons conservation track: %s", exc)
+
     # ROI: red stripe across all tracks highlighting the modification
     roi = [{
         "name": "Modification",
@@ -1213,9 +1337,17 @@ def build_igv_html(
     else:
         igv_script_tag = f'<script src="{_IGV_CDN}"></script>'
 
+    # The custom track class must register (igv.registerTrackClass) before
+    # igv.createBrowser reads the "tracks" config below, so it's inlined
+    # right after igv.min.js and before the browser-creation script.
+    logo_track_script_tag = ""
+    if use_stacked_logo_track:
+        logo_track_script_tag = f"<script>{_GPN_STAR_LOGO_TRACK_JS.read_text()}</script>"
+
     html = f"""
 <div id="igv-div" style="margin: 1rem 0; min-height: 400px;"></div>
 {igv_script_tag}
+{logo_track_script_tag}
 <script>
 (async function() {{
     try {{
