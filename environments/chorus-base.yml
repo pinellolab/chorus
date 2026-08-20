@@ -15,6 +15,7 @@ dependencies:
   - pysam>=0.19.0
   - biopython>=1.79
   - pyfaidx>=0.7.0
+  - pybigwig>=0.3.18
   # gtfsort: Linux-only (bioconda), install separately on Linux: mamba install -c bioconda gtfsort
 
   # Utilities

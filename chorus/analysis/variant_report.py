@@ -125,6 +125,9 @@ class VariantReport:
     # When True, IGV browser uses raw signal with autoscale instead of
     # the layer-aware floor rescale (default).  Table scores are unaffected.
     _igv_raw: bool = field(default=False, repr=False)
+    # When True, adds a GPN-Star conservation (entropy) track to the IGV
+    # browser (downloads the ~9.9 GB bigwig on first use).
+    _show_conservation: bool = field(default=False, repr=False)
     # Number of scored tracks dropped from the IGV browser because more
     # than 50 tracks were scored. The table still shows all of them.
     _igv_truncated: int = field(default=0, repr=False)
@@ -1006,6 +1009,7 @@ def build_variant_report(
     gene_name: str | None = None,
     normalizer: PerTrackNormalizer | QuantileNormalizer | None = None,
     igv_raw: bool = False,
+    show_conservation: bool = False,
     analysis_request: AnalysisRequest | None = None,
     lightweight: bool = False,
 ) -> VariantReport:
@@ -1034,6 +1038,17 @@ def build_variant_report(
         igv_raw: When ``True``, the IGV browser shows raw signal values
             with per-track autoscale instead of the layer-aware
             floor-rescale view.  Table scores still use the normalizer.
+        show_conservation: When ``True``, adds conservation tracks to the
+            IGV browser: two GPN-Star tracks (vertebrate-alignment model —
+            GPN-Star also ships mammalian and primate variants, not used
+            here) showing a fixed ``clip(1 - entropy, 0, 1)`` conservation
+            score (most conserved = highest value/tallest letter) — a
+            coverage track and a sequence-logo track (IGV's ``dynseq``
+            graph type) — and raw PhyloP 100-way / PhastCons 100-way
+            coverage tracks from UCSC (same 100-way vertebrate alignment)
+            — all capped to ``conservation.DEFAULT_MAX_WINDOW_BP`` around
+            the variant. Downloads each source bigwig (~5.5-9.9 GB apiece)
+            on first use (see ``chorus.analysis.conservation``).
         lightweight: When ``True``, build only the per-track ``allele_scores``
             needed for ranking / composite scoring and SKIP the
             display-only IGV ``_predictions`` assembly (filtering and
@@ -1355,6 +1370,7 @@ def build_variant_report(
         analysis_request=analysis_request,
         _normalizer=normalizer,
         _igv_raw=igv_raw,
+        _show_conservation=show_conservation,
     )
 
     # Attach nearby genes info for the report
@@ -1881,6 +1897,7 @@ def _render_track_figure(
             normalizer=igv_normalizer,
             oracle_name=report.oracle_name,
             modification_region=report.modification_region,
+            show_conservation=report._show_conservation,
         )
 
         if igv_html:
@@ -1937,6 +1954,28 @@ def _render_track_figure(
                     'comparable). Pass <code>'
                     'chorus.analysis.get_normalizer(oracle_name)</code> '
                     'for the rescaled view.</p>'
+                )
+            if report._show_conservation:
+                from .conservation import DEFAULT_MAX_WINDOW_BP
+                parts.append(
+                    '<p style="font-size:.85rem;color:#6b7280;margin-top:-.5rem">'
+                    f'<b>Conservation tracks</b> are shown at true single-base '
+                    f'resolution within {DEFAULT_MAX_WINDOW_BP:,} bp of the '
+                    'variant (never averaged into misleading flat blocks): '
+                    '<b>GPN-Star</b> (vertebrate-alignment model — GPN-Star '
+                    'also ships mammalian and primate variants, not shown '
+                    'here) is shown as two tracks — a coverage track and a '
+                    'sequence-logo track — both displaying a fixed '
+                    '<code>clip(1 - entropy, 0, 1)</code> conservation '
+                    'score rather than raw entropy: <b>0</b> = neutral '
+                    '(entropy &ge; 1), <b>1</b> = fully constrained, so the '
+                    'most conserved positions get the <b>tallest</b> '
+                    'letters/highest values on a consistent 0-1 baseline '
+                    'across windows (zoom in below 2bp/pixel to see the '
+                    'letters); plus raw, untransformed <b>PhyloP 100-way</b> '
+                    'and <b>PhastCons 100-way</b> coverage tracks from UCSC '
+                    '(same 100-way vertebrate alignment as the GPN-Star '
+                    'model above).</p>'
                 )
             parts.append(igv_html)
 

@@ -910,6 +910,35 @@ class TestHTMLOutput:
         # Has the modification ROI
         assert '"name":"Modification"' in html or "'name':'Modification'" in html
 
+    def test_to_html_modification_marker_is_exactly_ref_allele_wide(self):
+        # Regression test: marker_end was computed from variant_pos instead
+        # of from marker_start (variant_pos - 1), double-counting the -1
+        # and making every modification highlight one base too wide (e.g.
+        # 2bp for a 1bp SNP instead of 1bp).
+        import json
+        import re
+
+        from chorus.analysis.variant_report import build_variant_report
+
+        ref = {"DNASE:K562": np.ones(1000, dtype=np.float32)}
+        alt = {"DNASE:K562": np.ones(1000, dtype=np.float32) * 2.0}
+
+        def _marker_width(alleles):
+            vr = _make_variant_result(ref, alt, alleles=alleles)
+            html = build_variant_report(vr, oracle_name="test").to_html()
+            m = re.search(
+                r'igv\.createBrowser\(\s*document\.getElementById\("igv-div"\),\s*(\{.*?\})\s*\);', html, re.S,
+            )
+            opts = json.loads(m.group(1))
+            mod_track = next(
+                t for t in opts["tracks"] if t.get("type") == "annotation" and t["name"].startswith("Modification")
+            )
+            feat = mod_track["features"][0]
+            return feat["end"] - feat["start"]
+
+        assert _marker_width(["A", "G"]) == 1  # SNP: exactly 1bp, not 2
+        assert _marker_width(["ACG", "T"]) == 3  # 3bp ref allele: exactly 3bp, not 4
+
 
 # ── Region swap tests ────────────────────────────────────────────────
 

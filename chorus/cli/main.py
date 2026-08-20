@@ -289,36 +289,48 @@ def check_health(args):
         oracles = [o for o in manager.list_available_oracles()
                   if manager.environment_exists(o)]
 
-    if not oracles:
-        logger.info("No installed environments to check.")
-        return 0
-    
     all_ok = True
 
-    for oracle in oracles:
-        logger.info(f"\nChecking {oracle}...")
-        health = runner.check_environment_health(oracle, timeout=args.timeout)
+    if not oracles:
+        logger.info("No installed environments to check.")
+    else:
+        for oracle in oracles:
+            logger.info(f"\nChecking {oracle}...")
+            health = runner.check_environment_health(oracle, timeout=args.timeout)
 
-        if health.get('weights_status') == 'missing':
-            logger.warning(
-                f"⚠ {oracle}: Not installed — run `chorus setup --oracle {oracle}`"
-            )
-            for reason in health.get('missing_artifacts', []):
-                logger.warning(f"  - {reason}")
-            all_ok = False
-        elif health['errors']:
-            logger.error(f"✗ {oracle}: Unhealthy")
-            for error in health['errors']:
-                logger.error(f"  - {error}")
-            all_ok = False
-        else:
-            logger.info(f"✓ {oracle}: Healthy")
+            if health.get('weights_status') == 'missing':
+                logger.warning(
+                    f"⚠ {oracle}: Not installed — run `chorus setup --oracle {oracle}`"
+                )
+                for reason in health.get('missing_artifacts', []):
+                    logger.warning(f"  - {reason}")
+                all_ok = False
+            elif health['errors']:
+                logger.error(f"✗ {oracle}: Unhealthy")
+                for error in health['errors']:
+                    logger.error(f"  - {error}")
+                all_ok = False
+            else:
+                logger.info(f"✓ {oracle}: Healthy")
 
-            if args.verbose and health.get('metadata'):
-                metadata = health['metadata']
-                logger.info(f"  Class: {metadata.get('class_name')}")
-                logger.info(f"  Assay types: {len(metadata.get('assay_types', []))}")
-                logger.info(f"  Cell types: {len(metadata.get('cell_types', []))}")
+                if args.verbose and health.get('metadata'):
+                    metadata = health['metadata']
+                    logger.info(f"  Class: {metadata.get('class_name')}")
+                    logger.info(f"  Assay types: {len(metadata.get('assay_types', []))}")
+                    logger.info(f"  Cell types: {len(metadata.get('cell_types', []))}")
+
+    # Conservation tracks are independent of any single oracle's env, so
+    # only surface them in the general (unfiltered) health overview —
+    # `chorus health --oracle X` stays scoped to that oracle.
+    if not args.oracle:
+        from ..analysis import conservation
+        logger.info("\nConservation tracks (chorus conservation download to pre-fetch):")
+        for track, status in conservation.list_tracks().items():
+            if status["downloaded"]:
+                size_gb = status["size_bytes"] / (1024 ** 3)
+                logger.info(f"  ✓ {track}: {size_gb:.1f} GB")
+            else:
+                logger.info(f"  - {track}: not downloaded ({status['size_note']})")
 
     return 0 if all_ok else 1
 
@@ -671,6 +683,14 @@ def main(argv: Optional[List[str]] = None):
     from ._datadir import register_config_subcommand
     config_parser = register_config_subcommand(subparsers)
 
+    # Conservation command
+    from ._conservation import register_conservation_subcommand
+    conservation_parser = register_conservation_subcommand(subparsers)
+
+    # Annotation command
+    from ._annotation import register_annotation_subcommand
+    annotation_parser = register_annotation_subcommand(subparsers)
+
     # Cleanup command
     from ._cleanup import cleanup_resources
     cleanup_parser = subparsers.add_parser(
@@ -749,7 +769,17 @@ def main(argv: Optional[List[str]] = None):
     if args.command == 'backgrounds' and not hasattr(args, 'func'):
         bg_parser.print_help()
         return 0
-    
+
+    # Handle conservation subcommand without action
+    if args.command == 'conservation' and not hasattr(args, 'func'):
+        conservation_parser.print_help()
+        return 0
+
+    # Handle annotation subcommand without action
+    if args.command == 'annotation' and not hasattr(args, 'func'):
+        annotation_parser.print_help()
+        return 0
+
     # Execute command
     return args.func(args)
 

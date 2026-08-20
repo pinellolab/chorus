@@ -5,8 +5,26 @@ All notable changes to Chorus are documented here. The format follows
 project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+### Added
 
-_Nothing yet._
+- **Conservation-score tracks for IGV reports.** `chorus/analysis/conservation.py` wraps three
+  hg38 conservation sources as bulk-downloaded genome-wide bigwigs (mirroring how oracle weights
+  and per-track backgrounds are cached): GPN-Star entropy, vertebrate-alignment model (GPN-Star
+  also ships mammalian and primate models, not used here), shown as a coverage track plus a
+  per-nucleotide sequence-logo track, both displaying `clip(1 - entropy, 0, 1)` so the most
+  conserved positions are tallest/highest; UCSC PhyloP 100-way; and UCSC PhastCons 100-way (both
+  raw coverage, the same 100-way vertebrate alignment as the GPN-Star model).
+  `analyze_variant_multilayer(..., show_conservation=True)` adds all of these to the IGV browser,
+  capped to a bounded window around the variant. A new `chorus conservation` CLI subcommand
+  lists/downloads the tracks ahead of time; `chorus health` surfaces their download status.
+- **A unified annotation catalog.** `chorus/utils/annotation_store.py` adds `AnnotationStore`,
+  which lists/describes/downloads across the three previously-separate annotation registries
+  (conservation tracks, GENCODE GTF gene annotations, and a new user-editable custom-entry YAML
+  file) through one interface, plus new `list_annotations` / `describe_annotation` /
+  `download_annotation` MCP tools and a `chorus annotation` CLI subcommand. Downloaded
+  bigwig-format entries have their declared genome build physically verified against the file's
+  own chromosome-1 length, raising on a confident mismatch rather than silently scoring the
+  wrong genome build.
 
 ## [0.7.5] — 2026-08-18
 ### Fixed
