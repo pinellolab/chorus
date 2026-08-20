@@ -69,8 +69,8 @@ def test_gpn_star_bigwig_path_downloads_and_flattens(tmp_path, monkeypatch):
 @pytest.mark.parametrize(
     "track,path_fn,has_fn",
     [
-        ("phylop20way", conservation.phylop_bigwig_path, conservation.has_phylop_bigwig),
-        ("phastcons7way", conservation.phastcons_bigwig_path, conservation.has_phastcons_bigwig),
+        ("phylop100way", conservation.phylop_bigwig_path, conservation.has_phylop_bigwig),
+        ("phastcons100way", conservation.phastcons_bigwig_path, conservation.has_phastcons_bigwig),
     ],
 )
 def test_url_source_bigwig_path_downloads(tmp_path, monkeypatch, track, path_fn, has_fn):
@@ -116,7 +116,7 @@ def test_list_tracks_reports_status_without_downloading(tmp_path, monkeypatch):
 
     assert set(info.keys()) == {
         "gpn_star", "gpn_star_llr_a", "gpn_star_llr_c", "gpn_star_llr_g", "gpn_star_llr_t",
-        "phylop20way", "phastcons7way",
+        "phylop100way", "phastcons100way",
     }
     for track, status in info.items():
         assert status["downloaded"] is False
@@ -133,7 +133,7 @@ def test_list_tracks_reports_status_without_downloading(tmp_path, monkeypatch):
     info2 = conservation.list_tracks(downloads_dir)
     assert info2["gpn_star"]["downloaded"] is True
     assert info2["gpn_star"]["size_bytes"] == 1234
-    assert info2["phylop20way"]["downloaded"] is False
+    assert info2["phylop100way"]["downloaded"] is False
 
 
 def test_download_track_dispatches_by_name(tmp_path, monkeypatch):

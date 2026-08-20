@@ -40,13 +40,13 @@ logger = logging.getLogger(__name__)
 #: Conservation tracks carry no description in ``conservation._TRACK_SOURCES`` (it's a
 #: bare download-dispatch table), so descriptions live here instead.
 _CONSERVATION_DESCRIPTIONS = {
-    "gpn_star": "GPN-Star entropy conservation score (hg38)",
-    "gpn_star_llr_a": "GPN-Star calibrated log-likelihood ratio, base A (hg38)",
-    "gpn_star_llr_c": "GPN-Star calibrated log-likelihood ratio, base C (hg38)",
-    "gpn_star_llr_g": "GPN-Star calibrated log-likelihood ratio, base G (hg38)",
-    "gpn_star_llr_t": "GPN-Star calibrated log-likelihood ratio, base T (hg38)",
-    "phylop20way": "UCSC PhyloP 20-way conservation score (hg38)",
-    "phastcons7way": "UCSC PhastCons 7-way conservation score (hg38)",
+    "gpn_star": "GPN-Star entropy conservation score, vertebrate-alignment model (hg38)",
+    "gpn_star_llr_a": "GPN-Star calibrated log-likelihood ratio, base A, vertebrate-alignment model (hg38)",
+    "gpn_star_llr_c": "GPN-Star calibrated log-likelihood ratio, base C, vertebrate-alignment model (hg38)",
+    "gpn_star_llr_g": "GPN-Star calibrated log-likelihood ratio, base G, vertebrate-alignment model (hg38)",
+    "gpn_star_llr_t": "GPN-Star calibrated log-likelihood ratio, base T, vertebrate-alignment model (hg38)",
+    "phylop100way": "UCSC PhyloP 100-way conservation score (hg38)",
+    "phastcons100way": "UCSC PhastCons 100-way conservation score (hg38)",
 }
 
 #: Every conservation track shipped today is hg38-only (see conservation.py's module

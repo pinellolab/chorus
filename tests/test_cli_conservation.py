@@ -22,19 +22,19 @@ def _fake_status(downloaded_tracks=()):
             "source": "hf",
             "path": _FakePath("/fake/downloads/gpn_star/entropy.bw"),
         },
-        "phylop20way": {
-            "downloaded": "phylop20way" in downloaded_tracks,
-            "size_bytes": 234567890 if "phylop20way" in downloaded_tracks else None,
-            "size_note": "~7.3 GB",
+        "phylop100way": {
+            "downloaded": "phylop100way" in downloaded_tracks,
+            "size_bytes": 234567890 if "phylop100way" in downloaded_tracks else None,
+            "size_note": "~9.2 GB",
             "source": "url",
-            "path": _FakePath("/fake/downloads/phylop20way/hg38.phyloP20way.bw"),
+            "path": _FakePath("/fake/downloads/phylop100way/hg38.phyloP100way.bw"),
         },
-        "phastcons7way": {
-            "downloaded": "phastcons7way" in downloaded_tracks,
+        "phastcons100way": {
+            "downloaded": "phastcons100way" in downloaded_tracks,
             "size_bytes": None,
-            "size_note": "~7.2 GB",
+            "size_note": "~5.5 GB",
             "source": "url",
-            "path": _FakePath("/fake/downloads/phastcons7way/hg38.phastCons7way.bw"),
+            "path": _FakePath("/fake/downloads/phastcons100way/hg38.phastCons100way.bw"),
         },
     }
 
@@ -65,9 +65,9 @@ def test_conservation_status_prints_downloaded_and_missing(monkeypatch, capsys):
     out = capsys.readouterr().out
     assert "gpn_star" in out
     assert "GB" in out  # downloaded track shows a size
-    assert "phylop20way" in out
+    assert "phylop100way" in out
     assert "not downloaded" in out  # missing tracks say so
-    assert "~7.3 GB" in out  # missing tracks show the size estimate
+    assert "~9.2 GB" in out  # missing tracks show the size estimate
 
 
 def test_conservation_download_requires_track_or_all():
@@ -106,7 +106,7 @@ def test_conservation_download_all_calls_each_missing_track(monkeypatch):
 
     assert rc == 0
     # gpn_star already downloaded -> skipped; the other two get downloaded.
-    assert set(downloaded) == {"phylop20way", "phastcons7way"}
+    assert set(downloaded) == {"phylop100way", "phastcons100way"}
 
 
 def test_conservation_download_llr_alias_expands_to_all_four_tracks(monkeypatch):

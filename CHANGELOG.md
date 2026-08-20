@@ -9,13 +9,14 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 - **Conservation-score tracks for IGV reports.** `chorus/analysis/conservation.py` wraps three
   hg38 conservation sources as bulk-downloaded genome-wide bigwigs (mirroring how oracle weights
-  and per-track backgrounds are cached): GPN-Star entropy (shown as a coverage track plus a
+  and per-track backgrounds are cached): GPN-Star entropy, vertebrate-alignment model (GPN-Star
+  also ships mammalian and primate models, not used here), shown as a coverage track plus a
   per-nucleotide sequence-logo track, both displaying `clip(1 - entropy, 0, 1)` so the most
-  conserved positions are tallest/highest), UCSC PhyloP 20-way, and UCSC PhastCons 7-way (both
-  raw coverage). `analyze_variant_multilayer(..., show_conservation=True)` adds all of these to
-  the IGV browser, capped to a bounded window around the variant. A new `chorus conservation`
-  CLI subcommand lists/downloads the tracks ahead of time; `chorus health` surfaces their
-  download status.
+  conserved positions are tallest/highest; UCSC PhyloP 100-way; and UCSC PhastCons 100-way (both
+  raw coverage, the same 100-way vertebrate alignment as the GPN-Star model).
+  `analyze_variant_multilayer(..., show_conservation=True)` adds all of these to the IGV browser,
+  capped to a bounded window around the variant. A new `chorus conservation` CLI subcommand
+  lists/downloads the tracks ahead of time; `chorus health` surfaces their download status.
 - **A unified annotation catalog.** `chorus/utils/annotation_store.py` adds `AnnotationStore`,
   which lists/describes/downloads across the three previously-separate annotation registries
   (conservation tracks, GENCODE GTF gene annotations, and a new user-editable custom-entry YAML

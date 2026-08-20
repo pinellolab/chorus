@@ -12,11 +12,16 @@ backgrounds are cached) rather than streamed per-region:
   using the documented "entropy ~1.0 = neutral" reference point, so the
   most-conserved (lowest entropy) positions get the tallest letters/
   highest values and the baseline sits at a consistent 0 across windows
-  (see :func:`_apply_transform`).
-- **PhyloP 20-way** (UCSC ``hg38/phyloP20way/hg38.phyloP20way.bw``, ~7.3 GB)
-  — plain coverage only, raw values, no transform.
-- **PhastCons 7-way** (UCSC ``hg38/phastCons7way/hg38.phastCons7way.bw``,
-  ~7.2 GB) — plain coverage only, raw values, no transform.
+  (see :func:`_apply_transform`). GPN-Star ships three hg38 models, one per
+  multi-species alignment — ``v100`` (100-way **vertebrate**, used here),
+  ``m447`` (447-way mammalian), and ``p243`` (243-way primate); the
+  ``-hg38-v100-200m`` path segment below is that vertebrate model.
+- **PhyloP 100-way** (UCSC ``hg38/phyloP100way/hg38.phyloP100way.bw``,
+  ~9.2 GB) — plain coverage only, raw values, no transform. Same 100-way
+  vertebrate alignment as GPN-Star's ``v100`` model above.
+- **PhastCons 100-way** (UCSC ``hg38/phastCons100way/hg38.phastCons100way.bw``,
+  ~5.5 GB) — plain coverage only, raw values, no transform. Same 100-way
+  vertebrate alignment as GPN-Star's ``v100`` model above.
 
 All three share the same download/cache/read/IGV-feature machinery; only
 the source location and (for GPN-Star) the extra logo rendering differ.
@@ -81,19 +86,19 @@ _TRACK_SOURCES = {
         local_filename="llr_T.bw",
         size_note="~11 GB",
     ),
-    "phylop20way": dict(
+    "phylop100way": dict(
         kind="url",
-        url="https://hgdownload.soe.ucsc.edu/goldenPath/hg38/phyloP20way/hg38.phyloP20way.bw",
-        local_subdir="phylop20way",
-        local_filename="hg38.phyloP20way.bw",
-        size_note="~7.3 GB",
+        url="https://hgdownload.soe.ucsc.edu/goldenPath/hg38/phyloP100way/hg38.phyloP100way.bw",
+        local_subdir="phylop100way",
+        local_filename="hg38.phyloP100way.bw",
+        size_note="~9.2 GB",
     ),
-    "phastcons7way": dict(
+    "phastcons100way": dict(
         kind="url",
-        url="https://hgdownload.soe.ucsc.edu/goldenPath/hg38/phastCons7way/hg38.phastCons7way.bw",
-        local_subdir="phastcons7way",
-        local_filename="hg38.phastCons7way.bw",
-        size_note="~7.2 GB",
+        url="https://hgdownload.soe.ucsc.edu/goldenPath/hg38/phastCons100way/hg38.phastCons100way.bw",
+        local_subdir="phastcons100way",
+        local_filename="hg38.phastCons100way.bw",
+        size_note="~5.5 GB",
     ),
 }
 
@@ -209,28 +214,28 @@ def gpn_star_llr_bigwig_paths(downloads_dir: Path | None = None) -> dict[str, Pa
 
 
 def has_phylop_bigwig(downloads_dir: Path | None = None) -> bool:
-    return _has_bigwig("phylop20way", downloads_dir)
+    return _has_bigwig("phylop100way", downloads_dir)
 
 
 def phylop_bigwig_path(downloads_dir: Path | None = None) -> Path:
-    """Local path to the UCSC PhyloP 20-way bigwig, downloading on first use."""
-    return _bigwig_path("phylop20way", downloads_dir)
+    """Local path to the UCSC PhyloP 100-way bigwig, downloading on first use."""
+    return _bigwig_path("phylop100way", downloads_dir)
 
 
 def has_phastcons_bigwig(downloads_dir: Path | None = None) -> bool:
-    return _has_bigwig("phastcons7way", downloads_dir)
+    return _has_bigwig("phastcons100way", downloads_dir)
 
 
 def phastcons_bigwig_path(downloads_dir: Path | None = None) -> Path:
-    """Local path to the UCSC PhastCons 7-way bigwig, downloading on first use."""
-    return _bigwig_path("phastcons7way", downloads_dir)
+    """Local path to the UCSC PhastCons 100-way bigwig, downloading on first use."""
+    return _bigwig_path("phastcons100way", downloads_dir)
 
 
 def list_tracks(downloads_dir: Path | None = None) -> dict[str, dict]:
     """Status info for every known conservation track (for CLI/health use).
 
-    Keys are the internal track identifiers (``gpn_star``, ``phylop20way``,
-    ``phastcons7way``). Each value has ``path``, ``downloaded`` (bool),
+    Keys are the internal track identifiers (``gpn_star``, ``phylop100way``,
+    ``phastcons100way``). Each value has ``path``, ``downloaded`` (bool),
     ``size_bytes`` (if downloaded, else ``None``), ``size_note``
     (approximate expected size), and ``source`` (``"hf"`` or ``"url"``).
     Pure filesystem check — never triggers a download.
@@ -370,13 +375,13 @@ def compute_stacked_logo_heights(
 
 
 def read_phylop_values(chrom: str, start: int, end: int, *, bw_path: str | Path | None = None) -> np.ndarray:
-    """Read per-base PhyloP 20-way scores. Auto-downloads on first call."""
+    """Read per-base PhyloP 100-way scores. Auto-downloads on first call."""
     path = Path(bw_path) if bw_path is not None else phylop_bigwig_path()
     return read_bigwig_values(chrom, start, end, bw_path=path)
 
 
 def read_phastcons_values(chrom: str, start: int, end: int, *, bw_path: str | Path | None = None) -> np.ndarray:
-    """Read per-base PhastCons 7-way scores. Auto-downloads on first call."""
+    """Read per-base PhastCons 100-way scores. Auto-downloads on first call."""
     path = Path(bw_path) if bw_path is not None else phastcons_bigwig_path()
     return read_bigwig_values(chrom, start, end, bw_path=path)
 
@@ -420,12 +425,12 @@ def conservation_coolbox_track(
 def phylop_coolbox_track(
     *,
     bw_path: str | Path | None = None,
-    title: str = "PhyloP 20-way",
+    title: str = "PhyloP 100-way",
     color: str = "#6a4c93",
     height: float = 2.0,
     **coolbox_kwargs,
 ):
-    """Build a CoolBox frame with the raw PhyloP 20-way track as a bigwig line."""
+    """Build a CoolBox frame with the raw PhyloP 100-way track as a bigwig line."""
     path = Path(bw_path) if bw_path is not None else phylop_bigwig_path()
     return _bigwig_coolbox_track(path, title=title, color=color, height=height, coolbox_kwargs=coolbox_kwargs)
 
@@ -433,12 +438,12 @@ def phylop_coolbox_track(
 def phastcons_coolbox_track(
     *,
     bw_path: str | Path | None = None,
-    title: str = "PhastCons 7-way",
+    title: str = "PhastCons 100-way",
     color: str = "#1982c4",
     height: float = 2.0,
     **coolbox_kwargs,
 ):
-    """Build a CoolBox frame with the raw PhastCons 7-way track as a bigwig line."""
+    """Build a CoolBox frame with the raw PhastCons 100-way track as a bigwig line."""
     path = Path(bw_path) if bw_path is not None else phastcons_bigwig_path()
     return _bigwig_coolbox_track(path, title=title, color=color, height=height, coolbox_kwargs=coolbox_kwargs)
 
@@ -804,7 +809,7 @@ def phylop_igv_features(
     center: int | None = None,
     max_window_bp: int | None = DEFAULT_MAX_WINDOW_BP,
 ) -> list[dict]:
-    """Build IGV wig feature dicts for the raw PhyloP 20-way track (no transform)."""
+    """Build IGV wig feature dicts for the raw PhyloP 100-way track (no transform)."""
     path = Path(bw_path) if bw_path is not None else phylop_bigwig_path()
     return _bigwig_igv_features(
         chrom, start, end, bw_path=path, center=center, max_window_bp=max_window_bp, transform="raw",
@@ -820,7 +825,7 @@ def phastcons_igv_features(
     center: int | None = None,
     max_window_bp: int | None = DEFAULT_MAX_WINDOW_BP,
 ) -> list[dict]:
-    """Build IGV wig feature dicts for the raw PhastCons 7-way track (no transform)."""
+    """Build IGV wig feature dicts for the raw PhastCons 100-way track (no transform)."""
     path = Path(bw_path) if bw_path is not None else phastcons_bigwig_path()
     return _bigwig_igv_features(
         chrom, start, end, bw_path=path, center=center, max_window_bp=max_window_bp, transform="raw",

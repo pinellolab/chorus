@@ -1020,15 +1020,18 @@ def build_igv_html(
             percentiles [0, 1], making all tracks directly comparable.
         oracle_name: Oracle name for baseline lookup (required if normalizer given).
         show_conservation: Add conservation tracks: a plain GPN-Star
-            coverage track showing a fixed ``clip(1 - entropy, 0, 1)``
-            conservation score (0 = neutral, 1 = fully constrained — most
-            conserved positions get the highest values), a stacked
-            LLR-derived sequence-logo track (custom ``gpnStarStackedLogo``
+            coverage track (vertebrate-alignment model — GPN-Star also
+            ships mammalian and primate variants, not used here) showing
+            a fixed ``clip(1 - entropy, 0, 1)`` conservation score
+            (0 = neutral, 1 = fully constrained — most conserved
+            positions get the highest values), a stacked LLR-derived
+            sequence-logo track (custom ``gpnStarStackedLogo``
             IGV.js track type — four colored bars per position, one per
             nucleotide, height ``p(base) * (2 - H)`` from the calibrated
             LLR bigwigs; see ``conservation.compute_stacked_logo_heights``)
-            — plus raw, untransformed PhyloP 20-way / PhastCons 7-way
-            coverage tracks from UCSC. All are capped to
+            — plus raw, untransformed PhyloP 100-way / PhastCons 100-way
+            coverage tracks from UCSC (same 100-way vertebrate alignment
+            as the GPN-Star model above). All are capped to
             ``conservation.DEFAULT_MAX_WINDOW_BP`` around the variant.
             Downloads each source bigwig (~7-10 GB apiece, ~11 GB apiece
             for the four LLR tracks) on first use
@@ -1233,7 +1236,7 @@ def build_igv_html(
                 transform="invert",
             )
             tracks.append({
-                "name": "GPN-Star conservation score (1 - entropy, clipped)",
+                "name": "GPN-Star conservation score, vertebrate (1 - entropy, clipped)",
                 "type": "wig",
                 "height": 40,
                 "min": 0,
@@ -1268,7 +1271,7 @@ def build_igv_html(
                 variant_chrom, pred_start + 1, pred_end, center=variant_pos,
             )
             tracks.append({
-                "name": "GPN-Star conservation — sequence logo (LLR-derived)",
+                "name": "GPN-Star conservation, vertebrate — sequence logo (LLR-derived)",
                 # lowercase: igv.js lowercases config.type before looking it up
                 # in its track-class registry, so this must match the string
                 # passed to igv.registerTrackClass in gpn_star_logo_track.js.
@@ -1285,7 +1288,7 @@ def build_igv_html(
                 variant_chrom, pred_start + 1, pred_end, center=variant_pos,
             )
             tracks.append({
-                "name": "PhyloP 20-way",
+                "name": "PhyloP 100-way",
                 "type": "wig",
                 "height": 40,
                 "autoscale": True,
@@ -1300,7 +1303,7 @@ def build_igv_html(
                 variant_chrom, pred_start + 1, pred_end, center=variant_pos,
             )
             tracks.append({
-                "name": "PhastCons 7-way",
+                "name": "PhastCons 100-way",
                 "type": "wig",
                 "height": 40,
                 "autoscale": True,

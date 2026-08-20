@@ -666,9 +666,9 @@ def _annotation_page(results: list) -> dict:
 @mcp.tool()
 @_safe_tool
 def list_annotations() -> dict:
-    """List every known annotation: conservation tracks (GPN-Star, PhyloP, PhastCons),
-    GENCODE gene annotations, and any custom annotation registered via `chorus
-    annotation add`.
+    """List every known annotation: conservation tracks (GPN-Star vertebrate model,
+    PhyloP 100-way, PhastCons 100-way), GENCODE gene annotations, and any custom
+    annotation registered via `chorus annotation add`.
 
     Each row reports its reference genome build, download status, and (once
     downloaded) local path. Does not download anything.
@@ -1358,13 +1358,16 @@ def analyze_variant_multilayer(
                  signal with autoscale instead of the layer-aware rescaled
                  view. Table scores are unaffected.
         show_conservation: When True, adds conservation tracks to the IGV
-                 browser: two GPN-Star tracks (coverage + sequence logo)
-                 showing a fixed clip(1 - entropy, 0, 1) conservation
-                 score (most conserved = highest value/tallest per-base
-                 letters when zoomed in below 2bp/pixel), and raw PhyloP
-                 20-way / PhastCons 7-way coverage tracks from UCSC — all
-                 capped to a bounded window around the variant. Downloads
-                 each source bigwig (~7-10 GB apiece) on first use.
+                 browser: two GPN-Star tracks (coverage + sequence logo,
+                 vertebrate-alignment model — GPN-Star also ships
+                 mammalian and primate variants, not used here) showing a
+                 fixed clip(1 - entropy, 0, 1) conservation score (most
+                 conserved = highest value/tallest per-base letters when
+                 zoomed in below 2bp/pixel), and raw PhyloP 100-way /
+                 PhastCons 100-way coverage tracks from UCSC (same
+                 100-way vertebrate alignment) — all capped to a bounded
+                 window around the variant. Downloads each source bigwig
+                 (~5.5-9.9 GB apiece) on first use.
         ldlink_token: LDlink API token (only used when ``position`` is an
                   rsID). Register free at https://ldlink.nih.gov/?tab=apiaccess
                   or set ``LDLINK_TOKEN``.

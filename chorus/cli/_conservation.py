@@ -80,15 +80,17 @@ def register_conservation_subcommand(subparsers):
         help="Manage conservation-track bigwigs (GPN-Star, PhyloP, PhastCons)",
         description=(
             "View and pre-download the hg38 conservation bigwigs used by "
-            "show_conservation=True in variant reports: GPN-Star entropy "
-            "(HuggingFace, ~9.9 GB), the four GPN-Star calibrated-LLR "
-            "tracks that feed the stacked sequence-logo track (HuggingFace, "
-            "~11 GB each, ~44 GB total — download together with "
-            "`--track gpn_star_llr`), and PhyloP 20-way / PhastCons 7-way "
-            "(UCSC, ~7.2-7.3 GB each). Each is bulk-downloaded once into "
-            "downloads/<track>/ and cached for reuse — without this "
-            "command they still download lazily the first time a report "
-            "requests them."
+            "show_conservation=True in variant reports: GPN-Star entropy, "
+            "vertebrate-alignment model (HuggingFace, ~9.9 GB — GPN-Star "
+            "also ships mammalian and primate models, not fetched here), "
+            "the four GPN-Star calibrated-LLR tracks that feed the stacked "
+            "sequence-logo track (HuggingFace, ~11 GB each, ~44 GB total — "
+            "download together with `--track gpn_star_llr`), and PhyloP "
+            "100-way / PhastCons 100-way, the same 100-way vertebrate "
+            "alignment (UCSC, ~5.5-9.2 GB each). Each is bulk-downloaded "
+            "once into downloads/<track>/ and cached for reuse — without "
+            "this command they still download lazily the first time a "
+            "report requests them."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
