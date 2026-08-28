@@ -869,6 +869,36 @@ class TestHTMLOutput:
         assert "badge-" in html  # has color-coded badges
         assert "bar-pos" in html or "bar-neg" in html  # has effect bars
 
+    def test_resolve_html_path_agrees_with_where_to_html_writes(self):
+        """A caller of resolve_html_path must never point at a file to_html did not write.
+
+        ``output_dir`` values with a dotted, non-html suffix (e.g. a versioned run
+        directory like ``run.v2``) make ``Path.suffix`` non-empty, so ``to_html``
+        treats the whole path as the file rather than as a directory to write
+        ``default_filename()`` into. A caller that re-derives the path instead of
+        calling ``resolve_html_path`` used to disagree with this and report a path
+        that does not exist (chorus/mcp/server.py's ``_write_html_report``, fixed
+        alongside this test).
+        """
+        from chorus.analysis.variant_report import build_variant_report
+
+        ref = {"DNASE:K562": np.ones(1000, dtype=np.float32)}
+        alt = {"DNASE:K562": np.ones(1000, dtype=np.float32) * 2.0}
+        vr = _make_variant_result(ref, alt)
+        report = build_variant_report(vr, oracle_name="test")
+
+        with tempfile.TemporaryDirectory() as td:
+            for output_dir in (
+                os.path.join(td, "run.v2"),   # dotted "directory" -- the regression case
+                os.path.join(td, "plain_dir"),  # ordinary directory, no dot at all
+            ):
+                report.to_html(output_path=output_dir)
+                resolved = report.resolve_html_path(output_dir)
+                assert resolved.exists(), (
+                    f"resolve_html_path({output_dir!r}) = {resolved}, "
+                    f"but to_html wrote somewhere else"
+                )
+
     def test_to_html_with_quantile(self):
         from chorus.analysis.variant_report import build_variant_report
         from chorus.analysis.normalization import (
@@ -1409,6 +1439,38 @@ class TestCausalPrioritization:
         assert "Composite Causal Score" in html  # IGV score track
         assert "sentinel" in html
         assert "sortable" in html
+
+    def test_causal_resolve_html_path_agrees_with_where_to_html_writes(self):
+        """Same regression as VariantReport's: see test_resolve_html_path_agrees_with_where_to_html_writes."""
+        from chorus.analysis.causal import CausalVariantScore, CausalResult, CausalWeights
+
+        scores = [
+            CausalVariantScore(
+                variant_id="rs1", chrom="chr1", position=1000500, ref="A", alt="G",
+                r2=1.0, is_sentinel=True,
+                max_effect=0.5, n_layers_affected=2, convergence_score=1.0,
+                ref_activity=300.0, composite=0.85,
+                top_layer="chromatin_accessibility", top_track="DNASE:K562",
+                per_layer_scores={"chromatin_accessibility": 0.5},
+            ),
+        ]
+        result = CausalResult(
+            sentinel_id="rs1", population="CEU", n_variants=1,
+            scores=scores, weights=CausalWeights(),
+            oracle_name="test", gene_name="SORT1",
+        )
+
+        with tempfile.TemporaryDirectory() as td:
+            for output_dir in (
+                os.path.join(td, "run.v2"),
+                os.path.join(td, "plain_dir"),
+            ):
+                result.to_html(output_path=output_dir)
+                resolved = result.resolve_html_path(output_dir)
+                assert resolved.exists(), (
+                    f"resolve_html_path({output_dir!r}) = {resolved}, "
+                    f"but to_html wrote somewhere else"
+                )
 
 
 class TestLDUtils:

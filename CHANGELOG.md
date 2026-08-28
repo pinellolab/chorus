@@ -54,6 +54,19 @@ project adheres to [Semantic Versioning](https://semver.org/).
 - **The assembly check did not run on the path that reads the data.** It was called only from
   `describe_annotation`/`add_annotation`, which a report never touches. `_bigwig_path` now
   verifies after download: a confident mismatch raises, an unreadable file warns.
+- **`_write_html_report` (MCP) could report a path `to_html` never wrote to.** Both re-derived
+  `output_dir / default_filename()` independently; for an `output_dir` like `/data/run.v2` the
+  dotted `.v2` makes `Path.suffix` non-empty, so `to_html` treats the whole path as the file
+  while `_write_html_report` still appended a filename onto it — a path that does not exist.
+  `VariantReport`/`CausalResult` now expose `resolve_html_path`, and both `to_html` and the MCP
+  helper call it, so they cannot disagree.
+- **`discover_variant` rendered and wrote its own HTML report twice.** It called
+  `discover_variant_effects(..., output_path=...)`, which builds and writes the report — then
+  stamped `analysis_request` on afterwards and wrote it again to get the user prompt into the
+  file. `discover_variant_effects` already accepted an `analysis_request` kwarg for exactly this
+  case; the server now builds it up front and passes it in, so the report renders once and the
+  server just looks up where it landed. Expensive when `show_conservation` makes each render
+  nontrivial, wasted otherwise.
 
 ### Changed
 
@@ -68,10 +81,26 @@ project adheres to [Semantic Versioning](https://semver.org/).
   on a 0–2 bit scale — and stated ~25 GB of downloads where the logo track needs ~70 GB.
 - **`chorus/analysis/static/igv.min.js` was replaced** (1.35 MB → 1.50 MB, dropping the bundled
   jQuery 3.3.1). Recorded because it was an undeclared vendored-dependency bump inside a
-  feature change. **The 19 committed example reports still inline the old bundle**, and the
-  browser check renders committed reports — so the new bundle currently ships with no CI
-  coverage. Regenerating the examples, or adding a freshly-rendered report to that check,
-  would close it.
+  feature change. **The 19 committed example reports still inlined the old bundle**, and the
+  browser check renders committed reports — so the new bundle shipped with no CI coverage.
+  Partly closed: `rs12740374_SORT1_chrombpnet_report.html`, one of the two reports
+  `CHORUS_BROWSER_SMOKE=1` renders, is regenerated and now embeds the new bundle. Verified with
+  Playwright/Chromium against `test_committed_reports_render_in_a_browser.py` — the exact CI
+  smoke subset (11 passed, 1 skipped) and the full 19-report corpus (46 passed) — so the new
+  bundle is confirmed to paint every canvas with no console or page errors, not merely inferred
+  from size/content. The other smoke report (`rs12740374_SORT1_cherimoya_report.html`) still
+  carries the old bundle — regenerating it needs the `chorus-cherimoya` environment, unavailable
+  in the session that did this — and so do the other 17 committed reports outside the CI smoke
+  subset. **Still open**, though now a coverage-completeness gap rather than an unverified change.
+- **Conservation tracks and the annotation catalog get a worked example.** Neither had one:
+  `show_conservation`, `chorus conservation`, `chorus annotation` and `AnnotationStore` appeared
+  in no notebook. `examples/notebooks/single_oracle_quickstart.ipynb` gains a *Conservation
+  Tracks* section reusing the notebook's own GATA1 variant — `build_variant_report(...,
+  show_conservation=True)` plus a short `AnnotationStore.list_annotations()` listing — executed
+  with real data (all three conservation sources downloaded, ~24 GB combined) rather than left
+  unexecuted; the notebook prints the resulting 103.5 MB report's path and size but writes it to
+  a gitignored scratch directory rather than committing it. Still worth a dedicated walkthrough
+  if the CLI/MCP side of the annotation catalog needs one too.
 
 ## [0.7.5] — 2026-08-18
 ### Fixed

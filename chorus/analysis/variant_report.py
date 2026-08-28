@@ -7,6 +7,7 @@ both programmatic use and Claude-driven analysis via MCP.
 
 import logging
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Optional
 
 from .scorers import (
@@ -91,6 +92,23 @@ class TrackScore:
         if self.low_effective_bins:
             d["low_effective_bins"] = True
         return d
+
+
+def resolve_report_html_path(output_path: str, default_filename: str) -> Path:
+    """Where an HTML-report ``to_html(output_path=...)`` would write, without writing.
+
+    Shared by every report class's ``to_html``/``resolve_html_path`` (:class:`VariantReport`
+    here, :class:`~chorus.analysis.causal.CausalPrioritizationReport` there) and by any MCP
+    tool that needs the resulting file path without stashing the full HTML string in a JSON
+    result. A caller that re-derives this instead of calling it can disagree with ``to_html``
+    on inputs like ``/data/run.v2``, where the ``.v2`` makes ``Path.suffix`` non-empty and
+    ``to_html`` treats *output_path* as the file itself rather than a directory to write
+    *default_filename* into.
+    """
+    path = Path(output_path)
+    if path.suffix == "" or path.is_dir():
+        return path / default_filename
+    return path
 
 
 @dataclass
@@ -294,6 +312,11 @@ class VariantReport:
     # HTML report
     # ------------------------------------------------------------------
 
+    def resolve_html_path(self, output_path: str) -> Path:
+        """Where :meth:`to_html` would write, without writing anything. See
+        :func:`resolve_report_html_path`."""
+        return resolve_report_html_path(output_path, self.default_filename())
+
     def to_html(self, output_path: str | None = None) -> str:
         """Generate a self-contained HTML report with color-coded tables.
 
@@ -307,16 +330,8 @@ class VariantReport:
         """
         html = _build_html_report(self)
         if output_path is not None:
-            from pathlib import Path
-
-            path = Path(output_path)
-            # If output_path looks like a directory, append default filename
-            if path.suffix == "" or path.is_dir():
-                path.mkdir(parents=True, exist_ok=True)
-                path = path / self.default_filename()
-            else:
-                path.parent.mkdir(parents=True, exist_ok=True)
-
+            path = self.resolve_html_path(output_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(html, encoding="utf-8")
             logger.info("HTML report written to %s", path)
         return html

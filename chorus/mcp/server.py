@@ -259,11 +259,13 @@ def _write_html_report(report, output_dir: str) -> str:
     result: for reports with large embedded tracks (e.g.
     show_conservation=True) the HTML can run into the tens of MB, which
     breaks the MCP stdio transport if shipped back as a string field.
-    """
-    from pathlib import Path
 
+    Uses ``report.resolve_html_path`` rather than re-deriving the path, so this can
+    never disagree with where ``to_html`` actually wrote (e.g. an ``output_dir`` like
+    ``/data/run.v2`` that ``Path.suffix`` sees as a file, not a directory).
+    """
     report.to_html(output_path=output_dir)
-    return str(Path(output_dir) / report.default_filename())
+    return str(report.resolve_html_path(output_dir))
 
 
 def _auto_region(oracle, position: str) -> str:
@@ -1538,6 +1540,18 @@ def discover_variant(
             genome_build=genome_build,
         )
 
+    # Built up front and passed into discover_variant_effects so the report renders
+    # with the user prompt already on it -- setting report.analysis_request after the
+    # call, then writing the HTML a second time, rendered (and wrote, when
+    # show_conservation makes that expensive) the same report twice for no
+    # difference in the end result.
+    ar = AnalysisRequest(
+        user_prompt=user_prompt,
+        tool_name="discover_variant",
+        oracle_name=oracle_name,
+        tracks_requested="all oracle tracks",
+    )
+
     result = discover_variant_effects(
         oracle,
         oracle_name=oracle_name,
@@ -1548,6 +1562,7 @@ def discover_variant(
         normalizer=normalizer,
         output_path=state.output_dir,
         igv_raw=igv_raw,
+        analysis_request=ar,
         ranking_metric=ranking_metric,
         min_ref_value=min_ref_value,
     )
@@ -1555,16 +1570,10 @@ def discover_variant(
     # Serialize: extract report as markdown, remove non-serializable VariantReport
     report = result.pop("report", None)
     if report is not None:
-        report.analysis_request = AnalysisRequest(
-            user_prompt=user_prompt,
-            tool_name="discover_variant",
-            oracle_name=oracle_name,
-            tracks_requested="all oracle tracks",
-        )
         result["markdown_report"] = report.to_markdown()
         if state.output_dir:
             try:
-                result["html_report_path"] = _write_html_report(report, state.output_dir)
+                result["html_report_path"] = str(report.resolve_html_path(state.output_dir))
             except Exception:
                 pass
 
