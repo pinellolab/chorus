@@ -79,6 +79,36 @@ class AnnotationEntry:
         return d
 
 
+def hf_download_flat(*, repo: str, filename: str, dest: Path, revision: str | None = None) -> Path:
+    """Download one file from an HF dataset to *dest*, flattening the repo-relative dirs.
+
+    Extracted because ``conservation._bigwig_path`` and ``AnnotationStore._download_custom``
+    had line-for-line copies of this, differing only in whether they passed ``revision`` —
+    and that difference was the bug: the conservation copy fetched the dataset head. Two
+    copies of a download rule is how a pin gets applied to one of them.
+    """
+    from huggingface_hub import hf_hub_download
+
+    dest = Path(dest)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    downloaded = Path(hf_hub_download(
+        repo,
+        filename=filename,
+        repo_type="dataset",
+        revision=revision,
+        local_dir=str(dest.parent),
+    ))
+    if downloaded != dest:
+        shutil.move(str(downloaded), str(dest))
+        # Remove the now-empty repo-relative subdirectories hf_hub_download created.
+        nested_dir = downloaded.parent
+        while nested_dir != dest.parent and nested_dir.exists() and not any(nested_dir.iterdir()):
+            emptied = nested_dir
+            nested_dir = nested_dir.parent
+            emptied.rmdir()
+    return dest
+
+
 class AnnotationStore:
     """Unified list/describe/download/add interface over every annotation source."""
 
@@ -257,33 +287,30 @@ class AnnotationStore:
                 )
             return local_path
 
+        if local_path is None:
+            raise ValueError(
+                f"Custom annotation {annotation_id!r} has no local filename to download to. "
+                f"Its source URL/filename gave nothing usable, so re-add it with an explicit "
+                f"--local-filename."
+            )
+
         if local_path.exists():
             return local_path
 
         local_path.parent.mkdir(parents=True, exist_ok=True)
 
         if kind == "hf":
-            from huggingface_hub import hf_hub_download
-
             revision = meta["hf_revision"]
             logger.info(
                 "Downloading custom annotation %s (%s, revision=%s) from HuggingFace...",
                 annotation_id, meta["hf_filename"], revision,
             )
-            downloaded = Path(hf_hub_download(
-                meta["hf_repo"],
+            hf_download_flat(
+                repo=meta["hf_repo"],
                 filename=meta["hf_filename"],
-                repo_type="dataset",
+                dest=local_path,
                 revision=revision,
-                local_dir=str(local_path.parent),
-            ))
-            if downloaded != local_path:
-                shutil.move(str(downloaded), str(local_path))
-                nested_dir = downloaded.parent
-                while nested_dir != local_path.parent and nested_dir.exists() and not any(nested_dir.iterdir()):
-                    emptied = nested_dir
-                    nested_dir = nested_dir.parent
-                    emptied.rmdir()
+            )
         elif kind == "url":
             from .http import download_with_resume
 
@@ -410,6 +437,17 @@ class AnnotationStore:
         self._save_custom_yaml(data)
 
         if delete_file:
+            # kind="local" points at a file the *user* gave us and chorus never copied or
+            # downloaded, so deleting it would destroy their own data on a command whose
+            # help says "also delete the downloaded file". Only chorus-managed downloads
+            # are ours to remove.
+            if meta.get("kind") == "local":
+                logger.info(
+                    "Not deleting %s for %s: it is a local file you registered, not a "
+                    "chorus download. Remove it yourself if you meant to.",
+                    meta.get("local_path"), annotation_id,
+                )
+                return
             path = self._custom_local_path(annotation_id, meta)
             if path is not None and path.exists():
                 try:
@@ -431,7 +469,12 @@ class AnnotationStore:
         with open(self._custom_yaml_path) as f:
             data = yaml.safe_load(f) or {}
         data.setdefault("version", 1)
-        data.setdefault("annotations", {})
+        # setdefault only fires when the key is ABSENT. The docstring advertises this file
+        # as user-editable, and a hand-written `annotations:` with nothing under it parses
+        # to None — which then breaks every listing path with an AttributeError naming
+        # neither the file nor the key.
+        if not data.get("annotations"):
+            data["annotations"] = {}
         return data
 
     def _save_custom_yaml(self, data: dict) -> None:

@@ -341,11 +341,41 @@ def test_remove_custom_annotation_rejects_builtin_id(tmp_path):
         store.remove_custom_annotation("gpn_star")
 
 
-def test_remove_custom_annotation_delete_file_removes_downloaded_file(tmp_path):
+def test_remove_custom_annotation_delete_file_spares_a_users_own_file(tmp_path):
+    """`--delete-file` must not destroy a file chorus never downloaded.
+
+    This test previously asserted the opposite. `kind="local"` means the user pointed us
+    at their own file; chorus neither downloaded nor copied it, and the CLI flag reads
+    "also delete the downloaded file, if present". Deleting it there is data loss on a
+    command whose help promises housekeeping.
+    """
     store = _make_store(tmp_path)
-    local_file = tmp_path / "to_delete.bed"
+    local_file = tmp_path / "my_own_peaks.bed"
     local_file.write_text("data")
     store.add_annotation("with_file", description="d", genome_build="hg38", local_path=str(local_file))
 
     store.remove_custom_annotation("with_file", delete_file=True)
-    assert not local_file.exists()
+
+    assert local_file.exists(), (
+        "remove --delete-file deleted the user's own registered file; only chorus-managed "
+        "downloads are ours to unlink"
+    )
+    assert local_file.read_text() == "data"
+    # the registry entry itself is still gone
+    assert all(e.id != "with_file" for e in store.list_annotations())
+
+
+def test_remove_custom_annotation_delete_file_removes_a_chorus_download(tmp_path):
+    """The behaviour the flag is actually for: a file chorus fetched into its own dir."""
+    store = _make_store(tmp_path)
+    store.add_annotation(
+        "fetched", description="d", genome_build="hg38",
+        url="https://example.org/peaks.bed",
+    )
+    downloaded = store._custom_local_path("fetched", store._load_custom_yaml()["annotations"]["fetched"])
+    assert downloaded is not None
+    downloaded.parent.mkdir(parents=True, exist_ok=True)
+    downloaded.write_text("downloaded bytes")
+
+    store.remove_custom_annotation("fetched", delete_file=True)
+    assert not downloaded.exists()

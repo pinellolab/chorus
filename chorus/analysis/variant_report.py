@@ -1043,12 +1043,17 @@ def build_variant_report(
             GPN-Star also ships mammalian and primate variants, not used
             here) showing a fixed ``clip(1 - entropy, 0, 1)`` conservation
             score (most conserved = highest value/tallest letter) — a
-            coverage track and a sequence-logo track (IGV's ``dynseq``
-            graph type) — and raw PhyloP 100-way / PhastCons 100-way
-            coverage tracks from UCSC (same 100-way vertebrate alignment)
-            — all capped to ``conservation.DEFAULT_MAX_WINDOW_BP`` around
-            the variant. Downloads each source bigwig (~5.5-9.9 GB apiece)
-            on first use (see ``chorus.analysis.conservation``).
+            coverage track and a per-base sequence-logo track (chorus's own
+            ``gpnstarstackedlogo`` type, plotting ``p(base) * (2 - H)`` on a
+            0-2 bit scale — not IGV's ``dynseq``) — and raw PhyloP 100-way /
+            PhastCons 100-way coverage tracks from UCSC (same 100-way
+            vertebrate alignment) — all capped to
+            ``conservation.DEFAULT_MAX_WINDOW_BP`` around the variant.
+            **hg38 only**: a non-hg38 report raises rather than plotting human
+            scores against other coordinates. Downloads bigwigs on first use —
+            ~25 GB for the three coverage sources, ~45 GB more of per-allele
+            LLR files if the logo track is drawn, so budget ~70 GB (see
+            ``chorus.analysis.conservation``).
         lightweight: When ``True``, build only the per-track ``allele_scores``
             needed for ranking / composite scoring and SKIP the
             display-only IGV ``_predictions`` assembly (filtering and
@@ -1964,15 +1969,18 @@ def _render_track_figure(
                     'variant (never averaged into misleading flat blocks): '
                     '<b>GPN-Star</b> (vertebrate-alignment model — GPN-Star '
                     'also ships mammalian and primate variants, not shown '
-                    'here) is shown as two tracks — a coverage track and a '
-                    'sequence-logo track — both displaying a fixed '
-                    '<code>clip(1 - entropy, 0, 1)</code> conservation '
+                    'here) is shown as two tracks. The <b>coverage</b> track '
+                    'displays a fixed <code>clip(1 - entropy, 0, 1)</code> '
                     'score rather than raw entropy: <b>0</b> = neutral '
-                    '(entropy &ge; 1), <b>1</b> = fully constrained, so the '
-                    'most conserved positions get the <b>tallest</b> '
-                    'letters/highest values on a consistent 0-1 baseline '
-                    'across windows (zoom in below 2bp/pixel to see the '
-                    'letters); plus raw, untransformed <b>PhyloP 100-way</b> '
+                    '(entropy &ge; 1), <b>1</b> = fully constrained, on a '
+                    'consistent 0-1 baseline across windows. The '
+                    '<b>sequence-logo</b> track is a different quantity — '
+                    'per-base letter heights of <code>p(base) &times; (2 - H)'
+                    '</code> on a <b>0-2 bit</b> scale, from the calibrated '
+                    'per-allele LLR scores (zoom in below 2bp/pixel to see '
+                    'the letters). Positions with no coverage are omitted '
+                    'rather than drawn. Plus raw, untransformed '
+                    '<b>PhyloP 100-way</b> '
                     'and <b>PhastCons 100-way</b> coverage tracks from UCSC '
                     '(same 100-way vertebrate alignment as the GPN-Star '
                     'model above).</p>'

@@ -1040,6 +1040,23 @@ def build_igv_html(
     Returns:
         HTML string containing the IGV.js browser div + script.
     """
+    if show_conservation:
+        from . import conservation
+
+        # Every conservation source chorus wraps is hg38, and a bigwig read against
+        # another assembly does not error — chr1:3,000,000 exists in mm10 too — so a
+        # non-hg38 report would have shown human conservation scores labelled as
+        # conservation at a mouse locus, with no warning. Refuse, matching how chorus
+        # treats a non-hg38 reference everywhere else. Checked before any work is done.
+        if genome != conservation.CONSERVATION_ASSEMBLY:
+            raise ValueError(
+                f"show_conservation=True is only valid for "
+                f"{conservation.CONSERVATION_ASSEMBLY} reports; this report is for "
+                f"{genome!r}. The GPN-Star, phyloP and phastCons tracks chorus ships are "
+                f"{conservation.CONSERVATION_ASSEMBLY}-only, so plotting them against "
+                f"{genome!r} coordinates would render plausible values for the wrong DNA."
+            )
+
     from .scorers import classify_track_layer
 
     assay_ids = list(ref_pred.keys())

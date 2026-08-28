@@ -23,7 +23,13 @@ def annotation_list(args):
     entries = AnnotationStore().list_annotations()
     for entry in sorted(entries, key=lambda e: (e.origin, e.id)):
         status = "downloaded" if entry.downloaded else "not downloaded"
-        size = f"{entry.size_bytes / (1024**3):.1f} GB" if entry.size_bytes else (entry.size_note or "")
+        # `is not None`, not truthiness: a 0-byte file (interrupted download) is exactly
+        # the case a user needs to see, and falsy-zero fell back to the optimistic
+        # estimate — printing "downloaded ~9.9 GB" for an empty file.
+        size = (
+            f"{entry.size_bytes / (1024**3):.1f} GB" if entry.size_bytes is not None
+            else (entry.size_note or "")
+        )
         print(f"  [{entry.origin:12s}] {entry.id:24s} {entry.genome_build or '?':6s} {status:14s} {size}")
     return 0
 
