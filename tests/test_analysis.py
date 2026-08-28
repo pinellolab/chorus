@@ -869,6 +869,36 @@ class TestHTMLOutput:
         assert "badge-" in html  # has color-coded badges
         assert "bar-pos" in html or "bar-neg" in html  # has effect bars
 
+    def test_resolve_html_path_agrees_with_where_to_html_writes(self):
+        """A caller of resolve_html_path must never point at a file to_html did not write.
+
+        ``output_dir`` values with a dotted, non-html suffix (e.g. a versioned run
+        directory like ``run.v2``) make ``Path.suffix`` non-empty, so ``to_html``
+        treats the whole path as the file rather than as a directory to write
+        ``default_filename()`` into. A caller that re-derives the path instead of
+        calling ``resolve_html_path`` used to disagree with this and report a path
+        that does not exist (chorus/mcp/server.py's ``_write_html_report``, fixed
+        alongside this test).
+        """
+        from chorus.analysis.variant_report import build_variant_report
+
+        ref = {"DNASE:K562": np.ones(1000, dtype=np.float32)}
+        alt = {"DNASE:K562": np.ones(1000, dtype=np.float32) * 2.0}
+        vr = _make_variant_result(ref, alt)
+        report = build_variant_report(vr, oracle_name="test")
+
+        with tempfile.TemporaryDirectory() as td:
+            for output_dir in (
+                os.path.join(td, "run.v2"),   # dotted "directory" -- the regression case
+                os.path.join(td, "plain_dir"),  # ordinary directory, no dot at all
+            ):
+                report.to_html(output_path=output_dir)
+                resolved = report.resolve_html_path(output_dir)
+                assert resolved.exists(), (
+                    f"resolve_html_path({output_dir!r}) = {resolved}, "
+                    f"but to_html wrote somewhere else"
+                )
+
     def test_to_html_with_quantile(self):
         from chorus.analysis.variant_report import build_variant_report
         from chorus.analysis.normalization import (
@@ -909,6 +939,35 @@ class TestHTMLOutput:
         assert "Interactive Genome Browser" in html
         # Has the modification ROI
         assert '"name":"Modification"' in html or "'name':'Modification'" in html
+
+    def test_to_html_modification_marker_is_exactly_ref_allele_wide(self):
+        # Regression test: marker_end was computed from variant_pos instead
+        # of from marker_start (variant_pos - 1), double-counting the -1
+        # and making every modification highlight one base too wide (e.g.
+        # 2bp for a 1bp SNP instead of 1bp).
+        import json
+        import re
+
+        from chorus.analysis.variant_report import build_variant_report
+
+        ref = {"DNASE:K562": np.ones(1000, dtype=np.float32)}
+        alt = {"DNASE:K562": np.ones(1000, dtype=np.float32) * 2.0}
+
+        def _marker_width(alleles):
+            vr = _make_variant_result(ref, alt, alleles=alleles)
+            html = build_variant_report(vr, oracle_name="test").to_html()
+            m = re.search(
+                r'igv\.createBrowser\(\s*document\.getElementById\("igv-div"\),\s*(\{.*?\})\s*\);', html, re.S,
+            )
+            opts = json.loads(m.group(1))
+            mod_track = next(
+                t for t in opts["tracks"] if t.get("type") == "annotation" and t["name"].startswith("Modification")
+            )
+            feat = mod_track["features"][0]
+            return feat["end"] - feat["start"]
+
+        assert _marker_width(["A", "G"]) == 1  # SNP: exactly 1bp, not 2
+        assert _marker_width(["ACG", "T"]) == 3  # 3bp ref allele: exactly 3bp, not 4
 
 
 # ── Region swap tests ────────────────────────────────────────────────
@@ -1380,6 +1439,38 @@ class TestCausalPrioritization:
         assert "Composite Causal Score" in html  # IGV score track
         assert "sentinel" in html
         assert "sortable" in html
+
+    def test_causal_resolve_html_path_agrees_with_where_to_html_writes(self):
+        """Same regression as VariantReport's: see test_resolve_html_path_agrees_with_where_to_html_writes."""
+        from chorus.analysis.causal import CausalVariantScore, CausalResult, CausalWeights
+
+        scores = [
+            CausalVariantScore(
+                variant_id="rs1", chrom="chr1", position=1000500, ref="A", alt="G",
+                r2=1.0, is_sentinel=True,
+                max_effect=0.5, n_layers_affected=2, convergence_score=1.0,
+                ref_activity=300.0, composite=0.85,
+                top_layer="chromatin_accessibility", top_track="DNASE:K562",
+                per_layer_scores={"chromatin_accessibility": 0.5},
+            ),
+        ]
+        result = CausalResult(
+            sentinel_id="rs1", population="CEU", n_variants=1,
+            scores=scores, weights=CausalWeights(),
+            oracle_name="test", gene_name="SORT1",
+        )
+
+        with tempfile.TemporaryDirectory() as td:
+            for output_dir in (
+                os.path.join(td, "run.v2"),
+                os.path.join(td, "plain_dir"),
+            ):
+                result.to_html(output_path=output_dir)
+                resolved = result.resolve_html_path(output_dir)
+                assert resolved.exists(), (
+                    f"resolve_html_path({output_dir!r}) = {resolved}, "
+                    f"but to_html wrote somewhere else"
+                )
 
 
 class TestLDUtils:

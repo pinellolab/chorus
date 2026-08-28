@@ -7,6 +7,7 @@ both programmatic use and Claude-driven analysis via MCP.
 
 import logging
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Optional
 
 from .scorers import (
@@ -93,6 +94,23 @@ class TrackScore:
         return d
 
 
+def resolve_report_html_path(output_path: str, default_filename: str) -> Path:
+    """Where an HTML-report ``to_html(output_path=...)`` would write, without writing.
+
+    Shared by every report class's ``to_html``/``resolve_html_path`` (:class:`VariantReport`
+    here, :class:`~chorus.analysis.causal.CausalPrioritizationReport` there) and by any MCP
+    tool that needs the resulting file path without stashing the full HTML string in a JSON
+    result. A caller that re-derives this instead of calling it can disagree with ``to_html``
+    on inputs like ``/data/run.v2``, where the ``.v2`` makes ``Path.suffix`` non-empty and
+    ``to_html`` treats *output_path* as the file itself rather than a directory to write
+    *default_filename* into.
+    """
+    path = Path(output_path)
+    if path.suffix == "" or path.is_dir():
+        return path / default_filename
+    return path
+
+
 @dataclass
 class VariantReport:
     """Multi-layer, multi-oracle variant analysis report."""
@@ -125,6 +143,9 @@ class VariantReport:
     # When True, IGV browser uses raw signal with autoscale instead of
     # the layer-aware floor rescale (default).  Table scores are unaffected.
     _igv_raw: bool = field(default=False, repr=False)
+    # When True, adds a GPN-Star conservation (entropy) track to the IGV
+    # browser (downloads the ~9.9 GB bigwig on first use).
+    _show_conservation: bool = field(default=False, repr=False)
     # Number of scored tracks dropped from the IGV browser because more
     # than 50 tracks were scored. The table still shows all of them.
     _igv_truncated: int = field(default=0, repr=False)
@@ -291,6 +312,11 @@ class VariantReport:
     # HTML report
     # ------------------------------------------------------------------
 
+    def resolve_html_path(self, output_path: str) -> Path:
+        """Where :meth:`to_html` would write, without writing anything. See
+        :func:`resolve_report_html_path`."""
+        return resolve_report_html_path(output_path, self.default_filename())
+
     def to_html(self, output_path: str | None = None) -> str:
         """Generate a self-contained HTML report with color-coded tables.
 
@@ -304,16 +330,8 @@ class VariantReport:
         """
         html = _build_html_report(self)
         if output_path is not None:
-            from pathlib import Path
-
-            path = Path(output_path)
-            # If output_path looks like a directory, append default filename
-            if path.suffix == "" or path.is_dir():
-                path.mkdir(parents=True, exist_ok=True)
-                path = path / self.default_filename()
-            else:
-                path.parent.mkdir(parents=True, exist_ok=True)
-
+            path = self.resolve_html_path(output_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(html, encoding="utf-8")
             logger.info("HTML report written to %s", path)
         return html
@@ -1006,6 +1024,7 @@ def build_variant_report(
     gene_name: str | None = None,
     normalizer: PerTrackNormalizer | QuantileNormalizer | None = None,
     igv_raw: bool = False,
+    show_conservation: bool = False,
     analysis_request: AnalysisRequest | None = None,
     lightweight: bool = False,
 ) -> VariantReport:
@@ -1034,6 +1053,22 @@ def build_variant_report(
         igv_raw: When ``True``, the IGV browser shows raw signal values
             with per-track autoscale instead of the layer-aware
             floor-rescale view.  Table scores still use the normalizer.
+        show_conservation: When ``True``, adds conservation tracks to the
+            IGV browser: two GPN-Star tracks (vertebrate-alignment model —
+            GPN-Star also ships mammalian and primate variants, not used
+            here) showing a fixed ``clip(1 - entropy, 0, 1)`` conservation
+            score (most conserved = highest value/tallest letter) — a
+            coverage track and a per-base sequence-logo track (chorus's own
+            ``gpnstarstackedlogo`` type, plotting ``p(base) * (2 - H)`` on a
+            0-2 bit scale — not IGV's ``dynseq``) — and raw PhyloP 100-way /
+            PhastCons 100-way coverage tracks from UCSC (same 100-way
+            vertebrate alignment) — all capped to
+            ``conservation.DEFAULT_MAX_WINDOW_BP`` around the variant.
+            **hg38 only**: a non-hg38 report raises rather than plotting human
+            scores against other coordinates. Downloads bigwigs on first use —
+            ~25 GB for the three coverage sources, ~45 GB more of per-allele
+            LLR files if the logo track is drawn, so budget ~70 GB (see
+            ``chorus.analysis.conservation``).
         lightweight: When ``True``, build only the per-track ``allele_scores``
             needed for ranking / composite scoring and SKIP the
             display-only IGV ``_predictions`` assembly (filtering and
@@ -1355,6 +1390,7 @@ def build_variant_report(
         analysis_request=analysis_request,
         _normalizer=normalizer,
         _igv_raw=igv_raw,
+        _show_conservation=show_conservation,
     )
 
     # Attach nearby genes info for the report
@@ -1881,6 +1917,7 @@ def _render_track_figure(
             normalizer=igv_normalizer,
             oracle_name=report.oracle_name,
             modification_region=report.modification_region,
+            show_conservation=report._show_conservation,
         )
 
         if igv_html:
@@ -1937,6 +1974,31 @@ def _render_track_figure(
                     'comparable). Pass <code>'
                     'chorus.analysis.get_normalizer(oracle_name)</code> '
                     'for the rescaled view.</p>'
+                )
+            if report._show_conservation:
+                from .conservation import DEFAULT_MAX_WINDOW_BP
+                parts.append(
+                    '<p style="font-size:.85rem;color:#6b7280;margin-top:-.5rem">'
+                    f'<b>Conservation tracks</b> are shown at true single-base '
+                    f'resolution within {DEFAULT_MAX_WINDOW_BP:,} bp of the '
+                    'variant (never averaged into misleading flat blocks): '
+                    '<b>GPN-Star</b> (vertebrate-alignment model — GPN-Star '
+                    'also ships mammalian and primate variants, not shown '
+                    'here) is shown as two tracks. The <b>coverage</b> track '
+                    'displays a fixed <code>clip(1 - entropy, 0, 1)</code> '
+                    'score rather than raw entropy: <b>0</b> = neutral '
+                    '(entropy &ge; 1), <b>1</b> = fully constrained, on a '
+                    'consistent 0-1 baseline across windows. The '
+                    '<b>sequence-logo</b> track is a different quantity — '
+                    'per-base letter heights of <code>p(base) &times; (2 - H)'
+                    '</code> on a <b>0-2 bit</b> scale, from the calibrated '
+                    'per-allele LLR scores (zoom in below 2bp/pixel to see '
+                    'the letters). Positions with no coverage are omitted '
+                    'rather than drawn. Plus raw, untransformed '
+                    '<b>PhyloP 100-way</b> '
+                    'and <b>PhastCons 100-way</b> coverage tracks from UCSC '
+                    '(same 100-way vertebrate alignment as the GPN-Star '
+                    'model above).</p>'
                 )
             parts.append(igv_html)
 

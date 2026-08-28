@@ -192,6 +192,20 @@ WALKTHROUGHS: list[dict[str, Any]] = [
         "assay_ids": _AG_HEPG2,
         "html": "rs1421085_FTO_alphagenome_report.html",
     },
+    # ── conservation ────────────────────────────────────────────────────
+    {
+        "name": "SORT1 rs12740374 — ChromBPNet effect vs. cross-species conservation",
+        "dir": "examples/walkthroughs/conservation/SORT1_rs12740374",
+        "mcp_tool": "analyze_variant_multilayer",
+        "oracle": "chrombpnet",
+        "position": "chr1:109274968", "ref": "G", "alt": "T",
+        "gene": "SORT1",
+        "chrombpnet_assay": "DNASE",
+        "chrombpnet_cell_type": "HepG2",
+        "chrombpnet_fold": 0,
+        "show_conservation": True,
+        "html": "rs12740374_SORT1_chrombpnet_conservation_report.html",
+    },
     # ── validation ──────────────────────────────────────────────────────
     {
         "name": "SORT1 rs12740374 — validation with CEBPA/CEBPB co-occupancy",
@@ -336,17 +350,34 @@ def _imports_cell(extra: list[str] | None = None) -> dict:
     return _code("\n".join(base))
 
 
-def _save_artifacts_cell(*, report_var: str, dir_var: str, html_filename: str) -> dict:
-    """Cell that saves markdown / JSON / TSV / HTML the same way regenerate_*.py does."""
+def _save_artifacts_cell(
+    *, report_var: str, dir_var: str, html_filename: str, extra_json_var: str | None = None,
+) -> dict:
+    """Cell that saves markdown / JSON / TSV / HTML the same way regenerate_*.py does.
+
+    ``extra_json_var`` names a dict already in scope (e.g. measured conservation scores,
+    which live outside the oracle's own effect-score output) merged under a top-level
+    ``"conservation"`` key before the JSON is written, so numbers quoted from it in a
+    README are checkable against the committed artefact like any other.
+    """
+    dict_expr = f"{report_var}.to_dict()"
+    merge_line = ""
+    if extra_json_var:
+        merge_line = (
+            f"_report_dict = {report_var}.to_dict()\n"
+            f"_report_dict[\"conservation\"] = {extra_json_var}\n"
+        )
+        dict_expr = "_report_dict"
     return _code(
         "# Save the same artifacts the MCP tool would produce:\n"
         "#   - example_output.md  (markdown report)\n"
         "#   - example_output.json (structured scores)\n"
         "#   - example_output.tsv (track-level table)\n"
         "#   - {html} (interactive IGV report)\n".format(html=html_filename)
+        + merge_line
         + f"{dir_var}.joinpath(\"example_output.md\").write_text({report_var}.to_markdown())\n"
         f"{dir_var}.joinpath(\"example_output.json\").write_text(\n"
-        f"    json.dumps({report_var}.to_dict(), indent=2, default=str)\n"
+        f"    json.dumps({dict_expr}, indent=2, default=str)\n"
         f")\n"
         f"try:\n"
         f"    {report_var}.to_dataframe().to_csv(\n"
@@ -512,13 +543,16 @@ def _cells_chrombpnet_variant(spec: dict) -> list[dict]:
         "    assay_ids=[],\n"
         ")"
     ))
+    show_conservation = spec.get("show_conservation", False)
     cells.append(_code(
         "# Build the report with the ChromBPNet per-track normalizer.\n"
         "normalizer = get_normalizer(oracle_name=oracle_name)\n"
         "analysis_request = AnalysisRequest(\n"
         f"    user_prompt=f\"Score {{position}} {{ref_allele}}>{{alt_alleles[0]}} \"\n"
         f"                f\"using ChromBPNet {spec['chrombpnet_assay']!r} model in \"\n"
-        f"                f\"{spec['chrombpnet_cell_type']!r}.\",\n"
+        f"                f\"{spec['chrombpnet_cell_type']!r}"
+        + (", overlay conservation tracks.\"," if show_conservation else ".\",")
+        + "\n"
         "    tool_name=\"analyze_variant_multilayer\",\n"
         f"    oracle_name={spec['oracle']!r},\n"
         f"    tracks_requested=\"{spec['chrombpnet_assay']}:{spec['chrombpnet_cell_type']}\",\n"
@@ -530,20 +564,41 @@ def _cells_chrombpnet_variant(spec: dict) -> list[dict]:
         "    normalizer=normalizer,\n"
         "    igv_raw=False,\n"
         "    analysis_request=analysis_request,\n"
-        ")"
+        + (f"    show_conservation={show_conservation!r},\n" if show_conservation else "")
+        + ")"
     ))
+    if show_conservation:
+        cells.append(_code(
+            "# Real cross-species conservation at the variant's own base -- not part of\n"
+            "# the oracle's effect scores, so it is measured directly and merged into the\n"
+            "# saved JSON below rather than left as an unbacked claim in the README.\n"
+            "from chorus.analysis.conservation import (\n"
+            "    read_entropy_values, read_phastcons_values, read_phylop_values,\n"
+            ")\n"
+            "\n"
+            "conservation_scores = {\n"
+            "    \"phyloP_100way\": float(read_phylop_values(_chrom, _pos - 1, _pos)[0]),\n"
+            "    \"phastCons_100way\": float(read_phastcons_values(_chrom, _pos - 1, _pos)[0]),\n"
+            "    \"gpn_star_entropy_bits\": float(read_entropy_values(_chrom, _pos - 1, _pos)[0]),\n"
+            "}\n"
+            "print(conservation_scores)"
+        ))
     cells.append(_save_artifacts_cell(
         report_var="report",
         dir_var="WALKTHROUGH_DIR",
         html_filename=spec["html"],
+        extra_json_var="conservation_scores" if show_conservation else None,
     ))
-    cells.append(_md(
-        "## What this notebook produced\n\n"
-        f"- `example_output.md` — markdown report (1bp-resolution ChromBPNet profile)\n"
-        f"- `example_output.json` — structured per-bin scores\n"
-        f"- `example_output.tsv` — track table\n"
-        f"- `{spec['html']}` — IGV browser with 1bp ref / alt profile overlay\n"
-    ))
+    produced = [
+        "- `example_output.md` — markdown report (1bp-resolution ChromBPNet profile)",
+        "- `example_output.json` — structured per-bin scores"
+        + (" plus a `conservation` block (phyloP, phastCons, GPN-Star entropy at the variant)"
+           if show_conservation else ""),
+        "- `example_output.tsv` — track table",
+        f"- `{spec['html']}` — IGV browser with 1bp ref / alt profile overlay"
+        + (" and conservation tracks" if show_conservation else ""),
+    ]
+    cells.append(_md("## What this notebook produced\n\n" + "\n".join(produced) + "\n"))
     return cells
 
 

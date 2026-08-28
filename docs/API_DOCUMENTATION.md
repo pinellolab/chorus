@@ -9,13 +9,14 @@
 1. [Overview](#overview)
 2. [Core Classes](#core-classes)
 3. [Track Discovery](#track-discovery)
-4. [Prediction Methods](#prediction-methods)
-5. [Utility Functions](#utility-functions)
-6. [Track Management](#track-management)
-7. [Environment Management](#environment-management)
-8. [Complete Example](#complete-example)
-9. [Per-Track Normalization](#per-track-normalization)
-10. [Application layer (`chorus.analysis`)](#application-layer-chorusanalysis) — high-level variant analysis, discovery, batch scoring, fine-mapping, sequence engineering
+4. [Annotations & Conservation](#annotations--conservation)
+5. [Prediction Methods](#prediction-methods)
+6. [Utility Functions](#utility-functions)
+7. [Track Management](#track-management)
+8. [Environment Management](#environment-management)
+9. [Complete Example](#complete-example)
+10. [Per-Track Normalization](#per-track-normalization)
+11. [Application layer (`chorus.analysis`)](#application-layer-chorusanalysis) — high-level variant analysis, discovery, batch scoring, fine-mapping, sequence engineering
 
 ## Overview
 
@@ -83,6 +84,53 @@ len(oracle.describe_tracks())          # 5313 — omit query/limit for everythin
 Added in 0.7.4. It replaces four different shapes — `get_all_assay_ids()` on four oracles,
 `list_tracks()` on Cherimoya, a private `_get_all_assay_ids()` on Sei, and nothing at all on three
 others. Those older methods still work; new code should use `describe_tracks()`.
+
+## Annotations & Conservation
+
+### AnnotationStore
+
+One catalogue over three kinds of annotation: the conservation bigwigs chorus ships,
+GENCODE GTF annotations, and entries you register yourself.
+
+```python
+from chorus.utils import AnnotationStore
+
+store = AnnotationStore()
+for entry in store.list_annotations():
+    print(entry.origin, entry.id, entry.genome_build, entry.downloaded)
+
+store.describe_annotation("gpn_star")      # verifies a bigwig's build against its own chr1 length
+store.download_annotation("phylop100way")  # bulk-cached like oracle weights
+
+store.add_annotation("my_peaks", description="ATAC rep 1", genome_build="hg38",
+                     local_path="~/work/peaks.bed")
+store.remove_custom_annotation("my_peaks", delete_file=True)   # never deletes a file you registered
+```
+
+CLI equivalents: `chorus annotation list|describe|download|add|remove`, and
+`chorus conservation status|download` for the conservation sources specifically.
+
+### Conservation tracks on a report
+
+`build_variant_report(..., show_conservation=True)` — or
+`analyze_variant_multilayer(..., show_conservation=True)` from MCP — adds GPN-Star
+(coverage + per-base sequence logo), phyloP 100-way and phastCons 100-way to the IGV
+browser.
+
+**hg38 only.** A non-hg38 report raises rather than plotting human conservation against
+other coordinates. Budget **~25 GB** for the three coverage sources and **~70 GB** if the
+sequence-logo track is drawn (it needs four per-allele LLR bigwigs). Positions with no
+coverage are omitted, not drawn as zero.
+
+**Worked example**: [examples/walkthroughs/conservation/SORT1_rs12740374/](../examples/walkthroughs/conservation/SORT1_rs12740374/)
+scores rs12740374 with ChromBPNet and reads phyloP/phastCons/GPN-Star at the variant's
+own base directly — a strong, experimentally validated regulatory effect at a position
+with no cross-species conservation signal.
+
+### MCP tools
+
+`list_annotations`, `describe_annotation`, `download_annotation` — see
+`chorus/mcp/server.py`.
 
 ## Prediction Methods
 

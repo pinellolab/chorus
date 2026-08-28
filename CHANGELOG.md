@@ -5,8 +5,114 @@ All notable changes to Chorus are documented here. The format follows
 project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+### Added
 
-_Nothing yet._
+- **Conservation-score tracks for IGV reports.** `chorus/analysis/conservation.py` wraps three
+  hg38 conservation sources as bulk-downloaded genome-wide bigwigs (mirroring how oracle weights
+  and per-track backgrounds are cached): GPN-Star entropy, vertebrate-alignment model (GPN-Star
+  also ships mammalian and primate models, not used here), shown as a coverage track plus a
+  per-nucleotide sequence-logo track, both displaying `clip(1 - entropy, 0, 1)` so the most
+  conserved positions are tallest/highest; UCSC PhyloP 100-way; and UCSC PhastCons 100-way (both
+  raw coverage, the same 100-way vertebrate alignment as the GPN-Star model).
+  `analyze_variant_multilayer(..., show_conservation=True)` adds all of these to the IGV browser,
+  capped to a bounded window around the variant. A new `chorus conservation` CLI subcommand
+  lists/downloads the tracks ahead of time; `chorus health` surfaces their download status.
+- **A unified annotation catalog.** `chorus/utils/annotation_store.py` adds `AnnotationStore`,
+  which lists/describes/downloads across the three previously-separate annotation registries
+  (conservation tracks, GENCODE GTF gene annotations, and a new user-editable custom-entry YAML
+  file) through one interface, plus new `list_annotations` / `describe_annotation` /
+  `download_annotation` MCP tools and a `chorus annotation` CLI subcommand. Downloaded
+  bigwig-format entries have their declared genome build physically verified against the file's
+  own chromosome-1 length, raising on a confident mismatch rather than silently scoring the
+  wrong genome build.
+
+### Fixed — review of the conservation / annotation-store work
+
+- **Conservation tracks were plotted onto non-hg38 reports.** Every source chorus wraps is
+  hg38, and a bigwig read against another assembly returns values rather than erroring, so an
+  mm10 report showed human conservation scores against mouse coordinates with no warning.
+  `show_conservation=True` now raises for a non-hg38 report, checked before any work is done.
+- **No coverage rendered as maximum conservation.** Bigwig NaN was mapped to 0.0 and then
+  inverted to `clip(1 - 0, 0, 1) == 1.0`, so an assembly gap drew a solid full-height bar
+  indistinguishable from a perfectly constrained base. Uncovered positions are now omitted;
+  genuine zeros still plot.
+- **`chorus annotation remove --delete-file` deleted files chorus never downloaded.** For a
+  `kind="local"` entry the registered path is the user's own file. It is now left alone — a
+  test previously asserted the opposite.
+- **The GPN-Star downloads were unpinned**, fetching `songlab/gpn-star-scores` at its head, so
+  a re-upload could change conservation values silently. Pinned, with a guard that reads the
+  track configs rather than the call site.
+- **The sequence-logo track was off by one base** against every coolbox track above it:
+  coolbox passes 0-based half-open ranges, the height function reads 1-based inclusive.
+- **A `custom_annotations.yaml` with an empty `annotations:` key broke every listing path**
+  with an `AttributeError` naming neither the file nor the key — `setdefault` only fires when
+  a key is absent, not when it is present-but-empty.
+- **A source with no derivable filename** was accepted at registration and failed later with
+  `AttributeError: 'NoneType' object has no attribute 'exists'`; it now raises with advice.
+- **A 0-byte annotation file printed the optimistic size estimate** instead of its real size —
+  the one case a user needs to see — because the check was truthiness, not `is not None`.
+- **The assembly check did not run on the path that reads the data.** It was called only from
+  `describe_annotation`/`add_annotation`, which a report never touches. `_bigwig_path` now
+  verifies after download: a confident mismatch raises, an unreadable file warns.
+- **`_write_html_report` (MCP) could report a path `to_html` never wrote to.** Both re-derived
+  `output_dir / default_filename()` independently; for an `output_dir` like `/data/run.v2` the
+  dotted `.v2` makes `Path.suffix` non-empty, so `to_html` treats the whole path as the file
+  while `_write_html_report` still appended a filename onto it — a path that does not exist.
+  `VariantReport`/`CausalResult` now expose `resolve_html_path`, and both `to_html` and the MCP
+  helper call it, so they cannot disagree.
+- **`discover_variant` rendered and wrote its own HTML report twice.** It called
+  `discover_variant_effects(..., output_path=...)`, which builds and writes the report — then
+  stamped `analysis_request` on afterwards and wrote it again to get the user prompt into the
+  file. `discover_variant_effects` already accepted an `analysis_request` kwarg for exactly this
+  case; the server now builds it up front and passes it in, so the report renders once and the
+  server just looks up where it landed. Expensive when `show_conservation` makes each render
+  nontrivial, wasted otherwise.
+
+### Changed
+
+- **One `hf_download_flat` helper** replaces two line-for-line copies of the HF
+  download-and-flatten block. They differed only in whether they passed `revision=`, which is
+  precisely how the unpinned download shipped.
+- **The new surface is documented**, which it was not: README gains a *Conservation tracks*
+  section and its MCP tool count goes 24 → 27 with the three new tools listed;
+  `docs/API_DOCUMENTATION.md` gains *Annotations & Conservation*. Three copies of the
+  `show_conservation` blurb described the logo track as IGV's `dynseq` showing
+  `clip(1 - entropy, 0, 1)` — it is chorus's own stacked-logo track showing `p(base) × (2 - H)`
+  on a 0–2 bit scale — and stated ~25 GB of downloads where the logo track needs ~70 GB.
+- **`chorus/analysis/static/igv.min.js` was replaced** (1.35 MB → 1.50 MB, dropping the bundled
+  jQuery 3.3.1). Recorded because it was an undeclared vendored-dependency bump inside a
+  feature change. **The 19 committed example reports still inlined the old bundle**, and the
+  browser check renders committed reports — so the new bundle shipped with no CI coverage.
+  Partly closed: `rs12740374_SORT1_chrombpnet_report.html`, one of the two reports
+  `CHORUS_BROWSER_SMOKE=1` renders, is regenerated and now embeds the new bundle. Verified with
+  Playwright/Chromium against `test_committed_reports_render_in_a_browser.py` — the exact CI
+  smoke subset (11 passed, 1 skipped) and the full 19-report corpus (46 passed) — so the new
+  bundle is confirmed to paint every canvas with no console or page errors, not merely inferred
+  from size/content. The other smoke report (`rs12740374_SORT1_cherimoya_report.html`) still
+  carries the old bundle — regenerating it needs the `chorus-cherimoya` environment, unavailable
+  in the session that did this — and so do the other 17 committed reports outside the CI smoke
+  subset. **Still open**, though now a coverage-completeness gap rather than an unverified change.
+- **Conservation tracks and the annotation catalog get a worked example.** Neither had one:
+  `show_conservation`, `chorus conservation`, `chorus annotation` and `AnnotationStore` appeared
+  in no notebook. `examples/notebooks/single_oracle_quickstart.ipynb` gains a *Conservation
+  Tracks* section reusing the notebook's own GATA1 variant — `build_variant_report(...,
+  show_conservation=True)` plus a short `AnnotationStore.list_annotations()` listing — executed
+  with real data (all three conservation sources downloaded, ~24 GB combined) rather than left
+  unexecuted; the notebook prints the resulting 103.5 MB report's path and size but writes it to
+  a gitignored scratch directory rather than committing it. Still worth a dedicated walkthrough
+  if the CLI/MCP side of the annotation catalog needs one too.
+- **A dedicated `conservation/` walkthrough** ([examples/walkthroughs/conservation/SORT1_rs12740374/](examples/walkthroughs/conservation/SORT1_rs12740374/))
+  closes the gap the note above left open. Committed artifacts (JSON/MD/TSV/HTML, generated by a
+  new `scripts/regenerate_examples.py` entry, not hand-written): rs12740374 scored with ChromBPNet
+  DNASE:HepG2 (identical effect to the existing `variant_analysis/SORT1_chrombpnet` run: +1.376,
+  ≥99th percentile / 1.18× null max) with `show_conservation=True`, plus the three conservation
+  scores measured directly at the variant's own base and merged into `example_output.json`
+  (phyloP −0.046, phastCons 0.001, GPN-Star entropy 0.772 bits) — one of the strongest effects in
+  the repo landing on a base with no cross-species conservation signal by any of the three
+  sources, which is the case a reader cannot get from the oracle tracks alone. Along the way:
+  `README.md` and `docs/API_DOCUMENTATION.md` both documented `chorus conservation list` and
+  `chorus conservation download gpn_star` — the CLI only has `status` (not `list`) and `download`
+  requires `--track`; both ran and failed as written, fixed here.
 
 ## [0.7.5] — 2026-08-18
 ### Fixed

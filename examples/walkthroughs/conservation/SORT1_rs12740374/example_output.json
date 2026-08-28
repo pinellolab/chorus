@@ -58,6 +58,11 @@
     "tracks_requested": "DNASE:HepG2",
     "cell_types": [],
     "notes": [],
-    "generated_at": "2026-08-28 06:54 UTC"
+    "generated_at": "2026-08-28 13:03 UTC"
+  },
+  "conservation": {
+    "phyloP_100way": -0.04600000008940697,
+    "phastCons_100way": 0.0010000000474974513,
+    "gpn_star_entropy_bits": 0.7720000147819519
   }
 }
