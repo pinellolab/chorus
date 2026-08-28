@@ -26,6 +26,53 @@ project adheres to [Semantic Versioning](https://semver.org/).
   own chromosome-1 length, raising on a confident mismatch rather than silently scoring the
   wrong genome build.
 
+### Fixed — review of the conservation / annotation-store work
+
+- **Conservation tracks were plotted onto non-hg38 reports.** Every source chorus wraps is
+  hg38, and a bigwig read against another assembly returns values rather than erroring, so an
+  mm10 report showed human conservation scores against mouse coordinates with no warning.
+  `show_conservation=True` now raises for a non-hg38 report, checked before any work is done.
+- **No coverage rendered as maximum conservation.** Bigwig NaN was mapped to 0.0 and then
+  inverted to `clip(1 - 0, 0, 1) == 1.0`, so an assembly gap drew a solid full-height bar
+  indistinguishable from a perfectly constrained base. Uncovered positions are now omitted;
+  genuine zeros still plot.
+- **`chorus annotation remove --delete-file` deleted files chorus never downloaded.** For a
+  `kind="local"` entry the registered path is the user's own file. It is now left alone — a
+  test previously asserted the opposite.
+- **The GPN-Star downloads were unpinned**, fetching `songlab/gpn-star-scores` at its head, so
+  a re-upload could change conservation values silently. Pinned, with a guard that reads the
+  track configs rather than the call site.
+- **The sequence-logo track was off by one base** against every coolbox track above it:
+  coolbox passes 0-based half-open ranges, the height function reads 1-based inclusive.
+- **A `custom_annotations.yaml` with an empty `annotations:` key broke every listing path**
+  with an `AttributeError` naming neither the file nor the key — `setdefault` only fires when
+  a key is absent, not when it is present-but-empty.
+- **A source with no derivable filename** was accepted at registration and failed later with
+  `AttributeError: 'NoneType' object has no attribute 'exists'`; it now raises with advice.
+- **A 0-byte annotation file printed the optimistic size estimate** instead of its real size —
+  the one case a user needs to see — because the check was truthiness, not `is not None`.
+- **The assembly check did not run on the path that reads the data.** It was called only from
+  `describe_annotation`/`add_annotation`, which a report never touches. `_bigwig_path` now
+  verifies after download: a confident mismatch raises, an unreadable file warns.
+
+### Changed
+
+- **One `hf_download_flat` helper** replaces two line-for-line copies of the HF
+  download-and-flatten block. They differed only in whether they passed `revision=`, which is
+  precisely how the unpinned download shipped.
+- **The new surface is documented**, which it was not: README gains a *Conservation tracks*
+  section and its MCP tool count goes 24 → 27 with the three new tools listed;
+  `docs/API_DOCUMENTATION.md` gains *Annotations & Conservation*. Three copies of the
+  `show_conservation` blurb described the logo track as IGV's `dynseq` showing
+  `clip(1 - entropy, 0, 1)` — it is chorus's own stacked-logo track showing `p(base) × (2 - H)`
+  on a 0–2 bit scale — and stated ~25 GB of downloads where the logo track needs ~70 GB.
+- **`chorus/analysis/static/igv.min.js` was replaced** (1.35 MB → 1.50 MB, dropping the bundled
+  jQuery 3.3.1). Recorded because it was an undeclared vendored-dependency bump inside a
+  feature change. **The 19 committed example reports still inline the old bundle**, and the
+  browser check renders committed reports — so the new bundle currently ships with no CI
+  coverage. Regenerating the examples, or adding a freshly-rendered report to that check,
+  would close it.
+
 ## [0.7.5] — 2026-08-18
 ### Fixed
 

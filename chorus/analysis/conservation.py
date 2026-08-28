@@ -45,10 +45,22 @@ logger = logging.getLogger(__name__)
 # the exact region the caller asks for, whatever its size).
 DEFAULT_MAX_WINDOW_BP = 100_000
 
+#: Every source wrapped here is hg38, and a bigwig read against the wrong assembly
+#: returns plausible numbers rather than an error — chr1:3,000,000 exists in mm10 and in
+#: hg38. So the assembly is named once, and callers that plot these tracks check it.
+CONSERVATION_ASSEMBLY = "hg38"
+
+#: Pinned so two users on the same chorus commit read the same scores. The repo is a
+#: moving dataset: fetching its head would let a re-upload change conservation values
+#: with nothing in the tree recording that it happened (which is what
+#: `chorus-backgrounds` did on 2026-08-10). Bump deliberately, with the values re-checked.
+GPN_STAR_HF_REVISION = "a7b13bbf0d2338d74a7e5f0f8466e41ac0722f50"
+
 _TRACK_SOURCES = {
     "gpn_star": dict(
         kind="hf",
         hf_repo="songlab/gpn-star-scores",
+        hf_revision=GPN_STAR_HF_REVISION,
         hf_filename="bigwig/gpn-star-hg38-v100-200m/entropy.bw",
         local_subdir="gpn_star",
         local_filename="entropy.bw",
@@ -57,6 +69,7 @@ _TRACK_SOURCES = {
     "gpn_star_llr_a": dict(
         kind="hf",
         hf_repo="songlab/gpn-star-scores",
+        hf_revision=GPN_STAR_HF_REVISION,
         hf_filename="bigwig/gpn-star-hg38-v100-200m/llr_A.bw",
         local_subdir="gpn_star_llr",
         local_filename="llr_A.bw",
@@ -65,6 +78,7 @@ _TRACK_SOURCES = {
     "gpn_star_llr_c": dict(
         kind="hf",
         hf_repo="songlab/gpn-star-scores",
+        hf_revision=GPN_STAR_HF_REVISION,
         hf_filename="bigwig/gpn-star-hg38-v100-200m/llr_C.bw",
         local_subdir="gpn_star_llr",
         local_filename="llr_C.bw",
@@ -73,6 +87,7 @@ _TRACK_SOURCES = {
     "gpn_star_llr_g": dict(
         kind="hf",
         hf_repo="songlab/gpn-star-scores",
+        hf_revision=GPN_STAR_HF_REVISION,
         hf_filename="bigwig/gpn-star-hg38-v100-200m/llr_G.bw",
         local_subdir="gpn_star_llr",
         local_filename="llr_G.bw",
@@ -81,6 +96,7 @@ _TRACK_SOURCES = {
     "gpn_star_llr_t": dict(
         kind="hf",
         hf_repo="songlab/gpn-star-scores",
+        hf_revision=GPN_STAR_HF_REVISION,
         hf_filename="bigwig/gpn-star-hg38-v100-200m/llr_T.bw",
         local_subdir="gpn_star_llr",
         local_filename="llr_T.bw",
@@ -139,27 +155,19 @@ def _bigwig_path(track: str, downloads_dir: Path | None = None) -> Path:
     local_path.parent.mkdir(parents=True, exist_ok=True)
 
     if cfg["kind"] == "hf":
-        from huggingface_hub import hf_hub_download
-
         logger.info(
             "Downloading %s conservation track (%s, %s) from HuggingFace "
             "— this is a one-time download.",
             track, cfg["hf_filename"], cfg["size_note"],
         )
-        downloaded = Path(hf_hub_download(
-            cfg["hf_repo"],
+        from chorus.utils.annotation_store import hf_download_flat
+
+        hf_download_flat(
+            repo=cfg["hf_repo"],
             filename=cfg["hf_filename"],
-            repo_type="dataset",
-            local_dir=str(local_path.parent),
-        ))
-        if downloaded != local_path:
-            shutil.move(str(downloaded), str(local_path))
-            # Clean up the now-empty HF repo-relative subdirectories.
-            nested_dir = downloaded.parent
-            while nested_dir != local_path.parent and nested_dir.exists() and not any(nested_dir.iterdir()):
-                emptied = nested_dir
-                nested_dir = nested_dir.parent
-                emptied.rmdir()
+            dest=local_path,
+            revision=cfg.get("hf_revision"),
+        )
     elif cfg["kind"] == "url":
         from chorus.utils.http import download_with_resume
 
@@ -173,7 +181,40 @@ def _bigwig_path(track: str, downloads_dir: Path | None = None) -> Path:
         raise ValueError(f"Unknown track source kind: {cfg['kind']!r}")
 
     logger.info("%s conservation track cached at %s", track, local_path)
+    _verify_assembly(local_path, track)
     return local_path
+
+
+def _verify_assembly(local_path: Path, track: str) -> None:
+    """Check a freshly downloaded bigwig really is the assembly we think it is.
+
+    The store verifies this in ``describe_annotation``/``add_annotation``, but a report
+    never calls those — it calls :func:`_bigwig_path`. So a truncated download, a
+    substituted mirror, or an hg19 file dropped into ``downloads/phylop100way/`` was read
+    and plotted unchecked. Warn-not-raise for an unrecognised file, matching
+    :func:`chorus.utils.genome.require_assembly`: refusing an assembly we simply have no
+    chr1 length for would be worse than saying so.
+    """
+    from chorus.core.exceptions import GenomeAssemblyMismatchError
+
+    try:
+        from chorus.utils.genome import require_assembly_for_bigwig
+
+        require_assembly_for_bigwig(
+            local_path, CONSERVATION_ASSEMBLY, context=f"{track} conservation track",
+        )
+    except GenomeAssemblyMismatchError:
+        # A *confident* mismatch is the case this exists for: an hg19 file where hg38 is
+        # expected reads without error and yields plausible numbers about the wrong DNA.
+        raise
+    except Exception as exc:
+        # Anything else — pyBigWig missing, a file that will not open, no chr1 — is not a
+        # mismatch claim, and turning it into one would make the download path fail on
+        # files the reader would report on far more clearly a moment later.
+        logger.warning(
+            "Could not verify the assembly of the %s track at %s (%s: %s); continuing.",
+            track, local_path, type(exc).__name__, exc,
+        )
 
 
 # ---------------------------------------------------------------------
@@ -271,16 +312,25 @@ def download_track(track: str, downloads_dir: Path | None = None) -> Path:
 # Reading raw per-base values
 # ---------------------------------------------------------------------
 
-def read_bigwig_values(chrom: str, start: int, end: int, *, bw_path: str | Path) -> np.ndarray:
+def read_bigwig_values(
+    chrom: str, start: int, end: int, *, bw_path: str | Path, preserve_nan: bool = False,
+) -> np.ndarray:
     """Read per-base values from a local bigwig for a 1-based inclusive region.
 
-    Returns a float array of length ``end - start + 1``; positions with no
-    coverage (NaN in the bigwig) are mapped to 0.0.
+    Returns a float array of length ``end - start + 1``. Positions with no coverage are
+    NaN in the bigwig; by default they are mapped to 0.0.
+
+    ``preserve_nan=True`` keeps them, and callers that *invert* the scale must use it.
+    Mapping no-coverage to 0.0 and then applying ``transform="invert"`` yields
+    ``clip(1 - 0, 0, 1) == 1.0`` — the maximum — so an assembly gap rendered as a
+    solid full-height bar, indistinguishable from a perfectly constrained base.
     """
     import pyBigWig
 
     with pyBigWig.open(str(bw_path)) as bw:
         values = bw.values(chrom, start - 1, end, numpy=True)
+    if preserve_nan:
+        return np.asarray(values, dtype=float)
     return np.nan_to_num(values, nan=0.0)
 
 
@@ -615,8 +665,12 @@ def _get_sequence_logo_track_cls():
                 self._llr_bw_paths = llr_bw_paths
 
             def fetch_data(self, gr, **kwargs):
+                # coolbox GenomeRange is 0-based half-open (its own to_gr("chr1:0-1000")
+                # gives start 0); compute_stacked_logo_heights takes 1-based inclusive.
+                # Passing gr.start straight through fetched one extra base, one to the
+                # left, so the letters sat a base off from every coolbox track above.
                 return compute_stacked_logo_heights(
-                    gr.chrom, gr.start, gr.end,
+                    gr.chrom, gr.start + 1, gr.end,
                     genome_fasta=self._genome_fasta,
                     entropy_bw_path=self._entropy_bw_path,
                     llr_bw_paths=self._llr_bw_paths,
@@ -625,7 +679,9 @@ def _get_sequence_logo_track_cls():
             def plot(self, ax, gr, **kwargs) -> None:
                 self.ax = ax
                 heights = self.fetch_data(gr)
-                _draw_stacked_logo(ax, heights, gr.start, ymax=self.properties.get("ymax"))
+                # gr.start + 1 is the 1-based coordinate of the first fetched value, which
+                # is what _draw_stacked_logo lays letters out from.
+                _draw_stacked_logo(ax, heights, gr.start + 1, ymax=self.properties.get("ymax"))
                 self.plot_label()
 
         _sequence_logo_track_cls = SequenceLogoTrack
@@ -715,16 +771,32 @@ def _bigwig_igv_features(
     from ._igv_report import _downsample_to_features
 
     start, end = _clip_window(chrom, start, end, center=center, max_window_bp=max_window_bp)
-    values = read_bigwig_values(chrom, start, end, bw_path=bw_path)
+    # preserve_nan so no-coverage stays distinguishable from a real 0 through the
+    # transform; the uncovered positions are dropped below rather than plotted.
+    values = read_bigwig_values(chrom, start, end, bw_path=bw_path, preserve_nan=True)
     values = _apply_transform(values, transform)
+    uncovered = np.isnan(values)
     # _downsample_to_features expects a 0-based feature-coordinate origin
     # (matches every other IGV track built in _igv_report.py); our own
     # start/end args are 1-based inclusive. Always 1bp resolution — no
     # mean-aggregation — so per-base rendering (e.g. IGV's dynseq graph
     # type) never shows averaged, misleadingly-flat blocks.
-    return _downsample_to_features(
-        values, chrom, start - 1, resolution=1, bin_size=1, skip_zeros=False,
+    features = _downsample_to_features(
+        np.nan_to_num(values, nan=0.0), chrom, start - 1,
+        resolution=1, bin_size=1, skip_zeros=False,
     )
+    if not uncovered.any():
+        return features
+    # 1bp resolution with skip_zeros=False gives one feature per input value, so the
+    # mask lines up positionally. Assert it rather than trust it: a future change to
+    # either argument would otherwise silently drop the wrong positions.
+    if len(features) != len(values):
+        logger.warning(
+            "conservation: %d features for %d values — cannot map no-coverage positions, "
+            "leaving them in", len(features), len(values),
+        )
+        return features
+    return [f for f, missing in zip(features, uncovered) if not missing]
 
 
 def conservation_igv_features(

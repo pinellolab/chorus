@@ -1366,8 +1366,10 @@ def analyze_variant_multilayer(
                  zoomed in below 2bp/pixel), and raw PhyloP 100-way /
                  PhastCons 100-way coverage tracks from UCSC (same
                  100-way vertebrate alignment) — all capped to a bounded
-                 window around the variant. Downloads each source bigwig
-                 (~5.5-9.9 GB apiece) on first use.
+                 window around the variant. **hg38 only** — a non-hg38 report
+                 raises. Downloads bigwigs on first use: ~25 GB for the three
+                 coverage sources, ~45 GB more of per-allele LLR files for the
+                 sequence-logo track, so budget ~70 GB.
         ldlink_token: LDlink API token (only used when ``position`` is an
                   rsID). Register free at https://ldlink.nih.gov/?tab=apiaccess
                   or set ``LDLINK_TOKEN``.

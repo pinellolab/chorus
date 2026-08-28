@@ -35,7 +35,7 @@ def test_gpn_star_bigwig_path_downloads_and_flattens(tmp_path, monkeypatch):
 
     # Mimic hf_hub_download's real behaviour: it preserves the repo-relative
     # subpath under local_dir, landing the file nested rather than flat.
-    def fake_hf_hub_download(repo_id, filename, repo_type, local_dir):
+    def fake_hf_hub_download(repo_id, filename, repo_type, local_dir, revision=None):
         calls["n"] += 1
         assert repo_id == cfg["hf_repo"]
         assert filename == cfg["hf_filename"]
@@ -140,7 +140,7 @@ def test_download_track_dispatches_by_name(tmp_path, monkeypatch):
     downloads_dir = tmp_path / "downloads"
     calls = []
 
-    def fake_hf_hub_download(repo_id, filename, repo_type, local_dir):
+    def fake_hf_hub_download(repo_id, filename, repo_type, local_dir, revision=None):
         calls.append("hf")
         nested = Path(local_dir) / filename
         nested.parent.mkdir(parents=True, exist_ok=True)
@@ -839,9 +839,130 @@ def test_sequence_logo_track_fetch_data_returns_stacked_heights(tmp_path):
     track = conservation.conservation_logo_track(
         str(fa_path), entropy_bw_path=entropy_path, llr_bw_paths=llr_paths,
     )
-    heights = track.fetch_data(GenomeRange("chr1", 1, 4))
+    gr = GenomeRange("chr1", 1, 4)
+    heights = track.fetch_data(gr)
 
     assert set(heights.keys()) == {"A", "C", "G", "T"}
+    # GenomeRange is 0-based half-open, so [1, 4) is THREE bases. This asserted four
+    # before: fetch_data passed gr.start straight into compute_stacked_logo_heights, which
+    # reads 1-based inclusive, so it fetched an extra base one position to the left and the
+    # letters sat off-by-one against every coolbox track drawn above them.
+    expected_n = gr.end - gr.start
     # Uniform (all-zero) LLRs -> p=0.25 per base; height = 0.25 * (2-0.5) = 0.375.
     for base in "ACGT":
-        assert list(heights[base]) == pytest.approx([0.375] * 4)
+        assert list(heights[base]) == pytest.approx([0.375] * expected_n)
+
+
+def test_logo_track_fetches_the_same_span_as_a_coolbox_bigwig_track(tmp_path):
+    """Alignment, stated as the property that matters rather than a value count.
+
+    The logo is drawn beneath coolbox coverage tracks, so it has to cover exactly the
+    bases coolbox itself would fetch for the same GenomeRange.
+    """
+    from coolbox.utilities.genome import GenomeRange
+
+    chrom = "chr1"
+    entropy_path = tmp_path / "entropy.bw"
+    _write_fixture_bigwig(entropy_path, chrom=chrom, start=0, values=[0.5] * 10)
+    llr_paths = _write_llr_fixtures(tmp_path, chrom, {b: [0.0] * 10 for b in "ACGT"})
+    fa_path = tmp_path / "ref.fa"
+    fa_path.write_text(f">{chrom}\n" + "ACGTACGTAC" + "N" * 990 + "\n")
+
+    track = conservation.conservation_logo_track(
+        str(fa_path), entropy_bw_path=entropy_path, llr_bw_paths=llr_paths,
+    )
+    for start, end in ((0, 4), (1, 4), (2, 9)):
+        gr = GenomeRange(chrom, start, end)
+        heights = track.fetch_data(gr)
+        assert len(heights["A"]) == gr.end - gr.start, (
+            f"logo covers {len(heights['A'])} bases for {gr}, coolbox covers "
+            f"{gr.end - gr.start} — the tracks would not line up"
+        )
+
+
+# ── review fixes: the three defects that produced plausible-but-wrong plots ──────────
+
+class TestNoCoverageIsNotMaximumConservation:
+    """A bigwig NaN means "no data". Inverted, it used to mean "perfectly constrained".
+
+    `read_bigwig_values` mapped NaN to 0.0 and `transform="invert"` computes
+    `clip(1 - v, 0, 1)`, so an assembly gap became 1.0 — the maximum — and
+    `skip_zeros=False` kept every one of them. With `min=0, max=1, autoscale=false` on the
+    track, an uncovered region rendered as a solid full-height bar, identical to the most
+    conserved base in the genome.
+    """
+
+    @staticmethod
+    def _gapped_bigwig(tmp_path):
+        """Values at 1-based 1 and 3, nothing at 2 — a real no-coverage hole."""
+        import pyBigWig
+
+        path = tmp_path / "gapped.bw"
+        bw = pyBigWig.open(str(path), "w")
+        bw.addHeader([("chr1", 1000)])
+        bw.addEntries("chr1", [0, 2], values=[0.2, 0.4], span=1, step=1)
+        bw.close()
+        return path
+
+    def test_read_bigwig_values_can_preserve_nan(self, tmp_path):
+        bw = self._gapped_bigwig(tmp_path)
+
+        filled = conservation.read_bigwig_values("chr1", 1, 3, bw_path=bw)
+        kept = conservation.read_bigwig_values("chr1", 1, 3, bw_path=bw, preserve_nan=True)
+
+        assert filled[1] == 0.0                      # documented default, unchanged
+        assert np.isnan(kept[1])                     # opt-in keeps the distinction
+
+    def test_uncovered_positions_are_omitted_not_drawn_as_max(self, tmp_path):
+        bw = self._gapped_bigwig(tmp_path)
+
+        features = conservation.conservation_igv_features(
+            "chr1", 1, 3, bw_path=bw, max_window_bp=None, transform="invert",
+        )
+
+        values = [f["value"] for f in features]
+        assert 1.0 not in values, (
+            f"an uncovered base was plotted as maximum conservation: {features}"
+        )
+        assert len(features) == 2, f"expected the NaN position to be dropped, got {features}"
+        assert {round(v, 6) for v in values} == {0.8, 0.6}
+
+    def test_a_real_zero_is_still_plotted(self, tmp_path):
+        """Dropping NaN must not also drop genuine zero-conservation positions."""
+        bw = tmp_path / "flat.bw"
+        _write_fixture_bigwig(bw, start=0, values=[1.0, 1.0, 1.0])   # entropy 1 -> inverted 0
+
+        features = conservation.conservation_igv_features(
+            "chr1", 1, 3, bw_path=bw, max_window_bp=None, transform="invert",
+        )
+        assert len(features) == 3
+        assert all(f["value"] == 0.0 for f in features)
+
+
+class TestConservationIsHg38Only:
+    def test_the_assembly_is_named_once(self):
+        from chorus.analysis import conservation
+
+        assert conservation.CONSERVATION_ASSEMBLY == "hg38"
+
+    def test_a_non_hg38_report_refuses_conservation(self):
+        """Every source is hg38, and a bigwig read against mm10 returns values rather than
+        erroring — so this has to be refused, not warned about."""
+        from chorus.analysis._igv_report import build_igv_html
+
+        with pytest.raises(ValueError, match="only valid for hg38"):
+            build_igv_html(
+                None, None, "chr1", 3_000_000,
+                genome="mm10", show_conservation=True,
+            )
+
+    def test_an_hg38_report_is_not_blocked(self):
+        """The guard must not fire on the supported assembly."""
+        from chorus.analysis._igv_report import build_igv_html
+
+        try:
+            build_igv_html(None, None, "chr1", 3_000_000, genome="hg38", show_conservation=True)
+        except ValueError as exc:
+            assert "only valid for" not in str(exc), f"guard fired on hg38: {exc}"
+        except Exception:
+            pass   # any other failure is unrelated to the assembly guard
