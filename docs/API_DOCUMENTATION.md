@@ -108,7 +108,7 @@ store.remove_custom_annotation("my_peaks", delete_file=True)   # never deletes a
 ```
 
 CLI equivalents: `chorus annotation list|describe|download|add|remove`, and
-`chorus conservation list|download` for the conservation sources specifically.
+`chorus conservation status|download` for the conservation sources specifically.
 
 ### Conservation tracks on a report
 
@@ -121,6 +121,11 @@ browser.
 other coordinates. Budget **~25 GB** for the three coverage sources and **~70 GB** if the
 sequence-logo track is drawn (it needs four per-allele LLR bigwigs). Positions with no
 coverage are omitted, not drawn as zero.
+
+**Worked example**: [examples/walkthroughs/conservation/SORT1_rs12740374/](../examples/walkthroughs/conservation/SORT1_rs12740374/)
+scores rs12740374 with ChromBPNet and reads phyloP/phastCons/GPN-Star at the variant's
+own base directly — a strong, experimentally validated regulatory effect at a position
+with no cross-species conservation signal.
 
 ### MCP tools
 

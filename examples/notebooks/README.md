@@ -50,7 +50,7 @@ chorus genome download hg38
 # 4. Nothing — `chorus setup` registers the `chorus` Jupyter kernel for you.
 ```
 
-All 18 shipped notebooks declare kernel name `chorus`, and until recently nothing created it:
+All 19 shipped notebooks declare kernel name `chorus`, and until recently nothing created it:
 `jupyter nbconvert --execute` raised `NoSuchKernel: No such kernel named chorus` and JupyterLab
 silently prompted you to pick one, which looks like a broken notebook rather than a missing step.
 `chorus setup` now does it.

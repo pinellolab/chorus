@@ -1354,6 +1354,11 @@ report = build_variant_report(variant_result, oracle_name="alphagenome",
 
 From Claude: `analyze_variant_multilayer(..., show_conservation=True)`.
 
+**Worked example**: [examples/walkthroughs/conservation/SORT1_rs12740374/](examples/walkthroughs/conservation/SORT1_rs12740374/)
+— a variant with one of the strongest measured ChromBPNet effects in this repo (+1.376,
+≥99th percentile) at a base with no cross-species conservation signal by any of the three
+scores below, and why that combination isn't a contradiction.
+
 Three hg38 sources are wrapped, each a genome-wide bigwig cached once on first use (like
 oracle weights) rather than streamed per region:
 
@@ -1371,8 +1376,8 @@ read as a conserved base.
 Manage the downloads without running an analysis:
 
 ```bash
-chorus conservation list                  # sources, sizes, what is cached
-chorus conservation download gpn_star     # fetch one up front
+chorus conservation status                     # sources, sizes, what is cached
+chorus conservation download --track gpn_star  # fetch one up front
 chorus annotation list                    # conservation + GENCODE + your own entries
 chorus annotation add my_peaks --genome-build hg38 --local-path ~/work/peaks.bed \
     --description "ATAC peaks, replicate 1"
