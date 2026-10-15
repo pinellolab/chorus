@@ -51,6 +51,7 @@
 | Swap a promoter/enhancer and predict effects | `analyze_region_swap` | [sequence_engineering/](sequence_engineering/) |
 | Predict disruption from a construct insertion | `simulate_integration` | [sequence_engineering/](sequence_engineering/) |
 | Cross-validate a variant with multiple oracles | `MultiOracleReport` | [validation/SORT1_rs12740374_multioracle/](validation/SORT1_rs12740374_multioracle/) |
+| Overlay cross-species conservation on a variant report | `analyze_variant_multilayer(..., show_conservation=True)` | [conservation/](conservation/) |
 
 ## Quick start by role
 
@@ -155,6 +156,12 @@ that scores the classic SORT1 variant with **three independent oracles**
 (ChromBPNet for chromatin, LegNet for MPRA, AlphaGenome as generalist) and
 surfaces a consensus matrix flagging where they agree — and where they
 don't — on direction.
+
+### [conservation/](conservation/)
+Overlays phyloP, phastCons and GPN-Star cross-species conservation on a
+variant report (`show_conservation=True`) and reads the scores directly at
+the variant's own base, for the case where an oracle's predicted effect and
+the base's evolutionary conservation point in different directions.
 
 ## Output Formats
 

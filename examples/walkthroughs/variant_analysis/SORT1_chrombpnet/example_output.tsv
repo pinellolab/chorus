@@ -1,2 +1,2 @@
 allele	layer	assay_id	region_label	assay_type	cell_type	ref_value	alt_value	raw_score	quantile_score	effect_exceedance	ref_signal_percentile	note
-alt_1	chromatin_accessibility	DNASE:HepG2		DNASE	HepG2	287.23662550747395	747.0136800706387	1.3758109883126883	0.9995		0.906	
+alt_1	chromatin_accessibility	DNASE:HepG2		DNASE	HepG2	287.25764378905296	747.0854494571686	1.3758442055682085	1.0	1.177790508805568	0.8853	

@@ -54,19 +54,38 @@ def test_every_download_site_honours_the_pin():
     tag can ask for a file that does not exist at that revision — so the listing counts as
     a site too.
     """
-    src = NORMALIZATION.read_text()
-    downloads = [m.start() for m in re.finditer(r"hf_hub_download\(", src)]
-    assert downloads, "no hf_hub_download call found -- has the download path moved?"
+    # Scoped to the modules that download *artefacts* — backgrounds, conservation tracks,
+    # annotation files — rather than one file. Reading only normalization.py is what let
+    # chorus/analysis/conservation.py ship unpinned GPN-Star download sites while this
+    # guard stayed green: a guard aimed at "every download site" that reads one file is
+    # not one.
+    #
+    # Model *weights* are deliberately out of scope here. Widening this to the whole
+    # package flags 13 pre-existing unpinned sites (alphagenome_pt, cherimoya, chrombpnet,
+    # epinformerseq, legnet, sei, utils/annotations, _igv_report) — a real question, but a
+    # separate policy decision about weight pinning, not something to fold into an
+    # artefact guard.
+    pkg = NORMALIZATION.parent.parent
+    sources = [
+        pkg / "analysis" / "normalization.py",
+        pkg / "analysis" / "conservation.py",
+        pkg / "utils" / "annotation_store.py",
+    ]
+    sources = [s for s in sources if s.exists()]
     unpinned = []
-    for pos in downloads:
-        call = src[pos:pos + 400]
-        end = call.find(")")
-        if "revision=" not in call[:end if end > 0 else len(call)]:
-            line = src[:pos].count("\n") + 1
-            unpinned.append(line)
+    total = 0
+    for path in sources:
+        src = path.read_text()
+        for pos in (m.start() for m in re.finditer(r"hf_hub_download\(", src)):
+            total += 1
+            call = src[pos:pos + 400]
+            end = call.find(")")
+            if "revision=" not in call[:end if end > 0 else len(call)]:
+                unpinned.append(f"{path.relative_to(NORMALIZATION.parent.parent)}:{src[:pos].count(chr(10)) + 1}")
+    assert total, "no hf_hub_download call found anywhere -- has the download path moved?"
     assert not unpinned, (
-        f"hf_hub_download at line(s) {unpinned} does not pass revision=, so it fetches the "
-        f"dataset's head regardless of the pin"
+        f"hf_hub_download at {unpinned} does not pass revision=, so it fetches the "
+        f"dataset's head regardless of any pin"
     )
 
     listings = [m.start() for m in re.finditer(r"list_repo_files\(", src)]
@@ -166,3 +185,30 @@ def test_the_pinned_revision_matches_the_artefacts_on_this_machine():
         f"the local files are from a different build -- in both cases the percentiles this "
         f"machine produces are not the ones the pin claims."
     )
+
+
+def test_every_hf_conservation_track_pins_a_revision():
+    """The pin has to live on the track config, not just on the download helper.
+
+    `conservation._bigwig_path` now routes through `annotation_store.hf_download_flat`,
+    which passes `revision=` — so the call-site scan above sees a pinned site even when
+    the value handed to it is None. What actually decides whether two users read the same
+    conservation scores is whether each `kind="hf"` track config names a revision.
+    """
+    from chorus.analysis import conservation
+
+    unpinned = [
+        name for name, cfg in conservation._TRACK_SOURCES.items()
+        if cfg.get("kind") == "hf" and not cfg.get("hf_revision")
+    ]
+    assert not unpinned, (
+        f"conservation tracks {unpinned} have no hf_revision, so they fetch "
+        f"songlab/gpn-star-scores at its head. A re-upload would change conservation "
+        f"values with nothing in the tree recording it."
+    )
+
+    moving = [
+        name for name, cfg in conservation._TRACK_SOURCES.items()
+        if cfg.get("kind") == "hf" and cfg.get("hf_revision") in {"main", "master", "HEAD"}
+    ]
+    assert not moving, f"conservation tracks {moving} pin a moving ref, which is not a pin"

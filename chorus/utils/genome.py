@@ -389,6 +389,21 @@ def require_assembly(fasta_path, expected: str, *, context: str = "") -> Optiona
     typo (``"GRCh38"`` for ``"hg38"``) fails at the guard rather than silently
     disabling it.
     """
+    return _require_assembly_from_detected(
+        detect_assembly(fasta_path), expected, context=context, source=str(fasta_path),
+    )
+
+
+def _require_assembly_from_detected(
+    found: Optional[str], expected: str, *, context: str = "", source: str,
+) -> Optional[str]:
+    """Shared raise/warn body for :func:`require_assembly` and its chrom-sizes sibling.
+
+    Factored out so the FASTA path (``.fai``/pysam) and the chrom-sizes path (a
+    bigwig's ``bw.chroms()``) can never drift apart in wording or in the
+    raise-on-confident-mismatch / warn-on-unrecognized asymmetry — see
+    :func:`require_assembly`'s docstring for why that asymmetry is the whole design.
+    """
     if expected not in ASSEMBLY_CHR1_LENGTH:
         raise ValueError(
             f"require_assembly(expected={expected!r}) is not an assembly chorus can "
@@ -396,24 +411,76 @@ def require_assembly(fasta_path, expected: str, *, context: str = "") -> Optiona
             f"silently disable the check it was added to perform."
         )
     where = f" ({context})" if context else ""
-    found = detect_assembly(fasta_path)
     if found is None:
         logger.warning(
             "Could not identify the assembly of %s%s (no chr1, or a build chorus has "
             "no length for). Expected %s; proceeding unverified.",
-            fasta_path, where, expected,
+            source, where, expected,
         )
         return None
     if found != expected:
         from ..core.exceptions import GenomeAssemblyMismatchError
         raise GenomeAssemblyMismatchError(
-            f"{fasta_path} is {found}, not {expected}{where}. chr1 is "
+            f"{source} is {found}, not {expected}{where}. chr1 is "
             f"{ASSEMBLY_CHR1_LENGTH[found]:,} bp; {expected} has "
             f"{ASSEMBLY_CHR1_LENGTH[expected]:,}. Every coordinate in one assembly "
             f"also exists in the other, so this would not fail -- it would return "
             f"predictions about different DNA than the ones asked for."
         )
     return found
+
+
+def chr1_length_from_chrom_sizes(chrom_sizes: Dict[str, int]) -> Optional[int]:
+    """Length of chr1 in a ``{chrom: length}`` dict (e.g. a bigwig's ``bw.chroms()``).
+
+    Accepts both ``chr1`` and ``1`` keys, mirroring :func:`chr1_length`'s FASTA behaviour.
+    """
+    for name in ('chr1', '1'):
+        if name in chrom_sizes:
+            return int(chrom_sizes[name])
+    return None
+
+
+def detect_assembly_from_chrom_sizes(chrom_sizes: Dict[str, int]) -> Optional[str]:
+    """Same contract as :func:`detect_assembly`, fingerprinting from a chrom-sizes dict.
+
+    ``None`` means "no claim": no ``chr1``/``1`` key, or a length not in
+    :data:`ASSEMBLY_CHR1_LENGTH`.
+    """
+    length = chr1_length_from_chrom_sizes(chrom_sizes)
+    if length is None:
+        return None
+    return _CHR1_LENGTH_TO_ASSEMBLY.get(length)
+
+
+def require_assembly_from_chrom_sizes(
+    chrom_sizes: Dict[str, int], expected: str, *, context: str = "",
+) -> Optional[str]:
+    """Same raise/warn/ValueError asymmetry as :func:`require_assembly`, sourced from
+    a chrom-sizes dict (e.g. a bigwig's ``bw.chroms()``) rather than opening a FASTA.
+    """
+    return _require_assembly_from_detected(
+        detect_assembly_from_chrom_sizes(chrom_sizes), expected,
+        context=context, source=f"chrom-sizes {dict(chrom_sizes)!r}",
+    )
+
+
+def require_assembly_for_bigwig(bigwig_path, expected: str, *, context: str = "") -> Optional[str]:
+    """Convenience: open *bigwig_path* with pyBigWig and verify its assembly.
+
+    Extracts ``bw.chroms()`` and delegates to :func:`require_assembly_from_chrom_sizes`,
+    so a confident mismatch raises :class:`~chorus.core.exceptions.GenomeAssemblyMismatchError`
+    and an unrecognized build only warns — same asymmetry as :func:`require_assembly`.
+    """
+    import pyBigWig
+
+    bigwig_path = str(bigwig_path)
+    with pyBigWig.open(bigwig_path) as bw:
+        chrom_sizes = dict(bw.chroms())
+    return _require_assembly_from_detected(
+        detect_assembly_from_chrom_sizes(chrom_sizes), expected,
+        context=context, source=bigwig_path,
+    )
 
 
 def missing_reference_fasta_error(oracle_name: str = "") -> ValueError:

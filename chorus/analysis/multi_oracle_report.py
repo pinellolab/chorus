@@ -530,7 +530,7 @@ class MultiOracleReport:
             script_tag = f"<script>{local_igv.read_text()}</script>"
         else:
             script_tag = ('<script src="https://cdn.jsdelivr.net/npm/'
-                          'igv@3.1.1/dist/igv.min.js"></script>')
+                          'igv@3.8.4/dist/igv.min.js"></script>')
 
         return f"""
 <div id="igv-multioracle" style="margin: 1rem 0; min-height: 400px;"></div>

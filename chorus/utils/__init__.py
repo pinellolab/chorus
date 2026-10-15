@@ -48,6 +48,12 @@ from .annotations import (
     make_gene_track,
 )
 
+from .annotation_store import (
+    AnnotationStore,
+    AnnotationEntry,
+    get_annotation_store,
+)
+
 __all__ = [
     # Sequence utilities
     'extract_sequence',
@@ -91,4 +97,9 @@ __all__ = [
     'get_gene_tss',
     'get_gene_exons',
     'make_gene_track',
+
+    # Generic annotation catalog
+    'AnnotationStore',
+    'AnnotationEntry',
+    'get_annotation_store',
 ]

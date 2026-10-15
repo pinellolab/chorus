@@ -19,7 +19,7 @@ from .analysis_request import AnalysisRequest
 from .normalization import QuantileNormalizer
 from .variant_report import (
     TrackScore, VariantReport, build_variant_report,
-    _describe_normalizer, _fmt_percentile,
+    _describe_normalizer, _fmt_percentile, resolve_report_html_path,
 )
 
 from types import SimpleNamespace as _NS
@@ -219,6 +219,20 @@ class CausalResult:
             result["analysis_request"] = self.analysis_request.to_dict()
         return result
 
+    def default_filename(self, ext: str = "html") -> str:
+        """Generate a descriptive default filename for this report.
+
+        Format: ``<sentinel_id>_<gene>_<oracle>_causal_report.<ext>``
+        """
+        sentinel_safe = self.sentinel_id.replace(":", "_")
+        gene = self.gene_name or "locus"
+        return f"{sentinel_safe}_{gene}_{self.oracle_name}_causal_report.{ext}"
+
+    def resolve_html_path(self, output_path: str):
+        """Where :meth:`to_html` would write, without writing anything. See
+        :func:`chorus.analysis.variant_report.resolve_report_html_path`."""
+        return resolve_report_html_path(output_path, self.default_filename())
+
     def to_html(self, output_path: str | None = None) -> str:
         """Generate a self-contained HTML report.
 
@@ -228,17 +242,8 @@ class CausalResult:
         """
         html = _build_causal_html(self)
         if output_path is not None:
-            from pathlib import Path
-
-            path = Path(output_path)
-            if path.suffix == "" or path.is_dir():
-                path.mkdir(parents=True, exist_ok=True)
-                sentinel_safe = self.sentinel_id.replace(":", "_")
-                gene = self.gene_name or "locus"
-                fname = f"{sentinel_safe}_{gene}_{self.oracle_name}_causal_report.html"
-                path = path / fname
-            else:
-                path.parent.mkdir(parents=True, exist_ok=True)
+            path = self.resolve_html_path(output_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(html, encoding="utf-8")
             logger.info("Causal report written to %s", path)
         return html
@@ -1026,7 +1031,7 @@ document.querySelectorAll('.sortable tbody.variant-block tr.summary').forEach(ro
 """
 
 
-_IGV_CDN = "https://cdn.jsdelivr.net/npm/igv@3.1.1/dist/igv.min.js"
+_IGV_CDN = "https://cdn.jsdelivr.net/npm/igv@3.8.4/dist/igv.min.js"
 
 # r² to RGB for IGV variant annotations
 def _r2_to_rgb(r2: float) -> str:

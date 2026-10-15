@@ -123,7 +123,7 @@ Now ask, in any Claude Code prompt:
 
 > *"Replace the 200 bp endogenous enhancer at chrX:48,782,929–48,783,129 with this synthetic sequence and predict accessibility in HepG2, K562, and GM12878."*
 
-That's it. No more boilerplate, no juggling oracle APIs — chorus exposes **24 MCP tools** ([full list](#mcp-server--chorus-but-you-talk-to-claude)) covering prediction, variant effects, region swaps, multi-layer analysis, in-silico mutagenesis, gene-TSS lookups, and cell-type discovery, and Claude picks the right one for the question.
+That's it. No more boilerplate, no juggling oracle APIs — chorus exposes **27 MCP tools** ([full list](#mcp-server--chorus-but-you-talk-to-claude)) covering prediction, variant effects, region swaps, multi-layer analysis, in-silico mutagenesis, gene-TSS lookups, and cell-type discovery, and Claude picks the right one for the question.
 
 ### What to read next
 
@@ -148,7 +148,7 @@ Eight genomic deep-learning models — Enformer, Borzoi, ChromBPNet/BPNet, Cheri
 
 Every prediction comes with **effect and activity percentiles**, ranked against ~18 k–225 k sampled SNPs and ~19.5 k–320 k genome-wide positions. So a `+0.45 log₂FC` becomes `0.98 effect %ile, 0.96 activity %ile` — interpretable without calibrating it yourself.
 
-Each oracle runs in its own conda environment (no TF/PyTorch/JAX dependency hell), every weight + reference + background is pre-mirrored to a chorus-controlled HuggingFace org (no broken-link surprises), and the **24-tool MCP server** lets you ask Claude to run the analysis in plain English. See [Pick an oracle](#pick-an-oracle) for the per-oracle hardware/cost matrix.
+Each oracle runs in its own conda environment (no TF/PyTorch/JAX dependency hell), every weight + reference + background is pre-mirrored to a chorus-controlled HuggingFace org (no broken-link surprises), and the **27-tool MCP server** lets you ask Claude to run the analysis in plain English. See [Pick an oracle](#pick-an-oracle) for the per-oracle hardware/cost matrix.
 
 ### Key terms
 
@@ -776,7 +776,7 @@ kernel and `jupyter nbconvert --execute` fails with `NoSuchKernel: No such kerne
 
 ### MCP server — chorus, but you talk to Claude
 
-Chorus's MCP (Model Context Protocol) server is what makes the lunch-break tour Step 4 work. Claude (or any MCP-aware client) loads oracles, predicts variant effects, scores regions, and writes full HTML/MD reports — all from natural-language prompts. Step 4 above gave you the one-liner; this section has every config detail (Claude Code, Claude Desktop, manual testing, the full 24-tool catalogue).
+Chorus's MCP (Model Context Protocol) server is what makes the lunch-break tour Step 4 work. Claude (or any MCP-aware client) loads oracles, predicts variant effects, scores regions, and writes full HTML/MD reports — all from natural-language prompts. Step 4 above gave you the one-liner; this section has every config detail (Claude Code, Claude Desktop, manual testing, the full 27-tool catalogue).
 
 #### Setup for Claude Code
 
@@ -860,9 +860,10 @@ mamba run -n chorus chorus-mcp
 
 #### Available MCP tools
 
-All 24, grouped by what you would reach for them for:
+All 27, grouped by what you would reach for them for:
 
 - **Discovery**: `list_oracles`, `list_tracks`, `list_genomes`, `get_genes_in_region`, `get_gene_tss`, `recommend_alphagenome_backend`
+- **Annotations & conservation**: `list_annotations`, `describe_annotation`, `download_annotation` — the GENCODE/conservation/custom catalogue behind `show_conservation` (see [Conservation tracks](#conservation-tracks))
 - **Lifecycle**: `load_oracle`, `unload_oracle`, `oracle_status`
 - **Low-level prediction**: `predict`, `predict_variant_effect`, `predict_region_replacement`, `predict_region_insertion`
 - **Scoring primitives**: `score_prediction_region`, `score_variant_effect_at_region`, `predict_variant_effect_on_gene`
@@ -1339,6 +1340,54 @@ oracle = chorus.create_oracle('enformer',
                              use_environment=True,
                              device='cpu')
 ```
+
+### Conservation tracks
+
+Optional evolutionary-conservation tracks on any variant report, off by default:
+
+```python
+from chorus.analysis.variant_report import build_variant_report
+
+report = build_variant_report(variant_result, oracle_name="alphagenome",
+                              gene_name="SORT1", show_conservation=True)
+```
+
+From Claude: `analyze_variant_multilayer(..., show_conservation=True)`.
+
+**Worked example**: [examples/walkthroughs/conservation/SORT1_rs12740374/](examples/walkthroughs/conservation/SORT1_rs12740374/)
+— a variant with one of the strongest measured ChromBPNet effects in this repo (+1.376,
+≥99th percentile) at a base with no cross-species conservation signal by any of the three
+scores below, and why that combination isn't a contradiction.
+
+Three hg38 sources are wrapped, each a genome-wide bigwig cached once on first use (like
+oracle weights) rather than streamed per region:
+
+| source | what it shows | download |
+|---|---|---|
+| **GPN-Star** (100-way vertebrate) | a coverage track plus a per-base sequence logo — reference-base letters scaled by `p(base) × (2 − H)` on a 0–2 bit scale | ~9.9 GB, plus **~45 GB** of per-allele LLR bigwigs for the logo track |
+| **phyloP 100-way** | per-base conservation, raw values | ~9.2 GB (UCSC) |
+| **phastCons 100-way** | per-base conserved-element probability | ~5.5 GB (UCSC) |
+
+**Budget ~70 GB if you enable the logo track**, and note it is `hg38`-only — a non-hg38
+report refuses `show_conservation` rather than plotting human scores against other
+coordinates. Positions with no coverage are omitted rather than drawn, so a gap does not
+read as a conserved base.
+
+Manage the downloads without running an analysis:
+
+```bash
+chorus conservation status                     # sources, sizes, what is cached
+chorus conservation download --track gpn_star  # fetch one up front
+chorus annotation list                    # conservation + GENCODE + your own entries
+chorus annotation add my_peaks --genome-build hg38 --local-path ~/work/peaks.bed \
+    --description "ATAC peaks, replicate 1"
+chorus annotation describe my_peaks       # verifies a bigwig's build against its own chr1 length
+```
+
+`chorus annotation` is one interface over three kinds of entry: the conservation bigwigs
+above, GENCODE GTF annotations, and anything you register yourself (a local file, a URL, or
+a pinned HuggingFace file). `remove --delete-file` only deletes files chorus downloaded —
+never one you registered from your own disk.
 
 ### Caveats — what to know before you trust a number
 

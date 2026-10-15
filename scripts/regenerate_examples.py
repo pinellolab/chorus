@@ -203,6 +203,17 @@ CHROMBPNET_EXAMPLES = [
         "assay": "DNASE", "cell_type": "HepG2",
         "html_name": "rs12740374_SORT1_chrombpnet_report.html",
     },
+    {
+        "name": "SORT1 rs12740374 — effect vs. conservation",
+        "dir": f"{BASE}/conservation/SORT1_rs12740374",
+        "type": "chrombpnet",
+        "position": "chr1:109274968",
+        "ref": "G", "alt": "T",
+        "gene": "SORT1",
+        "assay": "DNASE", "cell_type": "HepG2",
+        "show_conservation": True,
+        "html_name": "rs12740374_SORT1_chrombpnet_conservation_report.html",
+    },
 ]
 
 
@@ -359,14 +370,30 @@ def regenerate_chrombpnet(oracle, norm, example):
         tracks_requested=f"{example['assay']}:{example['cell_type']}",
     )
 
+    show_conservation = example.get("show_conservation", False)
     report = build_variant_report(result, oracle_name="chrombpnet",
                                    gene_name=example["gene"], normalizer=norm,
-                                   analysis_request=ar)
+                                   analysis_request=ar,
+                                   show_conservation=show_conservation)
 
     md = report.to_markdown()
     with open(f'{out_dir}/example_output.md', 'w') as f:
         f.write(md)
     d = report.to_dict()
+    if show_conservation:
+        # Conservation is a display-only IGV overlay -- build_variant_report never puts
+        # it in to_dict(). Measure it directly at the variant's own base so the numbers
+        # a README quotes are checkable against this artefact like any other.
+        from chorus.analysis.conservation import (
+            read_entropy_values, read_phastcons_values, read_phylop_values,
+        )
+        _chrom, _pos = example["position"].split(":")
+        _pos = int(_pos)
+        d["conservation"] = {
+            "phyloP_100way": float(read_phylop_values(_chrom, _pos - 1, _pos)[0]),
+            "phastCons_100way": float(read_phastcons_values(_chrom, _pos - 1, _pos)[0]),
+            "gpn_star_entropy_bits": float(read_entropy_values(_chrom, _pos - 1, _pos)[0]),
+        }
     with open(f'{out_dir}/example_output.json', 'w') as f:
         json.dump(d, f, indent=2, default=str)
     _write_tsv(report, out_dir)
