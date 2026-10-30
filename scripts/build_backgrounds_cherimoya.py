@@ -1,16 +1,22 @@
-"""Build per-track background CDFs for the Cherimoya / CATv1 oracle.
+"""Build per-track background CDFs for the Cherimoya oracle, one atlas at a time.
 
-Each of the 1,518 CATv1 experiments is one track, producing
-``cherimoya_pertrack.npz`` with three CDFs per track (effect, summary,
-perbin).  CATv1 output is 1,000 bp at base resolution, so the perbin CDF
-captures the bin-level distribution inside the prediction window -- the
-same situation as ChromBPNet.
+Each experiment is one track.  ``--atlas catv1`` (the default) scores the
+1,518 accessibility experiments into ``cherimoya_pertrack.npz``;
+``--atlas batv1`` scores the 3,429 ChIP-seq experiments into
+``batv1_pertrack.npz``.  Both write three CDFs per track (effect, summary,
+perbin).  Output is 1,000 bp at base resolution either way, so the perbin
+CDF captures the bin-level distribution inside the prediction window -- the
+same situation as ChromBPNet.  A BATv1 model's two strands are summed into
+one track, by the same ``scoring.expected_counts_profile`` the oracle uses,
+so a BATv1 track has one row like a CATv1 track; and its control input is
+all zeros, by the same ``ControlWrapper`` the oracle loads it through.
 
 Run in the chorus-cherimoya env:
 
   mamba run -n chorus-cherimoya python scripts/build_backgrounds_cherimoya.py \\
       --part both --device cuda
   mamba run -n chorus python scripts/build_backgrounds_cherimoya.py --part merge
+  ... --atlas batv1 ...                             # the ChIP-seq atlas
 
 Validate on a handful of tracks before committing to the full atlas:
 
@@ -86,6 +92,13 @@ parser.add_argument(
     choices=["variants", "baselines", "both", "all", "merge",
              "merge-incremental", "merge-shards"],
     default="all",
+)
+parser.add_argument(
+    "--atlas", choices=["catv1", "batv1"], default="catv1",
+    help="Which atlas to score: catv1 (1,518 accessibility experiments, "
+         "cherimoya_pertrack.npz) or batv1 (3,429 ChIP-seq experiments, "
+         "batv1_pertrack.npz). Each has its own null because each has its "
+         "own models; the sampling is identical.",
 )
 parser.add_argument(
     "--device", default="cuda",
@@ -194,6 +207,8 @@ os.makedirs(log_dir, exist_ok=True)
 # record of which worker did what. (`build_backgrounds_chrombpnet.py` names
 # its log by `--part` alone and has the same problem for sharded runs.)
 _log_tag = args.part
+if args.atlas != "catv1":
+    _log_tag = f"{args.atlas}.{_log_tag}"
 if args.shard is not None and args.shard_of is not None:
     _log_tag += f".shard{args.shard}of{args.shard_of}"
 
@@ -218,7 +233,13 @@ CACHE_DIR = os.environ.get("CHORUS_BUILD_CACHE_DIR") or str(CHORUS_BACKGROUNDS_D
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 PERBIN_BINS_PER_POSITION = 32
-NPZ_STEM = "cherimoya" if args.dhs else "cherimoya-no-dhs"
+# The CDF key, and so the filename, per atlas: the CATv1 null keeps the oracle's own
+# name (it predates BATv1), the BATv1 null is keyed "batv1". See
+# normalization.normalization_key and PerTrackNormalizer._EXPECTED_FOLD.
+ORACLE_KEY = {"catv1": "cherimoya", "batv1": "batv1"}[args.atlas]
+ATLAS_NAME = {"catv1": "CATv1", "batv1": "BATv1"}[args.atlas]
+ATLAS_ASSAYS = {"catv1": ("ATAC", "DNASE"), "batv1": ("CHIP",)}[args.atlas]
+NPZ_STEM = ORACLE_KEY if args.dhs else f"{ORACLE_KEY}-no-dhs"
 
 
 def _build_config() -> dict:
@@ -232,7 +253,10 @@ def _build_config() -> dict:
 
     return {
         "oracle": "cherimoya",
-        "atlas": "CATv1",
+        "cdf_key": ORACLE_KEY,
+        "atlas": ATLAS_NAME,
+        "control": "all-zero (ControlWrapper)" if args.atlas == "batv1" else None,
+        "strands": "summed" if args.atlas == "batv1" else None,
         "cherimoya_version": cherimoya.__version__ if hasattr(cherimoya, "__version__") else "0.2.0",
         "fold": args.fold,
         "device": args.device,
@@ -459,8 +483,15 @@ def forward_window_sums(models, X, torch, perbin_idx=None):
                 if args.sequences_on_cpu:
                     b = b.to(model_device(model, torch))
                 logits, log_counts = model(b)
-                logits = logits.float()[:, 0, :]
-                probs = torch.softmax(logits - logits.mean(dim=1, keepdim=True), dim=1)
+                # (B, C, L): one channel for CATv1, two strands for BATv1. ONE softmax
+                # over channels and positions together -- the strands share a
+                # distribution -- then the channels are summed, so a track is (B, L)
+                # for either atlas. Mirrors scoring.expected_counts_profile, which is
+                # cross-checked against this path on the first batch below.
+                logits = logits.float()
+                flat = logits.reshape(logits.shape[0], -1)
+                probs = torch.softmax(flat - flat.mean(dim=1, keepdim=True), dim=1)
+                probs = probs.reshape(logits.shape).sum(dim=1)
                 counts = torch.expm1(log_counts.float()[:, 0])
                 profiles = probs * counts[:, None]
                 acc = profiles if acc is None else acc + profiles
@@ -478,7 +509,7 @@ def forward_window_sums(models, X, torch, perbin_idx=None):
                 # path are compared on fold 0 only -- the averaging itself is
                 # covered by tests/test_cherimoya_ensemble.py.
                 reference = expected_counts_profile(
-                    first_logits.cpu().numpy()[:, None, :],
+                    first_logits.cpu().numpy(),
                     first_counts.float().cpu().numpy())
                 if len(models) == 1:
                     numpy.testing.assert_allclose(
@@ -507,6 +538,7 @@ def enumerate_tracks() -> list:
     from chorus.oracles.cherimoya_source.catv1_metadata import get_metadata
 
     df = get_metadata().tracks_df
+    df = df[df["assay"].isin(ATLAS_ASSAYS)]
     specs = [
         {"assay": row["assay"], "encode_id": row["experiment_accession"],
          "track_id": row["track_id"]}
@@ -514,7 +546,14 @@ def enumerate_tracks() -> list:
     ]
 
     if args.chrombpnet_matched:
-        wanted = set(CHROMBPNET_MATCHED)
+        if args.atlas == "batv1":
+            # The BATv1 counterpart: the experiments behind chorus's BPNet CHIP models,
+            # pinned as defaults by scripts/generate_batv1_defaults.py.
+            from chorus.oracles.cherimoya_source.batv1_defaults import BATV1_DEFAULT_EXPERIMENT
+            wanted = {acc for acc, _, reason in BATV1_DEFAULT_EXPERIMENT.values()
+                      if reason == "bpnet-parity"}
+        else:
+            wanted = set(CHROMBPNET_MATCHED)
         specs = [s for s in specs if s["encode_id"] in wanted]
     if args.tracks:
         wanted = {t.strip() for t in args.tracks.split(",") if t.strip()}
@@ -539,8 +578,8 @@ def enumerate_tracks() -> list:
     # %s not %d for fold: it may be the "ensemble" sentinel, and a %d there
     # raises inside logging, which prints a scary multi-line traceback per call
     # while the build carries on fine -- pure noise that hides real errors.
-    logger.info("Will score %d tracks (fold %s, dhs=%s)",
-                len(specs), args.fold, args.dhs)
+    logger.info("Will score %d %s tracks (fold %s, dhs=%s)",
+                len(specs), ATLAS_NAME, args.fold, args.dhs)
     return specs
 
 
@@ -630,7 +669,7 @@ def build(do_variants: bool, do_baselines: bool):
     track_ids = [s["track_id"] for s in specs]
     loop_start = time.time()
     _n_attempted = _n_loaded = 0
-    name_for_abort = 'cherimoya'
+    name_for_abort = ORACLE_KEY
     for idx, spec in enumerate(specs):
         t0 = time.time()
         logger.info("=" * 60)
@@ -761,7 +800,7 @@ def merge(incremental: bool = False):
     # renamed out of the way. Both configurations can coexist.
     if incremental:
         path, n_added = PerTrackNormalizer.append_tracks(
-            oracle_name="cherimoya",
+            oracle_name=ORACLE_KEY,
             new_track_ids=ids,
             new_effect_cdfs=eff["effect_cdfs"],
             new_summary_cdfs=base["summary_cdfs"],
@@ -775,7 +814,7 @@ def merge(incremental: bool = False):
         logger.info("Appended %d tracks", n_added)
     else:
         path = PerTrackNormalizer.build_and_save(
-            oracle_name="cherimoya",
+            oracle_name=ORACLE_KEY,
             track_ids=ids,
             effect_cdfs=eff["effect_cdfs"],
             summary_cdfs=base["summary_cdfs"],
@@ -792,7 +831,7 @@ def merge(incremental: bool = False):
 
     path = Path(path)
     if not args.dhs:
-        target = path.with_name("cherimoya_pertrack.no-dhs.npz")
+        target = path.with_name(f"{ORACLE_KEY}_pertrack.no-dhs.npz")
         path.replace(target)
         path = target
 
@@ -873,7 +912,7 @@ def merge_shards():
     }
 
     path = Path(PerTrackNormalizer.build_and_save(
-        oracle_name="cherimoya",
+        oracle_name=ORACLE_KEY,
         track_ids=ids,
         effect_cdfs=numpy.concatenate(eff_c),
         summary_cdfs=numpy.concatenate(sum_c),
@@ -887,7 +926,7 @@ def merge_shards():
         sampling=sampling,
     ))
     if not args.dhs:
-        target = path.with_name("cherimoya_pertrack.no-dhs.npz")
+        target = path.with_name(f"{ORACLE_KEY}_pertrack.no-dhs.npz")
         path.replace(target)
         path = target
     _augment(path, json.dumps(_build_config()))

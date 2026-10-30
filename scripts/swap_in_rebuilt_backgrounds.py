@@ -38,7 +38,7 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
 ORACLES = ["alphagenome", "borzoi", "enformer", "chrombpnet",
-           "cherimoya", "sei", "legnet", "epinformerseq"]
+           "cherimoya", "batv1", "sei", "legnet", "epinformerseq"]
 
 
 def sha256(path: Path) -> str:

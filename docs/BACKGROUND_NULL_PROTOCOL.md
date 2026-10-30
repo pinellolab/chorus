@@ -106,6 +106,11 @@ enhancers — right family, wrong member.
 and **not** modified by the 2026-08 rebuild. Their effect layers were never thinned; their
 gain from the rebuild is the `perbin` tail (§6).
 
+Cherimoya's second atlas, **BATv1** (ChIP-seq, key `batv1`), uses the same set. It scores
+in `tf_binding`, as ChromBPNet's 744 BPNet CHIP tracks do, and those were built on this
+family from the start — so adding BATv1 changed no layer's composition and owed no
+two-arm measurement (§9, 2026-10-30).
+
 ### 3.4 Two composition decisions, both settled by measurement
 
 **DHS was added to the gene-anchored and promoter mixtures, then removed.** The a-priori
@@ -145,7 +150,7 @@ corresponding NPZ carries:
 |---|---|---|---|
 | enformer, borzoi | random 15,000 ∪ cCRE 11,500 ∪ TSS 3,000 ∪ gene-body 2,000 | 31,500 | 31,005 / 30,986 |
 | **alphagenome** | same, same proportions | **10,500 → 31,500** (harmonised 2026-08-06) | 30,868 |
-| chrombpnet, cherimoya | random 15,000 ∪ cCRE 11,500 ∪ TSS 3,000 ∪ **DHS 5,000**, no gene body | 34,500 | 34,004 |
+| chrombpnet, cherimoya, batv1 | random 15,000 ∪ cCRE 11,500 ∪ TSS 3,000 ∪ **DHS 5,000**, no gene body | 34,500 | 34,004 |
 | epinformerseq | same | 34,500 | 34,002 |
 | sei, legnet | random 15,000 ∪ cCRE 11,500 ∪ TSS 3,000, **no gene body, no DHS** | 29,500 | 29,004 / 29,002 |
 
@@ -182,7 +187,7 @@ requested **and** realised strata):
 |---|---|---|---|
 | `gene_anchored` | enformer, borzoi, alphagenome, sei, epinformerseq | 17,909 | §3.1 |
 | `promoter` | legnet | 17,805 | §3.2 |
-| `accessibility` | chrombpnet, cherimoya | 18,672 | random 9,609 ∪ DHS 9,063 |
+| `accessibility` | chrombpnet, cherimoya, batv1 | 18,672 | random 9,609 ∪ DHS 9,063 |
 
 **Why an artefact rather than a seed.** A seed reproduces positions only while nothing
 upstream moves, and the GTF, cCRE BED, DHS index and FASTA are all updatable without
@@ -228,6 +233,9 @@ have a content hash a reader can recompute from shipped inputs:
 | `regions_genome_dominated` | the set, verbatim | 31,500 | `86ea592d46c4` |
 | `regions_genome_dominated_minus_gene_body` | drop `gene_body` | 29,500 | `ddbc4b246ab3` |
 | `regions_genome_dominated_minus_gene_body_plus_dhs` | drop `gene_body`, add 5,000 DHS summits (`sample_dhs_positions`, seed 567) | 34,500 | `ec3070d6a361` |
+
+`batv1` (Cherimoya's ChIP-seq atlas) is a fourth user of the third derivation; it is
+listed with `chrombpnet` and `cherimoya` wherever the activity population is recorded.
 
 The first two are derivable from the artefact alone; the third additionally needs
 `annotations/dhs_vocabulary_hg38.txt.gz`, and without it the stamper records **no** activity
@@ -476,16 +484,25 @@ came back reporting byte-identical output.
 
 ---
 
-### 6.6 One oracle, two nulls — Cherimoya's folds
+### 6.6 One oracle, four nulls — Cherimoya's folds and atlases
 
 A percentile is a rank against a null, so the null must come from the *same model* that made
 the prediction. CATv1 ships five cross-validation folds and chorus exposes two modes, so it
-ships two nulls:
+ships two nulls; BATv1, the ChIP-seq atlas the same oracle serves under `assay="CHIP"`, has
+different models again and so its own pair:
 
 | artefact | built on | used when |
 |---|---|---|
-| `cherimoya_pertrack.npz` | fold 0 | the default |
-| `cherimoya_ensemble_pertrack.npz` | the 5-fold mean | `fold="ensemble"` |
+| `cherimoya_pertrack.npz` | CATv1 fold 0 | the default |
+| `cherimoya_ensemble_pertrack.npz` | the CATv1 5-fold mean | `fold="ensemble"` |
+| `batv1_pertrack.npz` | BATv1 fold 0 | `assay="CHIP"` |
+| `batv1_ensemble_pertrack.npz` | the BATv1 5-fold mean | `assay="CHIP"`, `fold="ensemble"` |
+
+Every Cherimoya `TrackPrediction` stamps `metadata["atlas"]` beside `metadata["fold"]`, and
+`normalization.normalization_key()` reads both; a prediction that predates the atlas stamp
+is a CATv1 one. BATv1 models are run with an all-zero control track and their two strands
+summed (§8 step 2b), and the null is built the same way, which is what makes its percentiles
+meaningful — and why the raw counts it ranks are not the observed track's.
 
 They are **not** interchangeable. On `DNASE:ENCSR149XIL` at chr1:109,274,968 the five fold
 peaks are 8.24 / 15.47 / 15.34 / 11.08 / 7.65 against an ensemble peak of 11.10 — a 2.02×
@@ -631,6 +648,7 @@ model's training target, not from a sibling oracle:
 | convention | inverse | who |
 |---|---|---|
 | `log1p` per track | `expm1(C)` | ChromBPNet ATAC/DNASE, CATv1 — 1,560 tracks |
+| `log1p` of the total over both strands, one joint softmax | `expm1(C)`, strands summed | BATv1 — 3,429 models. Same inverse as the row above although the head is two-stranded: the target is the log of the *total*, so `exp(C) - 2` would be wrong here by exactly one read |
 | `log1p` per track, pooled across a task's tracks with `logsumexp` | `exp(C) - n_tracks` | BPNet CHIP — 744 models |
 | `log10` | `10 ** C` | EPInformer-seq |
 
@@ -683,7 +701,7 @@ the family that matches Step 2:
 |---|---|---|
 | `snps_gene_anchored` | 17,909 | enformer, borzoi, alphagenome, sei, epinformerseq |
 | `snps_promoter` | 17,805 | legnet |
-| `snps_accessibility` | 18,672 | chrombpnet, cherimoya |
+| `snps_accessibility` | 18,672 | chrombpnet, cherimoya, batv1 |
 
 This is not bookkeeping. It is what lets
 `build_reference_position_sets.py --verify-against ORACLE --backgrounds-dir DIR [--strict]`
@@ -787,6 +805,7 @@ it.
 
 | date | decision | evidence |
 |---|---|---|
+| 2026-10-30 | **BATv1 (Cherimoya ChIP-seq) gets its own null pair under key `batv1`, on the accessibility family, with an all-zero control and summed strands** | 3,429 models with different weights from CATv1's, so `cherimoya_pertrack.npz` cannot rank them (§6.6); ChromBPNet's 744 BPNet CHIP tracks already score `tf_binding` on `random ∪ DHS-summit`, so the family is the established one for the layer and no composition changed. The control: the models were trained with the experiment's control bigWigs, which chorus has no way to supply; the BATv1 model card recommends an all-zero control for sequence-only predictions and `ControlWrapper` applies it in the oracle and the builder alike. Strands summed rather than emitted per strand so one track has one row, and because the count head is `log1p` of the two-strand *total* — the sum lives in `scoring.expected_counts_profile`, cross-checked on the builder's first batch |
 | 2026-08-18 | **`alphagenome_pt` keeps sharing `alphagenome`'s null**, and the premise is now enforced by test rather than asserted by comment | the alias was justified by a code comment claiming identical predictions. That was false for 738 splice tracks, which returned pre-activation values against a post-activation null (correlation 0.20 over a 1 MB window) — so the percentiles were meaningless, not noisy. Fixed in #240. Keeping the alias avoids a second 5,168-track build; what changed is that `test_alphagenome_backends_equivalence.py` now covers one track per output type instead of three DNase tracks from one head, so the premise is checkable. See §8b |
 | 2026-08-17 | **cross-process drift is accepted; TF determinism is not adopted** | measured: `TF_DETERMINISTIC_OPS=1 TF_CUDNN_DETERMINISTIC=1` makes Enformer bit-exact 4/4 where the control fails 2/2 (3.4%, 1.4%) — so a fix exists. Not adopted, because `determinism.py` requires a background and its queries under one setting, so it would mean rebuilding the Enformer **and** ChromBPNet nulls and changing published numbers for both. Magnitudes justify living with it: median drift **0.016%**, `ref_value` max 0.067%, published `quantile_score` max **0.69%**. The 3.4% figure is a log2FC over a near-zero denominator. **The residual risk is not numeric**: `discovery.py` cuts hard at `top_n_per_layer` and the rank-12↔13 gap in `tf_binding` is 4.25% against 4.29% max drift, so a sub-0.1% wobble can change *which* track is reported. Near-tie reporting is the follow-up, not a rebuild |
 | 2026-08-16 | **Sei's null covers all 21,947 tracks**, not the 40 projected classes | the 40-only scope was never a recorded decision — the builder's docstring simply asserted "Sei outputs 40 regulatory classes". `predict()` accepts `TA#` profile ids and returned real values whose percentile was always `None`. Compute was already being spent: the forward pass emits all 21,907 and `project()` discarded them. Cost is storage, 2.8 MB → 1.5 GB |

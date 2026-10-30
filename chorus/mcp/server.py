@@ -76,12 +76,15 @@ ORACLE_SPECS = {
         "assay_types": ["ATAC", "DNASE", "CHIP"],
     },
     "cherimoya": {
-        "description": "Cherimoya / CATv1 — base-resolution chromatin accessibility across 1,518 ENCODE experiments",
+        "description": (
+            "Cherimoya — base-resolution chromatin accessibility across 1,518 ENCODE experiments "
+            "(CATv1) and TF binding across 3,429 ENCODE ChIP-seq experiments (BATv1)"
+        ),
         "framework": "PyTorch",
         "input_size_bp": 2_114,
         "output_bins": 1_000,
         "resolution_bp": 1,
-        "assay_types": ["ATAC", "DNASE"],
+        "assay_types": ["ATAC", "DNASE", "CHIP"],
     },
     "sei": {
         "description": "Sei — sequence-level regulatory element classification",
@@ -438,17 +441,18 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
         }
 
     if oracle_name == "cherimoya":
-        # 1,518 tracks — search-first, like borzoi/enformer above, rather
-        # than enumerating. Track ids are ASSAY:ENCSR (the ENCODE
-        # experiment accession), because (assay, biosample) is ambiguous
-        # for 1,188 of the 1,518 experiments.
+        # 4,947 tracks across two atlases — search-first, like borzoi/enformer
+        # above, rather than enumerating. Track ids are ASSAY:ENCSR (the ENCODE
+        # experiment accession), because (assay, biosample) is ambiguous for
+        # 1,188 of the 1,518 CATv1 experiments and (biosample, target) for 437
+        # of BATv1's 2,474 pairs.
         from chorus.oracles.cherimoya_source.catv1_metadata import get_metadata
         meta = get_metadata()
         if query:
             df = meta.search_tracks(query)
             columns = [
-                "track_id", "experiment_accession", "assay", "biosample",
-                "biosample_classification", "biosample_summary",
+                "track_id", "experiment_accession", "atlas", "assay", "target", "biosample",
+                "biosample_classification", "biosample_summary", "quality_flags",
                 "profile_pearson", "count_pearson",
             ]
             results = df[columns].to_dict(orient="records")
@@ -457,15 +461,20 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
             "oracle": oracle_name,
             "assay_types": meta.list_assay_types(),
             "cell_types": meta.list_cell_types(),
+            "chip_cell_types": meta.list_cell_types("CHIP"),
             "num_tracks": len(meta.tracks_df),
+            "num_targets": len(meta.list_targets()),
             "track_summary": meta.get_track_summary(),
             "note": (
-                "1,518 tracks — use the query parameter to search by "
-                "biosample, assay, or ENCODE accession (e.g. query='K562', "
-                "query='T cell', query='ENCSR000EOT'). Use the returned "
-                "'track_id' (ASSAY:ENCSR) for predictions, or pass "
-                "assay= and cell_type= to load_oracle to get that "
-                "biosample's default experiment."
+                "4,947 tracks: 1,518 accessibility (ATAC/DNASE, the CATv1 atlas) and "
+                "3,429 ChIP-seq (CHIP, the BATv1 atlas, 1,139 targets). Use the query "
+                "parameter to search by biosample, target, assay, or ENCODE accession "
+                "(e.g. query='K562', query='GATA1', query='T cell', query='ENCSR000EOT'). "
+                "Use the returned 'track_id' (ASSAY:ENCSR) for predictions, or pass "
+                "assay= and cell_type= (plus TF= for assay='CHIP') to load_oracle to get "
+                "that pair's default experiment. 'cell_types' are the accessibility "
+                "biosamples; 'chip_cell_types' the ChIP-seq ones. Read 'quality_flags' "
+                "before trusting a BATv1 track."
             ),
         }
 
@@ -739,17 +748,18 @@ def load_oracle(
     Args:
         oracle_name: Oracle name (enformer, borzoi, chrombpnet, cherimoya, sei, legnet, epinformerseq, alphagenome).
         device: Device to use — "cpu", "cuda", "cuda:0", etc. None = auto-detect.
-        assay: (ChromBPNet/Cherimoya) Assay type — "ATAC", "DNASE", or (ChromBPNet only) "CHIP".
+        assay: (ChromBPNet/Cherimoya) Assay type — "ATAC", "DNASE", or "CHIP".
         cell_type: (ChromBPNet/Cherimoya/LegNet) Cell type — e.g. "K562", "HepG2".
-        TF: (ChromBPNet CHIP only) Transcription factor — e.g. "GATA1", "CTCF".
+        TF: (ChromBPNet/Cherimoya, CHIP only) Transcription factor or other ChIP-seq
+            target as ENCODE names it — e.g. "GATA1", "CTCF", "POLR2A".
         fold: (ChromBPNet/Cherimoya) Cross-validation fold 0-4 (default 0).
         model_type: (ChromBPNet only) Model variant — "chrombpnet", "bias_scaled", "chrombpnet_nobias".
-        encode_id: (Cherimoya only) ENCODE experiment accession, e.g. "ENCSR000EOT".
-            Pins one specific CATv1 experiment. Use this with the
-            'experiment_accession' returned by list_tracks: (assay, cell_type)
-            is ambiguous for most biosamples — K562 alone has 4 ATAC
-            experiments — and resolves to a committed default, so passing
-            cell_type only is not enough to reach a specific track.
+        encode_id: (Cherimoya only) ENCODE experiment accession, e.g. "ENCSR000EOT"
+            or "ENCSR000EGM". Pins one specific CATv1 or BATv1 experiment. Use this
+            with the 'experiment_accession' returned by list_tracks: (assay, cell_type)
+            is ambiguous for most biosamples — K562 alone has 4 ATAC experiments and
+            5 CTCF ChIP-seq experiments — and resolves to a committed default, so
+            passing cell_type (and TF) only is not enough to reach a specific track.
     """
     kwargs: dict = {}
     if assay:

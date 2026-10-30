@@ -269,6 +269,35 @@ def test_the_torch_path_agrees_with_numpy(heads):
     )
 
 
+@pytest.mark.parametrize("n_strands", [1, 2])
+def test_the_torch_path_agrees_with_cherimoyas_scoring_for_either_atlas(heads, n_strands):
+    """The builder's batch loop as it now reads: one softmax over channels and positions,
+    channels summed, expm1 on the count head. For a CATv1 head (one channel) this is the
+    expression the test above pins; for a BATv1 head (two strands) it must equal
+    ``cherimoya_source.scoring.expected_counts_profile``, which the oracle's query path
+    uses, or ``batv1_pertrack.npz`` ranks a different quantity than the oracle emits.
+    """
+    torch = pytest.importorskip(
+        "torch", reason="no torch in the base env; run this in chorus-cherimoya")
+    from chorus.oracles.cherimoya_source.scoring import expected_counts_profile as catv1
+
+    logits, log_counts = heads
+    stacked = np.stack([logits + 0.3 * k for k in range(n_strands)], axis=1)   # (N, C, L)
+    t_logits = torch.tensor(stacked, dtype=torch.float32)
+    t_counts = torch.tensor(log_counts[:, 0], dtype=torch.float32)
+
+    # Exactly the lines in the builder's batch loop.
+    flat = t_logits.reshape(t_logits.shape[0], -1)
+    probs = torch.softmax(flat - flat.mean(dim=1, keepdim=True), dim=1)
+    probs = probs.reshape(t_logits.shape).sum(dim=1)
+    counts = torch.expm1(t_counts)
+    got = (probs * counts[:, None]).numpy()
+
+    want = catv1(stacked, log_counts)
+    assert got.shape == want.shape == (stacked.shape[0], stacked.shape[2])
+    assert np.allclose(got, want, rtol=1e-5, atol=1e-6)
+
+
 # ──────────────────────────────────────────────────────────────────────
 # The extraction moved no numbers
 # ──────────────────────────────────────────────────────────────────────

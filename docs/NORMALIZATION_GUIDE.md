@@ -187,6 +187,9 @@ re-score all 753 tracks.
 | Conda env | `chorus-cherimoya` (PyTorch) |
 | NPZ size | ~154 MB |
 
+The same oracle serves a second atlas, **BATv1** (ChIP-seq, `assay="CHIP"`), with its own
+null — see [Cherimoya / BATv1](#cherimoya--batv1) below.
+
 **Track ids are `ASSAY:ENCSR`** — e.g. `DNASE:ENCSR000EOT` — not
 `ASSAY:cell_type`. `(assay, biosample)` collapses the 1,518 experiments
 into 492 pairs, and 162 of those hold more than one experiment (up to 83),
@@ -252,6 +255,85 @@ the same profile either way.
 the nine ENCODE experiments ChromBPNet also covers, which is the
 cross-oracle comparison set (CATv1's `annotation_accession` column joins
 each experiment to its ENCODE ChromBPNet annotation).
+
+---
+
+### Cherimoya / BATv1
+
+| Property | Value |
+|----------|-------|
+| Tracks | 3,429 CHIP, one per ENCODE ChIP-seq experiment (1,139 targets, 183 biosamples) |
+| Model | One model per experiment, fold 0; `fold="ensemble"` has its own null |
+| CDF keys | `batv1` (`batv1_pertrack.npz`) and `batv1_ensemble` |
+| Input length | 2,114 bp |
+| Output length | 1,000 bp at 1-bp resolution, two strands summed |
+| Build script | `scripts/build_backgrounds_cherimoya.py --atlas batv1` |
+| Conda env | `chorus-cherimoya` (PyTorch) |
+
+**Why a separate null, under its own key.** The Cherimoya oracle picks a CDF key from
+the `fold` **and** the `atlas` it stamps on every prediction
+(`normalization.normalization_key`), so a CHIP prediction is ranked against the models
+that made it. `cherimoya_pertrack.npz` is untouched — CATv1's published artefact keeps
+its name and contents — and the load-time fold guard covers all four files.
+
+**Track ids are `CHIP:ENCSR`**, e.g. `CHIP:ENCSR000EGM`. `(biosample, target)` collapses
+the 3,429 experiments into 2,474 pairs, 437 of which hold several (K562 / POLR2A holds
+59). `cherimoya_source/batv1_defaults.py` maps each pair to one committed default for
+`load_pretrained_model(assay="CHIP", cell_type=, TF=)`: the 744 pairs behind chorus's
+BPNet CHIP models are pinned to the model trained on the same ENCODE experiment
+(`bpnet-parity`), a revoked experiment is never the default when a released one exists,
+otherwise the best fold-0 validation count Pearson.
+
+**Layer**: `tf_binding` (unsigned, 501 bp window, pseudocount 1.0) — the same layer and
+statistic as ChromBPNet's BPNet CHIP tracks. No BATv1 target is a histone mark
+(`classify_chip_layer` is run over all 1,139 target names in the tests), so none lands in
+the 2001 bp `histone_marks` window.
+
+**Control track**: every BATv1 model was trained with the experiment's control bigWigs
+as a second input. chorus has no control signal, so both the oracle and this builder run
+the checkpoint through cherimoya's `ControlWrapper`, which feeds an all-zero control —
+the BATv1 model card's recommended setting for predictions of the sequence's own
+contribution. Raw counts are lower than the observed track; percentiles are unaffected
+because the null is built the same way, and `build_config` records
+`control: "all-zero (ControlWrapper)"`.
+
+**Negative values, and many of them.** CATv1's `summary`/`perbin` CDFs hold 195 slightly
+negative entries in 15.18 M, at the extreme low tail. Under the zero control BATv1's count
+head is off its training distribution at quiet sites, and `log(count + 1) < 0` is common:
+in the fold-0 null the median track has 11% of its `summary` CDF below zero, 1,344 of the
+3,429 tracks have a negative `summary` *median*, and the minimum is −0.94 counts. The
+`effect` CDF has none (it is a log ratio with pseudocount 1, and `ref + 1 ≥ 0.06`
+throughout). Left unclamped for the same reason as CATv1 — clamping in one place and not
+the other breaks the percentile, and a rank is a rank — but it means a BATv1 activity
+percentile near 0.5 can correspond to a *negative* predicted count, and raw BATv1 counts
+should not be read as reads.
+
+**Count-head transform and strands**: BATv1's profile head is two-stranded under ONE
+softmax over both strands and all positions, and its count head is `log(total + 1)` over
+both strands — CATv1's `log1p` convention (`expm1` inverse), *not* BPNet CHIP's pooled
+`logsumexp` one (`exp(C) - 2`; see `chorus/core/count_head.py`). The strands are summed
+into one track, so a BATv1 track has one background row like a CATv1 track. The sum
+happens in `cherimoya_source/scoring.py`, which the oracle and this builder share; the
+builder's accelerator path is cross-checked against it on the first batch of every run
+and pinned by `tests/test_count_head_copies_agree.py`.
+
+**Sampling**: identical to CATv1 and ChromBPNet — `effect_counts=18672`
+(9,609 random SNPs + 9,063 DHS-proximal) and `summary_counts=34004`. ChromBPNet's BPNet
+CHIP tracks are built on the same accessibility family, so no composition changed for the
+TF-binding layer and no two-arm measurement was owed.
+
+**Validate before scaling**: `--atlas batv1 --chrombpnet-matched` restricts the build to
+the 743 experiments behind chorus's BPNet models (the `bpnet-parity` defaults); add
+`--limit N` for a smoke test.
+
+```bash
+for GPU in 0 1 2 3 4 5 6 7; do
+  CUDA_VISIBLE_DEVICES=$GPU python scripts/build_backgrounds_cherimoya.py --atlas batv1 \
+      --part both --device cuda --shard $GPU --shard-of 8 &
+done
+wait
+python scripts/build_backgrounds_cherimoya.py --atlas batv1 --part merge-shards --shard 0 --shard-of 8
+```
 
 ---
 

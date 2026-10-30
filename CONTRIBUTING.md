@@ -634,7 +634,7 @@ chorus/
 
 ## Current Priorities
 
-All eight core oracles (Enformer, Borzoi, ChromBPNet/BPNet, Sei, LegNet, AlphaGenome, Cherimoya/CATv1, EPInformer-seq) are implemented — nine registered names, since AlphaGenome ships both a JAX and a PyTorch backend. We're interested in contributions for:
+All eight core oracles (Enformer, Borzoi, ChromBPNet/BPNet, Sei, LegNet, AlphaGenome, Cherimoya/CATv1+BATv1, EPInformer-seq) are implemented — nine registered names, since AlphaGenome ships both a JAX and a PyTorch backend. We're interested in contributions for:
 
 **Models**
 1. **Custom fine-tuned models** — models trained on specific tissues or conditions

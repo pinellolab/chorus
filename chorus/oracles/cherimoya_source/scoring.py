@@ -59,20 +59,38 @@ def expected_counts_profile(
     Mean-centres the profile logits, softmaxes them across positions to
     get a shape distribution, and scales by the predicted total count.
 
+    A CATv1 checkpoint emits one profile track.  A BATv1 checkpoint emits two,
+    the plus and minus strands, sharing **one** softmax over both strands and
+    all positions, with the count head predicting ``log(total + 1)`` over both
+    strands -- the same ``log1p`` convention as CATv1, not BPNet CHIP's pooled
+    ``logsumexp`` one.  The two strands are summed here, so a BATv1 track has
+    the same ``(N, L)`` shape as a CATv1 track and one background row.  Both
+    the oracle and the background builder go through this function, so the
+    sum is taken in exactly one place.
+
     Args:
-        profile_logits: ``(N, 1, L)`` or ``(N, L)`` profile logits.
+        profile_logits: ``(N, 1, L)``, ``(N, 2, L)`` or ``(N, L)`` profile logits.
         log_counts: ``(N, 1)`` or ``(N,)`` predicted ``log(count + 1)``.
 
     Returns:
-        ``(N, L)`` expected counts per base pair.
+        ``(N, L)`` expected counts per base pair, summed over strands.
     """
     logits = numpy.asarray(profile_logits, dtype=numpy.float64)
     if logits.ndim == 3:
-        if logits.shape[1] != 1:
+        if logits.shape[1] not in (1, 2):
             raise ValueError(
-                f"CATv1 models have a single output track; got profile "
-                f"logits with shape {logits.shape}."
+                f"Cherimoya models have one (CATv1) or two (BATv1 strands) output "
+                f"tracks; got profile logits with shape {logits.shape}."
             )
+        if logits.shape[1] == 2:
+            # (N, 2, L) -> (N, L, 2): the shared helper's layout for a stranded
+            # head. n_tracks=1 because the count head is log1p of the TOTAL over
+            # both strands, so expm1 recovers it; the joint softmax splits that
+            # total across strands and positions, and the strands are summed.
+            counts = numpy.asarray(log_counts, dtype=numpy.float64)
+            from ...core.count_head import expected_counts_profile as _shared
+
+            return _shared(logits.transpose(0, 2, 1), counts, n_tracks=1).sum(axis=2)
         logits = logits[:, 0, :]
     elif logits.ndim != 2:
         raise ValueError(f"Unsupported profile logits shape {logits.shape}.")

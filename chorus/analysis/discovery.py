@@ -591,9 +591,10 @@ def _score_all_tracks(
                 # model. Cherimoya ships one per fold mode and the prediction records which
                 # fold made it; every other oracle resolves to its own name.
                 from .normalization import normalization_key
-                from .variant_report import _track_fold
+                from .variant_report import _track_atlas, _track_fold
 
-                norm_key = normalization_key(oracle_name, fold=_track_fold(ref_track))
+                norm_key = normalization_key(
+                    oracle_name, fold=_track_fold(ref_track), atlas=_track_atlas(ref_track))
                 te.effect_pctile = normalizer.effect_percentile(
                     norm_key, assay_id, raw_for_norm, signed=use_signed,
                 )
@@ -849,23 +850,31 @@ def discover_variant_effects(
             )
             models = [{"cell_type": ct} for ct in EPINFORMERSEQ_AVAILABLE_CELLTYPES]
         elif name == "cherimoya":
-            # One experiment per biosample, not all 1,518. Measured 15.3 s per model (5.0 load +
-            # 10.3 predict), so the full atlas is 6.4 hours for a single discovery call; the 407
-            # biosamples are 1.7 h. Discovery's question is which CELL TYPES respond, and a biosample
-            # with four ATAC experiments answers it once — so this is a dedupe, not a sample, and the
-            # count is logged below rather than left implicit.
+            # One experiment per biosample for accessibility (CATv1) and one per
+            # (biosample, target) for ChIP-seq (BATv1), not all 4,947. Measured 15.3 s per model
+            # (5.0 load + 10.3 predict), so the full atlases are ~21 hours for a single discovery
+            # call; the 407 biosamples + 2,474 (biosample, target) pairs are ~12 h, with the
+            # accessibility half 1.7 h. Discovery's question is which CELL TYPES (and, for CHIP,
+            # which FACTORS in them) respond, and a biosample with four ATAC experiments answers
+            # it once — so this is a dedupe, not a sample, and the counts are logged below rather
+            # than left implicit. ChromBPNet's branch likewise iterates all 744 of its BPNet CHIP
+            # models.
+            records = oracle.describe_tracks()
             seen, models = set(), []
-            for rec in oracle.describe_tracks():
-                cell = rec.cell_type
-                if cell in seen:
+            n_chip = 0
+            for rec in records:
+                key = (rec.cell_type, rec.extra.get("tf")) if rec.assay == "CHIP" else rec.cell_type
+                if key in seen:
                     continue
-                seen.add(cell)
+                seen.add(key)
                 assay, _, encode_id = str(rec.track_id).partition(":")
                 models.append({"assay": assay, "encode_id": encode_id})
+                n_chip += rec.assay == "CHIP"
             logger.info(
-                "  cherimoya: %d biosamples from %d experiments (one experiment each; the full "
-                "atlas would be ~%.1f h at 15.3 s/model)",
-                len(models), len(oracle.describe_tracks()), len(oracle.describe_tracks()) * 15.3 / 3600,
+                "  cherimoya: %d biosamples (accessibility) + %d (biosample, target) pairs "
+                "(ChIP-seq) from %d experiments (one experiment each; the full atlases would be "
+                "~%.1f h at 15.3 s/model)",
+                len(models) - n_chip, n_chip, len(records), len(records) * 15.3 / 3600,
             )
         else:
             models = []

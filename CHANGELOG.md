@@ -7,6 +7,26 @@ project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 ### Added
 
+- **BATv1, the Cherimoya Binding ATlas, as `assay="CHIP"` on the Cherimoya oracle.** 3,429
+  per-experiment TF-binding models (1,139 targets, 183 biosamples, one per ENCODE ChIP-seq
+  experiment, weights at [`programmable-genomics/BATv1`](https://huggingface.co/programmable-genomics/BATv1),
+  CC-BY-4.0) join the 1,518 CATv1 accessibility models behind the one oracle, the way ChromBPNet
+  serves ATAC, DNASE and CHIP. `load_pretrained_model(assay="CHIP", cell_type="K562", TF="GATA1")`
+  resolves through a committed defaults table (`cherimoya_source/batv1_defaults.py`): the 744 pairs
+  ChromBPNet's BPNet models also cover are pinned to the BATv1 model trained on the *same* ENCODE
+  experiment, a revoked experiment is never a default when a released one exists, otherwise the
+  best fold-0 count Pearson. `encode_id=` pins any of the 3,429; track ids are `CHIP:ENCSR`.
+  BATv1 models take a control track chorus cannot supply, so they run through cherimoya's
+  `ControlWrapper` with an all-zero control (the model card's sequence-only setting), and their
+  two strands share one softmax and are summed into one track; both are done in the shared
+  `scoring.expected_counts_profile` so the oracle and the builder cannot differ. The atlas has its
+  own pair of nulls, `batv1_pertrack.npz` (fold 0) and `batv1_ensemble_pertrack.npz`, selected by
+  the `atlas` every Cherimoya prediction now stamps beside `fold`; the load-time fold guard covers
+  them. `list_tracks("cherimoya")` searches both atlases (adds `atlas`, `target` and the release's
+  `quality_flags`); discovery iterates one experiment per (biosample, target) for CHIP as it does one
+  per biosample for accessibility, with the projected cost logged. `scripts/vendor_batv1_metadata.py`
+  and `scripts/generate_batv1_defaults.py` regenerate the vendored tables.
+
 - **Conservation-score tracks for IGV reports.** `chorus/analysis/conservation.py` wraps three
   hg38 conservation sources as bulk-downloaded genome-wide bigwigs (mirroring how oracle weights
   and per-track backgrounds are cached): GPN-Star entropy, vertebrate-alignment model (GPN-Star
@@ -25,6 +45,14 @@ project adheres to [Semantic Versioning](https://semver.org/).
   bigwig-format entries have their declared genome build physically verified against the file's
   own chromosome-1 length, raising on a confident mismatch rather than silently scoring the
   wrong genome build.
+
+### Fixed
+
+- **Environment-mode runs could execute the wrong interpreter.** `run_code_in_environment`
+  resolved and checked the oracle env's python, then launched a bare `python` through
+  `conda run -n`, which with conda 25.7 ran the base chorus env's interpreter (the package
+  prepends its own bin directory to `PATH`) inside the oracle env's `CONDA_PREFIX` and failed
+  with `No module named 'torch'`. The resolved path is now what runs.
 
 ### Fixed — review of the conservation / annotation-store work
 

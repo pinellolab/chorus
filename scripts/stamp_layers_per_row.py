@@ -23,6 +23,8 @@ carry it:
     chrombpnet      from the id prefix: ATAC / DNASE / CHIP
                     (CHIP splits TF vs histone via classify_chip_layer on the id)
     cherimoya       from the id prefix: ATAC / DNASE
+    batv1           from the id prefix: CHIP (Cherimoya's ChIP-seq atlas; every target is
+                    TF-family, so classify_chip_layer lands all 3,429 rows in tf_binding)
     epinformerseq   from the id prefix: Enhancer_DNase / Enhancer_H3K27ac / …_DNase
     sei             constant 'sequence-class'   — ids are 'CA#PC1@…@Polycomb-repressed@0'
     legnet          constant 'LentiMPRA'        — ids are bare, e.g. 'K562'
@@ -53,7 +55,7 @@ from chorus.analysis.scorers import (  # noqa: E402
 from chorus.core.globals import CHORUS_DATA_DIR, resolve_backgrounds_dir  # noqa: E402
 
 #: Oracles whose track ids carry the assay_type as the first colon-delimited field.
-_PREFIXED = {"chrombpnet", "cherimoya", "epinformerseq"}
+_PREFIXED = {"chrombpnet", "cherimoya", "batv1", "epinformerseq"}
 
 #: Oracles whose ids carry no assay_type, with the one their oracle emits.
 _CONSTANT_ASSAY_TYPE = {

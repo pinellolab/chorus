@@ -37,6 +37,7 @@ $CHORUS_DATA_DIR/backgrounds/{oracle}_pertrack.npz
 | `build_backgrounds_borzoi.py` | Borzoi | 7,611 | 803.9 MB | `chorus-borzoi` |
 | `build_backgrounds_enformer.py` | Enformer | 5,313 | 556.7 MB | `chorus-enformer` |
 | `build_backgrounds_cherimoya.py` | Cherimoya (CATv1) | 1,518 | 161.7 MB | `chorus-cherimoya` |
+| `build_backgrounds_cherimoya.py --atlas batv1` | Cherimoya (BATv1, ChIP-seq) | 3,429 | `batv1_pertrack.npz` | `chorus-cherimoya` |
 | `build_backgrounds_chrombpnet.py` | ChromBPNet | 753 | 79.5 MB | `chorus-chrombpnet` |
 | `build_backgrounds_sei.py` | Sei | 40 | 2.9 MB | `chorus-sei` |
 | `build_backgrounds_epinformerseq_v2_percell.py` | EPInformer-seq | 33 | 2.3 MB | `chorus-epinformerseq` |
@@ -75,9 +76,12 @@ combines the interim files into `{oracle}_pertrack.npz`.
   env var now wins, but `--gpu` is unambiguous. **LegNet and EPInformer-seq have only
   `--device`**, so they do need the env var.
 * **`--fold`** — Cherimoya and ChromBPNet ship cross-validation folds. Cherimoya's default
-  is `CATV1_DEFAULT_FOLD`, i.e. the 5-fold **ensemble**, deliberately the same default the
-  oracle uses. A null built on fold 0 under a query path that ensembles is not a null; see
-  protocol §7b.
+  is `CATV1_DEFAULT_FOLD`, i.e. fold 0, deliberately the same default the oracle uses; the
+  5-fold ensemble is a second null. A null built on fold 0 under a query path that ensembles
+  is not a null; see protocol §7b.
+* **`--atlas`** — Cherimoya only. `catv1` (default) writes `cherimoya_pertrack.npz`;
+  `batv1` writes `batv1_pertrack.npz` for the ChIP-seq atlas, with the same sampling and the
+  same `--fold` rule. Each atlas has its own models, so each has its own null.
 * **`--shard` / `--shard-of`** — position sharding for the long builds. Merge from a
   staging directory, not in place.
 * **`conda run` buffers stdout**, so a 14-hour job's log stays empty until it exits. Use
@@ -144,10 +148,10 @@ stamper *derives* which one an oracle used rather than assuming:
 |---|---|---|
 | `regions_genome_dominated` | 31,500 | alphagenome, borzoi, enformer |
 | `…_minus_gene_body` | 29,500 | sei, legnet |
-| `…_minus_gene_body_plus_dhs` | 34,500 | chrombpnet, cherimoya, epinformerseq |
+| `…_minus_gene_body_plus_dhs` | 34,500 | chrombpnet, cherimoya, batv1, epinformerseq |
 
 Effect nulls come in three families, also stratified: `gene_anchored` (enformer, borzoi,
-alphagenome, sei, epinformerseq), `accessibility` (chrombpnet, cherimoya — `dhs` 9,063 +
+alphagenome, sei, epinformerseq), `accessibility` (chrombpnet, cherimoya, batv1 — `dhs` 9,063 +
 `random` 9,609), and `promoter` (legnet — `tss_promoter` 7,200, `ccre_pls` 5,400,
 `ccre_pels` 2,700, `random` 2,505). Protocol §3 and §4 give the reasoning; §9 records
 what was measured before each composition was changed.

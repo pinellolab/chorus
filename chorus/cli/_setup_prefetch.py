@@ -63,22 +63,26 @@ _DEFAULT_LOAD_KWARGS: Dict[str, Union[Dict[str, object], List[Dict[str, object]]
         {"assay": "DNASE", "cell_type": "K562",  "fold": 0},
         {"assay": "DNASE", "cell_type": "HepG2", "fold": 0},
     ],
-    # Cherimoya/CATv1 requires assay + cell_type (a CATv1 model is
-    # specific to one ENCODE experiment), so a bare load would raise
+    # Cherimoya requires assay + cell_type (+ TF for CHIP): a model is
+    # specific to one ENCODE experiment, so a bare load would raise
     # InvalidAssayError and fail `chorus setup`.
     #
-    # Checkpoints are only ~2.5 MB each, so unlike ChromBPNet there is no
-    # tension between "enough to be useful" and download size. These four
-    # are the DNase + ATAC K562/HepG2 pairs, which resolve to the
-    # ChromBPNet-matched experiments (ENCSR000EOT / ENCSR149XIL /
-    # ENCSR868FGK / ENCSR291GJU) and so are the cross-oracle comparison
-    # tracks. ~10 MB total. Any other experiment downloads lazily on
-    # first load_pretrained_model().
+    # Checkpoints are only ~2.5 MB (CATv1) or ~0.2 MB (BATv1) each, so
+    # unlike ChromBPNet there is no tension between "enough to be useful"
+    # and download size. The first four are the DNase + ATAC K562/HepG2
+    # pairs, which resolve to the ChromBPNet-matched experiments
+    # (ENCSR000EOT / ENCSR149XIL / ENCSR868FGK / ENCSR291GJU); the last two
+    # are the K562 and HepG2 CTCF ChIP-seq pairs, which resolve to the
+    # experiments behind chorus's BPNet models (ENCSR000DMA / ENCSR000DUG).
+    # All six are the cross-oracle comparison tracks; ~10 MB total. Any
+    # other experiment downloads lazily on first load_pretrained_model().
     "cherimoya": [
         {"assay": "DNASE", "cell_type": "K562",  "fold": 0},
         {"assay": "DNASE", "cell_type": "HepG2", "fold": 0},
         {"assay": "ATAC",  "cell_type": "K562",  "fold": 0},
         {"assay": "ATAC",  "cell_type": "HepG2", "fold": 0},
+        {"assay": "CHIP",  "cell_type": "K562",  "TF": "CTCF", "fold": 0},
+        {"assay": "CHIP",  "cell_type": "HepG2", "TF": "CTCF", "fold": 0},
     ],
 }
 

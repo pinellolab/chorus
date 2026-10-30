@@ -70,6 +70,23 @@ def test_the_key_follows_the_fold_the_prediction_was_made_with():
     # and a prediction with no fold recorded falls to the default null, not the ensemble
     assert normalization_key("cherimoya", _Pred(None)) == "cherimoya"
 
+    # The ChIP-seq atlas has its own pair, chosen by the stamped atlas the same way the
+    # fold is: a CHIP prediction against the accessibility null is the same class of
+    # silent error as fold 0 against the ensemble.
+    class _Chip:
+        def __init__(self, fold):
+            self.metadata = {"fold": fold, "atlas": "BATv1"}
+
+    assert normalization_key("cherimoya", _Chip(0)) == "batv1"
+    assert normalization_key("cherimoya", _Chip("ensemble")) == "batv1_ensemble"
+    assert normalization_key("cherimoya", fold=0, atlas="BATv1") == "batv1"
+    assert normalization_key("batv1", fold="ensemble") == "batv1_ensemble"
+    # a prediction that predates the atlas stamp is a CATv1 one
+    class _Old:
+        metadata = {"fold": 0}
+
+    assert normalization_key("cherimoya", _Old()) == "cherimoya"
+
 
 def test_folds_without_a_null_are_refused_rather_than_approximated():
     """Refusing is the only option that cannot silently mislead.
@@ -150,10 +167,12 @@ def test_both_nulls_ship_and_describe_themselves():
     from chorus.analysis.normalization import CHORUS_BACKGROUNDS_DIR, PerTrackNormalizer
 
     n = PerTrackNormalizer()
-    expected = {"cherimoya": 0, "cherimoya_ensemble": "ensemble"}
+    expected = {"cherimoya": 0, "cherimoya_ensemble": "ensemble",
+                "batv1": 0, "batv1_ensemble": "ensemble"}
+    n_tracks = {"cherimoya": 1518, "batv1": 3429}
+    assert PerTrackNormalizer._EXPECTED_FOLD == expected
     for key, fold in expected.items():
         if not (Path(CHORUS_BACKGROUNDS_DIR) / f"{key}_pertrack.npz").exists():
             pytest.skip(f"{key} artefact not present")
         entry = n._ensure_loaded(key)
-        assert entry is not None and len(entry["track_index"]) == 1518, key
-    assert PerTrackNormalizer._EXPECTED_FOLD == expected
+        assert entry is not None and len(entry["track_index"]) == n_tracks[key.split("_")[0]], key
