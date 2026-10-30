@@ -29,7 +29,8 @@ ORACLES = [
 #: reading it directly instead of the builder's own enumerator reproduced exactly that gap.
 EXPECTED_COUNTS = {
     "enformer": 5_313, "borzoi": 7_611, "alphagenome": 5_168, "alphagenome_pt": 5_168,
-    "cherimoya": 1_518, "sei": 21_947, "chrombpnet": 753, "legnet": 3, "epinformerseq": 33,
+    # cherimoya: 1,518 CATv1 (accessibility) + 3,429 BATv1 (ChIP-seq) experiments.
+    "cherimoya": 1_518 + 3_429, "sei": 21_947, "chrombpnet": 753, "legnet": 3, "epinformerseq": 33,
 }
 
 
@@ -229,7 +230,8 @@ def test_epinformerseq_lists_every_cell_type():
 
 #: Oracles whose tracks are cell-type specific, with the distinct count published for each. Sei's
 #: sequence classes are genuinely not cell-typed, so it is absent by design rather than by omission.
-EXPECTED_CELL_TYPES = {"cherimoya": 407, "legnet": 3, "epinformerseq": 11}
+#: cherimoya: 407 accessibility biosamples and 183 ChIP-seq biosamples, 465 distinct.
+EXPECTED_CELL_TYPES = {"cherimoya": 465, "legnet": 3, "epinformerseq": 11}
 
 
 @pytest.mark.parametrize("name,expected", sorted(EXPECTED_CELL_TYPES.items()))

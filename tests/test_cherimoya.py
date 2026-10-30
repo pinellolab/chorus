@@ -6,9 +6,17 @@ that require a real checkpoint are marked ``integration`` (see
 ``pytest.ini``) so the fast suite stays offline.
 """
 
+from pathlib import Path
+
 import numpy
 import pytest
 
+from chorus.oracles.cherimoya_source.batv1_defaults import BATV1_DEFAULT_EXPERIMENT
+from chorus.oracles.cherimoya_source.batv1_globals import (
+    BATV1_ASSAY_TYPES,
+    BATV1_N_CONTROL_TRACKS,
+    BATV1_SIGNAL_GROUPS,
+)
 from chorus.oracles.cherimoya_source.catv1_defaults import CATV1_DEFAULT_EXPERIMENT
 from chorus.oracles.cherimoya_source.catv1_globals import (
     CATV1_ASSAY_TYPES,
@@ -69,7 +77,7 @@ def test_assay_types_are_the_load_bearing_strings():
     from chorus.analysis.scorers import classify_track_layer
     from chorus.core.result import OraclePredictionTrack
 
-    assert _oracle().list_assay_types() == ["ATAC", "DNASE"]
+    assert _oracle().list_assay_types() == ["ATAC", "CHIP", "DNASE"]
 
     for assay in CATV1_ASSAY_TYPES:
         assert assay in OraclePredictionTrack._registry
@@ -81,6 +89,35 @@ def test_assay_types_are_the_load_bearing_strings():
 
         assert classify_track_layer(_Stub()) == "chromatin_accessibility"
 
+    # BATv1 tracks are CHIP, and every target is a TF-family protein, so they must land in
+    # tf_binding (the 501 bp window) rather than histone_marks (2001 bp) -- the layer is
+    # decided from the id and the description the oracle stamps.
+    assert "CHIP" in OraclePredictionTrack._registry
+    oracle = _oracle()
+    oracle.assay, oracle.encode_id, oracle.cell_type, oracle.tf = "CHIP", "ENCSR000EGM", "K562", "CTCF"
+
+    class _ChipStub:
+        assay_type = "CHIP"
+        assay_id = oracle.track_id
+        metadata = oracle._track_metadata()
+
+    assert _ChipStub.assay_id == "CHIP:ENCSR000EGM"
+    assert _ChipStub.metadata["description"] == "CTCF binding in K562"
+    assert _ChipStub.metadata["atlas"] == "BATv1"
+    assert classify_track_layer(_ChipStub()) == "tf_binding"
+
+
+def test_no_batv1_target_reads_as_a_histone_mark():
+    """classify_chip_layer pattern-matches mark names in the id and description; a target
+    that matched would be scored at 2001 bp against a 501 bp null."""
+    from chorus.analysis.scorers import classify_chip_layer
+
+    df = get_metadata().tracks_df
+    targets = sorted(df.loc[df["atlas"] == "BATv1", "target"].unique())
+    assert len(targets) == 1139
+    histone = [t for t in targets if classify_chip_layer("CHIP:ENCSR000000", f"{t} binding in K562") != "tf_binding"]
+    assert histone == []
+
 
 def test_fine_tune_raises():
     with pytest.raises(NotImplementedError):
@@ -91,11 +128,13 @@ def test_fine_tune_raises():
 
 def test_track_id_format_and_uniqueness():
     assert catv1_track_id("DNASE", "ENCSR000EOT") == "DNASE:ENCSR000EOT"
+    assert catv1_track_id("CHIP", "ENCSR000EGM") == "CHIP:ENCSR000EGM"
 
     ids = get_metadata().list_track_ids()
-    assert len(ids) == 1518
-    assert len(set(ids)) == 1518, "track ids must be unique"
-    assert all(i.split(":")[0] in CATV1_ASSAY_TYPES for i in ids)
+    assert len(ids) == 1518 + 3429
+    assert len(set(ids)) == 1518 + 3429, "track ids must be unique"
+    assert all(i.split(":")[0] in CATV1_ASSAY_TYPES + BATV1_ASSAY_TYPES for i in ids)
+    assert sum(i.startswith("CHIP:") for i in ids) == 3429
     # Exactly two colon-separated fields: anything else would break the
     # normalizer's last-component fallback.
     assert all(len(i.split(":")) == 2 for i in ids)
@@ -104,15 +143,17 @@ def test_track_id_format_and_uniqueness():
 def test_accession_alone_is_unique():
     """The rationale for dropping biosample from the id."""
     df = get_metadata().tracks_df
-    assert df["experiment_accession"].nunique() == len(df) == 1518
+    assert df["experiment_accession"].nunique() == len(df) == 1518 + 3429
     assert (df.groupby("experiment_accession")["assay"].nunique() == 1).all()
+    assert df["atlas"].value_counts().to_dict() == {"BATv1": 3429, "CATv1": 1518}
 
 
 def test_assay_biosample_is_ambiguous():
     """Documents *why* the id is accession-based, so a future change to
     ASSAY:cell_type fails here rather than silently aliasing CDF rows."""
     df = get_metadata().tracks_df
-    sizes = df.groupby(["assay", "biosample"]).size()
+    catv1 = df[df["atlas"] == "CATv1"]
+    sizes = catv1.groupby(["assay", "biosample"]).size()
     assert len(sizes) == 492
     assert (sizes > 1).sum() == 162
     assert sizes.max() == 83
@@ -120,10 +161,23 @@ def test_assay_biosample_is_ambiguous():
     assert sizes[("ATAC", "K562")] == 4
 
 
+def test_biosample_target_is_ambiguous_in_batv1():
+    """The same argument for BATv1: (biosample, target) does not name a model either."""
+    df = get_metadata().tracks_df
+    batv1 = df[df["atlas"] == "BATv1"]
+    sizes = batv1.groupby(["biosample", "target"]).size()
+    assert len(sizes) == 2474
+    assert (sizes > 1).sum() == 437
+    assert sizes.max() == 59
+    assert sizes[("K562", "CTCF")] == 5
+    assert sizes[("K562", "GATA1")] == 2
+
+
 # ── defaults table ───────────────────────────────────────────────────
 
 def test_defaults_cover_every_pair_and_are_valid():
     df = get_metadata().tracks_df
+    df = df[df["atlas"] == "CATv1"]
     pairs = set(map(tuple, df[["assay", "biosample"]].drop_duplicates().values))
     assert set(CATV1_DEFAULT_EXPERIMENT) == pairs
 
@@ -135,6 +189,52 @@ def test_defaults_cover_every_pair_and_are_valid():
         assert row["biosample"] == biosample
         assert n >= 1
         assert reason in {"chrombpnet-parity", "best-count-pearson", "only-candidate"}
+
+
+def test_batv1_defaults_cover_every_pair_and_are_valid():
+    df = get_metadata().tracks_df
+    batv1 = df[df["atlas"] == "BATv1"]
+    pairs = set(map(tuple, batv1[["biosample", "target"]].drop_duplicates().values))
+    assert set(BATV1_DEFAULT_EXPERIMENT) == pairs
+
+    valid = set(batv1["experiment_accession"])
+    status = dict(zip(batv1["experiment_accession"], batv1["experiment_status"]))
+    for (biosample, target), (accession, n, reason) in BATV1_DEFAULT_EXPERIMENT.items():
+        assert accession in valid
+        row = batv1[batv1["experiment_accession"] == accession].iloc[0]
+        assert row["biosample"] == biosample
+        assert row["target"] == target
+        assert n >= 1
+        assert reason in {"bpnet-parity", "best-count-pearson", "only-candidate"}
+    # A revoked experiment is never the default when a released one exists.
+    for (biosample, target), (accession, n, _) in BATV1_DEFAULT_EXPERIMENT.items():
+        if status[accession] == "revoked":
+            siblings = batv1[(batv1["biosample"] == biosample) & (batv1["target"] == target)]
+            assert set(siblings["experiment_status"]) == {"revoked"}, (biosample, target)
+    assert BATV1_DEFAULT_EXPERIMENT[("K562", "ZNF143")][0] == "ENCSR427WZJ"
+
+
+def test_bpnet_matched_pairs_are_pinned():
+    """Every BPNet CHIP model chorus serves was trained on a BATv1 experiment, so the
+    (biosample, target) pairs they cover resolve to the model trained on the same ENCODE
+    experiment -- `CHIP:K562:CTCF` means the same experiment on both oracles."""
+    import pandas
+    from chorus.oracles.chrombpnet_source.chrombpnet_globals import iter_unique_bpnet_models
+
+    pinned = {k: v[0] for k, v in BATV1_DEFAULT_EXPERIMENT.items() if v[2] == "bpnet-parity"}
+    assert len(pinned) == 743
+    assert pinned[("K562", "CTCF")] == "ENCSR000DMA"
+    assert pinned[("HepG2", "CTCF")] == "ENCSR000DUG"
+
+    jaspar_path = (Path(__file__).resolve().parents[1] / "chorus" / "oracles"
+                   / "chrombpnet_source" / "chrombpnet_JASPAR_metadata.tsv")
+    jaspar = pandas.read_csv(jaspar_path, sep="\t").drop_duplicates(["TF_NAME", "CELL_LINE"])
+    sources = set(jaspar["SOURCE_ID"])
+    assert len(sources) == 744
+    assert set(pinned.values()) <= sources
+    assert len(list(iter_unique_bpnet_models())) == 744
+    # The one pin not taken is the revoked K562 / ZNF143 experiment.
+    assert sources - set(pinned.values()) == {"ENCSR000EGP"}
 
 
 def test_chrombpnet_matched_pairs_are_pinned():
@@ -165,6 +265,11 @@ def test_resolve_by_pair_and_accession():
     assert meta.resolve(assay="ATAC", cell_type="K562") == ("ATAC", "ENCSR868FGK")
     assert meta.resolve(assay="atac", cell_type="K562") == ("ATAC", "ENCSR868FGK")
     assert meta.resolve(encode_id="ENCSR000EOT") == ("DNASE", "ENCSR000EOT")
+    # BATv1: the pair needs a target too, and an accession alone is enough.
+    assert meta.resolve(assay="CHIP", cell_type="K562", tf="CTCF") == ("CHIP", "ENCSR000DMA")
+    assert meta.resolve(assay="chip", cell_type="K562", tf="GATA1") == ("CHIP", "ENCSR000EFT")
+    assert meta.resolve(encode_id="ENCSR000EGM") == ("CHIP", "ENCSR000EGM")
+    assert meta.resolve(encode_id="ENCSR000EGM", assay="CHIP", tf="CTCF") == ("CHIP", "ENCSR000EGM")
 
 
 def test_resolve_rejects_bad_input():
@@ -174,12 +279,22 @@ def test_resolve_rejects_bad_input():
     with pytest.raises(KeyError):
         meta.resolve(assay="DNASE", cell_type="not a biosample")
     with pytest.raises(KeyError):
+        meta.resolve(assay="HISTONE", cell_type="K562")
+    with pytest.raises(ValueError):
+        # CHIP without a target is underspecified, not a lookup miss
         meta.resolve(assay="CHIP", cell_type="K562")
+    with pytest.raises(KeyError):
+        meta.resolve(assay="CHIP", cell_type="K562", tf="not a target")
     with pytest.raises(ValueError):
         meta.resolve(assay="DNASE")
     with pytest.raises(ValueError):
         # accession/assay disagreement should not pass silently
         meta.resolve(assay="ATAC", encode_id="ENCSR000EOT")
+    with pytest.raises(ValueError):
+        meta.resolve(assay="DNASE", encode_id="ENCSR000EGM")
+    with pytest.raises(ValueError):
+        # accession/target disagreement either
+        meta.resolve(encode_id="ENCSR000EGM", tf="GATA1")
 
 
 def test_load_pretrained_model_validates_input():
@@ -189,16 +304,26 @@ def test_load_pretrained_model_validates_input():
         oracle.load_pretrained_model(assay="DNASE", cell_type="K562", fold=5)
     with pytest.raises(InvalidAssayError):
         oracle.load_pretrained_model(assay="DNASE", cell_type="nope")
+    with pytest.raises(InvalidAssayError, match="TF="):
+        oracle.load_pretrained_model(assay="CHIP", cell_type="K562")
+    with pytest.raises(InvalidAssayError):
+        oracle.load_pretrained_model(assay="CHIP", cell_type="K562", TF="nope")
 
 
 # ── metadata surface ─────────────────────────────────────────────────
 
 def test_metadata_summary_and_search():
     meta = get_metadata()
-    assert meta.get_track_summary() == {"ATAC": 369, "DNASE": 1149}
-    assert len(meta.list_cell_types()) == 407
+    assert meta.get_track_summary() == {"ATAC": 369, "CHIP": 3429, "DNASE": 1149}
+    assert meta.list_assay_types() == ["ATAC", "CHIP", "DNASE"]
+    assert len(meta.list_cell_types()) == 407            # accessibility biosamples, as before
+    assert len(meta.list_cell_types("CHIP")) == 183
+    assert len(meta.list_cell_types("DNASE")) < 407
+    assert len(meta.list_targets()) == 1139
     assert len(meta.search_tracks("ENCSR000EOT")) == 1
-    assert len(meta.search_tracks("K562")) >= 5
+    assert len(meta.search_tracks("K562")) >= 5 + 760
+    gata1 = meta.search_tracks("GATA1")
+    assert len(gata1) >= 2 and set(gata1["assay"]) == {"CHIP"}
     assert meta.search_tracks("definitely-not-present").empty
 
 
@@ -209,7 +334,16 @@ def test_describe_accepts_track_id_or_accession():
     assert by_track["experiment_accession"] == by_acc["experiment_accession"]
     assert by_track["biosample"] == "K562"
     assert by_track["assay"] == "DNASE"
+    assert by_track["atlas"] == "CATv1"
+    assert by_track["target"] == ""
     assert 0 <= by_track["count_pearson"] <= 1
+
+    chip = meta.describe("CHIP:ENCSR000EGM")
+    assert chip == meta.describe("ENCSR000EGM")
+    assert (chip["atlas"], chip["assay"], chip["target"], chip["biosample"]) == ("BATv1", "CHIP", "CTCF", "K562")
+    assert chip["experiment_status"] == "released" and chip["quality_flags"] == ""
+    assert 0 <= chip["count_pearson"] <= 1
+    assert "early_checkpoint" in meta.describe("ENCSR343IFJ")["quality_flags"]
 
 
 def test_atlas_is_grch38_only():
@@ -251,9 +385,44 @@ def test_expected_counts_shape_handling():
     numpy.testing.assert_allclose(a.sum(axis=1), [10.0, 20.0], rtol=1e-9)
 
 
-def test_expected_counts_rejects_multitrack():
+def test_expected_counts_rejects_more_than_two_tracks():
     with pytest.raises(ValueError):
-        expected_counts_profile(numpy.zeros((1, 2, 8)), numpy.zeros((1, 1)))
+        expected_counts_profile(numpy.zeros((1, 3, 8)), numpy.zeros((1, 1)))
+
+
+def test_expected_counts_sums_two_strands_under_one_softmax():
+    """BATv1's head: one softmax over both strands and all positions, a count head of
+    log1p(total over both strands), strands summed into one track.
+
+    Two consequences pin the arithmetic. The summed track must total expm1(log_counts),
+    not twice it -- per-strand softmaxes each scaled by the total would (the 2.00x BPNet
+    defect). And the strands must share one distribution: a strand whose logits sit 100
+    units lower contributes nothing, which a per-strand softmax would not show.
+    """
+    log_counts = numpy.log1p(numpy.array([[100.0]]))
+    uniform = numpy.zeros((1, 2, 4))
+    profile = expected_counts_profile(uniform, log_counts)
+    assert profile.shape == (1, 4)
+    numpy.testing.assert_allclose(profile.sum(), 100.0, rtol=1e-9)
+    numpy.testing.assert_allclose(profile, 25.0, rtol=1e-9)
+
+    lopsided = numpy.zeros((1, 2, 4))
+    lopsided[0, 1, :] = -100.0
+    profile = expected_counts_profile(lopsided, log_counts)
+    numpy.testing.assert_allclose(profile.sum(), 100.0, rtol=1e-9)
+    one_strand = expected_counts_profile(lopsided[:, :1, :], log_counts)
+    numpy.testing.assert_allclose(profile, one_strand, rtol=1e-9)
+
+    # And the sum is of the shared helper's own (N, L, 2) output, so the two agree.
+    from chorus.core.count_head import expected_counts_profile as shared
+    rng = numpy.random.RandomState(1)
+    logits = rng.randn(3, 2, 16)
+    counts = numpy.log1p(numpy.full((3, 1), 50.0))
+    numpy.testing.assert_allclose(
+        expected_counts_profile(logits, counts),
+        shared(logits.transpose(0, 2, 1), counts, n_tracks=1).sum(axis=2),
+        rtol=1e-12,
+    )
 
 
 def test_expected_counts_is_shift_invariant_in_logits():
@@ -324,18 +493,61 @@ def test_transform_places_values_at_trim_offset():
     prediction interval; a mis-offset here is the failure mode that
     collapsed ChromBPNet variant effects ~4x (see core/base.py)."""
     oracle = _oracle()
-    logits = numpy.zeros((1, 1, CATV1_OUTPUT_LENGTH))
     log_counts = numpy.log1p(numpy.array([[1000.0]]))
 
-    values = oracle._transform_predictions_to_tracks(
-        logits, log_counts, CATV1_INPUT_LENGTH,
-    )
+    for n_strands in (1, 2):
+        logits = numpy.zeros((1, n_strands, CATV1_OUTPUT_LENGTH))
+        values = oracle._transform_predictions_to_tracks(
+            logits, log_counts, CATV1_INPUT_LENGTH,
+        )
 
-    assert values.shape == (CATV1_INPUT_LENGTH,)
-    assert values[:CATV1_TRIMMING].sum() == 0.0
-    assert values[CATV1_TRIMMING + CATV1_OUTPUT_LENGTH:].sum() == 0.0
-    window = values[CATV1_TRIMMING:CATV1_TRIMMING + CATV1_OUTPUT_LENGTH]
-    assert window.sum() == pytest.approx(1000.0)
+        assert values.shape == (CATV1_INPUT_LENGTH,)
+        assert values[:CATV1_TRIMMING].sum() == 0.0
+        assert values[CATV1_TRIMMING + CATV1_OUTPUT_LENGTH:].sum() == 0.0
+        window = values[CATV1_TRIMMING:CATV1_TRIMMING + CATV1_OUTPUT_LENGTH]
+        assert window.sum() == pytest.approx(1000.0)
+
+
+def test_geometry_guard_is_per_atlas():
+    """A BATv1 checkpoint declares two control tracks and two strands; a CATv1 one none
+    and one. Each is accepted under its own assay and refused under the other's, so a
+    checkpoint cannot be run with the wrong null or the wrong control."""
+    from chorus.core.exceptions import ModelNotLoadedError
+
+    oracle = _oracle()
+    oracle.assay = "DNASE"
+    oracle._check_geometry(CATV1_TRIMMING, 0, [1])
+    with pytest.raises(ModelNotLoadedError, match="control tracks"):
+        oracle._check_geometry(CATV1_TRIMMING, BATV1_N_CONTROL_TRACKS, BATV1_SIGNAL_GROUPS)
+
+    oracle.assay = "CHIP"
+    assert oracle.atlas == "BATv1"
+    oracle._check_geometry(CATV1_TRIMMING, BATV1_N_CONTROL_TRACKS, BATV1_SIGNAL_GROUPS)
+    with pytest.raises(ModelNotLoadedError, match="control tracks"):
+        oracle._check_geometry(CATV1_TRIMMING, 0, [1])
+    with pytest.raises(ModelNotLoadedError, match="signal_groups"):
+        oracle._check_geometry(CATV1_TRIMMING, BATV1_N_CONTROL_TRACKS, [1])
+    with pytest.raises(ModelNotLoadedError, match="trimming"):
+        oracle._check_geometry(CATV1_TRIMMING - 1, BATV1_N_CONTROL_TRACKS, BATV1_SIGNAL_GROUPS)
+
+
+def test_normalization_key_follows_the_atlas_and_the_fold():
+    """Four nulls, selected by what the oracle holds: ranking a CHIP prediction against the
+    accessibility null would be the same class of silent error as fold 0 against the
+    ensemble."""
+    from chorus.oracles.cherimoya_source.catv1_globals import CATV1_ENSEMBLE
+
+    oracle = _oracle()
+    assert oracle.atlas is None
+    oracle.assay = "DNASE"
+    assert oracle.normalization_key == "cherimoya"
+    oracle.fold = CATV1_ENSEMBLE
+    assert oracle.normalization_key == "cherimoya_ensemble"
+    oracle.assay = "CHIP"
+    assert oracle.normalization_key == "batv1_ensemble"
+    oracle.fold = 0
+    assert oracle.normalization_key == "batv1"
+    assert oracle._track_metadata()["atlas"] == "BATv1"
 
 
 # ── windowing / sliding ──────────────────────────────────────────────
@@ -500,6 +712,7 @@ def test_registered_in_backgrounds_and_probes():
     from chorus.core.weights_probe import _ARTIFACT_PROBES
 
     assert "cherimoya" in _KNOWN_ORACLES
+    assert "batv1" in _KNOWN_ORACLES, "the BATv1 null is keyed 'batv1'; status must list it"
     assert "cherimoya" in _ARTIFACT_PROBES
 
 
@@ -516,11 +729,14 @@ def test_prefetch_load_kwargs_are_valid():
     assert isinstance(entries, list) and entries
 
     meta = get_metadata()
+    assert {e["assay"] for e in entries} == {"ATAC", "DNASE", "CHIP"}
     for entry in entries:
         assert {"assay", "cell_type"} <= set(entry)
+        if entry["assay"] == "CHIP":
+            assert "TF" in entry
         # Must actually resolve, or setup fails at prefetch time.
         assay, accession = meta.resolve(
-            assay=entry["assay"], cell_type=entry["cell_type"],
+            assay=entry["assay"], cell_type=entry["cell_type"], tf=entry.get("TF"),
         )
         assert assay == entry["assay"]
         assert accession.startswith("ENCSR")
@@ -542,15 +758,26 @@ def test_mcp_list_tracks_search_and_summary():
     from chorus.mcp.server import list_tracks
 
     summary = list_tracks("cherimoya")
-    assert summary["num_tracks"] == 1518
-    assert summary["track_summary"] == {"ATAC": 369, "DNASE": 1149}
+    assert summary["num_tracks"] == 1518 + 3429
+    assert summary["track_summary"] == {"ATAC": 369, "CHIP": 3429, "DNASE": 1149}
     assert len(summary["cell_types"]) == 407
-    assert "query" in summary["note"]
+    assert len(summary["chip_cell_types"]) == 183
+    assert summary["num_targets"] == 1139
+    assert "query" in summary["note"] and "TF=" in summary["note"]
 
     hit = list_tracks("cherimoya", query="ENCSR000EOT")
     assert hit["num_results"] == 1
     assert hit["tracks"][0]["track_id"] == "DNASE:ENCSR000EOT"
     assert hit["tracks"][0]["biosample"] == "K562"
+    assert hit["tracks"][0]["atlas"] == "CATv1"
+
+    chip = list_tracks("cherimoya", query="ENCSR000EGM")
+    assert chip["num_results"] == 1
+    assert chip["tracks"][0]["track_id"] == "CHIP:ENCSR000EGM"
+    assert (chip["tracks"][0]["target"], chip["tracks"][0]["atlas"]) == ("CTCF", "BATv1")
+    assert chip["tracks"][0]["quality_flags"] == ""
+    gata1 = list_tracks("cherimoya", query="GATA1")
+    assert gata1["num_results"] >= 2 and all(t["assay"] == "CHIP" for t in gata1["tracks"])
 
     # Results are capped so a broad query cannot flood an LLM context.
     broad = list_tracks("cherimoya", query="cell")

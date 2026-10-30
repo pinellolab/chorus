@@ -1,27 +1,37 @@
-"""Cherimoya / CATv1 oracle implementation.
+"""Cherimoya oracle: the CATv1 (accessibility) and BATv1 (ChIP-seq) atlases.
 
-Cherimoya is a compact (~0.6 M parameter) convolutional sequence-to-function
-model in the BPNet / ChromBPNet family.  CATv1 — the Cherimoya Accessibility
-aTlas — is a family of 1,518 per-experiment chromatin accessibility models
-covering 1,149 ENCODE DNase-seq and 369 ATAC-seq experiments, each trained
-across five chromosome-held-out folds.
+Cherimoya is a compact convolutional sequence-to-function model in the BPNet /
+ChromBPNet family.  Two atlases of per-experiment models are served here, in
+the way ChromBPNet serves ATAC, DNASE and CHIP from one oracle:
+
+* **CATv1** — the Cherimoya Accessibility aTlas — 1,518 chromatin accessibility
+  models (~0.6 M parameters each) covering 1,149 ENCODE DNase-seq and 369
+  ATAC-seq experiments, assays ``ATAC`` and ``DNASE``.
+* **BATv1** — the Cherimoya Binding ATlas — 3,429 transcription-factor and
+  DNA-associated-protein binding models (~46 K parameters each) covering 1,139
+  targets in 183 biosamples, assay ``CHIP``.  These take a control track the
+  oracle cannot supply and predict two strands; see
+  :mod:`chorus.oracles.cherimoya_source.batv1_globals` for how both are handled.
+
+Every model is trained across the same five chromosome-held-out folds.
 
 This oracle is the closest analog to :class:`~chorus.oracles.chrombpnet.ChromBPNetOracle`
 and shares its exact geometry (2114 bp input, 1000 bp base-resolution output),
 so the offset arithmetic and the 501 bp central scoring window are ported
 rather than reinvented.  Two things differ substantively:
 
-* **Track ids are ``ASSAY:ENCSR``**, e.g. ``DNASE:ENCSR000EOT``, not
-  ``ASSAY:cell_type``.  ``(assay, biosample)`` is ambiguous for 1,188 of the
-  1,518 experiments — even ``ATAC:K562`` maps to four — so the ENCODE
-  experiment accession is the identifier.  See
+* **Track ids are ``ASSAY:ENCSR``**, e.g. ``DNASE:ENCSR000EOT`` or
+  ``CHIP:ENCSR000EGM``, not ``ASSAY:cell_type``.  ``(assay, biosample)`` is
+  ambiguous for 1,188 of the 1,518 CATv1 experiments — even ``ATAC:K562`` maps
+  to four — and ``(biosample, target)`` for 437 of BATv1's 2,474 pairs, so the
+  ENCODE experiment accession is the identifier.  See
   :func:`~chorus.oracles.cherimoya_source.catv1_globals.catv1_track_id`.
 * **The count head predicts ``log(count + 1)``**, so recovering counts uses
   ``expm1``.  That transform lives in
   :mod:`chorus.oracles.cherimoya_source.scoring`, shared with the background
   builder so the two cannot drift.
 
-CATv1 is GRCh38-only; unlike ChromBPNet it ships no mouse models.
+Both atlases are GRCh38-only; unlike ChromBPNet they ship no mouse models.
 """
 
 import json
@@ -53,6 +63,13 @@ from .cherimoya_source.catv1_globals import (
     CATV1_TRIMMING,
     catv1_track_id,
 )
+from .cherimoya_source.batv1_globals import (
+    BATV1_ASSAY_TYPES,
+    BATV1_CHECKPOINT_TEMPLATE,
+    BATV1_HF_REPO,
+    BATV1_N_CONTROL_TRACKS,
+    BATV1_SIGNAL_GROUPS,
+)
 from .cherimoya_source.catv1_metadata import get_metadata
 from .cherimoya_source.scoring import (
     expected_counts_profile,
@@ -68,7 +85,7 @@ logger = logging.getLogger(__name__)
 
 
 class CherimoyaOracle(OracleBase):
-    """Cherimoya / CATv1 oracle for chromatin accessibility (DNase / ATAC)."""
+    """Cherimoya oracle: CATv1 chromatin accessibility (DNase / ATAC) and BATv1 ChIP-seq binding."""
 
     #: Weights are trained on GRCh38. Enforced, not assumed -- see #124.
     training_genome = "hg38"
@@ -128,6 +145,7 @@ class CherimoyaOracle(OracleBase):
         self.assay = None
         self.cell_type = None
         self.encode_id = None
+        self.tf = None
         self.fold = CATV1_DEFAULT_FOLD
 
     # ── paths / templates ────────────────────────────────────────────
@@ -157,12 +175,20 @@ class CherimoyaOracle(OracleBase):
     # ── model loading ────────────────────────────────────────────────
 
     @property
+    def atlas(self) -> Optional[str]:
+        """``"CATv1"`` or ``"BATv1"``, from the loaded assay; ``None`` before a load."""
+        if self.assay is None:
+            return None
+        return "BATv1" if self.assay in BATV1_ASSAY_TYPES else "CATv1"
+
+    @property
     def normalization_key(self) -> str:
-        """Which per-track CDF key ranks predictions from this oracle's current fold.
+        """Which per-track CDF key ranks predictions from this oracle's current atlas and fold.
 
         A percentile is a rank against a null, so the null has to come from the same model.
-        chorus ships two Cherimoya artefacts -- ``cherimoya_pertrack.npz`` built on fold 0
-        (the default) and ``cherimoya_ensemble_pertrack.npz`` built on the 5-fold mean -- and
+        chorus ships four Cherimoya artefacts -- ``cherimoya_pertrack.npz`` built on CATv1
+        fold 0 (the default), ``cherimoya_ensemble_pertrack.npz`` on CATv1's 5-fold mean, and
+        ``batv1_pertrack.npz`` / ``batv1_ensemble_pertrack.npz`` for the ChIP-seq atlas -- and
         this is how a caller asks for the right one:
 
             get_normalizer(oracle.normalization_key)
@@ -174,7 +200,9 @@ class CherimoyaOracle(OracleBase):
         signatures. The load-time guard in ``_ensure_loaded`` then checks the artefact's
         stamped fold against the key, so a stale or mislabelled file fails loudly.
         """
-        return "cherimoya_ensemble" if self.fold == CATV1_ENSEMBLE else "cherimoya"
+        from ..analysis.normalization import normalization_key
+
+        return normalization_key(self.oracle_name, fold=self.fold, atlas=self.atlas)
 
     def load_pretrained_model(
         self,
@@ -183,23 +211,28 @@ class CherimoyaOracle(OracleBase):
         encode_id: Optional[str] = None,
         fold: int = CATV1_DEFAULT_FOLD,
         weights: Optional[str] = None,
+        TF: Optional[str] = None,
     ) -> None:
-        """Load one CATv1 experiment's checkpoint.
+        """Load one experiment's checkpoint, from CATv1 or BATv1.
 
-        A CATv1 model is specific to a single ENCODE experiment, so exactly
+        A Cherimoya model is specific to a single ENCODE experiment, so exactly
         one experiment is loaded at a time — the same one-model-per-instance
         contract ChromBPNet uses.
 
-        Because ``(assay, cell_type)`` is ambiguous for most of the atlas,
-        it resolves through the committed defaults table
-        (``cherimoya_source/catv1_defaults.py``); ambiguous pairs log which
-        experiment was chosen.  Pass ``encode_id`` to pin one exactly.
+        Because ``(assay, cell_type)`` is ambiguous for most of CATv1, and
+        ``(cell_type, TF)`` for a fifth of BATv1, both resolve through committed
+        defaults tables (``cherimoya_source/catv1_defaults.py`` and
+        ``batv1_defaults.py``); ambiguous pairs log which experiment was
+        chosen.  Pass ``encode_id`` to pin one exactly.
 
         Args:
-            assay: ``'ATAC'`` or ``'DNASE'``.
+            assay: ``'ATAC'`` or ``'DNASE'`` (CATv1), or ``'CHIP'`` (BATv1).
             cell_type: Biosample term name, e.g. ``'K562'``.
             encode_id: ENCODE experiment accession, e.g. ``'ENCSR000EOT'``.
-                Overrides ``cell_type``.
+                Overrides ``cell_type`` and ``TF``.
+            TF: ChIP-seq target as ENCODE names it, e.g. ``'GATA1'``; required
+                with ``assay='CHIP'`` unless ``encode_id`` is given. Named as
+                ChromBPNet names it so ``load_oracle`` passes it through unchanged.
             fold: Cross-validation fold ``0``–``4``, or ``CATV1_ENSEMBLE``
                 (``"ensemble"``) to average the predictions of all five, which is
                 the **default** and what the shipped background CDFs are built on.
@@ -233,7 +266,7 @@ class CherimoyaOracle(OracleBase):
             # (2.02x). Ranking fold 3 against fold 0's null returns a percentile that looks
             # perfectly normal and is wrong.
             raise InvalidAssayError(
-                f"CATv1 fold {fold} has no matching background null, so its percentiles "
+                f"Cherimoya fold {fold} has no matching background null, so its percentiles "
                 f"would be ranked against a different model's distribution. chorus ships "
                 f"nulls for fold 0 (the default) and {CATV1_ENSEMBLE!r} only. The five folds "
                 f"disagree by ~2x on the same sequence, so this is not an approximation. "
@@ -248,41 +281,46 @@ class CherimoyaOracle(OracleBase):
                     "gets the correct assay type."
                 )
             resolved_assay = assay.upper()
-            if resolved_assay not in CATV1_ASSAY_TYPES:
+            if resolved_assay not in CATV1_ASSAY_TYPES + BATV1_ASSAY_TYPES:
                 raise InvalidAssayError(
-                    f"CATv1 covers {CATV1_ASSAY_TYPES}, not {assay!r}."
+                    f"Cherimoya covers {sorted(CATV1_ASSAY_TYPES + BATV1_ASSAY_TYPES)}, "
+                    f"not {assay!r}."
                 )
             resolved_id = encode_id or Path(weights).stem
             resolved_cell_type = cell_type
+            resolved_tf = TF
             self.model_path = str(weights)
             self.model_paths = [self.model_path]
         else:
             try:
                 resolved_assay, resolved_id = get_metadata().resolve(
-                    assay=assay, cell_type=cell_type, encode_id=encode_id,
+                    assay=assay, cell_type=cell_type, encode_id=encode_id, tf=TF,
                 )
             except (KeyError, ValueError) as exc:
                 raise InvalidAssayError(str(exc)) from exc
             row = get_metadata().describe(resolved_id)
             resolved_cell_type = row["biosample"]
+            resolved_tf = row["target"] or None
             if ensemble:
                 self.model_paths = [
-                    self._download_checkpoint(resolved_id, f)
+                    self._download_checkpoint(resolved_id, f, resolved_assay)
                     for f in range(CATV1_N_FOLDS)
                 ]
                 self.model_path = self.model_paths[0]
             else:
-                self.model_path = self._download_checkpoint(resolved_id, fold)
+                self.model_path = self._download_checkpoint(resolved_id, fold, resolved_assay)
                 self.model_paths = [self.model_path]
 
         self.assay = resolved_assay
         self.encode_id = resolved_id
         self.cell_type = resolved_cell_type
+        self.tf = resolved_tf
         self.fold = fold
 
         logger.info(
             "Loading Cherimoya %s (%s, %s)...",
-            self.track_id, resolved_cell_type,
+            self.track_id,
+            f"{resolved_tf} in {resolved_cell_type}" if resolved_tf else resolved_cell_type,
             "5-fold ensemble" if ensemble else f"fold {fold}",
         )
 
@@ -298,22 +336,31 @@ class CherimoyaOracle(OracleBase):
             # oracle API sees a real single model rather than a tuple.
             self.model = self._models[0]
 
-    def _download_checkpoint(self, encode_id: str, fold: int) -> str:
-        """Fetch one checkpoint from HuggingFace, returning the cached path."""
-        filename = CATV1_CHECKPOINT_TEMPLATE.format(encode_id=encode_id, fold=fold)
+    def _download_checkpoint(self, encode_id: str, fold: int, assay: str) -> str:
+        """Fetch one checkpoint from HuggingFace, returning the cached path.
+
+        The atlas, and so the repository, follows the assay: ``CHIP`` experiments
+        live in BATv1, ``ATAC`` and ``DNASE`` in CATv1. Both lay out checkpoints
+        the same way.
+        """
+        if assay in BATV1_ASSAY_TYPES:
+            repo, template = BATV1_HF_REPO, BATV1_CHECKPOINT_TEMPLATE
+        else:
+            repo, template = CATV1_HF_REPO, CATV1_CHECKPOINT_TEMPLATE
+        filename = template.format(encode_id=encode_id, fold=fold)
         try:
             from huggingface_hub import hf_hub_download
         except ImportError as exc:
             raise ModelNotLoadedError(
-                "huggingface_hub is required to fetch CATv1 weights. Add "
+                "huggingface_hub is required to fetch Cherimoya weights. Add "
                 "'huggingface_hub>=0.20' to environments/chorus-cherimoya.yml."
             ) from exc
 
         try:
-            return hf_hub_download(repo_id=CATV1_HF_REPO, filename=filename)
+            return hf_hub_download(repo_id=repo, filename=filename)
         except Exception as exc:
             raise ModelNotLoadedError(
-                f"Failed to download {filename} from {CATV1_HF_REPO}: {exc}"
+                f"Failed to download {filename} from {repo}: {exc}"
             ) from exc
 
     def _load_in_environment(self, weights: str) -> None:
@@ -371,19 +418,29 @@ class CherimoyaOracle(OracleBase):
             # compile=False is mandatory: Cherimoya.load defaults to
             # compile=True with mode='max-autotune', which would add a
             # multi-minute warmup per model -- ruinous for the background
-            # build, which loads 1,518 of them.
+            # build, which loads thousands of them.
             model = Cherimoya.load(weights, device=device, compile=False)
-            self.model = model.eval()
+            model = model.eval()
         except Exception as exc:
             raise ModelNotLoadedError(
                 f"Failed to load Cherimoya model from {weights}: {exc}"
             ) from exc
 
         self._check_geometry(
-            trimming=int(self.model.trimming),
-            n_control_tracks=int(self.model.n_control_tracks),
-            signal_groups=[int(g) for g in self.model.signal_groups],
+            trimming=int(model.trimming),
+            n_control_tracks=int(model.n_control_tracks),
+            signal_groups=[int(g) for g in model.signal_groups],
         )
+        if model.n_control_tracks:
+            # A BATv1 checkpoint takes the experiment's control track as a second
+            # input, which chorus cannot supply. ControlWrapper feeds an all-zero
+            # control (the model card's setting for sequence-only predictions), so
+            # the wrapped model takes the sequence alone like a CATv1 one. The
+            # predict template does the same in environment mode.
+            from cherimoya import ControlWrapper
+
+            model = ControlWrapper(model)
+        self.model = model
         self._resolved_device = device
         self.loaded = True
         logger.info("Cherimoya model loaded directly on %s.", device)
@@ -392,26 +449,35 @@ class CherimoyaOracle(OracleBase):
         """Fail loudly if a checkpoint's geometry isn't what we assume.
 
         Every offset in this oracle, and every background CDF, assumes a
-        2114 bp input trimmed by 557 to a single 1000 bp output track.  A
-        checkpoint that differs would otherwise produce silently
-        misaligned tracks.
+        2114 bp input trimmed by 557 to a 1000 bp output window.  A CATv1
+        checkpoint has no control tracks and one output track; a BATv1 one
+        has two control tracks and one group of two strands.  A checkpoint
+        that differs from what its atlas declares would otherwise produce
+        silently misaligned or mis-scaled tracks, so the atlas is checked
+        against the checkpoint rather than inferred from it.
         """
         if trimming is not None and int(trimming) != CATV1_TRIMMING:
             raise ModelNotLoadedError(
                 f"Checkpoint has trimming={trimming}, expected "
                 f"{CATV1_TRIMMING} ({CATV1_INPUT_LENGTH} -> "
                 f"{CATV1_OUTPUT_LENGTH}). This oracle's offsets and the "
-                f"background CDFs assume CATv1 geometry."
+                f"background CDFs assume Cherimoya atlas geometry."
             )
-        if n_control_tracks not in (None, 0):
+        if self.atlas == "BATv1":
+            expected_controls, expected_groups, atlas = BATV1_N_CONTROL_TRACKS, BATV1_SIGNAL_GROUPS, "BATv1"
+        else:
+            expected_controls, expected_groups, atlas = 0, [1], "CATv1"
+        if n_control_tracks is not None and int(n_control_tracks) != expected_controls:
             raise ModelNotLoadedError(
-                f"Checkpoint expects {n_control_tracks} control tracks; "
-                f"CATv1 models are trained without controls."
+                f"Checkpoint expects {n_control_tracks} control tracks; {atlas} "
+                f"models have {expected_controls}. Is assay={self.assay!r} the "
+                f"right atlas for this checkpoint?"
             )
-        if signal_groups is not None and list(signal_groups) != [1]:
+        if signal_groups is not None and list(signal_groups) != expected_groups:
             raise ModelNotLoadedError(
-                f"Checkpoint has signal_groups={signal_groups}; CATv1 "
-                f"models have a single unstranded output track."
+                f"Checkpoint has signal_groups={signal_groups}; {atlas} "
+                f"models have {expected_groups}. Is assay={self.assay!r} the "
+                f"right atlas for this checkpoint?"
             )
 
     # ── track identity / metadata ────────────────────────────────────
@@ -429,50 +495,66 @@ class CherimoyaOracle(OracleBase):
         return self.bin_size * self.output_length
 
     def list_assay_types(self) -> List[str]:
-        """Return CATv1's assay types."""
-        return list(CATV1_ASSAY_TYPES)
+        """Return the assay types across both atlases: ``ATAC``, ``CHIP``, ``DNASE``."""
+        return sorted(CATV1_ASSAY_TYPES + BATV1_ASSAY_TYPES)
 
-    def list_cell_types(self) -> List[str]:
-        """Return every biosample term name in the atlas (407 of them)."""
-        return get_metadata().list_cell_types()
+    def list_cell_types(self, assay: Optional[str] = None) -> List[str]:
+        """Return biosample term names.
+
+        Like ChromBPNet's, the default is the accessibility (CATv1) biosamples,
+        407 of them; ``assay="CHIP"`` gives BATv1's 183.
+        """
+        return get_metadata().list_cell_types(assay)
+
+    def list_targets(self) -> List[str]:
+        """Return every ChIP-seq target in BATv1 (1,139 of them)."""
+        return get_metadata().list_targets()
 
     def list_tracks(self) -> List[str]:
-        """Return every canonical track id in the atlas (1,518 of them)."""
+        """Return every canonical track id across both atlases (4,947 of them)."""
         return get_metadata().list_track_ids()
 
     def _describe_tracks(self) -> list:
-        """The full CATv1 atlas — 1,518 tracks. Available before load; `track_id` is None until then."""
+        """Both atlases — 1,518 CATv1 + 3,429 BATv1 tracks. Available before load; `track_id` is None until then."""
         from ..core.tracks import TrackRecord
-        from .cherimoya_source.catv1_metadata import get_metadata
 
         meta = get_metadata()
         out = []
-        for tid in meta.list_track_ids():
-            try:
-                d = meta.describe(tid)
-            except (KeyError, ValueError):
-                d = {}
-            out.append(TrackRecord(
-                track_id=str(tid),
-                assay=d.get("assay") or (str(tid).split(":")[0] if ":" in str(tid) else None),
+        for d in meta.tracks_df.sort_values("track_id").to_dict(orient="records"):
+            tid = d["track_id"]
+            summary = d.get("biosample_summary")
+            target = d.get("target") or None
+            extra = {k: d[k] for k in ("experiment_accession", "biosample_classification", "atlas") if k in d}
+            if target:
+                # The same shape ChromBPNet's CHIP records carry, so a consumer that reads
+                # `extra["tf"]` or the description sees one vocabulary for both oracles.
+                extra["tf"] = target
+                extra["quality_flags"] = d.get("quality_flags") or ""
+                description = f"{target} binding in {d['biosample']}"
+            else:
                 # `biosample` is the key CATv1-metadata.tsv actually uses. The first version looked
                 # for "biosample_term_name", so cell_type was None on all 1,518 records -- counts were
                 # right, so the conformance test passed, and the field the catalogue exists to let you
                 # filter on was empty.
+                description = summary if summary and str(summary) != "nan" else None
+            out.append(TrackRecord(
+                track_id=str(tid),
+                assay=d.get("assay") or (str(tid).split(":")[0] if ":" in str(tid) else None),
                 cell_type=d.get("biosample"),
-                description=d.get("biosample_summary") if str(d.get("biosample_summary")) != "nan" else None,
-                extra={k: d[k] for k in ("experiment_accession", "biosample_classification") if k in d},
+                description=description,
+                extra=extra,
             ))
         return out
 
     def describe_track(self, track_or_accession: str) -> Dict:
-        """Return assay, biosample, and fold-0 metrics for a track.
+        """Return atlas, assay, target, biosample, and fold-0 metrics for a track.
 
         Track ids carry only assay and accession, so this is how a caller
-        recovers the biosample and provenance.
+        recovers the biosample, the ChIP-seq target and provenance.
 
         Args:
-            track_or_accession: ``'DNASE:ENCSR000EOT'`` or ``'ENCSR000EOT'``.
+            track_or_accession: ``'DNASE:ENCSR000EOT'``, ``'CHIP:ENCSR000EGM'``
+                or a bare accession.
         """
         return get_metadata().describe(track_or_accession)
 
@@ -483,7 +565,7 @@ class CherimoyaOracle(OracleBase):
     # ── prediction ───────────────────────────────────────────────────
 
     def _check_assembly(self) -> None:
-        """Warn once if the reference isn't the assembly CATv1 was trained on.
+        """Warn once if the reference isn't the assembly the atlases were trained on.
 
         Advisory, unlike the build-side ``require_reference_assembly``: refusing here
         would change behaviour for anyone deliberately scoring a non-reference FASTA,
@@ -503,12 +585,32 @@ class CherimoyaOracle(OracleBase):
         if length is None:
             return                      # unreadable or no chr1 -- no claim to make
         logger.warning(
-            "Reference %s looks like %s (chr1 is %s bp), not %s. Every CATv1 model is "
+            "Reference %s looks like %s (chr1 is %s bp), not %s. Every Cherimoya model is "
             "trained on %s; predictions against another assembly resolve fine and are "
             "silently about different DNA.",
             self.reference_fasta, found or "an assembly chorus does not recognise",
             f"{length:,}", self.training_genome, self.training_genome,
         )
+
+    def _track_metadata(self, **extra) -> Dict:
+        """Metadata stamped on every emitted track.
+
+        ``fold`` and ``atlas`` are read back by ``normalization.normalization_key`` to pick
+        the null a prediction is ranked against; ``description`` is what
+        ``classify_chip_layer`` reads to split CHIP tracks into TF binding and histone
+        marks, and no BATv1 target is a histone mark, so every CHIP track lands in
+        ``tf_binding`` with the 501 bp window -- the same as ChromBPNet's BPNet models.
+        """
+        meta = {
+            "encode_id": self.encode_id,
+            "fold": self.fold,
+            "atlas": self.atlas,
+        }
+        if self.tf:
+            meta["target"] = self.tf
+            meta["description"] = f"{self.tf} binding in {self.cell_type}"
+        meta.update(extra)
+        return meta
 
     def _transform_predictions_to_tracks(
         self,
@@ -545,12 +647,12 @@ class CherimoyaOracle(OracleBase):
         seq: "str | Tuple[str, int, int] | Interval",
         assay_ids: Optional[List[str]] = None,
     ) -> OraclePrediction:
-        """Predict accessibility for a sequence, region, or interval.
+        """Predict accessibility or binding for a sequence, region, or interval.
 
         Args:
             seq: DNA string, ``(chrom, start, end)``, or an
                 :class:`~chorus.core.interval.Interval`.
-            assay_ids: Ignored — a CATv1 instance holds exactly one
+            assay_ids: Ignored — a Cherimoya instance holds exactly one
                 experiment, so the loaded model determines the track. Kept
                 for interface compatibility with the other oracles.
 
@@ -612,11 +714,7 @@ class CherimoyaOracle(OracleBase):
             input_interval=input_interval,
             resolution=self.bin_size,
             values=values,
-            metadata={
-                "encode_id": self.encode_id,
-                "fold": self.fold,
-                "atlas": "CATv1",
-            },
+            metadata=self._track_metadata(),
             preferred_aggregation="mean",
             preferred_interpolation="linear_divided",
             preferred_scoring_strategy="mean",
@@ -668,7 +766,8 @@ class CherimoyaOracle(OracleBase):
 
         Returns:
             ``(profile_logits, log_counts)`` with shapes
-            ``(n_windows, 1, output_length)`` and ``(n_windows, 1)``.
+            ``(n_windows, 1 or 2, output_length)`` and ``(n_windows, 1)``; two
+            for BATv1's strands.
         """
         if len(getattr(self, "model_paths", []) or []) > 1:
             return self._forward_ensemble(windows)
@@ -679,8 +778,8 @@ class CherimoyaOracle(OracleBase):
     def _forward_ensemble(self, windows) -> Tuple[numpy.ndarray, numpy.ndarray]:
         """Average the expected-counts predictions across the loaded folds.
 
-        CATv1's model card: "use a single fold (e.g. fold_0), or average the
-        predictions of all five folds for a more robust estimate."
+        The CATv1 and BATv1 model cards: "use a single fold (e.g. fold_0), or
+        average the predictions of all five folds for a more robust estimate."
 
         The mean is over the **expected-counts profiles** -- that is what
         "predictions" means here. Not over the two raw heads: both enter
@@ -930,12 +1029,7 @@ class CherimoyaOracle(OracleBase):
             input_interval=input_interval,
             resolution=self.bin_size,
             values=out,
-            metadata={
-                "encode_id": self.encode_id,
-                "fold": self.fold,
-                "atlas": "CATv1",
-                "sliding_step": step,
-            },
+            metadata=self._track_metadata(sliding_step=step),
             preferred_aggregation="mean",
             preferred_interpolation="linear_divided",
             preferred_scoring_strategy="mean",

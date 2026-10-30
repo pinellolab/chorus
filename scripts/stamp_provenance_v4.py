@@ -49,6 +49,7 @@ GEOMETRY = {
     "enformer":      dict(input_length=393_216, resolution=128),
     "chrombpnet":    dict(input_length=2_114, resolution=1),
     "cherimoya":     dict(input_length=2_114, resolution=1),
+    "batv1":         dict(input_length=2_114, resolution=1),
     "epinformerseq": dict(input_length=2_114, resolution=None),
     "sei":           dict(input_length=4_096, resolution=None),
     "legnet":        dict(input_length=200, resolution=None),
@@ -98,6 +99,9 @@ ACTIVITY_POPULATIONS = {
     # three streams plus DHS summits, no gene-body block.
     "chrombpnet":    _NO_GENE_BODY_PLUS_DHS,
     "cherimoya":     _NO_GENE_BODY_PLUS_DHS,
+    # build_backgrounds_cherimoya.py --atlas batv1: the same sampling block, scored by
+    # the ChIP-seq atlas's models. One row per track; the two strands are summed.
+    "batv1":         _NO_GENE_BODY_PLUS_DHS,
     "epinformerseq": _NO_GENE_BODY_PLUS_DHS,
 }
 
@@ -346,8 +350,13 @@ def build_config(oracle: str, payload: dict) -> dict:
             prior = json.loads(str(payload["build_config"][0]))
         except Exception:
             prior = {}
+    # `atlas`, `cdf_key`, `control` and `strands` are what the Cherimoya builder writes
+    # for its ChIP-seq atlas (BATv1: all-zero control, strands summed); a stamp that
+    # dropped them could not say which of the oracle's atlases it ranks, or that its
+    # counts are sequence-only rather than the observed track's.
     carried = {k: prior[k] for k in ("fold", "folds", "ensemble", "model_variant",
-                                     "checkpoint_template")
+                                     "checkpoint_template", "atlas", "cdf_key",
+                                     "control", "strands")
                if k in prior and prior[k] is not None}
 
     cfg = {

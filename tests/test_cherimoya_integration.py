@@ -34,6 +34,10 @@ import numpy
 import pytest
 
 from chorus.oracles.cherimoya import CherimoyaOracle
+from chorus.oracles.cherimoya_source.batv1_globals import (
+    BATV1_N_CONTROL_TRACKS,
+    BATV1_SIGNAL_GROUPS,
+)
 from chorus.oracles.cherimoya_source.catv1_globals import (
     CATV1_ENSEMBLE,
     CATV1_N_FOLDS,
@@ -433,3 +437,205 @@ def test_geometry_guard_rejects_a_mismatched_checkpoint(tmp_path):
     oracle = CherimoyaOracle(use_environment=False)
     with pytest.raises(ModelNotLoadedError, match="trimming"):
         oracle.load_pretrained_model(assay="DNASE", weights=str(path))
+
+
+# ── BATv1: the ChIP-seq atlas through the same two paths ─────────────
+
+#: K562 CTCF, the BPNet-parity default for that pair, so `CHIP:K562:CTCF` on this oracle is
+#: the experiment behind ChromBPNet's BPNet model.
+BATV1_TEST_ACCESSION = "ENCSR000DMA"
+BATV1_TEST_TRACK = f"CHIP:{BATV1_TEST_ACCESSION}"
+
+
+@pytest.fixture(scope="module")
+def chip_oracle():
+    _require_prerequisites()
+    oracle = CherimoyaOracle(
+        use_environment=True,
+        reference_fasta=REFERENCE_FASTA,
+        device=_pinned_device(),
+    )
+    oracle.load_pretrained_model(assay="CHIP", cell_type="K562", TF="CTCF")
+    return oracle
+
+
+def test_chip_default_resolution_is_the_bpnet_matched_experiment(chip_oracle):
+    assert chip_oracle.encode_id == BATV1_TEST_ACCESSION
+    assert chip_oracle.assay == "CHIP"
+    assert chip_oracle.cell_type == "K562"
+    assert chip_oracle.tf == "CTCF"
+    assert chip_oracle.atlas == "BATv1"
+    assert chip_oracle.track_id == BATV1_TEST_TRACK
+    assert chip_oracle.normalization_key == "batv1"
+    assert chip_oracle.fold == 0 and len(chip_oracle.model_paths) == 1
+    assert chip_oracle.loaded
+
+
+def test_loaded_chip_checkpoint_reports_batv1_geometry(chip_oracle):
+    """Two control tracks and one group of two strands, 45,586 parameters."""
+    info = chip_oracle._model_info
+    assert info["trimming"] == CATV1_TRIMMING
+    assert info["n_control_tracks"] == BATV1_N_CONTROL_TRACKS
+    assert info["signal_groups"] == BATV1_SIGNAL_GROUPS
+    assert info["n_parameters"] == 45586
+
+
+def test_chip_predict_is_one_summed_track_in_the_tf_binding_layer(chip_oracle):
+    from chorus.analysis.scorers import classify_track_layer
+
+    prediction = chip_oracle.predict(TEST_REGION)
+    assert list(prediction.keys()) == [BATV1_TEST_TRACK]
+    track = prediction[BATV1_TEST_TRACK]
+    values = track.values
+    assert values.shape == (CATV1_INPUT_LENGTH,)
+    assert numpy.all(numpy.isfinite(values))
+    assert values[:CATV1_TRIMMING].sum() == 0.0
+    assert values[CATV1_TRIMMING + CATV1_OUTPUT_LENGTH:].sum() == 0.0
+    assert values.sum() > 0
+    assert track.assay_type == "CHIP"
+    assert track.metadata["atlas"] == "BATv1"
+    assert track.metadata["target"] == "CTCF"
+    assert classify_track_layer(track) == "tf_binding"
+
+
+def test_chip_predict_matches_direct_window_scoring(chip_oracle, reference_sequence):
+    """The invariant the BATv1 CDFs rest on, through the env-mode path: the summed-strand
+    profile from predict() equals the head outputs through the shared scoring module. The
+    tolerance follows the CATv1 version of this test (see its docstring for why 5e-3)."""
+    values = chip_oracle.predict(TEST_REGION)[BATV1_TEST_TRACK].values
+    from_predict = values[CATV1_TRIMMING:CATV1_TRIMMING + CATV1_OUTPUT_LENGTH]
+
+    logits, log_counts = chip_oracle._forward_windows([reference_sequence])
+    assert logits.shape == (1, 2, CATV1_OUTPUT_LENGTH), "two strands expected from a BATv1 head"
+    direct = expected_counts_profile(logits, log_counts)[0]
+
+    assert chip_oracle._last_device == _pinned_device()
+    numpy.testing.assert_allclose(from_predict, direct, rtol=5e-3, atol=1e-4)
+    assert score_window_sum(from_predict) == pytest.approx(score_window_sum(direct), rel=1e-3)
+    # The summed track totals expm1(log_counts): one softmax over both strands, not two.
+    assert direct.sum() == pytest.approx(float(numpy.expm1(log_counts[0][0])), rel=1e-5)
+
+
+def test_chip_predict_matches_direct_window_scoring_in_process(reference_sequence):
+    """Exact agreement in one process, as for CATv1, plus the control: the in-process loader
+    wraps the model so a sequence-only forward pass works, and its result equals the
+    checkpoint called directly with an all-zero control."""
+    import json
+    import subprocess
+    import tempfile
+
+    from chorus.core.environment import EnvironmentManager
+
+    _require_prerequisites()
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
+        json.dump({
+            "repo_root": os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            "fasta": REFERENCE_FASTA,
+            "region": list(TEST_REGION),
+            "sequence": reference_sequence,
+            "track": BATV1_TEST_TRACK,
+        }, fh)
+        args_path = fh.name
+
+    probe = f'''
+import json, sys
+with open({args_path!r}) as fh:
+    a = json.load(fh)
+sys.path.insert(0, a["repo_root"])
+import numpy, torch
+from chorus.oracles.cherimoya import CherimoyaOracle
+from chorus.oracles.cherimoya_source.scoring import expected_counts_profile, score_window_sum
+from chorus.oracles.cherimoya_source.catv1_globals import CATV1_TRIMMING, CATV1_OUTPUT_LENGTH
+
+oracle = CherimoyaOracle(use_environment=False, reference_fasta=a["fasta"], device="cuda")
+oracle.load_pretrained_model(assay="CHIP", cell_type="K562", TF="CTCF")
+
+chrom, start, end = a["region"]
+values = oracle.predict((chrom, start, end))[a["track"]].values
+from_predict = values[CATV1_TRIMMING:CATV1_TRIMMING + CATV1_OUTPUT_LENGTH]
+logits, log_counts = oracle._forward_windows([a["sequence"]])
+direct = expected_counts_profile(logits, log_counts)[0]
+
+# The checkpoint itself, with an explicit all-zero control.
+inner = oracle.model.model
+X = torch.zeros(1, 4, len(a["sequence"]), device=next(inner.parameters()).device)
+for i, b in enumerate(a["sequence"]):
+    j = "ACGT".find(b)
+    if j >= 0:
+        X[0, j, i] = 1.0
+with torch.no_grad():
+    zl, zc = inner(X, torch.zeros(1, inner.n_control_tracks, X.shape[-1], device=X.device))
+explicit = expected_counts_profile(zl.float().cpu().numpy(), zc.float().cpu().numpy())[0]
+
+scale = max(float(numpy.abs(direct).max()), 1e-12)
+print("CHORUS_RESULT " + json.dumps({{
+    "n_folds": len(oracle.model_paths),
+    "wrapped": type(oracle.model).__name__,
+    "strands": int(logits.shape[1]),
+    "profile_max_rel": float(numpy.abs(from_predict - direct).max() / scale),
+    "explicit_max_rel": float(numpy.abs(explicit - direct).max() / scale),
+    "sum_from_predict": float(score_window_sum(from_predict)),
+    "sum_direct": float(score_window_sum(direct)),
+}}))
+'''
+
+    python_exe = EnvironmentManager().get_python_executable("cherimoya")
+    completed = subprocess.run([python_exe, "-c", probe], capture_output=True, text=True, timeout=1800)
+    marker = [line for line in completed.stdout.splitlines() if line.startswith("CHORUS_RESULT ")]
+    if not marker:
+        pytest.fail(
+            "in-process probe produced no result.\n"
+            f"exit={completed.returncode}\n"
+            f"stdout tail:\n{completed.stdout[-2000:]}\n"
+            f"stderr tail:\n{completed.stderr[-2000:]}"
+        )
+    got = json.loads(marker[-1][len("CHORUS_RESULT "):])
+
+    assert got["n_folds"] == 1, got
+    assert got["wrapped"] == "ControlWrapper", got
+    assert got["strands"] == 2, got
+    assert got["profile_max_rel"] <= 1e-7, got
+    assert got["explicit_max_rel"] <= 1e-7, got
+    assert got["sum_from_predict"] == pytest.approx(got["sum_direct"], rel=1e-9)
+    assert got["sum_from_predict"] > 0
+
+
+def test_chip_variant_effect_runs_end_to_end(chip_oracle):
+    import pysam
+
+    chrom = "chr1"
+    position = 1_000_000 + CATV1_INPUT_LENGTH // 2
+    with pysam.FastaFile(REFERENCE_FASTA) as fasta:
+        ref_base = fasta.fetch(chrom, position - 1, position).upper()
+    alt_base = "A" if ref_base != "A" else "G"
+
+    result = chip_oracle.predict_variant_effect(
+        genomic_region=f"{chrom}:{position}-{position}",
+        variant_position=f"{chrom}:{position}",
+        alleles=[ref_base, alt_base],
+        assay_ids=None,
+    )
+    effects = result["effect_sizes"]["alt_1"][BATV1_TEST_TRACK]
+    assert numpy.all(numpy.isfinite(effects))
+    assert numpy.abs(effects).sum() > 0
+
+
+def test_chip_describe_track_recovers_target(chip_oracle):
+    row = chip_oracle.describe_track(chip_oracle.track_id)
+    assert (row["atlas"], row["assay"], row["target"], row["biosample"]) == ("BATv1", "CHIP", "CTCF", "K562")
+    assert row["assembly"] == "GRCh38"
+    assert 0 <= row["count_pearson"] <= 1
+
+
+def test_geometry_guard_refuses_a_batv1_checkpoint_under_an_accessibility_assay():
+    """A ChIP-seq checkpoint loaded as DNASE would run with no control and be ranked against
+    the accessibility null; the per-atlas geometry check refuses it before either happens."""
+    _require_prerequisites()
+    pytest.importorskip("cherimoya", reason="needs cherimoya importable to load a checkpoint")
+    from chorus.core.exceptions import ModelNotLoadedError
+
+    oracle = CherimoyaOracle(use_environment=False)
+    oracle.load_pretrained_model(assay="CHIP", cell_type="K562", TF="CTCF")
+    path = oracle.model_path
+    with pytest.raises(ModelNotLoadedError, match="control tracks"):
+        CherimoyaOracle(use_environment=False).load_pretrained_model(assay="DNASE", weights=path)

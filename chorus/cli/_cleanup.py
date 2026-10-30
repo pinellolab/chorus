@@ -98,8 +98,12 @@ def _cleanup_oracle(
     if _remove_path(weight_dir, dry_run):
         dirs += 1
 
-    # Per-oracle background CDF
-    for pattern in [f"{oracle}_pertrack.npz", f"{oracle}_*.npy"]:
+    # Per-oracle background CDF. Cherimoya ships four: two per atlas (fold 0 and the
+    # ensemble), with the ChIP-seq atlas keyed "batv1" rather than under the oracle's name.
+    patterns = [f"{oracle}_pertrack.npz", f"{oracle}_*.npy", f"{oracle}_ensemble_pertrack.npz"]
+    if oracle == "cherimoya":
+        patterns += ["batv1_pertrack.npz", "batv1_ensemble_pertrack.npz"]
+    for pattern in patterns:
         for f in _BACKGROUNDS_DIR.glob(pattern):
             _remove_path(f, dry_run)
 

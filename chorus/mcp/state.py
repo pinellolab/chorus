@@ -71,8 +71,8 @@ class OracleStateManager:
 
         # Separate constructor kwargs from load-time kwargs (assay/cell_type
         # are only used by load_pretrained_model, not the oracle constructor).
-        # `encode_id` (Cherimoya) selects a specific CATv1 ENCODE
-        # experiment. Listed here rather than only in the loop below --
+        # `encode_id` (Cherimoya) selects a specific CATv1 or BATv1 ENCODE
+        # experiment; `TF` is shared with ChromBPNet's CHIP path. Listed here rather than only in the loop below --
         # this set and that loop must stay in sync, and a key missing from
         # *this* one silently lands in the constructor and raises
         # `TypeError: __init__() got an unexpected keyword argument`.

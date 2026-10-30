@@ -221,7 +221,15 @@ except Exception as e:
             # Run the script file instead of passing code as argument
             env_name = self.env_manager.get_environment_name(oracle)
             mamba_exe = getattr(self.env_manager, 'conda_exe', None) or _find_mamba()
-            running_command = shlex.split(f"{mamba_exe} run -n {env_name} python {code_path}")
+            # The interpreter is named by its resolved path, not as a bare `python`.
+            # `chorus/__init__.py` prepends the *calling* env's bin directory to PATH
+            # (so the CLI finds its own conda), and `conda run -n` does not reliably
+            # put the target env's bin ahead of it -- measured with conda 25.7: the
+            # subprocess ran the base chorus env's python inside the cherimoya env's
+            # CONDA_PREFIX and failed with "No module named 'torch'". The path was
+            # already resolved and checked above; using it closes the gap, and
+            # `conda run` still supplies the env's activation (LD paths, CUDA libs).
+            running_command = shlex.split(f"{mamba_exe} run -n {env_name} {python_exe} {code_path}")
 
             env = self._prepare_env(oracle)
                 

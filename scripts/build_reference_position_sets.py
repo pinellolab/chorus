@@ -66,6 +66,7 @@ ORACLE_SNP_SET = {
     "epinformerseq": "gene_anchored",
     "legnet": "promoter",
     "chrombpnet": "accessibility", "cherimoya": "accessibility",
+    "batv1": "accessibility",
 }
 FAI = REPO / "genomes" / "hg38.fa.fai"
 FASTA = REPO / "genomes" / "hg38.fa"

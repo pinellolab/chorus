@@ -29,8 +29,8 @@ This directory contains conda environment definitions for each oracle in the Cho
 - `chorus-alphagenome.yml`: Environment for AlphaGenome (JAX-based)
 - `chorus-alphagenome_pt.yml`: Environment for the AlphaGenome **PyTorch** backend — installed by
   default alongside the JAX one, so Apple Silicon gets MPS
-- `chorus-cherimoya.yml`: Environment for Cherimoya / CATv1 (PyTorch + Triton; CUDA on Linux,
-  CPU-only on macOS)
+- `chorus-cherimoya.yml`: Environment for Cherimoya, both the CATv1 and BATv1 atlases
+  (PyTorch + Triton; CUDA on Linux, CPU-only on macOS)
 - `chorus-epinformerseq.yml`: Environment for EPInformer-seq (PyTorch)
 
 ## Usage

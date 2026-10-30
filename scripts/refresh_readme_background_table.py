@@ -39,10 +39,11 @@ END = "<!-- END GENERATED: background-table -->"
 
 DISPLAY = {
     "alphagenome": "AlphaGenome", "enformer": "Enformer", "borzoi": "Borzoi",
-    "chrombpnet": "ChromBPNet", "cherimoya": "Cherimoya (CATv1)", "sei": "Sei",
+    "chrombpnet": "ChromBPNet", "cherimoya": "Cherimoya (CATv1)",
+    "batv1": "Cherimoya (BATv1)", "sei": "Sei",
     "legnet": "LegNet", "epinformerseq": "EPInformer-seq",
 }
-ORDER = ["alphagenome", "enformer", "borzoi", "chrombpnet", "cherimoya",
+ORDER = ["alphagenome", "enformer", "borzoi", "chrombpnet", "cherimoya", "batv1",
          "sei", "legnet", "epinformerseq"]
 
 
@@ -102,7 +103,8 @@ def build_table() -> str:
             # The two that were peak-anchored before the field existed; read from
             # their builders, not assumed.
             region = {"chrombpnet": "uniform + DHS summits",
-                      "cherimoya": "uniform + DHS summits"}.get(name)
+                      "cherimoya": "uniform + DHS summits",
+                      "batv1": "uniform + DHS summits"}.get(name)
         if not region:
             region = "(unrecorded)"
         rows.append(f"| {DISPLAY[name]} | {n:,} | {eff} | {act} | {region} "

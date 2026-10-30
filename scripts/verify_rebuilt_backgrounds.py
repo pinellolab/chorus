@@ -46,7 +46,7 @@ MIN_TRACKS_FOR_CEILING_GATE = 25
 MODEL_CHANGE_MIN_CEILING_RATIO = 0.50
 
 ORACLES = ["alphagenome", "borzoi", "enformer", "chrombpnet",
-           "cherimoya", "sei", "legnet", "epinformerseq"]
+           "cherimoya", "batv1", "sei", "legnet", "epinformerseq"]
 
 
 def _stats(row: np.ndarray) -> dict:

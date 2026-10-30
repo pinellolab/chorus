@@ -1,4 +1,4 @@
-"""Load a CATv1 checkpoint inside the chorus-cherimoya environment.
+"""Load a CATv1 or BATv1 checkpoint inside the chorus-cherimoya environment.
 
 Run by ``CherimoyaOracle._load_in_environment`` via
 ``run_code_in_environment``.  ``__ARGS_FILE_NAME__`` is substituted with a
@@ -73,5 +73,5 @@ result = {
     "n_control_tracks": int(model.n_control_tracks),
     "signal_groups": [int(g) for g in model.signal_groups],
     "torch_version": str(torch.__version__),
-    "description": "Cherimoya CATv1 model loaded successfully",
+    "description": "Cherimoya model loaded successfully",
 }

@@ -1,4 +1,4 @@
-"""Batched forward pass for a CATv1 checkpoint, inside chorus-cherimoya.
+"""Batched forward pass for a CATv1 or BATv1 checkpoint, inside chorus-cherimoya.
 
 Run by ``CherimoyaOracle._forward_windows`` via ``run_code_in_environment``.
 ``__ARGS_FILE_NAME__`` is substituted with a temp JSON path by the caller.
@@ -65,6 +65,16 @@ batch_size = args.get("batch_size", 64)
 model = Cherimoya.load(args["model_weights"], device=resolved, compile=False)
 model = model.eval()
 
+# A BATv1 checkpoint was trained with the experiment's control track as a second
+# input, which chorus cannot supply. ControlWrapper feeds an all-zero control, the
+# model card's recommended setting for sequence-only predictions, and passes a
+# CATv1 checkpoint (no control tracks) through unchanged. The parent process
+# checked n_control_tracks against the atlas at load time.
+if model.n_control_tracks:
+    from cherimoya import ControlWrapper
+
+    model = ControlWrapper(model)
+
 MAPPING = {"A": 0, "C": 1, "G": 2, "T": 3}
 
 
@@ -90,7 +100,7 @@ with torch.no_grad():
         all_logits.append(profile_logits.float().cpu().numpy())
         all_log_counts.append(log_counts.float().cpu().numpy())
 
-profile_logits = numpy.concatenate(all_logits)     # (n_windows, 1, output_length)
+profile_logits = numpy.concatenate(all_logits)     # (n_windows, 1 or 2 strands, output_length)
 log_counts = numpy.concatenate(all_log_counts)     # (n_windows, 1)
 
 # The resolved device is returned, not just used. Cherimoya's Triton

@@ -412,7 +412,11 @@ class PerTrackNormalizer:
     #: (2.02x), and any single fold lands between 0.69x and 1.39x of the ensemble. fold 0 is
     #: the default and takes the plain filename; the ensemble is a separate key.
     #: ``CherimoyaOracle.normalization_key`` is how a caller picks.
-    _EXPECTED_FOLD: dict[str, object] = {"cherimoya": 0, "cherimoya_ensemble": "ensemble"}
+    _EXPECTED_FOLD: dict[str, object] = {
+        "cherimoya": 0, "cherimoya_ensemble": "ensemble",
+        # The BATv1 (ChIP-seq) atlas of the same oracle: its own pair of nulls, same rule.
+        "batv1": 0, "batv1_ensemble": "ensemble",
+    }
 
     def _ensure_loaded(self, oracle_name: str) -> dict | None:
         """Lazy-load the NPZ for *oracle_name*.  Returns the data dict or None."""
@@ -439,7 +443,7 @@ class PerTrackNormalizer:
             got = _stamped_fold(path)
             if got is not None and got != expected:
                 raise BackgroundFoldMismatch(
-                    f"{path.name} was built on CATv1 fold {got!r} but the "
+                    f"{path.name} was built on Cherimoya fold {got!r} but the "
                     f"'{oracle_name}' CDF key requires fold {expected!r}. A percentile is a "
                     f"rank against a null, so using this file would rank predictions from "
                     f"one model against another model's distribution -- the folds disagree "
@@ -1669,30 +1673,41 @@ def _hf_endpoint_reachable(timeout: float = 5.0) -> "tuple[bool, str]":
         return False, f"{host}:{port} — {type(exc).__name__}: {exc}"
 
 
-def normalization_key(oracle_name: str, track=None, fold=None) -> str:
-    """Which CDF key ranks a prediction from *oracle_name*, given its fold.
+_CHERIMOYA_KEYS = ("cherimoya", "cherimoya_ensemble", "batv1", "batv1_ensemble")
+
+
+def normalization_key(oracle_name: str, track=None, fold=None, atlas=None) -> str:
+    """Which CDF key ranks a prediction from *oracle_name*, given its atlas and fold.
 
     A percentile is a rank against a null, so the null must come from the same model. Only
-    Cherimoya has more than one: ``cherimoya`` (fold 0, the default) and
-    ``cherimoya_ensemble`` (the 5-fold mean). Every other oracle returns its own name.
+    Cherimoya has more than one: ``cherimoya`` (CATv1 fold 0, the default),
+    ``cherimoya_ensemble`` (CATv1's 5-fold mean), and ``batv1`` / ``batv1_ensemble`` for
+    the ChIP-seq atlas the same oracle serves under ``assay="CHIP"``. Every other oracle
+    returns its own name.
 
-    The fold is read from the prediction's own metadata when a track is given -- every
-    Cherimoya ``TrackPrediction`` stamps ``metadata["fold"]`` -- so a caller that already has
-    the track does not need to know about folds at all. Pass ``fold=`` directly when only the
-    oracle instance is in scope (``oracle.fold``).
+    The fold and atlas are read from the prediction's own metadata when a track is given --
+    every Cherimoya ``TrackPrediction`` stamps ``metadata["fold"]`` and ``metadata["atlas"]``
+    -- so a caller that already has the track does not need to know about either. Pass
+    ``fold=`` and ``atlas=`` directly when only the oracle instance is in scope
+    (``oracle.fold``, ``oracle.atlas``). An atlas that is neither given nor stamped means
+    CATv1, which is what every prediction before BATv1 existed was.
 
     Getting this wrong is not a crash: it is a percentile that looks entirely normal and is
     ranked against a different model's distribution. The folds disagree by ~2x on the same
     sequence. ``tests/test_fold_selects_its_own_null.py`` enumerates the lookup sites so a new
     one cannot skip this resolution silently.
     """
-    if oracle_name not in ("cherimoya", "cherimoya_ensemble"):
+    if oracle_name not in _CHERIMOYA_KEYS:
         return oracle_name
-    if fold is None and track is not None:
-        meta = getattr(track, "metadata", None)
-        if isinstance(meta, dict):
-            fold = meta.get("fold")
-    return "cherimoya_ensemble" if fold == "ensemble" else "cherimoya"
+    meta = getattr(track, "metadata", None) if track is not None else None
+    if fold is None and isinstance(meta, dict):
+        fold = meta.get("fold")
+    if atlas is None and isinstance(meta, dict):
+        atlas = meta.get("atlas")
+    if atlas is None and oracle_name.startswith("batv1"):
+        atlas = "BATv1"
+    base = "batv1" if atlas == "BATv1" else "cherimoya"
+    return f"{base}_ensemble" if fold == "ensemble" else base
 
 
 class BackgroundArtefactMismatch(ValueError):
@@ -1731,7 +1746,7 @@ class BackgroundGenomeMismatch(BackgroundArtefactMismatch):
 
 
 def _stamped_fold(path) -> object | None:
-    """CATv1 fold recorded in an artefact's ``build_config``, or None if unstamped.
+    """Cherimoya fold recorded in an artefact's ``build_config``, or None if unstamped.
 
     Opened lazily and defensively: an unreadable or unstamped file must not break loading,
     because only Cherimoya has a fold at all and every other oracle's artefact has no such

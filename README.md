@@ -185,7 +185,7 @@ Start with one or two oracles and add more with `chorus setup --oracle <name>` l
 | **Enformer** | 8 GB | optional | ~10 s (GPU) / ~1 min (CPU) | lightweight multi-track, CPU-friendly starter |
 | **Borzoi** | 12 GB | recommended | ~30 s (GPU) | distal gene-expression effects, longer context |
 | **ChromBPNet** | 4 GB | optional | ~1 s (CPU ok) | base-pair chromatin / motif disruption |
-| **Cherimoya / CATv1** | 4 GB | recommended | ~5 s (GPU, default) — [see note](#cherimoya-timing-depends-on-the-mode-you-run-it-in) | base-pair chromatin accessibility across 1,518 ENCODE DNase/ATAC experiments — the widest biosample coverage in chorus |
+| **Cherimoya (CATv1 + BATv1)** | 4 GB | recommended | ~5 s (GPU, default) — [see note](#cherimoya-timing-depends-on-the-mode-you-run-it-in) | base-pair chromatin accessibility across 1,518 ENCODE DNase/ATAC experiments (CATv1) and TF binding across 3,429 ENCODE ChIP-seq experiments of 1,139 targets (BATv1) — the widest biosample and target coverage in chorus |
 | **LegNet** | 4 GB | optional | <1 s | MPRA / promoter activity |
 | **Sei** | 4 GB | optional | ~2 s | regulatory sequence-class profiling |
 | **EPInformer-seq** | 2 GB | optional | <1 s | per-cell 2-channel enhancer activity (DNase cut-sites + H3K27ac, 3 assays, 11 Roadmap cells, 2114-bp window) |
@@ -230,8 +230,9 @@ rather than returning a plausible wrong number. On the window above:
 | peak | 8.24 | 15.47 | 15.34 | 11.08 | 7.65 | **11.10** |
 
 The folds disagree by 2.02× among themselves, so `fold=N` is a different answer, not a cheaper
-approximation. chorus ships nulls for fold 0 and the ensemble; build one for another fold with
-`scripts/build_backgrounds_cherimoya.py --fold N`.
+approximation. chorus ships nulls for fold 0 and the ensemble, per atlas (CATv1 under the
+oracle's name, BATv1 under `batv1`); build one for another fold with
+`scripts/build_backgrounds_cherimoya.py [--atlas batv1] --fold N`.
 
 ⚠️ **Cherimoya and ChromBPNet are not comparable at raw magnitude.** chorus loads ChromBPNet as
 `chrombpnet_nobias`, which predicts the *bias-corrected* accessibility profile — ChromBPNet
@@ -295,14 +296,14 @@ The default `chorus setup` (all 8 oracles, both AlphaGenome backends, hg38, all 
 | Sei weights — the extracted model **plus** the retained `sei_model.tar.gz` it came from | ~6.5 GB |
 | `hg38` reference fasta + index | ~3.1 GB |
 | Base `chorus` env | ~2.7 GB |
-| Per-oracle CDF backgrounds (`<data-dir>/backgrounds/`, 9 files) — Sei is 1.5 GB of that, a consequence of the 0.7.4 rebuild (40 sequence classes → all 21,947) | ~3.4 GB |
+| Per-oracle CDF backgrounds (`<data-dir>/backgrounds/`, 11 files) — Sei is 1.5 GB of that, a consequence of the 0.7.4 rebuild (40 sequence classes → all 21,947) | ~3.7 GB |
 | AlphaGenome weights — PyTorch (~880 MB) + JAX (~700 MB) | ~1.6 GB |
 | Borzoi weights | ~1.4 GB |
 | Enformer weights | ~960 MB |
 | ChromBPNet slim HuggingFace mirror — fast-path pre-cache (K562 + HepG2 DNase) | ~50 MB |
 | LegNet weights | ~41 MB |
 | EPInformer-seq per-cell weights (11 main + 11 bias) | ~8 MB |
-| Cherimoya fast-path weights (DNase + ATAC K562/HepG2) | ~10 MB |
+| Cherimoya fast-path weights (DNase + ATAC K562/HepG2, CTCF ChIP-seq K562/HepG2) | ~10 MB |
 | **Total default** | **~87 GB** |
 
 **One oracle instead of eight** is ~13 GiB (measured for `enformer`: 2.41 GiB base env + 5.89 GiB oracle
@@ -537,7 +538,8 @@ Chorus mirrors every oracle's weights to chorus-controlled HuggingFace repos so 
 | Enformer | [`lucapinello/chorus-enformer`](https://huggingface.co/lucapinello/chorus-enformer) | TFHub `deepmind/enformer/1` (now redirects to Kaggle) | 961 MB |
 | Borzoi | [`lucapinello/chorus-borzoi`](https://huggingface.co/lucapinello/chorus-borzoi) | [`johahi/borzoi-replicate-{0..3}`](https://huggingface.co/johahi/borzoi-replicate-0) | ~6 GB (4 folds) |
 | ChromBPNet | [`lucapinello/chorus-chrombpnet-slim`](https://huggingface.co/lucapinello/chorus-chrombpnet-slim) | ENCODE per-experiment tarballs | 1.49 GB (786 h5's; chorus fetches only the 9 human ATAC/DNase models — the 33 mm10 models are still hosted but no longer offered, see 2026-08-01) |
-| Cherimoya | [`programmable-genomics/CATv1`](https://huggingface.co/programmable-genomics/CATv1) | *is* the primary source (CC-BY-4.0) | ~3.8 GB (1,518 fold-0 checkpoints; ~2.5 MB each, fetched lazily) |
+| Cherimoya (CATv1) | [`programmable-genomics/CATv1`](https://huggingface.co/programmable-genomics/CATv1) | *is* the primary source (CC-BY-4.0) | ~3.8 GB (1,518 fold-0 checkpoints; ~2.5 MB each, fetched lazily) |
+| Cherimoya (BATv1) | [`programmable-genomics/BATv1`](https://huggingface.co/programmable-genomics/BATv1) | *is* the primary source (CC-BY-4.0) | ~0.7 GB (3,429 fold-0 checkpoints; ~0.2 MB each, fetched lazily) |
 | Sei | [`lucapinello/chorus-sei`](https://huggingface.co/lucapinello/chorus-sei) | Zenodo [4906997](https://zenodo.org/record/4906997) | 3.28 GB |
 | LegNet | [`lucapinello/chorus-legnet`](https://huggingface.co/lucapinello/chorus-legnet) | Zenodo [17863550](https://zenodo.org/records/17863550) | 38 MB |
 | EPInformer-seq | [`lucapinello/chorus-epinformerseq-v2`](https://huggingface.co/lucapinello/chorus-epinformerseq-v2) | per-cell 2-channel PerCellProfileNetWide + frozen BiasNet, trained on Roadmap DNase-summit peaks (ch0 = 5′ DNase cut-sites, ch1 = H3K27ac) (Pinello Lab) | 11 MB (11 cells × main + bias) |
@@ -552,6 +554,8 @@ The chorus mirrors are byte-identical to the originals (verified via md5 / size 
 | ChromBPNet | ~80 MB | 753 (9 ATAC/DNASE + 744 CHIP) |
 | Cherimoya | ~162 MB | 1,518 (369 ATAC + 1,149 DNASE) |
 | Cherimoya (ensemble) | ~154 MB | 1,518 — the fold-ensemble has its own null; see [Cherimoya folds](#cherimoya--catv1) |
+| Cherimoya BATv1 (`batv1`) | ~355 MB | 3,429 CHIP — the ChIP-seq atlas, run with an all-zero control and strands summed; see [Cherimoya / CATv1](#cherimoya--catv1) |
+| Cherimoya BATv1 (ensemble) | ~356 MB | 3,429 — its fold-ensemble null |
 | Sei | ~1.5 GB | 21,947 tracks (21,907 chromatin profiles + 40 sequence classes) |
 | LegNet | ~210 KB | 3 cell types |
 | EPInformer-seq | ~2.3 MB | 33 tracks (11 cell types × 3 assays: DNase, H3K27ac, composite) |
@@ -881,7 +885,7 @@ Every analysis tool accepts an optional `user_prompt` parameter and writes it in
 Key features:
 - **Auto-centering**: `region` is optional in variant tools — auto-sized for each oracle's output window
 - **ChromBPNet/BPNet params**: `load_oracle("chrombpnet", assay="CHIP", cell_type="K562", TF="GATA1")`
-- **Cherimoya params**: `load_oracle("cherimoya", assay="DNASE", cell_type="K562")` picks that biosample's default experiment; `load_oracle("cherimoya", assay="ATAC", encode_id="ENCSR483RKN")` pins a specific one. `(assay, cell_type)` is ambiguous across much of the atlas — K562 alone has four ATAC experiments — so search with `list_tracks("cherimoya", query="K562")` and pass the `experiment_accession` you want
+- **Cherimoya params**: `load_oracle("cherimoya", assay="DNASE", cell_type="K562")` picks that biosample's default experiment; `load_oracle("cherimoya", assay="CHIP", cell_type="K562", TF="GATA1")` does the same for a ChIP-seq target (BATv1); `load_oracle("cherimoya", assay="ATAC", encode_id="ENCSR483RKN")` pins a specific one. `(assay, cell_type)` is ambiguous across much of the atlas — K562 alone has four ATAC experiments and five CTCF ChIP-seq experiments — so search with `list_tracks("cherimoya", query="K562")` or `query="GATA1"` and pass the `experiment_accession` you want
 - **TSS warnings**: `predict_variant_effect_on_gene` warns when the target gene TSS is outside the output window
 - **Mixed-resolution**: AlphaGenome's 1bp DNASE + 128bp histone tracks score correctly in a single call
 
@@ -945,7 +949,7 @@ predictions = oracle.predict(sequence, ['DNase:K562'])
 predictions = oracle.predict(sequence, ['CNhs11250'])  # CAGE:K562
 ```
 
-> **MCP users:** The MCP server requires ENCODE identifiers (e.g. `ENCFF413AHU`), not descriptive names. Use `list_tracks(oracle_name, query='K562')` to search and get the `identifier` field. **Cherimoya returns `track_id` instead** (e.g. `DNASE:ENCSR000EOT`) — it keys on the ENCODE *experiment* accession rather than a file accession; see [Cherimoya / CATv1](#cherimoya--catv1).
+> **MCP users:** The MCP server requires ENCODE identifiers (e.g. `ENCFF413AHU`), not descriptive names. Use `list_tracks(oracle_name, query='K562')` to search and get the `identifier` field. **Cherimoya returns `track_id` instead** (e.g. `DNASE:ENCSR000EOT`, `CHIP:ENCSR000EGM`) — it keys on the ENCODE *experiment* accession rather than a file accession; see [Cherimoya / CATv1](#cherimoya--catv1).
 
 #### 4. BedGraph output
 
@@ -1063,19 +1067,19 @@ oracle.load_pretrained_model(
 
 #### Cherimoya / CATv1
 
-Cherimoya is a compact (~614 K parameter) ConvNeXt-style convolutional model in the BPNet / ChromBPNet family. **CATv1** — the Cherimoya Accessibility aTlas — is a family of 1,518 per-experiment chromatin accessibility models covering 1,149 ENCODE DNase-seq and 369 ATAC-seq experiments, each trained across five chromosome-held-out folds. That makes it the widest biosample coverage in chorus.
+Cherimoya is a compact ConvNeXt-style convolutional model in the BPNet / ChromBPNet family, and chorus serves two atlases of per-experiment Cherimoya models from one oracle, the way ChromBPNet serves ATAC, DNASE and CHIP. **CATv1** — the Cherimoya Accessibility aTlas — is 1,518 chromatin accessibility models (~614 K parameters each) covering 1,149 ENCODE DNase-seq and 369 ATAC-seq experiments. **BATv1** — the Cherimoya Binding ATlas — is 3,429 TF-binding models (~46 K parameters each) covering 1,139 transcription factors and other DNA-associated proteins across 183 biosamples, one per ENCODE ChIP-seq experiment, under `assay="CHIP"`. Every model is trained across the same five chromosome-held-out folds. That makes it the widest biosample and target coverage in chorus.
 
 - Sequence length: 2,114 bp input
 - Output: 1,000 bins at 1 bp resolution
 - Bin size: 1 bp
-- Track types: DNase / ATAC chromatin accessibility (`list_assay_types()` → `['ATAC', 'DNASE']`)
-- Track identifiers: `ASSAY:ENCSR` — the ENCODE **experiment** accession, e.g. `DNASE:ENCSR000EOT` (not `ASSAY:cell_type`)
-- Scoring window: 501 bp central window, matching ChromBPNet
-- Assembly: GRCh38 only — CATv1 ships no mouse models
-- Weights: [`programmable-genomics/CATv1`](https://huggingface.co/programmable-genomics/CATv1) (CC-BY-4.0), fold-0 checkpoints ~2.5 MB each, fetched lazily
+- Track types: DNase / ATAC chromatin accessibility and ChIP-seq binding (`list_assay_types()` → `['ATAC', 'CHIP', 'DNASE']`)
+- Track identifiers: `ASSAY:ENCSR` — the ENCODE **experiment** accession, e.g. `DNASE:ENCSR000EOT` or `CHIP:ENCSR000EGM` (not `ASSAY:cell_type`)
+- Scoring window: 501 bp central window, matching ChromBPNet (CHIP tracks score in the `tf_binding` layer, like BPNet's)
+- Assembly: GRCh38 only — neither atlas ships mouse models
+- Weights: [`programmable-genomics/CATv1`](https://huggingface.co/programmable-genomics/CATv1) and [`programmable-genomics/BATv1`](https://huggingface.co/programmable-genomics/BATv1) (CC-BY-4.0), fold-0 checkpoints ~2.5 MB (CATv1) or ~0.2 MB (BATv1) each, fetched lazily
 - Device: CUDA (Triton kernels) or CPU; **no MPS/Metal path**
 
-One CATv1 model covers exactly one ENCODE experiment, so one experiment is loaded at a time — the same one-model-per-instance contract ChromBPNet uses:
+One Cherimoya model covers exactly one ENCODE experiment, so one experiment is loaded at a time — the same one-model-per-instance contract ChromBPNet uses:
 
 ```python
 oracle = chorus.create_oracle('cherimoya', use_environment=True,
@@ -1084,11 +1088,16 @@ oracle = chorus.create_oracle('cherimoya', use_environment=True,
 # By biosample — resolves through the committed defaults table
 oracle.load_pretrained_model(assay="DNASE", cell_type="K562")
 
+# A ChIP-seq target in a biosample (BATv1) — its own defaults table
+oracle.load_pretrained_model(assay="CHIP", cell_type="K562", TF="GATA1")
+
 # Or pin one experiment exactly (recommended when the biosample is ambiguous)
 oracle.load_pretrained_model(assay="ATAC", encode_id="ENCSR483RKN")
 ```
 
-> **`(assay, cell_type)` is ambiguous for most of the atlas** — 1,188 of the 1,518 experiments share an (assay, biosample) pair, and K562 alone has four ATAC experiments. Ambiguous pairs resolve through `cherimoya_source/catv1_defaults.py` and log which experiment was chosen. To pick deliberately, search the metadata and pass the accession:
+> **BATv1 runs with an all-zero control track.** Each BATv1 model was trained with the experiment's ChIP-seq control signal as a second input, which chorus cannot supply, so it is run through cherimoya's `ControlWrapper` with a zero control — the setting the BATv1 model card recommends for predictions of the sequence's own contribution. Raw counts are therefore lower than the observed track; percentiles are unaffected because the BATv1 null (`batv1_pertrack.npz`, with `batv1_ensemble_pertrack.npz` for `fold="ensemble"`) is built the same way. Its two strands share one softmax and are summed into one track, so a BATv1 track has the same shape as a CATv1 one. The 744 (biosample, target) pairs that ChromBPNet's BPNet models also cover are pinned to the BATv1 model trained on the *same* ENCODE experiment (`cherimoya_source/batv1_defaults.py`, rule `bpnet-parity`), so `CHIP:K562:CTCF` means the same experiment on both oracles; read `quality_flags` in `list_tracks` before trusting a track.
+
+> **`(assay, cell_type)` is ambiguous for most of the atlas** — 1,188 of the 1,518 CATv1 experiments share an (assay, biosample) pair, K562 alone has four ATAC experiments, and 437 of BATv1's 2,474 (biosample, target) pairs hold several experiments (K562 / POLR2A has 59). Ambiguous pairs resolve through `cherimoya_source/catv1_defaults.py` and `batv1_defaults.py` and log which experiment was chosen. To pick deliberately, search the metadata and pass the accession:
 
 ```python
 from chorus.oracles.cherimoya_source.catv1_metadata import get_metadata
@@ -1575,6 +1584,7 @@ At each of the same positions, **32 random bins** from the full output window ar
 | Borzoi | 7,611 | 17,908–51,831 | 19,548–75,021 | gene-anchored + cCRE (17,909) | 804 MB |
 | ChromBPNet | 753 | 18,672–37,344 | 34,004–68,008 | uniform + DHS summits (18,672) | 79 MB |
 | Cherimoya (CATv1) | 1,518 | 18,672 | 34,004 | uniform + DHS summits (18,672) | 162 MB |
+| Cherimoya (BATv1) | 3,429 | 18,672 | 34,004 | uniform + DHS summits (18,672) | 355 MB |
 | Sei | 21,947 | 17,909 | 29,004 | gene-anchored + cCRE (17,909) | 1.5 GB |
 | LegNet | 3 | 17,805 | 29,002 | promoter-anchored (17,805) | 200 KB |
 | EPInformer-seq | 33 | 17,909 | 34,002 | gene-anchored + cCRE (17,909) | 2 MB |
