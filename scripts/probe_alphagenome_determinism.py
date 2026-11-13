@@ -121,7 +121,10 @@ def main() -> int:
         raise SystemExit("model did not load in-process")
     print(f"[{args.tag}] model loaded in {time.time() - t0:.0f}s", flush=True)
 
-    from alphagenome.models.dna_output import OutputType
+    try:  # alphagenome >= 2.0 moved modules under models/v1
+        from alphagenome.models.v1.dna_output import OutputType
+    except ImportError:  # alphagenome < 2.0
+        from alphagenome.models.dna_output import OutputType
     from chorus.oracles.alphagenome_source.alphagenome_metadata import (
         SKIPPED_OUTPUT_TYPES,
     )

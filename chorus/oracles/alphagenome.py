@@ -439,7 +439,10 @@ class AlphaGenomeOracle(OracleBase):
             get_metadata,
             SKIPPED_OUTPUT_TYPES,
         )
-        from alphagenome.models.dna_output import OutputType
+        try:  # alphagenome >= 2.0 moved modules under models/v1
+            from alphagenome.models.v1.dna_output import OutputType
+        except ImportError:  # alphagenome < 2.0
+            from alphagenome.models.dna_output import OutputType
 
         metadata = get_metadata()
 

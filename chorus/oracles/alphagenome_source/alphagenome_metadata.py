@@ -52,8 +52,14 @@ CACHE_FILE = os.path.join(MODULE_DIR, "alphagenome_tracks.json")
 
 def _build_track_list_from_package() -> List[dict]:
     """Build track metadata from the installed alphagenome_research package."""
-    from alphagenome.models.dna_output import OutputType
-    from alphagenome.models.dna_model import Organism
+    try:  # alphagenome >= 2.0 moved modules under models/v1
+        from alphagenome.models.v1.dna_output import OutputType
+    except ImportError:  # alphagenome < 2.0
+        from alphagenome.models.dna_output import OutputType
+    try:  # alphagenome >= 2.0 moved modules under models/v1
+        from alphagenome.models.v1.dna_model import Organism
+    except ImportError:  # alphagenome < 2.0
+        from alphagenome.models.dna_model import Organism
     from alphagenome_research.model.metadata import metadata as metadata_lib
 
     output_metadata = metadata_lib.load(Organism.HOMO_SAPIENS)
