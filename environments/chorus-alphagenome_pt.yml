@@ -35,4 +35,11 @@ dependencies:
     - anndata
     - pyarrow
 
-    - alphagenome-pytorch[scoring] @ git+https://github.com/genomicsxai/alphagenome-pytorch.git
+    # Pinned to the commit chorus validated this backend against (#239-#241, 2026-08-17/18), and
+    # to the alphagenome release that build used. Unpinned, a fresh env runs whatever upstream
+    # HEAD is: 10 commits have landed since, including a track-strand fix and a junction-head
+    # change, none checked against the JAX null this backend borrows through the #241 alias.
+    # alphagenome must be pinned too: at this commit the [scoring] extra requires an unbounded
+    # alphagenome, so pip would take 2.0.0, which removed the legacy import paths (see #249/#250).
+    - alphagenome-pytorch[scoring] @ git+https://github.com/genomicsxai/alphagenome-pytorch.git@473d3d226b3a0aec754fb47cb6fcab1028829435
+    - alphagenome==0.7.0
