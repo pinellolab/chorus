@@ -12,7 +12,7 @@ chorus/
 │   ├── interval.py      # Genomic interval utilities
 │   ├── exceptions.py    # Custom exceptions
 │   └── environment/     # Isolated conda-env runner (runner.py, manager.py)
-├── oracles/             # 6 oracles + a second AlphaGenome backend (PyTorch)
+├── oracles/             # 8 oracles + a second AlphaGenome backend (PyTorch)
 │   ├── enformer.py
 │   ├── borzoi.py
 │   ├── chrombpnet.py
@@ -31,7 +31,7 @@ chorus/
 │   ├── normalization.py         # PerTrackNormalizer (CDF-based percentiles)
 │   ├── analysis_request.py      # User-prompt preservation on every report
 │   └── _igv_report.py           # IGV browser HTML (igv.js inlined; genome fetched, #139)
-├── mcp/                 # FastMCP server (22 tools)
+├── mcp/                 # FastMCP server (27 tools)
 │   ├── server.py
 │   ├── state.py
 │   └── serializers.py

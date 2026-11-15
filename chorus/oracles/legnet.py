@@ -117,13 +117,32 @@ class LegNetOracle(OracleBase):
         with open(path) as inp:
             return inp.read(), "__ARGS_FILE_NAME__"
     
-    def load_pretrained_model(self, weights: str | None = None) -> None:
-        """Load LegNet model weights."""
+    def load_pretrained_model(self, weights: str | None = None, cell_type: str | None = None) -> None:
+        """Load LegNet model weights.
+
+        ``cell_type`` switches cells without re-instantiating, the same contract as
+        ``EPInformerSeqOracle.load_pretrained_model``. Without it, the MCP ``load_oracle`` tool
+        (which passes ``cell_type`` at load time, as it must for ChromBPNet, Cherimoya and
+        EPInformer-seq) raised ``TypeError`` for LegNet, so only the HepG2 default was reachable
+        over MCP; and ``discover_variant`` — which loads each cell type with
+        ``load_pretrained_model(cell_type=...)`` — failed all three LegNet models and reported
+        nothing.
+        """
         # Raise EnvironmentNotReadyError up-front if env setup failed and
         # the user explicitly asked for use_environment=True (issue #64).
         self._check_env_ready()
         if weights is not None:
             self.model_dir = weights
+        if cell_type is not None and cell_type != self.cell_type:
+            if cell_type not in LEGNET_AVAILABLE_CELLTYPES:
+                raise LegNetError(
+                    f"Cell line {cell_type} not in available cell types: {LEGNET_AVAILABLE_CELLTYPES}"
+                )
+            self.cell_type = cell_type
+            self.assay_id = f"{self.assay}:{self.cell_type}"
+            self._model = None
+            self.loaded = False
+            self._model_info = None
 
         if self.use_environment:
             self._load_in_environment()

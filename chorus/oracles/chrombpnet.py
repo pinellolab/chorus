@@ -82,6 +82,8 @@ class ChromBPNetOracle(OracleBase):
         self.assay = None
         self.cell_type = None
         self.fold = 0
+        self.tf = None
+        self.model_type = None
 
     def get_encode_link(self, idx: str) -> str:
         return f"https://www.encodeproject.org/files/{idx}/@@download/{idx}.tar.gz"
@@ -427,11 +429,15 @@ class ChromBPNetOracle(OracleBase):
                     "You must provide `weights` when `is_custom=True`."
                 )
             
-        # Store assay and celltype
+        # Store assay and celltype. `model_type` too: it selects a different network
+        # (bias-aware vs nobias), and the MCP state manager compares it on a repeat
+        # load_oracle call -- unrecorded, a request for 'chrombpnet' was accepted as
+        # 'already_loaded' while 'chrombpnet_nobias' stayed loaded.
         self.assay = assay
         self.cell_type = cell_type
         self.fold = fold
         self.tf = TF
+        self.model_type = model_type
 
         # Load JASPAR metadata if TF is set
         if TF is not None:
