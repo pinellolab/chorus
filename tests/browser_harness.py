@@ -146,6 +146,14 @@ UNREACHABLE_SIGNATURES = (
     # on a change that touched no browser code. Narrow on purpose: this is igv.js's fixed prefix, and
     # the caller still requires every implicated URL to resolve to a REFERENCE_SEQUENCE_HOSTS entry.
     "IGV error: Timed out",
+    # The third shape, from CI on 2026-11-15 (run 43761862909, the push of #249, which touched only
+    # Python imports): UCSC answered hg38.2bit without an Access-Control-Allow-Origin header, as its
+    # servers do when they fail mid-request, so Chromium reported a CORS block plus a bare
+    # "net::ERR_FAILED" alongside igv.js's "Status: 0". The same corpus passed seven minutes later.
+    # Both are narrow, and the URL rule below still applies: a CORS failure on any host other than
+    # a REFERENCE_SEQUENCE_HOSTS entry fails rather than skips.
+    "blocked by CORS policy",
+    "net::ERR_FAILED",
 )
 
 
