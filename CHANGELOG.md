@@ -26,6 +26,20 @@ project adheres to [Semantic Versioning](https://semver.org/).
   own chromosome-1 length, raising on a confident mismatch rather than silently scoring the
   wrong genome build.
 
+### Fixed — fresh AlphaGenome envs
+
+- **A freshly built `chorus-alphagenome` env failed at `predict()`.**
+  `environments/chorus-alphagenome.yml` installed `alphagenome` and `alphagenome-research` from
+  git with no ref, so a build after 2026-11-11 took alphagenome 2.0.0, which removed the legacy
+  `alphagenome.models.*` import paths: the model loaded, then every prediction raised
+  `No module named 'alphagenome.models.dna_output'`. Both are now pinned to full commit shas,
+  the pair the shipped AlphaGenome backgrounds and examples were produced with
+  (`alphagenome@3563ebf`, `alphagenome_research@1e55dcf`), and
+  `tests/test_alphagenome_deps_are_pinned.py` fails on an unpinned git dep. Existing envs are
+  unaffected. Reported, with a forward-compatible import fix, by
+  [@starrzy](https://github.com/starrzy) in
+  [#249](https://github.com/pinellolab/chorus/pull/249) — thanks!
+
 ### Fixed — review of the conservation / annotation-store work
 
 - **Conservation tracks were plotted onto non-hg38 reports.** Every source chorus wraps is
