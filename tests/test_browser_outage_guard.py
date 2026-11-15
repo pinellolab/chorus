@@ -165,3 +165,44 @@ def test_the_igv_timeout_signature_did_not_widen_the_guard():
     assert bh.unreachable_external_host(_fake(
         console=["error: something genuinely broke in the report"],
         external=_UCSC)) is None, "an unrelated console error was excused"
+
+
+#: Verbatim from CI on 2026-11-15 (run 43761862909), clipped at 200 characters exactly as
+#: `render()` records console messages, so the guard is pinned to what it actually sees.
+_REAL_CORS_OUTAGE = [
+    "error: Access to XMLHttpRequest at 'https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/"
+    "hg38.2bit' from origin 'null' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' "
+    "header is present o",
+    "error: IGV error: Error accessing resource: "
+    "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.2bit Status: 0",
+    "error: Failed to load resource: net::ERR_FAILED",
+]
+
+
+def test_a_cors_shaped_ucsc_failure_is_recognised():
+    """The third outage shape: UCSC replies without CORS headers when it fails mid-request.
+
+    It turned the push build of #249 red, a change to Python imports only, and the same corpus
+    passed seven minutes later. Chromium reports it as a CORS block plus a bare net::ERR_FAILED,
+    neither of which the signature list knew.
+    """
+    why = bh.unreachable_external_host(_fake(console=_REAL_CORS_OUTAGE, external=_UCSC))
+    assert why and "hgdownload.soe.ucsc.edu" in why, (
+        f"a CORS-shaped UCSC failure is not recognised as an outage, so it fails the build: {why!r}"
+    )
+
+
+def test_the_cors_signatures_did_not_widen_the_guard():
+    """A CORS block is an outage only on the reference host, and never excuses uncaught JS."""
+    foreign = ("error: Access to XMLHttpRequest at 'https://cdn.example.com/t.bw' from origin 'null' "
+               "has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present")
+    assert bh.unreachable_external_host(_fake(
+        console=[foreign], external=["https://cdn.example.com/t.bw"] + _UCSC)) is None, (
+        "a CORS block on a non-reference host was excused; that is a report defect, not weather")
+    assert bh.unreachable_external_host(_fake(
+        console=_REAL_CORS_OUTAGE, external=_UCSC,
+        page=["TypeError: Cannot read properties of undefined"])) is None, "uncaught JS was excused"
+    assert bh.unreachable_external_host(_fake(
+        console=["error: Failed to load resource: net::ERR_FAILED"],
+        external=["https://cdn.example.com/t.bw"])) is None, (
+        "a bare ERR_FAILED from a foreign host was excused")

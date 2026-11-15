@@ -136,6 +136,16 @@ what an agent does, and the sweep turned up behaviour bugs in the same layer.
   the example searches and each truncation-note example return tracks, that assay types match
   the metadata, and pins each behaviour fix.
 
+### Fixed — a UCSC hiccup turned CI red
+
+- **The browser smoke job failed on an outage shape its guard did not know.** Committed reports
+  fetch hg38 from UCSC when opened. On 2026-11-15 UCSC answered without CORS headers, Chromium
+  reported `blocked by CORS policy` and a bare `net::ERR_FAILED`, and the push build of #249
+  failed. That change touched only Python imports, and the same corpus passed seven minutes
+  later. `tests/browser_harness.py` now recognises both signatures. The rule that every failing
+  URL must belong to the reference host still holds, so a CORS failure anywhere else still fails.
+  The run's errors are pinned verbatim in `tests/test_browser_outage_guard.py`.
+
 ### Changed
 
 - **One `hf_download_flat` helper** replaces two line-for-line copies of the HF
