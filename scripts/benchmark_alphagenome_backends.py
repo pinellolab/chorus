@@ -90,9 +90,9 @@ JAX_INNER = textwrap.dedent(
         os.environ["JAX_PLATFORMS"] = "cpu"
     import jax
     from alphagenome_research.model.dna_model import create_from_huggingface
-    try:  # alphagenome >= 2.0 moved modules under models/v1
+    try:  # alphagenome >= 0.10 (required from 2.0)
         from alphagenome.models.v1.dna_output import OutputType
-    except ImportError:  # alphagenome < 2.0
+    except ImportError:  # alphagenome < 0.10
         from alphagenome.models.dna_output import OutputType
 
     jax_device = jax.devices("gpu")[0] if "gpu" in {d.platform for d in jax.devices()} else jax.devices("cpu")[0]

@@ -142,7 +142,7 @@ def main() -> int:
     index = build_transcript_exon_index()
 
     from chorus.oracles.alphagenome import AlphaGenomeOracle
-    from alphagenome.models.dna_output import OutputType
+    from chorus.oracles.alphagenome_source.compat import OutputType
     from chorus.oracles.alphagenome_source.alphagenome_metadata import get_metadata
 
     oracle = AlphaGenomeOracle(use_environment=False)
