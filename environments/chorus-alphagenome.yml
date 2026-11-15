@@ -54,6 +54,10 @@ dependencies:
     - anndata
     - pyarrow
 
-    # AlphaGenome packages (installed from GitHub)
-    - alphagenome @ git+https://github.com/google-deepmind/alphagenome.git
-    - alphagenome-research @ git+https://github.com/google-deepmind/alphagenome_research.git
+    # AlphaGenome packages (installed from GitHub), pinned to the exact pair the shipped
+    # alphagenome backgrounds and examples were produced with. Unpinned, a fresh build now
+    # gets alphagenome 2.0.0, which removed the legacy `alphagenome.models.*` import paths
+    # (see PR #249), and research HEAD, which requires the v1 layout. The two must move
+    # together: research <= 1e55dcf needs the legacy paths; research HEAD needs >= 0.10.
+    - alphagenome @ git+https://github.com/google-deepmind/alphagenome.git@3563ebfc94be2de6e7ffb03b08c9e48fe9cd8524
+    - alphagenome-research @ git+https://github.com/google-deepmind/alphagenome_research.git@1e55dcffb98ba26b31e74edc5e9f038f54c0e89d
