@@ -39,6 +39,15 @@ project adheres to [Semantic Versioning](https://semver.org/).
   unaffected. Reported, with a forward-compatible import fix, by
   [@starrzy](https://github.com/starrzy) in
   [#249](https://github.com/pinellolab/chorus/pull/249) — thanks!
+- **The PyTorch AlphaGenome backend had the same unpinned git dependency.**
+  `environments/chorus-alphagenome_pt.yml` installed `alphagenome-pytorch` from git with no ref,
+  so a fresh `chorus-alphagenome_pt` env ran whatever upstream HEAD was that day, which is 10
+  commits past the build chorus validated (#239-#241). Those commits include a track-strand fix
+  and a junction-head change, and the backend borrows the JAX null through the #241 alias. It
+  is now pinned to that commit (`473d3d2`), with `alphagenome==0.7.0` alongside: at that commit
+  the `[scoring]` extra leaves `alphagenome` unbounded, so pip would otherwise resolve 2.0.0.
+  `tests/test_alphagenome_deps_are_pinned.py` now holds every git dep in every env file to a
+  full commit sha.
 
 ### Fixed — review of the conservation / annotation-store work
 

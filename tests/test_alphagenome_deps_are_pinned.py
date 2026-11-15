@@ -52,3 +52,50 @@ def test_each_alphagenome_git_dep_is_pinned_to_a_full_commit_sha():
             f"{name} is pinned to {ref!r}. Use a full 40-character commit sha: a branch moves, "
             f"and alphagenome-research's tag/version string does not identify its import layout."
         )
+
+
+# ── every git dep in every env file, and the PyTorch backend's alphagenome ────────────────────
+#
+# The tests above cover one file. The PyTorch backend (environments/chorus-alphagenome_pt.yml)
+# had the same defect -- alphagenome-pytorch from git with no ref -- and nothing looked at it.
+# Generalised so a git dep added to any env file later is held to the same rule.
+
+_ANY_GIT_DEP = re.compile(r"^\s*-\s*(?P<spec>[A-Za-z0-9_.\-\[\]]+)\s*@\s*git\+(?P<url>\S+)\s*$")
+ENV_FILES = sorted([REPO / "environment.yml", *(REPO / "environments").glob("*.yml")])
+
+
+def _all_git_deps():
+    for env_file in ENV_FILES:
+        for line in env_file.read_text().splitlines():
+            m = _ANY_GIT_DEP.match(line)
+            if m:
+                url, _, ref = m.group("url").rpartition("@") if "@" in m.group("url") else (m.group("url"), "", "")
+                yield env_file.name, m.group("spec"), (ref or None)
+
+
+def test_the_env_scan_sees_the_known_git_deps():
+    found = {(f, spec) for f, spec, _ in _all_git_deps()}
+    for expected in [("chorus-alphagenome.yml", "alphagenome"),
+                     ("chorus-alphagenome.yml", "alphagenome-research"),
+                     ("chorus-alphagenome_pt.yml", "alphagenome-pytorch[scoring]"),
+                     ("environment.yml", "coolbox")]:
+        assert expected in found, f"the env-file scan no longer sees {expected}; fix the parser"
+
+
+def test_every_git_dep_in_every_env_file_is_pinned_to_a_full_commit_sha():
+    unpinned = [f"{f}: {spec} @ {ref or '(no ref)'}" for f, spec, ref in _all_git_deps()
+                if not (ref and re.fullmatch(r"[0-9a-f]{40}", ref))]
+    assert not unpinned, (
+        "git deps without a full commit sha make every fresh build take that repo's HEAD:\n"
+        + "\n".join(unpinned)
+    )
+
+
+def test_the_pytorch_backend_pins_alphagenome_below_2():
+    """At the pinned alphagenome-pytorch commit the [scoring] extra leaves alphagenome
+    unbounded, so without this line pip resolves alphagenome 2.0.0."""
+    text = (REPO / "environments" / "chorus-alphagenome_pt.yml").read_text()
+    m = re.search(r"^\s*-\s*alphagenome\s*(==|<|<=|~=)\s*([0-9][^\s#]*)", text, re.M)
+    assert m, "chorus-alphagenome_pt.yml must pin or upper-bound alphagenome"
+    major = int(m.group(2).split(".")[0])
+    assert major < 2 or m.group(1) == "<", f"alphagenome is pinned to {m.group(2)}, which is >= 2"
