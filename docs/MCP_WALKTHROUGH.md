@@ -32,7 +32,8 @@ what a user types in natural language and what Claude returns.
    > *"What chorus oracles are available, and which ones do I have set up locally?"*
 
    Claude should call `list_oracles` and `oracle_status` and reply with
-   the 6 oracle names plus an "installed / not installed" status per
+   the 9 oracle names (8 oracles; AlphaGenome has two backends) plus an
+   "installed / not installed" status per
    oracle. If you instead see "I don't have access to chorus tools",
    the MCP install above didn't take effect — restart Claude Code or
    double-check your `.mcp.json` / `claude mcp list` output.

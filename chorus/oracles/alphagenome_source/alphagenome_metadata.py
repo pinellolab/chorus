@@ -1,8 +1,10 @@
 """
 AlphaGenome track metadata.
 
-AlphaGenome predicts 5,731 human functional genomic tracks across multiple
-modalities.  Track information is obtained programmatically from the
+AlphaGenome predicts 5,168 human functional genomic tracks across multiple
+modalities. Its metadata table has 5,731 rows: the other 563 are ``padding``
+placeholders that keep ``local_index`` aligned with the model's output array
+(see ``iter_tracks``). Track information is obtained programmatically from the
 alphagenome_research metadata module.
 
 When the alphagenome packages are not installed (e.g. in the main chorus
@@ -174,7 +176,11 @@ class AlphaGenomeMetadata:
         self._track_index_map = {
             t["identifier"]: t["index"] for t in self._tracks
         }
-        logger.info(f"Loaded {len(self._tracks)} AlphaGenome tracks")
+        n_real = sum(1 for _ in self.iter_tracks())
+        logger.info(
+            f"Loaded {n_real} AlphaGenome tracks "
+            f"({len(self._tracks)} metadata rows incl. {len(self._tracks) - n_real} padding)"
+        )
 
     # ------------------------------------------------------------------
     # Public API (mirrors BorzoiMetadata interface)
@@ -229,8 +235,9 @@ class AlphaGenomeMetadata:
         )
 
     def get_track_summary(self) -> Dict[str, int]:
+        """Track count per chorus type, padding excluded (it sums to 5,168, not 5,731)."""
         summary: Dict[str, int] = {}
-        for t in self._tracks:
+        for t in self.iter_tracks():
             ct = t["chorus_type"]
             summary[ct] = summary.get(ct, 0) + 1
         return summary
@@ -248,13 +255,18 @@ class AlphaGenomeMetadata:
         ``df[df['identifier'].str.contains('HepG2')]`` will get 0 hits;
         prefer this method, which searches all four fields and returns
         the same DataFrame.
+
+        Padding placeholder rows are never returned. They used to be: their
+        ``output_type`` matched, so ``search_tracks('PROCAP')`` gave 128 rows
+        of which 116 were ``PROCAP/Padding/./N`` placeholders, and the MCP
+        ``list_tracks`` tool handed those to agents as if they were tracks.
         """
         import pandas as pd
 
         query_lower = query.lower()
         matches = [
             t
-            for t in self._tracks
+            for t in self.iter_tracks()
             if query_lower in t.get("identifier", "").lower()
             or query_lower in t.get("name", "").lower()
             or query_lower in t.get("description", "").lower()

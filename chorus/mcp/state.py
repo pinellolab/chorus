@@ -49,6 +49,110 @@ class OracleStateManager:
     # Oracle lifecycle
     # ------------------------------------------------------------------
 
+    #: Model-selecting load arguments, and the oracle attribute each one is recorded under once a
+    #: model is loaded (ChromBPNet stores ``TF`` as ``tf``). Read back from the oracle rather than
+    #: from the arguments of the original call, because ``discover_variant`` reloads per-model
+    #: oracles in place and leaves whichever model it visited last.
+    _SELECTION_ATTRS = {
+        "assay": "assay", "cell_type": "cell_type", "TF": "tf",
+        "fold": "fold", "model_type": "model_type", "encode_id": "encode_id",
+    }
+
+    @staticmethod
+    def _selection_params(fn):
+        """The model-selecting argument names ``fn`` accepts, or None if it takes ``**kwargs``
+        (then it cannot be vetted, so everything is passed through as before)."""
+        import inspect
+
+        try:
+            params = inspect.signature(fn).parameters
+        except (TypeError, ValueError):
+            return None
+        if any(p.kind is p.VAR_KEYWORD for p in params.values()):
+            return None
+        return set(params) & set(OracleStateManager._SELECTION_ATTRS)
+
+    @classmethod
+    def _refuse_unknown_selection(cls, name: str, oracle, requested: dict) -> None:
+        """Refuse, by name, a selection argument this oracle takes neither at load nor at init.
+
+        Without this the argument reached ``load_pretrained_model`` and surfaced as a bare
+        ``TypeError`` from inside the load -- or, on a repeat call, as advice to unload and load
+        again, which then failed the same way and lost the working model.
+        """
+        at_load = cls._selection_params(oracle.load_pretrained_model)
+        at_init = cls._selection_params(type(oracle).__init__)
+        if at_load is None or at_init is None:
+            return
+        takes = at_load | at_init
+        unknown = sorted(k for k, v in requested.items() if v is not None and k not in takes)
+        if unknown:
+            raise ValueError(
+                f"{name} does not take {', '.join(unknown)}. Its model is chosen with "
+                f"{', '.join(sorted(takes)) or 'no arguments'}."
+            )
+
+    def _loaded_selection(self, oracle) -> dict:
+        """Which model a loaded oracle holds, read from the oracle itself."""
+        loaded = {}
+        for key, attr in self._SELECTION_ATTRS.items():
+            value = getattr(oracle, attr, None)
+            if isinstance(value, (str, int, float)) and not isinstance(value, bool):
+                loaded[key] = value
+        return loaded
+
+    def _already_loaded(self, name: str, requested: dict) -> dict:
+        """Answer a repeat ``load_oracle`` call without silently serving a different model.
+
+        This used to return ``already_loaded`` whatever was asked for. ChromBPNet, Cherimoya,
+        LegNet and EPInformer-seq hold one model per load, so ``load_oracle('chrombpnet',
+        assay='DNASE', cell_type='K562')`` after HepG2 reported success and kept HepG2 — and the
+        reply did not say which model was loaded, so a caller had no way to notice.
+        """
+        oracle = self._oracles[name]
+        self._refuse_unknown_selection(name, oracle, requested)
+        loaded = self._loaded_selection(oracle)
+
+        def _same(a, b) -> bool:
+            if isinstance(a, str) and isinstance(b, str):
+                return a.lower() == b.lower()
+            return a == b
+
+        # Compare against the attribute itself, not only the displayed values: a ChromBPNet
+        # DNASE model has `tf = None`, and a request for TF='CTCF' is a different model, not an
+        # unverifiable one. Only an attribute the oracle does not have at all is unverifiable.
+        _missing = object()
+        mismatched = {}
+        unverified = []
+        for k, v in requested.items():
+            if v is None:
+                continue
+            have = getattr(oracle, self._SELECTION_ATTRS[k], _missing)
+            if have is _missing:
+                unverified.append(k)
+            elif not _same(have, v):
+                mismatched[k] = v
+        if mismatched:
+            asked = ", ".join(f"{k}={v!r}" for k, v in mismatched.items())
+            have = ", ".join(f"{k}={v!r}" for k, v in loaded.items())
+            raise ValueError(
+                f"{name} is already loaded with a different model ({have}); this call asked for "
+                f"{asked}. One model is held per oracle name: call unload_oracle({name!r}) and "
+                f"then load_oracle again to switch."
+            )
+        result = {
+            "name": name,
+            "status": "already_loaded",
+            "load_time_seconds": self._load_times.get(name),
+            "loaded_model": loaded,
+        }
+        if unverified:
+            result["note"] = (
+                f"Could not confirm {', '.join(sorted(unverified))} against the loaded model; if you need "
+                f"a different one, call unload_oracle({name!r}) first."
+            )
+        return result
+
     def load_oracle(
         self,
         name: str,
@@ -61,11 +165,7 @@ class OracleStateManager:
         """
         name = name.lower()
         if name in self._oracles:
-            return {
-                "name": name,
-                "status": "already_loaded",
-                "load_time_seconds": self._load_times.get(name),
-            }
+            return self._already_loaded(name, kwargs)
 
         from chorus import create_oracle
 
@@ -90,7 +190,19 @@ class OracleStateManager:
         t0 = time.time()
         oracle = create_oracle(name, use_environment=True, **oracle_kwargs)
 
-        load_kwargs = {k: kwargs[k] for k in _LOAD_ONLY_KEYS if k in kwargs}
+        # Route each selection argument to where this oracle takes it. Most per-model oracles
+        # choose their model in load_pretrained_model, but EPInformer-seq takes `assay` (and
+        # AlphaGenome/Borzoi take `fold`) only in the constructor -- sent to the load call, those
+        # raised TypeError, so 22 of EPInformer-seq's 33 tracks were unreachable over MCP.
+        selection = {k: kwargs[k] for k in _LOAD_ONLY_KEYS if k in kwargs}
+        self._refuse_unknown_selection(name, oracle, selection)
+        at_load = self._selection_params(oracle.load_pretrained_model)
+        if at_load is None:
+            at_load = set(selection)
+        load_kwargs = {k: v for k, v in selection.items() if k in at_load}
+        at_init = {k: v for k, v in selection.items() if k not in at_load}
+        if at_init:
+            oracle = create_oracle(name, use_environment=True, **oracle_kwargs, **at_init)
         oracle.load_pretrained_model(**load_kwargs)
 
         elapsed = time.time() - t0
@@ -109,6 +221,7 @@ class OracleStateManager:
             "status": "loaded",
             "device": resolved_device,
             "load_time_seconds": self._load_times[name],
+            "loaded_model": self._loaded_selection(oracle),
         }
         normalizer = self._normalizers.get(name)
         if normalizer is not None:
@@ -228,6 +341,9 @@ class OracleStateManager:
                 "name": name,
                 "device": getattr(oracle, "device", None),
                 "load_time_seconds": self._load_times.get(name),
+                # Read live: discover_variant reloads per-model oracles in place, so the model
+                # held now can differ from the one load_oracle was asked for.
+                "loaded_model": self._loaded_selection(oracle),
             }
             normalizer = self._normalizers.get(name)
             if normalizer is not None:

@@ -52,7 +52,8 @@ ALLOWED_IN_CONTEXT = {
     "5,731 rows",
     # Filtered subsets, not totals.
     "266 tracks",
-    "1504 tracks",
+    # What list_tracks("alphagenome", query="RNA") returns: a search result, not the oracle's total.
+    "1,403 rows",
 }
 
 

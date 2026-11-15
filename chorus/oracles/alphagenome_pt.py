@@ -141,7 +141,7 @@ class AlphaGenomePTOracle(OracleBase):
     """AlphaGenome PyTorch-port oracle (opt-in backend).
 
     Mirrors :class:`AlphaGenomeOracle` shape; differs only in load + forward.
-    Shares the 5,731-track metadata cache and `Track` conversion conventions
+    Shares the metadata cache (5,168 tracks plus 563 padding rows) and `Track` conversion conventions
     so percentile CDFs, walkthroughs, and report templates port over without
     schema changes.
     """

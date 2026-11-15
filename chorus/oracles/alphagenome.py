@@ -22,9 +22,10 @@ logger = logging.getLogger(__name__)
 class AlphaGenomeOracle(OracleBase):
     """AlphaGenome oracle with automatic environment management.
 
-    AlphaGenome (Google DeepMind, Nature 2026) predicts 5,731 human functional
+    AlphaGenome (Google DeepMind, Nature 2026) predicts 5,168 human functional
     genomic tracks at single base-pair resolution from up to 1 MB of DNA
-    sequence using a JAX-based model.
+    sequence using a JAX-based model. (Its metadata table has 5,731 rows; the
+    other 563 are ``padding`` placeholders, not tracks.)
 
     Track identifiers use the AlphaGenome naming convention, e.g.
     ``"CL:0000084 ATAC-seq"`` for T-cell ATAC-seq. Use
@@ -274,7 +275,7 @@ class AlphaGenomeOracle(OracleBase):
 
         # Fail-safe memory guard. Scoring every track at a large (1 bp-
         # resolution, up to 1 Mb) window materialises one array per track of up
-        # to ``output_size`` floats; with all ~5,731 tracks at 1 Mb that is tens
+        # to ``output_size`` floats; with all 5,168 tracks at 1 Mb that is tens
         # of GB once the result is serialised back from the env subprocess,
         # which can OOM-kill the host process (observed: it took down the MCP
         # server). Estimate the allocation conservatively and fail loudly

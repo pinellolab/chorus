@@ -228,7 +228,7 @@ list_tracks("alphagenome", query="hepatocyte")   # CAGE/RNA for liver
 list_tracks("alphagenome", query="K562")          # CAGE for erythroid
 list_tracks("alphagenome", query="fat")           # CAGE for adipocyte
 list_tracks("alphagenome", query="GATA1")         # TF ChIP
-list_tracks("alphagenome", query="RNA")           # RNA-seq (1504 tracks!)
+list_tracks("alphagenome", query="RNA")           # 1,403 rows: 667 RNA-seq + 734 splice-site usage + 2 CAGE
 list_tracks("alphagenome", query="DNASE")         # Accessibility
 ```
 Track ID format: `CAGE/hCAGE CL:0000182/+`, `CHIP_TF/EFO:0002067 TF ChIP-seq GATA1/.`

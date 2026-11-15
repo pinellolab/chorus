@@ -37,14 +37,17 @@ _INSTRUCTIONS = (
     "Discover tracks, load models, make predictions, and analyse variant effects. "
     "Use `recommend_alphagenome_backend` to choose between the JAX and "
     "PyTorch AlphaGenome backends for a given window size. "
-    "SCORE EACH VARIANT ONCE: every oracle returns ALL of its tracks (every cell "
-    "type, assay, and TF) from a SINGLE forward pass, so one call to "
-    "`predict_variant_effect`, `analyze_variant_multilayer`, or `discover_variant` "
+    "SCORE EACH VARIANT ONCE: Enformer, Borzoi, AlphaGenome and Sei return ALL of "
+    "their tracks (every cell type, assay, and TF) from a SINGLE forward pass, so one "
+    "call to `predict_variant_effect`, `analyze_variant_multilayer`, or `discover_variant` "
     "already covers every track — never loop a scoring tool once per track or per "
     "cell type (that re-runs the model needlessly and can turn minutes into hours). "
+    "ChromBPNet, Cherimoya, LegNet and EPInformer-seq hold ONE model (one cell type or "
+    "experiment) per load: a call scores that model's tracks, and `discover_variant` "
+    "iterates their models for you. "
     "To score MANY variants (a GWAS credible set, fine-mapping, or a VCF), use the "
-    "dedicated multi-variant tools — `fine_map_causal_variant`, `score_variant_batch`, "
-    "and `discover_variant_cell_types` — which score each variant exactly once."
+    "dedicated multi-variant tools — `fine_map_causal_variant` and `score_variant_batch` "
+    "— which score each variant exactly once."
 )
 
 mcp = FastMCP("Chorus Genomics", instructions=_INSTRUCTIONS)
@@ -57,7 +60,7 @@ ORACLE_SPECS = {
         "input_size_bp": 393_216,
         "output_bins": 896,
         "resolution_bp": 128,
-        "assay_types": ["DNASE", "ATAC", "CAGE", "CHIP", "RNA"],
+        "assay_types": ["DNASE", "ATAC", "CAGE", "CHIP"],
     },
     "borzoi": {
         "description": "Borzoi — high-resolution gene expression & chromatin prediction",
@@ -84,7 +87,10 @@ ORACLE_SPECS = {
         "assay_types": ["ATAC", "DNASE"],
     },
     "sei": {
-        "description": "Sei — sequence-level regulatory element classification",
+        "description": (
+            "Sei — 40 regulatory sequence classes plus 21,907 chromatin-profile "
+            "predictions (DNase/ATAC, histone and TF ChIP) from 4 kb of sequence"
+        ),
         "framework": "PyTorch",
         "input_size_bp": 4_096,
         "output_bins": 1,
@@ -117,7 +123,7 @@ ORACLE_SPECS = {
         ],
     },
     "alphagenome": {
-        "description": "AlphaGenome (DeepMind) — 1-bp resolution across 5,731 tracks",
+        "description": "AlphaGenome (DeepMind) — 5,168 tracks from a 1 Mb window, at 1-bp resolution (128 bp for ChIP)",
         "framework": "JAX",
         "input_size_bp": 1_048_576,
         "output_bins": 1_048_576,
@@ -128,7 +134,7 @@ ORACLE_SPECS = {
         "description": (
             "AlphaGenome (DeepMind) — PyTorch backend. Second of two "
             "interchangeable AlphaGenome oracles (the other is "
-            "`alphagenome`, JAX). Same 5,731-track schema, same weights "
+            "`alphagenome`, JAX). Same 5,168-track schema, same weights "
             "— `gtca/alphagenome_pytorch` is the official JAX checkpoint "
             "converted to safetensors and produces equivalent outputs "
             "(1–2 % per-track fp32 noise, verified on M3 Ultra + A100). "
@@ -289,7 +295,7 @@ def recommend_alphagenome_backend(window_size_bp: int) -> dict:
 
     Two AlphaGenome backends ship with chorus: the JAX reference (`alphagenome`,
     default) and the upstream PyTorch port (`alphagenome_pt`, opt-in). Their
-    public API is interchangeable — same 5,731-track schema, same predict
+    public API is interchangeable — same 5,168-track schema, same predict
     surface — but speed profiles differ by platform and window size:
 
     - macOS + MPS, ≤600 kb: PyTorch backend wins (5–8× over JAX CPU).
@@ -343,6 +349,16 @@ def list_oracles() -> dict:
 
 _TRACK_RESULT_CAP = 200
 
+#: A narrowing query known to return tracks on each oracle, quoted in the truncation note. It must
+#: be per oracle: 'DNASE:HepG2' finds tracks on AlphaGenome, Enformer, Borzoi and ChromBPNet but
+#: nothing on Cherimoya (ids are ASSAY:ENCSR) or Sei (descriptions read 'DNase in HepG2'), which
+#: are among the searches that truncate most. Pinned by tests/test_mcp_agent_facing_text.py.
+_NARROWING_EXAMPLE = {
+    "alphagenome": "DNASE:HepG2", "alphagenome_pt": "DNASE:HepG2", "enformer": "DNASE:HepG2",
+    "borzoi": "DNASE:HepG2", "chrombpnet": "CHIP:HepG2", "cherimoya": "ENCSR000EOT",
+    "sei": "DNase in HepG2",
+}
+
 
 def _track_page(oracle_name: str, query: str, results: list) -> dict:
     """Cap a track search at ``_TRACK_RESULT_CAP`` rows and *say so in the payload*.
@@ -374,8 +390,10 @@ def _track_page(oracle_name: str, query: str, results: list) -> dict:
     if truncated:
         out["note"] = (
             f"{len(results)} tracks matched; showing the first {len(shown)}. "
-            "Narrow the query (e.g. add an assay or cell type) to see the rest — "
-            "'num_results' is the full match count."
+            "Narrow the query to see the rest — it is ONE substring that must appear verbatim "
+            "in a track's id or description, so copy a fragment from a returned row"
+            + (f" (e.g. '{_NARROWING_EXAMPLE[oracle_name]}')" if oracle_name in _NARROWING_EXAMPLE else "")
+            + "; 'DNASE HepG2' with a space matches nothing. 'num_results' is the full match count."
         )
     return out
 
@@ -388,8 +406,8 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
     Does not require the oracle to be loaded — uses metadata classes.
 
     Args:
-        oracle_name: Oracle name (enformer, borzoi, chrombpnet, cherimoya, sei, legnet, epinformerseq, alphagenome).
-        query: Optional search string to filter tracks (e.g. "K562", "DNASE"). Use the returned 'identifier' field as the assay_id for predictions.
+        oracle_name: Oracle name (enformer, borzoi, chrombpnet, cherimoya, sei, legnet, epinformerseq, alphagenome, alphagenome_pt).
+        query: Optional search string to filter tracks (e.g. "K562" on any oracle; "DNASE:HepG2" or "GATA1" on AlphaGenome, Enformer and Borzoi). It is ONE case-insensitive substring that must appear verbatim in a track's id or description, not a list of words: "DNASE HepG2" (with a space) matches nothing. Use the returned 'identifier' (Enformer, Borzoi, AlphaGenome) or 'track_id' (the other oracles) as the assay_id for predictions.
     """
     oracle_name = oracle_name.lower()
 
@@ -507,8 +525,9 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
         }
 
     if oracle_name in ("alphagenome", "alphagenome_pt"):
-        # Both backends share the same 5,731-track metadata cache; only
-        # the load + forward path differs. list_tracks routes through
+        # Both backends share the same metadata cache (5,731 rows: 5,168
+        # tracks plus 563 `padding` placeholders, which search_tracks skips);
+        # only the load + forward path differs. list_tracks routes through
         # the same metadata module either way.
         from chorus.oracles.alphagenome_source.alphagenome_metadata import get_metadata
         meta = get_metadata()
@@ -558,7 +577,11 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
             "num_tracks": len(records),
             "assay_types": sorted({r.assay for r in records if r.assay}),
             "cell_types": sorted({r.cell_type for r in records if r.cell_type}),
-            "note": "LegNet predicts lentiMPRA activity. Specify cell_type when loading.",
+            "note": (
+                "LegNet predicts lentiMPRA activity; one cell type per load. Choose it with "
+                "load_oracle('legnet', cell_type=...) (default HepG2); to switch, "
+                "unload_oracle('legnet') first."
+            ),
         }
 
     if oracle_name == "epinformerseq":
@@ -581,7 +604,8 @@ def list_tracks(oracle_name: str, query: Optional[str] = None) -> dict:
                 "2-channel per-cell PerCellProfileNetWide (ch0 DNase cut-site, ch1 "
                 "H3K27ac coverage) + frozen BiasNet. Assays: 'Enhancer_DNase' (default), "
                 "'Enhancer_H3K27ac', 'Enhancer_H3K27ac_DNase' (composite sqrt(D*H)), each "
-                "the max over the central 256 bp. Switch cells with load_pretrained_model(cell_type=...)."
+                "the max over the central 256 bp. One cell type per load: choose it with "
+                "load_oracle('epinformerseq', cell_type=...); to switch, unload_oracle('epinformerseq') first."
             ),
         }
 
@@ -706,8 +730,9 @@ def describe_annotation(annotation_id: str) -> dict:
 def download_annotation(annotation_id: str) -> dict:
     """Download (or confirm already-cached) an annotation by id.
 
-    WARNING: some conservation tracks are 7-44 GB; this can be a long-running,
-    large download. No-ops if already downloaded.
+    WARNING: each conservation track is a 5.5-11.6 GB bigwig (all seven together
+    are ~70 GB); this can be a long-running, large download. No-ops if already
+    downloaded.
 
     Args:
         annotation_id: Id from `list_annotations`.
@@ -737,7 +762,7 @@ def load_oracle(
     This can take 30 seconds to several minutes depending on the model.
 
     Args:
-        oracle_name: Oracle name (enformer, borzoi, chrombpnet, cherimoya, sei, legnet, epinformerseq, alphagenome).
+        oracle_name: Oracle name (enformer, borzoi, chrombpnet, cherimoya, sei, legnet, epinformerseq, alphagenome, alphagenome_pt).
         device: Device to use — "cpu", "cuda", "cuda:0", etc. None = auto-detect.
         assay: (ChromBPNet/Cherimoya) Assay type — "ATAC", "DNASE", or (ChromBPNet only) "CHIP".
         cell_type: (ChromBPNet/Cherimoya/LegNet) Cell type — e.g. "K562", "HepG2".
@@ -804,7 +829,10 @@ def predict(
     Args:
         oracle_name: A loaded oracle name.
         region: Genomic region as "chr1:1000000-1393216".
-        assay_ids: List of assay identifiers (e.g. ["DNASE:K562", "CAGE:K562"]).
+        assay_ids: List of assay identifiers, copied from `list_tracks` — the format
+            differs per oracle (e.g. ["ENCFF413AHU", "CNhs11250"] on Enformer for K562
+            DNase and K562 CAGE; ["DNASE:HepG2"] on ChromBPNet). On Enformer and Borzoi
+            pass the ``identifier``, not a description such as "DNASE:K562".
     """
     state = _state()
     oracle = state.get_oracle(oracle_name)
@@ -835,8 +863,8 @@ def predict_variant_effect(
     per-allele effect sizes with summary statistics.
 
     One forward pass scores the variant across every track in ``assay_ids``
-    (or ALL of the oracle's tracks when ``assay_ids`` is omitted), so request
-    the full set in a single call — never loop this tool once per track or per
+    (on Enformer, Borzoi and AlphaGenome, an empty list means ALL of the
+    oracle's tracks), so request the full set in a single call — never loop this tool once per track or per
     cell type. To score many variants, use ``score_variant_batch`` or
     ``fine_map_causal_variant`` (each scores a variant exactly once).
 
@@ -949,7 +977,8 @@ def score_prediction_region(
     Args:
         oracle_name: A loaded oracle name.
         region: Input region as "chr1:1000000-1393216".
-        assay_ids: List of assay identifiers (e.g. ["DNASE:K562"]).
+        assay_ids: List of assay identifiers copied from `list_tracks` (e.g. ["ENCFF413AHU"]
+            for K562 DNase on Enformer).
         score_region: Sub-region to score as "chr1:1050000-1051000".
         scoring_strategy: How to summarise bins — mean, max, sum, or median.
     """
@@ -1330,9 +1359,17 @@ def analyze_variant_multilayer(
     - Chromatin (DNASE/ATAC): log2 fold-change of sum in 501bp window
     - TF binding (ChIP-TF): log2 fold-change of sum in 501bp window
     - Histone marks (ChIP-Histone): log2 fold-change of sum in 2001bp window
-    - TSS activity (CAGE): log2 fold-change of sum in 501bp window
+    - TSS activity (CAGE, PRO-cap): log2 fold-change of sum in 501bp window
+    - Splicing (AlphaGenome splice sites): log2 fold-change of sum in 501bp window
     - Gene expression (RNA): log fold-change of mean over gene exons
     - Promoter activity (MPRA): simple difference
+    - Regulatory classification (Sei sequence classes): simple difference
+    - Enhancer activity (EPInformer-seq): log2 fold-change of the scalar
+
+    Scores come with an effect percentile and an activity percentile ranked
+    against that track's own background null (blank if the background is not
+    downloaded). Compare oracles by log2FC and percentiles, never by raw
+    ref/alt values, which are on model-specific scales.
 
     For non-coding variants, nearby genes are auto-detected within the
     prediction window so that RNA expression effects can be scored even
@@ -1351,8 +1388,11 @@ def analyze_variant_multilayer(
         alt_alleles: Alternate alleles.
         assay_ids: List of assay identifiers covering different layers
                    (e.g. DNASE, CAGE, ChIP tracks for multi-layer coverage).
-                   Pass an empty list or None to score all tracks on
-                   oracles that support it (AlphaGenome, Enformer, Borzoi).
+                   Pass an empty list to score all tracks on oracles that
+                   support it (AlphaGenome, Enformer, Borzoi). On AlphaGenome
+                   at the full 1 Mb window that is tens of GB of output and
+                   is refused on hosts without the RAM; pass a smaller region
+                   or a track list.
         gene_name: Gene symbol for RNA expression scoring (e.g. "SORT1").
                    If omitted, the nearest gene is auto-detected.
         region: Input region as "chr1:1000000-1393216". If omitted, auto-centered.
@@ -1498,8 +1538,10 @@ def discover_variant(
 ) -> dict:
     """Discover which cell types and regulatory layers are most affected by a variant.
 
-    Predicts variant effect across ALL available tracks (thousands for
-    Enformer/Borzoi/AlphaGenome, or iterates all models for ChromBPNet/LegNet),
+    Predicts variant effect across ALL available tracks (thousands, in one
+    pass, for Enformer/Borzoi/AlphaGenome/Sei; for ChromBPNet, Cherimoya,
+    LegNet and EPInformer-seq it iterates their models — ChromBPNet's
+    ATAC/DNASE ones, and one Cherimoya experiment per biosample),
     ranks by ``ranking_metric``, and returns the top hits with a full
     report.
 
@@ -1601,11 +1643,15 @@ def discover_variant_cell_types(
     Use this when you don't know which cell type is relevant — let the model
     tell you where the variant matters most.
 
+    **AlphaGenome only** (``alphagenome`` or ``alphagenome_pt``): the screen
+    uses AlphaGenome's own DNASE/ATAC catalogue, so any other oracle is
+    refused with an error. For other oracles use ``discover_variant``.
+
     **Two-stage analysis:**
-    1. Screens all DNASE/ATAC tracks (~472 cell types on AlphaGenome, ~638
-       on Enformer) to rank cell types by ``ranking_metric``.
-    2. For each top cell type, runs full multi-layer analysis (chromatin,
-       TF, histone, CAGE, RNA) limited to that cell type's tracks.
+    1. Screens AlphaGenome's 472 unstranded DNASE/ATAC tracks (~403 cell
+       types) to rank cell types by ``ranking_metric``.
+    2. For each top cell type, runs multi-layer analysis (chromatin, TF,
+       histone, CAGE, RNA) on up to 30 of that cell type's tracks.
 
     **Runtime expectations** (AlphaGenome, single A100):
       - Stage 1 screen: ~30–60 s
@@ -1613,8 +1659,8 @@ def discover_variant_cell_types(
       - Typical end-to-end with default ``top_n=5``: 3–4 minutes
 
     Args:
-        oracle_name: A loaded oracle name (ideally AlphaGenome for broadest
-            cell-type coverage).
+        oracle_name: A loaded AlphaGenome oracle (``alphagenome`` or
+            ``alphagenome_pt``).
         position: Variant position as ``"chr1:1050000"`` OR an rsID
             like ``"rs12740374"`` (requires LDlink token; resolves to
             coords via the LDproxy API).
@@ -1651,6 +1697,16 @@ def discover_variant_cell_types(
     """
     from chorus.analysis.analysis_request import AnalysisRequest
     from chorus.analysis.discovery import discover_and_report
+
+    # The screen's track ids come from AlphaGenome's catalogue whatever oracle is passed, so any
+    # other oracle rejects them, discover_cell_types logs "Scout prediction failed" and the tool
+    # used to answer with an empty ranking — indistinguishable from "no cell type is affected".
+    if oracle_name.lower() not in ("alphagenome", "alphagenome_pt"):
+        raise ValueError(
+            f"discover_variant_cell_types screens AlphaGenome's DNASE/ATAC tracks and needs "
+            f"oracle_name='alphagenome' (or 'alphagenome_pt'), not {oracle_name!r}. For "
+            f"{oracle_name!r}, use discover_variant instead."
+        )
 
     state = _state()
     oracle = state.get_oracle(oracle_name)
@@ -2149,30 +2205,47 @@ def getting_started() -> str:
     return (
         "You are using Chorus, a unified interface for genomic deep-learning oracles.\n\n"
         "## Getting Started\n\n"
-        "1. **Discover oracles**: Call `list_oracles()` to see all 7 available oracles "
-        "and which ones have their environments installed.\n\n"
+        "1. **Discover oracles**: Call `list_oracles()` to see all 8 oracles (9 names: "
+        "AlphaGenome has a JAX and a PyTorch backend) and which ones have their "
+        "environments installed.\n\n"
         "2. **Choose an oracle**:\n"
-        "   - **AlphaGenome** (recommended): 1Mb window, 5,731 tracks, 1bp resolution. Best for variant analysis.\n"
-        "   - **Enformer**: 114kb output, 5,313 ENCODE tracks. Great general-purpose oracle.\n"
+        "   - **AlphaGenome** (recommended): 1Mb window, 5,168 tracks, 1bp resolution (128bp for ChIP). "
+        "Best for variant analysis. `alphagenome_pt` is the same model on PyTorch — see "
+        "`recommend_alphagenome_backend()`.\n"
+        "   - **Enformer**: 114kb output, 5,313 tracks (DNase/ATAC, ChIP, CAGE). Great general-purpose oracle.\n"
         "   - **Borzoi**: 196kb output at 32bp resolution, 7,611 tracks. Good for distal gene expression.\n"
-        "   - **ChromBPNet**: 1bp resolution, 1kb window. Best for motif-level TF binding analysis.\n"
-        "   - **Sei**: Regulatory element classification (not per-track signal).\n"
-        "   - **LegNet**: MPRA activity prediction for short sequences.\n"
-        "   - **EPInformer-seq**: scalar enhancer activity from 2,114bp sequence (per-cell DNase + H3K27ac).\n\n"
+        "   - **ChromBPNet / BPNet**: 1bp resolution, 1kb output; 9 ATAC/DNASE models plus 744 BPNet "
+        "TF ChIP models, one per load. Best for motif-level analysis.\n"
+        "   - **Cherimoya / CATv1**: 1bp resolution, 1kb output; 1,518 ENCODE DNase/ATAC experiments, "
+        "one per load (pick with `assay` + `cell_type`, or pin one with `encode_id`).\n"
+        "   - **Sei**: 40 regulatory sequence classes plus 21,907 chromatin profiles from 4kb of sequence.\n"
+        "   - **LegNet**: lentiMPRA activity of 200bp sequences in HepG2, K562 or WTC11, one per load.\n"
+        "   - **EPInformer-seq**: scalar enhancer activity from 2,114bp sequence (per-cell DNase + H3K27ac), "
+        "11 cell types, one per load.\n\n"
         "3. **Find tracks**: Call `list_tracks(oracle_name, query='...')` to search for "
-        "relevant assays (e.g. 'DNASE K562', 'CAGE liver', 'GATA1').\n\n"
-        "4. **Load an oracle**: Call `load_oracle(oracle_name)`. This takes 30s-5min. "
-        "The oracle stays loaded for subsequent calls.\n\n"
+        "relevant assays (e.g. 'DNASE:K562', 'CAGE:liver' or 'GATA1' on AlphaGenome; 'K562' "
+        "works on every oracle). The query is ONE substring, not a list of words: "
+        "'DNASE K562' with a space matches nothing.\n\n"
+        "4. **Load an oracle**: Call `load_oracle(oracle_name)` (the device is auto-detected; "
+        "pass `device='cuda:1'` to pick a GPU). This takes 30s-5min, and the oracle stays "
+        "loaded for subsequent calls. ChromBPNet, Cherimoya, LegNet and EPInformer-seq load "
+        "one model per call: ChromBPNet takes `assay` + `cell_type` (plus `TF` for CHIP), "
+        "Cherimoya `assay` + `cell_type` or `encode_id`, LegNet `cell_type`, EPInformer-seq "
+        "`cell_type` and `assay`. To switch model, `unload_oracle()` first.\n\n"
         "5. **Analyse a variant** (recommended): Use `analyze_variant_multilayer()` for a "
-        "complete multi-layer report with normalization, interpretation labels, and an IGV browser.\n\n"
+        "complete multi-layer report with effect and activity percentiles, interpretation "
+        "labels, and an IGV browser.\n\n"
         "6. **Discover affected cell types**: Use `discover_variant()` to scan ALL tracks and find "
-        "which cell types and regulatory layers are most affected — no track pre-selection needed.\n\n"
+        "which cell types and regulatory layers are most affected — no track pre-selection needed. "
+        "On AlphaGenome, `discover_variant_cell_types()` screens ~400 cell types and reports the "
+        "top ones in depth.\n\n"
         "7. **Batch scoring**: Use `score_variant_batch()` to compare multiple variants side-by-side "
         "on specific tracks.\n\n"
         "8. **Fine-mapping**: Use `fine_map_causal_variant()` with an rsID + LDlink token to rank "
         "LD proxies by composite causal evidence.\n\n"
-        "9. **Sequence engineering**: Use `analyze_region_swap()` or `simulate_integration()` for "
-        "in-silico mutagenesis and transgene insertion analysis.\n\n"
+        "9. **Sequence engineering**: Use `analyze_region_swap()` to replace a region with your "
+        "own sequence, `simulate_integration()` to insert a construct, and `score_ism()` for "
+        "in-silico saturation mutagenesis.\n\n"
         "## Low-level tools (for custom workflows)\n"
         "- `predict()` — raw oracle prediction on a region\n"
         "- `predict_variant_effect()` — per-track variant effects without normalization\n"
@@ -2182,6 +2255,8 @@ def getting_started() -> str:
         "- Positions use `chrN:pos` (e.g. `chr1:109274968`); regions auto-center on the variant\n"
         "- Call `oracle_status()` to see what's currently loaded\n"
         "- Call `unload_oracle(name)` to free memory when done\n"
+        "- Compare oracles by log2FC and percentiles only: raw ref/alt values are on "
+        "model-specific scales\n"
     )
 
 

@@ -82,6 +82,60 @@ project adheres to [Semantic Versioning](https://semver.org/).
   server just looks up where it landed. Expensive when `show_conservation` makes each render
   nontrivial, wasted otherwise.
 
+### Fixed — what the MCP server tells an agent
+
+An agent sees only the system prompt, the `getting_started` prompt, `list_oracles`' specs and
+the tool descriptions. A sweep of that text on 2026-11-15 found it wrong in ways that change
+what an agent does, and the sweep turned up behaviour bugs in the same layer.
+
+- **`getting_started` undercounted and misled.** It said "all 7 available oracles", left
+  Cherimoya out of its menu, gave AlphaGenome as "5,731 tracks" (the metadata row count; 563
+  rows are `padding` placeholders, so 5,168 are queryable) and described Sei as "not per-track
+  signal" (it has 21,907 chromatin profiles with percentiles). The same 5,731 appeared in
+  `list_oracles`' AlphaGenome specs, `recommend_alphagenome_backend` and three docstrings.
+- **Its example track searches matched nothing.** `'DNASE K562'` and `'CAGE liver'` return no
+  tracks on any oracle: the query is one substring, and the ids read `DNASE:K562`. The
+  truncation note's advice to "add an assay or cell type" failed the same way. The examples,
+  the note and the `list_tracks` help now explain the query. The note's example is chosen per
+  oracle, because `'DNASE:HepG2'` finds nothing on Cherimoya or Sei.
+- **`list_tracks('alphagenome', ...)` returned padding rows as tracks**: 116 of the 128 rows
+  for `'PROCAP'`, 79 of 384 for `'DNASE'`. `AlphaGenomeMetadata.search_tracks` now skips them.
+- **`discover_variant_cell_types` claimed an Enformer screen it cannot run.** Its scout tracks
+  are always AlphaGenome's, so any other oracle came back with an empty ranking, which reads
+  as "no cell type is affected". It now refuses other oracles and names `discover_variant`.
+- **`load_oracle` answered `already_loaded` to a request for a different model**, and never
+  said which model it held, so loading ChromBPNet K562 after HepG2 kept HepG2 without saying
+  so. A conflicting repeat load is now an error that says how to switch. `load_oracle` and
+  `oracle_status` now report `loaded_model`, read from the oracle itself, because
+  `discover_variant` reloads per-model oracles in place. ChromBPNet now records `model_type`,
+  so bias-aware versus nobias counts as a different model.
+- **`load_oracle` sent every selection argument to `load_pretrained_model`.** EPInformer-seq
+  takes `assay` only in its constructor, so its two H3K27ac assays (22 of its 33 tracks) were
+  unreachable over MCP, and an argument an oracle does not take at all surfaced as a bare
+  `TypeError`. Arguments now go to whichever of the two takes them, and anything else is
+  refused by name before any loading starts.
+- **LegNet could not switch cell type at load time.** `load_oracle('legnet', cell_type=...)`
+  raised `TypeError`, leaving only HepG2 reachable over MCP. `discover_variant` hit the same
+  `TypeError` for all three LegNet models and returned nothing. `LegNetOracle.load_pretrained_model`
+  now takes `cell_type`, as EPInformer-seq's already did.
+- Smaller corrections: Enformer no longer advertises RNA (it has no RNA track); the
+  `oracle_name` help lists `alphagenome_pt`; the system prompt's "score each variant once" rule
+  says which oracles hold one model per load and no longer lists `discover_variant_cell_types`
+  as a multi-variant tool; `predict` and `score_prediction_region` give Enformer `identifier`
+  examples (`"CAGE:K562"` resolved nowhere, and a description such as `"DNASE:K562"` passes
+  validation but is rejected by the env template); AlphaGenome's `get_track_summary()` sums to
+  5,168, not 5,731; conservation
+  downloads are 5.5–11.6 GB each, not "7–44 GB"; the multilayer scoring list includes splicing,
+  Sei classes and EPInformer-seq; `analyze_region_swap` is no longer described as mutagenesis,
+  and `score_ism` is listed. README, `docs/IMPLEMENTATION_GUIDE.md` and `docs/MCP_WALKTHROUGH.md`
+  stated 24 tools, 22 tools and 6 oracles; there are 27 and 8.
+- `tests/test_mcp_agent_facing_text.py` reads the text the way a client receives it, through
+  `mcp.list_tools()` and the prompt functions. Every "N tracks" claim about AlphaGenome is
+  checked against the metadata, which needs no backgrounds, so CI runs it too; every "N tracks"
+  claim about the other oracles is checked against the shipped backgrounds. It also checks that
+  the example searches and each truncation-note example return tracks, that assay types match
+  the metadata, and pins each behaviour fix.
+
 ### Changed
 
 - **One `hf_download_flat` helper** replaces two line-for-line copies of the HF
