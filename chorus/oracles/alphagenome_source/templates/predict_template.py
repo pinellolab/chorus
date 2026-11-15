@@ -71,7 +71,7 @@ _urlreq.urlopen = lambda *a, **k: _retry(_orig_urlopen, *a, **k)
 _orig_read_feather = _pd.read_feather
 _pd.read_feather = lambda *a, **k: _retry(_orig_read_feather, *a, **k)
 
-from alphagenome.models.dna_output import OutputType
+from chorus.oracles.alphagenome_source.compat import OutputType
 from alphagenome_research.model.dna_model import create_from_huggingface
 from chorus.oracles.alphagenome_source.alphagenome_metadata import (
     get_metadata,

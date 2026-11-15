@@ -174,7 +174,7 @@ def load_model_and_track_info():
 
     logger.info("Importing alphagenome packages...")
     import jax
-    from alphagenome.models.dna_output import OutputType
+    from chorus.oracles.alphagenome_source.compat import OutputType
     from alphagenome_research.model.dna_model import create_from_huggingface
 
     # Pick GPU device

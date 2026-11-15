@@ -91,7 +91,7 @@ def main() -> int:
     random.Random(0).shuffle(tss)
     tss = tss[:args.n]
 
-    from alphagenome.models.dna_output import OutputType
+    from chorus.oracles.alphagenome_source.compat import OutputType
     from chorus.oracles.alphagenome import AlphaGenomeOracle
     from chorus.oracles.alphagenome_source.alphagenome_metadata import get_metadata
 

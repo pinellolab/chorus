@@ -445,7 +445,7 @@ class AlphaGenomeOracle(OracleBase):
             get_metadata,
             SKIPPED_OUTPUT_TYPES,
         )
-        from alphagenome.models.dna_output import OutputType
+        from chorus.oracles.alphagenome_source.compat import OutputType
 
         metadata = get_metadata()
 
