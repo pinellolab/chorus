@@ -1,0 +1,38 @@
+{
+ "schema": "chorus_predictions/1",
+ "oracle": "cherimoya",
+ "variant": {
+  "chrom": "chr1",
+  "pos": 109274968,
+  "ref": "G",
+  "alt": "T"
+ },
+ "alt_key": "alt_1",
+ "tracks": {
+  "ATAC:ENCSR042AWH": {
+   "assay_type": "ATAC",
+   "cell_type": "HepG2",
+   "description": "ATAC:HepG2",
+   "resolution": 1,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_ATAC_ENCSR042AWH.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_ATAC_ENCSR042AWH.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     37133108,
+     1794832019085209753
+    ],
+    "alt": [
+     37132608,
+     1794832020644237104
+    ]
+   }
+  }
+ }
+}

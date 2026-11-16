@@ -161,6 +161,16 @@ def serialize_variant_effect(
             )
             saved[allele_name] = files
         out["saved_files"] = saved
+        if oracle_name:
+            # The bedgraphs are named by track id only, so a later call for another variant or oracle overwrites
+            # them. The manifest says which oracle / variant / interval each belongs to and fingerprints the files,
+            # which is what lets build_locus_report reuse them safely.
+            from chorus.analysis.locus_report import record_predictions
+
+            manifest = record_predictions(out_path, oracle_name, variant_result["variant_info"],
+                                          variant_result["predictions"], saved)
+            if manifest:
+                out["prediction_manifest"] = manifest
 
     return out
 

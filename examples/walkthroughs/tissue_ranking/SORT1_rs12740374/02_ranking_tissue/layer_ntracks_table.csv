@@ -1,0 +1,61 @@
+group,DNase,ATAC,ChIP-TF,ChIP-histone,RNA-seq,CAGE
+Liver,1,6,138,27,12,10
+Myeloid cells,6,2,121,34,6,40
+Uterus / endometrium,NA,1,14,2,4,8
+Adrenal gland,NA,1,1,6,4,2
+Lung,6,8,46,83,22,14
+Adipose tissue,1,3,1,13,8,20
+Breast / mammary,4,2,55,38,12,10
+Spleen,NA,1,1,6,3,2
+Aorta,1,2,3,13,8,8
+Ovary,NA,1,1,6,4,6
+Skeletal muscle,13,2,6,67,25,14
+Esophagus,NA,3,3,18,6,6
+Placenta / extra-embryonic,6,NA,2,33,13,20
+Small intestine,1,1,NA,18,2,4
+Colon / large intestine,7,6,20,49,13,10
+Cervix / vagina,1,NA,26,13,5,4
+Bladder / ureter / urethra,1,2,NA,2,5,6
+Pancreas,3,3,6,17,9,4
+Fibroblast / stromal (organ unspecified),7,NA,5,8,4,2
+Embryonic / stem (other),6,NA,1,36,7,2
+Heart,4,11,8,38,28,20
+Stomach,NA,2,2,22,6,2
+Lymph node / tonsil,NA,1,1,5,2,4
+Eye,4,NA,2,5,1,32
+Mouth / salivary gland,2,NA,NA,7,2,22
+Trachea / bronchus,NA,NA,1,2,4,10
+Prostate,1,3,10,21,3,12
+Nervous system (other / neural progenitor),10,4,38,73,18,22
+Bone / cartilage,4,NA,3,15,6,8
+Bone marrow,3,NA,2,26,2,6
+Testis,NA,1,1,3,4,6
+Skin,23,1,9,56,26,22
+Artery,2,1,2,7,5,20
+Vein / umbilical vein,1,1,4,9,5,8
+Blood vessel / endothelium (other),8,NA,2,3,7,10
+Hematopoietic progenitor,2,NA,NA,6,1,2
+Spinal cord,2,NA,1,6,4,2
+Kidney,17,1,68,11,19,14
+B cell / plasma cell,8,108,77,78,11,4
+NK / innate lymphoid,NA,1,1,5,3,2
+Thymus,1,NA,NA,6,1,2
+Thyroid / parathyroid,NA,1,1,10,2,2
+T cell,11,20,6,60,18,10
+Brain,19,2,5,49,23,58
+Pluripotent stem cell (ES / iPS),9,2,48,88,9,NA
+Reproductive (other),1,1,2,6,1,NA
+Limb,5,NA,NA,NA,NA,2
+Erythroid / megakaryocyte,1,NA,NA,NA,NA,2
+Blood / immune (other),NA,NA,NA,10,4,4
+Respiratory (other),NA,NA,NA,NA,2,6
+Pituitary,NA,NA,NA,NA,1,2
+Digestive tract (other),NA,NA,NA,NA,NA,4
+Musculoskeletal (other),NA,NA,NA,NA,NA,8
+Ear / nose,NA,NA,NA,NA,NA,6
+Smooth muscle,NA,NA,NA,NA,NA,2
+Other / unspecified,NA,NA,NA,NA,NA,6
+Male genital tract,NA,NA,NA,NA,NA,6
+Endocrine (other),NA,NA,NA,NA,NA,2
+Whole organism / unspecified,NA,NA,NA,NA,NA,2
+Urinary (other),NA,NA,NA,NA,NA,2

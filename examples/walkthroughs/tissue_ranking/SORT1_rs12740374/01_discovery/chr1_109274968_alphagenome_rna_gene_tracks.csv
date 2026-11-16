@@ -1,0 +1,673 @@
+# SORT1 rs12740374
+# Sign convention: raw_score = alt - ref (positive = the alt allele raises the predicted signal).
+# percentile = |effect percentile| against the track's own background null, i.e. a MAGNITUDE in [0,1] with no sign;
+# the direction of a track is the sign of raw_score in the *_track_scores.csv table.
+# RNA-seq tracks: id, cell type and model of each column. Lines starting with '#' come first; read with pandas.read_csv(path, skiprows=<their count>).
+track_id,track_key,strand,cell_type_key,cell_type,model
+RNA_SEQ/EFO:0002101 total RNA-seq/+,RNA_SEQ/EFO:0002101 total RNA-seq,+,a172,A172,AlphaGenome
+RNA_SEQ/EFO:0002101 total RNA-seq/-,RNA_SEQ/EFO:0002101 total RNA-seq,-,a172,A172,AlphaGenome
+RNA_SEQ/EFO:0002103 total RNA-seq/+,RNA_SEQ/EFO:0002103 total RNA-seq,+,a375,A375,AlphaGenome
+RNA_SEQ/EFO:0002103 total RNA-seq/-,RNA_SEQ/EFO:0002103 total RNA-seq,-,a375,A375,AlphaGenome
+RNA_SEQ/EFO:0001086 polyA plus RNA-seq/+,RNA_SEQ/EFO:0001086 polyA plus RNA-seq,+,a549,A549,AlphaGenome
+RNA_SEQ/EFO:0001086 polyA plus RNA-seq/-,RNA_SEQ/EFO:0001086 polyA plus RNA-seq,-,a549,A549,AlphaGenome
+RNA_SEQ/EFO:0002106 total RNA-seq/+,RNA_SEQ/EFO:0002106 total RNA-seq,+,a673,A673,AlphaGenome
+RNA_SEQ/EFO:0002106 total RNA-seq/-,RNA_SEQ/EFO:0002106 total RNA-seq,-,a673,A673,AlphaGenome
+RNA_SEQ/UBERON:0001013 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0001013 polyA plus RNA-seq,+,adipose tissue,adipose tissue,AlphaGenome
+RNA_SEQ/UBERON:0001013 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0001013 polyA plus RNA-seq,-,adipose tissue,adipose tissue,AlphaGenome
+RNA_SEQ/UBERON:0002369 gtex Adrenal_Gland polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002369 gtex Adrenal_Gland polyA plus RNA-seq/.,.,adrenal gland,adrenal gland,AlphaGenome
+RNA_SEQ/UBERON:0002369 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0002369 polyA plus RNA-seq,+,adrenal gland,adrenal gland,AlphaGenome
+RNA_SEQ/UBERON:0002369 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0002369 polyA plus RNA-seq,-,adrenal gland,adrenal gland,AlphaGenome
+RNA_SEQ/UBERON:0002369 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002369 polyA plus RNA-seq/.,.,adrenal gland,adrenal gland,AlphaGenome
+RNA_SEQ/UBERON:0002369 total RNA-seq/+,RNA_SEQ/UBERON:0002369 total RNA-seq,+,adrenal gland,adrenal gland,AlphaGenome
+RNA_SEQ/UBERON:0002369 total RNA-seq/-,RNA_SEQ/UBERON:0002369 total RNA-seq,-,adrenal gland,adrenal gland,AlphaGenome
+RNA_SEQ/EFO:0006270 polyA plus RNA-seq/+,RNA_SEQ/EFO:0006270 polyA plus RNA-seq,+,ag04450,AG04450,AlphaGenome
+RNA_SEQ/EFO:0006270 polyA plus RNA-seq/-,RNA_SEQ/EFO:0006270 polyA plus RNA-seq,-,ag04450,AG04450,AlphaGenome
+RNA_SEQ/CL:0002368 total RNA-seq/+,RNA_SEQ/CL:0002368 total RNA-seq,+,airway epithelial cell,airway epithelial cell,AlphaGenome
+RNA_SEQ/CL:0002368 total RNA-seq/-,RNA_SEQ/CL:0002368 total RNA-seq,-,airway epithelial cell,airway epithelial cell,AlphaGenome
+RNA_SEQ/UBERON:0001954 gtex Brain_Hippocampus polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001954 gtex Brain_Hippocampus polyA plus RNA-seq/.,.,ammon's horn,Ammon's horn,AlphaGenome
+RNA_SEQ/UBERON:0000305 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0000305 polyA plus RNA-seq,+,amnion,amnion,AlphaGenome
+RNA_SEQ/UBERON:0000305 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0000305 polyA plus RNA-seq,-,amnion,amnion,AlphaGenome
+RNA_SEQ/UBERON:0001876 gtex Brain_Amygdala polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001876 gtex Brain_Amygdala polyA plus RNA-seq/.,.,amygdala,amygdala,AlphaGenome
+RNA_SEQ/UBERON:0009835 gtex Brain_Anterior_cingulate_cortex_BA24 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0009835 gtex Brain_Anterior_cingulate_cortex_BA24 polyA plus RNA-seq/.,.,anterior cingulate cortex,anterior cingulate cortex,AlphaGenome
+RNA_SEQ/UBERON:0006330 gtex Minor_Salivary_Gland polyA plus RNA-seq/.,RNA_SEQ/UBERON:0006330 gtex Minor_Salivary_Gland polyA plus RNA-seq/.,.,anterior lingual gland,anterior lingual gland,AlphaGenome
+RNA_SEQ/UBERON:0000947 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0000947 polyA plus RNA-seq,+,aorta,aorta,AlphaGenome
+RNA_SEQ/UBERON:0000947 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0000947 polyA plus RNA-seq,-,aorta,aorta,AlphaGenome
+RNA_SEQ/UBERON:0000947 total RNA-seq/+,RNA_SEQ/UBERON:0000947 total RNA-seq,+,aorta,aorta,AlphaGenome
+RNA_SEQ/UBERON:0000947 total RNA-seq/-,RNA_SEQ/UBERON:0000947 total RNA-seq,-,aorta,aorta,AlphaGenome
+RNA_SEQ/CL:0002539 total RNA-seq/+,RNA_SEQ/CL:0002539 total RNA-seq,+,aortic smooth muscle cell,aortic smooth muscle cell,AlphaGenome
+RNA_SEQ/CL:0002539 total RNA-seq/-,RNA_SEQ/CL:0002539 total RNA-seq,-,aortic smooth muscle cell,aortic smooth muscle cell,AlphaGenome
+RNA_SEQ/CL:2000007 total RNA-seq/+,RNA_SEQ/CL:2000007 total RNA-seq,+,articular chondrocyte of knee joint,articular chondrocyte of knee joint,AlphaGenome
+RNA_SEQ/CL:2000007 total RNA-seq/-,RNA_SEQ/CL:2000007 total RNA-seq,-,articular chondrocyte of knee joint,articular chondrocyte of knee joint,AlphaGenome
+RNA_SEQ/UBERON:0001496 gtex Artery_Aorta polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001496 gtex Artery_Aorta polyA plus RNA-seq/.,.,ascending aorta,ascending aorta,AlphaGenome
+RNA_SEQ/UBERON:0001496 total RNA-seq/+,RNA_SEQ/UBERON:0001496 total RNA-seq,+,ascending aorta,ascending aorta,AlphaGenome
+RNA_SEQ/UBERON:0001496 total RNA-seq/-,RNA_SEQ/UBERON:0001496 total RNA-seq,-,ascending aorta,ascending aorta,AlphaGenome
+RNA_SEQ/CL:0000127 total RNA-seq/+,RNA_SEQ/CL:0000127 total RNA-seq,+,astrocyte,astrocyte,AlphaGenome
+RNA_SEQ/CL:0000127 total RNA-seq/-,RNA_SEQ/CL:0000127 total RNA-seq,-,astrocyte,astrocyte,AlphaGenome
+RNA_SEQ/CL:0000236 polyA plus RNA-seq/+,RNA_SEQ/CL:0000236 polyA plus RNA-seq,+,b cell,B cell,AlphaGenome
+RNA_SEQ/CL:0000236 polyA plus RNA-seq/-,RNA_SEQ/CL:0000236 polyA plus RNA-seq,-,b cell,B cell,AlphaGenome
+RNA_SEQ/CL:0000236 total RNA-seq/+,RNA_SEQ/CL:0000236 total RNA-seq,+,b cell,B cell,AlphaGenome
+RNA_SEQ/CL:0000236 total RNA-seq/-,RNA_SEQ/CL:0000236 total RNA-seq,-,b cell,B cell,AlphaGenome
+RNA_SEQ/EFO:0005725 polyA plus RNA-seq/.,RNA_SEQ/EFO:0005725 polyA plus RNA-seq/.,.,be2c,BE2C,AlphaGenome
+RNA_SEQ/EFO:0002779 polyA plus RNA-seq/+,RNA_SEQ/EFO:0002779 polyA plus RNA-seq,+,bj,BJ,AlphaGenome
+RNA_SEQ/EFO:0002779 polyA plus RNA-seq/-,RNA_SEQ/EFO:0002779 polyA plus RNA-seq,-,bj,BJ,AlphaGenome
+RNA_SEQ/CL:2000040 total RNA-seq/+,RNA_SEQ/CL:2000040 total RNA-seq,+,bladder microvascular endothelial cell,bladder microvascular endothelial cell,AlphaGenome
+RNA_SEQ/CL:2000040 total RNA-seq/-,RNA_SEQ/CL:2000040 total RNA-seq,-,bladder microvascular endothelial cell,bladder microvascular endothelial cell,AlphaGenome
+RNA_SEQ/EFO:0030018 polyA plus RNA-seq/+,RNA_SEQ/EFO:0030018 polyA plus RNA-seq,+,blaer1,BLaER1,AlphaGenome
+RNA_SEQ/EFO:0030018 polyA plus RNA-seq/-,RNA_SEQ/EFO:0030018 polyA plus RNA-seq,-,blaer1,BLaER1,AlphaGenome
+RNA_SEQ/UBERON:0001150 gtex Pancreas polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001150 gtex Pancreas polyA plus RNA-seq/.,.,body of pancreas,body of pancreas,AlphaGenome
+RNA_SEQ/UBERON:0001150 total RNA-seq/+,RNA_SEQ/UBERON:0001150 total RNA-seq,+,body of pancreas,body of pancreas,AlphaGenome
+RNA_SEQ/UBERON:0001150 total RNA-seq/-,RNA_SEQ/UBERON:0001150 total RNA-seq,-,body of pancreas,body of pancreas,AlphaGenome
+RNA_SEQ/UBERON:0000955 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0000955 polyA plus RNA-seq,+,brain,brain,AlphaGenome
+RNA_SEQ/UBERON:0000955 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0000955 polyA plus RNA-seq,-,brain,brain,AlphaGenome
+RNA_SEQ/UBERON:0008367 gtex Breast_Mammary_Tissue polyA plus RNA-seq/.,RNA_SEQ/UBERON:0008367 gtex Breast_Mammary_Tissue polyA plus RNA-seq/.,.,breast epithelium,breast epithelium,AlphaGenome
+RNA_SEQ/UBERON:0008367 total RNA-seq/+,RNA_SEQ/UBERON:0008367 total RNA-seq,+,breast epithelium,breast epithelium,AlphaGenome
+RNA_SEQ/UBERON:0008367 total RNA-seq/-,RNA_SEQ/UBERON:0008367 total RNA-seq,-,breast epithelium,breast epithelium,AlphaGenome
+RNA_SEQ/CL:0002328 total RNA-seq/+,RNA_SEQ/CL:0002328 total RNA-seq,+,bronchial epithelial cell,bronchial epithelial cell,AlphaGenome
+RNA_SEQ/CL:0002328 total RNA-seq/-,RNA_SEQ/CL:0002328 total RNA-seq,-,bronchial epithelial cell,bronchial epithelial cell,AlphaGenome
+RNA_SEQ/CL:0002598 total RNA-seq/+,RNA_SEQ/CL:0002598 total RNA-seq,+,bronchial smooth muscle cell,bronchial smooth muscle cell,AlphaGenome
+RNA_SEQ/CL:0002598 total RNA-seq/-,RNA_SEQ/CL:0002598 total RNA-seq,-,bronchial smooth muscle cell,bronchial smooth muscle cell,AlphaGenome
+RNA_SEQ/CL:2000093 total RNA-seq/+,RNA_SEQ/CL:2000093 total RNA-seq,+,bronchus fibroblast of lung,bronchus fibroblast of lung,AlphaGenome
+RNA_SEQ/CL:2000093 total RNA-seq/-,RNA_SEQ/CL:2000093 total RNA-seq,-,bronchus fibroblast of lung,bronchus fibroblast of lung,AlphaGenome
+RNA_SEQ/UBERON:0006469 gtex Brain_Spinal_cord_cervical_c-1 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0006469 gtex Brain_Spinal_cord_cervical_c-1 polyA plus RNA-seq/.,.,c1 segment of cervical spinal cord,C1 segment of cervical spinal cord,AlphaGenome
+RNA_SEQ/EFO:0001099 total RNA-seq/+,RNA_SEQ/EFO:0001099 total RNA-seq,+,caco-2,Caco-2,AlphaGenome
+RNA_SEQ/EFO:0001099 total RNA-seq/-,RNA_SEQ/EFO:0001099 total RNA-seq,-,caco-2,Caco-2,AlphaGenome
+RNA_SEQ/EFO:0002150 total RNA-seq/+,RNA_SEQ/EFO:0002150 total RNA-seq,+,caki2,Caki2,AlphaGenome
+RNA_SEQ/EFO:0002150 total RNA-seq/-,RNA_SEQ/EFO:0002150 total RNA-seq,-,caki2,Caki2,AlphaGenome
+RNA_SEQ/EFO:0002819 total RNA-seq/+,RNA_SEQ/EFO:0002819 total RNA-seq,+,calu3,Calu3,AlphaGenome
+RNA_SEQ/EFO:0002819 total RNA-seq/-,RNA_SEQ/EFO:0002819 total RNA-seq,-,calu3,Calu3,AlphaGenome
+RNA_SEQ/UBERON:0000019 total RNA-seq/+,RNA_SEQ/UBERON:0000019 total RNA-seq,+,camera-type eye,camera-type eye,AlphaGenome
+RNA_SEQ/UBERON:0000019 total RNA-seq/-,RNA_SEQ/UBERON:0000019 total RNA-seq,-,camera-type eye,camera-type eye,AlphaGenome
+RNA_SEQ/CL:2000067 total RNA-seq/+,RNA_SEQ/CL:2000067 total RNA-seq,+,cardiac atrium fibroblast,cardiac atrium fibroblast,AlphaGenome
+RNA_SEQ/CL:2000067 total RNA-seq/-,RNA_SEQ/CL:2000067 total RNA-seq,-,cardiac atrium fibroblast,cardiac atrium fibroblast,AlphaGenome
+RNA_SEQ/CL:0000746 polyA plus RNA-seq/.,RNA_SEQ/CL:0000746 polyA plus RNA-seq/.,.,cardiac muscle cell,cardiac muscle cell,AlphaGenome
+RNA_SEQ/CL:0000746 total RNA-seq/+,RNA_SEQ/CL:0000746 total RNA-seq,+,cardiac muscle cell,cardiac muscle cell,AlphaGenome
+RNA_SEQ/CL:0000746 total RNA-seq/-,RNA_SEQ/CL:0000746 total RNA-seq,-,cardiac muscle cell,cardiac muscle cell,AlphaGenome
+RNA_SEQ/UBERON:0002099 total RNA-seq/+,RNA_SEQ/UBERON:0002099 total RNA-seq,+,cardiac septum,cardiac septum,AlphaGenome
+RNA_SEQ/UBERON:0002099 total RNA-seq/-,RNA_SEQ/UBERON:0002099 total RNA-seq,-,cardiac septum,cardiac septum,AlphaGenome
+RNA_SEQ/CL:2000066 total RNA-seq/+,RNA_SEQ/CL:2000066 total RNA-seq,+,cardiac ventricle fibroblast,cardiac ventricle fibroblast,AlphaGenome
+RNA_SEQ/CL:2000066 total RNA-seq/-,RNA_SEQ/CL:2000066 total RNA-seq,-,cardiac ventricle fibroblast,cardiac ventricle fibroblast,AlphaGenome
+RNA_SEQ/UBERON:0001873 gtex Brain_Caudate_basal_ganglia polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001873 gtex Brain_Caudate_basal_ganglia polyA plus RNA-seq/.,.,caudate nucleus,caudate nucleus,AlphaGenome
+RNA_SEQ/CL:0001054 polyA plus RNA-seq/+,RNA_SEQ/CL:0001054 polyA plus RNA-seq,+,cd14-positive monocyte,CD14-positive monocyte,AlphaGenome
+RNA_SEQ/CL:0001054 polyA plus RNA-seq/-,RNA_SEQ/CL:0001054 polyA plus RNA-seq,-,cd14-positive monocyte,CD14-positive monocyte,AlphaGenome
+RNA_SEQ/CL:0001054 polyA plus RNA-seq/.,RNA_SEQ/CL:0001054 polyA plus RNA-seq/.,.,cd14-positive monocyte,CD14-positive monocyte,AlphaGenome
+RNA_SEQ/CL:0000624 polyA plus RNA-seq/.,RNA_SEQ/CL:0000624 polyA plus RNA-seq/.,.,cd4-positive,CD4-positive,AlphaGenome
+RNA_SEQ/CL:0000624 total RNA-seq/+,RNA_SEQ/CL:0000624 total RNA-seq,+,cd4-positive,CD4-positive,AlphaGenome
+RNA_SEQ/CL:0000624 total RNA-seq/-,RNA_SEQ/CL:0000624 total RNA-seq,-,cd4-positive,CD4-positive,AlphaGenome
+RNA_SEQ/CL:0000792 polyA plus RNA-seq/.,RNA_SEQ/CL:0000792 polyA plus RNA-seq/.,.,cd4-positive,CD4-positive,AlphaGenome
+RNA_SEQ/CL:0000792 total RNA-seq/+,RNA_SEQ/CL:0000792 total RNA-seq,+,cd4-positive,CD4-positive,AlphaGenome
+RNA_SEQ/CL:0000792 total RNA-seq/-,RNA_SEQ/CL:0000792 total RNA-seq,-,cd4-positive,CD4-positive,AlphaGenome
+RNA_SEQ/CL:0000897 polyA plus RNA-seq/.,RNA_SEQ/CL:0000897 polyA plus RNA-seq/.,.,cd4-positive,CD4-positive,AlphaGenome
+RNA_SEQ/CL:0000897 total RNA-seq/+,RNA_SEQ/CL:0000897 total RNA-seq,+,cd4-positive,CD4-positive,AlphaGenome
+RNA_SEQ/CL:0000897 total RNA-seq/-,RNA_SEQ/CL:0000897 total RNA-seq,-,cd4-positive,CD4-positive,AlphaGenome
+RNA_SEQ/CL:0000625 polyA plus RNA-seq/.,RNA_SEQ/CL:0000625 polyA plus RNA-seq/.,.,cd8-positive,CD8-positive,AlphaGenome
+RNA_SEQ/CL:0000625 total RNA-seq/+,RNA_SEQ/CL:0000625 total RNA-seq,+,cd8-positive,CD8-positive,AlphaGenome
+RNA_SEQ/CL:0000625 total RNA-seq/-,RNA_SEQ/CL:0000625 total RNA-seq,-,cd8-positive,CD8-positive,AlphaGenome
+RNA_SEQ/CL:0000909 polyA plus RNA-seq/.,RNA_SEQ/CL:0000909 polyA plus RNA-seq/.,.,cd8-positive,CD8-positive,AlphaGenome
+RNA_SEQ/CL:0000909 total RNA-seq/+,RNA_SEQ/CL:0000909 total RNA-seq,+,cd8-positive,CD8-positive,AlphaGenome
+RNA_SEQ/CL:0000909 total RNA-seq/-,RNA_SEQ/CL:0000909 total RNA-seq,-,cd8-positive,CD8-positive,AlphaGenome
+RNA_SEQ/UBERON:0002245 gtex Brain_Cerebellar_Hemisphere polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002245 gtex Brain_Cerebellar_Hemisphere polyA plus RNA-seq/.,.,cerebellar hemisphere,cerebellar hemisphere,AlphaGenome
+RNA_SEQ/UBERON:0002037 gtex Brain_Cerebellum polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002037 gtex Brain_Cerebellum polyA plus RNA-seq/.,.,cerebellum,cerebellum,AlphaGenome
+RNA_SEQ/UBERON:0002037 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0002037 polyA plus RNA-seq,+,cerebellum,cerebellum,AlphaGenome
+RNA_SEQ/UBERON:0002037 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0002037 polyA plus RNA-seq,-,cerebellum,cerebellum,AlphaGenome
+RNA_SEQ/UBERON:0002037 total RNA-seq/+,RNA_SEQ/UBERON:0002037 total RNA-seq,+,cerebellum,cerebellum,AlphaGenome
+RNA_SEQ/UBERON:0002037 total RNA-seq/-,RNA_SEQ/UBERON:0002037 total RNA-seq,-,cerebellum,cerebellum,AlphaGenome
+RNA_SEQ/CL:0000138 total RNA-seq/+,RNA_SEQ/CL:0000138 total RNA-seq,+,chondrocyte,chondrocyte,AlphaGenome
+RNA_SEQ/CL:0000138 total RNA-seq/-,RNA_SEQ/CL:0000138 total RNA-seq,-,chondrocyte,chondrocyte,AlphaGenome
+RNA_SEQ/UBERON:0003124 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0003124 polyA plus RNA-seq,+,chorion,chorion,AlphaGenome
+RNA_SEQ/UBERON:0003124 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0003124 polyA plus RNA-seq,-,chorion,chorion,AlphaGenome
+RNA_SEQ/UBERON:0007106 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0007106 polyA plus RNA-seq,+,chorionic villus,chorionic villus,AlphaGenome
+RNA_SEQ/UBERON:0007106 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0007106 polyA plus RNA-seq,-,chorionic villus,chorionic villus,AlphaGenome
+RNA_SEQ/UBERON:0000317 total RNA-seq/+,RNA_SEQ/UBERON:0000317 total RNA-seq,+,colonic mucosa,colonic mucosa,AlphaGenome
+RNA_SEQ/UBERON:0000317 total RNA-seq/-,RNA_SEQ/UBERON:0000317 total RNA-seq,-,colonic mucosa,colonic mucosa,AlphaGenome
+RNA_SEQ/CL:0001059 polyA plus RNA-seq/.,RNA_SEQ/CL:0001059 polyA plus RNA-seq/.,.,common myeloid progenitor,common myeloid progenitor,AlphaGenome
+RNA_SEQ/UBERON:0001621 gtex Artery_Coronary polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001621 gtex Artery_Coronary polyA plus RNA-seq/.,.,coronary artery,coronary artery,AlphaGenome
+RNA_SEQ/UBERON:0001225 gtex Kidney_Cortex polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001225 gtex Kidney_Cortex polyA plus RNA-seq/.,.,cortex of kidney,cortex of kidney,AlphaGenome
+RNA_SEQ/EFO:0005698 total RNA-seq/+,RNA_SEQ/EFO:0005698 total RNA-seq,+,daoy,Daoy,AlphaGenome
+RNA_SEQ/EFO:0005698 total RNA-seq/-,RNA_SEQ/EFO:0005698 total RNA-seq,-,daoy,Daoy,AlphaGenome
+RNA_SEQ/CL:2000010 total RNA-seq/+,RNA_SEQ/CL:2000010 total RNA-seq,+,dermis blood vessel endothelial cell,dermis blood vessel endothelial cell,AlphaGenome
+RNA_SEQ/CL:2000010 total RNA-seq/-,RNA_SEQ/CL:2000010 total RNA-seq,-,dermis blood vessel endothelial cell,dermis blood vessel endothelial cell,AlphaGenome
+RNA_SEQ/CL:2000011 total RNA-seq/+,RNA_SEQ/CL:2000011 total RNA-seq,+,dermis lymphatic vessel endothelial cell,dermis lymphatic vessel endothelial cell,AlphaGenome
+RNA_SEQ/CL:2000011 total RNA-seq/-,RNA_SEQ/CL:2000011 total RNA-seq,-,dermis lymphatic vessel endothelial cell,dermis lymphatic vessel endothelial cell,AlphaGenome
+RNA_SEQ/CL:2000041 total RNA-seq/+,RNA_SEQ/CL:2000041 total RNA-seq,+,dermis microvascular lymphatic vessel endothelial cell,dermis microvascular lymphatic vessel endothelial cell,AlphaGenome
+RNA_SEQ/CL:2000041 total RNA-seq/-,RNA_SEQ/CL:2000041 total RNA-seq,-,dermis microvascular lymphatic vessel endothelial cell,dermis microvascular lymphatic vessel endothelial cell,AlphaGenome
+RNA_SEQ/UBERON:0001894 total RNA-seq/+,RNA_SEQ/UBERON:0001894 total RNA-seq,+,diencephalon,diencephalon,AlphaGenome
+RNA_SEQ/UBERON:0001894 total RNA-seq/-,RNA_SEQ/UBERON:0001894 total RNA-seq,-,diencephalon,diencephalon,AlphaGenome
+RNA_SEQ/UBERON:0009834 gtex Brain_Frontal_Cortex_BA9 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0009834 gtex Brain_Frontal_Cortex_BA9 polyA plus RNA-seq/.,.,dorsolateral prefrontal cortex,dorsolateral prefrontal cortex,AlphaGenome
+RNA_SEQ/UBERON:0009834 total RNA-seq/+,RNA_SEQ/UBERON:0009834 total RNA-seq,+,dorsolateral prefrontal cortex,dorsolateral prefrontal cortex,AlphaGenome
+RNA_SEQ/UBERON:0009834 total RNA-seq/-,RNA_SEQ/UBERON:0009834 total RNA-seq,-,dorsolateral prefrontal cortex,dorsolateral prefrontal cortex,AlphaGenome
+RNA_SEQ/UBERON:0012249 gtex Cervix_Ectocervix polyA plus RNA-seq/.,RNA_SEQ/UBERON:0012249 gtex Cervix_Ectocervix polyA plus RNA-seq/.,.,ectocervix,ectocervix,AlphaGenome
+RNA_SEQ/CL:0000221 polyA plus RNA-seq/+,RNA_SEQ/CL:0000221 polyA plus RNA-seq,+,ectodermal cell,ectodermal cell,AlphaGenome
+RNA_SEQ/CL:0000221 polyA plus RNA-seq/-,RNA_SEQ/CL:0000221 polyA plus RNA-seq,-,ectodermal cell,ectodermal cell,AlphaGenome
+RNA_SEQ/UBERON:0000458 gtex Cervix_Endocervix polyA plus RNA-seq/.,RNA_SEQ/UBERON:0000458 gtex Cervix_Endocervix polyA plus RNA-seq/.,.,endocervix,endocervix,AlphaGenome
+RNA_SEQ/UBERON:0000016 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0000016 polyA plus RNA-seq,+,endocrine pancreas,endocrine pancreas,AlphaGenome
+RNA_SEQ/UBERON:0000016 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0000016 polyA plus RNA-seq,-,endocrine pancreas,endocrine pancreas,AlphaGenome
+RNA_SEQ/CL:0000223 polyA plus RNA-seq/+,RNA_SEQ/CL:0000223 polyA plus RNA-seq,+,endodermal cell,endodermal cell,AlphaGenome
+RNA_SEQ/CL:0000223 polyA plus RNA-seq/-,RNA_SEQ/CL:0000223 polyA plus RNA-seq,-,endodermal cell,endodermal cell,AlphaGenome
+RNA_SEQ/CL:0000223 total RNA-seq/+,RNA_SEQ/CL:0000223 total RNA-seq,+,endodermal cell,endodermal cell,AlphaGenome
+RNA_SEQ/CL:0000223 total RNA-seq/-,RNA_SEQ/CL:0000223 total RNA-seq,-,endodermal cell,endodermal cell,AlphaGenome
+RNA_SEQ/CL:0000115 total RNA-seq/+,RNA_SEQ/CL:0000115 total RNA-seq,+,endothelial cell,endothelial cell,AlphaGenome
+RNA_SEQ/CL:0000115 total RNA-seq/-,RNA_SEQ/CL:0000115 total RNA-seq,-,endothelial cell,endothelial cell,AlphaGenome
+RNA_SEQ/CL:2000018 total RNA-seq/+,RNA_SEQ/CL:2000018 total RNA-seq,+,endothelial cell of coronary artery,endothelial cell of coronary artery,AlphaGenome
+RNA_SEQ/CL:2000018 total RNA-seq/-,RNA_SEQ/CL:2000018 total RNA-seq,-,endothelial cell of coronary artery,endothelial cell of coronary artery,AlphaGenome
+RNA_SEQ/CL:0002618 polyA plus RNA-seq/+,RNA_SEQ/CL:0002618 polyA plus RNA-seq,+,endothelial cell of umbilical vein,endothelial cell of umbilical vein,AlphaGenome
+RNA_SEQ/CL:0002618 polyA plus RNA-seq/-,RNA_SEQ/CL:0002618 polyA plus RNA-seq,-,endothelial cell of umbilical vein,endothelial cell of umbilical vein,AlphaGenome
+RNA_SEQ/CL:0002618 polyA plus RNA-seq/.,RNA_SEQ/CL:0002618 polyA plus RNA-seq/.,.,endothelial cell of umbilical vein,endothelial cell of umbilical vein,AlphaGenome
+RNA_SEQ/CL:0002618 total RNA-seq/+,RNA_SEQ/CL:0002618 total RNA-seq,+,endothelial cell of umbilical vein,endothelial cell of umbilical vein,AlphaGenome
+RNA_SEQ/CL:0002618 total RNA-seq/-,RNA_SEQ/CL:0002618 total RNA-seq,-,endothelial cell of umbilical vein,endothelial cell of umbilical vein,AlphaGenome
+RNA_SEQ/CL:0010003 total RNA-seq/+,RNA_SEQ/CL:0010003 total RNA-seq,+,epithelial cell of alveolus of lung,epithelial cell of alveolus of lung,AlphaGenome
+RNA_SEQ/CL:0010003 total RNA-seq/-,RNA_SEQ/CL:0010003 total RNA-seq,-,epithelial cell of alveolus of lung,epithelial cell of alveolus of lung,AlphaGenome
+RNA_SEQ/CL:0002306 total RNA-seq/+,RNA_SEQ/CL:0002306 total RNA-seq,+,epithelial cell of proximal tubule,epithelial cell of proximal tubule,AlphaGenome
+RNA_SEQ/CL:0002306 total RNA-seq/-,RNA_SEQ/CL:0002306 total RNA-seq,-,epithelial cell of proximal tubule,epithelial cell of proximal tubule,AlphaGenome
+RNA_SEQ/CL:0010002 total RNA-seq/+,RNA_SEQ/CL:0010002 total RNA-seq,+,epithelial cell of umbilical artery,epithelial cell of umbilical artery,AlphaGenome
+RNA_SEQ/CL:0010002 total RNA-seq/-,RNA_SEQ/CL:0010002 total RNA-seq,-,epithelial cell of umbilical artery,epithelial cell of umbilical artery,AlphaGenome
+RNA_SEQ/UBERON:0001043 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0001043 polyA plus RNA-seq,+,esophagus,esophagus,AlphaGenome
+RNA_SEQ/UBERON:0001043 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0001043 polyA plus RNA-seq,-,esophagus,esophagus,AlphaGenome
+RNA_SEQ/UBERON:0002469 total RNA-seq/+,RNA_SEQ/UBERON:0002469 total RNA-seq,+,esophagus mucosa,esophagus mucosa,AlphaGenome
+RNA_SEQ/UBERON:0002469 total RNA-seq/-,RNA_SEQ/UBERON:0002469 total RNA-seq,-,esophagus mucosa,esophagus mucosa,AlphaGenome
+RNA_SEQ/UBERON:0004648 gtex Esophagus_Muscularis polyA plus RNA-seq/.,RNA_SEQ/UBERON:0004648 gtex Esophagus_Muscularis polyA plus RNA-seq/.,.,esophagus muscularis mucosa,esophagus muscularis mucosa,AlphaGenome
+RNA_SEQ/UBERON:0004648 total RNA-seq/+,RNA_SEQ/UBERON:0004648 total RNA-seq,+,esophagus muscularis mucosa,esophagus muscularis mucosa,AlphaGenome
+RNA_SEQ/UBERON:0004648 total RNA-seq/-,RNA_SEQ/UBERON:0004648 total RNA-seq,-,esophagus muscularis mucosa,esophagus muscularis mucosa,AlphaGenome
+RNA_SEQ/UBERON:0006920 gtex Esophagus_Mucosa polyA plus RNA-seq/.,RNA_SEQ/UBERON:0006920 gtex Esophagus_Mucosa polyA plus RNA-seq/.,.,esophagus squamous epithelium,esophagus squamous epithelium,AlphaGenome
+RNA_SEQ/UBERON:0006920 total RNA-seq/+,RNA_SEQ/UBERON:0006920 total RNA-seq,+,esophagus squamous epithelium,esophagus squamous epithelium,AlphaGenome
+RNA_SEQ/UBERON:0006920 total RNA-seq/-,RNA_SEQ/UBERON:0006920 total RNA-seq,-,esophagus squamous epithelium,esophagus squamous epithelium,AlphaGenome
+RNA_SEQ/UBERON:0003889 gtex Fallopian_Tube polyA plus RNA-seq/.,RNA_SEQ/UBERON:0003889 gtex Fallopian_Tube polyA plus RNA-seq/.,.,fallopian tube,fallopian tube,AlphaGenome
+RNA_SEQ/EFO:0002009 gtex Cells_Cultured_fibroblasts polyA plus RNA-seq/.,RNA_SEQ/EFO:0002009 gtex Cells_Cultured_fibroblasts polyA plus RNA-seq/.,.,fibroblast derived cell line,fibroblast derived cell line,AlphaGenome
+RNA_SEQ/CL:0002551 total RNA-seq/+,RNA_SEQ/CL:0002551 total RNA-seq,+,fibroblast of dermis,fibroblast of dermis,AlphaGenome
+RNA_SEQ/CL:0002551 total RNA-seq/-,RNA_SEQ/CL:0002551 total RNA-seq,-,fibroblast of dermis,fibroblast of dermis,AlphaGenome
+RNA_SEQ/CL:0002553 polyA plus RNA-seq/+,RNA_SEQ/CL:0002553 polyA plus RNA-seq,+,fibroblast of lung,fibroblast of lung,AlphaGenome
+RNA_SEQ/CL:0002553 polyA plus RNA-seq/-,RNA_SEQ/CL:0002553 polyA plus RNA-seq,-,fibroblast of lung,fibroblast of lung,AlphaGenome
+RNA_SEQ/CL:0002553 polyA plus RNA-seq/.,RNA_SEQ/CL:0002553 polyA plus RNA-seq/.,.,fibroblast of lung,fibroblast of lung,AlphaGenome
+RNA_SEQ/CL:0002553 total RNA-seq/+,RNA_SEQ/CL:0002553 total RNA-seq,+,fibroblast of lung,fibroblast of lung,AlphaGenome
+RNA_SEQ/CL:0002553 total RNA-seq/-,RNA_SEQ/CL:0002553 total RNA-seq,-,fibroblast of lung,fibroblast of lung,AlphaGenome
+RNA_SEQ/CL:2000013 polyA plus RNA-seq/.,RNA_SEQ/CL:2000013 polyA plus RNA-seq/.,.,fibroblast of skin of abdomen,fibroblast of skin of abdomen,AlphaGenome
+RNA_SEQ/CL:0011022 polyA plus RNA-seq/.,RNA_SEQ/CL:0011022 polyA plus RNA-seq/.,.,fibroblast of skin of back,fibroblast of skin of back,AlphaGenome
+RNA_SEQ/NTR:0000524 polyA plus RNA-seq/.,RNA_SEQ/NTR:0000524 polyA plus RNA-seq/.,.,fibroblast of skin of scalp,fibroblast of skin of scalp,AlphaGenome
+RNA_SEQ/CL:0002547 total RNA-seq/+,RNA_SEQ/CL:0002547 total RNA-seq,+,fibroblast of the aortic adventitia,fibroblast of the aortic adventitia,AlphaGenome
+RNA_SEQ/CL:0002547 total RNA-seq/-,RNA_SEQ/CL:0002547 total RNA-seq,-,fibroblast of the aortic adventitia,fibroblast of the aortic adventitia,AlphaGenome
+RNA_SEQ/CL:0002558 total RNA-seq/+,RNA_SEQ/CL:0002558 total RNA-seq,+,fibroblast of villous mesenchyme,fibroblast of villous mesenchyme,AlphaGenome
+RNA_SEQ/CL:0002558 total RNA-seq/-,RNA_SEQ/CL:0002558 total RNA-seq,-,fibroblast of villous mesenchyme,fibroblast of villous mesenchyme,AlphaGenome
+RNA_SEQ/UBERON:0003662 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0003662 polyA plus RNA-seq/.,.,forelimb muscle,forelimb muscle,AlphaGenome
+RNA_SEQ/CL:1001608 polyA plus RNA-seq/+,RNA_SEQ/CL:1001608 polyA plus RNA-seq,+,foreskin fibroblast,foreskin fibroblast,AlphaGenome
+RNA_SEQ/CL:1001608 polyA plus RNA-seq/-,RNA_SEQ/CL:1001608 polyA plus RNA-seq,-,foreskin fibroblast,foreskin fibroblast,AlphaGenome
+RNA_SEQ/CL:1001606 polyA plus RNA-seq/+,RNA_SEQ/CL:1001606 polyA plus RNA-seq,+,foreskin keratinocyte,foreskin keratinocyte,AlphaGenome
+RNA_SEQ/CL:1001606 polyA plus RNA-seq/-,RNA_SEQ/CL:1001606 polyA plus RNA-seq,-,foreskin keratinocyte,foreskin keratinocyte,AlphaGenome
+RNA_SEQ/CL:1001606 total RNA-seq/+,RNA_SEQ/CL:1001606 total RNA-seq,+,foreskin keratinocyte,foreskin keratinocyte,AlphaGenome
+RNA_SEQ/CL:1001606 total RNA-seq/-,RNA_SEQ/CL:1001606 total RNA-seq,-,foreskin keratinocyte,foreskin keratinocyte,AlphaGenome
+RNA_SEQ/CL:2000045 polyA plus RNA-seq/+,RNA_SEQ/CL:2000045 polyA plus RNA-seq,+,foreskin melanocyte,foreskin melanocyte,AlphaGenome
+RNA_SEQ/CL:2000045 polyA plus RNA-seq/-,RNA_SEQ/CL:2000045 polyA plus RNA-seq,-,foreskin melanocyte,foreskin melanocyte,AlphaGenome
+RNA_SEQ/UBERON:0001870 gtex Brain_Cortex polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001870 gtex Brain_Cortex polyA plus RNA-seq/.,.,frontal cortex,frontal cortex,AlphaGenome
+RNA_SEQ/UBERON:0001870 total RNA-seq/+,RNA_SEQ/UBERON:0001870 total RNA-seq,+,frontal cortex,frontal cortex,AlphaGenome
+RNA_SEQ/UBERON:0001870 total RNA-seq/-,RNA_SEQ/UBERON:0001870 total RNA-seq,-,frontal cortex,frontal cortex,AlphaGenome
+RNA_SEQ/EFO:0002179 total RNA-seq/+,RNA_SEQ/EFO:0002179 total RNA-seq,+,g401,G401,AlphaGenome
+RNA_SEQ/EFO:0002179 total RNA-seq/-,RNA_SEQ/EFO:0002179 total RNA-seq,-,g401,G401,AlphaGenome
+RNA_SEQ/UBERON:0011907 gtex Muscle_Skeletal polyA plus RNA-seq/.,RNA_SEQ/UBERON:0011907 gtex Muscle_Skeletal polyA plus RNA-seq/.,.,gastrocnemius medialis,gastrocnemius medialis,AlphaGenome
+RNA_SEQ/UBERON:0011907 total RNA-seq/+,RNA_SEQ/UBERON:0011907 total RNA-seq,+,gastrocnemius medialis,gastrocnemius medialis,AlphaGenome
+RNA_SEQ/UBERON:0011907 total RNA-seq/-,RNA_SEQ/UBERON:0011907 total RNA-seq,-,gastrocnemius medialis,gastrocnemius medialis,AlphaGenome
+RNA_SEQ/UBERON:0004550 gtex Esophagus_Gastroesophageal_Junction polyA plus RNA-seq/.,RNA_SEQ/UBERON:0004550 gtex Esophagus_Gastroesophageal_Junction polyA plus RNA-seq/.,.,gastroesophageal sphincter,gastroesophageal sphincter,AlphaGenome
+RNA_SEQ/UBERON:0004550 total RNA-seq/+,RNA_SEQ/UBERON:0004550 total RNA-seq,+,gastroesophageal sphincter,gastroesophageal sphincter,AlphaGenome
+RNA_SEQ/UBERON:0004550 total RNA-seq/-,RNA_SEQ/UBERON:0004550 total RNA-seq,-,gastroesophageal sphincter,gastroesophageal sphincter,AlphaGenome
+RNA_SEQ/CL:0002188 total RNA-seq/+,RNA_SEQ/CL:0002188 total RNA-seq,+,glomerular endothelial cell,glomerular endothelial cell,AlphaGenome
+RNA_SEQ/CL:0002188 total RNA-seq/-,RNA_SEQ/CL:0002188 total RNA-seq,-,glomerular endothelial cell,glomerular endothelial cell,AlphaGenome
+RNA_SEQ/CL:0000679 total RNA-seq/+,RNA_SEQ/CL:0000679 total RNA-seq,+,glutamatergic neuron,glutamatergic neuron,AlphaGenome
+RNA_SEQ/CL:0000679 total RNA-seq/-,RNA_SEQ/CL:0000679 total RNA-seq,-,glutamatergic neuron,glutamatergic neuron,AlphaGenome
+RNA_SEQ/EFO:0002784 polyA plus RNA-seq/+,RNA_SEQ/EFO:0002784 polyA plus RNA-seq,+,gm12878,GM12878,AlphaGenome
+RNA_SEQ/EFO:0002784 polyA plus RNA-seq/-,RNA_SEQ/EFO:0002784 polyA plus RNA-seq,-,gm12878,GM12878,AlphaGenome
+RNA_SEQ/EFO:0002784 polyA plus RNA-seq/.,RNA_SEQ/EFO:0002784 polyA plus RNA-seq/.,.,gm12878,GM12878,AlphaGenome
+RNA_SEQ/EFO:0002784 total RNA-seq/+,RNA_SEQ/EFO:0002784 total RNA-seq,+,gm12878,GM12878,AlphaGenome
+RNA_SEQ/EFO:0002784 total RNA-seq/-,RNA_SEQ/EFO:0002784 total RNA-seq,-,gm12878,GM12878,AlphaGenome
+RNA_SEQ/EFO:0002785 polyA plus RNA-seq/.,RNA_SEQ/EFO:0002785 polyA plus RNA-seq/.,.,gm12891,GM12891,AlphaGenome
+RNA_SEQ/EFO:0002786 polyA plus RNA-seq/.,RNA_SEQ/EFO:0002786 polyA plus RNA-seq/.,.,gm12892,GM12892,AlphaGenome
+RNA_SEQ/EFO:0005723 polyA plus RNA-seq/.,RNA_SEQ/EFO:0005723 polyA plus RNA-seq/.,.,gm23248,GM23248,AlphaGenome
+RNA_SEQ/EFO:0005723 total RNA-seq/+,RNA_SEQ/EFO:0005723 total RNA-seq,+,gm23248,GM23248,AlphaGenome
+RNA_SEQ/EFO:0005723 total RNA-seq/-,RNA_SEQ/EFO:0005723 total RNA-seq,-,gm23248,GM23248,AlphaGenome
+RNA_SEQ/EFO:0007950 polyA plus RNA-seq/.,RNA_SEQ/EFO:0007950 polyA plus RNA-seq/.,.,gm23338,GM23338,AlphaGenome
+RNA_SEQ/EFO:0007950 total RNA-seq/+,RNA_SEQ/EFO:0007950 total RNA-seq,+,gm23338,GM23338,AlphaGenome
+RNA_SEQ/EFO:0007950 total RNA-seq/-,RNA_SEQ/EFO:0007950 total RNA-seq,-,gm23338,GM23338,AlphaGenome
+RNA_SEQ/EFO:0003042 polyA plus RNA-seq/+,RNA_SEQ/EFO:0003042 polyA plus RNA-seq,+,h1,H1,AlphaGenome
+RNA_SEQ/EFO:0003042 polyA plus RNA-seq/-,RNA_SEQ/EFO:0003042 polyA plus RNA-seq,-,h1,H1,AlphaGenome
+RNA_SEQ/EFO:0003042 polyA plus RNA-seq/.,RNA_SEQ/EFO:0003042 polyA plus RNA-seq/.,.,h1,H1,AlphaGenome
+RNA_SEQ/EFO:0003042 total RNA-seq/+,RNA_SEQ/EFO:0003042 total RNA-seq,+,h1,H1,AlphaGenome
+RNA_SEQ/EFO:0003042 total RNA-seq/-,RNA_SEQ/EFO:0003042 total RNA-seq,-,h1,H1,AlphaGenome
+RNA_SEQ/EFO:0002184 total RNA-seq/+,RNA_SEQ/EFO:0002184 total RNA-seq,+,h4,H4,AlphaGenome
+RNA_SEQ/EFO:0002184 total RNA-seq/-,RNA_SEQ/EFO:0002184 total RNA-seq,-,h4,H4,AlphaGenome
+RNA_SEQ/EFO:0005904 total RNA-seq/+,RNA_SEQ/EFO:0005904 total RNA-seq,+,h7,H7,AlphaGenome
+RNA_SEQ/EFO:0005904 total RNA-seq/-,RNA_SEQ/EFO:0005904 total RNA-seq,-,h7,H7,AlphaGenome
+RNA_SEQ/EFO:0003045 total RNA-seq/+,RNA_SEQ/EFO:0003045 total RNA-seq,+,h9,H9,AlphaGenome
+RNA_SEQ/EFO:0003045 total RNA-seq/-,RNA_SEQ/EFO:0003045 total RNA-seq,-,h9,H9,AlphaGenome
+RNA_SEQ/CL:0000346 total RNA-seq/+,RNA_SEQ/CL:0000346 total RNA-seq,+,hair follicle dermal papilla cell,hair follicle dermal papilla cell,AlphaGenome
+RNA_SEQ/CL:0000346 total RNA-seq/-,RNA_SEQ/CL:0000346 total RNA-seq,-,hair follicle dermal papilla cell,hair follicle dermal papilla cell,AlphaGenome
+RNA_SEQ/CL:2000092 total RNA-seq/+,RNA_SEQ/CL:2000092 total RNA-seq,+,hair follicular keratinocyte,hair follicular keratinocyte,AlphaGenome
+RNA_SEQ/CL:2000092 total RNA-seq/-,RNA_SEQ/CL:2000092 total RNA-seq,-,hair follicular keratinocyte,hair follicular keratinocyte,AlphaGenome
+RNA_SEQ/EFO:0002824 polyA plus RNA-seq/.,RNA_SEQ/EFO:0002824 polyA plus RNA-seq/.,.,hct116,HCT116,AlphaGenome
+RNA_SEQ/EFO:0002824 total RNA-seq/+,RNA_SEQ/EFO:0002824 total RNA-seq,+,hct116,HCT116,AlphaGenome
+RNA_SEQ/EFO:0002824 total RNA-seq/-,RNA_SEQ/EFO:0002824 total RNA-seq,-,hct116,HCT116,AlphaGenome
+RNA_SEQ/UBERON:0000948 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0000948 polyA plus RNA-seq,+,heart,heart,AlphaGenome
+RNA_SEQ/UBERON:0000948 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0000948 polyA plus RNA-seq,-,heart,heart,AlphaGenome
+RNA_SEQ/UBERON:0000948 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0000948 polyA plus RNA-seq/.,.,heart,heart,AlphaGenome
+RNA_SEQ/UBERON:0000948 total RNA-seq/+,RNA_SEQ/UBERON:0000948 total RNA-seq,+,heart,heart,AlphaGenome
+RNA_SEQ/UBERON:0000948 total RNA-seq/-,RNA_SEQ/UBERON:0000948 total RNA-seq,-,heart,heart,AlphaGenome
+RNA_SEQ/UBERON:0002084 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0002084 polyA plus RNA-seq,+,heart left ventricle,heart left ventricle,AlphaGenome
+RNA_SEQ/UBERON:0002084 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0002084 polyA plus RNA-seq,-,heart left ventricle,heart left ventricle,AlphaGenome
+RNA_SEQ/UBERON:0002084 total RNA-seq/+,RNA_SEQ/UBERON:0002084 total RNA-seq,+,heart left ventricle,heart left ventricle,AlphaGenome
+RNA_SEQ/UBERON:0002084 total RNA-seq/-,RNA_SEQ/UBERON:0002084 total RNA-seq,-,heart left ventricle,heart left ventricle,AlphaGenome
+RNA_SEQ/UBERON:0002080 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0002080 polyA plus RNA-seq,+,heart right ventricle,heart right ventricle,AlphaGenome
+RNA_SEQ/UBERON:0002080 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0002080 polyA plus RNA-seq,-,heart right ventricle,heart right ventricle,AlphaGenome
+RNA_SEQ/UBERON:0002080 total RNA-seq/+,RNA_SEQ/UBERON:0002080 total RNA-seq,+,heart right ventricle,heart right ventricle,AlphaGenome
+RNA_SEQ/UBERON:0002080 total RNA-seq/-,RNA_SEQ/UBERON:0002080 total RNA-seq,-,heart right ventricle,heart right ventricle,AlphaGenome
+RNA_SEQ/EFO:0002791 polyA plus RNA-seq/+,RNA_SEQ/EFO:0002791 polyA plus RNA-seq,+,hela-s3,HeLa-S3,AlphaGenome
+RNA_SEQ/EFO:0002791 polyA plus RNA-seq/-,RNA_SEQ/EFO:0002791 polyA plus RNA-seq,-,hela-s3,HeLa-S3,AlphaGenome
+RNA_SEQ/EFO:0002791 polyA plus RNA-seq/.,RNA_SEQ/EFO:0002791 polyA plus RNA-seq/.,.,hela-s3,HeLa-S3,AlphaGenome
+RNA_SEQ/CL:0000837 total RNA-seq/+,RNA_SEQ/CL:0000837 total RNA-seq,+,hematopoietic multipotent progenitor cell,hematopoietic multipotent progenitor cell,AlphaGenome
+RNA_SEQ/CL:0000837 total RNA-seq/-,RNA_SEQ/CL:0000837 total RNA-seq,-,hematopoietic multipotent progenitor cell,hematopoietic multipotent progenitor cell,AlphaGenome
+RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,hepatocyte,hepatocyte,AlphaGenome
+RNA_SEQ/CL:0000182 total RNA-seq/+,RNA_SEQ/CL:0000182 total RNA-seq,+,hepatocyte,hepatocyte,AlphaGenome
+RNA_SEQ/CL:0000182 total RNA-seq/-,RNA_SEQ/CL:0000182 total RNA-seq,-,hepatocyte,hepatocyte,AlphaGenome
+RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,hepg2,HepG2,AlphaGenome
+RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,-,hepg2,HepG2,AlphaGenome
+RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,hepg2,HepG2,AlphaGenome
+RNA_SEQ/EFO:0001187 total RNA-seq/+,RNA_SEQ/EFO:0001187 total RNA-seq,+,hepg2,HepG2,AlphaGenome
+RNA_SEQ/EFO:0001187 total RNA-seq/-,RNA_SEQ/EFO:0001187 total RNA-seq,-,hepg2,HepG2,AlphaGenome
+RNA_SEQ/EFO:0009318 total RNA-seq/+,RNA_SEQ/EFO:0009318 total RNA-seq,+,hffc6,HFFc6,AlphaGenome
+RNA_SEQ/EFO:0009318 total RNA-seq/-,RNA_SEQ/EFO:0009318 total RNA-seq,-,hffc6,HFFc6,AlphaGenome
+RNA_SEQ/UBERON:0003663 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0003663 polyA plus RNA-seq/.,.,hindlimb muscle,hindlimb muscle,AlphaGenome
+RNA_SEQ/EFO:0001193 total RNA-seq/+,RNA_SEQ/EFO:0001193 total RNA-seq,+,ht-29,HT-29,AlphaGenome
+RNA_SEQ/EFO:0001193 total RNA-seq/-,RNA_SEQ/EFO:0001193 total RNA-seq,-,ht-29,HT-29,AlphaGenome
+RNA_SEQ/EFO:0002059 polyA plus RNA-seq/+,RNA_SEQ/EFO:0002059 polyA plus RNA-seq,+,ht1080,HT1080,AlphaGenome
+RNA_SEQ/EFO:0002059 polyA plus RNA-seq/-,RNA_SEQ/EFO:0002059 polyA plus RNA-seq,-,ht1080,HT1080,AlphaGenome
+RNA_SEQ/EFO:0002059 total RNA-seq/+,RNA_SEQ/EFO:0002059 total RNA-seq,+,ht1080,HT1080,AlphaGenome
+RNA_SEQ/EFO:0002059 total RNA-seq/-,RNA_SEQ/EFO:0002059 total RNA-seq,-,ht1080,HT1080,AlphaGenome
+RNA_SEQ/EFO:0007089 polyA plus RNA-seq/+,RNA_SEQ/EFO:0007089 polyA plus RNA-seq,+,hues64,HUES64,AlphaGenome
+RNA_SEQ/EFO:0007089 polyA plus RNA-seq/-,RNA_SEQ/EFO:0007089 polyA plus RNA-seq,-,hues64,HUES64,AlphaGenome
+RNA_SEQ/UBERON:0001898 gtex Brain_Hypothalamus polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001898 gtex Brain_Hypothalamus polyA plus RNA-seq/.,.,hypothalamus,hypothalamus,AlphaGenome
+RNA_SEQ/CL:0001053 polyA plus RNA-seq/.,RNA_SEQ/CL:0001053 polyA plus RNA-seq/.,.,igd-negative memory b cell,IgD-negative memory B cell,AlphaGenome
+RNA_SEQ/CL:0000823 polyA plus RNA-seq/.,RNA_SEQ/CL:0000823 polyA plus RNA-seq/.,.,immature natural killer cell,immature natural killer cell,AlphaGenome
+RNA_SEQ/EFO:0001196 polyA plus RNA-seq/+,RNA_SEQ/EFO:0001196 polyA plus RNA-seq,+,imr-90,IMR-90,AlphaGenome
+RNA_SEQ/EFO:0001196 polyA plus RNA-seq/-,RNA_SEQ/EFO:0001196 polyA plus RNA-seq,-,imr-90,IMR-90,AlphaGenome
+RNA_SEQ/EFO:0001196 total RNA-seq/+,RNA_SEQ/EFO:0001196 total RNA-seq,+,imr-90,IMR-90,AlphaGenome
+RNA_SEQ/EFO:0001196 total RNA-seq/-,RNA_SEQ/EFO:0001196 total RNA-seq,-,imr-90,IMR-90,AlphaGenome
+RNA_SEQ/CLO:0007045 polyA plus RNA-seq/.,RNA_SEQ/CLO:0007045 polyA plus RNA-seq/.,.,jurkat,Jurkat,AlphaGenome
+RNA_SEQ/EFO:0002067 polyA plus RNA-seq/+,RNA_SEQ/EFO:0002067 polyA plus RNA-seq,+,k562,K562,AlphaGenome
+RNA_SEQ/EFO:0002067 polyA plus RNA-seq/-,RNA_SEQ/EFO:0002067 polyA plus RNA-seq,-,k562,K562,AlphaGenome
+RNA_SEQ/EFO:0002067 polyA plus RNA-seq/.,RNA_SEQ/EFO:0002067 polyA plus RNA-seq/.,.,k562,K562,AlphaGenome
+RNA_SEQ/EFO:0002067 total RNA-seq/+,RNA_SEQ/EFO:0002067 total RNA-seq,+,k562,K562,AlphaGenome
+RNA_SEQ/EFO:0002067 total RNA-seq/-,RNA_SEQ/EFO:0002067 total RNA-seq,-,k562,K562,AlphaGenome
+RNA_SEQ/EFO:0005719 total RNA-seq/+,RNA_SEQ/EFO:0005719 total RNA-seq,+,karpas-422,Karpas-422,AlphaGenome
+RNA_SEQ/EFO:0005719 total RNA-seq/-,RNA_SEQ/EFO:0005719 total RNA-seq,-,karpas-422,Karpas-422,AlphaGenome
+RNA_SEQ/CL:0000312 polyA plus RNA-seq/+,RNA_SEQ/CL:0000312 polyA plus RNA-seq,+,keratinocyte,keratinocyte,AlphaGenome
+RNA_SEQ/CL:0000312 polyA plus RNA-seq/-,RNA_SEQ/CL:0000312 polyA plus RNA-seq,-,keratinocyte,keratinocyte,AlphaGenome
+RNA_SEQ/CL:0000312 polyA plus RNA-seq/.,RNA_SEQ/CL:0000312 polyA plus RNA-seq/.,.,keratinocyte,keratinocyte,AlphaGenome
+RNA_SEQ/UBERON:0002113 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0002113 polyA plus RNA-seq,+,kidney,kidney,AlphaGenome
+RNA_SEQ/UBERON:0002113 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0002113 polyA plus RNA-seq,-,kidney,kidney,AlphaGenome
+RNA_SEQ/UBERON:0002113 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002113 polyA plus RNA-seq/.,.,kidney,kidney,AlphaGenome
+RNA_SEQ/UBERON:0002113 total RNA-seq/+,RNA_SEQ/UBERON:0002113 total RNA-seq,+,kidney,kidney,AlphaGenome
+RNA_SEQ/UBERON:0002113 total RNA-seq/-,RNA_SEQ/UBERON:0002113 total RNA-seq,-,kidney,kidney,AlphaGenome
+RNA_SEQ/CL:0002518 total RNA-seq/+,RNA_SEQ/CL:0002518 total RNA-seq,+,kidney epithelial cell,kidney epithelial cell,AlphaGenome
+RNA_SEQ/CL:0002518 total RNA-seq/-,RNA_SEQ/CL:0002518 total RNA-seq,-,kidney epithelial cell,kidney epithelial cell,AlphaGenome
+RNA_SEQ/UBERON:0000059 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0000059 polyA plus RNA-seq/.,.,large intestine,large intestine,AlphaGenome
+RNA_SEQ/UBERON:0002079 total RNA-seq/+,RNA_SEQ/UBERON:0002079 total RNA-seq,+,left cardiac atrium,left cardiac atrium,AlphaGenome
+RNA_SEQ/UBERON:0002079 total RNA-seq/-,RNA_SEQ/UBERON:0002079 total RNA-seq,-,left cardiac atrium,left cardiac atrium,AlphaGenome
+RNA_SEQ/UBERON:0008971 total RNA-seq/+,RNA_SEQ/UBERON:0008971 total RNA-seq,+,left colon,left colon,AlphaGenome
+RNA_SEQ/UBERON:0008971 total RNA-seq/-,RNA_SEQ/UBERON:0008971 total RNA-seq,-,left colon,left colon,AlphaGenome
+RNA_SEQ/UBERON:0004538 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0004538 polyA plus RNA-seq/.,.,left kidney,left kidney,AlphaGenome
+RNA_SEQ/UBERON:0001115 total RNA-seq/+,RNA_SEQ/UBERON:0001115 total RNA-seq,+,left lobe of liver,left lobe of liver,AlphaGenome
+RNA_SEQ/UBERON:0001115 total RNA-seq/-,RNA_SEQ/UBERON:0001115 total RNA-seq,-,left lobe of liver,left lobe of liver,AlphaGenome
+RNA_SEQ/UBERON:0002168 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002168 polyA plus RNA-seq/.,.,left lung,left lung,AlphaGenome
+RNA_SEQ/UBERON:0002168 total RNA-seq/+,RNA_SEQ/UBERON:0002168 total RNA-seq,+,left lung,left lung,AlphaGenome
+RNA_SEQ/UBERON:0002168 total RNA-seq/-,RNA_SEQ/UBERON:0002168 total RNA-seq,-,left lung,left lung,AlphaGenome
+RNA_SEQ/UBERON:0018117 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0018117 polyA plus RNA-seq/.,.,left renal cortex interstitium,left renal cortex interstitium,AlphaGenome
+RNA_SEQ/UBERON:0018115 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0018115 polyA plus RNA-seq/.,.,left renal pelvis,left renal pelvis,AlphaGenome
+RNA_SEQ/UBERON:0006566 gtex Heart_Left_Ventricle polyA plus RNA-seq/.,RNA_SEQ/UBERON:0006566 gtex Heart_Left_Ventricle polyA plus RNA-seq/.,.,left ventricle myocardium,left ventricle myocardium,AlphaGenome
+RNA_SEQ/NTR:0000493 total RNA-seq/+,RNA_SEQ/NTR:0000493 total RNA-seq,+,left ventricle myocardium inferior,left ventricle myocardium inferior,AlphaGenome
+RNA_SEQ/NTR:0000493 total RNA-seq/-,RNA_SEQ/NTR:0000493 total RNA-seq,-,left ventricle myocardium inferior,left ventricle myocardium inferior,AlphaGenome
+RNA_SEQ/NTR:0000494 total RNA-seq/+,RNA_SEQ/NTR:0000494 total RNA-seq,+,left ventricle myocardium superior,left ventricle myocardium superior,AlphaGenome
+RNA_SEQ/NTR:0000494 total RNA-seq/-,RNA_SEQ/NTR:0000494 total RNA-seq,-,left ventricle myocardium superior,left ventricle myocardium superior,AlphaGenome
+RNA_SEQ/EFO:0005714 polyA plus RNA-seq/.,RNA_SEQ/EFO:0005714 polyA plus RNA-seq/.,.,lhcn-m2,LHCN-M2,AlphaGenome
+RNA_SEQ/EFO:0005714 total RNA-seq/+,RNA_SEQ/EFO:0005714 total RNA-seq,+,lhcn-m2,LHCN-M2,AlphaGenome
+RNA_SEQ/EFO:0005714 total RNA-seq/-,RNA_SEQ/EFO:0005714 total RNA-seq,-,lhcn-m2,LHCN-M2,AlphaGenome
+RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,liver,liver,AlphaGenome
+RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,-,liver,liver,AlphaGenome
+RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,liver,liver,AlphaGenome
+RNA_SEQ/UBERON:0002107 total RNA-seq/+,RNA_SEQ/UBERON:0002107 total RNA-seq,+,liver,liver,AlphaGenome
+RNA_SEQ/UBERON:0002107 total RNA-seq/-,RNA_SEQ/UBERON:0002107 total RNA-seq,-,liver,liver,AlphaGenome
+RNA_SEQ/UBERON:0004264 gtex Skin_Sun_Exposed_Lower_leg polyA plus RNA-seq/.,RNA_SEQ/UBERON:0004264 gtex Skin_Sun_Exposed_Lower_leg polyA plus RNA-seq/.,.,lower leg skin,lower leg skin,AlphaGenome
+RNA_SEQ/UBERON:0004264 total RNA-seq/+,RNA_SEQ/UBERON:0004264 total RNA-seq,+,lower leg skin,lower leg skin,AlphaGenome
+RNA_SEQ/UBERON:0004264 total RNA-seq/-,RNA_SEQ/UBERON:0004264 total RNA-seq,-,lower leg skin,lower leg skin,AlphaGenome
+RNA_SEQ/UBERON:0008953 total RNA-seq/+,RNA_SEQ/UBERON:0008953 total RNA-seq,+,lower lobe of left lung,lower lobe of left lung,AlphaGenome
+RNA_SEQ/UBERON:0008953 total RNA-seq/-,RNA_SEQ/UBERON:0008953 total RNA-seq,-,lower lobe of left lung,lower lobe of left lung,AlphaGenome
+RNA_SEQ/UBERON:0002171 total RNA-seq/+,RNA_SEQ/UBERON:0002171 total RNA-seq,+,lower lobe of right lung,lower lobe of right lung,AlphaGenome
+RNA_SEQ/UBERON:0002171 total RNA-seq/-,RNA_SEQ/UBERON:0002171 total RNA-seq,-,lower lobe of right lung,lower lobe of right lung,AlphaGenome
+RNA_SEQ/CL:0002326 polyA plus RNA-seq/+,RNA_SEQ/CL:0002326 polyA plus RNA-seq,+,luminal epithelial cell of mammary gland,luminal epithelial cell of mammary gland,AlphaGenome
+RNA_SEQ/CL:0002326 polyA plus RNA-seq/-,RNA_SEQ/CL:0002326 polyA plus RNA-seq,-,luminal epithelial cell of mammary gland,luminal epithelial cell of mammary gland,AlphaGenome
+RNA_SEQ/UBERON:0002048 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0002048 polyA plus RNA-seq,+,lung,lung,AlphaGenome
+RNA_SEQ/UBERON:0002048 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0002048 polyA plus RNA-seq,-,lung,lung,AlphaGenome
+RNA_SEQ/UBERON:0002048 total RNA-seq/+,RNA_SEQ/UBERON:0002048 total RNA-seq,+,lung,lung,AlphaGenome
+RNA_SEQ/UBERON:0002048 total RNA-seq/-,RNA_SEQ/UBERON:0002048 total RNA-seq,-,lung,lung,AlphaGenome
+RNA_SEQ/CL:2000016 total RNA-seq/+,RNA_SEQ/CL:2000016 total RNA-seq,+,lung microvascular endothelial cell,lung microvascular endothelial cell,AlphaGenome
+RNA_SEQ/CL:2000016 total RNA-seq/-,RNA_SEQ/CL:2000016 total RNA-seq,-,lung microvascular endothelial cell,lung microvascular endothelial cell,AlphaGenome
+RNA_SEQ/EFO:0000572 gtex Cells_EBV-transformed_lymphocytes polyA plus RNA-seq/.,RNA_SEQ/EFO:0000572 gtex Cells_EBV-transformed_lymphocytes polyA plus RNA-seq/.,.,lymphoblast,lymphoblast,AlphaGenome
+RNA_SEQ/EFO:0005697 total RNA-seq/+,RNA_SEQ/EFO:0005697 total RNA-seq,+,m059j,M059J,AlphaGenome
+RNA_SEQ/EFO:0005697 total RNA-seq/-,RNA_SEQ/EFO:0005697 total RNA-seq,-,m059j,M059J,AlphaGenome
+RNA_SEQ/CL:0002327 polyA plus RNA-seq/+,RNA_SEQ/CL:0002327 polyA plus RNA-seq,+,mammary epithelial cell,mammary epithelial cell,AlphaGenome
+RNA_SEQ/CL:0002327 polyA plus RNA-seq/-,RNA_SEQ/CL:0002327 polyA plus RNA-seq,-,mammary epithelial cell,mammary epithelial cell,AlphaGenome
+RNA_SEQ/CL:0002327 total RNA-seq/+,RNA_SEQ/CL:0002327 total RNA-seq,+,mammary epithelial cell,mammary epithelial cell,AlphaGenome
+RNA_SEQ/CL:0002327 total RNA-seq/-,RNA_SEQ/CL:0002327 total RNA-seq,-,mammary epithelial cell,mammary epithelial cell,AlphaGenome
+RNA_SEQ/CL:2000071 total RNA-seq/+,RNA_SEQ/CL:2000071 total RNA-seq,+,mammary microvascular endothelial cell,mammary microvascular endothelial cell,AlphaGenome
+RNA_SEQ/CL:2000071 total RNA-seq/-,RNA_SEQ/CL:2000071 total RNA-seq,-,mammary microvascular endothelial cell,mammary microvascular endothelial cell,AlphaGenome
+RNA_SEQ/CL:0002451 polyA plus RNA-seq/+,RNA_SEQ/CL:0002451 polyA plus RNA-seq,+,mammary stem cell,mammary stem cell,AlphaGenome
+RNA_SEQ/CL:0002451 polyA plus RNA-seq/-,RNA_SEQ/CL:0002451 polyA plus RNA-seq,-,mammary stem cell,mammary stem cell,AlphaGenome
+RNA_SEQ/EFO:0001200 total RNA-seq/+,RNA_SEQ/EFO:0001200 total RNA-seq,+,mcf 10a,MCF 10A,AlphaGenome
+RNA_SEQ/EFO:0001200 total RNA-seq/-,RNA_SEQ/EFO:0001200 total RNA-seq,-,mcf 10a,MCF 10A,AlphaGenome
+RNA_SEQ/EFO:0001203 polyA plus RNA-seq/+,RNA_SEQ/EFO:0001203 polyA plus RNA-seq,+,mcf-7,MCF-7,AlphaGenome
+RNA_SEQ/EFO:0001203 polyA plus RNA-seq/-,RNA_SEQ/EFO:0001203 polyA plus RNA-seq,-,mcf-7,MCF-7,AlphaGenome
+RNA_SEQ/EFO:0001203 polyA plus RNA-seq/.,RNA_SEQ/EFO:0001203 polyA plus RNA-seq/.,.,mcf-7,MCF-7,AlphaGenome
+RNA_SEQ/EFO:0001203 total RNA-seq/+,RNA_SEQ/EFO:0001203 total RNA-seq,+,mcf-7,MCF-7,AlphaGenome
+RNA_SEQ/EFO:0001203 total RNA-seq/-,RNA_SEQ/EFO:0001203 total RNA-seq,-,mcf-7,MCF-7,AlphaGenome
+RNA_SEQ/CL:1000458 total RNA-seq/+,RNA_SEQ/CL:1000458 total RNA-seq,+,melanocyte of skin,melanocyte of skin,AlphaGenome
+RNA_SEQ/CL:1000458 total RNA-seq/-,RNA_SEQ/CL:1000458 total RNA-seq,-,melanocyte of skin,melanocyte of skin,AlphaGenome
+RNA_SEQ/CL:0000650 total RNA-seq/+,RNA_SEQ/CL:0000650 total RNA-seq,+,mesangial cell,mesangial cell,AlphaGenome
+RNA_SEQ/CL:0000650 total RNA-seq/-,RNA_SEQ/CL:0000650 total RNA-seq,-,mesangial cell,mesangial cell,AlphaGenome
+RNA_SEQ/CL:0000134 polyA plus RNA-seq/+,RNA_SEQ/CL:0000134 polyA plus RNA-seq,+,mesenchymal stem cell,mesenchymal stem cell,AlphaGenome
+RNA_SEQ/CL:0000134 polyA plus RNA-seq/-,RNA_SEQ/CL:0000134 polyA plus RNA-seq,-,mesenchymal stem cell,mesenchymal stem cell,AlphaGenome
+RNA_SEQ/CL:0002570 total RNA-seq/+,RNA_SEQ/CL:0002570 total RNA-seq,+,mesenchymal stem cell of adipose,mesenchymal stem cell of adipose,AlphaGenome
+RNA_SEQ/CL:0002570 total RNA-seq/-,RNA_SEQ/CL:0002570 total RNA-seq,-,mesenchymal stem cell of adipose,mesenchymal stem cell of adipose,AlphaGenome
+RNA_SEQ/CL:0002540 total RNA-seq/+,RNA_SEQ/CL:0002540 total RNA-seq,+,mesenchymal stem cell of the bone marrow,mesenchymal stem cell of the bone marrow,AlphaGenome
+RNA_SEQ/CL:0002540 total RNA-seq/-,RNA_SEQ/CL:0002540 total RNA-seq,-,mesenchymal stem cell of the bone marrow,mesenchymal stem cell of the bone marrow,AlphaGenome
+RNA_SEQ/CL:0002568 total RNA-seq/+,RNA_SEQ/CL:0002568 total RNA-seq,+,mesenchymal stem cell of wharton's jelly,mesenchymal stem cell of Wharton's jelly,AlphaGenome
+RNA_SEQ/CL:0002568 total RNA-seq/-,RNA_SEQ/CL:0002568 total RNA-seq,-,mesenchymal stem cell of wharton's jelly,mesenchymal stem cell of Wharton's jelly,AlphaGenome
+RNA_SEQ/NTR:0000856 polyA plus RNA-seq/+,RNA_SEQ/NTR:0000856 polyA plus RNA-seq,+,mesendoderm,mesendoderm,AlphaGenome
+RNA_SEQ/NTR:0000856 polyA plus RNA-seq/-,RNA_SEQ/NTR:0000856 polyA plus RNA-seq,-,mesendoderm,mesendoderm,AlphaGenome
+RNA_SEQ/UBERON:0015143 total RNA-seq/+,RNA_SEQ/UBERON:0015143 total RNA-seq,+,mesenteric fat pad,mesenteric fat pad,AlphaGenome
+RNA_SEQ/UBERON:0015143 total RNA-seq/-,RNA_SEQ/UBERON:0015143 total RNA-seq,-,mesenteric fat pad,mesenteric fat pad,AlphaGenome
+RNA_SEQ/CL:0000222 polyA plus RNA-seq/+,RNA_SEQ/CL:0000222 polyA plus RNA-seq,+,mesodermal cell,mesodermal cell,AlphaGenome
+RNA_SEQ/CL:0000222 polyA plus RNA-seq/-,RNA_SEQ/CL:0000222 polyA plus RNA-seq,-,mesodermal cell,mesodermal cell,AlphaGenome
+RNA_SEQ/CL:0011019 total RNA-seq/+,RNA_SEQ/CL:0011019 total RNA-seq,+,mesothelial cell of epicardium,mesothelial cell of epicardium,AlphaGenome
+RNA_SEQ/CL:0011019 total RNA-seq/-,RNA_SEQ/CL:0011019 total RNA-seq,-,mesothelial cell of epicardium,mesothelial cell of epicardium,AlphaGenome
+RNA_SEQ/UBERON:0000081 total RNA-seq/+,RNA_SEQ/UBERON:0000081 total RNA-seq,+,metanephros,metanephros,AlphaGenome
+RNA_SEQ/UBERON:0000081 total RNA-seq/-,RNA_SEQ/UBERON:0000081 total RNA-seq,-,metanephros,metanephros,AlphaGenome
+RNA_SEQ/EFO:0002234 total RNA-seq/+,RNA_SEQ/EFO:0002234 total RNA-seq,+,mg63,MG63,AlphaGenome
+RNA_SEQ/EFO:0002234 total RNA-seq/-,RNA_SEQ/EFO:0002234 total RNA-seq,-,mg63,MG63,AlphaGenome
+RNA_SEQ/UBERON:1000010 polyA plus RNA-seq/+,RNA_SEQ/UBERON:1000010 polyA plus RNA-seq,+,mole,mole,AlphaGenome
+RNA_SEQ/UBERON:1000010 polyA plus RNA-seq/-,RNA_SEQ/UBERON:1000010 polyA plus RNA-seq,-,mole,mole,AlphaGenome
+RNA_SEQ/CL:0000842 total RNA-seq/+,RNA_SEQ/CL:0000842 total RNA-seq,+,mononuclear cell,mononuclear cell,AlphaGenome
+RNA_SEQ/CL:0000842 total RNA-seq/-,RNA_SEQ/CL:0000842 total RNA-seq,-,mononuclear cell,mononuclear cell,AlphaGenome
+RNA_SEQ/CL:0000100 total RNA-seq/.,RNA_SEQ/CL:0000100 total RNA-seq/.,.,motor neuron,motor neuron,AlphaGenome
+RNA_SEQ/UBERON:0004992 total RNA-seq/+,RNA_SEQ/UBERON:0004992 total RNA-seq,+,mucosa of descending colon,mucosa of descending colon,AlphaGenome
+RNA_SEQ/UBERON:0004992 total RNA-seq/-,RNA_SEQ/UBERON:0004992 total RNA-seq,-,mucosa of descending colon,mucosa of descending colon,AlphaGenome
+RNA_SEQ/UBERON:0005033 total RNA-seq/+,RNA_SEQ/UBERON:0005033 total RNA-seq,+,mucosa of gallbladder,mucosa of gallbladder,AlphaGenome
+RNA_SEQ/UBERON:0005033 total RNA-seq/-,RNA_SEQ/UBERON:0005033 total RNA-seq,-,mucosa of gallbladder,mucosa of gallbladder,AlphaGenome
+RNA_SEQ/UBERON:0001499 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001499 polyA plus RNA-seq/.,.,muscle of arm,muscle of arm,AlphaGenome
+RNA_SEQ/UBERON:0002324 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002324 polyA plus RNA-seq/.,.,muscle of back,muscle of back,AlphaGenome
+RNA_SEQ/UBERON:0001383 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0001383 polyA plus RNA-seq,+,muscle of leg,muscle of leg,AlphaGenome
+RNA_SEQ/UBERON:0001383 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0001383 polyA plus RNA-seq,-,muscle of leg,muscle of leg,AlphaGenome
+RNA_SEQ/UBERON:0001383 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001383 polyA plus RNA-seq/.,.,muscle of leg,muscle of leg,AlphaGenome
+RNA_SEQ/UBERON:0001774 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001774 polyA plus RNA-seq/.,.,muscle of trunk,muscle of trunk,AlphaGenome
+RNA_SEQ/CL:0000187 polyA plus RNA-seq/.,RNA_SEQ/CL:0000187 polyA plus RNA-seq/.,.,myocyte,myocyte,AlphaGenome
+RNA_SEQ/CL:0000187 total RNA-seq/+,RNA_SEQ/CL:0000187 total RNA-seq,+,myocyte,myocyte,AlphaGenome
+RNA_SEQ/CL:0000187 total RNA-seq/-,RNA_SEQ/CL:0000187 total RNA-seq,-,myocyte,myocyte,AlphaGenome
+RNA_SEQ/CL:0002324 polyA plus RNA-seq/+,RNA_SEQ/CL:0002324 polyA plus RNA-seq,+,myoepithelial cell of mammary gland,myoepithelial cell of mammary gland,AlphaGenome
+RNA_SEQ/CL:0002324 polyA plus RNA-seq/-,RNA_SEQ/CL:0002324 polyA plus RNA-seq,-,myoepithelial cell of mammary gland,myoepithelial cell of mammary gland,AlphaGenome
+RNA_SEQ/CL:0002366 total RNA-seq/+,RNA_SEQ/CL:0002366 total RNA-seq,+,myometrial cell,myometrial cell,AlphaGenome
+RNA_SEQ/CL:0002366 total RNA-seq/-,RNA_SEQ/CL:0002366 total RNA-seq,-,myometrial cell,myometrial cell,AlphaGenome
+RNA_SEQ/CL:0002372 total RNA-seq/+,RNA_SEQ/CL:0002372 total RNA-seq,+,myotube,myotube,AlphaGenome
+RNA_SEQ/CL:0002372 total RNA-seq/-,RNA_SEQ/CL:0002372 total RNA-seq,-,myotube,myotube,AlphaGenome
+RNA_SEQ/CL:0000788 polyA plus RNA-seq/.,RNA_SEQ/CL:0000788 polyA plus RNA-seq/.,.,naive b cell,naive B cell,AlphaGenome
+RNA_SEQ/CL:0000895 polyA plus RNA-seq/.,RNA_SEQ/CL:0000895 polyA plus RNA-seq/.,.,naive thymus-derived cd4-positive,naive thymus-derived CD4-positive,AlphaGenome
+RNA_SEQ/CL:0000895 total RNA-seq/+,RNA_SEQ/CL:0000895 total RNA-seq,+,naive thymus-derived cd4-positive,naive thymus-derived CD4-positive,AlphaGenome
+RNA_SEQ/CL:0000895 total RNA-seq/-,RNA_SEQ/CL:0000895 total RNA-seq,-,naive thymus-derived cd4-positive,naive thymus-derived CD4-positive,AlphaGenome
+RNA_SEQ/CL:0000900 polyA plus RNA-seq/.,RNA_SEQ/CL:0000900 polyA plus RNA-seq/.,.,naive thymus-derived cd8-positive,naive thymus-derived CD8-positive,AlphaGenome
+RNA_SEQ/CL:0000900 total RNA-seq/+,RNA_SEQ/CL:0000900 total RNA-seq,+,naive thymus-derived cd8-positive,naive thymus-derived CD8-positive,AlphaGenome
+RNA_SEQ/CL:0000900 total RNA-seq/-,RNA_SEQ/CL:0000900 total RNA-seq,-,naive thymus-derived cd8-positive,naive thymus-derived CD8-positive,AlphaGenome
+RNA_SEQ/CL:2000094 total RNA-seq/+,RNA_SEQ/CL:2000094 total RNA-seq,+,nasal cavity respiratory epithelium epithelial cell of viscerocranial mucosa,nasal cavity respiratory epithelium epithelial cell of viscerocranial mucosa,AlphaGenome
+RNA_SEQ/CL:2000094 total RNA-seq/-,RNA_SEQ/CL:2000094 total RNA-seq,-,nasal cavity respiratory epithelium epithelial cell of viscerocranial mucosa,nasal cavity respiratory epithelium epithelial cell of viscerocranial mucosa,AlphaGenome
+RNA_SEQ/CL:0000623 polyA plus RNA-seq/+,RNA_SEQ/CL:0000623 polyA plus RNA-seq,+,natural killer cell,natural killer cell,AlphaGenome
+RNA_SEQ/CL:0000623 polyA plus RNA-seq/-,RNA_SEQ/CL:0000623 polyA plus RNA-seq,-,natural killer cell,natural killer cell,AlphaGenome
+RNA_SEQ/CL:0000623 total RNA-seq/+,RNA_SEQ/CL:0000623 total RNA-seq,+,natural killer cell,natural killer cell,AlphaGenome
+RNA_SEQ/CL:0000623 total RNA-seq/-,RNA_SEQ/CL:0000623 total RNA-seq,-,natural killer cell,natural killer cell,AlphaGenome
+RNA_SEQ/EFO:0003044 polyA plus RNA-seq/+,RNA_SEQ/EFO:0003044 polyA plus RNA-seq,+,nci-h460,NCI-H460,AlphaGenome
+RNA_SEQ/EFO:0003044 polyA plus RNA-seq/-,RNA_SEQ/EFO:0003044 polyA plus RNA-seq,-,nci-h460,NCI-H460,AlphaGenome
+RNA_SEQ/EFO:0003044 total RNA-seq/+,RNA_SEQ/EFO:0003044 total RNA-seq,+,nci-h460,NCI-H460,AlphaGenome
+RNA_SEQ/EFO:0003044 total RNA-seq/-,RNA_SEQ/EFO:0003044 total RNA-seq,-,nci-h460,NCI-H460,AlphaGenome
+RNA_SEQ/CL:0002319 polyA plus RNA-seq/+,RNA_SEQ/CL:0002319 polyA plus RNA-seq,+,neural cell,neural cell,AlphaGenome
+RNA_SEQ/CL:0002319 polyA plus RNA-seq/-,RNA_SEQ/CL:0002319 polyA plus RNA-seq,-,neural cell,neural cell,AlphaGenome
+RNA_SEQ/CL:0011012 total RNA-seq/+,RNA_SEQ/CL:0011012 total RNA-seq,+,neural crest cell,neural crest cell,AlphaGenome
+RNA_SEQ/CL:0011012 total RNA-seq/-,RNA_SEQ/CL:0011012 total RNA-seq,-,neural crest cell,neural crest cell,AlphaGenome
+RNA_SEQ/CL:0011020 total RNA-seq/+,RNA_SEQ/CL:0011020 total RNA-seq,+,neural progenitor cell,neural progenitor cell,AlphaGenome
+RNA_SEQ/CL:0011020 total RNA-seq/-,RNA_SEQ/CL:0011020 total RNA-seq,-,neural progenitor cell,neural progenitor cell,AlphaGenome
+RNA_SEQ/CL:0000047 polyA plus RNA-seq/+,RNA_SEQ/CL:0000047 polyA plus RNA-seq,+,neuronal stem cell,neuronal stem cell,AlphaGenome
+RNA_SEQ/CL:0000047 polyA plus RNA-seq/-,RNA_SEQ/CL:0000047 polyA plus RNA-seq,-,neuronal stem cell,neuronal stem cell,AlphaGenome
+RNA_SEQ/NTR:0000427 polyA plus RNA-seq/+,RNA_SEQ/NTR:0000427 polyA plus RNA-seq,+,neurosphere,neurosphere,AlphaGenome
+RNA_SEQ/NTR:0000427 polyA plus RNA-seq/-,RNA_SEQ/NTR:0000427 polyA plus RNA-seq,-,neurosphere,neurosphere,AlphaGenome
+RNA_SEQ/UBERON:0001882 gtex Brain_Nucleus_accumbens_basal_ganglia polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001882 gtex Brain_Nucleus_accumbens_basal_ganglia polyA plus RNA-seq/.,.,nucleus accumbens,nucleus accumbens,AlphaGenome
+RNA_SEQ/UBERON:0002021 total RNA-seq/+,RNA_SEQ/UBERON:0002021 total RNA-seq,+,occipital lobe,occipital lobe,AlphaGenome
+RNA_SEQ/UBERON:0002021 total RNA-seq/-,RNA_SEQ/UBERON:0002021 total RNA-seq,-,occipital lobe,occipital lobe,AlphaGenome
+RNA_SEQ/EFO:0006711 total RNA-seq/+,RNA_SEQ/EFO:0006711 total RNA-seq,+,oci-ly7,OCI-LY7,AlphaGenome
+RNA_SEQ/EFO:0006711 total RNA-seq/-,RNA_SEQ/EFO:0006711 total RNA-seq,-,oci-ly7,OCI-LY7,AlphaGenome
+RNA_SEQ/UBERON:0010414 gtex Adipose_Visceral_Omentum polyA plus RNA-seq/.,RNA_SEQ/UBERON:0010414 gtex Adipose_Visceral_Omentum polyA plus RNA-seq/.,.,omental fat pad,omental fat pad,AlphaGenome
+RNA_SEQ/UBERON:0010414 total RNA-seq/+,RNA_SEQ/UBERON:0010414 total RNA-seq,+,omental fat pad,omental fat pad,AlphaGenome
+RNA_SEQ/UBERON:0010414 total RNA-seq/-,RNA_SEQ/UBERON:0010414 total RNA-seq,-,omental fat pad,omental fat pad,AlphaGenome
+RNA_SEQ/CL:0000062 total RNA-seq/+,RNA_SEQ/CL:0000062 total RNA-seq,+,osteoblast,osteoblast,AlphaGenome
+RNA_SEQ/CL:0000062 total RNA-seq/-,RNA_SEQ/CL:0000062 total RNA-seq,-,osteoblast,osteoblast,AlphaGenome
+RNA_SEQ/CL:0000137 total RNA-seq/+,RNA_SEQ/CL:0000137 total RNA-seq,+,osteocyte,osteocyte,AlphaGenome
+RNA_SEQ/CL:0000137 total RNA-seq/-,RNA_SEQ/CL:0000137 total RNA-seq,-,osteocyte,osteocyte,AlphaGenome
+RNA_SEQ/UBERON:0001293 gtex Kidney_Medulla polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001293 gtex Kidney_Medulla polyA plus RNA-seq/.,.,outer medulla of kidney,outer medulla of kidney,AlphaGenome
+RNA_SEQ/UBERON:0000992 gtex Ovary polyA plus RNA-seq/.,RNA_SEQ/UBERON:0000992 gtex Ovary polyA plus RNA-seq/.,.,ovary,ovary,AlphaGenome
+RNA_SEQ/UBERON:0000992 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0000992 polyA plus RNA-seq,+,ovary,ovary,AlphaGenome
+RNA_SEQ/UBERON:0000992 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0000992 polyA plus RNA-seq,-,ovary,ovary,AlphaGenome
+RNA_SEQ/UBERON:0000992 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0000992 polyA plus RNA-seq/.,.,ovary,ovary,AlphaGenome
+RNA_SEQ/UBERON:0000992 total RNA-seq/+,RNA_SEQ/UBERON:0000992 total RNA-seq,+,ovary,ovary,AlphaGenome
+RNA_SEQ/UBERON:0000992 total RNA-seq/-,RNA_SEQ/UBERON:0000992 total RNA-seq,-,ovary,ovary,AlphaGenome
+RNA_SEQ/EFO:0002713 polyA plus RNA-seq/.,RNA_SEQ/EFO:0002713 polyA plus RNA-seq/.,.,panc1,Panc1,AlphaGenome
+RNA_SEQ/EFO:0002713 total RNA-seq/+,RNA_SEQ/EFO:0002713 total RNA-seq,+,panc1,Panc1,AlphaGenome
+RNA_SEQ/EFO:0002713 total RNA-seq/-,RNA_SEQ/EFO:0002713 total RNA-seq,-,panc1,Panc1,AlphaGenome
+RNA_SEQ/UBERON:0001264 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0001264 polyA plus RNA-seq,+,pancreas,pancreas,AlphaGenome
+RNA_SEQ/UBERON:0001264 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0001264 polyA plus RNA-seq,-,pancreas,pancreas,AlphaGenome
+RNA_SEQ/UBERON:0001264 total RNA-seq/+,RNA_SEQ/UBERON:0001264 total RNA-seq,+,pancreas,pancreas,AlphaGenome
+RNA_SEQ/UBERON:0001264 total RNA-seq/-,RNA_SEQ/UBERON:0001264 total RNA-seq,-,pancreas,pancreas,AlphaGenome
+RNA_SEQ/UBERON:0001872 total RNA-seq/+,RNA_SEQ/UBERON:0001872 total RNA-seq,+,parietal lobe,parietal lobe,AlphaGenome
+RNA_SEQ/UBERON:0001872 total RNA-seq/-,RNA_SEQ/UBERON:0001872 total RNA-seq,-,parietal lobe,parietal lobe,AlphaGenome
+RNA_SEQ/EFO:0002074 total RNA-seq/+,RNA_SEQ/EFO:0002074 total RNA-seq,+,pc-3,PC-3,AlphaGenome
+RNA_SEQ/EFO:0002074 total RNA-seq/-,RNA_SEQ/EFO:0002074 total RNA-seq,-,pc-3,PC-3,AlphaGenome
+RNA_SEQ/EFO:0002847 total RNA-seq/+,RNA_SEQ/EFO:0002847 total RNA-seq,+,pc-9,PC-9,AlphaGenome
+RNA_SEQ/EFO:0002847 total RNA-seq/-,RNA_SEQ/EFO:0002847 total RNA-seq,-,pc-9,PC-9,AlphaGenome
+RNA_SEQ/CL:2000068 total RNA-seq/+,RNA_SEQ/CL:2000068 total RNA-seq,+,pericardium fibroblast,pericardium fibroblast,AlphaGenome
+RNA_SEQ/CL:2000068 total RNA-seq/-,RNA_SEQ/CL:2000068 total RNA-seq,-,pericardium fibroblast,pericardium fibroblast,AlphaGenome
+RNA_SEQ/CL:2000001 polyA plus RNA-seq/+,RNA_SEQ/CL:2000001 polyA plus RNA-seq,+,peripheral blood mononuclear cell,peripheral blood mononuclear cell,AlphaGenome
+RNA_SEQ/CL:2000001 polyA plus RNA-seq/-,RNA_SEQ/CL:2000001 polyA plus RNA-seq,-,peripheral blood mononuclear cell,peripheral blood mononuclear cell,AlphaGenome
+RNA_SEQ/UBERON:0001211 gtex Small_Intestine_Terminal_Ileum polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001211 gtex Small_Intestine_Terminal_Ileum polyA plus RNA-seq/.,.,peyer's patch,Peyer's patch,AlphaGenome
+RNA_SEQ/UBERON:0001211 total RNA-seq/+,RNA_SEQ/UBERON:0001211 total RNA-seq,+,peyer's patch,Peyer's patch,AlphaGenome
+RNA_SEQ/UBERON:0001211 total RNA-seq/-,RNA_SEQ/UBERON:0001211 total RNA-seq,-,peyer's patch,Peyer's patch,AlphaGenome
+RNA_SEQ/EFO:0005234 polyA plus RNA-seq/.,RNA_SEQ/EFO:0005234 polyA plus RNA-seq/.,.,pfsk-1,PFSK-1,AlphaGenome
+RNA_SEQ/UBERON:0000007 gtex Pituitary polyA plus RNA-seq/.,RNA_SEQ/UBERON:0000007 gtex Pituitary polyA plus RNA-seq/.,.,pituitary gland,pituitary gland,AlphaGenome
+RNA_SEQ/UBERON:0001987 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0001987 polyA plus RNA-seq,+,placenta,placenta,AlphaGenome
+RNA_SEQ/UBERON:0001987 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0001987 polyA plus RNA-seq,-,placenta,placenta,AlphaGenome
+RNA_SEQ/UBERON:0001987 total RNA-seq/+,RNA_SEQ/UBERON:0001987 total RNA-seq,+,placenta,placenta,AlphaGenome
+RNA_SEQ/UBERON:0001987 total RNA-seq/-,RNA_SEQ/UBERON:0001987 total RNA-seq,-,placenta,placenta,AlphaGenome
+RNA_SEQ/NTR:0003013 polyA plus RNA-seq/+,RNA_SEQ/NTR:0003013 polyA plus RNA-seq,+,placental basal plate,placental basal plate,AlphaGenome
+RNA_SEQ/NTR:0003013 polyA plus RNA-seq/-,RNA_SEQ/NTR:0003013 polyA plus RNA-seq,-,placental basal plate,placental basal plate,AlphaGenome
+RNA_SEQ/CL:0002577 total RNA-seq/+,RNA_SEQ/CL:0002577 total RNA-seq,+,placental epithelial cell,placental epithelial cell,AlphaGenome
+RNA_SEQ/CL:0002577 total RNA-seq/-,RNA_SEQ/CL:0002577 total RNA-seq,-,placental epithelial cell,placental epithelial cell,AlphaGenome
+RNA_SEQ/CL:2000078 total RNA-seq/+,RNA_SEQ/CL:2000078 total RNA-seq,+,placental pericyte,placental pericyte,AlphaGenome
+RNA_SEQ/CL:2000078 total RNA-seq/-,RNA_SEQ/CL:2000078 total RNA-seq,-,placental pericyte,placental pericyte,AlphaGenome
+RNA_SEQ/UBERON:0001072 total RNA-seq/+,RNA_SEQ/UBERON:0001072 total RNA-seq,+,posterior vena cava,posterior vena cava,AlphaGenome
+RNA_SEQ/UBERON:0001072 total RNA-seq/-,RNA_SEQ/UBERON:0001072 total RNA-seq,-,posterior vena cava,posterior vena cava,AlphaGenome
+RNA_SEQ/CL:0002351 total RNA-seq/+,RNA_SEQ/CL:0002351 total RNA-seq,+,progenitor cell of endocrine pancreas,progenitor cell of endocrine pancreas,AlphaGenome
+RNA_SEQ/CL:0002351 total RNA-seq/-,RNA_SEQ/CL:0002351 total RNA-seq,-,progenitor cell of endocrine pancreas,progenitor cell of endocrine pancreas,AlphaGenome
+RNA_SEQ/UBERON:0002367 gtex Prostate polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002367 gtex Prostate polyA plus RNA-seq/.,.,prostate gland,prostate gland,AlphaGenome
+RNA_SEQ/UBERON:0002367 total RNA-seq/+,RNA_SEQ/UBERON:0002367 total RNA-seq,+,prostate gland,prostate gland,AlphaGenome
+RNA_SEQ/UBERON:0002367 total RNA-seq/-,RNA_SEQ/UBERON:0002367 total RNA-seq,-,prostate gland,prostate gland,AlphaGenome
+RNA_SEQ/UBERON:0008450 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0008450 polyA plus RNA-seq,+,psoas muscle,psoas muscle,AlphaGenome
+RNA_SEQ/UBERON:0008450 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0008450 polyA plus RNA-seq,-,psoas muscle,psoas muscle,AlphaGenome
+RNA_SEQ/UBERON:0008450 total RNA-seq/+,RNA_SEQ/UBERON:0008450 total RNA-seq,+,psoas muscle,psoas muscle,AlphaGenome
+RNA_SEQ/UBERON:0008450 total RNA-seq/-,RNA_SEQ/UBERON:0008450 total RNA-seq,-,psoas muscle,psoas muscle,AlphaGenome
+RNA_SEQ/CL:1001568 total RNA-seq/+,RNA_SEQ/CL:1001568 total RNA-seq,+,pulmonary artery endothelial cell,pulmonary artery endothelial cell,AlphaGenome
+RNA_SEQ/CL:1001568 total RNA-seq/-,RNA_SEQ/CL:1001568 total RNA-seq,-,pulmonary artery endothelial cell,pulmonary artery endothelial cell,AlphaGenome
+RNA_SEQ/CL:0000121 polyA plus RNA-seq/.,RNA_SEQ/CL:0000121 polyA plus RNA-seq/.,.,purkinje cell,Purkinje cell,AlphaGenome
+RNA_SEQ/UBERON:0001874 gtex Brain_Putamen_basal_ganglia polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001874 gtex Brain_Putamen_basal_ganglia polyA plus RNA-seq/.,.,putamen,putamen,AlphaGenome
+RNA_SEQ/CL:0002098 total RNA-seq/+,RNA_SEQ/CL:0002098 total RNA-seq,+,regular cardiac myocyte,regular cardiac myocyte,AlphaGenome
+RNA_SEQ/CL:0002098 total RNA-seq/-,RNA_SEQ/CL:0002098 total RNA-seq,-,regular cardiac myocyte,regular cardiac myocyte,AlphaGenome
+RNA_SEQ/UBERON:0005270 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0005270 polyA plus RNA-seq/.,.,renal cortex interstitium,renal cortex interstitium,AlphaGenome
+RNA_SEQ/CL:0002584 total RNA-seq/+,RNA_SEQ/CL:0002584 total RNA-seq,+,renal cortical epithelial cell,renal cortical epithelial cell,AlphaGenome
+RNA_SEQ/CL:0002584 total RNA-seq/-,RNA_SEQ/CL:0002584 total RNA-seq,-,renal cortical epithelial cell,renal cortical epithelial cell,AlphaGenome
+RNA_SEQ/UBERON:0001224 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001224 polyA plus RNA-seq/.,.,renal pelvis,renal pelvis,AlphaGenome
+RNA_SEQ/UBERON:0006631 gtex Heart_Atrial_Appendage polyA plus RNA-seq/.,RNA_SEQ/UBERON:0006631 gtex Heart_Atrial_Appendage polyA plus RNA-seq/.,.,right atrium auricular region,right atrium auricular region,AlphaGenome
+RNA_SEQ/UBERON:0006631 total RNA-seq/+,RNA_SEQ/UBERON:0006631 total RNA-seq,+,right atrium auricular region,right atrium auricular region,AlphaGenome
+RNA_SEQ/UBERON:0006631 total RNA-seq/-,RNA_SEQ/UBERON:0006631 total RNA-seq,-,right atrium auricular region,right atrium auricular region,AlphaGenome
+RNA_SEQ/UBERON:0002078 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0002078 polyA plus RNA-seq,+,right cardiac atrium,right cardiac atrium,AlphaGenome
+RNA_SEQ/UBERON:0002078 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0002078 polyA plus RNA-seq,-,right cardiac atrium,right cardiac atrium,AlphaGenome
+RNA_SEQ/UBERON:0002078 total RNA-seq/+,RNA_SEQ/UBERON:0002078 total RNA-seq,+,right cardiac atrium,right cardiac atrium,AlphaGenome
+RNA_SEQ/UBERON:0002078 total RNA-seq/-,RNA_SEQ/UBERON:0002078 total RNA-seq,-,right cardiac atrium,right cardiac atrium,AlphaGenome
+RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,right lobe of liver,right lobe of liver,AlphaGenome
+RNA_SEQ/UBERON:0001114 total RNA-seq/+,RNA_SEQ/UBERON:0001114 total RNA-seq,+,right lobe of liver,right lobe of liver,AlphaGenome
+RNA_SEQ/UBERON:0001114 total RNA-seq/-,RNA_SEQ/UBERON:0001114 total RNA-seq,-,right lobe of liver,right lobe of liver,AlphaGenome
+RNA_SEQ/UBERON:0002167 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002167 polyA plus RNA-seq/.,.,right lung,right lung,AlphaGenome
+RNA_SEQ/UBERON:0018118 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0018118 polyA plus RNA-seq/.,.,right renal cortex interstitium,right renal cortex interstitium,AlphaGenome
+RNA_SEQ/UBERON:0018116 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0018116 polyA plus RNA-seq/.,.,right renal pelvis,right renal pelvis,AlphaGenome
+RNA_SEQ/NTR:0000491 total RNA-seq/+,RNA_SEQ/NTR:0000491 total RNA-seq,+,right ventricle myocardium inferior,Right ventricle myocardium inferior,AlphaGenome
+RNA_SEQ/NTR:0000491 total RNA-seq/-,RNA_SEQ/NTR:0000491 total RNA-seq,-,right ventricle myocardium inferior,Right ventricle myocardium inferior,AlphaGenome
+RNA_SEQ/NTR:0000492 total RNA-seq/+,RNA_SEQ/NTR:0000492 total RNA-seq,+,right ventricle myocardium superior,Right ventricle myocardium superior,AlphaGenome
+RNA_SEQ/NTR:0000492 total RNA-seq/-,RNA_SEQ/NTR:0000492 total RNA-seq,-,right ventricle myocardium superior,Right ventricle myocardium superior,AlphaGenome
+RNA_SEQ/EFO:0005712 total RNA-seq/+,RNA_SEQ/EFO:0005712 total RNA-seq,+,rpmi7951,RPMI7951,AlphaGenome
+RNA_SEQ/EFO:0005712 total RNA-seq/-,RNA_SEQ/EFO:0005712 total RNA-seq,-,rpmi7951,RPMI7951,AlphaGenome
+RNA_SEQ/UBERON:0001322 total RNA-seq/+,RNA_SEQ/UBERON:0001322 total RNA-seq,+,sciatic nerve,sciatic nerve,AlphaGenome
+RNA_SEQ/UBERON:0001322 total RNA-seq/-,RNA_SEQ/UBERON:0001322 total RNA-seq,-,sciatic nerve,sciatic nerve,AlphaGenome
+RNA_SEQ/UBERON:0001159 gtex Colon_Sigmoid polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001159 gtex Colon_Sigmoid polyA plus RNA-seq/.,.,sigmoid colon,sigmoid colon,AlphaGenome
+RNA_SEQ/UBERON:0001159 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0001159 polyA plus RNA-seq,+,sigmoid colon,sigmoid colon,AlphaGenome
+RNA_SEQ/UBERON:0001159 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0001159 polyA plus RNA-seq,-,sigmoid colon,sigmoid colon,AlphaGenome
+RNA_SEQ/UBERON:0001159 total RNA-seq/+,RNA_SEQ/UBERON:0001159 total RNA-seq,+,sigmoid colon,sigmoid colon,AlphaGenome
+RNA_SEQ/UBERON:0001159 total RNA-seq/-,RNA_SEQ/UBERON:0001159 total RNA-seq,-,sigmoid colon,sigmoid colon,AlphaGenome
+RNA_SEQ/EFO:0005722 total RNA-seq/+,RNA_SEQ/EFO:0005722 total RNA-seq,+,sjcrh30,SJCRH30,AlphaGenome
+RNA_SEQ/EFO:0005722 total RNA-seq/-,RNA_SEQ/EFO:0005722 total RNA-seq,-,sjcrh30,SJCRH30,AlphaGenome
+RNA_SEQ/EFO:0002330 total RNA-seq/+,RNA_SEQ/EFO:0002330 total RNA-seq,+,sjsa1,SJSA1,AlphaGenome
+RNA_SEQ/EFO:0002330 total RNA-seq/-,RNA_SEQ/EFO:0002330 total RNA-seq,-,sjsa1,SJSA1,AlphaGenome
+RNA_SEQ/EFO:0005720 polyA plus RNA-seq/+,RNA_SEQ/EFO:0005720 polyA plus RNA-seq,+,sk-mel-5,SK-MEL-5,AlphaGenome
+RNA_SEQ/EFO:0005720 polyA plus RNA-seq/-,RNA_SEQ/EFO:0005720 polyA plus RNA-seq,-,sk-mel-5,SK-MEL-5,AlphaGenome
+RNA_SEQ/EFO:0005720 total RNA-seq/+,RNA_SEQ/EFO:0005720 total RNA-seq,+,sk-mel-5,SK-MEL-5,AlphaGenome
+RNA_SEQ/EFO:0005720 total RNA-seq/-,RNA_SEQ/EFO:0005720 total RNA-seq,-,sk-mel-5,SK-MEL-5,AlphaGenome
+RNA_SEQ/EFO:0005721 polyA plus RNA-seq/+,RNA_SEQ/EFO:0005721 polyA plus RNA-seq,+,sk-n-dz,SK-N-DZ,AlphaGenome
+RNA_SEQ/EFO:0005721 polyA plus RNA-seq/-,RNA_SEQ/EFO:0005721 polyA plus RNA-seq,-,sk-n-dz,SK-N-DZ,AlphaGenome
+RNA_SEQ/EFO:0003072 polyA plus RNA-seq/+,RNA_SEQ/EFO:0003072 polyA plus RNA-seq,+,sk-n-sh,SK-N-SH,AlphaGenome
+RNA_SEQ/EFO:0003072 polyA plus RNA-seq/-,RNA_SEQ/EFO:0003072 polyA plus RNA-seq,-,sk-n-sh,SK-N-SH,AlphaGenome
+RNA_SEQ/EFO:0003072 polyA plus RNA-seq/.,RNA_SEQ/EFO:0003072 polyA plus RNA-seq/.,.,sk-n-sh,SK-N-SH,AlphaGenome
+RNA_SEQ/CL:0000515 polyA plus RNA-seq/+,RNA_SEQ/CL:0000515 polyA plus RNA-seq,+,skeletal muscle myoblast,skeletal muscle myoblast,AlphaGenome
+RNA_SEQ/CL:0000515 polyA plus RNA-seq/-,RNA_SEQ/CL:0000515 polyA plus RNA-seq,-,skeletal muscle myoblast,skeletal muscle myoblast,AlphaGenome
+RNA_SEQ/CL:0000515 polyA plus RNA-seq/.,RNA_SEQ/CL:0000515 polyA plus RNA-seq/.,.,skeletal muscle myoblast,skeletal muscle myoblast,AlphaGenome
+RNA_SEQ/CL:0000515 total RNA-seq/+,RNA_SEQ/CL:0000515 total RNA-seq,+,skeletal muscle myoblast,skeletal muscle myoblast,AlphaGenome
+RNA_SEQ/CL:0000515 total RNA-seq/-,RNA_SEQ/CL:0000515 total RNA-seq,-,skeletal muscle myoblast,skeletal muscle myoblast,AlphaGenome
+RNA_SEQ/CL:0000594 total RNA-seq/+,RNA_SEQ/CL:0000594 total RNA-seq,+,skeletal muscle satellite cell,skeletal muscle satellite cell,AlphaGenome
+RNA_SEQ/CL:0000594 total RNA-seq/-,RNA_SEQ/CL:0000594 total RNA-seq,-,skeletal muscle satellite cell,skeletal muscle satellite cell,AlphaGenome
+RNA_SEQ/UBERON:0001134 total RNA-seq/+,RNA_SEQ/UBERON:0001134 total RNA-seq,+,skeletal muscle tissue,skeletal muscle tissue,AlphaGenome
+RNA_SEQ/UBERON:0001134 total RNA-seq/-,RNA_SEQ/UBERON:0001134 total RNA-seq,-,skeletal muscle tissue,skeletal muscle tissue,AlphaGenome
+RNA_SEQ/UBERON:0002097 total RNA-seq/+,RNA_SEQ/UBERON:0002097 total RNA-seq,+,skin of body,skin of body,AlphaGenome
+RNA_SEQ/UBERON:0002097 total RNA-seq/-,RNA_SEQ/UBERON:0002097 total RNA-seq,-,skin of body,skin of body,AlphaGenome
+RNA_SEQ/UBERON:0002108 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0002108 polyA plus RNA-seq,+,small intestine,small intestine,AlphaGenome
+RNA_SEQ/UBERON:0002108 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0002108 polyA plus RNA-seq,-,small intestine,small intestine,AlphaGenome
+RNA_SEQ/UBERON:0002108 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002108 polyA plus RNA-seq/.,.,small intestine,small intestine,AlphaGenome
+RNA_SEQ/CL:0000192 polyA plus RNA-seq/.,RNA_SEQ/CL:0000192 polyA plus RNA-seq/.,.,smooth muscle cell,smooth muscle cell,AlphaGenome
+RNA_SEQ/CL:0000192 total RNA-seq/+,RNA_SEQ/CL:0000192 total RNA-seq,+,smooth muscle cell,smooth muscle cell,AlphaGenome
+RNA_SEQ/CL:0000192 total RNA-seq/-,RNA_SEQ/CL:0000192 total RNA-seq,-,smooth muscle cell,smooth muscle cell,AlphaGenome
+RNA_SEQ/CL:0002597 total RNA-seq/+,RNA_SEQ/CL:0002597 total RNA-seq,+,smooth muscle cell of bladder,smooth muscle cell of bladder,AlphaGenome
+RNA_SEQ/CL:0002597 total RNA-seq/-,RNA_SEQ/CL:0002597 total RNA-seq,-,smooth muscle cell of bladder,smooth muscle cell of bladder,AlphaGenome
+RNA_SEQ/CL:0002592 total RNA-seq/+,RNA_SEQ/CL:0002592 total RNA-seq,+,smooth muscle cell of the coronary artery,smooth muscle cell of the coronary artery,AlphaGenome
+RNA_SEQ/CL:0002592 total RNA-seq/-,RNA_SEQ/CL:0002592 total RNA-seq,-,smooth muscle cell of the coronary artery,smooth muscle cell of the coronary artery,AlphaGenome
+RNA_SEQ/CL:0002591 total RNA-seq/+,RNA_SEQ/CL:0002591 total RNA-seq,+,smooth muscle cell of the pulmonary artery,smooth muscle cell of the pulmonary artery,AlphaGenome
+RNA_SEQ/CL:0002591 total RNA-seq/-,RNA_SEQ/CL:0002591 total RNA-seq,-,smooth muscle cell of the pulmonary artery,smooth muscle cell of the pulmonary artery,AlphaGenome
+RNA_SEQ/CL:0002594 total RNA-seq/+,RNA_SEQ/CL:0002594 total RNA-seq,+,smooth muscle cell of the umbilical artery,smooth muscle cell of the umbilical artery,AlphaGenome
+RNA_SEQ/CL:0002594 total RNA-seq/-,RNA_SEQ/CL:0002594 total RNA-seq,-,smooth muscle cell of the umbilical artery,smooth muscle cell of the umbilical artery,AlphaGenome
+RNA_SEQ/CL:0002600 total RNA-seq/+,RNA_SEQ/CL:0002600 total RNA-seq,+,smooth muscle cell of trachea,smooth muscle cell of trachea,AlphaGenome
+RNA_SEQ/CL:0002600 total RNA-seq/-,RNA_SEQ/CL:0002600 total RNA-seq,-,smooth muscle cell of trachea,smooth muscle cell of trachea,AlphaGenome
+RNA_SEQ/UBERON:0002240 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0002240 polyA plus RNA-seq,+,spinal cord,spinal cord,AlphaGenome
+RNA_SEQ/UBERON:0002240 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0002240 polyA plus RNA-seq,-,spinal cord,spinal cord,AlphaGenome
+RNA_SEQ/UBERON:0002240 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002240 polyA plus RNA-seq/.,.,spinal cord,spinal cord,AlphaGenome
+RNA_SEQ/UBERON:0002240 total RNA-seq/+,RNA_SEQ/UBERON:0002240 total RNA-seq,+,spinal cord,spinal cord,AlphaGenome
+RNA_SEQ/UBERON:0002240 total RNA-seq/-,RNA_SEQ/UBERON:0002240 total RNA-seq,-,spinal cord,spinal cord,AlphaGenome
+RNA_SEQ/UBERON:0002106 gtex Spleen polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002106 gtex Spleen polyA plus RNA-seq/.,.,spleen,spleen,AlphaGenome
+RNA_SEQ/UBERON:0002106 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0002106 polyA plus RNA-seq,+,spleen,spleen,AlphaGenome
+RNA_SEQ/UBERON:0002106 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0002106 polyA plus RNA-seq,-,spleen,spleen,AlphaGenome
+RNA_SEQ/UBERON:0002106 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002106 polyA plus RNA-seq/.,.,spleen,spleen,AlphaGenome
+RNA_SEQ/UBERON:0002106 total RNA-seq/+,RNA_SEQ/UBERON:0002106 total RNA-seq,+,spleen,spleen,AlphaGenome
+RNA_SEQ/UBERON:0002106 total RNA-seq/-,RNA_SEQ/UBERON:0002106 total RNA-seq,-,spleen,spleen,AlphaGenome
+RNA_SEQ/UBERON:0000945 gtex Stomach polyA plus RNA-seq/.,RNA_SEQ/UBERON:0000945 gtex Stomach polyA plus RNA-seq/.,.,stomach,stomach,AlphaGenome
+RNA_SEQ/UBERON:0000945 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0000945 polyA plus RNA-seq,+,stomach,stomach,AlphaGenome
+RNA_SEQ/UBERON:0000945 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0000945 polyA plus RNA-seq,-,stomach,stomach,AlphaGenome
+RNA_SEQ/UBERON:0000945 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0000945 polyA plus RNA-seq/.,.,stomach,stomach,AlphaGenome
+RNA_SEQ/UBERON:0000945 total RNA-seq/+,RNA_SEQ/UBERON:0000945 total RNA-seq,+,stomach,stomach,AlphaGenome
+RNA_SEQ/UBERON:0000945 total RNA-seq/-,RNA_SEQ/UBERON:0000945 total RNA-seq,-,stomach,stomach,AlphaGenome
+RNA_SEQ/UBERON:0002190 gtex Adipose_Subcutaneous polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002190 gtex Adipose_Subcutaneous polyA plus RNA-seq/.,.,subcutaneous adipose tissue,subcutaneous adipose tissue,AlphaGenome
+RNA_SEQ/UBERON:0002190 total RNA-seq/+,RNA_SEQ/UBERON:0002190 total RNA-seq,+,subcutaneous adipose tissue,subcutaneous adipose tissue,AlphaGenome
+RNA_SEQ/UBERON:0002190 total RNA-seq/-,RNA_SEQ/UBERON:0002190 total RNA-seq,-,subcutaneous adipose tissue,subcutaneous adipose tissue,AlphaGenome
+RNA_SEQ/CL:0002583 total RNA-seq/+,RNA_SEQ/CL:0002583 total RNA-seq,+,subcutaneous preadipocyte,subcutaneous preadipocyte,AlphaGenome
+RNA_SEQ/CL:0002583 total RNA-seq/-,RNA_SEQ/CL:0002583 total RNA-seq,-,subcutaneous preadipocyte,subcutaneous preadipocyte,AlphaGenome
+RNA_SEQ/UBERON:0002038 gtex Brain_Substantia_nigra polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002038 gtex Brain_Substantia_nigra polyA plus RNA-seq/.,.,substantia nigra,substantia nigra,AlphaGenome
+RNA_SEQ/UBERON:0036149 gtex Skin_Not_Sun_Exposed_Suprapubic polyA plus RNA-seq/.,RNA_SEQ/UBERON:0036149 gtex Skin_Not_Sun_Exposed_Suprapubic polyA plus RNA-seq/.,.,suprapubic skin,suprapubic skin,AlphaGenome
+RNA_SEQ/UBERON:0036149 total RNA-seq/+,RNA_SEQ/UBERON:0036149 total RNA-seq,+,suprapubic skin,suprapubic skin,AlphaGenome
+RNA_SEQ/UBERON:0036149 total RNA-seq/-,RNA_SEQ/UBERON:0036149 total RNA-seq,-,suprapubic skin,suprapubic skin,AlphaGenome
+RNA_SEQ/CL:0000084 polyA plus RNA-seq/+,RNA_SEQ/CL:0000084 polyA plus RNA-seq,+,t-cell,T-cell,AlphaGenome
+RNA_SEQ/CL:0000084 polyA plus RNA-seq/-,RNA_SEQ/CL:0000084 polyA plus RNA-seq,-,t-cell,T-cell,AlphaGenome
+RNA_SEQ/CL:0000084 total RNA-seq/+,RNA_SEQ/CL:0000084 total RNA-seq,+,t-cell,T-cell,AlphaGenome
+RNA_SEQ/CL:0000084 total RNA-seq/-,RNA_SEQ/CL:0000084 total RNA-seq,-,t-cell,T-cell,AlphaGenome
+RNA_SEQ/CL:0000899 total RNA-seq/+,RNA_SEQ/CL:0000899 total RNA-seq,+,t-helper 17 cell,T-helper 17 cell,AlphaGenome
+RNA_SEQ/CL:0000899 total RNA-seq/-,RNA_SEQ/CL:0000899 total RNA-seq,-,t-helper 17 cell,T-helper 17 cell,AlphaGenome
+RNA_SEQ/UBERON:0001871 total RNA-seq/+,RNA_SEQ/UBERON:0001871 total RNA-seq,+,temporal lobe,temporal lobe,AlphaGenome
+RNA_SEQ/UBERON:0001871 total RNA-seq/-,RNA_SEQ/UBERON:0001871 total RNA-seq,-,temporal lobe,temporal lobe,AlphaGenome
+RNA_SEQ/UBERON:0000473 gtex Testis polyA plus RNA-seq/.,RNA_SEQ/UBERON:0000473 gtex Testis polyA plus RNA-seq/.,.,testis,testis,AlphaGenome
+RNA_SEQ/UBERON:0000473 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0000473 polyA plus RNA-seq,+,testis,testis,AlphaGenome
+RNA_SEQ/UBERON:0000473 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0000473 polyA plus RNA-seq,-,testis,testis,AlphaGenome
+RNA_SEQ/UBERON:0000473 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0000473 polyA plus RNA-seq/.,.,testis,testis,AlphaGenome
+RNA_SEQ/UBERON:0000473 total RNA-seq/+,RNA_SEQ/UBERON:0000473 total RNA-seq,+,testis,testis,AlphaGenome
+RNA_SEQ/UBERON:0000473 total RNA-seq/-,RNA_SEQ/UBERON:0000473 total RNA-seq,-,testis,testis,AlphaGenome
+RNA_SEQ/UBERON:0001515 total RNA-seq/+,RNA_SEQ/UBERON:0001515 total RNA-seq,+,thoracic aorta,thoracic aorta,AlphaGenome
+RNA_SEQ/UBERON:0001515 total RNA-seq/-,RNA_SEQ/UBERON:0001515 total RNA-seq,-,thoracic aorta,thoracic aorta,AlphaGenome
+RNA_SEQ/CL:0002545 total RNA-seq/+,RNA_SEQ/CL:0002545 total RNA-seq,+,thoracic aorta endothelial cell,thoracic aorta endothelial cell,AlphaGenome
+RNA_SEQ/CL:0002545 total RNA-seq/-,RNA_SEQ/CL:0002545 total RNA-seq,-,thoracic aorta endothelial cell,thoracic aorta endothelial cell,AlphaGenome
+RNA_SEQ/UBERON:0002370 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0002370 polyA plus RNA-seq,+,thymus,thymus,AlphaGenome
+RNA_SEQ/UBERON:0002370 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0002370 polyA plus RNA-seq,-,thymus,thymus,AlphaGenome
+RNA_SEQ/UBERON:0002370 polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002370 polyA plus RNA-seq/.,.,thymus,thymus,AlphaGenome
+RNA_SEQ/UBERON:0002046 gtex Thyroid polyA plus RNA-seq/.,RNA_SEQ/UBERON:0002046 gtex Thyroid polyA plus RNA-seq/.,.,thyroid gland,thyroid gland,AlphaGenome
+RNA_SEQ/UBERON:0002046 total RNA-seq/+,RNA_SEQ/UBERON:0002046 total RNA-seq,+,thyroid gland,thyroid gland,AlphaGenome
+RNA_SEQ/UBERON:0002046 total RNA-seq/-,RNA_SEQ/UBERON:0002046 total RNA-seq,-,thyroid gland,thyroid gland,AlphaGenome
+RNA_SEQ/UBERON:0007610 gtex Artery_Tibial polyA plus RNA-seq/.,RNA_SEQ/UBERON:0007610 gtex Artery_Tibial polyA plus RNA-seq/.,.,tibial artery,tibial artery,AlphaGenome
+RNA_SEQ/UBERON:0001323 gtex Nerve_Tibial polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001323 gtex Nerve_Tibial polyA plus RNA-seq/.,.,tibial nerve,tibial nerve,AlphaGenome
+RNA_SEQ/UBERON:0001323 total RNA-seq/+,RNA_SEQ/UBERON:0001323 total RNA-seq,+,tibial nerve,tibial nerve,AlphaGenome
+RNA_SEQ/UBERON:0001323 total RNA-seq/-,RNA_SEQ/UBERON:0001323 total RNA-seq,-,tibial nerve,tibial nerve,AlphaGenome
+RNA_SEQ/UBERON:0001723 total RNA-seq/+,RNA_SEQ/UBERON:0001723 total RNA-seq,+,tongue,tongue,AlphaGenome
+RNA_SEQ/UBERON:0001723 total RNA-seq/-,RNA_SEQ/UBERON:0001723 total RNA-seq,-,tongue,tongue,AlphaGenome
+RNA_SEQ/CL:0000307 total RNA-seq/+,RNA_SEQ/CL:0000307 total RNA-seq,+,tracheal epithelial cell,tracheal epithelial cell,AlphaGenome
+RNA_SEQ/CL:0000307 total RNA-seq/-,RNA_SEQ/CL:0000307 total RNA-seq,-,tracheal epithelial cell,tracheal epithelial cell,AlphaGenome
+RNA_SEQ/UBERON:0001157 gtex Colon_Transverse polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001157 gtex Colon_Transverse polyA plus RNA-seq/.,.,transverse colon,transverse colon,AlphaGenome
+RNA_SEQ/UBERON:0001157 total RNA-seq/+,RNA_SEQ/UBERON:0001157 total RNA-seq,+,transverse colon,transverse colon,AlphaGenome
+RNA_SEQ/UBERON:0001157 total RNA-seq/-,RNA_SEQ/UBERON:0001157 total RNA-seq,-,transverse colon,transverse colon,AlphaGenome
+RNA_SEQ/UBERON:0000088 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0000088 polyA plus RNA-seq,+,trophoblast,trophoblast,AlphaGenome
+RNA_SEQ/UBERON:0000088 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0000088 polyA plus RNA-seq,-,trophoblast,trophoblast,AlphaGenome
+RNA_SEQ/CL:0000351 polyA plus RNA-seq/+,RNA_SEQ/CL:0000351 polyA plus RNA-seq,+,trophoblast cell,trophoblast cell,AlphaGenome
+RNA_SEQ/CL:0000351 polyA plus RNA-seq/-,RNA_SEQ/CL:0000351 polyA plus RNA-seq,-,trophoblast cell,trophoblast cell,AlphaGenome
+RNA_SEQ/CL:0000169 total RNA-seq/+,RNA_SEQ/CL:0000169 total RNA-seq,+,type b pancreatic cell,type B pancreatic cell,AlphaGenome
+RNA_SEQ/CL:0000169 total RNA-seq/-,RNA_SEQ/CL:0000169 total RNA-seq,-,type b pancreatic cell,type B pancreatic cell,AlphaGenome
+RNA_SEQ/EFO:0005237 polyA plus RNA-seq/.,RNA_SEQ/EFO:0005237 polyA plus RNA-seq/.,.,u-87 mg,U-87 MG,AlphaGenome
+RNA_SEQ/UBERON:0002331 total RNA-seq/+,RNA_SEQ/UBERON:0002331 total RNA-seq,+,umbilical cord,umbilical cord,AlphaGenome
+RNA_SEQ/UBERON:0002331 total RNA-seq/-,RNA_SEQ/UBERON:0002331 total RNA-seq,-,umbilical cord,umbilical cord,AlphaGenome
+RNA_SEQ/UBERON:0008952 gtex Lung polyA plus RNA-seq/.,RNA_SEQ/UBERON:0008952 gtex Lung polyA plus RNA-seq/.,.,upper lobe of left lung,upper lobe of left lung,AlphaGenome
+RNA_SEQ/UBERON:0008952 total RNA-seq/+,RNA_SEQ/UBERON:0008952 total RNA-seq,+,upper lobe of left lung,upper lobe of left lung,AlphaGenome
+RNA_SEQ/UBERON:0008952 total RNA-seq/-,RNA_SEQ/UBERON:0008952 total RNA-seq,-,upper lobe of left lung,upper lobe of left lung,AlphaGenome
+RNA_SEQ/UBERON:0002170 total RNA-seq/+,RNA_SEQ/UBERON:0002170 total RNA-seq,+,upper lobe of right lung,upper lobe of right lung,AlphaGenome
+RNA_SEQ/UBERON:0002170 total RNA-seq/-,RNA_SEQ/UBERON:0002170 total RNA-seq,-,upper lobe of right lung,upper lobe of right lung,AlphaGenome
+RNA_SEQ/UBERON:0000056 total RNA-seq/+,RNA_SEQ/UBERON:0000056 total RNA-seq,+,ureter,ureter,AlphaGenome
+RNA_SEQ/UBERON:0000056 total RNA-seq/-,RNA_SEQ/UBERON:0000056 total RNA-seq,-,ureter,ureter,AlphaGenome
+RNA_SEQ/UBERON:0001255 gtex Bladder polyA plus RNA-seq/.,RNA_SEQ/UBERON:0001255 gtex Bladder polyA plus RNA-seq/.,.,urinary bladder,urinary bladder,AlphaGenome
+RNA_SEQ/UBERON:0001255 polyA plus RNA-seq/+,RNA_SEQ/UBERON:0001255 polyA plus RNA-seq,+,urinary bladder,urinary bladder,AlphaGenome
+RNA_SEQ/UBERON:0001255 polyA plus RNA-seq/-,RNA_SEQ/UBERON:0001255 polyA plus RNA-seq,-,urinary bladder,urinary bladder,AlphaGenome
+RNA_SEQ/UBERON:0001255 total RNA-seq/+,RNA_SEQ/UBERON:0001255 total RNA-seq,+,urinary bladder,urinary bladder,AlphaGenome
+RNA_SEQ/UBERON:0001255 total RNA-seq/-,RNA_SEQ/UBERON:0001255 total RNA-seq,-,urinary bladder,urinary bladder,AlphaGenome
+RNA_SEQ/CL:0002601 total RNA-seq/+,RNA_SEQ/CL:0002601 total RNA-seq,+,uterine smooth muscle cell,uterine smooth muscle cell,AlphaGenome
+RNA_SEQ/CL:0002601 total RNA-seq/-,RNA_SEQ/CL:0002601 total RNA-seq,-,uterine smooth muscle cell,uterine smooth muscle cell,AlphaGenome
+RNA_SEQ/UBERON:0000995 gtex Uterus polyA plus RNA-seq/.,RNA_SEQ/UBERON:0000995 gtex Uterus polyA plus RNA-seq/.,.,uterus,uterus,AlphaGenome
+RNA_SEQ/UBERON:0000995 total RNA-seq/+,RNA_SEQ/UBERON:0000995 total RNA-seq,+,uterus,uterus,AlphaGenome
+RNA_SEQ/UBERON:0000995 total RNA-seq/-,RNA_SEQ/UBERON:0000995 total RNA-seq,-,uterus,uterus,AlphaGenome
+RNA_SEQ/UBERON:0000996 gtex Vagina polyA plus RNA-seq/.,RNA_SEQ/UBERON:0000996 gtex Vagina polyA plus RNA-seq/.,.,vagina,vagina,AlphaGenome
+RNA_SEQ/UBERON:0000996 total RNA-seq/+,RNA_SEQ/UBERON:0000996 total RNA-seq,+,vagina,vagina,AlphaGenome
+RNA_SEQ/UBERON:0000996 total RNA-seq/-,RNA_SEQ/UBERON:0000996 total RNA-seq,-,vagina,vagina,AlphaGenome
+RNA_SEQ/CL:0002543 total RNA-seq/+,RNA_SEQ/CL:0002543 total RNA-seq,+,vein endothelial cell,vein endothelial cell,AlphaGenome
+RNA_SEQ/CL:0002543 total RNA-seq/-,RNA_SEQ/CL:0002543 total RNA-seq,-,vein endothelial cell,vein endothelial cell,AlphaGenome
+RNA_SEQ/UBERON:0013756 gtex Whole_Blood polyA plus RNA-seq/.,RNA_SEQ/UBERON:0013756 gtex Whole_Blood polyA plus RNA-seq/.,.,venous blood,venous blood,AlphaGenome
+RNA_SEQ/EFO:0009747 total RNA-seq/+,RNA_SEQ/EFO:0009747 total RNA-seq,+,wtc11,WTC11,AlphaGenome
+RNA_SEQ/EFO:0009747 total RNA-seq/-,RNA_SEQ/EFO:0009747 total RNA-seq,-,wtc11,WTC11,AlphaGenome
+RNA_SEQ/EFO:0009747 total RNA-seq/.,RNA_SEQ/EFO:0009747 total RNA-seq/.,.,wtc11,WTC11,AlphaGenome

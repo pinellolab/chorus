@@ -1,0 +1,413 @@
+# SORT1 rs12740374
+# Sign convention: raw_score = alt - ref (positive = the alt allele raises the predicted signal).
+# percentile = |effect percentile| against the track's own background null, i.e. a MAGNITUDE in [0,1] with no sign;
+# the direction of a track is the sign of raw_score in the *_track_scores.csv table.
+# One row per unique track. Lines starting with '#' come first; read with pandas.read_csv(path, skiprows=<their count>).
+model,molecular_layer,track_id,cell_type_key,cell_type,percentile,raw_score
+Cherimoya,ATAC,ATAC:ENCSR032RGS,a549,A549,0.9982,1.072372089379929
+Cherimoya,ATAC,ATAC:ENCSR659SFK,activated b cell,activated B cell,0.9192,0.24763303250674387
+Cherimoya,ATAC,ATAC:ENCSR991PBP,"activated cd4-positive, alpha-beta t cell","activated CD4-positive, alpha-beta T cell",0.9678,0.49646682987855906
+Cherimoya,ATAC,ATAC:ENCSR094QFZ,"activated cd4-positive, cd25-positive, alpha-beta regulatory t cell","activated CD4-positive, CD25-positive, alpha-beta regulatory T cell",0.9609,0.3272146555357717
+Cherimoya,ATAC,ATAC:ENCSR915MTG,"activated cd8-positive, alpha-beta memory t cell","activated CD8-positive, alpha-beta memory T cell",0.9471,0.28564967032815486
+Cherimoya,ATAC,ATAC:ENCSR545UJP,"activated cd8-positive, alpha-beta t cell","activated CD8-positive, alpha-beta T cell",0.9594,0.29788549372528506
+Cherimoya,ATAC,ATAC:ENCSR174SUM,"activated naive cd4-positive, alpha-beta t cell","activated naive CD4-positive, alpha-beta T cell",0.9735,0.48422615063425295
+Cherimoya,ATAC,ATAC:ENCSR477YSU,"activated naive cd8-positive, alpha-beta t cell","activated naive CD8-positive, alpha-beta T cell",0.9758,0.3881538885466484
+Cherimoya,ATAC,ATAC:ENCSR092SRS,activated t-cell,activated T-cell,0.9438,0.2582663930098248
+Cherimoya,ATAC,ATAC:ENCSR115OIV,activated t-helper 17 cell,activated T-helper 17 cell,0.9681,0.4424335203162256
+Cherimoya,ATAC,ATAC:ENCSR113MBR,adrenal gland,adrenal gland,0.9987,0.7886874579750099
+Cherimoya,ATAC,ATAC:ENCSR295TFY,aorta,aorta,1.0,0.7079823575502824
+Cherimoya,ATAC,ATAC:ENCSR603LVR,b cell,B cell,0.4829,0.024521262613446948
+Cherimoya,ATAC,ATAC:ENCSR174MLD,bile duct,bile duct,0.9997,0.5566753605119587
+Cherimoya,ATAC,ATAC:ENCSR152PSA,body of pancreas,body of pancreas,0.9995,1.1023167710773232
+Cherimoya,ATAC,ATAC:ENCSR654UYP,breast epithelium,breast epithelium,0.9999,0.8431927943383712
+Cherimoya,ATAC,ATAC:ENCSR167SYF,cardiac septum,cardiac septum,0.9887,0.2261055259060251
+Cherimoya,ATAC,ATAC:ENCSR841LHT,"cd4-positive, alpha-beta t cell","CD4-positive, alpha-beta T cell",0.9552,0.42685222485274105
+Cherimoya,ATAC,ATAC:ENCSR159GFS,"cd4-positive, cd25-positive, alpha-beta regulatory t cell","CD4-positive, CD25-positive, alpha-beta regulatory T cell",0.9768,0.421439467895025
+Cherimoya,ATAC,ATAC:ENCSR476VJY,"cd8-positive, alpha-beta t cell","CD8-positive, alpha-beta T cell",0.9806,0.6564940017923461
+Cherimoya,ATAC,ATAC:ENCSR165FYY,"central memory cd8-positive, alpha-beta t cell","central memory CD8-positive, alpha-beta T cell",0.9857,0.5847295208754476
+Cherimoya,ATAC,ATAC:ENCSR802GEV,cerebellum,cerebellum,0.2176,0.006666992287444882
+Cherimoya,ATAC,ATAC:ENCSR970UNF,colonic mucosa,colonic mucosa,0.9813,0.4690920059949336
+Cherimoya,ATAC,ATAC:ENCSR584AXZ,coronary artery,coronary artery,0.9997,0.5803083645152031
+Cherimoya,ATAC,ATAC:ENCSR059IHA,dendritic cell,dendritic cell,0.9941,0.6105787216772757
+Cherimoya,ATAC,ATAC:ENCSR660WSB,dnd-41,DND-41,0.9423,0.2296082528782382
+Cherimoya,ATAC,ATAC:ENCSR019XCN,"effector memory cd8-positive, alpha-beta t cell","effector memory CD8-positive, alpha-beta T cell",0.9661,0.17405765461819017
+Cherimoya,ATAC,ATAC:ENCSR303PWB,esophagus mucosa,esophagus mucosa,0.9954,0.608658580599201
+Cherimoya,ATAC,ATAC:ENCSR609GST,esophagus muscularis mucosa,esophagus muscularis mucosa,1.0,0.6345233854749566
+Cherimoya,ATAC,ATAC:ENCSR096BPX,esophagus squamous epithelium,esophagus squamous epithelium,0.9949,0.2665722717969329
+Cherimoya,ATAC,ATAC:ENCSR212LAZ,fallopian tube,fallopian tube,0.9999,1.3152834994036742
+Cherimoya,ATAC,ATAC:ENCSR356KRQ,foreskin keratinocyte,foreskin keratinocyte,0.9754,0.35019362624744577
+Cherimoya,ATAC,ATAC:ENCSR258JCL,gastrocnemius medialis,gastrocnemius medialis,0.9976,0.9450153123873394
+Cherimoya,ATAC,ATAC:ENCSR260ZIV,gastroesophageal sphincter,gastroesophageal sphincter,0.9997,0.6142857721463391
+Cherimoya,ATAC,ATAC:ENCSR095QNB,gm12878,GM12878,0.7679,0.09623023308898584
+Cherimoya,ATAC,ATAC:ENCSR924SDV,gm18498,GM18498,0.9558,0.24212577972609595
+Cherimoya,ATAC,ATAC:ENCSR700HPA,gm18499,GM18499,0.9461,0.2279098587835332
+Cherimoya,ATAC,ATAC:ENCSR241VGH,gm18502,GM18502,0.973,0.3360236192745451
+Cherimoya,ATAC,ATAC:ENCSR084FHK,gm18505,GM18505,0.953,0.2315179342274444
+Cherimoya,ATAC,ATAC:ENCSR357WQH,gm18508,GM18508,0.951,0.22036231149826335
+Cherimoya,ATAC,ATAC:ENCSR253QLW,gm18511,GM18511,0.8521,0.11121972138662031
+Cherimoya,ATAC,ATAC:ENCSR442OAV,gm18517,GM18517,0.9882,0.5068389918555278
+Cherimoya,ATAC,ATAC:ENCSR312UCH,gm18519,GM18519,0.9481,0.21202544968723383
+Cherimoya,ATAC,ATAC:ENCSR762YFD,gm18520,GM18520,0.9838,0.44983942860465265
+Cherimoya,ATAC,ATAC:ENCSR011NJP,gm18858,GM18858,0.9258,0.18847663039823837
+Cherimoya,ATAC,ATAC:ENCSR628PLS,gm18861,GM18861,0.9537,0.2436889567059728
+Cherimoya,ATAC,ATAC:ENCSR492FJO,gm18867,GM18867,0.9551,0.24119049748272062
+Cherimoya,ATAC,ATAC:ENCSR580JBA,gm18868,GM18868,0.8949,0.15015530651788014
+Cherimoya,ATAC,ATAC:ENCSR684KUG,gm18870,GM18870,0.9806,0.37060257468535945
+Cherimoya,ATAC,ATAC:ENCSR304ZDQ,gm18873,GM18873,0.9792,0.34912686293435224
+Cherimoya,ATAC,ATAC:ENCSR487QSB,gm18907,GM18907,0.9804,0.3263730192387994
+Cherimoya,ATAC,ATAC:ENCSR917WJS,gm18909,GM18909,0.9681,0.28452956025762743
+Cherimoya,ATAC,ATAC:ENCSR512FHU,gm19023,GM19023,0.977,0.3667473048172019
+Cherimoya,ATAC,ATAC:ENCSR419UYY,gm19025,GM19025,0.9764,0.4239614315058893
+Cherimoya,ATAC,ATAC:ENCSR637MUF,gm19035,GM19035,0.9808,0.4095740970517072
+Cherimoya,ATAC,ATAC:ENCSR409YCK,gm19043,GM19043,0.8927,0.1476446235981316
+Cherimoya,ATAC,ATAC:ENCSR425WQW,gm19324,GM19324,0.9642,0.18548870408860277
+Cherimoya,ATAC,ATAC:ENCSR383RDZ,gm19328,GM19328,0.9599,0.26833318055884803
+Cherimoya,ATAC,ATAC:ENCSR231BZU,gm19351,GM19351,0.9331,0.22214234877185643
+Cherimoya,ATAC,ATAC:ENCSR335JVB,gm19372,GM19372,0.9791,0.45021077363108614
+Cherimoya,ATAC,ATAC:ENCSR372IGW,gm19395,GM19395,0.9702,0.3126106153579523
+Cherimoya,ATAC,ATAC:ENCSR839IAD,gm19397,GM19397,0.9803,0.376743100499759
+Cherimoya,ATAC,ATAC:ENCSR134OSR,gm19438,GM19438,0.9362,0.21333970011849301
+Cherimoya,ATAC,ATAC:ENCSR454UTH,gm19452,GM19452,0.943,0.2140533673670533
+Cherimoya,ATAC,ATAC:ENCSR706GDQ,gm19455,GM19455,0.9664,0.28157856172086004
+Cherimoya,ATAC,ATAC:ENCSR712ZRY,gm19463,GM19463,0.971,0.3980677199859772
+Cherimoya,ATAC,ATAC:ENCSR635CAC,gm19467,GM19467,0.9844,0.42287015119457827
+Cherimoya,ATAC,ATAC:ENCSR635AIF,gm19468,GM19468,0.9687,0.2553369060473925
+Cherimoya,ATAC,ATAC:ENCSR105SCQ,gm21360,GM21360,0.9179,0.16729458462227048
+Cherimoya,ATAC,ATAC:ENCSR509JPT,gm21367,GM21367,0.9647,0.26783755219494637
+Cherimoya,ATAC,ATAC:ENCSR512YXO,gm21381,GM21381,0.9607,0.2763919132281039
+Cherimoya,ATAC,ATAC:ENCSR024WOD,gm21390,GM21390,0.9484,0.24323882230211927
+Cherimoya,ATAC,ATAC:ENCSR902CFR,gm21423,GM21423,0.9498,0.24440619214197667
+Cherimoya,ATAC,ATAC:ENCSR424KQH,gm21447,GM21447,0.9854,0.528323899519547
+Cherimoya,ATAC,ATAC:ENCSR960KGO,gm21515,GM21515,0.9787,0.3604720185699042
+Cherimoya,ATAC,ATAC:ENCSR408IVU,gm21526,GM21526,0.9804,0.3444092196418392
+Cherimoya,ATAC,ATAC:ENCSR939EVW,gm21528,GM21528,0.9561,0.22538937348074717
+Cherimoya,ATAC,ATAC:ENCSR954BDA,gm21529,GM21529,0.9737,0.3666085082513207
+Cherimoya,ATAC,ATAC:ENCSR122NDR,gm21576,GM21576,0.9735,0.34998482755444316
+Cherimoya,ATAC,ATAC:ENCSR214EIV,gm21619,GM21619,0.9722,0.3576210672887172
+Cherimoya,ATAC,ATAC:ENCSR422RPD,gm21717,GM21717,0.9639,0.2500758485023524
+Cherimoya,ATAC,ATAC:ENCSR233HSC,gm21723,GM21723,0.9457,0.21112512329111152
+Cherimoya,ATAC,ATAC:ENCSR315QWI,gm21737,GM21737,0.9523,0.22689343752010255
+Cherimoya,ATAC,ATAC:ENCSR275LCF,gm21786,GM21786,0.9614,0.30171832214399347
+Cherimoya,ATAC,ATAC:ENCSR641KNU,gm21825,GM21825,0.9664,0.2842291905237605
+Cherimoya,ATAC,ATAC:ENCSR485TLP,gm23338,GM23338,0.7236,0.07234805482300752
+Cherimoya,ATAC,ATAC:ENCSR872WGW,hct116,HCT116,0.981,0.4401810101326824
+Cherimoya,ATAC,ATAC:ENCSR117PYB,heart left ventricle,heart left ventricle,0.8932,0.052040178748464276
+Cherimoya,ATAC,ATAC:ENCSR053SGP,heart right ventricle,heart right ventricle,0.9845,0.3144698647244072
+Cherimoya,ATAC,ATAC:ENCSR042AWH,hepg2,HepG2,0.9992,1.1199777403634297
+Cherimoya,ATAC,ATAC:ENCSR400ISH,hg02571,HG02571,0.9717,0.3493198755878401
+Cherimoya,ATAC,ATAC:ENCSR189VFC,hg02588,HG02588,0.9764,0.3748759574309999
+Cherimoya,ATAC,ATAC:ENCSR905PWV,hg02610,HG02610,0.9865,0.44931042000480587
+Cherimoya,ATAC,ATAC:ENCSR821JHD,hg02623,HG02623,0.9767,0.36651951001317323
+Cherimoya,ATAC,ATAC:ENCSR821QHC,hg02642,HG02642,0.9803,0.36812006236362327
+Cherimoya,ATAC,ATAC:ENCSR180HEL,hg02678,HG02678,0.9687,0.3288818119024032
+Cherimoya,ATAC,ATAC:ENCSR144ZXR,hg02759,HG02759,0.9576,0.27129520844738486
+Cherimoya,ATAC,ATAC:ENCSR404OEO,hg02763,HG02763,0.9638,0.27210301990782804
+Cherimoya,ATAC,ATAC:ENCSR524CPZ,hg02798,HG02798,0.9815,0.34892083386627987
+Cherimoya,ATAC,ATAC:ENCSR854ZBA,hg02840,HG02840,0.956,0.2301440057825793
+Cherimoya,ATAC,ATAC:ENCSR368FYV,hg02852,HG02852,0.9544,0.28050449860376286
+Cherimoya,ATAC,ATAC:ENCSR420RVW,hg02870,HG02870,0.9807,0.46765969933887813
+Cherimoya,ATAC,ATAC:ENCSR604YEQ,hg02884,HG02884,0.9596,0.2913169338523122
+Cherimoya,ATAC,ATAC:ENCSR621JYI,hg02885,HG02885,0.9685,0.29616234371102995
+Cherimoya,ATAC,ATAC:ENCSR920FQJ,hg02938,HG02938,0.9898,0.5424204067664451
+Cherimoya,ATAC,ATAC:ENCSR123WME,hg02943,HG02943,0.9842,0.44393454718538566
+Cherimoya,ATAC,ATAC:ENCSR857MCZ,hg02970,HG02970,0.989,0.3960972820531479
+Cherimoya,ATAC,ATAC:ENCSR038WVV,hg02973,HG02973,0.9873,0.48110793372766814
+Cherimoya,ATAC,ATAC:ENCSR208HAP,hg02981,HG02981,0.9777,0.39824536214055917
+Cherimoya,ATAC,ATAC:ENCSR673ZMQ,hg03025,HG03025,0.9719,0.28770739403059514
+Cherimoya,ATAC,ATAC:ENCSR381LJX,hg03039,HG03039,0.973,0.3168962429900529
+Cherimoya,ATAC,ATAC:ENCSR249FXU,hg03045,HG03045,0.9289,0.15863307371958094
+Cherimoya,ATAC,ATAC:ENCSR470ZNM,hg03060,HG03060,0.9468,0.22605018114579697
+Cherimoya,ATAC,ATAC:ENCSR487SOP,hg03064,HG03064,0.9493,0.23696073504790408
+Cherimoya,ATAC,ATAC:ENCSR040PBN,hg03066,HG03066,0.9912,0.6631123935846659
+Cherimoya,ATAC,ATAC:ENCSR359HFH,hg03095,HG03095,0.9711,0.3462216336767903
+Cherimoya,ATAC,ATAC:ENCSR608KJD,hg03097,HG03097,0.9779,0.32253852816276307
+Cherimoya,ATAC,ATAC:ENCSR833ACP,hg03103,HG03103,0.9213,0.18525678070296892
+Cherimoya,ATAC,ATAC:ENCSR962ITF,hg03108,HG03108,0.8641,0.11383666877570954
+Cherimoya,ATAC,ATAC:ENCSR096VEO,hg03135,HG03135,0.9811,0.39414396516689437
+Cherimoya,ATAC,ATAC:ENCSR615YIL,hg03139,HG03139,0.9572,0.2524419719080368
+Cherimoya,ATAC,ATAC:ENCSR940YDN,hg03159,HG03159,0.9862,0.4612811407478549
+Cherimoya,ATAC,ATAC:ENCSR305XRF,hg03175,HG03175,0.9572,0.2461335186595235
+Cherimoya,ATAC,ATAC:ENCSR063UNG,hg03196,HG03196,0.9557,0.23181686186574055
+Cherimoya,ATAC,ATAC:ENCSR554WGQ,hg03280,HG03280,0.9518,0.2138488107811172
+Cherimoya,ATAC,ATAC:ENCSR528YDD,hg03342,HG03342,0.9411,0.1952085406326709
+Cherimoya,ATAC,ATAC:ENCSR025MEO,hg03354,HG03354,0.9709,0.3136779904333223
+Cherimoya,ATAC,ATAC:ENCSR824DUE,hg03378,HG03378,0.9781,0.3689811548561013
+Cherimoya,ATAC,ATAC:ENCSR839UOB,hg03432,HG03432,0.9607,0.29498470280024847
+Cherimoya,ATAC,ATAC:ENCSR376YMU,hg03439,HG03439,0.9836,0.35436349378935444
+Cherimoya,ATAC,ATAC:ENCSR858GTE,hg03442,HG03442,0.9883,0.5436684245403679
+Cherimoya,ATAC,ATAC:ENCSR322SBN,hg03457,HG03457,0.9843,0.43157437260962084
+Cherimoya,ATAC,ATAC:ENCSR345NVR,hg03460,HG03460,0.943,0.22692228731079048
+Cherimoya,ATAC,ATAC:ENCSR163KRG,hg03469,HG03469,0.9632,0.2882025785370786
+Cherimoya,ATAC,ATAC:ENCSR624CTU,hg03520,HG03520,0.981,0.3900749637666865
+Cherimoya,ATAC,ATAC:ENCSR594TMY,hg03521,HG03521,0.9865,0.4673809343774418
+Cherimoya,ATAC,ATAC:ENCSR278JWM,hg03558,HG03558,0.9817,0.45407109171146204
+Cherimoya,ATAC,ATAC:ENCSR835WBW,hg03565,HG03565,0.9827,0.4465829657699651
+Cherimoya,ATAC,ATAC:ENCSR000RBT,hg03571,HG03571,0.94,0.19281926752869522
+Cherimoya,ATAC,ATAC:ENCSR331JFZ,hg03575,HG03575,0.9794,0.37379540691634827
+Cherimoya,ATAC,ATAC:ENCSR200OML,imr-90,IMR-90,0.9908,0.9120718974603953
+Cherimoya,ATAC,ATAC:ENCSR415LEB,jejunum,jejunum,0.9994,0.5524003675074138
+Cherimoya,ATAC,ATAC:ENCSR483RKN,k562,K562,0.9774,0.2986194033032299
+Cherimoya,ATAC,ATAC:ENCSR297VGU,kidney,kidney,0.9993,0.5710085675069538
+Cherimoya,ATAC,ATAC:ENCSR310UDW,left cardiac atrium,left cardiac atrium,0.9994,0.9186934589047758
+Cherimoya,ATAC,ATAC:ENCSR600ZHS,left colon,left colon,0.9816,0.6243402467514696
+Cherimoya,ATAC,ATAC:ENCSR624ODL,left lobe of liver,left lobe of liver,0.9947,0.8192144240996834
+Cherimoya,ATAC,ATAC:ENCSR682ETE,left lung,left lung,0.9884,0.5081007751499902
+Cherimoya,ATAC,ATAC:ENCSR946MAI,left ventricle myocardium inferior,left ventricle myocardium inferior,0.99,0.5489746451622861
+Cherimoya,ATAC,ATAC:ENCSR133WJY,left ventricle myocardium superior,left ventricle myocardium superior,0.999,1.028848487340176
+Cherimoya,ATAC,ATAC:ENCSR124NNL,liver,liver,1.0,1.007691959768888
+Cherimoya,ATAC,ATAC:ENCSR555ZDH,lower lobe of left lung,lower lobe of left lung,0.9985,1.0063074272641113
+Cherimoya,ATAC,ATAC:ENCSR923VTG,lower lobe of right lung,lower lobe of right lung,0.9998,0.7643213185416876
+Cherimoya,ATAC,ATAC:ENCSR647AOY,lung,lung,0.9963,0.5683108629343931
+Cherimoya,ATAC,ATAC:ENCSR422SUG,mcf-7,MCF-7,0.7094,0.061545640004875654
+Cherimoya,ATAC,ATAC:ENCSR610AQP,memory b cell,memory B cell,0.4822,0.027688936154645058
+Cherimoya,ATAC,ATAC:ENCSR551CSY,mesenteric fat pad,mesenteric fat pad,0.9992,0.8530993262246729
+Cherimoya,ATAC,ATAC:ENCSR065CER,motor neuron,motor neuron,0.8249,0.15935795642892173
+Cherimoya,ATAC,ATAC:ENCSR491VXJ,mucosa of descending colon,mucosa of descending colon,0.9806,0.6747421790083578
+Cherimoya,ATAC,ATAC:ENCSR695FLC,mucosa of gallbladder,mucosa of gallbladder,0.9934,0.9324375966673463
+Cherimoya,ATAC,ATAC:ENCSR153IUB,mucosa of urinary bladder,mucosa of urinary bladder,0.997,0.9654996625809806
+Cherimoya,ATAC,ATAC:ENCSR685OFR,naive b cell,naive B cell,0.8771,0.1749287382704641
+Cherimoya,ATAC,ATAC:ENCSR260LAN,"naive thymus-derived cd4-positive, alpha-beta t cell","naive thymus-derived CD4-positive, alpha-beta T cell",0.9673,0.36846548000046936
+Cherimoya,ATAC,ATAC:ENCSR283LPH,"naive thymus-derived cd8-positive, alpha-beta t cell","naive thymus-derived CD8-positive, alpha-beta T cell",0.9617,0.4370618854927306
+Cherimoya,ATAC,ATAC:ENCSR044ATC,natural killer cell,natural killer cell,0.9799,0.547885644991302
+Cherimoya,ATAC,ATAC:ENCSR382LBS,nci-h929,NCI-H929,0.9919,0.6417182272705377
+Cherimoya,ATAC,ATAC:ENCSR788TRR,omental fat pad,omental fat pad,0.9999,1.1848468983655365
+Cherimoya,ATAC,ATAC:ENCSR227FVE,ovary,ovary,0.9995,1.1315624465700296
+Cherimoya,ATAC,ATAC:ENCSR591PIX,panc1,Panc1,0.93,-0.1474767751058438
+Cherimoya,ATAC,ATAC:ENCSR251POP,pancreas,pancreas,0.9987,1.202928560814622
+Cherimoya,ATAC,ATAC:ENCSR499ASS,pc-3,PC-3,0.8798,0.16589072652061426
+Cherimoya,ATAC,ATAC:ENCSR017RQC,peyer's patch,Peyer's patch,0.9991,0.48367802397937654
+Cherimoya,ATAC,ATAC:ENCSR729FNL,posterior cingulate cortex,posterior cingulate cortex,0.5725,0.021520747978634392
+Cherimoya,ATAC,ATAC:ENCSR213DBU,posterior vena cava,posterior vena cava,0.9999,1.0902030966044756
+Cherimoya,ATAC,ATAC:ENCSR999NKW,prostate gland,prostate gland,0.9985,0.38194045957894435
+Cherimoya,ATAC,ATAC:ENCSR040DJK,psoas muscle,psoas muscle,0.9996,1.2397474499538546
+Cherimoya,ATAC,ATAC:ENCSR062SVK,right atrium auricular region,right atrium auricular region,0.9927,0.16560693887042566
+Cherimoya,ATAC,ATAC:ENCSR177JWR,right cardiac atrium,right cardiac atrium,0.9995,0.7447994402876138
+Cherimoya,ATAC,ATAC:ENCSR373TDL,right lobe of liver,right lobe of liver,0.9997,0.6862145815543889
+Cherimoya,ATAC,ATAC:ENCSR855BMI,right ventricle myocardium inferior,Right ventricle myocardium inferior,0.9998,1.013357550170283
+Cherimoya,ATAC,ATAC:ENCSR074WMH,right ventricle myocardium superior,Right ventricle myocardium superior,0.9983,0.7704344138857357
+Cherimoya,ATAC,ATAC:ENCSR080SNF,rwpe2,RWPE2,0.9929,0.7903663499454492
+Cherimoya,ATAC,ATAC:ENCSR072UYN,sciatic nerve,sciatic nerve,1.0,1.6757276285273748
+Cherimoya,ATAC,ATAC:ENCSR086OGH,sigmoid colon,sigmoid colon,0.9998,0.8207269181085953
+Cherimoya,ATAC,ATAC:ENCSR587TRP,sk-n-sh,SK-N-SH,0.9145,0.1790920724789856
+Cherimoya,ATAC,ATAC:ENCSR078EBD,spleen,spleen,0.9632,0.14686523170522894
+Cherimoya,ATAC,ATAC:ENCSR335LHS,"stimulated activated effector memory cd8-positive, alpha-beta t cell","stimulated activated effector memory CD8-positive, alpha-beta T cell",0.971,0.31414941363054516
+Cherimoya,ATAC,ATAC:ENCSR302PTB,stimulated activated memory b cell,stimulated activated memory B cell,0.8464,0.06005787268693694
+Cherimoya,ATAC,ATAC:ENCSR379NMT,stimulated activated naive b cell,stimulated activated naive B cell,0.9265,0.19325273595348044
+Cherimoya,ATAC,ATAC:ENCSR326ESM,"stimulated activated naive cd8-positive, alpha-beta t cell","stimulated activated naive CD8-positive, alpha-beta T cell",0.9125,0.17252331345288469
+Cherimoya,ATAC,ATAC:ENCSR337UIU,stomach,stomach,0.9995,0.9105251162478858
+Cherimoya,ATAC,ATAC:ENCSR540BML,subcutaneous adipose tissue,subcutaneous adipose tissue,0.9994,0.6205175558263525
+Cherimoya,ATAC,ATAC:ENCSR032MEH,t-cell,T-cell,0.834,-0.0291882236036283
+Cherimoya,ATAC,ATAC:ENCSR248ZAC,t-helper 17 cell,T-helper 17 cell,0.9995,0.9217458558153263
+Cherimoya,ATAC,ATAC:ENCSR210NKB,testis,testis,0.9731,0.12983658954842553
+Cherimoya,ATAC,ATAC:ENCSR344ZTM,thoracic aorta,thoracic aorta,0.9953,0.46703443834062214
+Cherimoya,ATAC,ATAC:ENCSR201FIW,thyroid gland,thyroid gland,0.8162,0.0746633140221357
+Cherimoya,ATAC,ATAC:ENCSR630REB,tibial artery,tibial artery,0.9983,0.8553142442258961
+Cherimoya,ATAC,ATAC:ENCSR831KAH,tibial nerve,tibial nerve,0.9999,0.6805572712669574
+Cherimoya,ATAC,ATAC:ENCSR386HAZ,transverse colon,transverse colon,0.9938,0.4213949859603773
+Cherimoya,ATAC,ATAC:ENCSR242QRV,upper lobe of left lung,upper lobe of left lung,0.9999,0.5434643403791675
+Cherimoya,ATAC,ATAC:ENCSR990NNX,upper lobe of right lung,upper lobe of right lung,0.9997,0.9819522140527286
+Cherimoya,ATAC,ATAC:ENCSR814RGG,ureter,ureter,0.9994,0.7490161049618896
+Cherimoya,ATAC,ATAC:ENCSR705RZX,uterus,uterus,0.9998,0.4520817679344788
+Cherimoya,ATAC,ATAC:ENCSR541KFY,wtc11,WTC11,0.8689,0.12722327868202538
+Cherimoya,DNase,DNASE:ENCSR932KWJ,a172,A172,0.9946,0.8456346220388703
+Cherimoya,DNase,DNASE:ENCSR346JWH,a673,A673,0.9789,0.3905905899140069
+Cherimoya,DNase,DNASE:ENCSR257BGZ,achn,ACHN,0.9717,0.3453313276842908
+Cherimoya,DNase,DNASE:ENCSR021YFW,"activated cd4-positive, alpha-beta memory t cell","activated CD4-positive, alpha-beta memory T cell",0.9799,0.46342759819651524
+Cherimoya,DNase,DNASE:ENCSR636DIR,activated t-helper 1 cell,activated T-helper 1 cell,0.9949,0.4125636865212312
+Cherimoya,DNase,DNASE:ENCSR780ABS,activated t-helper 2 cell,activated T-helper 2 cell,0.9904,0.29438984026632087
+Cherimoya,DNase,DNASE:ENCSR405TXU,adipocyte,adipocyte,0.9989,1.914959353822522
+Cherimoya,DNase,DNASE:ENCSR000ELX,ag04449,AG04449,0.9997,1.8264426643305918
+Cherimoya,DNase,DNASE:ENCSR000ELY,ag04450,AG04450,0.9985,1.348320817267765
+Cherimoya,DNase,DNASE:ENCSR000EMA,ag09319,AG09319,0.9998,2.2109591520674945
+Cherimoya,DNase,DNASE:ENCSR000EMB,ag10803,AG10803,0.9997,2.6991141923709066
+Cherimoya,DNase,DNASE:ENCSR584LUZ,ammon's horn,Ammon's horn,0.9984,0.8579564834568921
+Cherimoya,DNase,DNASE:ENCSR207TUX,amniotic stem cell,amniotic stem cell,0.9619,0.23333595744640273
+Cherimoya,DNase,DNASE:ENCSR422IIZ,ascending aorta,ascending aorta,0.9996,0.9335552576952062
+Cherimoya,DNase,DNASE:ENCSR000EPM,astrocyte,astrocyte,0.9927,0.993878798435567
+Cherimoya,DNase,DNASE:ENCSR000ENC,astrocyte of the cerebellum,astrocyte of the cerebellum,0.9952,0.8885965473829481
+Cherimoya,DNase,DNASE:ENCSR000ENA,astrocyte of the hippocampus,astrocyte of the hippocampus,0.9753,0.47193505256981955
+Cherimoya,DNase,DNASE:ENCSR000ENB,astrocyte of the spinal cord,astrocyte of the spinal cord,0.9939,0.9822833951530374
+Cherimoya,DNase,DNASE:ENCSR000EMD,be2c,BE2C,0.9407,-0.2650934635998928
+Cherimoya,DNase,DNASE:ENCSR000EME,bj,BJ,0.9983,1.81284306814908
+Cherimoya,DNase,DNASE:ENCSR026EOM,brain,brain,0.7853,0.08174500408026418
+Cherimoya,DNase,DNASE:ENCSR000ENE,brain microvascular endothelial cell,brain microvascular endothelial cell,0.9982,1.6312269157866024
+Cherimoya,DNase,DNASE:ENCSR000ENF,brain pericyte,brain pericyte,0.9972,0.8082997473768123
+Cherimoya,DNase,DNASE:ENCSR000EMI,caco-2,Caco-2,0.9982,1.0097258649524314
+Cherimoya,DNase,DNASE:ENCSR515EWI,caki2,Caki2,0.9723,0.43537148753172333
+Cherimoya,DNase,DNASE:ENCSR000ENI,cardiac fibroblast,cardiac fibroblast,0.9991,2.36985359246909
+Cherimoya,DNase,DNASE:ENCSR842KCP,cardiac muscle cell,cardiac muscle cell,0.9712,0.258939437708639
+Cherimoya,DNase,DNASE:ENCSR015BGH,caudate nucleus,caudate nucleus,0.9592,0.23970418371147964
+Cherimoya,DNase,DNASE:ENCSR000EPK,cd14-positive monocyte,CD14-positive monocyte,1.0,2.4559850976318875
+Cherimoya,DNase,DNASE:ENCSR373BIX,cd1c-positive myeloid dendritic cell,CD1c-positive myeloid dendritic cell,0.9977,1.0146652546532653
+Cherimoya,DNase,DNASE:ENCSR239XNU,"cd4-positive, alpha-beta memory t cell","CD4-positive, alpha-beta memory T cell",0.9928,0.5249477926815659
+Cherimoya,DNase,DNASE:ENCSR025BWH,"cd8-positive, alpha-beta memory t cell","CD8-positive, alpha-beta memory T cell",0.9899,0.39358229713729165
+Cherimoya,DNase,DNASE:ENCSR503HIB,cerebellar cortex,cerebellar cortex,0.9773,0.3009519974790911
+Cherimoya,DNase,DNASE:ENCSR000EMN,cmk,CMK,0.9707,0.3077018118120434
+Cherimoya,DNase,DNASE:ENCSR122VUW,"common myeloid progenitor, cd34-positive","common myeloid progenitor, CD34-positive",0.9491,0.23352785180969132
+Cherimoya,DNase,DNASE:ENCSR346IHH,daoy,Daoy,0.9774,0.50516289467699
+Cherimoya,DNase,DNASE:ENCSR820WLP,dedifferentiated amniotic fluid mesenchymal stem cell,dedifferentiated amniotic fluid mesenchymal stem cell,0.9981,0.8254810373226887
+Cherimoya,DNase,DNASE:ENCSR000ENX,dermis blood vessel endothelial cell,dermis blood vessel endothelial cell,0.9583,0.21521179186266842
+Cherimoya,DNase,DNASE:ENCSR000EOA,dermis microvascular lymphatic vessel endothelial cell,dermis microvascular lymphatic vessel endothelial cell,0.9956,1.1151902528671078
+Cherimoya,DNase,DNASE:ENCSR001QTZ,dorsolateral prefrontal cortex,dorsolateral prefrontal cortex,0.7771,0.06035482186479383
+Cherimoya,DNase,DNASE:ENCSR360XIS,ecto neural progenitor cell,ecto neural progenitor cell,0.6155,-0.03665235791762593
+Cherimoya,DNase,DNASE:ENCSR582QEW,"effector memory cd4-positive, alpha-beta t cell","effector memory CD4-positive, alpha-beta T cell",0.9941,0.48324723015134613
+Cherimoya,DNase,DNASE:ENCSR548MMD,eh,EH,0.9822,0.9429685275402749
+Cherimoya,DNase,DNASE:ENCSR691MQJ,el,EL,0.9859,0.7175507860132474
+Cherimoya,DNase,DNASE:ENCSR678ILN,elf-1,ELF-1,0.9926,-0.6160999301245521
+Cherimoya,DNase,DNASE:ENCSR240TPI,elr,ELR,0.9832,0.7141848323771882
+Cherimoya,DNase,DNASE:ENCSR435NHO,embryonic facial prominence,embryonic facial prominence,0.9755,0.20030283534219828
+Cherimoya,DNase,DNASE:ENCSR166KPV,endodermal cell,endodermal cell,0.836,0.10513884658164302
+Cherimoya,DNase,DNASE:ENCSR541IET,endothelial cell,endothelial cell,0.9464,0.11293370801338447
+Cherimoya,DNase,DNASE:ENCSR000EOQ,endothelial cell of umbilical vein,endothelial cell of umbilical vein,0.8978,0.159473279571505
+Cherimoya,DNase,DNASE:ENCSR000EPU,epithelial cell of prostate,epithelial cell of prostate,0.9971,0.9934441738391641
+Cherimoya,DNase,DNASE:ENCSR127PWK,eye,eye,0.9148,0.164828008115778
+Cherimoya,DNase,DNASE:ENCSR805XIF,femur,femur,0.9907,0.5188407621791037
+Cherimoya,DNase,DNASE:ENCSR000ENS,fibroblast of gingiva,fibroblast of gingiva,0.9997,1.8271020736852925
+Cherimoya,DNase,DNASE:ENCSR000EOJ,fibroblast of lung,fibroblast of lung,0.9998,2.486772328820048
+Cherimoya,DNase,DNASE:ENCSR000ENW,fibroblast of mammary gland,fibroblast of mammary gland,0.9995,2.779314567161422
+Cherimoya,DNase,DNASE:ENCSR000EOH,fibroblast of pulmonary artery,fibroblast of pulmonary artery,0.9997,2.6849513478405123
+Cherimoya,DNase,DNASE:ENCSR176KYD,fibroblast of skin of abdomen,fibroblast of skin of abdomen,0.9981,1.2660285029570344
+Cherimoya,DNase,DNASE:ENCSR184LMY,fibroblast of skin of back,fibroblast of skin of back,0.9772,0.6803482076906301
+Cherimoya,DNase,DNASE:ENCSR562ACY,fibroblast of skin of left biceps,fibroblast of skin of left biceps,0.9982,1.5984263320046275
+Cherimoya,DNase,DNASE:ENCSR371KRY,fibroblast of skin of left quadriceps,fibroblast of skin of left quadriceps,0.9982,1.5853895273574956
+Cherimoya,DNase,DNASE:ENCSR383BLX,fibroblast of skin of right biceps,fibroblast of skin of right biceps,0.9963,1.603663784677163
+Cherimoya,DNase,DNASE:ENCSR217RVH,fibroblast of skin of right quadriceps,fibroblast of skin of right quadriceps,0.9958,1.2473328206071141
+Cherimoya,DNase,DNASE:ENCSR360LBD,fibroblast of skin of scalp,fibroblast of skin of scalp,0.9943,1.0958284730877264
+Cherimoya,DNase,DNASE:ENCSR000ENK,fibroblast of the conjunctiva,fibroblast of the conjunctiva,0.9997,1.8076342106108156
+Cherimoya,DNase,DNASE:ENCSR325LYJ,fibroblast of upper back skin,fibroblast of upper back skin,0.9976,1.8922218351570113
+Cherimoya,DNase,DNASE:ENCSR000EOR,fibroblast of villous mesenchyme,fibroblast of villous mesenchyme,0.9993,2.070363643537978
+Cherimoya,DNase,DNASE:ENCSR166TEE,forelimb muscle,forelimb muscle,0.997,0.8103009636639855
+Cherimoya,DNase,DNASE:ENCSR000ENQ,foreskin fibroblast,foreskin fibroblast,0.9962,1.2042599013795268
+Cherimoya,DNase,DNASE:ENCSR434OBM,foreskin melanocyte,foreskin melanocyte,0.9785,-0.5561175746840514
+Cherimoya,DNase,DNASE:ENCSR269SIA,g401,G401,0.9462,0.17771675633526338
+Cherimoya,DNase,DNASE:ENCSR771DAX,globus pallidus,globus pallidus,0.9901,0.45678345354367483
+Cherimoya,DNase,DNASE:ENCSR000EOM,glomerular endothelial cell,glomerular endothelial cell,0.9578,0.2571878672868651
+Cherimoya,DNase,DNASE:ENCSR109RIQ,glutamatergic neuron,glutamatergic neuron,0.5504,0.02921759054591492
+Cherimoya,DNase,DNASE:ENCSR000EMO,gm04503,GM04503,0.9959,1.481811614685755
+Cherimoya,DNase,DNASE:ENCSR000EMP,gm04504,GM04504,0.9974,1.8187476966271903
+Cherimoya,DNase,DNASE:ENCSR000EMQ,gm06990,GM06990,0.9609,0.32111430028391297
+Cherimoya,DNase,DNASE:ENCSR000EMR,gm12864,GM12864,0.9456,0.31070769227837874
+Cherimoya,DNase,DNASE:ENCSR000EMS,gm12865,GM12865,0.981,0.4771894690936716
+Cherimoya,DNase,DNASE:ENCSR217TAW,gm23248,GM23248,0.9937,1.4790619365133357
+Cherimoya,DNase,DNASE:ENCSR000EMU,h1,H1,0.9559,0.14155575108202337
+Cherimoya,DNase,DNASE:ENCSR809CEA,h4,H4,0.9995,1.2112483895626338
+Cherimoya,DNase,DNASE:ENCSR000EMZ,h7,H7,0.7619,0.10600866602965461
+Cherimoya,DNase,DNASE:ENCSR017OZH,h9,H9,0.7157,0.0446227406006424
+Cherimoya,DNase,DNASE:ENCSR620QNS,hap-1,HAP-1,0.7514,0.06306592740533232
+Cherimoya,DNase,DNASE:ENCSR038XTK,hcec 1ct,HCEC 1CT,0.9985,1.920402785202389
+Cherimoya,DNase,DNASE:ENCSR002IHL,head of caudate nucleus,head of caudate nucleus,0.591,-0.028408979553509944
+Cherimoya,DNase,DNASE:ENCSR064GBK,heart,heart,0.7441,0.07581648061911443
+Cherimoya,DNase,DNASE:ENCSR000ENO,hela-s3,HeLa-S3,0.9939,1.019235991892037
+Cherimoya,DNase,DNASE:ENCSR000EMK,hematopoietic multipotent progenitor cell,hematopoietic multipotent progenitor cell,0.9789,0.5131575826038821
+Cherimoya,DNase,DNASE:ENCSR364MFN,hepatocyte,hepatocyte,0.9988,0.8487381658005553
+Cherimoya,DNase,DNASE:ENCSR000ENR,hff-myc,HFF-Myc,0.9959,1.0256838579187235
+Cherimoya,DNase,DNASE:ENCSR672EWY,hffc6,HFFc6,0.9897,0.6676323448265609
+Cherimoya,DNase,DNASE:ENCSR385AMY,hindlimb muscle,hindlimb muscle,0.9894,0.5922368918967508
+Cherimoya,DNase,DNASE:ENCSR634YVQ,hk-2,HK-2,0.9845,0.42060193259205847
+Cherimoya,DNase,DNASE:ENCSR000ENU,hl-60,HL-60,0.9999,2.039042961410689
+Cherimoya,DNase,DNASE:ENCSR000EMF,hs-27a,HS-27A,0.971,0.3312016694973605
+Cherimoya,DNase,DNASE:ENCSR000EMG,hs-5,HS-5,0.9918,0.8442729026645898
+Cherimoya,DNase,DNASE:ENCSR814KRX,ht-29,HT-29,0.9953,0.9362967800270464
+Cherimoya,DNase,DNASE:ENCSR000FDI,ht1080,HT1080,0.9963,1.0878765939933344
+Cherimoya,DNase,DNASE:ENCSR986YWZ,inferior parietal cortex,inferior parietal cortex,0.9371,0.15434040982164
+Cherimoya,DNase,DNASE:ENCSR383SNM,ips df 19.11,iPS DF 19.11,0.9744,0.3157301528175709
+Cherimoya,DNase,DNASE:ENCSR440QMR,ips df 19.7,iPS DF 19.7,0.9704,0.2062582425738548
+Cherimoya,DNase,DNASE:ENCSR014FPY,ips df 4.7,iPS DF 4.7,0.9352,0.1367167640032166
+Cherimoya,DNase,DNASE:ENCSR261SMF,ips df 6.9,iPS DF 6.9,0.9239,0.11677957273780497
+Cherimoya,DNase,DNASE:ENCSR224FOA,islet precursor cell,islet precursor cell,0.619,-0.04875700435120294
+Cherimoya,DNase,DNASE:ENCSR000EOS,"jurkat, clone e6-1","Jurkat, Clone E6-1",0.9537,0.23828496088239587
+Cherimoya,DNase,DNASE:ENCSR019JDO,karpas-422,Karpas-422,0.2213,0.008626912279268959
+Cherimoya,DNase,DNASE:ENCSR426IEA,kbm-7,KBM-7,0.9968,1.1118032988741757
+Cherimoya,DNase,DNASE:ENCSR000EPQ,keratinocyte,keratinocyte,0.8496,0.08216765747470829
+Cherimoya,DNase,DNASE:ENCSR988YKR,kidney capillary endothelial cell,kidney capillary endothelial cell,0.9473,0.1791127072536416
+Cherimoya,DNase,DNASE:ENCSR136KEL,kidney glomerular epithelial cell,kidney glomerular epithelial cell,0.9922,0.5931114435537141
+Cherimoya,DNase,DNASE:ENCSR314EZY,l1-s8,L1-S8,0.2927,-0.011439635376827292
+Cherimoya,DNase,DNASE:ENCSR746ZPP,l1-s8r,L1-S8R,0.9342,0.13319254234182812
+Cherimoya,DNase,DNASE:ENCSR047FNH,large intestine,large intestine,0.9977,0.9090898351589155
+Cherimoya,DNase,DNASE:ENCSR976XOY,left forelimb,left forelimb,0.8262,0.07251123882270576
+Cherimoya,DNase,DNASE:ENCSR431UEM,left hindlimb,left hindlimb,0.9874,0.42153040655743235
+Cherimoya,DNase,DNASE:ENCSR097BWW,left kidney,left kidney,0.7592,0.09690209173655705
+Cherimoya,DNase,DNASE:ENCSR039ZVQ,left renal cortex interstitium,left renal cortex interstitium,0.9592,0.22229993381191718
+Cherimoya,DNase,DNASE:ENCSR016THC,left renal pelvis,left renal pelvis,0.9304,0.18489197790320946
+Cherimoya,DNase,DNASE:ENCSR000EPE,lhcn-m2,LHCN-M2,0.9959,1.5886136073796988
+Cherimoya,DNase,DNASE:ENCSR532CRI,limb,limb,0.9385,0.16911969292883314
+Cherimoya,DNase,DNASE:ENCSR503BEM,lovo,LoVo,0.9928,0.5320013399371195
+Cherimoya,DNase,DNASE:ENCSR361DND,lower leg skin,lower leg skin,0.9999,1.5166138904870128
+Cherimoya,DNase,DNASE:ENCSR000EOD,lung microvascular endothelial cell,lung microvascular endothelial cell,0.9522,0.31904927123658
+Cherimoya,DNase,DNASE:ENCSR000ENV,mammary epithelial cell,mammary epithelial cell,0.9966,1.1549254906069837
+Cherimoya,DNase,DNASE:ENCSR385SZQ,mcf 10a,MCF 10A,0.9985,2.022859003440369
+Cherimoya,DNase,DNASE:ENCSR224IYD,medulla oblongata,medulla oblongata,0.9988,0.7880868758813003
+Cherimoya,DNase,DNASE:ENCSR731QLJ,mesenchymal stem cell,mesenchymal stem cell,0.999,1.819909700381936
+Cherimoya,DNase,DNASE:ENCSR714DIF,mesendoderm,mesendoderm,0.936,0.2611830968958108
+Cherimoya,DNase,DNASE:ENCSR945KSP,mesothelial cell of epicardium,mesothelial cell of epicardium,0.812,0.05853666077836628
+Cherimoya,DNase,DNASE:ENCSR083STA,mg63,MG63,0.9957,1.330675581274869
+Cherimoya,DNase,DNASE:ENCSR706IDL,midbrain,midbrain,0.945,0.16878821203368005
+Cherimoya,DNase,DNASE:ENCSR318PRQ,middle frontal gyrus,middle frontal gyrus,0.928,0.14982330594938437
+Cherimoya,DNase,DNASE:ENCSR458LIB,mm.1s,MM.1S,0.9817,0.436155030607956
+Cherimoya,DNase,DNASE:ENCSR062DXC,muscle of arm,muscle of arm,0.9781,0.28942811681115904
+Cherimoya,DNase,DNASE:ENCSR010ZMK,muscle of back,muscle of back,0.9384,0.22321215515245457
+Cherimoya,DNase,DNASE:ENCSR033DQS,muscle of leg,muscle of leg,0.9426,0.21861797138474887
+Cherimoya,DNase,DNASE:ENCSR217YRJ,muscle of trunk,muscle of trunk,0.9783,0.4283898381570414
+Cherimoya,DNase,DNASE:ENCSR000EPD,myocyte,myocyte,0.984,0.7818420301269597
+Cherimoya,DNase,DNASE:ENCSR000EOP,myotube,myotube,0.9914,0.9938063919479744
+Cherimoya,DNase,DNASE:ENCSR301OGM,namalwa,NAMALWA,0.9827,0.3059006598872742
+Cherimoya,DNase,DNASE:ENCSR000EPL,nb4,NB4,0.9983,1.3765451233204136
+Cherimoya,DNase,DNASE:ENCSR265TEK,nci-h226,NCI-H226,0.9968,1.4451355566753354
+Cherimoya,DNase,DNASE:ENCSR000FJH,nci-h460,NCI-H460,0.999,1.354392705510326
+Cherimoya,DNase,DNASE:ENCSR503UNA,nephron progenitor cell,nephron progenitor cell,0.6017,0.04124091039437789
+Cherimoya,DNase,DNASE:ENCSR826URD,neural crest cell,neural crest cell,0.231,0.0075474165419170324
+Cherimoya,DNase,DNASE:ENCSR963ALV,neural progenitor cell,neural progenitor cell,0.9001,0.12141123371505418
+Cherimoya,DNase,DNASE:ENCSR278FVO,neuronal stem cell,neuronal stem cell,0.9582,0.13837900005310672
+Cherimoya,DNase,DNASE:ENCSR000EPS,nt2/d1,NT2/D1,0.1785,0.006273597103908496
+Cherimoya,DNase,DNASE:ENCSR489NAM,oci-ly7,OCI-LY7,0.7878,0.05159660537335177
+Cherimoya,DNase,DNASE:ENCSR818HHN,osteocyte,osteocyte,0.7673,0.043032510982371285
+Cherimoya,DNase,DNASE:ENCSR940NLN,pc-9,PC-9,0.9923,0.7770282664855932
+Cherimoya,DNase,DNASE:ENCSR035QHH,placenta,placenta,0.9082,0.20074691217693816
+Cherimoya,DNase,DNASE:ENCSR829MXU,pons,pons,0.997,0.6656433120040055
+Cherimoya,DNase,DNASE:ENCSR006XFA,posterior cingulate gyrus,posterior cingulate gyrus,0.4535,0.016981176665513246
+Cherimoya,DNase,DNASE:ENCSR169KNO,progenitor cell of endocrine pancreas,progenitor cell of endocrine pancreas,0.9798,0.14613167510928185
+Cherimoya,DNase,DNASE:ENCSR000EOG,pulmonary artery endothelial cell,pulmonary artery endothelial cell,0.9151,0.12430841646892188
+Cherimoya,DNase,DNASE:ENCSR493VDS,putamen,putamen,0.6221,0.040690428153189656
+Cherimoya,DNase,DNASE:ENCSR337IRF,rcc,RCC,0.9756,0.5840902360252009
+Cherimoya,DNase,DNASE:ENCSR037PGI,rcc 7860,RCC 7860,0.99,0.5738104412202275
+Cherimoya,DNase,DNASE:ENCSR022ECC,renal cortex interstitium,renal cortex interstitium,0.9511,0.2506875014018275
+Cherimoya,DNase,DNASE:ENCSR000EOK,renal cortical epithelial cell,renal cortical epithelial cell,0.9931,1.0671356615961207
+Cherimoya,DNase,DNASE:ENCSR141DMX,renal pelvis,renal pelvis,0.9533,0.2318446327930415
+Cherimoya,DNase,DNASE:ENCSR474GZQ,retina,retina,0.6576,0.056591817404478835
+Cherimoya,DNase,DNASE:ENCSR274SDO,right forelimb,right forelimb,0.9588,0.2024845030640884
+Cherimoya,DNase,DNASE:ENCSR449HOQ,right hindlimb,right hindlimb,0.9833,0.4254208503069466
+Cherimoya,DNase,DNASE:ENCSR017TFH,right kidney,right kidney,0.8912,0.16962505671973266
+Cherimoya,DNase,DNASE:ENCSR263IGU,right lung,right lung,0.9949,0.8626451941761266
+Cherimoya,DNase,DNASE:ENCSR014VAC,right renal cortex interstitium,right renal cortex interstitium,0.8013,0.07871025251266965
+Cherimoya,DNase,DNASE:ENCSR540PVZ,right renal pelvis,right renal pelvis,0.9538,0.22584415606507216
+Cherimoya,DNase,DNASE:ENCSR429RHR,rko,RKO,0.9821,0.2639097379588127
+Cherimoya,DNase,DNASE:ENCSR000EPV,rpmi7951,RPMI7951,0.8253,0.14531790654960242
+Cherimoya,DNase,DNASE:ENCSR594NOE,rpmi8226,RPMI8226,0.9569,0.2575349378843149
+Cherimoya,DNase,DNASE:ENCSR000FFJ,sjcrh30,SJCRH30,0.7552,0.07058531547021395
+Cherimoya,DNase,DNASE:ENCSR520WTV,sjsa1,SJSA1,0.9682,0.24703800191449238
+Cherimoya,DNase,DNASE:ENCSR000FEK,sk-mel-5,SK-MEL-5,0.9742,0.3841544003282505
+Cherimoya,DNase,DNASE:ENCSR946MVP,sk-n-dz,SK-N-DZ,0.8809,0.08505084893755674
+Cherimoya,DNase,DNASE:ENCSR000EPY,sk-n-mc,SK-N-MC,0.4237,0.02190789579407036
+Cherimoya,DNase,DNASE:ENCSR000EQA,skeletal muscle cell,skeletal muscle cell,0.9999,2.660837591678524
+Cherimoya,DNase,DNASE:ENCSR000EOO,skeletal muscle myoblast,skeletal muscle myoblast,0.9973,1.943471299616651
+Cherimoya,DNase,DNASE:ENCSR092OFK,skin of body,skin of body,0.9528,0.17761073293414767
+Cherimoya,DNase,DNASE:ENCSR116WWW,small intestine,small intestine,0.9946,0.6752506424287937
+Cherimoya,DNase,DNASE:ENCSR000ENG,smooth muscle cell of the brain vasculature,smooth muscle cell of the brain vasculature,0.9843,0.48676971500699384
+Cherimoya,DNase,DNASE:ENCSR148MFM,spinal cord,spinal cord,0.9536,0.17889511589579518
+Cherimoya,DNase,DNASE:ENCSR010TMX,"stimulated activated cd4-positive, alpha-beta t cell","stimulated activated CD4-positive, alpha-beta T cell",0.9654,0.1856975352515851
+Cherimoya,DNase,DNASE:ENCSR060TTR,"stimulated activated cd8-positive, alpha-beta memory t cell","stimulated activated CD8-positive, alpha-beta memory T cell",0.9961,0.5520906770678954
+Cherimoya,DNase,DNASE:ENCSR000EMH,stromal cell of bone marrow,stromal cell of bone marrow,0.9967,1.706922460629806
+Cherimoya,DNase,DNASE:ENCSR382JUJ,superior temporal gyrus,superior temporal gyrus,0.9131,0.12614231808867046
+Cherimoya,DNase,DNASE:ENCSR101QXF,suprapubic skin,suprapubic skin,0.9998,1.4297067780278618
+Cherimoya,DNase,DNASE:ENCSR217SET,sw480,SW480,0.9969,0.9264951127931275
+Cherimoya,DNase,DNASE:ENCSR000EQD,t-helper 1 cell,T-helper 1 cell,0.9955,0.7336034539892223
+Cherimoya,DNase,DNASE:ENCSR000EQH,t-helper 2 cell,T-helper 2 cell,0.9756,0.258673333918575
+Cherimoya,DNase,DNASE:ENCSR000EQB,t47d,T47D,0.8827,0.15625765483919163
+Cherimoya,DNase,DNASE:ENCSR164PQJ,thymus,thymus,0.9452,0.1354156423441684
+Cherimoya,DNase,DNASE:ENCSR559WMK,tongue,tongue,0.9173,0.1928754473784598
+Cherimoya,DNase,DNASE:ENCSR121ZSL,trophoblast cell,trophoblast cell,0.9429,0.36427122669118595
+Cherimoya,DNase,DNASE:ENCSR362ZFC,type b pancreatic cell,type B pancreatic cell,0.886,0.0700012314468922
+Cherimoya,DNase,DNASE:ENCSR512CWR,umbilical cord,umbilical cord,0.9979,0.9585723228125528
+Cherimoya,DNase,DNASE:ENCSR813CKU,urinary bladder,urinary bladder,0.9957,0.5231114796792087
+Cherimoya,DNase,DNASE:ENCSR000EQL,weri-rb-1,WERI-Rb-1,0.8675,0.11505312316103865
+Cherimoya,DNase,DNASE:ENCSR000EQM,wi38,WI38,0.9953,1.1606300681456465

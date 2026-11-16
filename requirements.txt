@@ -15,6 +15,9 @@ fastmcp>=3.0
 huggingface_hub>=0.20.0
 pyyaml>=5.4  # chorus/core/environment/manager.py imports yaml at module level
 requests>=2.25  # chorus/utils/annotations.py imports requests at module level
+pdfminer.six>=20221105  # chorus/analysis/paper_claims.py: text of a PDF paper (MIT; PyMuPDF is AGPL)
+beautifulsoup4>=4.9  # chorus/analysis/paper_claims.py: text of an HTML paper
+lxml>=4.6  # parser used by beautifulsoup4 there
 
 # Note: Oracle-specific dependencies are installed in separate environments
 # See environments/ directory for oracle-specific requirements

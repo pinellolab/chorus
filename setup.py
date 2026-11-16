@@ -77,6 +77,7 @@ setup(
             "oracles/chrombpnet_source/templates/*.json",
             "oracles/enformer_source/*.txt",
             "analysis/data/*.bed",
+            "analysis/data/*.csv",  # cell_type_annotation.csv: cell type -> tissue / system for layer_ranking
             "analysis/static/*.js",  # bundled IGV.js for inline HTML reports
             # The hg38 cytoband table, which supplies both the ideogram and the
             # chromosome lengths a report inlines instead of fetching (#139).
