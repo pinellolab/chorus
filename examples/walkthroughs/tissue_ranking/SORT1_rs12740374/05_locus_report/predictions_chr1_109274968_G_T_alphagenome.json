@@ -1,0 +1,363 @@
+{
+ "schema": "chorus_predictions/1",
+ "oracle": "alphagenome",
+ "variant": {
+  "chrom": "chr1",
+  "pos": 109274968,
+  "ref": "G",
+  "alt": "T"
+ },
+ "alt_key": "alt_1",
+ "tracks": {
+  "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27ac/.": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:H3K27ac:HepG2",
+   "resolution": 128,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K27ac.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K27ac.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     241879,
+     1794831972972683320
+    ],
+    "alt": [
+     241841,
+     1794831979309128147
+    ]
+   }
+  },
+  "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K27me3/.": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:H3K27me3:HepG2",
+   "resolution": 128,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K27me3.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K27me3.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     242762,
+     1794831972984815506
+    ],
+    "alt": [
+     242883,
+     1794831979320597627
+    ]
+   }
+  },
+  "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K36me3/.": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:H3K36me3:HepG2",
+   "resolution": 128,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K36me3.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K36me3.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     241252,
+     1794831972996518647
+    ],
+    "alt": [
+     241171,
+     1794831979331980220
+    ]
+   }
+  },
+  "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K4me1/.": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:H3K4me1:HepG2",
+   "resolution": 128,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K4me1.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K4me1.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     242726,
+     1794831973007971971
+    ],
+    "alt": [
+     242642,
+     1794831979343232881
+    ]
+   }
+  },
+  "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K4me2/.": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:H3K4me2:HepG2",
+   "resolution": 128,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K4me2.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K4me2.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     245961,
+     1794831973019522840
+    ],
+    "alt": [
+     245980,
+     1794831979354520611
+    ]
+   }
+  },
+  "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K4me3/.": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:H3K4me3:HepG2",
+   "resolution": 128,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K4me3.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K4me3.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     245057,
+     1794831973031034063
+    ],
+    "alt": [
+     245160,
+     1794831979366135124
+    ]
+   }
+  },
+  "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K79me2/.": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:H3K79me2:HepG2",
+   "resolution": 128,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K79me2.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K79me2.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     243487,
+     1794831973042472783
+    ],
+    "alt": [
+     243521,
+     1794831979377892085
+    ]
+   }
+  },
+  "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K9ac/.": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:H3K9ac:HepG2",
+   "resolution": 128,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K9ac.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K9ac.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     242059,
+     1794831973053804763
+    ],
+    "alt": [
+     242063,
+     1794831979389576634
+    ]
+   }
+  },
+  "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H3K9me3/.": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:H3K9me3:HepG2",
+   "resolution": 128,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K9me3.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H3K9me3.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     246886,
+     1794831973065286147
+    ],
+    "alt": [
+     246998,
+     1794831979401336034
+    ]
+   }
+  },
+  "CHIP_HISTONE/EFO:0001187 Histone ChIP-seq H4K20me1/.": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:H4K20me1:HepG2",
+   "resolution": 128,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H4K20me1.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HISTONE_EFO_0001187_Histone_ChIP-seq_H4K20me1.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     241620,
+     1794831973076639655
+    ],
+    "alt": [
+     241580,
+     1794831979413007413
+    ]
+   }
+  },
+  "CAGE/hCAGE EFO:0001187/+": {
+   "assay_type": "CAGE",
+   "cell_type": "HepG2",
+   "description": "CAGE:HepG2",
+   "resolution": 1,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CAGE_hCAGE_EFO_0001187_+.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CAGE_hCAGE_EFO_0001187_+.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     38273706,
+     1794831974622426299
+    ],
+    "alt": [
+     38268013,
+     1794831980971538588
+    ]
+   }
+  },
+  "CAGE/hCAGE EFO:0001187/-": {
+   "assay_type": "CAGE",
+   "cell_type": "HepG2",
+   "description": "CAGE:HepG2",
+   "resolution": 1,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CAGE_hCAGE_EFO_0001187_-.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CAGE_hCAGE_EFO_0001187_-.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     38332049,
+     1794831976182453902
+    ],
+    "alt": [
+     38325292,
+     1794831982535566226
+    ]
+   }
+  },
+  "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/+": {
+   "assay_type": "RNA",
+   "cell_type": "HepG2",
+   "description": "RNA:HepG2",
+   "resolution": 1,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_RNA_SEQ_EFO_0001187_polyA_plus_RNA-seq_+.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_RNA_SEQ_EFO_0001187_polyA_plus_RNA-seq_+.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     38020333,
+     1794831977733990355
+    ],
+    "alt": [
+     38010204,
+     1794831984093593751
+    ]
+   }
+  },
+  "RNA_SEQ/EFO:0001187 polyA plus RNA-seq/-": {
+   "assay_type": "RNA",
+   "cell_type": "HepG2",
+   "description": "RNA:HepG2",
+   "resolution": 1,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_RNA_SEQ_EFO_0001187_polyA_plus_RNA-seq_-.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_RNA_SEQ_EFO_0001187_polyA_plus_RNA-seq_-.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     38173709,
+     1794831979295245795
+    ],
+    "alt": [
+     38166381,
+     1794831985659023116
+    ]
+   }
+  }
+ }
+}

@@ -1,0 +1,69 @@
+{
+  "method": "acat",
+  "group_level": "tissue_system",
+  "top_n": 15,
+  "min_tracks": 1,
+  "threshold": 0.95,
+  "variant_label": "SORT1 rs12740374",
+  "layers": {
+    "DNase": {
+      "oracle": "Cherimoya",
+      "n_groups_ranked": 16
+    },
+    "ATAC": {
+      "oracle": "Cherimoya",
+      "n_groups_ranked": 15
+    },
+    "ChIP-TF": {
+      "oracle": "BPNet",
+      "n_groups_ranked": 17
+    },
+    "ChIP-histone": {
+      "oracle": "AlphaGenome",
+      "n_groups_ranked": 17
+    },
+    "RNA-seq": {
+      "oracle": "AlphaGenome",
+      "n_groups_ranked": 17
+    },
+    "CAGE": {
+      "oracle": "AlphaGenome",
+      "n_groups_ranked": 19
+    }
+  },
+  "n_tracks_used": 3203,
+  "n_unmapped_cell_types": 0,
+  "notes": [],
+  "rna_gene": "SORT1",
+  "rna_genes_available": [
+    "PSRC1",
+    "CELSR2",
+    "MYBPHL",
+    "SORT1",
+    "ELAPOR1",
+    "SARS1",
+    "GSTM5",
+    "SYPL2",
+    "GSTM3",
+    "AKNAD1",
+    "CFAP276",
+    "GSTM1",
+    "AMPD2",
+    "EPS8L3",
+    "GNAT2",
+    "ATXN7L2",
+    "AMIGO1",
+    "WDR47",
+    "GSTM2",
+    "CLCC1",
+    "PSMA5",
+    "GSTM4",
+    "GPR61",
+    "TMEM167B",
+    "TAF13",
+    "STXBP3",
+    "CYB561D1",
+    "GPSM2",
+    "GNAI3"
+  ]
+}

@@ -1,0 +1,213 @@
+{
+ "schema": "chorus_predictions/1",
+ "oracle": "chrombpnet",
+ "variant": {
+  "chrom": "chr1",
+  "pos": 109274968,
+  "ref": "G",
+  "alt": "T"
+ },
+ "alt_key": "alt_1",
+ "tracks": {
+  "CHIP:HepG2:CEBPB:+": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:HepG2",
+   "resolution": 1,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HepG2_CEBPB_+.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HepG2_CEBPB_+.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     38512616,
+     1794832040971129066
+    ],
+    "alt": [
+     38511614,
+     1794832044109647846
+    ]
+   }
+  },
+  "CHIP:HepG2:CEBPB:-": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:HepG2",
+   "resolution": 1,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HepG2_CEBPB_-.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HepG2_CEBPB_-.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     38508755,
+     1794832042544058005
+    ],
+    "alt": [
+     38507817,
+     1794832045683918589
+    ]
+   }
+  },
+  "CHIP:HepG2:CEBPA:+": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:HepG2",
+   "resolution": 1,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HepG2_CEBPA_+.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HepG2_CEBPA_+.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     39499421,
+     1794832065981029157
+    ],
+    "alt": [
+     39498305,
+     1794832069151084305
+    ]
+   }
+  },
+  "CHIP:HepG2:CEBPA:-": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:HepG2",
+   "resolution": 1,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HepG2_CEBPA_-.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HepG2_CEBPA_-.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     39496666,
+     1794832067561056648
+    ],
+    "alt": [
+     39495594,
+     1794832070734111834
+    ]
+   }
+  },
+  "CHIP:HepG2:HLF:+": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:HepG2",
+   "resolution": 1,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HepG2_HLF_+.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HepG2_HLF_+.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     37546583,
+     1794832089989077335
+    ],
+    "alt": [
+     37546352,
+     1794832093073911833
+    ]
+   }
+  },
+  "CHIP:HepG2:HLF:-": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:HepG2",
+   "resolution": 1,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HepG2_HLF_-.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HepG2_HLF_-.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     37556537,
+     1794832091535152558
+    ],
+    "alt": [
+     37556291,
+     1794832094617526284
+    ]
+   }
+  },
+  "CHIP:HepG2:CEBPD:+": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:HepG2",
+   "resolution": 1,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HepG2_CEBPD_+.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HepG2_CEBPD_+.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     39532508,
+     1794832113867192137
+    ],
+    "alt": [
+     39532242,
+     1794832117028913740
+    ]
+   }
+  },
+  "CHIP:HepG2:CEBPD:-": {
+   "assay_type": "CHIP",
+   "cell_type": "HepG2",
+   "description": "CHIP:HepG2",
+   "resolution": 1,
+   "interval": {
+    "chrom": "chr1",
+    "start": 108750679,
+    "end": 109799255
+   },
+   "files": {
+    "ref": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/reference_CHIP_HepG2_CEBPD_-.bedgraph",
+    "alt": "/storage_1/lruggeri/projects/chorus-article/reproduce/chorus/analysis_output/sort1_replay_2026-11-16/alt_1_CHIP_HepG2_CEBPD_-.bedgraph"
+   },
+   "fingerprint": {
+    "ref": [
+     39541140,
+     1794832115443175588
+    ],
+    "alt": [
+     39540825,
+     1794832118595940780
+    ]
+   }
+  }
+ }
+}

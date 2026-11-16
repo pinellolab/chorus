@@ -1,0 +1,20 @@
+group,DNase,ATAC,ChIP-TF,ChIP-histone,RNA-seq,CAGE
+Liver,1,6,93,25,12,10
+Adipose,1,3,0,13,8,20
+Respiratory,6,8,16,75,25,26
+Breast / mammary,3,1,19,18,12,9
+Endocrine,NA,1,0,12,7,5
+Reproductive,6,6,18,49,28,50
+Pancreas,1,2,0,13,9,4
+Blood & immune,26,100,40,164,43,56
+Digestive tract,9,12,4,101,26,37
+Musculoskeletal,16,2,0,64,29,34
+Connective / stromal,7,NA,0,7,3,2
+Sensory organs,1,NA,0,1,1,23
+Cardiovascular,10,14,1,61,50,45
+Skin,21,1,0,42,18,14
+Urinary,12,3,6,7,22,14
+Embryonic / pluripotent,6,0,5,31,13,2
+Nervous system,16,2,2,57,26,39
+Other / unspecified,NA,NA,NA,NA,NA,4
+Whole organism / unspecified,NA,NA,NA,NA,NA,1

@@ -1,0 +1,61 @@
+group,DNase,ATAC,ChIP-TF,ChIP-histone,RNA-seq,CAGE
+Liver,2.921,3.483,2.977,3.461,2.723,2.984
+Myeloid cells,3.551,2.029,2.272,2.823,2.229,2.239
+Uterus / endometrium,NA,3.699,2.859,3.155,1.621,1.447
+Adrenal gland,NA,2.886,0.262,3.317,2.329,2.344
+Lung,3.058,3.398,2.745,2.658,2.448,2.064
+Adipose tissue,2.959,3.634,0.456,2.987,2.508,2.128
+Breast / mammary,2.871,3.699,2.513,2.097,2.392,2.026
+Spleen,NA,1.434,0.964,2.695,2.431,1.784
+Aorta,3.398,3.708,0.481,2.968,2.051,1.592
+Ovary,NA,3.301,0.470,3.018,2.087,1.975
+Skeletal muscle,2.943,3.164,0.628,2.741,2.020,1.982
+Esophagus,NA,3.541,0.387,2.423,2.084,2.139
+Placenta / extra-embryonic,2.617,NA,0.776,1.619,2.347,1.934
+Small intestine,2.268,3.222,NA,2.702,1.829,2.022
+Colon / large intestine,2.533,2.952,1.541,2.492,2.238,1.803
+Cervix / vagina,2.215,NA,2.755,2.308,2.071,2.214
+Bladder / ureter / urethra,2.367,3.000,NA,2.960,2.069,1.926
+Pancreas,1.298,2.967,0.650,2.678,2.433,2.188
+Fibroblast / stromal (organ unspecified),3.277,NA,0.609,2.695,1.859,1.872
+Embryonic / stem (other),2.299,NA,0.913,2.176,2.057,1.964
+Heart,2.460,3.104,0.733,2.343,2.033,1.710
+Stomach,NA,3.426,0.702,2.645,1.816,1.821
+Lymph node / tonsil,NA,3.046,0.593,2.742,2.170,1.682
+Eye,2.923,NA,0.159,1.021,2.046,1.814
+Mouth / salivary gland,3.223,NA,NA,2.487,1.967,1.687
+Trachea / bronchus,NA,NA,0.522,2.074,2.061,1.947
+Prostate,2.538,2.434,0.509,1.998,2.084,1.898
+Nervous system (other / neural progenitor),2.350,3.699,0.677,1.505,1.990,1.755
+Bone / cartilage,1.972,NA,0.752,2.142,2.015,2.056
+Bone marrow,2.185,NA,0.277,1.649,2.097,2.039
+Testis,NA,1.570,0.925,2.508,1.650,1.773
+Skin,2.927,1.609,0.768,2.296,1.914,1.654
+Artery,3.223,2.770,0.542,2.717,1.856,1.732
+Vein / umbilical vein,0.991,4.000,0.684,1.890,1.944,1.729
+Blood vessel / endothelium (other),2.076,NA,0.696,2.273,1.693,1.683
+Hematopoietic progenitor,1.525,NA,NA,1.790,1.975,2.231
+Spinal cord,1.967,NA,1.305,1.285,1.958,1.121
+Kidney,1.608,3.155,0.930,1.773,1.905,1.593
+B cell / plasma cell,1.464,1.560,1.274,1.953,2.187,1.245
+NK / innate lymphoid,NA,1.697,0.054,1.842,2.056,1.257
+Thymus,1.261,NA,NA,1.610,1.842,1.473
+Thyroid / parathyroid,NA,0.736,0.327,1.711,2.472,1.189
+T cell,2.082,2.109,0.237,1.584,1.723,0.853
+Brain,2.172,0.189,0.566,1.520,1.501,1.321
+Pluripotent stem cell (ES / iPS),1.203,0.743,2.332,0.004,1.920,NA
+Reproductive (other),0.085,4.000,0.884,1.260,1.466,NA
+Limb,1.568,NA,NA,NA,NA,1.812
+Erythroid / megakaryocyte,1.533,NA,NA,NA,NA,1.696
+Blood / immune (other),NA,NA,NA,2.403,2.205,2.046
+Respiratory (other),NA,NA,NA,NA,2.171,1.840
+Pituitary,NA,NA,NA,NA,1.860,2.233
+Digestive tract (other),NA,NA,NA,NA,NA,2.159
+Musculoskeletal (other),NA,NA,NA,NA,NA,2.136
+Ear / nose,NA,NA,NA,NA,NA,1.972
+Smooth muscle,NA,NA,NA,NA,NA,1.963
+Other / unspecified,NA,NA,NA,NA,NA,1.779
+Male genital tract,NA,NA,NA,NA,NA,1.651
+Endocrine (other),NA,NA,NA,NA,NA,1.542
+Whole organism / unspecified,NA,NA,NA,NA,NA,1.323
+Urinary (other),NA,NA,NA,NA,NA,1.311

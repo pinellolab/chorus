@@ -1,0 +1,61 @@
+group,DNase,ATAC,ChIP-TF,ChIP-histone,RNA-seq,CAGE
+Liver,1.200e-03,3.286e-04,1.055e-03,3.457e-04,1.891e-03,1.038e-03
+Myeloid cells,2.812e-04,9.359e-03,5.341e-03,1.502e-03,5.903e-03,5.774e-03
+Uterus / endometrium,NA,2.000e-04,1.383e-03,7.000e-04,2.391e-02,3.571e-02
+Adrenal gland,NA,1.300e-03,5.469e-01,4.817e-04,4.684e-03,4.528e-03
+Lung,8.758e-04,3.996e-04,1.797e-03,2.199e-03,3.566e-03,8.627e-03
+Adipose tissue,1.100e-03,2.323e-04,3.499e-01,1.030e-03,3.103e-03,7.447e-03
+Breast / mammary,1.347e-03,2.000e-04,3.070e-03,7.990e-03,4.059e-03,9.410e-03
+Spleen,NA,3.680e-02,1.087e-01,2.017e-03,3.707e-03,1.646e-02
+Aorta,4.000e-04,1.958e-04,3.303e-01,1.077e-03,8.889e-03,2.559e-02
+Ovary,NA,5.000e-04,3.388e-01,9.588e-04,8.175e-03,1.059e-02
+Skeletal muscle,1.141e-03,6.857e-04,2.353e-01,1.816e-03,9.540e-03,1.041e-02
+Esophagus,NA,2.881e-04,4.105e-01,3.778e-03,8.250e-03,7.256e-03
+Placenta / extra-embryonic,2.414e-03,NA,1.675e-01,2.404e-02,4.493e-03,1.163e-02
+Small intestine,5.400e-03,6.000e-04,NA,1.988e-03,1.483e-02,9.502e-03
+Colon / large intestine,2.932e-03,1.117e-03,2.875e-02,3.224e-03,5.786e-03,1.573e-02
+Cervix / vagina,6.100e-03,NA,1.758e-03,4.922e-03,8.498e-03,6.107e-03
+Bladder / ureter / urethra,4.300e-03,1.000e-03,NA,1.097e-03,8.540e-03,1.185e-02
+Pancreas,5.037e-02,1.078e-03,2.240e-01,2.101e-03,3.692e-03,6.487e-03
+Fibroblast / stromal (organ unspecified),5.290e-04,NA,2.462e-01,2.019e-03,1.383e-02,1.342e-02
+Embryonic / stem (other),5.028e-03,NA,1.223e-01,6.675e-03,8.774e-03,1.088e-02
+Heart,3.468e-03,7.864e-04,1.849e-01,4.542e-03,9.263e-03,1.948e-02
+Stomach,NA,3.750e-04,1.986e-01,2.266e-03,1.526e-02,1.509e-02
+Lymph node / tonsil,NA,9.000e-04,2.554e-01,1.810e-03,6.758e-03,2.081e-02
+Eye,1.193e-03,NA,6.928e-01,9.521e-02,9.000e-03,1.533e-02
+Mouth / salivary gland,5.979e-04,NA,NA,3.259e-03,1.079e-02,2.054e-02
+Trachea / bronchus,NA,NA,3.006e-01,8.442e-03,8.687e-03,1.130e-02
+Prostate,2.900e-03,3.679e-03,3.097e-01,1.004e-02,8.246e-03,1.264e-02
+Nervous system (other / neural progenitor),4.464e-03,1.998e-04,2.103e-01,3.124e-02,1.024e-02,1.757e-02
+Bone / cartilage,1.067e-02,NA,1.771e-01,7.218e-03,9.652e-03,8.789e-03
+Bone marrow,6.530e-03,NA,5.288e-01,2.241e-02,8.000e-03,9.138e-03
+Testis,NA,2.690e-02,1.189e-01,3.102e-03,2.240e-02,1.687e-02
+Skin,1.183e-03,2.460e-02,1.704e-01,5.062e-03,1.220e-02,2.216e-02
+Artery,5.979e-04,1.700e-03,2.868e-01,1.920e-03,1.393e-02,1.852e-02
+Vein / umbilical vein,1.022e-01,1.000e-04,2.071e-01,1.289e-02,1.138e-02,1.867e-02
+Blood vessel / endothelium (other),8.402e-03,NA,2.014e-01,5.334e-03,2.029e-02,2.077e-02
+Hematopoietic progenitor,2.985e-02,NA,NA,1.623e-02,1.060e-02,5.879e-03
+Spinal cord,1.079e-02,NA,4.960e-02,5.191e-02,1.102e-02,7.576e-02
+Kidney,2.469e-02,7.000e-04,1.174e-01,1.686e-02,1.246e-02,2.553e-02
+B cell / plasma cell,3.437e-02,2.754e-02,5.321e-02,1.113e-02,6.507e-03,5.685e-02
+NK / innate lymphoid,NA,2.010e-02,8.829e-01,1.440e-02,8.799e-03,5.532e-02
+Thymus,5.480e-02,NA,NA,2.455e-02,1.440e-02,3.369e-02
+Thyroid / parathyroid,NA,1.838e-01,4.710e-01,1.944e-02,3.375e-03,6.476e-02
+T cell,8.288e-03,7.787e-03,5.797e-01,2.605e-02,1.894e-02,1.404e-01
+Brain,6.737e-03,6.470e-01,2.719e-01,3.017e-02,3.158e-02,4.773e-02
+Pluripotent stem cell (ES / iPS),6.265e-02,1.807e-01,4.657e-03,9.903e-01,1.202e-02,NA
+Reproductive (other),8.215e-01,1.000e-04,1.305e-01,5.499e-02,3.420e-02,NA
+Limb,2.703e-02,NA,NA,NA,NA,1.541e-02
+Erythroid / megakaryocyte,2.930e-02,NA,NA,NA,NA,2.012e-02
+Blood / immune (other),NA,NA,NA,3.957e-03,6.233e-03,8.990e-03
+Respiratory (other),NA,NA,NA,NA,6.750e-03,1.446e-02
+Pituitary,NA,NA,NA,NA,1.380e-02,5.841e-03
+Digestive tract (other),NA,NA,NA,NA,NA,6.933e-03
+Musculoskeletal (other),NA,NA,NA,NA,NA,7.312e-03
+Ear / nose,NA,NA,NA,NA,NA,1.067e-02
+Smooth muscle,NA,NA,NA,NA,NA,1.088e-02
+Other / unspecified,NA,NA,NA,NA,NA,1.664e-02
+Male genital tract,NA,NA,NA,NA,NA,2.233e-02
+Endocrine (other),NA,NA,NA,NA,NA,2.873e-02
+Whole organism / unspecified,NA,NA,NA,NA,NA,4.748e-02
+Urinary (other),NA,NA,NA,NA,NA,4.891e-02

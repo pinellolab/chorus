@@ -1,0 +1,19 @@
+{
+  "tissue": "Liver",
+  "group_level": "tissue_organ",
+  "noise_floor_log2": 0.06016,
+  "min_track_fraction": 0.75,
+  "n_tracks": 12,
+  "n_genes": 29,
+  "model": "AlphaGenome",
+  "named_genes": [
+    "PSRC1",
+    "CELSR2",
+    "MYBPHL",
+    "SORT1"
+  ],
+  "notes": [
+    "MYBPHL is inside the noise floor on 1 of 12 tracks (an outlier on 12)",
+    "SORT1 is inside the noise floor on 4 of 12 tracks (an outlier on 11)"
+  ]
+}

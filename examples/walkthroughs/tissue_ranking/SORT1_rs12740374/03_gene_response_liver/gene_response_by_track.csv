@@ -1,0 +1,349 @@
+gene,cell_type,track_id,track_strand,log2fc,raw_score,signed_percentile,is_outlier,above_floor,responds,named
+AKNAD1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,-,-0.00043555,-0.0003019,,False,False,False,False
+AKNAD1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,-0.000142741,-9.89406e-05,,False,False,False,False
+AKNAD1,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,-,0.000668215,0.000463171,,False,False,False,False
+AKNAD1,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,-0.00264206,-0.00183133,-0.8046,False,False,False,False
+AKNAD1,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,-,-0.00167762,-0.00116284,-0.721,False,False,False,False
+AKNAD1,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,-,-0.0019922,-0.00138089,-0.7202,False,False,False,False
+AKNAD1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,-,-0.00245663,-0.0017028,-0.7626,False,False,False,False
+AKNAD1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.00329755,-0.00228569,-0.8122,False,False,False,False
+AKNAD1,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,-,-0.00239289,-0.00165863,-0.8136,False,False,False,False
+AKNAD1,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,-,-0.00211433,-0.00146554,-0.7774,False,False,False,False
+AKNAD1,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.00521043,-0.00361159,-0.919,False,False,False,False
+AKNAD1,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,-,-0.0018626,-0.00129106,-0.742,False,False,False,False
+AMIGO1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,-,-0.00139204,-0.000964889,,False,False,False,False
+AMIGO1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,-0.00197422,-0.00136842,-0.6806,False,False,False,False
+AMIGO1,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,-,-0.00257976,-0.00178816,-0.813,False,False,False,False
+AMIGO1,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,-0.00239983,-0.00166344,-0.776,False,False,False,False
+AMIGO1,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,-,-0.00206405,-0.00143069,-0.7812,False,False,False,False
+AMIGO1,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,-,-0.00743961,-0.00515674,-0.9636,False,False,False,False
+AMIGO1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,-,-0.00744384,-0.00515968,-0.9594,False,False,False,False
+AMIGO1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.00775075,-0.00537241,-0.9542,False,False,False,False
+AMIGO1,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,-,-0.00504343,-0.00349584,-0.943,False,False,False,False
+AMIGO1,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,-,-0.000420667,-0.000291584,,False,False,False,False
+AMIGO1,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.00706878,-0.0048997,-0.9522,False,False,False,False
+AMIGO1,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,-,-0.00587972,-0.00407551,-0.953,False,False,False,False
+AMPD2,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,-0.00221824,-0.00153756,-0.7628,False,False,False,False
+AMPD2,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,-0.00422225,-0.00292664,-0.8856,False,False,False,False
+AMPD2,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,-0.00262359,-0.00181853,-0.8164,False,False,False,False
+AMPD2,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.000632116,0.00043815,,False,False,False,False
+AMPD2,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,-0.000299583,-0.000207655,,False,False,False,False
+AMPD2,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,-0.0124277,-0.00861424,-0.9834,False,False,False,False
+AMPD2,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,-0.0107519,-0.00745265,-0.9766,False,False,False,False
+AMPD2,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.0117726,-0.00816018,-0.9756,False,False,False,False
+AMPD2,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,-0.00546115,-0.00378538,-0.9508,False,False,False,False
+AMPD2,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,-5.05155e-05,-3.50146e-05,,False,False,False,False
+AMPD2,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.00961372,-0.00666372,-0.9712,False,False,False,False
+AMPD2,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,-0.00842452,-0.00583943,-0.9738,False,False,False,False
+ATXN7L2,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,0.00229813,0.00159294,0.773,False,False,False,False
+ATXN7L2,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.00225693,0.00156439,0.73,False,False,False,False
+ATXN7L2,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,0.002391,0.00165732,0.7946,False,False,False,False
+ATXN7L2,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,-0.00130963,-0.000907766,,False,False,False,False
+ATXN7L2,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,-0.000565074,-0.00039168,,False,False,False,False
+ATXN7L2,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,-0.00190306,-0.0013191,-0.7114,False,False,False,False
+ATXN7L2,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,-0.00218678,-0.00151576,-0.7328,False,False,False,False
+ATXN7L2,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.00190896,-0.00132319,-0.627,False,False,False,False
+ATXN7L2,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,-0.00059632,-0.000413338,,False,False,False,False
+ATXN7L2,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,-0.00197448,-0.00136861,-0.7664,False,False,False,False
+ATXN7L2,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.00356157,-0.0024687,-0.8482,False,False,False,False
+ATXN7L2,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,-0.00128251,-0.000888968,,False,False,False,False
+CELSR2,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,0.574492,0.398207,0.9998,True,True,True,True
+CELSR2,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.653529,0.452992,0.9998,True,True,True,True
+CELSR2,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,0.521921,0.361768,0.9998,True,True,True,True
+CELSR2,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.0846009,0.0586409,0.9982,True,True,True,True
+CELSR2,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,0.0816626,0.0566042,0.9988,True,True,True,True
+CELSR2,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,0.599303,0.415405,0.9998,True,True,True,True
+CELSR2,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,0.605089,0.419416,0.9998,True,True,True,True
+CELSR2,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,0.897129,0.621842,0.9998,True,True,True,True
+CELSR2,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,0.220627,0.152927,0.9996,True,True,True,True
+CELSR2,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,0.0651082,0.0451295,0.9982,True,True,True,True
+CELSR2,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,0.719474,0.498702,0.9998,True,True,True,True
+CELSR2,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,0.523526,0.36288,0.9998,True,True,True,True
+CFAP276,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,-,0.0115162,0.00798243,0.9832,False,False,False,False
+CFAP276,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.0136508,0.009462,0.9828,False,False,False,False
+CFAP276,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,-,0.00585624,0.00405924,0.95,False,False,False,False
+CFAP276,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.00336302,0.00233107,0.8672,False,False,False,False
+CFAP276,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,-,0.0036718,0.0025451,0.9096,False,False,False,False
+CFAP276,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,-,0.00606392,0.00420319,0.9496,False,False,False,False
+CFAP276,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,-,0.0042547,0.00294913,0.8996,False,False,False,False
+CFAP276,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,0.00551562,0.00382314,0.9216,False,False,False,False
+CFAP276,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,-,0.00250842,0.00173871,0.8256,False,False,False,False
+CFAP276,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,-,0.00255095,0.00176819,0.8294,False,False,False,False
+CFAP276,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,0.00636678,0.00441311,0.9464,False,False,False,False
+CFAP276,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,-,0.0037034,0.002567,0.8982,False,False,False,False
+CLCC1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,-,0.00195248,0.00135335,0.7288,False,False,False,False
+CLCC1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.00143308,0.000993332,,False,False,False,False
+CLCC1,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,-,0.00205867,0.00142696,0.757,False,False,False,False
+CLCC1,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.000590784,0.0004095,,False,False,False,False
+CLCC1,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,-,0.00101663,0.000704677,,False,False,False,False
+CLCC1,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,-,0.00125014,0.00086653,,False,False,False,False
+CLCC1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,-,0.000785573,0.000544518,,False,False,False,False
+CLCC1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-6.83827e-05,-4.73992e-05,,False,False,False,False
+CLCC1,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,-,0.000381603,0.000264507,,False,False,False,False
+CLCC1,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,-,0.00170241,0.00118002,0.717,False,False,False,False
+CLCC1,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-9.33069e-05,-6.46754e-05,,False,False,False,False
+CLCC1,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,-,0.00109974,0.000762281,,False,False,False,False
+CYB561D1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,0.00158238,0.00109682,0.6696,False,False,False,False
+CYB561D1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.00113565,0.00078717,,False,False,False,False
+CYB561D1,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,0.000659849,0.000457373,,False,False,False,False
+CYB561D1,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,-0.00187353,-0.00129863,-0.6932,False,False,False,False
+CYB561D1,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,-0.00125936,-0.000872921,,False,False,False,False
+CYB561D1,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,-0.00164098,-0.00113744,-0.6668,False,False,False,False
+CYB561D1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,-0.00171874,-0.00119134,-0.6516,False,False,False,False
+CYB561D1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.00205903,-0.00142721,-0.6548,False,False,False,False
+CYB561D1,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,-0.001081,-0.000749295,,False,False,False,False
+CYB561D1,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,-0.000942141,-0.000653042,,False,False,False,False
+CYB561D1,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.00167046,-0.00115787,-0.6024,False,False,False,False
+CYB561D1,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,-0.00145299,-0.00100714,-0.6762,False,False,False,False
+ELAPOR1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,0.0222195,0.0154014,0.9922,False,False,False,False
+ELAPOR1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.0213107,0.0147715,0.9894,True,False,False,False
+ELAPOR1,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,0.0199761,0.0138464,0.9916,True,False,False,False
+ELAPOR1,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,-0.000179389,-0.000124343,,False,False,False,False
+ELAPOR1,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,-0.00290455,-0.00201328,-0.8668,False,False,False,False
+ELAPOR1,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,-0.0163365,-0.0113236,-0.988,False,False,False,False
+ELAPOR1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,-0.0144396,-0.0100088,-0.9838,False,False,False,False
+ELAPOR1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.0134429,-0.00931788,-0.9798,False,False,False,False
+ELAPOR1,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,-0.00946618,-0.00656146,-0.9796,False,False,False,False
+ELAPOR1,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,-0.00426419,-0.00295571,-0.926,False,False,False,False
+ELAPOR1,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.0179402,-0.0124352,-0.9864,False,False,False,False
+ELAPOR1,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,-0.0113896,-0.00789468,-0.9828,False,False,False,False
+EPS8L3,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,-,-0.00428696,-0.00297149,-0.905,False,False,False,False
+EPS8L3,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,-0.00413412,-0.00286555,-0.8816,False,False,False,False
+EPS8L3,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,-,-0.00530453,-0.00367682,-0.9396,False,False,False,False
+EPS8L3,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.00169258,0.00117321,0.657,False,False,False,False
+EPS8L3,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,-,0.00137762,0.000954897,,False,False,False,False
+EPS8L3,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,-,-0.0126164,-0.00874504,-0.9834,False,False,False,False
+EPS8L3,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,-,-0.0147637,-0.0102334,-0.984,False,False,False,False
+EPS8L3,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.0154621,-0.0107175,-0.9824,False,False,False,False
+EPS8L3,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,-,-0.00778278,-0.00539461,-0.9728,False,False,False,False
+EPS8L3,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,-,0.00124587,0.000863569,,False,False,False,False
+EPS8L3,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.0140014,-0.009705,-0.9824,False,False,False,False
+EPS8L3,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,-,-0.0114365,-0.00792721,-0.9834,False,False,False,False
+GNAI3,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,0.00154631,0.00107182,0.663,False,False,False,False
+GNAI3,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.00189677,0.00131474,0.672,False,False,False,False
+GNAI3,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,0.00118875,0.000823977,,False,False,False,False
+GNAI3,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,3.60082e-05,2.4959e-05,,False,False,False,False
+GNAI3,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,3.10106e-05,2.14949e-05,,False,False,False,False
+GNAI3,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,0.00124475,0.000862794,,False,False,False,False
+GNAI3,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,0.00086059,0.000596516,,False,False,False,False
+GNAI3,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,0.00127747,0.000885478,,False,False,False,False
+GNAI3,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,0.000135469,9.38999e-05,,False,False,False,False
+GNAI3,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,0.000415057,0.000287696,,False,False,False,False
+GNAI3,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,0.00117902,0.000817232,,False,False,False,False
+GNAI3,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,0.000550444,0.000381539,,False,False,False,False
+GNAT2,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,-,0.00882394,0.00611629,0.9742,False,False,False,False
+GNAT2,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.00763889,0.00529487,0.9596,False,False,False,False
+GNAT2,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,-,0.0068437,0.00474369,0.962,False,False,False,False
+GNAT2,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.0013705,0.000949959,,False,False,False,False
+GNAT2,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,-,0.00324886,0.00225194,0.888,False,False,False,False
+GNAT2,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,-,0.0021136,0.00146503,0.74,False,False,False,False
+GNAT2,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,-,0.00381875,0.00264696,0.8792,False,False,False,False
+GNAT2,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,0.00208969,0.00144846,0.6622,False,False,False,False
+GNAT2,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,-,0.00366152,0.00253797,0.9022,False,False,False,False
+GNAT2,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,-,0.000672871,0.000466398,,False,False,False,False
+GNAT2,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,0.00312282,0.00216458,0.8168,False,False,False,False
+GNAT2,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,-,0.00269817,0.00187023,0.836,False,False,False,False
+GPR61,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,0.00100776,0.000698529,,False,False,False,False
+GPR61,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.00261181,0.00181037,0.775,False,False,False,False
+GPR61,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,0.000751385,0.00052082,,False,False,False,False
+GPR61,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.000160452,0.000111217,,False,False,False,False
+GPR61,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,-0.000365999,-0.000253691,,False,False,False,False
+GPR61,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,-0.0018242,-0.00126444,-0.699,False,False,False,False
+GPR61,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,-0.00215673,-0.00149493,-0.7284,False,False,False,False
+GPR61,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.00136973,-0.000949426,,False,False,False,False
+GPR61,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,-0.00165653,-0.00114822,-0.7166,False,False,False,False
+GPR61,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,-0.000799795,-0.000554375,,False,False,False,False
+GPR61,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.00253793,-0.00175916,-0.752,False,False,False,False
+GPR61,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,-0.000618302,-0.000428574,,False,False,False,False
+GPSM2,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,-0.000991577,-0.000687309,,False,False,False,False
+GPSM2,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,-0.000463402,-0.000321206,,False,False,False,False
+GPSM2,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,-0.0022651,-0.00157005,-0.78,False,False,False,False
+GPSM2,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,1.29463e-06,8.97369e-07,,False,False,False,False
+GPSM2,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,-0.000340088,-0.000235731,,False,False,False,False
+GPSM2,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,-0.0050756,-0.00351814,-0.9306,False,False,False,False
+GPSM2,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,-0.00426188,-0.00295411,-0.9002,False,False,False,False
+GPSM2,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.00170708,-0.00118326,-0.5858,False,False,False,False
+GPSM2,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,-0.00392565,-0.00272106,-0.9134,False,False,False,False
+GPSM2,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,-0.000343258,-0.000237928,,False,False,False,False
+GPSM2,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.00095225,-0.00066005,,False,False,False,False
+GPSM2,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,-0.00466534,-0.00323376,-0.9318,False,False,False,False
+GSTM1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,-0.00240517,-0.00166714,-0.7852,False,False,False,False
+GSTM1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,-0.00263069,-0.00182346,-0.7728,False,False,False,False
+GSTM1,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,-0.00213794,-0.00148191,-0.7656,False,False,False,False
+GSTM1,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.000566666,0.000392783,,False,False,False,False
+GSTM1,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,-0.000635982,-0.000440829,,False,False,False,False
+GSTM1,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,-0.00536968,-0.00372198,-0.9372,False,False,False,False
+GSTM1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,-0.00428163,-0.0029678,-0.901,False,False,False,False
+GSTM1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.00480156,-0.00332819,-0.8972,False,False,False,False
+GSTM1,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,-0.00379975,-0.00263379,-0.9082,False,False,False,False
+GSTM1,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,0.000860007,0.000596111,,False,False,False,False
+GSTM1,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.00328723,-0.00227854,-0.8282,False,False,False,False
+GSTM1,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,-0.00507967,-0.00352096,-0.9412,False,False,False,False
+GSTM2,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,-0.00037798,-0.000261996,,False,False,False,False
+GSTM2,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,-0.0031072,-0.00215375,-0.8182,False,False,False,False
+GSTM2,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,-0.00127587,-0.000884368,,False,False,False,False
+GSTM2,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,8.19292e-05,5.6789e-05,,False,False,False,False
+GSTM2,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,-0.000647444,-0.000448774,,False,False,False,False
+GSTM2,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,-0.00735331,-0.00509693,-0.9632,False,False,False,False
+GSTM2,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,-0.00773146,-0.00535904,-0.9626,False,False,False,False
+GSTM2,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.00684172,-0.00474232,-0.9438,False,False,False,False
+GSTM2,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,-0.00560107,-0.00388236,-0.953,False,False,False,False
+GSTM2,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,-1.93404e-06,-1.34058e-06,,False,False,False,False
+GSTM2,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.00595677,-0.00412892,-0.9358,False,False,False,False
+GSTM2,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,-0.00724338,-0.00502073,-0.9674,False,False,False,False
+GSTM3,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,-,-0.00797671,-0.00552903,-0.9682,False,False,False,False
+GSTM3,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,-0.00965041,-0.00668916,-0.9704,False,False,False,False
+GSTM3,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,-,-0.00644578,-0.00446788,-0.9574,False,False,False,False
+GSTM3,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,-0.00245136,-0.00169915,-0.7824,False,False,False,False
+GSTM3,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,-,-0.00263916,-0.00182932,-0.8432,False,False,False,False
+GSTM3,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,-,-0.0141667,-0.0098196,-0.9856,False,False,False,False
+GSTM3,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,-,-0.0130218,-0.009026,-0.9812,False,False,False,False
+GSTM3,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.0120625,-0.00836112,-0.9764,False,False,False,False
+GSTM3,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,-,-0.00857837,-0.00594607,-0.9764,False,False,False,False
+GSTM3,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,-,-0.0025414,-0.00176156,-0.8254,False,False,False,False
+GSTM3,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.012819,-0.00888547,-0.9806,False,False,False,False
+GSTM3,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,-,-0.0122185,-0.00846919,-0.9848,False,False,False,False
+GSTM4,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,0.000225228,0.000156116,,False,False,False,False
+GSTM4,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,-0.000347699,-0.000241007,,False,False,False,False
+GSTM4,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,0.00147667,0.00102355,0.6652,False,False,False,False
+GSTM4,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.000707352,0.000490299,,False,False,False,False
+GSTM4,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,0.000921679,0.000638859,,False,False,False,False
+GSTM4,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,-0.00396113,-0.00274565,-0.8934,False,False,False,False
+GSTM4,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,-0.00377747,-0.00261834,-0.8784,False,False,False,False
+GSTM4,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.00330871,-0.00229342,-0.813,False,False,False,False
+GSTM4,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,-0.00281998,-0.00195466,-0.8528,False,False,False,False
+GSTM4,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,0.000857327,0.000594254,,False,False,False,False
+GSTM4,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.0038006,-0.00263437,-0.8628,False,False,False,False
+GSTM4,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,-0.00314607,-0.00218069,-0.87,False,False,False,False
+GSTM5,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,-0.00723453,-0.0050146,-0.9632,False,False,False,False
+GSTM5,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,-0.00797386,-0.00552706,-0.9604,False,False,False,False
+GSTM5,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,-0.00569134,-0.00394494,-0.9464,False,False,False,False
+GSTM5,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,-0.00190492,-0.00132039,-0.6992,False,False,False,False
+GSTM5,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,-0.0020924,-0.00145034,-0.7864,False,False,False,False
+GSTM5,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,-0.0183891,-0.0127464,-0.9894,False,False,False,False
+GSTM5,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,-0.0184676,-0.0128008,-0.9874,False,False,False,False
+GSTM5,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.0199413,-0.0138222,-0.9864,False,False,False,False
+GSTM5,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,-0.0118447,-0.00821014,-0.9846,False,False,False,False
+GSTM5,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,-0.00252997,-0.00175364,-0.8306,False,False,False,False
+GSTM5,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.017288,-0.0119832,-0.9858,False,False,False,False
+GSTM5,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,-0.0180554,-0.0125151,-0.99,False,False,False,False
+MYBPHL,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,-,0.303735,0.210533,0.9998,True,True,True,True
+MYBPHL,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.345339,0.239371,0.9998,True,True,True,True
+MYBPHL,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,-,0.319772,0.221649,0.9998,True,True,True,True
+MYBPHL,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.079416,0.055047,0.9982,True,True,True,True
+MYBPHL,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,-,0.0963767,0.0668032,0.999,True,True,True,True
+MYBPHL,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,-,0.312281,0.216457,0.9998,True,True,True,True
+MYBPHL,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,-,0.301388,0.208906,0.9998,True,True,True,True
+MYBPHL,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,0.340357,0.235918,0.9996,True,True,True,True
+MYBPHL,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,-,0.193102,0.133848,0.9996,True,True,True,True
+MYBPHL,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,-,0.0458634,0.0317901,0.9972,True,False,False,True
+MYBPHL,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,0.290278,0.201205,0.9996,True,True,True,True
+MYBPHL,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,-,0.303265,0.210207,0.9998,True,True,True,True
+PSMA5,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,-,0.00719016,0.00498384,0.9626,False,False,False,False
+PSMA5,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.00749234,0.0051933,0.9582,False,False,False,False
+PSMA5,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,-,0.00457356,0.00317015,0.9224,False,False,False,False
+PSMA5,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.000136941,9.49203e-05,,False,False,False,False
+PSMA5,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,-,0.0013922,0.000964997,,False,False,False,False
+PSMA5,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,-,0.0081643,0.00565906,0.9702,False,False,False,False
+PSMA5,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,-,0.00546254,0.00378635,0.9362,False,False,False,False
+PSMA5,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,0.00689817,0.00478145,0.9482,False,False,False,False
+PSMA5,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,-,0.00334233,0.00231673,0.886,False,False,False,False
+PSMA5,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,-,-0.000984412,-0.000682343,,False,False,False,False
+PSMA5,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,0.00897753,0.00622275,0.9702,False,False,False,False
+PSMA5,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,-,0.00576069,0.00399301,0.9534,False,False,False,False
+PSRC1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,-,0.52417,0.363327,0.9998,True,True,True,True
+PSRC1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.622287,0.431337,0.9998,True,True,True,True
+PSRC1,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,-,0.379108,0.262778,0.9998,True,True,True,True
+PSRC1,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.212785,0.147491,0.9996,True,True,True,True
+PSRC1,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,-,0.255422,0.177045,0.9998,True,True,True,True
+PSRC1,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,-,1.07878,0.747754,0.9998,True,True,True,True
+PSRC1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,-,0.957047,0.663375,0.9998,True,True,True,True
+PSRC1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,1.06723,0.739747,0.9998,True,True,True,True
+PSRC1,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,-,0.375844,0.260515,0.9998,True,True,True,True
+PSRC1,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,-,0.247326,0.171434,0.9996,True,True,True,True
+PSRC1,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,0.914375,0.633796,0.9998,True,True,True,True
+PSRC1,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,-,0.925152,0.641266,0.9998,True,True,True,True
+SARS1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,0.0151508,0.0105017,0.9882,False,False,False,False
+SARS1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.0175352,0.0121545,0.987,False,False,False,False
+SARS1,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,0.0133361,0.00924387,0.9868,False,False,False,False
+SARS1,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.00500216,0.00346724,0.932,False,False,False,False
+SARS1,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,0.00555282,0.00384892,0.9578,True,False,False,False
+SARS1,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,0.0122633,0.0085003,0.9846,False,False,False,False
+SARS1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,0.0104666,0.0072549,0.9786,False,False,False,False
+SARS1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,0.0128601,0.00891392,0.9804,False,False,False,False
+SARS1,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,0.00715285,0.00495798,0.9704,False,False,False,False
+SARS1,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,0.00274456,0.00190238,0.847,False,False,False,False
+SARS1,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,0.0101407,0.00702897,0.9754,False,False,False,False
+SARS1,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,0.0100098,0.00693825,0.982,False,False,False,False
+SORT1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,-,0.0821268,0.056926,0.9984,True,True,True,True
+SORT1,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.105936,0.0734295,0.9986,True,True,True,True
+SORT1,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,-,0.0772997,0.05358,0.9984,True,True,True,True
+SORT1,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.0249216,0.0172744,0.9924,True,False,False,True
+SORT1,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,-,0.0209051,0.0144903,0.9932,True,False,False,True
+SORT1,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,-,0.0825869,0.0572449,0.9984,True,True,True,True
+SORT1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,-,0.0780939,0.0541306,0.9982,True,True,True,True
+SORT1,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,0.090105,0.062456,0.9982,True,True,True,True
+SORT1,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,-,0.0276952,0.0191968,0.995,True,False,False,True
+SORT1,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,-,0.00493948,0.00342379,0.9438,False,False,False,True
+SORT1,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,0.0690258,0.047845,0.9974,True,True,True,True
+SORT1,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,-,0.0661888,0.0458786,0.9982,True,True,True,True
+STXBP3,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,0.00362867,0.0025152,0.8784,False,False,False,False
+STXBP3,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.0038971,0.00270126,0.8738,False,False,False,False
+STXBP3,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,0.00184966,0.00128209,0.727,False,False,False,False
+STXBP3,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,-0.00074389,-0.000515625,,False,False,False,False
+STXBP3,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,0.000414869,0.000287565,,False,False,False,False
+STXBP3,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,0.00221448,0.00153496,0.7564,False,False,False,False
+STXBP3,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,0.000862688,0.00059797,,False,False,False,False
+STXBP3,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,0.000659138,0.00045688,,False,False,False,False
+STXBP3,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,0.00100888,0.000699304,,False,False,False,False
+STXBP3,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,0.000964707,0.000668684,,False,False,False,False
+STXBP3,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,0.00131385,0.000910691,,False,False,False,False
+STXBP3,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,0.00179159,0.00124183,0.7346,False,False,False,False
+SYPL2,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,-0.00159554,-0.00110594,-0.6708,False,False,False,False
+SYPL2,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,-0.000387555,-0.000268633,,False,False,False,False
+SYPL2,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,-0.000400954,-0.00027792,,False,False,False,False
+SYPL2,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,-0.00423988,-0.00293886,-0.9074,False,False,False,False
+SYPL2,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,-0.00373064,-0.00258588,-0.9112,True,False,False,False
+SYPL2,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,-0.007361,-0.00510226,-0.9634,False,False,False,False
+SYPL2,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,-0.009281,-0.0064331,-0.9718,False,False,False,False
+SYPL2,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.00950525,-0.00658854,-0.9668,False,False,False,False
+SYPL2,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,-0.0063554,-0.00440523,-0.9622,False,False,False,False
+SYPL2,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,-0.00308597,-0.00213903,-0.873,False,False,False,False
+SYPL2,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.00769813,-0.00533594,-0.9588,False,False,False,False
+SYPL2,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,-0.00652723,-0.00452433,-0.9616,False,False,False,False
+TAF13,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,-,0.00226029,0.00156671,0.7688,False,False,False,False
+TAF13,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.00216552,0.00150102,0.7168,False,False,False,False
+TAF13,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,-,0.000741014,0.000513632,,False,False,False,False
+TAF13,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.00169885,0.00117756,0.6582,False,False,False,False
+TAF13,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,-,-0.000106114,-7.35528e-05,,False,False,False,False
+TAF13,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,-,0.000220732,0.000153,,False,False,False,False
+TAF13,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,-,0.00054205,0.00037572,,False,False,False,False
+TAF13,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,0.00146529,0.00101566,0.5306,False,False,False,False
+TAF13,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,-,-0.00138307,-0.00095867,,False,False,False,False
+TAF13,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,-,-0.000411432,-0.000285183,,False,False,False,False
+TAF13,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,0.000890963,0.000617568,,False,False,False,False
+TAF13,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,-,-7.00227e-05,-4.8536e-05,,False,False,False,False
+TMEM167B,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,+,0.00360813,0.00250097,0.8772,False,False,False,False
+TMEM167B,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.00407514,0.00282467,0.8822,False,False,False,False
+TMEM167B,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,+,0.00242549,0.00168122,0.7982,False,False,False,False
+TMEM167B,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,0.00085912,0.000595496,,False,False,False,False
+TMEM167B,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,+,0.000690259,0.000478451,,False,False,False,False
+TMEM167B,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,+,0.00032231,0.000223408,,False,False,False,False
+TMEM167B,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,+,0.000473895,0.000328479,,False,False,False,False
+TMEM167B,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,0.000218768,0.000151639,,False,False,False,False
+TMEM167B,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,+,8.87818e-05,6.15388e-05,,False,False,False,False
+TMEM167B,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,+,-0.000461696,-0.000320023,,False,False,False,False
+TMEM167B,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,0.000323735,0.000224396,,False,False,False,False
+TMEM167B,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,+,0.000655501,0.000454359,,False,False,False,False
+WDR47,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq,-,0.00209,0.00144868,0.7472,False,False,False,False
+WDR47,HepG2,RNA_SEQ/EFO:0001187 polyA plus RNA-seq/.,.,0.00185503,0.00128581,0.6644,False,False,False,False
+WDR47,HepG2,RNA_SEQ/EFO:0001187 total RNA-seq,-,0.00260924,0.00180858,0.816,False,False,False,False
+WDR47,hepatocyte,RNA_SEQ/CL:0000182 polyA plus RNA-seq/.,.,4.4237e-05,3.06628e-05,,False,False,False,False
+WDR47,hepatocyte,RNA_SEQ/CL:0000182 total RNA-seq,-,0.00116138,0.000805005,,False,False,False,False
+WDR47,left lobe of liver,RNA_SEQ/UBERON:0001115 total RNA-seq,-,0.000139413,9.66337e-05,,False,False,False,False
+WDR47,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq,-,-0.000441026,-0.000305696,,False,False,False,False
+WDR47,liver,RNA_SEQ/UBERON:0002107 polyA plus RNA-seq/.,.,-0.00027177,-0.000188377,,False,False,False,False
+WDR47,liver,RNA_SEQ/UBERON:0002107 total RNA-seq,-,0.000211305,0.000146466,,False,False,False,False
+WDR47,mucosa of gallbladder,RNA_SEQ/UBERON:0005033 total RNA-seq,-,0.00181924,0.001261,0.7376,False,False,False,False
+WDR47,right lobe of liver,RNA_SEQ/UBERON:0001114 gtex Liver polyA plus RNA-seq/.,.,-0.00158565,-0.00109909,-0.5824,False,False,False,False
+WDR47,right lobe of liver,RNA_SEQ/UBERON:0001114 total RNA-seq,-,0.000266177,0.0001845,,False,False,False,False

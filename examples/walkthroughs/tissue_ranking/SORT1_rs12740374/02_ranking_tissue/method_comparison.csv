@@ -1,0 +1,13 @@
+layer,vs,n_groups,spearman
+DNase,fisher,37,0.507
+DNase,top3,37,0.653
+ATAC,fisher,33,0.534
+ATAC,top3,33,0.664
+ChIP-TF,fisher,41,0.960
+ChIP-TF,top3,41,0.926
+ChIP-histone,fisher,47,0.265
+ChIP-histone,top3,47,0.822
+RNA-seq,fisher,49,0.348
+RNA-seq,top3,49,0.603
+CAGE,fisher,58,0.414
+CAGE,top3,58,0.780
