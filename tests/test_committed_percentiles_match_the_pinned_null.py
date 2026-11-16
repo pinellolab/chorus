@@ -27,14 +27,26 @@ covered: values derived from these (batch ``max_quantile``, causal ``composite``
 ``.md``/``.tsv``/``.html`` renderings, and rows that carry no percentile. Cherimoya is ranked
 against the fold-0 null, because the JSON records no fold and fold 0 is the default.
 
+Also covered: the TABLES a walkthrough commits in place of an ``example_output.json``
+(``tissue_ranking/``). ``*_track_scores.csv`` carries one row per track with ``raw_score`` and
+``percentile`` (the magnitude of the effect percentile; every layer in it is unsigned), and the
+``*_rna_gene_percentiles.csv`` matrix carries the signed RNA percentile of every gene x track next to
+its ``*_raw_scores.csv`` companion. RNA cells are left blank when ``|raw_score| <
+NOISE_FLOOR_RAW_SCORE``, so a blank is checked too: it must sit inside the floor, and a filled cell
+outside it. The walkthrough was committed once with percentiles from stale April nulls (94 % of its
+ChromBPNet rows and 91 % of its AlphaGenome rows moved against the pinned ones, by up to 0.70), and
+until these tables were read nothing could notice.
+
 Skipped where the backgrounds are not downloaded, as in CI. It trusts that the local files are
 the pinned revision (``test_the_pinned_revision_matches_the_artefacts_on_this_machine`` compares
 their sizes against it), and a failure prints the sha256 of each file it ranked against.
 """
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -46,6 +58,7 @@ from chorus.analysis.normalization import (
     normalization_key,
 )
 from chorus.analysis.scorers import LAYER_CONFIGS
+from chorus.analysis.variant_report import NOISE_FLOOR_RAW_SCORE
 
 REPO = Path(__file__).resolve().parent.parent
 EXAMPLES = REPO / "examples"
@@ -54,6 +67,19 @@ OUTPUTS = sorted(EXAMPLES.rglob("example_output.json")) + sorted(
     EXAMPLES.rglob("*_variant_report.json"))
 
 _PERCENTILE_KEYS = ("quantile_score", "effect_exceedance", "ref_signal_percentile")
+
+#: Discovery's tables, committed by walkthroughs that have no example_output.json.
+TRACK_TABLES = sorted(EXAMPLES.rglob("*_track_scores.csv"))
+RNA_TABLES = sorted(EXAMPLES.rglob("*_rna_gene_percentiles.csv"))
+
+#: The ``model`` column of a track table -> the oracle whose null ranks it. BPNet is the ChromBPNet
+#: oracle's ChIP-TF models.
+_TABLE_ORACLE = {"alphagenome": "alphagenome", "cherimoya": "cherimoya",
+                 "chrombpnet": "chrombpnet", "bpnet": "chrombpnet"}
+
+#: Every layer a track table may hold is unsigned (RNA has its own tables); a layer not listed here
+#: needs a decision about its sign before its percentiles can be recomputed.
+_TABLE_UNSIGNED_LAYERS = {"DNase", "ATAC", "ChIP-TF", "ChIP-histone", "CAGE", "PRO-CAP", "SPLICE_SITES"}
 
 #: Half of one rank on a 10,000-point grid: "equal to 4 decimal places".
 _TOL = 0.5e-4
@@ -254,3 +280,128 @@ def test_committed_percentiles_match_the_pinned_null(path: Path, norm):
             "Regenerate the example against these backgrounds, or, if they are not that "
             "revision, refetch them first.",
             pytrace=False)
+
+
+# --- Discovery's committed tables ---------------------------------------------------------------
+
+def _read_table(path: Path) -> list[dict]:
+    """Rows of a discovery table, skipping its ``#`` header comments."""
+    with open(path, newline="") as fh:
+        return list(csv.DictReader(line for line in fh if not line.startswith("#")))
+
+
+def _track_table_rows(path: Path):
+    """``(oracle, layer, track_id, raw_score, percentile)`` for each row of a ``*_track_scores.csv``.
+
+    Raises on anything the comparison could not rank, so the hermetic test below fails loudly.
+    """
+    out = []
+    for i, r in enumerate(_read_table(path)):
+        model, layer = (r.get("model") or "").lower(), r.get("molecular_layer")
+        if model not in _TABLE_ORACLE:
+            raise ValueError(f"row {i}: model {r.get('model')!r} has no oracle in _TABLE_ORACLE")
+        if layer not in _TABLE_UNSIGNED_LAYERS:
+            raise ValueError(f"row {i}: layer {layer!r} is not a known unsigned layer")
+        if not r.get("track_id"):
+            raise ValueError(f"row {i}: no track_id")
+        out.append((_TABLE_ORACLE[model], layer, r["track_id"], float(r["raw_score"]), float(r["percentile"])))
+    return out
+
+
+def _rna_table(path: Path):
+    """``(oracle, percentile_rows, raw_rows)`` for a ``*_rna_gene_percentiles.csv`` and its raw companion."""
+    m = re.match(r"^chr[^_]+_\d+_(.+)_rna_gene_percentiles\.csv$", path.name)
+    if not m:
+        raise ValueError(f"cannot read the oracle from {path.name}")
+    raw_path = path.with_name(path.name.replace("_rna_gene_percentiles", "_rna_gene_raw_scores"))
+    return m.group(1), _read_table(path), _read_table(raw_path)
+
+
+def _fail_against_null(where: str, bad: list[str], n_checked: int, keys, norm) -> None:
+    nulls = "\n".join(f"  {k}: {p} (sha256 {_sha256(p)[:12]})"
+                      for k, p in ((k, _npz_on_disk(norm, k)) for k in keys))
+    pytest.fail(
+        f"{where}: {len(bad)} of {n_checked} committed values are not what the pinned null gives:\n  "
+        + "\n  ".join(bad[:25]) + (f"\n  ... and {len(bad) - 25} more" if len(bad) > 25 else "")
+        + f"\nRanked against (this chorus pins {_HF_REVISION}):\n{nulls}\n"
+        "Regenerate the walkthrough against these backgrounds, or, if they are not that revision, "
+        "refetch them first.",
+        pytrace=False)
+
+
+def test_there_are_committed_tables_to_check():
+    """Guard the guard: a bad glob silently turns every table check below into a no-op."""
+    assert len(TRACK_TABLES) >= 3 and len(RNA_TABLES) >= 1, (
+        f"found {len(TRACK_TABLES)} *_track_scores.csv and {len(RNA_TABLES)} "
+        f"*_rna_gene_percentiles.csv under {EXAMPLES}")
+
+
+@pytest.mark.parametrize("path", TRACK_TABLES, ids=_ids)
+def test_this_file_reads_every_committed_track_table_row(path: Path):
+    """Hermetic, so it runs in CI where the comparison below skips."""
+    rows = _track_table_rows(path)
+    assert rows, f"{_ids(path)} has no rows"
+    assert all(0.0 <= pct <= 1.0 for *_, pct in rows), f"{_ids(path)}: a percentile outside [0, 1]"
+
+
+@pytest.mark.parametrize("path", RNA_TABLES, ids=_ids)
+def test_this_file_reads_every_committed_rna_table_cell(path: Path):
+    """Hermetic: the percentile matrix and its raw companion must describe the same genes and tracks."""
+    _, pct, raw = _rna_table(path)
+    meta = {"gene", "distance_bp", "strand", "n_tracks", "n_sig_0.95", "median_abs_raw"}
+    assert [r["gene"] for r in pct] == [r["gene"] for r in raw], f"{_ids(path)}: genes differ from raw"
+    assert {c for c in pct[0] if c not in meta} == {c for c in raw[0] if c != "gene"}, (
+        f"{_ids(path)}: its track columns differ from the raw_scores companion")
+
+
+@pytest.mark.parametrize("path", TRACK_TABLES, ids=_ids)
+def test_committed_track_table_percentiles_match_the_pinned_null(path: Path, norm):
+    """Recompute each table's ``percentile`` (a magnitude) from its ``raw_score`` and the local null."""
+    rows = _track_table_rows(path)
+    keys = sorted({normalization_key(oracle) for oracle, *_ in rows}, key=str)
+    missing = [k for k in keys if norm.n_tracks(k) == 0]
+    if missing:
+        pytest.skip(f"no downloaded background for {missing} under {norm.cache_dir}")
+
+    bad = []
+    for oracle, layer, track, raw, pct in rows:
+        got = norm.effect_percentile(normalization_key(oracle), track, abs(raw), signed=False)
+        if got is None:
+            bad.append(f"{oracle}:{track} [{layer}]: no null row to rank raw_score {raw}")
+        elif abs(abs(got) - pct) > _TOL:
+            bad.append(f"{oracle}:{track} [{layer}]: percentile committed {pct}, pinned null {abs(got)} "
+                       f"(raw_score {raw})")
+    if bad:
+        _fail_against_null(_ids(path), bad, len(rows), keys, norm)
+
+
+@pytest.mark.parametrize("path", RNA_TABLES, ids=_ids)
+def test_committed_rna_percentiles_match_the_pinned_null(path: Path, norm):
+    """Each filled RNA cell is the signed percentile of its raw score; a blank cell is inside the floor."""
+    oracle, pct, raw = _rna_table(path)
+    key = normalization_key(oracle)
+    if norm.n_tracks(key) == 0:
+        pytest.skip(f"no downloaded background for {key} under {norm.cache_dir}")
+
+    committed = {r["gene"]: r for r in pct}
+    bad, n_checked = [], 0
+    for r in raw:
+        gene = r["gene"]
+        for track, v in r.items():
+            if track == "gene" or v in ("", None):
+                continue
+            n_checked += 1
+            value, cell = float(v), committed[gene].get(track)
+            blank = cell in ("", None)
+            if abs(value) < NOISE_FLOOR_RAW_SCORE:
+                if not blank:
+                    bad.append(f"{gene} {track}: raw_score {value} is inside the noise floor "
+                               f"({NOISE_FLOOR_RAW_SCORE}) but a percentile {cell} was committed")
+                continue
+            got = norm.effect_percentile(key, track, value, signed=True)
+            if blank or got is None or abs(float(cell) - got) > _TOL:
+                bad.append(f"{gene} {track}: percentile committed {cell or 'blank'}, pinned null {got} "
+                           f"(raw_score {value})")
+    assert n_checked, f"{_ids(path)}: no RNA cell was compared"
+    if bad:
+        _fail_against_null(_ids(path), bad, n_checked, [key], norm)
