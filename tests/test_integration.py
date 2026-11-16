@@ -103,8 +103,10 @@ def test_chrombpnet_fresh_single_model_download(tmp_path):
     via the full ENCODE tarball).
     """
     import chorus
+    from reference_genome import HG38_FASTA
 
-    reference_fasta = str(Path(__file__).parent.parent / "genomes" / "hg38.fa")
+    # Was repo-relative, which skipped this on any install with a data dir (P1-14).
+    reference_fasta = str(HG38_FASTA)
     if not Path(reference_fasta).exists():
         pytest.skip("hg38.fa missing — run `chorus genome download hg38` first")
 
@@ -206,7 +208,7 @@ def test_mcp_e2e_list_oracles_and_analyze_variant(tmp_path):
     if not hf_token:
         pytest.skip(
             "no HuggingFace token (set HF_TOKEN, HUGGING_FACE_HUB_TOKEN, or run "
-            "`huggingface-cli login`) — AlphaGenome is gated"
+            "`hf auth login`) — AlphaGenome is gated"
         )
 
     # Locate chorus-mcp on PATH (installed by `pip install -e .` in the
@@ -257,6 +259,12 @@ def test_mcp_e2e_list_oracles_and_analyze_variant(tmp_path):
                 "HOME": os.environ.get("HOME", ""),
                 **{k: os.environ[k] for k in
                    ("HF_HOME", "HF_TOKEN_PATH", "HF_HUB_CACHE", "XDG_CACHE_HOME")
+                   if k in os.environ},
+                # The GPU mask and the data/output locations must reach the child too. Dropped
+                # by the whitelist, chorus-mcp saw every GPU on a shared host (JAX initialises all
+                # visible devices), and resolved its data dir and output dir afresh; v0.8.0 audit.
+                **{k: os.environ[k] for k in
+                   ("CUDA_VISIBLE_DEVICES", "CHORUS_DATA_DIR", "CHORUS_MCP_OUTPUT_DIR")
                    if k in os.environ},
             },
         )

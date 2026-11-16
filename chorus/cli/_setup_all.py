@@ -76,7 +76,7 @@ def setup_all_oracles(args) -> int:
             logger.error(
                 "`chorus setup` halted: a working HuggingFace token is "
                 "required for AlphaGenome. Nothing was downloaded. "
-                "Set HF_TOKEN, run 'huggingface-cli login', or pass "
+                "Set HF_TOKEN, run 'hf auth login', or pass "
                 "--hf-token and retry."
             )
             return 1

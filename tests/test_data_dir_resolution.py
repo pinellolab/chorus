@@ -40,8 +40,34 @@ import pytest
 REPO = Path(__file__).resolve().parent.parent
 
 
-def _layout(env_extra: dict | None = None, cwd: Path | None = None) -> dict:
-    """Resolve the layout in a FRESH interpreter and return describe_layout()."""
+def _isolated_install(tmp_path: Path) -> Path:
+    """An installation directory of its own, so the marker a test reads or writes is its own.
+
+    ``CHORUS_ROOT`` is the directory that *contains* the ``chorus`` package, and the marker
+    is read from there. Importing this checkout's package through a symlink in *tmp_path*
+    therefore gives the child an install root that nothing else uses. Both marker tests
+    used the real one until the v0.8.0 audit (P1-15, 2026-11-15):
+
+    * the default test read the real ``chorus_data_dir.txt``, so it failed on every install
+      configured the documented way (``chorus setup --data-dir``, ``config data-dir --set``);
+    * the precedence test wrote a pytest tmp path INTO it for ~4 s and restored it in
+      ``finally``. Every chorus process started in that window (an env-mode oracle, the MCP
+      server) resolved its data dir to pytest's tmp dir, and a SIGTERM inside it would have
+      left the install pointing there for good, since ``finally`` does not run on a signal.
+    """
+    root = tmp_path / "install"
+    root.mkdir()
+    (root / "chorus").symlink_to(REPO / "chorus", target_is_directory=True)
+    return root
+
+
+def _layout(env_extra: dict | None = None, cwd: Path | None = None,
+            root: Path = REPO) -> dict:
+    """Resolve the layout in a FRESH interpreter and return describe_layout().
+
+    *root* is the installation directory the child imports chorus from; pass an
+    :func:`_isolated_install` to keep the real install's marker out of the result.
+    """
     env = dict(os.environ)
     env.pop("CHORUS_DATA_DIR", None)
     for var in ("HF_HOME", "HF_HUB_CACHE", "HUGGINGFACE_HUB_CACHE"):
@@ -59,7 +85,7 @@ def _layout(env_extra: dict | None = None, cwd: Path | None = None) -> dict:
         out["_token_found"] = bool(get_token())
         print("@@@" + json.dumps(out))
         """
-    ) % str(REPO)
+    ) % str(root)
     proc = subprocess.run([sys.executable, "-c", code], env=env,
                           cwd=str(cwd or REPO), capture_output=True, text=True,
                           timeout=300)
@@ -73,11 +99,15 @@ def _layout(env_extra: dict | None = None, cwd: Path | None = None) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def test_default_is_the_installation_directory_not_home():
-    layout = _layout()
-    assert layout["data_dir"] == str(REPO), (
+def test_default_is_the_installation_directory_not_home(tmp_path):
+    root = _isolated_install(tmp_path)
+    layout = _layout(root=root)
+    assert layout["install_dir"] == str(root), (
+        f"the child imported chorus from {layout['install_dir']}, not from {root}"
+    )
+    assert layout["data_dir"] == str(root.resolve()), (
         f"default data dir is {layout['data_dir']}, expected the installation "
-        f"directory {REPO}"
+        f"directory {root}"
     )
     home = str(Path.home())
     for key in ("downloads", "genomes", "annotations", "hf_cache"):
@@ -159,26 +189,20 @@ def test_env_var_expands_a_tilde(tmp_path):
     assert "~" not in layout["data_dir"]
 
 
-def test_marker_file_redirects_and_env_var_beats_it(tmp_path, monkeypatch):
+def test_marker_file_redirects_and_env_var_beats_it(tmp_path):
     """Precedence: env var > marker file > default."""
     from chorus.core.globals import DATA_DIR_MARKER
 
-    marker = REPO / DATA_DIR_MARKER
-    existed = marker.exists()
-    original = marker.read_text() if existed else None
+    root = _isolated_install(tmp_path)
     marked = tmp_path / "from-marker"
     other = tmp_path / "from-env"
-    try:
-        marker.write_text(f"{marked}\n")
-        assert _layout()["data_dir"] == str(marked.resolve())
-        assert "chorus_data_dir.txt" in _layout()["source"]
-        # env var must win
-        assert _layout({"CHORUS_DATA_DIR": str(other)})["data_dir"] == str(other.resolve())
-    finally:
-        if existed:
-            marker.write_text(original)
-        else:
-            marker.unlink(missing_ok=True)
+    (root / DATA_DIR_MARKER).write_text(f"{marked}\n")
+    layout = _layout(root=root)
+    assert layout["data_dir"] == str(marked.resolve())
+    assert "chorus_data_dir.txt" in layout["source"]
+    # env var must win
+    assert (_layout({"CHORUS_DATA_DIR": str(other)}, root=root)["data_dir"]
+            == str(other.resolve()))
 
 
 # ---------------------------------------------------------------------------

@@ -36,14 +36,17 @@ from chorus.utils.annotations import (
     sample_gene_anchored_positions,
     sample_promoter_anchored_positions,
 )
+from reference_genome import HG38_FAI
 
-FAI = "genomes/hg38.fa.fai"
+# Was the cwd-relative "genomes/hg38.fa.fai", which skipped this file on any install with a
+# data dir (P1-14, 2026-11-15).
+FAI = str(HG38_FAI)
 
 
 @pytest.fixture(scope="module")
 def sizes():
     if not os.path.exists(FAI):
-        pytest.skip("hg38.fa.fai not available")
+        pytest.skip(f"{FAI} not available — run `chorus genome download hg38`")
     return load_chrom_sizes(FAI)
 
 

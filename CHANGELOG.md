@@ -5,6 +5,26 @@ All notable changes to Chorus are documented here. The format follows
 project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
+
+## [0.8.0] — 2026-11-16
+
+**No percentiles change in this release.** No background, region set, retention rule or default
+fold moved, so every percentile is the same as in 0.7.5. The minor version is for new surface:
+conservation tracks, an annotation catalog, three MCP tools and two CLI commands (#246). It also
+covers MCP behaviour changes (#251). `discover_variant_cell_types` now refuses non-AlphaGenome
+oracles instead of returning an empty ranking. A repeat `load_oracle` that asks for a different
+model now raises instead of answering `already_loaded`. And AlphaGenome track search no longer
+returns its 563 padding rows as tracks.
+
+**Upgrade if you build environments fresh.** Since alphagenome 2.0.0 (2026-11-11), a
+`chorus-alphagenome` env built from v0.7.5's env file fails at `predict()`. This release pins both
+AlphaGenome backends' dependencies (#250, #253), and its imports work under alphagenome 2.0 as well
+(#249).
+
+**Background artefacts.** Unchanged: this release is verified against dataset revision
+`backgrounds-2026-08-16-sei-full`, the same as 0.7.4 and 0.7.5, and `_HF_REVISION` still pins it.
+Nothing was rebuilt or re-uploaded.
+
 ### Added
 
 - **Conservation-score tracks for IGV reports.** `chorus/analysis/conservation.py` wraps three
@@ -155,6 +175,82 @@ what an agent does, and the sweep turned up behaviour bugs in the same layer.
   URL must belong to the reference host still holds, so a CORS failure anywhere else still fails.
   The run's errors are pinned verbatim in `tests/test_browser_outage_guard.py`.
 
+### Fixed — found by the v0.8.0 release audit
+
+The pre-release run of `audits/AUDIT_CHECKLIST.md` is recorded in
+[`audits/2026-11-16_v080_release_audit.md`](audits/2026-11-16_v080_release_audit.md).
+
+- **A committed walkthrough carried percentiles the pinned null does not give.**
+  `variant_analysis/SORT1_chrombpnet` was regenerated on 2026-08-28 against a ChromBPNet null that
+  is not the published one. It reported effect "≥99th (1.18× null max)" and activity 0.885, while
+  the pinned `chrombpnet_pertrack.npz` (sha256 `d4d6488c…`) gives 0.9995 and 0.906, the values
+  v0.7.5 shipped. It has been regenerated. A new test,
+  `tests/test_committed_percentiles_match_the_pinned_null.py`, recomputes every committed
+  percentile in `examples/**/example_output.json` (2,412 values across 18 outputs) from the
+  pinned backgrounds and fails on any mismatch. It skips where backgrounds are absent, as in CI.
+- **`single_oracle_quickstart.ipynb` no longer downloads ~70 GB on "Run All".** Its conservation
+  cell called `build_variant_report(..., show_conservation=True)` unconditionally, so the
+  notebook recommended to first-time users fetched seven genome-wide bigwigs (66 GiB) on a fresh
+  data dir. The cell is now behind `RUN_CONSERVATION = False`. With the flag off, it prints each
+  missing track with its size and the `chorus conservation download` command. The notebooks
+  README states the disk requirement, and `tests/test_quickstart_conservation_cell_is_gated.py`
+  pins the gate.
+- **GPN-Star, phyloP 100-way and phastCons 100-way are credited.** #246 began downloading and
+  drawing them, but `docs/THIRD_PARTY.md` named none of them. It now has an *Annotation and
+  conservation data* section, linked from the README Acknowledgments:
+  - GPN-Star (Ye et al., *Nature* 2026; `songlab/gpn-star-scores` at the pinned revision,
+    Apache-2.0);
+  - phyloP and phastCons (Pollard et al. 2010; Siepel et al. 2005; UCSC `multiz100way`, under
+    UCSC's terms);
+  - GENCODE v48.
+
+  The igv.js entry described the 3.1.1 bundle #246 replaced. It now names 3.8.4 with its sha256,
+  quotes igv.js's MIT notice, and lists the libraries bundled inside.
+- **An LDlink failure wrote the LDlink token to the MCP server's log.** `fetch_ld_variants` raised
+  its redacted error `from exc`, which kept the original `requests` exception chained; that
+  exception's message is the full request URL, token included. `_safe_tool` logged the whole
+  chain, and with `CHORUS_MCP_DEBUG=1` returned it too. The fixes:
+  - both raises are now `from None`;
+  - `_safe_tool` scrubs token values and `token=` parameters before it logs or returns anything;
+  - urllib3, which logs request URLs at DEBUG, is held at INFO for the call.
+
+  `tests/test_credentials_never_reach_an_error_message.py` drives an outage through an MCP tool.
+- **rsID input to `analyze_variant_multilayer`, `discover_variant` and
+  `discover_variant_cell_types` never worked.** `_resolve_rsid_to_position` read `v.pos`, but
+  `LDVariant` names the field `position`, so every successful lookup raised `AttributeError`.
+  This has been the case since the feature arrived (#84). Only the failure paths had ever run.
+  `tests/test_rsid_position_resolves.py` covers both branches.
+- **The login advice named a command that no longer runs.** Every shipped env resolves
+  huggingface_hub 1.26, where `huggingface-cli` exits 1. Error messages, setup and health output,
+  and the README now say `hf auth login`. `tests/test_error_recovery.py` fails if `huggingface-cli`
+  returns to a string literal in the package.
+- **Causal reports described the effect null as "a background of common variants".** It is about
+  18,000 variants sampled from the regulatory regions each assay measures. The footnote, the
+  README and `docs/NORMALIZATION_GUIDE.md` now say so, and
+  `tests/test_reports_describe_the_real_reference_class.py` forbids the old phrase.
+- **Three test-harness gates no longer depend on the host or on UCSC.**
+  - The browser meta-test consults the outage guard when the channel it expects stays silent, so
+    a UCSC outage skips rather than fails. That outage is what turned CI red on 4258b6f. A caught
+    mutation, uncaught JS, or a failing non-UCSC host still never skips.
+  - `tests/test_data_dir_resolution.py` runs against a throwaway install root. It passes on
+    installs that use a data dir, and no longer rewrites the real `chorus_data_dir.txt`, which it
+    used to do for about 4 s.
+  - Integration tests and `scripts/gate_end_to_end_determinism.py` find hg38 through the data dir
+    (`tests/reference_genome.py`). They used to look in the repo, which skipped all six oracle
+    smoke tests on a host set up the documented way.
+- **`scripts/regenerate_examples.py` looked for hg38 in the repo and exited 0 when every example
+  failed.** It now resolves the genome through the data dir and exits 1, naming the examples that
+  failed.
+- **The MCP end-to-end release test dropped `CUDA_VISIBLE_DEVICES` from the server's environment.**
+  The test passes `chorus-mcp` an explicit environment whitelist, and that whitelist left out the
+  GPU mask. So on a shared host the server could initialise every GPU, including ones the run was
+  not given. The whitelist now also forwards `CUDA_VISIBLE_DEVICES`, `CHORUS_DATA_DIR` and
+  `CHORUS_MCP_OUTPUT_DIR`.
+- **A browser cache from another playwright release read as 47 report failures.** The browser
+  checks skipped when no Chromium was cached at all. A cached Chromium of the wrong build passed
+  that check and then failed every launch with "Executable doesn't exist". That is now a skip that
+  names the build and the `playwright install chromium` fix; any other launch error still fails.
+
 ### Changed
 
 - **One `hf_download_flat` helper** replaces two line-for-line copies of the HF
@@ -188,18 +284,62 @@ what an agent does, and the sweep turned up behaviour bugs in the same layer.
   unexecuted; the notebook prints the resulting 103.5 MB report's path and size but writes it to
   a gitignored scratch directory rather than committing it. Still worth a dedicated walkthrough
   if the CLI/MCP side of the annotation catalog needs one too.
-- **A dedicated `conservation/` walkthrough** ([examples/walkthroughs/conservation/SORT1_rs12740374/](examples/walkthroughs/conservation/SORT1_rs12740374/))
-  closes the gap the note above left open. Committed artifacts (JSON/MD/TSV/HTML, generated by a
-  new `scripts/regenerate_examples.py` entry, not hand-written): rs12740374 scored with ChromBPNet
-  DNASE:HepG2 (identical effect to the existing `variant_analysis/SORT1_chrombpnet` run: +1.376,
-  ≥99th percentile / 1.18× null max) with `show_conservation=True`, plus the three conservation
-  scores measured directly at the variant's own base and merged into `example_output.json`
-  (phyloP −0.046, phastCons 0.001, GPN-Star entropy 0.772 bits) — one of the strongest effects in
-  the repo landing on a base with no cross-species conservation signal by any of the three
-  sources, which is the case a reader cannot get from the oracle tracks alone. Along the way:
-  `README.md` and `docs/API_DOCUMENTATION.md` both documented `chorus conservation list` and
-  `chorus conservation download gpn_star` — the CLI only has `status` (not `list`) and `download`
-  requires `--track`; both ran and failed as written, fixed here.
+- **A dedicated `conservation/` walkthrough was added, then pulled before release.**
+  `examples/walkthroughs/conservation/SORT1_rs12740374` scored rs12740374 with ChromBPNet
+  DNASE:HepG2 next to the three conservation scores at the variant's base. The v0.8.0 release
+  audit found its committed percentiles (effect "≥99th (1.18× null max)", activity 0.885) are not
+  reproduced by the pinned ChromBPNet null, which gives 0.9995, inside the null's support (max
+  1.606), and 0.906. Its "saturating effect" headline therefore did not hold. It returns once
+  regenerated against the pinned background; restore it from `eab109c`. The fix that came with
+  it stays: `README.md` and `docs/API_DOCUMENTATION.md` documented `chorus conservation list` and
+  `chorus conservation download gpn_star`, but the CLI has `status` (not `list`), and `download`
+  requires `--track`.
+
+### Known limitations
+
+These are pre-existing issues the release audit rated "fix before release" (P1) but left for a
+later release; they are not regressions. The audit report has the evidence for each.
+
+- **Variants near a chromosome's 3' end cannot be scored.** `predict_variant_effect` widens the
+  region to the model's input window without clamping it at the chromosome end. So any variant
+  within half a window of a q-terminus raises `InvalidRegionError`. Examples: MC1R rs1805007 with
+  AlphaGenome, and every chrM variant with Enformer, Borzoi and AlphaGenome.
+- **LegNet mis-scores insertions.** For example, G>GA scores −0.41 with percentile −0.985, where
+  about +0.02 is expected. Score SNVs only with LegNet until this is fixed.
+- **BATv1 ([#248](https://github.com/pinellolab/chorus/pull/248)) is not in this release.** It is
+  under review: its nulls are not yet mirrored to the pinned dataset, and three issues block the
+  merge.
+- **The conservation walkthrough is pulled** until it is regenerated against the pinned
+  background (see *Changed*).
+- **Both AlphaGenome backends stay on alphagenome 0.7.0.** #249 makes the imports work under
+  alphagenome 2.0, but the pins hold the versions the shipped backgrounds were built and
+  validated with. Moving them waits on a fresh env build and a GPU check that predictions still
+  match the backgrounds.
+- **No env was built fresh from the pinned env files for this release.** The pins reproduce the
+  installed envs the backgrounds and validations ran in; the build itself was not repeated.
+- **Shipped examples and notebooks:**
+  - Four walkthrough READMEs quote result tables that disagree with their own
+    `example_output.md`.
+  - `cherimoya_quickstart.ipynb` hardcodes `../../genomes/hg38.fa` and describes the 5-fold
+    ensemble, although fold 0 has been the default since 0.7.2.
+  - `comprehensive_oracle_showcase.ipynb` prints AlphaGenome's 5,731 metadata rows as its track
+    count, and states one insight ("H3K27ac +80") that matches no computed number.
+  - The two committed causal reports keep the old null footnote until they are regenerated.
+  - 18 of the 19 committed IGV reports still inline the previous igv.js (3.1.1). They render, and
+    the browser check covers them.
+- **Counts and paths:**
+  - Stale counts remain in some notebooks, in `scripts/README.md`, and in code comments. The
+    README and the docs guarded by `tests/test_documented_track_counts.py` are clean, and the
+    text the MCP server shows agents was corrected in #251.
+  - The background builders and probes under `scripts/` still expect `<repo>/genomes/hg38.fa`.
+    Pass `--reference`, or symlink the data dir's genome there.
+- **Enformer accepts a description such as `"DNASE:K562"` at validation that its env predict
+  template then rejects.** Pass the `identifier` (`ENCFF…`, `CNhs…`) from `list_tracks`; the MCP
+  examples now do.
+- **`AnnotationStore` reports GENCODE as "not downloaded" and lists its `.bgz`/`.tbi` index
+  files as annotations.** This affects `list_annotations`/`describe_annotation` too.
+- **Loading AlphaGenome metadata in its env rewrites the tracked `alphagenome_tracks.json`** in
+  the package directory.
 
 ## [0.7.5] — 2026-08-18
 ### Fixed
@@ -1737,7 +1877,8 @@ HTML report generation with embedded IGV, and the `chorus` CLI
 
 ---
 
-[Unreleased]: https://github.com/pinellolab/chorus/compare/v0.7.5...HEAD
+[Unreleased]: https://github.com/pinellolab/chorus/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/pinellolab/chorus/compare/v0.7.5...v0.8.0
 [0.7.5]: https://github.com/pinellolab/chorus/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/pinellolab/chorus/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/pinellolab/chorus/compare/v0.7.2...v0.7.3

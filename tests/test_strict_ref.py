@@ -28,9 +28,12 @@ import pytest
 
 from chorus.core.base import OracleBase
 from chorus.core.exceptions import ChorusError, ReferenceAlleleMismatchError
+from reference_genome import HG38_FASTA
 
 FIXTURE = Path("tests/fixtures/example_ref_alleles.tsv")
-_HG38 = Path("genomes/hg38.fa")
+# Was the cwd-relative "genomes/hg38.fa", which skipped the BCL11A check below on any install
+# with a data dir (P1-14, 2026-11-15).
+_HG38 = HG38_FASTA
 
 
 class _Bare(OracleBase):
@@ -179,7 +182,7 @@ def test_fixture_covers_every_real_variant_in_the_examples():
 def test_pinned_alleles_match_hg38():
     """The check that would have caught BCL11A. Needs the 3 GB FASTA."""
     if not _HG38.exists():
-        pytest.skip("genomes/hg38.fa not available")
+        pytest.skip(f"{_HG38} not available — run `chorus genome download hg38`")
     from pyfaidx import Fasta
 
     fasta = Fasta(str(_HG38), as_raw=True, sequence_always_upper=True)

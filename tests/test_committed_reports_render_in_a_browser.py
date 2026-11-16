@@ -87,8 +87,14 @@ def browser():
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as pw:
-        b = pw.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage"],
-                               env=bh.browser_env())
+        try:
+            b = pw.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage"],
+                                   env=bh.browser_env())
+        except Exception as exc:
+            why = bh.launch_unavailable(exc)
+            if why:
+                pytest.skip(why)
+            raise
         try:
             yield b
         finally:
@@ -240,6 +246,16 @@ def test_the_check_actually_detects_a_broken_panel(browser, tmp_path, label, mut
         "console": bool(r.console_errors),
         "pageerror": bool(r.page_errors),
     }
+    # Asked only when the expected channel stayed silent, so an outage can turn a failure into a
+    # skip but never a detection into one. "features emptied" needs the reference sequence: with
+    # UCSC's hg38.2bit unreachable, igv.js lays out no canvases at all (0/0), so nothing can be
+    # blank. That turned CI red on 4258b6f (run 43764177834, 2026-11-15, UCSC CORS-blocked), since
+    # this test, unlike the paint checks above, never asked the guard #252 had just extended. The
+    # guard's refusals stand: uncaught JS, or a failing host other than UCSC, still fails.
+    if not detected[expect]:
+        unverifiable = bh.unreachable_external_host(r)
+        if unverifiable:
+            pytest.skip(unverifiable)
     assert detected[expect], (
         f"{label}: the {expect} channel did not notice.\n  {r.summary()}\n"
         f"  blank={r.blank[:6]} console={r.console_errors[:1]} page={r.page_errors[:1]}"

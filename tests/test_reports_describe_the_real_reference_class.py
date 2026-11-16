@@ -51,6 +51,11 @@ FORBIDDEN = [
     (r"~?10K random SNPs", "same claim, abbreviated"),
     (r"vs random SNPs", "same claim, in a tooltip"),
     (r"~?10K common SNPs", "and it is not gnomAD common SNPs either"),
+    # causal.py's per-layer footnote said "vs. a background of common variants" from
+    # 97fdcad (v0.6.0) on, and none of the patterns above matched it (2026-11-15
+    # pre-release audit, P1-8).
+    (r"common[- ]variants?", "the null is sampled positions with a uniformly chosen alt, "
+                             "not common variants"),
     (r"sampled uniformly across chr1[-–]chr22", "sampling is stratified, not uniform"),
     # Scoped: naming gnomAD as a COORDINATE convention alongside dbSNP/UCSC/IGV is
     # correct and common (README:80 does it). What is false is claiming the background

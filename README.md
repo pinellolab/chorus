@@ -26,7 +26,7 @@ Four steps. Steps 1 + 2 are copy-paste. Step 3 is a runnable snippet. Step 4 hoo
 
 ```bash
 git clone https://github.com/pinellolab/chorus.git && cd chorus
-git checkout v0.7.5          # a released tag; omit to track main
+git checkout v0.8.0          # a released tag; omit to track main
 mamba env create -f environment.yml
 mamba activate chorus
 python -m pip install -e .
@@ -460,7 +460,7 @@ Two tokens are relevant. `chorus setup` surfaces both so they aren't a mid-predi
 
 | Token | When you need it | How `chorus setup` handles it |
 |---|---|---|
-| `HF_TOKEN` (HuggingFace) | Required for **AlphaGenome** — the `google/alphagenome-all-folds` model is gated. | Resolved via `--hf-token` → `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN` env → existing `huggingface-cli login` → interactive prompt. `chorus setup` (bare or `--oracle all`) **halts** the whole flow if no working token can be resolved, so the other 7 oracles aren't built for nothing. |
+| `HF_TOKEN` (HuggingFace) | Required for **AlphaGenome** — the `google/alphagenome-all-folds` model is gated. | Resolved via `--hf-token` → `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN` env → existing `hf auth login` → interactive prompt. `chorus setup` (bare or `--oracle all`) **halts** the whole flow if no working token can be resolved, so the other 7 oracles aren't built for nothing. |
 | `LDLINK_TOKEN` | Optional — only used by `fine_map_causal_variant` (auto-fetch LD proxies from the NIH LDlink REST API). | Non-blocking prompt during `chorus setup`. If provided, stored in `~/.chorus/config.toml`; `chorus.utils.ld` also reads `LDLINK_TOKEN` from env. |
 
 Register an HF read token at <https://huggingface.co/settings/tokens>, then accept the model license at <https://huggingface.co/google/alphagenome-all-folds>. Register a free LDlink token at <https://ldlink.nih.gov/?tab=apiaccess>.
@@ -1158,8 +1158,9 @@ AlphaGenome weights are hosted on a **gated HuggingFace repository**. You must a
 # Option A: Set environment variable (recommended — works with automation and across envs)
 export HF_TOKEN="hf_your_token_here"
 
-# Option B: Interactive login (saves token to ~/.cache/huggingface/token)
-mamba run -n chorus-alphagenome huggingface-cli login
+# Option B: Interactive login with `hf auth login` (formerly `huggingface-cli login`, which
+# current huggingface_hub refuses to run). Saves the token to ~/.cache/huggingface/token.
+mamba run -n chorus-alphagenome hf auth login
 ```
 
 > **For MCP users**: Claude Code inherits environment variables from the shell where you start `claude`. Make sure `HF_TOKEN` is exported in that shell (e.g. add the `export` to your `~/.bashrc` or `~/.zshrc`). Option B (cached token) also works without any shell export.
@@ -1303,7 +1304,7 @@ AlphaGenome weights are hosted on a gated HuggingFace repository. If you see a `
 # 1. Accept model terms at https://huggingface.co/google/alphagenome-all-folds
 # 2. Authenticate via environment variable (recommended)
 export HF_TOKEN="hf_your_token_here"
-# Or: mamba run -n chorus-alphagenome huggingface-cli login
+# Or: mamba run -n chorus-alphagenome hf auth login
 ```
 
 #### LDlink token (for causal prioritization)
@@ -1353,11 +1354,6 @@ report = build_variant_report(variant_result, oracle_name="alphagenome",
 ```
 
 From Claude: `analyze_variant_multilayer(..., show_conservation=True)`.
-
-**Worked example**: [examples/walkthroughs/conservation/SORT1_rs12740374/](examples/walkthroughs/conservation/SORT1_rs12740374/)
-— a variant with one of the strongest measured ChromBPNet effects in this repo (+1.376,
-≥99th percentile) at a base with no cross-species conservation signal by any of the three
-scores below, and why that combination isn't a contradiction.
 
 Three hg38 sources are wrapped, each a genome-wide bigwig cached once on first use (like
 oracle weights) rather than streamed per region:
@@ -1462,7 +1458,7 @@ If you use Chorus in your research, please cite:
 ```bibtex
 @software{chorus2026,
   title = {Chorus: A unified interface for genomic sequence oracles},
-  version = {0.7.5},
+  version = {0.8.0},
   author = {Penzar, Dmitry and Ruggeri, Lorenzo and Giugno, Rosalba and Pinello, Luca},
   year = {2026},
   url = {https://github.com/pinellolab/chorus}
@@ -1486,6 +1482,12 @@ Chorus integrates several groundbreaking models:
 - AlphaGenome (Google DeepMind, 2026)
 
 For visualization tasks we extensively use [coolbox package](https://github.com/GangCaoLab/CoolBox)
+
+Chorus also downloads third-party annotation and conservation data: GENCODE v48 gene
+annotation (Mudge et al., 2025), GPN-Star scores (Ye et al., 2026), and UCSC phyloP and
+phastCons 100-way (Pollard et al., 2010; Siepel et al., 2005). Where each comes from, its
+license and what to cite are in
+[`docs/THIRD_PARTY.md` → Annotation and conservation data](docs/THIRD_PARTY.md#annotation-and-conservation-data).
 
 ---
 
@@ -1601,7 +1603,7 @@ track_id = "DNASE/EFO:0001187 DNase-seq/."  # HepG2 DNase
 # How unusual is a +0.45 log2FC effect? (unsigned: pass abs value)
 eff_pct = norm.effect_percentile("alphagenome", track_id, abs(0.45),
                                  signed=False)
-# → 0.9811  (stronger than 98.1% of common-variant effects on this track)
+# → 0.9811  (stronger than 98.1% of this track's ~18,000 background variants)
 
 # How active is the reference signal at the variant site?
 # third arg is `raw_signal`, positional — there is no `ref_value=` keyword

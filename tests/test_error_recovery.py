@@ -169,7 +169,35 @@ class TestAuthFailurePaths:
         assert "huggingface.co/google/alphagenome-all-folds" in msg, (
             "error must link to the correct gated repo so the user knows where to click"
         )
-        assert "huggingface-cli login" in msg, "alternative auth path should be mentioned"
+        assert "hf auth login" in msg, "alternative auth path should be mentioned"
+
+    def test_no_message_tells_users_to_run_the_removed_huggingface_cli(self):
+        """`huggingface-cli` exits 1 ("no longer works. Use `hf` instead") under
+        huggingface_hub 1.26, which every shipped env resolves, yet six auth messages
+        still told users to run it and two more named it (2026-11-15 pre-release audit,
+        P1-18). One is in the AlphaGenome load template, which runs in the oracle env
+        where the test above cannot reach it, so this scans every string literal in the
+        package. Docstrings are skipped: they may describe the old name's history.
+        """
+        import ast
+
+        root = Path(__file__).resolve().parent.parent / "chorus"
+        offenders = []
+        for py in sorted(root.rglob("*.py")):
+            tree = ast.parse(py.read_text(), filename=str(py))
+            docstrings = {
+                id(node.body[0].value) for node in ast.walk(tree)
+                if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef,
+                                     ast.AsyncFunctionDef))
+                and node.body and isinstance(node.body[0], ast.Expr)
+                and isinstance(node.body[0].value, ast.Constant)
+            }
+            offenders += [
+                f"{py.relative_to(root.parent)}:{node.lineno}" for node in ast.walk(tree)
+                if isinstance(node, ast.Constant) and isinstance(node.value, str)
+                and "huggingface-cli" in node.value and id(node) not in docstrings
+            ]
+        assert not offenders, f"user-facing text still names `huggingface-cli`: {offenders}"
 
 
 # ---------------------------------------------------------------------------

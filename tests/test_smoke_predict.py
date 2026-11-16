@@ -2,7 +2,7 @@
 
 These tests require:
   - The per-oracle conda environments (``chorus setup --oracle <name>``)
-  - Reference genome at genomes/hg38.fa
+  - Reference genome at <data dir>/genomes/hg38.fa (``chorus genome download hg38``)
   - Pretrained model weights downloaded for chrombpnet, sei, and legnet
 
 Run with: pytest tests/test_smoke_predict.py -v -s -m integration
@@ -23,9 +23,13 @@ import pytest
 import numpy as np
 import chorus
 
+from reference_genome import HG38_FASTA
+
 pytestmark = pytest.mark.integration
 
-REFERENCE_FASTA = "genomes/hg38.fa"
+# Was the repo-relative "genomes/hg38.fa", which skipped every test here on any install with a
+# data dir (P1-14, 2026-11-15).
+REFERENCE_FASTA = str(HG38_FASTA)
 
 
 def _require_oracle(name: str) -> None:
@@ -39,7 +43,7 @@ def _require_oracle(name: str) -> None:
 
     if not os.path.exists(REFERENCE_FASTA):
         pytest.skip(
-            f"{REFERENCE_FASTA} not found -- run `chorus genome get hg38` or symlink a "
+            f"{REFERENCE_FASTA} not found -- run `chorus genome download hg38` or symlink a "
             f"GRCh38 FASTA there."
         )
     if not EnvironmentManager().environment_exists(name):

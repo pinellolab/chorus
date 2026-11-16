@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 import browser_harness as bh
 
 REPO = Path(__file__).resolve().parent.parent
@@ -206,3 +208,67 @@ def test_the_cors_signatures_did_not_widen_the_guard():
         console=["error: Failed to load resource: net::ERR_FAILED"],
         external=["https://cdn.example.com/t.bw"])) is None, (
         "a bare ERR_FAILED from a foreign host was excused")
+
+
+# ── the mutation meta-test asks the guard too (2026-11-16) ──────────────────────
+
+def _meta_outcome(tmp_path, monkeypatch, render) -> str:
+    """Run the browser file's mutation meta-test on a stubbed render: "pass", "fail" or "skip".
+
+    The real function is called, not a copy of its logic, so this checks its skip path itself.
+    It is imported inside this helper because a module-level import would make pytest collect
+    it here too, without the `browser` fixture it needs.
+    """
+    from test_committed_reports_render_in_a_browser import (
+        test_the_check_actually_detects_a_broken_panel as meta,
+    )
+
+    monkeypatch.setattr(bh, "render", lambda *a, **k: render)
+    try:
+        meta(None, tmp_path, "features emptied", lambda s: s, "blank")
+    except pytest.skip.Exception:
+        return "skip"
+    except AssertionError:
+        return "fail"
+    return "pass"
+
+
+def test_the_mutation_meta_test_skips_when_the_reference_host_is_down(tmp_path, monkeypatch):
+    """CI run 43764177834 on 4258b6f, the merge of #252: red, with no report changed.
+
+    UCSC was CORS-blocked, so igv.js laid out no canvases (0/0) and the "features emptied" mutation
+    had nothing to be blank. The meta-test was the only browser check that never asked the guard,
+    so it failed with "the blank channel did not notice". The one console error its message printed
+    is `_REAL_CORS_OUTAGE[0]` verbatim.
+    """
+    outcome = _meta_outcome(tmp_path, monkeypatch, _fake(console=_REAL_CORS_OUTAGE, external=_UCSC))
+    assert outcome == "skip", f"a UCSC outage still {outcome}s the mutation meta-test"
+
+
+def test_the_mutation_meta_test_skip_keeps_the_guards_refusals(tmp_path, monkeypatch):
+    """The new skip must not excuse what the guard refuses, nor overrule a channel that noticed."""
+    uncaught = _fake(console=_REAL_CORS_OUTAGE, external=_UCSC,
+                     page=["TypeError: Cannot read properties of undefined (reading 'tracks')"])
+    assert _meta_outcome(tmp_path, monkeypatch, uncaught) == "fail", "uncaught JS was excused"
+
+    foreign = _fake(console=["error: IGV error: Error accessing resource: "
+                             "https://cdn.example.com/t.bw Status: 0"],
+                    external=["https://cdn.example.com/t.bw"] + _UCSC)
+    assert _meta_outcome(tmp_path, monkeypatch, foreign) == "fail", "a foreign host was excused"
+
+    noticed = _fake(console=_REAL_CORS_OUTAGE, external=_UCSC, blank=[0, 1])
+    assert _meta_outcome(tmp_path, monkeypatch, noticed) == "pass", (
+        "a mutation the blank channel caught was skipped because UCSC was also down; an outage may "
+        "turn a failure into a skip, never a detection")
+
+
+def test_a_browser_build_mismatch_is_a_named_skip_not_a_report_failure():
+    """Verbatim first line from the v0.8.0 release host: cached build 1255, playwright wants 1234."""
+    exc = RuntimeError(
+        "BrowserType.launch: Executable doesn't exist at /home/u/.cache/ms-playwright/"
+        "chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell\n"
+        "Looks like Playwright was just installed or updated.")
+    why = bh.launch_unavailable(exc)
+    assert why and "playwright install chromium" in why and "chromium_headless_shell-1234" in why
+    assert bh.launch_unavailable(RuntimeError("Target page, context or browser has been closed")) is None, (
+        "a genuine launch failure must still raise, not skip")

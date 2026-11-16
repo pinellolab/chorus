@@ -42,6 +42,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from reference_genome import HG38_FASTA
+
 REPO = Path(__file__).resolve().parent.parent
 SCRIPTS = REPO / "scripts"
 BUILDERS = sorted(SCRIPTS.glob("build_backgrounds_*.py"))
@@ -127,9 +129,9 @@ def test_a_recognised_but_wrong_assembly_raises():
     from chorus.core.exceptions import GenomeAssemblyMismatchError
     from chorus.utils.genome import require_assembly
 
-    fasta = REPO / "genomes" / "hg38.fa"
+    fasta = HG38_FASTA  # was REPO-relative, so this skipped on any data-dir install (P1-14)
     if not fasta.exists():
-        pytest.skip("hg38 reference not present")
+        pytest.skip(f"{fasta} not present — run `chorus genome download hg38`")
 
     assert require_assembly(fasta, "hg38") == "hg38"
     with pytest.raises(GenomeAssemblyMismatchError) as exc:
@@ -144,7 +146,7 @@ def test_an_unknown_expected_assembly_raises_rather_than_disabling_the_check():
     from chorus.utils.genome import require_assembly
 
     with pytest.raises(ValueError, match="not an assembly chorus can identify"):
-        require_assembly(REPO / "genomes" / "hg38.fa", "GRCh38")
+        require_assembly(HG38_FASTA, "GRCh38")
 
 
 def test_an_unidentifiable_reference_warns_rather_than_blocking(tmp_path, caplog):
@@ -167,7 +169,7 @@ def test_an_oracle_that_declares_nothing_is_refused():
         training_genome = None
 
     with pytest.raises(ValueError, match="does not declare training_genome"):
-        require_reference_assembly(REPO / "genomes" / "hg38.fa", Undeclared,
+        require_reference_assembly(HG38_FASTA, Undeclared,
                                    label="unit")
 
 

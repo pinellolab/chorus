@@ -196,6 +196,34 @@ def _state() -> OracleStateManager:
     return OracleStateManager()
 
 
+# Env vars holding credentials. HUGGING_FACE_HUB_TOKEN is the older name every
+# AlphaGenome load path still reads.
+_SECRET_ENV_VARS = ("LDLINK_TOKEN", "HF_TOKEN", "HUGGING_FACE_HUB_TOKEN")
+
+
+def _scrub_secrets(text: str, *extra: Optional[str]) -> str:
+    """Remove credentials from text that ``_safe_tool`` is about to log or return.
+
+    The second barrier behind ``fetch_ld_variants`` no longer chaining the requests
+    exception: its message is the full request URL, so ``logger.exception`` printed the
+    LDlink token to the server's stderr, which MCP clients keep as a log file, and
+    ``CHORUS_MCP_DEBUG=1`` returned it in ``payload["traceback"]`` (2026-11-15
+    pre-release audit, P1-6). This catches a credential that reaches a traceback by
+    some other route: the env-var values, any ``*_token`` argument the tool was called
+    with, and any ``token=`` query parameter whatever its value.
+    """
+    import os
+
+    from chorus.utils.ld import _redact
+
+    candidates = [os.environ.get(var) for var in _SECRET_ENV_VARS] + list(extra)
+    # Longest first, so a token containing another is not left half-printed. Nothing
+    # under 8 characters: that is no credential for either service, and replacing it
+    # would rewrite line numbers all over the traceback.
+    secrets = sorted({s for s in candidates if s and len(s) >= 8}, key=len, reverse=True)
+    return _redact(text, *secrets)
+
+
 def _safe_tool(fn):
     """Decorator that converts unhandled exceptions into a structured
     ``{"error": ..., "error_type": ...}`` dict so Claude can recover
@@ -207,6 +235,9 @@ def _safe_tool(fn):
     Set ``CHORUS_MCP_DEBUG=1`` to include ``"traceback": ...`` in the
     returned dict — useful when debugging a tool call through an MCP
     client that only prints the JSON reply (v26 P1 #18).
+
+    Everything it logs or returns goes through ``_scrub_secrets`` first, which is
+    why the traceback is formatted here rather than by ``logger.exception``.
     """
     import functools
     import os
@@ -217,14 +248,17 @@ def _safe_tool(fn):
         try:
             return fn(*args, **kwargs)
         except Exception as exc:
-            logger.exception("MCP tool %s failed", fn.__name__)
+            passed = [v for k, v in kwargs.items()
+                      if k.endswith("_token") and isinstance(v, str)]  # e.g. ldlink_token
+            tb = _scrub_secrets(_traceback.format_exc(), *passed)
+            logger.error("MCP tool %s failed\n%s", fn.__name__, tb.rstrip())
             payload = {
-                "error": str(exc) or type(exc).__name__,
+                "error": _scrub_secrets(str(exc), *passed) or type(exc).__name__,
                 "error_type": type(exc).__name__,
                 "tool": fn.__name__,
             }
             if os.environ.get("CHORUS_MCP_DEBUG", "").lower() in ("1", "true", "yes"):
-                payload["traceback"] = _traceback.format_exc()
+                payload["traceback"] = tb
             return payload
 
     return wrapper
@@ -2148,11 +2182,13 @@ def _resolve_rsid_to_position(
             genome_build=genome_build,
         )
     except LDLinkError as exc:
+        # `from None`: the message already carries the (redacted) LDlink error, and
+        # chaining is how the unredacted requests exception reached the log (P1-6).
         raise ValueError(
             f"Could not resolve {rsid!r} via LDlink: {exc}. "
             f"Pass coordinates directly as 'chr1:109274968' if LDlink is "
             f"unavailable, or set LDLINK_TOKEN."
-        ) from exc
+        ) from None
     if not ld:
         raise ValueError(
             f"LDlink returned no record for {rsid!r}. Check that the rsID "
@@ -2161,10 +2197,12 @@ def _resolve_rsid_to_position(
     v = ld[0]  # sentinel
     if not v.ref or not v.alt:
         raise ValueError(
-            f"LDlink returned {rsid!r} at {v.chrom}:{v.pos} but no alleles. "
+            f"LDlink returned {rsid!r} at {v.chrom}:{v.position} but no alleles. "
             f"Pass coordinates + alleles directly."
         )
-    return f"{v.chrom}:{v.pos}", v.ref, v.alt
+    # `.position`, not `.pos`: LDVariant has no `.pos`, so every successful lookup raised
+    # AttributeError and rsID input to these three tools never worked (#84 through 0.7.5).
+    return f"{v.chrom}:{v.position}", v.ref, v.alt
 
 
 def _parse_lead_variant(text: str) -> dict:

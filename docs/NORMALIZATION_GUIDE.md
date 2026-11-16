@@ -21,7 +21,8 @@ Each track is one of two flavours:
   marks, TSS activity, splicing): only the **magnitude** of an effect
   matters. Effects are scored as `|log2 fold-change|` and percentiles
   fall in `[0, 1]`. A value of 0.95 means "this variant's effect is
-  larger than 95% of common-variant effects on this track".
+  larger than 95% of the background effects on this track" — ~18K
+  variants from assay-matched regulatory regions (table below).
 - **Signed** layers (gene expression, MPRA / promoter activity, Sei
   regulatory class): direction matters too. Effects use the raw
   log-fold-change or `alt − ref` difference, and percentiles fall in
@@ -43,8 +44,8 @@ For each track in each oracle, we store three empirical CDFs:
 | **perbin_cdfs** | Per-bin signal values | Same positions, per-bin (oracle-dependent resolution) | [0, 1] |
 
 **Effect percentile**: "How extreme is this variant's effect compared to
-common variants?" A score at the 95th percentile means 95% of common
-variants show a smaller effect for this track.
+variants in comparable regulatory regions?" A score at the 95th percentile
+means 95% of the background variants show a smaller effect for this track.
 
 **Activity percentile**: "How active is this region compared to the
 genome-wide background?" Used for baseline signal interpretation.

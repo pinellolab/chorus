@@ -7,7 +7,7 @@ its isolated ``chorus-cherimoya`` environment, matching how
 they need:
 
   * ``chorus setup --oracle cherimoya`` to have been run, and
-  * a GRCh38 FASTA at ``genomes/hg38.fa``.
+  * a GRCh38 FASTA at ``<data dir>/genomes/hg38.fa`` (``chorus genome download hg38``).
 
 Run with:
 
@@ -45,10 +45,13 @@ from chorus.oracles.cherimoya_source.scoring import (
     expected_counts_profile,
     score_window_sum,
 )
+from reference_genome import HG38_FASTA
 
 pytestmark = pytest.mark.integration
 
-REFERENCE_FASTA = "genomes/hg38.fa"
+# Was the repo-relative "genomes/hg38.fa", which skipped every test here on any install with a
+# data dir (P1-14, 2026-11-15).
+REFERENCE_FASTA = str(HG38_FASTA)
 
 # One of the nine experiments ChromBPNet also covers, so this doubles as
 # the cross-oracle comparison track.
@@ -63,7 +66,7 @@ def _require_prerequisites():
 
     if not os.path.exists(REFERENCE_FASTA):
         pytest.skip(
-            f"{REFERENCE_FASTA} not found — run `chorus genome get hg38` or "
+            f"{REFERENCE_FASTA} not found — run `chorus genome download hg38` or "
             f"symlink a GRCh38 FASTA there."
         )
     if not EnvironmentManager().environment_exists("cherimoya"):

@@ -1637,6 +1637,8 @@ RANKING_GENOME = "hg38"
 #:   chorus 0.7.3     backgrounds-2026-08-12-cherimoya-fold0  (unchanged: no artefact was rebuilt)
 #:   chorus 0.7.4     backgrounds-2026-08-16-sei-full      (sei 40 -> 21,947 tracks, nucleosome-
 #:                                                          normalized; see CHANGELOG #224/#225/#226)
+#:   chorus 0.7.5     backgrounds-2026-08-16-sei-full      (unchanged: no artefact was rebuilt)
+#:   chorus 0.8.0     backgrounds-2026-08-16-sei-full      (unchanged: no artefact was rebuilt)
 #:
 #: Override with ``CHORUS_BACKGROUNDS_REVISION`` -- set it to ``main`` to track the
 #: dataset's head, which is what you want while developing a new oracle's background and

@@ -193,19 +193,10 @@ WALKTHROUGHS: list[dict[str, Any]] = [
         "html": "rs1421085_FTO_alphagenome_report.html",
     },
     # ── conservation ────────────────────────────────────────────────────
-    {
-        "name": "SORT1 rs12740374 — ChromBPNet effect vs. cross-species conservation",
-        "dir": "examples/walkthroughs/conservation/SORT1_rs12740374",
-        "mcp_tool": "analyze_variant_multilayer",
-        "oracle": "chrombpnet",
-        "position": "chr1:109274968", "ref": "G", "alt": "T",
-        "gene": "SORT1",
-        "chrombpnet_assay": "DNASE",
-        "chrombpnet_cell_type": "HepG2",
-        "chrombpnet_fold": 0,
-        "show_conservation": True,
-        "html": "rs12740374_SORT1_chrombpnet_conservation_report.html",
-    },
+    # The rs12740374 conservation walkthrough (#246) was pulled from v0.8.0 on 2026-11-16
+    # because the pinned ChromBPNet null does not reproduce its percentiles (release audit
+    # P1-1). Its spec returns with the regenerated walkthrough; the show_conservation
+    # codegen below stays.
     # ── validation ──────────────────────────────────────────────────────
     {
         "name": "SORT1 rs12740374 — validation with CEBPA/CEBPB co-occupancy",
