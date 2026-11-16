@@ -123,13 +123,13 @@ Now ask, in any Claude Code prompt:
 
 > *"Replace the 200 bp endogenous enhancer at chrX:48,782,929–48,783,129 with this synthetic sequence and predict accessibility in HepG2, K562, and GM12878."*
 
-That's it. No more boilerplate, no juggling oracle APIs — chorus exposes **27 MCP tools** ([full list](#mcp-server--chorus-but-you-talk-to-claude)) covering prediction, variant effects, region swaps, multi-layer analysis, in-silico mutagenesis, gene-TSS lookups, and cell-type discovery, and Claude picks the right one for the question.
+That's it. No more boilerplate, no juggling oracle APIs — chorus exposes **32 MCP tools** ([full list](#mcp-server--chorus-but-you-talk-to-claude)) covering prediction, variant effects, region swaps, multi-layer analysis, in-silico mutagenesis, gene-TSS lookups, cell-type discovery, tissue ranking, locus views, and paper comparison, and Claude picks the right one for the question.
 
 ### What to read next
 
 - [Notebooks](#notebooks--three-sittings-zero-to-confident) — three end-to-end tutorials you can follow start-to-finish (start here)
 - [Worked application examples](#worked-application-examples--seven-things-you-can-do-today) — driven by natural-language prompts; the *what can chorus do?* tour
-- [MCP server](#mcp-server--chorus-but-you-talk-to-claude) — full Claude Code + Claude Desktop setup with all 27 tools
+- [MCP server](#mcp-server--chorus-but-you-talk-to-claude) — full Claude Code + Claude Desktop setup with all 32 tools
 - [Python API](#python-api) — 9 runnable recipes (region replacement, gene expression, sub-region scoring, variant-to-gene, …)
 - [Pick an oracle](#pick-an-oracle) — hardware matrix, which one to start with
 - [Troubleshooting](#troubleshooting)
@@ -860,7 +860,7 @@ mamba run -n chorus chorus-mcp
 
 #### Available MCP tools
 
-All 27, grouped by what you would reach for them for:
+All 32, grouped by what you would reach for them for:
 
 - **Discovery**: `list_oracles`, `list_tracks`, `list_genomes`, `get_genes_in_region`, `get_gene_tss`, `recommend_alphagenome_backend`
 - **Annotations & conservation**: `list_annotations`, `describe_annotation`, `download_annotation` — the GENCODE/conservation/custom catalogue behind `show_conservation` (see [Conservation tracks](#conservation-tracks))
@@ -875,6 +875,11 @@ All 27, grouped by what you would reach for them for:
     - `score_variant_batch` — rank many variants (VCF / GWAS set / credible set) by effect magnitude
     - `fine_map_causal_variant` — prioritize the causal SNP in a GWAS locus using multi-layer convergence
     - `analyze_region_swap`, `simulate_integration` — score sequence engineering edits (promoter swaps, construct insertions)
+- **Reading `discover_variant` output (no oracle, no model run)**:
+    - `rank_variant_tissues` — rank tissues or body systems within each molecular layer from the track tables `discover_variant` wrote, combining each group's track p-values with Fisher (breadth) or ACAT (peak)
+    - `plot_variant_gene_response` — which genes the variant moves, and in which cell types: a per-track dot plot of RNA-seq effects
+    - `build_locus_report` — draw several earlier `predict_variant_effect` predictions side by side over one ~1 Mb window, as one igv.js HTML
+- **Comparing with a paper**: `fetch_paper`, `compare_paper_to_chorus` — fetch a PDF or HTML paper as numbered paragraphs, then check each of its claims layer by layer against the Chorus tables (a claim whose quote is not in the paper is rejected)
 
 Every analysis tool accepts an optional `user_prompt` parameter and writes it into the top of the report so an HTML/MD opened later still shows the original question. See [`examples/walkthroughs/`](examples/walkthroughs/) for worked outputs of each tool, or read the [MCP Walkthrough](docs/MCP_WALKTHROUGH.md) for a step-by-step guide showing what you type in Claude and what comes back.
 

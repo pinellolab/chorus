@@ -56,3 +56,6 @@ dependencies:
     - oxbow>=0.4.0
     - fastmcp>=3.0
     - huggingface_hub>=0.20.0
+    - pdfminer.six>=20221105  # paper_claims: text of a PDF paper (MIT)
+    - beautifulsoup4>=4.9  # paper_claims: text of an HTML paper
+    - lxml>=4.6

@@ -6,6 +6,75 @@ project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Tissue / body-system rank tables from discovery output.** `discover_variant` (and
+  `discover_variant_effects(..., write_tables=True)`) now also writes `<chrom>_<pos>_<oracle>_track_scores.csv`
+  (one row per unique track, with signed `raw_score`) and `..._prediction_matrix.csv` (one row per cell type,
+  every track's percentile plus Fisher's combined p). The new `rank_variant_tissues` MCP tool
+  (`chorus/analysis/layer_ranking.py`) reads one track table per oracle, groups cell types into tissues
+  (~60) or body systems (~19) with the bundled `analysis/data/cell_type_annotation.csv`, combines each
+  group's track p-values with **Fisher** or **ACAT**, ranks groups within each molecular layer and draws the
+  orange rank-tier figure with the auxiliary CSVs (`layer_rank_table`, `_over_N`, `_score`, `_ntracks`,
+  `_nsig`, `method_comparison`, `unmapped_cell_types`, `run_summary.json`). No oracle is needed, so the same
+  discovery output can be re-ranked with another method or grouping. Output matches
+  `scripts/sort1_layer_rank_table.py` exactly (all four method x level combinations; the ACAT/tissue figure is
+  pixel-identical to the committed one). RNA-seq is handled per gene: the RNA null is an exon-mask statistic, so
+  for AlphaGenome/Borzoi discovery scores RNA against every protein-coding gene in the prediction window,
+  using the same scoring and normalization code as `analyze_variant_multilayer`, into separate gene x track
+  tables (`*_rna_gene_percentiles.csv`, `_raw_scores.csv`, `_tracks.csv`); the user picks the gene with
+  `rank_variant_tissues(rna_gene=...)`. RNA stays out of discovery's own `cell_type_ranking`.
+- **`build_locus_report`: several earlier predictions side by side over one ~1 Mb window, as one igv.js HTML**
+  (`chorus/analysis/locus_report.py`; MCP tool of the same name). It reuses what `predict_variant_effect` already saved
+  and runs no model: pick tracks by `oracle` + `assay_id` (or `assay_ids` + `combine` for the mean/sum of the + and -
+  strands, or explicit bedgraph paths) from any number of oracles. One merged track per selection (reference blue,
+  alternate orange, orange only where the alternate is higher), AlphaGenome's 1,048,576 bp window by default (the
+  selected AlphaGenome track's own interval, else centred on the variant), binned to 128 bp with a per-track
+  `aggregate` (`mean` / `max` / `sum`) and `scale`, GENCODE genes, a band on the variant, optional GPN-Star
+  conservation over the whole window (never downloaded implicitly) and an optional PNG. Coverage is reported when a
+  prediction spans less than the window. To make reuse safe, `predict_variant_effect` now also writes a manifest per
+  (variant, oracle) - the files, interval, resolution and a size/mtime fingerprint of each bedgraph - because those
+  bedgraphs are named by track id only and a later call for another variant silently overwrites them; a file whose
+  fingerprint changed is refused with the call to repeat. Reproduces the data behind the Figure 3 locus panel (seven
+  tracks, three oracles) to the 4 significant digits the HTML stores.
+- **Compare a paper's findings with the Chorus analysis, layer by layer** (`chorus/analysis/paper_claims.py`; MCP tools
+  `fetch_paper` and `compare_paper_to_chorus`). `fetch_paper` takes a PDF or HTML paper (a path or an http(s) URL;
+  PDF text via `pdfminer.six`, HTML via `beautifulsoup4`) and returns numbered paragraphs, paged and saved to disk;
+  private and local addresses, oversized files, redirect loops and scanned PDFs are refused, and the request carries
+  only a generic client name. The agent reads the text and writes structured claims (layer, direction of the alt
+  allele, cell type / tissue, factor, gene, optional magnitude such as `>=12-fold`), each with a verbatim quote.
+  `compare_paper_to_chorus` rejects any claim whose quote is not in the paper, matches the rest to the tracks of the
+  same layer / cell type / factor / gene in the `discover_variant` tables (no oracle needed) and gives a per-claim,
+  per-model verdict: CONSISTENT, PARTIAL (right direction, magnitude outside the claim), CONTRADICTS, MIXED,
+  NO-EFFECT, NOT-COVERED (no matching track: not a mismatch) or NOT-TESTABLE, with a layer-grouped figure and CSVs.
+  RNA-seq significance uses the measured noise floor on the raw effect, not the saturating percentile. New
+  dependencies: `pdfminer.six` (MIT; PyMuPDF was avoided as AGPL), `beautifulsoup4`, `lxml`.
+- **`plot_variant_gene_response`: which genes does the variant move, and in which cell types?**
+  (`chorus/analysis/gene_response.py`, MCP tool of the same name.) Reads the RNA gene tables from
+  `discover_variant` and, for the RNA-seq tracks of one required tissue or system, draws one box per track over every
+  gene's log2 fold change, grey dots for other outliers, and a coloured, margin-named dot per responding gene
+  joined across the tracks of a cell type (the compact "Which liver cell type responds?" panel). It plots raw
+  log2FC against AlphaGenome's measured RNA null (0.0417 ln), because RNA percentiles saturate at 1.0. A gene is
+  read only on unstranded tracks and on the stranded track of its own strand. A gene is named when it is a boxplot
+  outlier on >=75% of tracks (`min_track_fraction`) with a median |effect| above the floor; `notes` reports named
+  genes that dip inside the floor. The published panel's caption ("above the noise floor on every track") is
+  stricter than its data: only PSRC1 is (12/12), CELSR2 and MYBPHL are on 11 and SORT1 on 8, while all four are
+  outliers on 11-12 of 12 tracks and no other gene on any. The RNA tables now keep strand-specific tracks and each
+  gene's strand; the ranking still collapses strands (stronger wins) so its output is unchanged.
+- **`examples/walkthroughs/tissue_ranking/SORT1_rs12740374`: which tissue does the variant hit, and through
+  which layers?** One prompt (`prompt.md`), chorus MCP calls only, no tissue or cell type fixed in advance: discovery
+  on AlphaGenome, Cherimoya and ChromBPNet (BPNet), ACAT tissue and system ranking, the liver gene response, the
+  multilayer report for the chosen cell type and a 17-track locus report. Every artefact comes from one replay of
+  that prompt against the pinned background nulls (Liver is Global rank 1 at both levels; HepG2 is the cell type the
+  coverage rule selects). The README lists the points the prompt leaves open and how the replay settled them.
+
+### Changed
+
+- **`discover_variant` on the `chrombpnet` oracle now also scores the BPNet ChIP-TF models.** It used to iterate only
+  the ATAC / DNase models (`iter_unique_models()`, 9 models); it now also iterates `iter_unique_bpnet_models()`
+  (744 TF x cell-line models, each with its per-track CDF), 753 models in all, so a ChromBPNet discovery runs
+  much longer than before and its track table gains a ChIP-TF layer, which `rank_variant_tissues` uses.
+
 ## [0.8.0] — 2026-11-16
 
 **No percentiles change in this release.** No background, region set, retention rule or default

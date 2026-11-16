@@ -15,6 +15,7 @@ The unified entry point is :func:`discover_variant_effects`.
 
 import logging
 import math
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Optional
@@ -477,6 +478,9 @@ class TrackEffect:
     # that lets LLM consumers demote misleading "high fold-change at
     # closed-baseline" hits.
     low_baseline_warning: bool = False
+    # Oracle-native assay type of the track ("DNASE", "CHIP", "CAGE", ...). Needed to name the
+    # figure column a track belongs to (ChIP-TF vs ChIP-histone share layer-less assay "CHIP").
+    assay: str = ""
 
 
 def _score_all_tracks(
@@ -579,6 +583,7 @@ def _score_all_tracks(
             abs_score=abs(raw_score),
             ref_value=ref_v,
             alt_value=alt_v,
+            assay=at,
         )
 
         # Add normalization if available
@@ -749,6 +754,137 @@ def _rank_cell_types(
     return ct_ranking[:top_n]
 
 
+def _score_rna_genes(variant_result: dict, oracle_name: str, normalizer=None, gene_name: str | None = None) -> list[dict]:
+    """RNA-seq effect of the variant on every protein-coding gene in the prediction window, per track.
+
+    Discovery cannot score RNA against "the" gene (it has none), and the RNA null is the mean over a gene's
+    exon mask, so a whole-track change would be ranked against the wrong statistic. Instead every nearby gene
+    is scored exactly as ``build_variant_report`` does it -- ``score_track_effect`` for the exon-mask log
+    fold change, ``_apply_normalization`` for the (signed) percentile and its noise floor -- and the caller
+    picks the gene afterwards. This reuses those functions rather than re-implementing them so that the
+    numbers cannot drift from ``analyze_variant_multilayer``.
+
+    Returns one dict per (track, gene) with a score, including the gene's strand; tracks whose exons fall
+    outside the window are skipped. Every gene is scored on every track, strand-specific or not: which strand a
+    gene may be read on is decided later by whoever uses the table (``load_rna_tables(strand_mode=...)``).
+    ``gene_name`` is scored even when it is not among the nearby genes.
+    """
+    from .scorers import classify_track_layer, score_track_effect
+    from .variant_report import (
+        TrackScore, _apply_normalization, _find_nearby_genes, _parse_cell_type_from_description,
+        _track_description, _track_fold,
+    )
+    from ..utils.annotations import get_gene_exons
+
+    predictions = variant_result["predictions"]
+    ref_pred = predictions["reference"]
+    alt_pred = predictions[[k for k in predictions if k != "reference"][0]]
+    chrom, pos_s = variant_result["variant_info"]["position"].split(":")
+    pos = int(pos_s)
+    rna_ids = [a for a in ref_pred.keys() if classify_track_layer(ref_pred[a]) == "gene_expression"]
+    if not rna_ids:
+        return []
+
+    first = ref_pred[rna_ids[0]]
+    window = (first.prediction_interval.reference.start, first.prediction_interval.reference.end)
+    genes = _find_nearby_genes(chrom, pos, window)
+    if gene_name and gene_name not in genes:
+        genes.insert(0, gene_name)
+
+    exons, distance, gstrand = {}, {}, {}
+    for gn in genes:
+        try:
+            edf = get_gene_exons(gn)
+        except Exception as exc:  # noqa: BLE001 - a gene without exons is simply not scored
+            logger.debug("no exons for %s: %s", gn, exc)
+            continue
+        if len(edf) == 0:
+            continue
+        exons[gn] = edf[["chrom", "start", "end"]].to_dict("records")
+        lo, hi = int(edf["start"].min()), int(edf["end"].max())
+        distance[gn] = 0 if lo <= pos <= hi else min(abs(pos - lo), abs(pos - hi))
+        gstrand[gn] = str(edf["strand"].iloc[0]) if "strand" in edf.columns else "?"
+
+    rows = []
+    for assay_id in rna_ids:
+        ref_track, alt_track = ref_pred[assay_id], alt_pred[assay_id]
+        at = getattr(ref_track, "assay_type", "")
+        desc = _track_description(ref_track)
+        cell = _parse_cell_type_from_description(desc, at) if desc else getattr(ref_track, "cell_type", "")
+        for gn, gene_exons in exons.items():
+            res = score_track_effect(ref_track, alt_track, chrom, pos, gene_exons=gene_exons)
+            if res is None:
+                continue
+            ts = TrackScore(assay_id=assay_id, assay_type=at, cell_type=cell, description=desc,
+                            layer="gene_expression", ref_value=res["ref_value"], alt_value=res["alt_value"],
+                            raw_score=res["raw_score"], region_label=f"{gn} (exons)")
+            _apply_normalization(ts, normalizer, oracle_name, "gene_expression", assay_id=assay_id,
+                                 fold=_track_fold(ref_track))
+            rows.append({"gene": gn, "distance_bp": distance[gn], "strand": gstrand[gn], "track_id": assay_id,
+                         "cell_type": cell,
+                         "percentile": ts.quantile_score, "raw_score": res["raw_score"]})
+    return rows
+
+
+def _export_rna_tables(oracle_name, variant_result, gene_name, normalizer, output_path, stem, label, info) -> dict:
+    """The RNA gene x track tables; any failure is recorded in ``info`` and costs nothing else."""
+    from .layer_ranking import write_rna_tables
+
+    if variant_result is None or oracle_name.lower() not in _MULTI_TRACK_ORACLES:
+        return {}      # per-model oracles have no RNA tracks
+    try:
+        rows = _score_rna_genes(variant_result, oracle_name, normalizer, gene_name)
+        out = write_rna_tables(rows, oracle_name, output_path, stem, label) if rows else {}
+        if out:
+            info["n_rna_genes"] = len(out["rna_genes"])
+            logger.info("  Wrote RNA tables for %d genes: %s", len(out["rna_genes"]), out["rna_gene_percentiles_csv"])
+        return out
+    except Exception as exc:  # noqa: BLE001
+        info["rna_skipped"] = f"RNA gene scoring failed: {exc}"
+        logger.warning("  %s", info["rna_skipped"])
+        return {}
+
+
+def _export_discovery_tables(oracle, oracle_name, all_effects, variant_position, alleles, output_path,
+                             variant_label, variant_result=None, gene_name=None, normalizer=None) -> dict:
+    """Write the track table and prediction matrix that ``rank_variant_tissues`` consumes.
+
+    Never raises: the model run is already paid for, and the report and rankings do not depend on this.
+    A failure is returned under ``tables`` so the caller can see why the files are missing.
+    """
+    from .layer_ranking import track_table_from_effects, write_discovery_tables
+
+    try:
+        catalog = {}
+        try:
+            # The oracle's own catalogue is authoritative for cell type and assay; the cell type
+            # parsed from a track description is wrong for BPNet ids.
+            for rec in oracle.describe_tracks():
+                tid = re.sub(r":[+-]$", "", str(rec.track_id))
+                catalog[tid] = {"cell_type": rec.cell_type, "assay": rec.assay}
+        except Exception as exc:  # noqa: BLE001 - fall back to what discovery parsed
+            logger.warning("  describe_tracks() failed (%s); using cell types parsed from track descriptions", exc)
+
+        table = track_table_from_effects(all_effects, oracle_name, catalog)
+        n_no_pctile = sum(1 for e in all_effects if e.effect_pctile is None)
+        info = {"n_tracks_in_table": int(len(table)), "n_tracks_without_percentile": n_no_pctile}
+        if table.empty:
+            info["skipped"] = ("no track has an effect percentile (no background normalizer loaded, or none "
+                               "of the tracks has a background null), so there is nothing to rank")
+            logger.warning("  tables not written: %s", info["skipped"])
+            return {"tables": info}
+        chrom, pos_s = variant_position.split(":")
+        label = variant_label or f"{chrom}:{int(pos_s):,} {alleles[0]}>{alleles[1]}"
+        stem = re.sub(r"[^A-Za-z0-9_.-]+", "_", f"{chrom}_{pos_s}_{oracle_name}")
+        paths = write_discovery_tables(table, output_path, stem, label)
+        logger.info("  Wrote %d-track table: %s", len(table), paths["track_scores_csv"])
+        rna = _export_rna_tables(oracle_name, variant_result, gene_name, normalizer, output_path, stem, label, info)
+        return {**paths, **rna, "tables": info}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("  table export failed: %s", exc)
+        return {"tables": {"skipped": f"export failed: {exc}"}}
+
+
 def discover_variant_effects(
     oracle,
     oracle_name: str,
@@ -764,6 +900,8 @@ def discover_variant_effects(
     analysis_request: "AnalysisRequest | None" = None,
     ranking_metric: str = "alt_x_abs_effect",
     min_ref_value: float = 0.0,
+    write_tables: bool = False,
+    variant_label: str | None = None,
 ) -> dict:
     """Discover which cell types and regulatory layers are most affected.
 
@@ -791,10 +929,25 @@ def discover_variant_effects(
         analysis_request: Optional AnalysisRequest stamped onto the
             report so the HTML is rendered with the user prompt on
             first write (avoids a post-hoc ``to_html`` rewrite).
+        write_tables: Also write the per-track tables that
+            :func:`chorus.analysis.layer_ranking.rank_variant_tissues` ranks, into ``output_path``:
+            ``<chrom>_<pos>_<oracle>_track_scores.csv`` (one row per unique track, the source of
+            truth) and ``<chrom>_<pos>_<oracle>_prediction_matrix.csv`` (one row per cell type).
+            Off by default so existing callers that point ``output_path`` at a committed
+            directory do not grow files. Requires ``output_path`` and a normalizer (a percentile
+            is what the ranking aggregates). For oracles with RNA-seq tracks (AlphaGenome, Borzoi) it also
+            writes ``..._rna_gene_percentiles.csv`` / ``_raw_scores.csv`` / ``_tracks.csv``: the effect on
+            every protein-coding gene in the prediction window (genes as rows, tracks as columns), because
+            the RNA null is a per-gene exon-mask statistic and the gene is for the user to choose. RNA
+            stays out of ``cell_type_ranking`` / ``layer_rankings``.
+        variant_label: Title line of the written tables and of the rank figure
+            (default ``chr1:109,274,968 G>T``).
 
     Returns:
         Dict with cell_type_ranking, layer_rankings, selected tracks,
-        and a VariantReport for the top tracks.
+        and a VariantReport for the top tracks. With ``write_tables`` it also holds
+        ``track_scores_csv`` / ``prediction_matrix_csv`` (paths) and ``tables``
+        (track counts and any reason the export was skipped).
     """
     from .variant_report import build_variant_report
     from ..core.result import OraclePrediction
@@ -802,6 +955,11 @@ def discover_variant_effects(
     chrom, pos_str = variant_position.split(":")
     pos = int(pos_str)
     name = oracle_name.lower()
+
+    if write_tables and not output_path:
+        # Checked before the model runs: finding this out after a multi-hour per-model sweep would
+        # throw the whole sweep away.
+        raise ValueError("write_tables=True needs output_path: the tables are written next to the report")
 
     # ── Step 1: Get variant predictions for ALL tracks ──────────────
     if name in _MULTI_TRACK_ORACLES:
@@ -831,15 +989,32 @@ def discover_variant_effects(
         variant_result = None  # will build from best tracks later
 
         if name == "chrombpnet":
-            from ..oracles.chrombpnet_source.chrombpnet_globals import iter_unique_models
+            from ..oracles.chrombpnet_source.chrombpnet_globals import (
+                iter_unique_bpnet_models,
+                iter_unique_models,
+            )
             # Dedupe by ENCFF. The registry is one-alias-per-model since the
             # mouse atlas was dropped (2026-08-01), so this is currently a
-            # no-op — but it stays because the helper is the registry's
+            # no-op — but it stays because the helper is the registry
             # contract, not an incidental optimisation.
             models = [
                 {"assay": assay, "cell_type": cell_type}
                 for assay, cell_type, _encff in iter_unique_models()
             ]
+            # BPNet ChIP-TF models. ``iter_unique_models`` yields ATAC/DNASE only (the CHIP registry
+            # dict is empty by design), so without this the ChIP-TF layer was silently absent from a
+            # ChromBPNet discovery: 9 tracks scored, none of them TF binding. One model per
+            # (TF, cell line) -- the JASPAR metadata has 1259 rows but only 744 distinct pairs --
+            # each with a per-track CDF under ``CHIP:<cell>:<TF>`` in chrombpnet_pertrack.npz.
+            n_chromatin = len(models)
+            models += [
+                {"assay": "CHIP", "cell_type": cell, "TF": tf}
+                for cell, tf, _url, _ident in iter_unique_bpnet_models()
+            ]
+            logger.info(
+                "  chrombpnet: %d models (%d ATAC/DNASE + %d BPNet ChIP-TF)",
+                len(models), n_chromatin, len(models) - n_chromatin,
+            )
         elif name == "legnet":
             from ..oracles.legnet_source.legnet_globals import LEGNET_AVAILABLE_CELLTYPES
             models = [{"cell_type": ct} for ct in LEGNET_AVAILABLE_CELLTYPES]
@@ -874,6 +1049,8 @@ def discover_variant_effects(
             ct = model_params.get("cell_type", "?")
             assay = model_params.get("assay", "")
             label = f"{assay}:{ct}" if assay else ct
+            if model_params.get("TF"):
+                label = f"{assay}:{ct}:{model_params['TF']}"
             logger.info("  Model %d/%d: %s", i + 1, len(models), label)
 
             try:
@@ -906,6 +1083,13 @@ def discover_variant_effects(
     if not all_effects:
         return {"cell_type_ranking": [], "layer_rankings": {}, "report": None,
                 "near_ties_at_cutoff": {}}
+
+    table_info = (
+        _export_discovery_tables(oracle, oracle_name, all_effects, variant_position, alleles, output_path,
+                                 variant_label, variant_result=variant_result, gene_name=gene_name,
+                                 normalizer=normalizer)
+        if write_tables else {}
+    )
 
     # ── Step 2: Rank and select top tracks ──────────────────────────
     selected, layer_rankings, near_ties = _rank_and_select(
@@ -1003,4 +1187,5 @@ def discover_variant_effects(
         "total_tracks_scored": len(all_effects),
         "selected_tracks": len(selected),
         "report": report,
+        **table_info,
     }

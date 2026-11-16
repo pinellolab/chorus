@@ -31,7 +31,7 @@ chorus/
 │   ├── normalization.py         # PerTrackNormalizer (CDF-based percentiles)
 │   ├── analysis_request.py      # User-prompt preservation on every report
 │   └── _igv_report.py           # IGV browser HTML (igv.js inlined; genome fetched, #139)
-├── mcp/                 # FastMCP server (27 tools)
+├── mcp/                 # FastMCP server (32 tools)
 │   ├── server.py
 │   ├── state.py
 │   └── serializers.py
