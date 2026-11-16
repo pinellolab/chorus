@@ -21,7 +21,7 @@ broken. (The `../walkthroughs/` notebooks ship unexecuted by design — differen
 
 | Notebook | For whom | What you learn | Typical time |
 |---|---|---|---|
-| **[single_oracle_quickstart.ipynb](single_oracle_quickstart.ipynb)** | First-time users · bench biologists who can read Python | Load one oracle (Enformer), predict at a locus, score a variant's effect, interpret results with effect percentiles. Includes a gene-expression example and evolutionary-conservation tracks (`show_conservation=True`) via the `AnnotationStore` catalog. | 15 min |
+| **[single_oracle_quickstart.ipynb](single_oracle_quickstart.ipynb)** | First-time users · bench biologists who can read Python | Load one oracle (Enformer), predict at a locus, score a variant's effect, interpret results with effect percentiles. Includes a gene-expression example and evolutionary-conservation tracks (`show_conservation=True`) via the `AnnotationStore` catalog. The conservation cell ships off (`RUN_CONSERVATION = False`): turning it on needs **~70 GB of disk** for a one-time download of seven conservation bigwigs. | 15 min |
 | **[advanced_multi_oracle_analysis.ipynb](advanced_multi_oracle_analysis.ipynb)** | Intermediate · want to compare oracles | Score the same variant with multiple oracles (ChromBPNet, Enformer, Borzoi, Sei, LegNet, AlphaGenome), plot cross-oracle track comparisons with gene annotations, understand where each oracle is strong. | 45 min |
 | **[cherimoya_quickstart.ipynb](cherimoya_quickstart.ipynb)** | Anyone who needs a specific cell type or tissue | Cherimoya/CATv1 across 1,518 ENCODE DNase/ATAC experiments: search the atlas, pick the right experiment when a biosample has several, predict, score a variant, and compare accessibility across biosamples with activity percentiles. | 20 min |
 | **[comprehensive_oracle_showcase.ipynb](comprehensive_oracle_showcase.ipynb)** | Power users · need every feature in one place | All six (pre-EPI) oracles, all prediction modes (wild-type, variant, region swap, sequence insertion, discovery), the full visualization + normalization stack. | 60 min |
@@ -50,7 +50,7 @@ chorus genome download hg38
 # 4. Nothing — `chorus setup` registers the `chorus` Jupyter kernel for you.
 ```
 
-All 20 shipped notebooks declare kernel name `chorus`, and until recently nothing created it:
+All 19 shipped notebooks declare kernel name `chorus`, and until recently nothing created it:
 `jupyter nbconvert --execute` raised `NoSuchKernel: No such kernel named chorus` and JupyterLab
 silently prompted you to pick one, which looks like a broken notebook rather than a missing step.
 `chorus setup` now does it.
@@ -69,6 +69,12 @@ kernel from the Kernel menu.
 ## Scaling up
 
 - `single_oracle_quickstart` runs fully on CPU with 8 GB RAM (Enformer).
+  Its conservation cell ships off (`RUN_CONSERVATION = False`) because
+  `show_conservation=True` first downloads seven genome-wide hg38 bigwigs,
+  **~70 GB of disk** (GPN-Star entropy plus its four per-allele LLR files,
+  phyloP 100-way, phastCons 100-way), into the data dir that
+  `chorus config data-dir` reports. Fetch them up front with
+  `chorus conservation download --all`, then set the flag to `True`.
 - `cherimoya_quickstart` needs a CUDA GPU for fast execution, but not to
   run at all — it completes on CPU, just slowly, because it predicts across
   many biosamples and that is where CPU falls 45–150× behind (the

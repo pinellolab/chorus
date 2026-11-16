@@ -552,6 +552,7 @@ Every one of these exists because something passed all the *other* checks.
 | annotation round-trip | positions that do not match the annotation their tag names | test |
 | `check_counts_fit_the_population` | a stamped activity population too small to have produced the samples the file carries: `max(counts) ≤ n_positions × per-position × fan-out`, per layer | stamp time + test |
 | `verify_rebuilt_backgrounds.py` | track-set changes, body drift, falling ceilings, missing retention, and **more real effects pinning than before** | before swap |
+| `test_committed_percentiles_match_the_pinned_null` | a committed example whose percentiles the pinned null does not give. `SORT1_chrombpnet` shipped DNASE:HepG2 as `≥99th (1.18× null max)`, activity 0.885, where the pinned null gives 0.9995 and 0.906; the JSON records no revision, so nothing else could see it (v0.8.0 audit P1-1) | test, where backgrounds are downloaded |
 
 `check_counts_fit_the_population` is one-sided, and that limit is worth knowing: it catches a
 population declared too **small** (chrombpnet's 68,008 summary samples against 31,500 × 2 =

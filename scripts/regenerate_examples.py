@@ -25,6 +25,17 @@ import numpy as np
 REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, REPO_ROOT)
 
+# The genome lives in the data dir (CHORUS_DATA_DIR / chorus_data_dir.txt), not necessarily the
+# repo. `REPO_ROOT/genomes/hg38.fa` made every example fail on a host set up the documented way,
+# and the per-example `except` below logged it and carried on -- the run ended "ALL DONE", exit 0,
+# having regenerated nothing (found 2026-11-16 regenerating SORT1_chrombpnet for v0.8.0).
+from chorus.core.globals import CHORUS_GENOMES_DIR  # noqa: E402
+HG38_FASTA = str(CHORUS_GENOMES_DIR / "hg38.fa")
+
+#: Examples that raised. A non-empty list makes the script exit 1 (see the end of the file), so a
+#: wrapper keyed on the exit code -- as CLAUDE.md asks -- sees the failure.
+FAILED: list = []
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--oracle", choices=["alphagenome", "enformer", "chrombpnet", "all"], default="all")
 parser.add_argument("--gpu", type=int, default=1)
@@ -203,17 +214,10 @@ CHROMBPNET_EXAMPLES = [
         "assay": "DNASE", "cell_type": "HepG2",
         "html_name": "rs12740374_SORT1_chrombpnet_report.html",
     },
-    {
-        "name": "SORT1 rs12740374 — effect vs. conservation",
-        "dir": f"{BASE}/conservation/SORT1_rs12740374",
-        "type": "chrombpnet",
-        "position": "chr1:109274968",
-        "ref": "G", "alt": "T",
-        "gene": "SORT1",
-        "assay": "DNASE", "cell_type": "HepG2",
-        "show_conservation": True,
-        "html_name": "rs12740374_SORT1_chrombpnet_conservation_report.html",
-    },
+    # NOTE: the "effect vs. conservation" walkthrough for rs12740374 (#246) was pulled from
+    # v0.8.0 on 2026-11-16: the pinned ChromBPNet null does not reproduce its committed
+    # percentiles (release audit P1-1). It comes back as the entry above plus
+    # "show_conservation": True, which regenerate_chrombpnet still handles.
 ]
 
 
@@ -427,7 +431,7 @@ if args.oracle in ("alphagenome", "all"):
         logger.info("Loading AlphaGenome oracle (via env runner)...")
         oracle = AlphaGenomeOracle(
             use_environment=True,
-            reference_fasta=os.path.join(REPO_ROOT, 'genomes/hg38.fa'),
+            reference_fasta=HG38_FASTA,
             device=f'cuda:{args.gpu}',
             predict_timeout=900, model_load_timeout=1200,
         )
@@ -441,6 +445,7 @@ if args.oracle in ("alphagenome", "all"):
                 regenerate_variant_alphagenome(oracle, norm, ex)
             except Exception as exc:
                 logger.error("  ✗ Failed: %s", str(exc)[:200])
+                FAILED.append(ex.get("name", "?"))
             logger.info("")
 
         logger.info("AlphaGenome examples done in %.1f min", (time.time() - t0) / 60)
@@ -458,7 +463,7 @@ if args.oracle in ("enformer", "all"):
 
         oracle = EnformerOracle(
             use_environment=True,
-            reference_fasta=os.path.join(REPO_ROOT, 'genomes/hg38.fa'),
+            reference_fasta=HG38_FASTA,
             device=f'cuda:{args.gpu}',
             predict_timeout=600, model_load_timeout=900,
         )
@@ -471,6 +476,7 @@ if args.oracle in ("enformer", "all"):
                 regenerate_enformer_discovery(oracle, norm, ex, igv_raw=igv_raw)
             except Exception as exc:
                 logger.error("  ✗ Failed: %s", str(exc)[:200])
+                FAILED.append(ex.get("name", "?"))
 
 if args.oracle in ("chrombpnet", "all"):
     if args.dry_run:
@@ -486,7 +492,7 @@ if args.oracle in ("chrombpnet", "all"):
 
         oracle = ChromBPNetOracle(
             use_environment=True,
-            reference_fasta=os.path.join(REPO_ROOT, 'genomes/hg38.fa'),
+            reference_fasta=HG38_FASTA,
             device=f'cuda:{args.gpu}',
             model_load_timeout=600, predict_timeout=300,
         )
@@ -497,7 +503,12 @@ if args.oracle in ("chrombpnet", "all"):
                 regenerate_chrombpnet(oracle, norm, ex)
             except Exception as exc:
                 logger.error("  ✗ Failed: %s", str(exc)[:200])
+                FAILED.append(ex.get("name", "?"))
 
 logger.info("=" * 60)
+if FAILED:
+    logger.error("FAILED %d example(s): %s", len(FAILED), ", ".join(FAILED))
+    logger.info("=" * 60)
+    sys.exit(1)
 logger.info("ALL DONE")
 logger.info("=" * 60)

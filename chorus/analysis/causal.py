@@ -1604,11 +1604,17 @@ def _build_causal_html(result: CausalResult) -> str:
                          f'<td>{q_str}</td>'
                          f'</tr>')
             p.append('</tbody></table>')
+            # The only definition of the Percentile column, in variant_report.py's words.
+            # It used to name a population of observed variants; the null is sampled
+            # positions with a uniformly chosen alt (2026-11-15 pre-release audit, P1-8).
             p.append('<p class="muted" style="margin-top:0.4rem">'
                      'Each row reports the <b>single track with the largest '
                      '|effect|</b> in that layer. Ref/Alt are the model\'s raw '
-                     'predicted signal for that track. Percentile is the variant '
-                     'effect vs. a background of common variants (when available).'
+                     'predicted signal for that track. Percentile (when available) '
+                     'ranks the variant effect against a per-track background of '
+                     '~18,000 variants sampled from the regulatory regions this '
+                     'assay measures (cCREs, DHS summits, promoters, gene features) '
+                     '— not uniformly random positions.'
                      '</p>')
 
         p.append('</div></td></tr>')

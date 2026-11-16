@@ -43,7 +43,7 @@ def _print_hf_setup_instructions(reason: str) -> None:
     print("  3. Give the token to chorus — ANY of:")
     print("       a. chorus setup --oracle alphagenome --hf-token hf_xxx")
     print("       b. export HF_TOKEN=hf_xxx && chorus setup --oracle alphagenome")
-    print("       c. mamba run -n chorus huggingface-cli login")
+    print("       c. mamba run -n chorus hf auth login")
     print("─" * 72)
     print()
 
@@ -144,7 +144,7 @@ def resolve_hf_token(
     _persist_hf_token(token)
     user = _try_whoami()
     if user:
-        logger.info("✓ HuggingFace auth ok (user: %s, saved via huggingface-cli)", user)
+        logger.info("✓ HuggingFace auth ok (user: %s, saved via huggingface_hub.login)", user)
         return True
     logger.error(
         "HuggingFace rejected the provided token. "

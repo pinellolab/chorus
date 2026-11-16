@@ -196,7 +196,7 @@ class AlphaGenomeOracle(OracleBase):
                 else:
                     raise ModelNotLoadedError(
                         "AlphaGenome requires HuggingFace authentication. "
-                        "Set the HF_TOKEN environment variable or run `huggingface-cli login`. "
+                        "Set the HF_TOKEN environment variable or run `hf auth login`. "
                         "You must also accept the model license at "
                         "https://huggingface.co/google/alphagenome-all-folds."
                     )

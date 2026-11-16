@@ -252,6 +252,24 @@ def unavailable() -> "str | None":
     return None
 
 
+def launch_unavailable(exc) -> "str | None":
+    """Why Chromium could not start here, or None if ``exc`` is a genuine launch failure.
+
+    ``unavailable()`` only checks that *a* Chromium is cached. A cache filled by a different
+    playwright release holds the wrong build, and launch then fails with "Executable doesn't
+    exist". On the v0.8.0 release host the cache had build 1255 while the env's playwright 1.62
+    wanted 1234, and the two browser modules reported 47 errors that read as 47 report defects.
+    That case is a host setup issue, so it skips with the fix named; every other launch error is
+    still raised.
+    """
+    msg = str(exc)
+    if "Executable doesn't exist" not in msg:
+        return None
+    first = msg.splitlines()[0].split(": ", 1)[-1]
+    return (f"{first} -- the cached Chromium is from a different playwright release; run "
+            f"`python -m playwright install chromium` with this env's playwright")
+
+
 def browser_env() -> dict:
     """Environment for the Chromium process, with the library path assembled."""
     existing = os.environ.get("LD_LIBRARY_PATH", "")

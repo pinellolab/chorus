@@ -188,7 +188,7 @@ def cleanup_resources(args) -> int:
             if _remove_path(t, dry_run):      # prints the "remove <path>" line itself
                 total_caches += 1
         if parent is not None:
-            _dry(f"  keeping {parent} itself — it can hold your `huggingface-cli login` token",
+            _dry(f"  keeping {parent} itself — it can hold your `hf auth login` token",
                  dry_run)
     elif do_all:
         targets, _ = _hf_cache_targets()

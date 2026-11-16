@@ -124,7 +124,7 @@ def _probe_alphagenome() -> Tuple[bool, List[str]]:
             [
                 "HuggingFace auth failed "
                 f"({type(exc).__name__}: {exc}). Set HF_TOKEN or run "
-                "'huggingface-cli login'."
+                "'hf auth login'."
             ],
         )
 

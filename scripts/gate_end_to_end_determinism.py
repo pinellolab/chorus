@@ -74,8 +74,11 @@ def _child(out_path: str, gpu: str, oracle_name: str = "alphagenome") -> int:
     from chorus.analysis.variant_report import build_variant_report
     # reference_fasta is required: predict_variant_effect refuses to guess a
     # genome (#128's strict_ref work made that a hard error rather than a
-    # substitution). regenerate_examples.py passes it the same way.
-    fasta = str(REPO / "genomes" / "hg38.fa")
+    # substitution). It comes from the data dir, where `chorus genome download`
+    # writes it, as in tests/reference_genome.py: REPO/genomes/hg38.fa made the
+    # gate die with OSError on any install with a data dir (P1-14, 2026-11-15).
+    from chorus.core.globals import CHORUS_GENOMES_DIR
+    fasta = str(CHORUS_GENOMES_DIR / "hg38.fa")
     if oracle_name == "enformer":
         # use_environment=True on purpose: that is the path regenerate_examples.py takes for the
         # walkthroughs, and it spawns a fresh process per predict. The AlphaGenome arm below runs

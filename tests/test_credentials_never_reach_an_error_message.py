@@ -19,14 +19,27 @@ The redactor is deliberately belt-and-braces: it removes the secret it was hande
 AND blanks any ``token=`` parameter, so a credential that arrived by a route the
 function was not told about is still not printed. These tests check both halves,
 because the second is the one that survives refactoring.
+
+A clean message was not enough (2026-11-15 pre-release audit, P1-6). The redacted
+``LDLinkError`` was raised ``from exc``, so the unredacted requests exception rode
+along as its cause, and ``_safe_tool``'s ``logger.exception`` printed the whole chain
+to the MCP server's stderr -- which clients keep as a log file -- and
+``CHORUS_MCP_DEBUG=1`` returned it in ``payload["traceback"]``. urllib3 also logs the
+request line, query string included, at DEBUG. The tests at the bottom drive an
+LDlink outage through the MCP layer and check all three places.
 """
 from __future__ import annotations
+
+import json
+import logging
+import traceback
 
 import pytest
 
 from chorus.utils.ld import _redact
 
 SECRET = "SUPERSECRETLDTOKEN123"
+FAKE_TOKEN = "abc123def456"  # fake, shaped like an LDlink token; not a credential
 
 
 @pytest.mark.parametrize("message", [
@@ -99,3 +112,105 @@ def test_the_error_paths_redact_rather_than_interpolating_raw():
         assert "_redact" in snippet, (
             f"an LDLinkError interpolates {m.group(1)!r} without _redact:\n{snippet}"
         )
+
+
+# --- The chain, the server log and the debug payload (P1-6) ------------------------
+
+
+def _ldlink_outage(monkeypatch):
+    """Make ``requests.get`` fail as an LDlink outage does: urllib3 logs the request
+    line, then a 503 whose message is the full request URL, token included."""
+    import requests
+
+    def fake_get(url, params=None, timeout=None):
+        query = "&".join(f"{k}={v}" for k, v in (params or {}).items())
+        # urllib3.connectionpool's own DEBUG line, emitted for every request.
+        logging.getLogger("urllib3.connectionpool").debug(
+            '%s://%s:%s "%s %s %s" %s %s', "https", "ldlink.nih.gov", 443, "GET",
+            f"/LDlinkRest/ldproxy?{query}", "HTTP/1.1", 503, None)
+        raise requests.exceptions.HTTPError(
+            f"503 Server Error: Service Unavailable for url: {url}?{query}")
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+
+@pytest.mark.parametrize("entry", ["fetch_ld_variants", "_resolve_rsid_to_position"])
+def test_the_traceback_of_an_ldlink_outage_does_not_carry_the_token(monkeypatch, entry):
+    """The chain itself must be clean, whoever prints it -- a notebook, pytest, a logger."""
+    from chorus.mcp import server
+    from chorus.utils import ld
+
+    _ldlink_outage(monkeypatch)
+    try:
+        if entry == "fetch_ld_variants":
+            ld.fetch_ld_variants("rs12740374", token=FAKE_TOKEN)
+        else:
+            server._resolve_rsid_to_position("rs12740374", ldlink_token=FAKE_TOKEN)
+    except (ld.LDLinkError, ValueError):
+        tb = traceback.format_exc()
+    else:
+        pytest.fail("an LDlink outage must raise")
+    assert FAKE_TOKEN not in tb, tb
+    assert "503 Server Error" in tb, "the redacted message is what you debug an outage with"
+
+
+@pytest.mark.parametrize("debug_logger", [None, "urllib3", "urllib3.connectionpool"],
+                         ids=["root", "urllib3", "urllib3.connectionpool"])
+def test_an_ldlink_outage_in_an_mcp_tool_leaks_into_no_log_and_no_payload(
+        monkeypatch, caplog, debug_logger):
+    """The audit's reproduction: an rsID tool call while LDlink is down, with the
+    server logging at DEBUG (root, or the urllib3 loggers directly) and
+    CHORUS_MCP_DEBUG=1."""
+    from chorus.mcp import server
+
+    _ldlink_outage(monkeypatch)
+    monkeypatch.setenv("CHORUS_MCP_DEBUG", "1")
+    caplog.set_level(logging.DEBUG)
+    if debug_logger:
+        caplog.set_level(logging.DEBUG, logger=debug_logger)
+    levels = {n: logging.getLogger(n).level for n in ("urllib3", "urllib3.connectionpool")}
+
+    @server._safe_tool
+    def rsid_tool(position, ldlink_token=None):  # the shape of the three rsID tools
+        return server._resolve_rsid_to_position(position, ldlink_token=ldlink_token)
+
+    payload = rsid_tool("rs12740374", ldlink_token=FAKE_TOKEN)
+
+    assert payload["error_type"] == "ValueError", payload
+    assert "MCP tool rsid_tool failed" in caplog.text, "nothing was logged, so nothing was checked"
+    assert FAKE_TOKEN not in caplog.text, caplog.text
+    assert FAKE_TOKEN not in payload["traceback"], payload["traceback"]
+    assert FAKE_TOKEN not in json.dumps(payload)
+    assert "token=<redacted>" in payload["traceback"]
+    # The hold is released afterwards, or urllib3 debugging stays off for the process.
+    assert {n: logging.getLogger(n).level for n in levels} == levels
+
+
+def test_safe_tool_scrubs_credentials_from_what_it_logs_and_returns(monkeypatch, caplog):
+    """The second barrier, for a credential that reaches a traceback by a route nobody
+    has found yet: the env-var values, a ``*_token`` argument, any ``token=`` parameter."""
+    from chorus.mcp import server
+
+    hf = "hf_" + "A1b2C3d4E5" * 3 + "f6G7"  # fake, assembled so no scanner sees a token
+    passed = "passedtoken" + "456789"
+    monkeypatch.setenv("HF_TOKEN", hf)
+    monkeypatch.setenv("LDLINK_TOKEN", FAKE_TOKEN)
+    monkeypatch.setenv("CHORUS_MCP_DEBUG", "1")
+
+    @server._safe_tool
+    def leaky(ldlink_token=None):
+        try:
+            raise ConnectionError("GET https://example.org/x?var=1&token=querytoken987 failed")
+        except ConnectionError as cause:
+            raise RuntimeError(f"auth failed: {hf} {FAKE_TOKEN} {ldlink_token}") from cause
+
+    with caplog.at_level(logging.ERROR, logger="chorus.mcp.server"):
+        payload = leaky(ldlink_token=passed)
+
+    assert "MCP tool leaky failed" in caplog.text, "nothing was logged, so nothing was checked"
+    for secret in (hf, FAKE_TOKEN, passed, "querytoken987"):
+        assert secret not in caplog.text, secret
+        assert secret not in json.dumps(payload), secret
+    # Redaction must not eat the diagnosis.
+    assert "auth failed" in payload["error"]
+    assert "ConnectionError" in payload["traceback"] and "example.org" in caplog.text

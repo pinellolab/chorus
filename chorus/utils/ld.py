@@ -4,6 +4,7 @@ Fetches LD proxy variants from the LDlink REST API, or converts
 user-provided variant lists into a standard format.
 """
 
+import contextlib
 import logging
 import os
 from dataclasses import dataclass
@@ -37,6 +38,32 @@ def _redact(text: str, *secrets: Optional[str]) -> str:
         if secret:
             out = out.replace(secret, "<redacted>")
     return re.sub(r"(?i)([?&]token=)[^&\s'\"]+", r"\1<redacted>", out)
+
+
+@contextlib.contextmanager
+def _urllib3_held_at_info():
+    """Hold urllib3's loggers at INFO or above for the duration of one request.
+
+    urllib3 logs every request line at DEBUG, query string included -- i.e.
+    ``"GET /LDlinkRest/ldproxy?...&token=<value>"`` -- so a process running with
+    ``logging.basicConfig(level=logging.DEBUG)``, or the usual
+    ``getLogger("urllib3").setLevel(DEBUG)`` recipe, wrote the token to its log
+    (2026-11-15 pre-release audit, P1-6). A child logger given its own level is raised
+    too, since raising the parent does not reach it.
+    """
+    loggers = [logging.getLogger("urllib3")] + [
+        lg for name, lg in list(logging.Logger.manager.loggerDict.items())
+        if name.startswith("urllib3.") and isinstance(lg, logging.Logger)
+    ]
+    saved = [(lg, lg.level) for lg in loggers]
+    for lg in loggers:  # "urllib3" first, so children left at NOTSET inherit INFO
+        if lg.getEffectiveLevel() < logging.INFO and (lg.name == "urllib3" or lg.level):
+            lg.setLevel(logging.INFO)
+    try:
+        yield
+    finally:
+        for lg, level in saved:
+            lg.setLevel(level)
 
 
 def _resolve_ldlink_token(explicit: Optional[str]) -> Optional[str]:
@@ -162,13 +189,18 @@ def fetch_ld_variants(
     logger.info("Querying LDlink LDproxy for %s in %s...", variant_id, population)
 
     try:
-        resp = requests.get(url, params=params, timeout=timeout)
-        resp.raise_for_status()
+        with _urllib3_held_at_info():
+            resp = requests.get(url, params=params, timeout=timeout)
+            resp.raise_for_status()
     except requests.RequestException as exc:
-        # Redact before interpolating: the message contains the request URL.
+        # Redact before interpolating: the message contains the request URL. And
+        # `from None`, not `from exc`: chaining kept the unredacted requests
+        # exception attached, and every traceback printer -- `_safe_tool`'s
+        # logger.exception, CHORUS_MCP_DEBUG's payload["traceback"] -- printed it,
+        # token and all (2026-11-15 pre-release audit, P1-6).
         raise LDLinkError(
             f"LDlink API request failed: {_redact(str(exc), token)}"
-        ) from exc
+        ) from None
 
     text = resp.text
     if "error" in text.lower() and len(text) < 500:

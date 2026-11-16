@@ -232,8 +232,14 @@ def browser():
     from playwright.sync_api import sync_playwright
 
     with sync_playwright() as pw:
-        b = pw.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage"],
-                               env=bh.browser_env())
+        try:
+            b = pw.chromium.launch(args=["--no-sandbox", "--disable-dev-shm-usage"],
+                                   env=bh.browser_env())
+        except Exception as exc:
+            why = bh.launch_unavailable(exc)
+            if why:
+                pytest.skip(why)
+            raise
         try:
             yield b
         finally:

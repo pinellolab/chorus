@@ -95,7 +95,7 @@ def setup_environments(args):
         if not resolve_hf_token(cli_token=getattr(args, "hf_token", None), interactive=True):
             logger.error(
                 "AlphaGenome requires a HuggingFace token. Set HF_TOKEN, run "
-                "'huggingface-cli login', or pass --hf-token."
+                "'hf auth login', or pass --hf-token."
             )
             return 1
 

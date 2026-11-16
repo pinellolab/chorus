@@ -31,10 +31,10 @@ subprocess calls that broke when this test was invoked under
 """
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 import pytest
+
+from reference_genome import HG38_FASTA
 
 
 # 1 MB SORT1 window centered at rs12740374's TSS (chr1:109,274,968).
@@ -46,7 +46,9 @@ SORT1_WINDOW = (
     109_274_968 + 524_288,
 )
 
-GENOME_FASTA = Path(__file__).parent.parent / "genomes" / "hg38.fa"
+# Was repo-relative, so on any install with a data dir the first test below skipped and the
+# second, which had no guard, died with OSError (P1-14, 2026-11-15).
+GENOME_FASTA = HG38_FASTA
 
 # Three canonical AlphaGenome assay identifiers (format
 # "{output_type}/{name}/{strand}", verified via
@@ -216,6 +218,9 @@ def test_jax_pt_agree_across_every_output_type():
     Derived from metadata rather than hardcoded so the test keeps covering all heads if track ids move;
     head coverage is the point, the specific tracks are not.
     """
+    if not GENOME_FASTA.exists():
+        pytest.skip(f"{GENOME_FASTA} not present — run `chorus genome download hg38` first")
+
     from chorus.core.environment import EnvironmentManager
 
     mgr = EnvironmentManager()
